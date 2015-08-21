@@ -1,0 +1,3386 @@
+From T.McMinn at exchange.curtin.edu.au  Thu Oct  7 11:47:39 2004
+From: T.McMinn at exchange.curtin.edu.au (Terrance Mc Minn)
+Date: Thu Oct  7 12:04:13 2004
+Subject: [Radiance-general] Flemish Bond Cal Assistance 
+Message-ID: <092BF7A1BC389E489A69DC764F23CD876572E4@exmsp2.perth.ad.curtin.edu.au>
+
+Hello All,
+
+I have been attempting to understand the library brick.cal procedure with
+the aim to develop a new procedure for flemish bond brickwork. Unfortunately
+the information in RWR (edition 1) assumes more background than I have.
+
+For those unfamiliar, a flemish brick bond has each course consists of
+alternating faces and ends, with each successive course offset by 50%.... Or
+in ascii art it might look like...
+					|     | |     | |     | |     |
+					|   |     | |     | |     |   |
+					|     | |     | |     | |     |
+Often the end blocks are a different colour/material.
+
+Any clues to understanding the original brick.cal file based on a stretcher
+bond (half brick overlap) would be appreciated if I am going to be able to
+create a new flemish.cal procedure.
+
+Regards
+
+Terry Mc Minn
+Faculty of Built Environment, Art and Design
+Curtin University of Technology
+GPO Box U 1987
+Perth 6845
+Western Australia
+Email: T.Mcminn@curtin.edu.au
+CRICOS Provider Code: 00301J
+
+From jk at ateliereng.com  Thu Oct  7 15:13:14 2004
+From: jk at ateliereng.com (Jochen Kauschmann)
+Date: Thu Oct  7 15:18:38 2004
+Subject: [Radiance-general] Flemish Bond Cal Assistance
+Message-ID: <E6494AE57E6C1343B133D3B383992458088342@sbs1.sbs>
+
+Hello there,
+
+Is there a *.cal procedure out there for generating a weave mesh ?
+
+(Metal meshes seem to become more and more popular as architectural cladding these days...)
+
+Regards Jochen
+
+
+
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org]On Behalf Of
+Terrance Mc Minn
+Sent: 07 October 2004 10:48
+To: 'radiance-general@radiance-online.org'
+Subject: [Radiance-general] Flemish Bond Cal Assistance 
+
+
+Hello All,
+
+I have been attempting to understand the library brick.cal procedure with
+the aim to develop a new procedure for flemish bond brickwork. Unfortunately
+the information in RWR (edition 1) assumes more background than I have.
+
+For those unfamiliar, a flemish brick bond has each course consists of
+alternating faces and ends, with each successive course offset by 50%.... Or
+in ascii art it might look like...
+					|     | |     | |     | |     |
+					|   |     | |     | |     |   |
+					|     | |     | |     | |     |
+Often the end blocks are a different colour/material.
+
+Any clues to understanding the original brick.cal file based on a stretcher
+bond (half brick overlap) would be appreciated if I am going to be able to
+create a new flemish.cal procedure.
+
+Regards
+
+Terry Mc Minn
+Faculty of Built Environment, Art and Design
+Curtin University of Technology
+GPO Box U 1987
+Perth 6845
+Western Australia
+Email: T.Mcminn@curtin.edu.au
+CRICOS Provider Code: 00301J
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+________________________________________________________________________
+This e-mail has been scanned for all viruses by Star. The
+service is powered by MessageLabs. For more information on a proactive
+anti-virus service working around the clock, around the globe, visit:
+http://www.star.net.uk
+________________________________________________________________________
+
+
+
+________________________________________________________________________
+This e-mail has been scanned for all viruses by Star. The
+service is powered by MessageLabs. For more information on a proactive
+anti-virus service working around the clock, around the globe, visit:
+http://www.star.net.uk
+________________________________________________________________________
+
+From tarik.rahman at ed.ac.uk  Fri Oct  8 16:47:20 2004
+From: tarik.rahman at ed.ac.uk (Tarik Rahman)
+Date: Fri Oct  8 16:47:26 2004
+Subject: [Radiance-general] trying to implement isotropic reflection model
+Message-ID: <1097246840.4166a878b4ca0@sms.ed.ac.uk>
+
+
+Hi there
+I'm trying to implement the isotropic reflection model where
+              [ exp(-tan^2(delta/alpha^2)]
+ K =    -------------------------------------------------
+            sqrt( cos(theta_i)*cos(theta_r) )*4pi*alpha^2
+
+my diffuse is (0.2 0.2 0.2) and specular is 0.05 ( roughness = 0.05 ) so I get
+the reflected colour as = diffuse/pi + spec*K and multiply this by the light
+colour (1 1 1 )
+and return it
+
+my values are supposed to be around 0.106  but I always get either too big like
+1.137 or too small like 0.0653.
+
+Anyone have any idea where I might be going wrong, should I be doing some kind
+of fall off factor where the light intensity at an intersection ( of a simple
+plane) is inversely proportional to the distance from the light source.
+
+Thanks for any help,
+
+Tarik
+--
+Tarik Rahman
+PhD student, Institue of Perception, Action and Behaviour
+School of Informatics
+University of Edinburgh
+
+From gward at lmi.net  Sun Oct 10 06:50:30 2004
+From: gward at lmi.net (Greg Ward)
+Date: Sun Oct 10 10:32:26 2004
+Subject: [Radiance-general] trying to implement isotropic reflection model
+In-Reply-To: <1097246840.4166a878b4ca0@sms.ed.ac.uk>
+References: <1097246840.4166a878b4ca0@sms.ed.ac.uk>
+Message-ID: <E98B9E70-1A77-11D9-9E05-00306540F848@lmi.net>
+
+Hi Tarik,
+
+Against your current formula, you must multiply the projected solid 
+angle of the light source, which accounts for the 1/r^2 fall-off with 
+distance.  The projected solid angle equals the cosine of theta_i times 
+the apparent solid angle of the source, which depends on the source 
+geometry in relation to the calculation point, but may be approximated 
+as the projected area in the source direction divided by the distance 
+to the source squared.
+
+By the way, some folks recently offered a correction to the Radiance 
+specular (Gaussian) reflectance model, which eliminates the square root 
+in the denominator of your formula:
+
+               [ exp(-tan^2(delta/alpha^2)]
+  K =    -------------------------------------------------
+             cos(theta_i)*cos(theta_r)*4pi*alpha^2
+
+This achieves a more accurate normalization of the reflectance, as the 
+original square root was really an error on my part in a change of 
+variables I screwed up.
+
+-Greg
+
+> From: Tarik Rahman <tarik.rahman@ed.ac.uk>
+> Date: October 8, 2004 4:47:20 PM CEST
+>
+> Hi there
+> I'm trying to implement the isotropic reflection model where
+>               [ exp(-tan^2(delta/alpha^2)]
+>  K =    -------------------------------------------------
+>             sqrt( cos(theta_i)*cos(theta_r) )*4pi*alpha^2
+>
+> my diffuse is (0.2 0.2 0.2) and specular is 0.05 ( roughness = 0.05 ) 
+> so I get
+> the reflected colour as = diffuse/pi + spec*K and multiply this by the 
+> light
+> colour (1 1 1 )
+> and return it
+>
+> my values are supposed to be around 0.106  but I always get either too 
+> big like
+> 1.137 or too small like 0.0653.
+>
+> Anyone have any idea where I might be going wrong, should I be doing 
+> some kind
+> of fall off factor where the light intensity at an intersection ( of a 
+> simple
+> plane) is inversely proportional to the distance from the light source.
+>
+> Thanks for any help,
+>
+> Tarik
+
+
+From jean at afnet.fr  Wed Oct 13 02:42:37 2004
+From: jean at afnet.fr (jean brange)
+Date: Wed Oct 13 02:42:54 2004
+Subject: [Radiance-general] Hourra for Raphael and Greg
+In-Reply-To: <mailman.201.1096599615.13134.radiance-general@radiance-online.org>
+References: <mailman.201.1096599615.13134.radiance-general@radiance-online.o
+	rg>
+Message-ID: <B15EFDA3A68B621B6741551C@[192.168.0.2]>
+
+It was as usual a great pleasure to meet you all in fribourg !
+
+2 days are always too short, but they were dense !
+
+thank's a lot to Greg and Raphael to make this encounter possible ;)
+
+Cheers, Jean-
+
+From karsten.andersen at velux.com  Wed Oct 13 04:00:42 2004
+From: karsten.andersen at velux.com (karsten.andersen@velux.com)
+Date: Wed Oct 13 04:00:26 2004
+Subject: [Radiance-general] I am out of office. If very important can you
+ contact me on mobil phone no. +45 22 16 27 87
+Message-ID: <OF8D78BF53.F8DA3822-ONC1256F2C.000B0D2D-C1256F2C.000B0D40@velux.com>
+
+
+
+
+
+I will be out of the office starting  11-10-2004 and will not return until
+18-10-2004.
+
+ I will return as soon as possible
+
+
+From apian at www.radiance-online.org  Wed Oct 13 14:03:17 2004
+From: apian at www.radiance-online.org (Peter Apian-Bennewitz)
+Date: Wed Oct 13 14:06:20 2004
+Subject: [Radiance-general] CD of 2004 workshop now online
+Message-ID: <20041013120317.GA3051@www.radiance-online.org>
+
+Hi all,
+
+the CD of the 2004 Radiance workshop that ended yesterday in Fribourg
+(in the heart of Switzerland) is now available online.  It was good fun
+and highly informative - thanks to Greg, Raphael and all speakers.
+
+regards
+Peter Apian-Bennewitz
+
+PS: I took the liberty of removing the list of participants from the
+online version. Such a nicely grouped, unprotected, online list of valid
+emails is just too easy for spam generators.
+The downloadable ISO images of the CD are left in the original state, so
+you can burn the CD yourself, which is nearly as good as having been
+there.
+
+
+From MMoeck at engr.psu.edu  Wed Oct 13 14:16:10 2004
+From: MMoeck at engr.psu.edu (Martin Moeck)
+Date: Wed Oct 13 14:17:23 2004
+Subject: [Radiance-general] spectra of various materials 
+Message-ID: <84F05BA9118BBD4A8FC6409808CE266C233DCB@ENGRMAIL2.engr.psu.edu>
+
+Hello,
+
+there is a nice database of the spectral reflectance of various materials at 
+
+ftp://ftp.eos.ncsu.edu/pub/spectra
+
+in 2 nm and 10 nm increments from 390 nm to 730 nm. It includes Munsell chips as well as materials such as foliage, the human skin, fabric, and others.
+
+Martin Moeck
+
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: not available
+Type: application/ms-tnef
+Size: 2466 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20041013/33c3ac30/attachment.bin
+From arrguedi at techunix.technion.ac.il  Wed Oct 13 16:22:26 2004
+From: arrguedi at techunix.technion.ac.il (Guedi Capeluto)
+Date: Wed Oct 13 16:20:34 2004
+Subject: [Radiance-general] CD of 2004 workshop now online
+Message-ID: <20041013142026.7A97236D1@techunix.technion.ac.il>
+
+Hi Peter,
+Hope it was a great meeting !
+I cannot find the link to the workshop's CD from its web page.
+Can you send the link?
+ 
+Thanks,
+Guedi
+ 
+Arch. Guedi Capeluto, D.Sc.
+Faculty of Architecture and Town Planning
+Technion - Israel Institute of Technology
+email: arrguedi@tx.technion.ac.il
+web  :  <http://tx.technion.ac.il/~arrguedi>
+http://tx.technion.ac.il/~arrguedi
+Hi all,
+ 
+the CD of the 2004 Radiance workshop that ended yesterday in Fribourg
+(in the heart of Switzerland) is now available online.  It was good fun
+and highly informative - thanks to Greg, Raphael and all speakers.
+ 
+regards
+Peter Apian-Bennewitz
+ 
+ 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20041013/9e4ef3fe/attachment.htm
+From rpg at rumblestrip.org  Wed Oct 13 18:35:06 2004
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Wed Oct 13 18:34:45 2004
+Subject: [Radiance-general] Workshop '04
+Message-ID: <416D593A.5000503@rumblestrip.org>
+
+Well, there goes my morning.  First off, I regret not being able to 
+attend this year's workshop, it looks like I missed a good one. 
+Second, big thanks to Peter A-B for putting the iso image of the 
+Workshop CD online so quickly.  I enjoyed perusing the extracts, and it 
+was nice to see so many familiar names, presenting exciting new work.
+
+Next year, let's have it at my house.  Airplane rides! Hamburgers! Beer! 
+   (and research, of course.)
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+From apian at pab-opto.de  Wed Oct 13 23:15:20 2004
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Wed Oct 13 23:16:33 2004
+Subject: [Radiance-general] CD of 2004 workshop now online
+In-Reply-To: <20041013142026.7A97236D1@techunix.technion.ac.il>
+References: <20041013142026.7A97236D1@techunix.technion.ac.il>
+Message-ID: <416D9AE8.9040300@pab-opto.de>
+
+Guedi Capeluto wrote:
+
+> Hi Peter,
+>
+> Hope it was a great meeting !
+>
+> I cannot find the link to the workshop's CD from its web page.
+>
+> Can you send the link?
+>
+Follow the link to "Intl. workshops / 2004" on 
+http://www.radiance-online.org/ and the page on the right hand side says 
+"browse workshop DC online", or do it in one go with
+
+http://www.radiance-online.org/radiance-workshop3/cd/
+
+There are compressed versions of the ISO image (a 1:1 copy of the CD) 
+available too, in case someone wants to burn her/his own copy.
+
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+
+
+From Tony at instaview.com  Fri Oct 15 02:04:52 2004
+From: Tony at instaview.com (Tony)
+Date: Fri Oct 15 02:02:06 2004
+Subject: [Radiance-general] CD of 2004 workshop now online
+Message-ID: <00e601c4b24a$98e190a0$0a00a8c0@wonderland>
+
+
+Man i must be blind.. dont see any links to the full CD there.. 
+
+Articles, but not the whole thing in one lump...
+
+
+------------------------------
+
+Message: 5
+Date: Wed, 13 Oct 2004 23:15:20 +0200
+From: Peter Apian-Bennewitz <apian@pab-opto.de>
+Subject: Re: [Radiance-general] CD of 2004 workshop now online
+To: Radiance general discussion <radiance-general@radiance-online.org>
+Message-ID: <416D9AE8.9040300@pab-opto.de>
+Content-Type: text/plain; charset=us-ascii; format=flowed
+
+Guedi Capeluto wrote:
+
+> Hi Peter,
+>
+> Hope it was a great meeting !
+>
+> I cannot find the link to the workshop's CD from its web page.
+>
+> Can you send the link?
+>
+Follow the link to "Intl. workshops / 2004" on 
+http://www.radiance-online.org/ and the page on the right hand side says 
+"browse workshop DC online", or do it in one go with
+
+http://www.radiance-online.org/radiance-workshop3/cd/
+
+There are compressed versions of the ISO image (a 1:1 copy of the CD) 
+available too, in case someone wants to burn her/his own copy.
+
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+
+
+
+
+------------------------------
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+End of Radiance-general Digest, Vol 8, Issue 5
+**********************************************
+
+
+From apian at pab-opto.de  Fri Oct 15 09:47:20 2004
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Fri Oct 15 09:52:47 2004
+Subject: [Radiance-general] CD of 2004 workshop now online
+In-Reply-To: <00e601c4b24a$98e190a0$0a00a8c0@wonderland>
+References: <00e601c4b24a$98e190a0$0a00a8c0@wonderland>
+Message-ID: <416F8088.8000902@pab-opto.de>
+
+Tony wrote:
+
+>Man i must be blind.. dont see any links to the full CD there.. 
+>
+>Articles, but not the whole thing in one lump...
+>  
+>
+http://www.radiance-online.org/radiance-workshop3/
+has links to
+CDROM ISO image: no compression 
+<http://www.radiance-online.org/radiance-workshop3/cd.iso> (223MB)
+CDROM ISO image: bzip2 compression 
+<http://www.radiance-online.org/radiance-workshop3/cd.iso.bz2> (198MB)
+CDROM ISO image: zip file 
+<http://www.radiance-online.org/radiance-workshop3/cd.iso.zip> (205MB)
+
+-- 
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+
+
+From ckehrlich at yahoo.com  Fri Oct 15 19:25:10 2004
+From: ckehrlich at yahoo.com (Charles Ehrlich)
+Date: Fri Oct 15 19:32:00 2004
+Subject: [Radiance-general] Re: CD of 2004 workshop now online
+Message-ID: <20041015172510.55543.qmail@web80302.mail.yahoo.com>
+
+
+I found the ISO image.  Thanks Peter!
+
+I tried writing to a disk using Adaptec's CD Creator program, but it wouldn't work.  Are there any free/cheap cd-writing tools that you can recommend?
+
+-Chas
+
+ 
+
+
+Follow the link to "Intl. workshops / 2004" on 
+http://www.radiance-online.org/ and the page on the right hand side says 
+"browse workshop DC online", or do it in one go with
+
+http://www.radiance-online.org/radiance-workshop3/cd/
+
+There are compressed versions of the ISO image (a 1:1 copy of the CD) 
+available too, in case someone wants to burn her/his own copy.
+
+-Peter
+
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20041015/6373999a/attachment.html
+From rpg at rumblestrip.org  Fri Oct 15 21:22:55 2004
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Fri Oct 15 21:21:59 2004
+Subject: [Radiance-general] Re: CD of 2004 workshop now online
+In-Reply-To: <20041015172510.55543.qmail@web80302.mail.yahoo.com>
+References: <20041015172510.55543.qmail@web80302.mail.yahoo.com>
+Message-ID: <4170238F.4060603@rumblestrip.org>
+
+Charles Ehrlich wrote:
+> I found the ISO image.  Thanks Peter!
+> 
+> I tried writing to a disk using Adaptec's CD Creator program, but it 
+> wouldn't work.  Are there any free/cheap cd-writing tools that you can 
+> recommend?
+
+There should be a menu item called "Create CD from image" or something 
+like that, that's what my Adaptec EasyCD Creator program has.  Worked 
+for me.  You can't just burn the .iso as a file.
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+From apian at pab-opto.de  Fri Oct 15 23:50:54 2004
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Fri Oct 15 23:51:07 2004
+Subject: [Radiance-general] Re: CD of 2004 workshop now online
+In-Reply-To: <4170238F.4060603@rumblestrip.org>
+References: <20041015172510.55543.qmail@web80302.mail.yahoo.com>
+	<4170238F.4060603@rumblestrip.org>
+Message-ID: <4170463E.9070405@pab-opto.de>
+
+Rob Guglielmetti wrote:
+
+> Charles Ehrlich wrote:
+>
+>> I found the ISO image.  Thanks Peter!
+>>
+>> I tried writing to a disk using Adaptec's CD Creator program, but it 
+>> wouldn't work.  Are there any free/cheap cd-writing tools that you 
+>> can recommend?
+>
+>
+> There should be a menu item called "Create CD from image" or something 
+> like that, that's what my Adaptec EasyCD Creator program has.  Worked 
+> for me.  You can't just burn the .iso as a file.
+
+for those with Linux and a configured cdrecord (e.g. files in 
+/etc/cdrecord indicating where the driver is located, see your favourite 
+manpage or html),
+    cdrecord -v -tao  -data  cd.iso
+(or -sao) should do the trick. However, this piece of information is 
+likely either redundant or incomprehensible.
+
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+
+
+From tarik.rahman at ed.ac.uk  Wed Oct 20 18:08:33 2004
+From: tarik.rahman at ed.ac.uk (Tarik Rahman)
+Date: Wed Oct 20 18:08:36 2004
+Subject: [Radiance-general] ranimate movies
+Message-ID: <1098288513.41768d81255d4@sms.ed.ac.uk>
+
+Hi
+I'm running ranimate and I get the .pic frame files stored in the directory
+along with the .unf files. What are the .unf files and how can you view the
+animation like a movie e.g. in some media player?
+Thanks
+
+Tarik
+
+--
+Tarik Rahman
+PhD student, Institue of Perception, Action and Behaviour
+School of Informatics
+University of Edinburgh
+
+From jedev at visarc.com  Wed Oct 20 18:16:36 2004
+From: jedev at visarc.com (Jack de Valpine)
+Date: Wed Oct 20 18:16:46 2004
+Subject: [Radiance-general] ranimate movies
+In-Reply-To: <1098288513.41768d81255d4@sms.ed.ac.uk>
+References: <1098288513.41768d81255d4@sms.ed.ac.uk>
+Message-ID: <41768F64.9090605@visarc.com>
+
+Hi Tarik,
+
+The .unf finished files are the rendered images pre any filetering 
+operations. The .pic image have been filtered and perhaps some other 
+operations depending on your rif settings. The .pic images are your 
+final frames. To view the animation like a movie you will need to 
+convert your .pic images to tifs or some other format and then from 
+there into an animation format. There are a few options to view:
+
+   1. convert final pic frames to jpg and use "animate *.jpg" to view
+      the animation (this presumes linux)
+   2. to generate an avi or other format (again presuming linux) you can
+      convert the frames to tifs and then use "ffmpeg" to generate an
+      avi or mpeg. Note this tool can be a little tricky. It is
+      powerful, but the documentation really presumes a fair amount of
+      knowledge about codecs, encoding and decoding.
+   3. otherwise you can load up the converted frames into something like
+      adobe premier and generate an animation.
+
+-Jack
+
+Tarik Rahman wrote:
+
+>Hi
+>I'm running ranimate and I get the .pic frame files stored in the directory
+>along with the .unf files. What are the .unf files and how can you view the
+>animation like a movie e.g. in some media player?
+>Thanks
+>
+>Tarik
+>
+>--
+>Tarik Rahman
+>PhD student, Institue of Perception, Action and Behaviour
+>School of Informatics
+>University of Edinburgh
+>
+>_______________________________________________
+>Radiance-general mailing list
+>Radiance-general@radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>  
+>
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20041020/b20f3cb6/attachment.htm
+From Rob.Fitzsimmons at Summit.Fiserv.com  Wed Oct 20 18:31:42 2004
+From: Rob.Fitzsimmons at Summit.Fiserv.com (Fitzsimmons, Rob)
+Date: Wed Oct 20 18:31:59 2004
+Subject: [Radiance-general] ranimate movies
+Message-ID: <7B2F6EA5E35E214882CB9828962BC3CF04D696B8@corvallis>
+
+ 
+
+-----Original Message-----
+From: Tarik Rahman
+To: Radiance general discussion
+Sent: 10/20/2004 9:08 AM
+Subject: [Radiance-general] ranimate movies
+
+Hi
+I'm running ranimate and I get the .pic frame files stored in the
+directory
+along with the .unf files. What are the .unf files 
+
+they are the original oversized pic before resampling, exposure adjustment,
+etc. with pfilt
+pfilt -1 -e 1.25 -m .25 -x /3 -y /3 scene001.unf > scene001.pic
+they are deleted when the animation  is completed (or sooner depending on
+your Diskspace setting)
+and how can you view
+the
+animation like a movie e.g. in some media player?
+I'm on a Mac, so I convert them all to pict, and use a shareware called
+Moover to make the picts a quicktime
+
+Rob F
+
+--
+Tarik Rahman
+PhD student, Institue of Perception, Action and Behaviour
+School of Informatics
+University of Edinburgh
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+From rpg at rumblestrip.org  Wed Oct 20 18:42:35 2004
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Wed Oct 20 18:42:05 2004
+Subject: [Radiance-general] ranimate movies
+In-Reply-To: <41768F64.9090605@visarc.com>
+References: <1098288513.41768d81255d4@sms.ed.ac.uk>
+	<41768F64.9090605@visarc.com>
+Message-ID: <4176957B.4040409@rumblestrip.org>
+
+Hi Jack, Tarik, y'all,
+
+Jack de Valpine wrote:
+> Hi Tarik,
+> 
+> The .unf finished files are the rendered images pre any filetering 
+> operations. The .pic image have been filtered and perhaps some other 
+> operations depending on your rif settings. The .pic images are your 
+> final frames. To view the animation like a movie you will need to 
+> convert your .pic images to tifs or some other format and then from 
+> there into an animation format. There are a few options to view:
+> 
+>    1. convert final pic frames to jpg and use "animate *.jpg" to view
+>       the animation (this presumes linux)
+
+... and ImageMagick installed as well, I believe.
+
+>    2. to generate an avi or other format (again presuming linux) you can
+>       convert the frames to tifs and then use "ffmpeg" to generate an
+>       avi or mpeg. Note this tool can be a little tricky. It is
+>       powerful, but the documentation really presumes a fair amount of
+>       knowledge about codecs, encoding and decoding.
+
+Thanks for this, I've been looking for a good encoder.
+
+>    3. otherwise you can load up the converted frames into something like
+>       adobe premier and generate an animation.
+
+Two other options that I use:
+
+MakeAVI
+=======
+MakeAVI is a nice simple Windows-based GUI for taking a bunch of stills 
+and squirting them into an AVI movie.
+
+Pro: GUI-based.
+Con: GUI-based.
+
+Info: http://sourceforge.net/projects/makeavi
+
+GIFsicle
+========
+This one I just found recently; great for using in scripts as it's 
+command-line based.  Takes a bunch of stills and makes an animated gif. 
+  Quick & dirty, as you please.
+
+Pros: scriptable, runs on Windows and unix.
+Con: animated gifs aren't really interactive.  I tend to do animations 
+of the sun, and it's nice to be able to stop the action and study 
+particular times of day, something you can't do with an animated gif, so 
+thanks again for the ffmpeg reference, Jack-o.
+
+Info: http://www.lcdf.org/~eddietwo/gifsicle/
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+From g_a_chadwick at yahoo.co.uk  Wed Oct 20 18:49:34 2004
+From: g_a_chadwick at yahoo.co.uk (George Chadwick)
+Date: Wed Oct 20 18:49:40 2004
+Subject: [Radiance-general] Can I safely convert linefeeds in cal files to
+	line-returns for an easy life in DOS
+Message-ID: <20041020164934.37651.qmail@web25201.mail.ukl.yahoo.com>
+
+
+Hello Radiance gurus and other folks.
+
+ 
+
+Asking from a standpoint of ignorance in Radiance/UNIX, will it do any harm if I convert all the supplied .cal files to DOS-readable files, by stripping out what I presume are the bare line-feeds ? a UNIX trademark I presume -  and substituting DOS return characters, so they don?t cause unreadable/invisible characters and line overflows in my DOS/Windows word-processing apps?
+
+ 
+
+As it happens, I am forced to use the command line in a DOS box in a Window$ environment to run the Radiance bin/programs.  I got these by installing DeskRad.  Thanks to obligatory corporate hardware/software upgrades I lost AutoCrap2000 forever, so I can't use DeskRad itself.  Undaunted I am hoping to learn to use Radiance directly in the DOS-box, hands-on from scratch.
+
+ 
+
+ 
+
+Your humble novice in trepidation
+
+George Chadwick
+
+
+		
+---------------------------------
+ ALL-NEW Yahoo! Messenger - all new features - even more fun!  
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20041020/ef1a591e/attachment.htm
+From gward at lmi.net  Wed Oct 20 22:24:54 2004
+From: gward at lmi.net (Greg Ward)
+Date: Wed Oct 20 22:27:59 2004
+Subject: [Radiance-general] Can I safely convert linefeeds in cal files to
+	line-returns for an easy life in DOS
+In-Reply-To: <20041020164934.37651.qmail@web25201.mail.ukl.yahoo.com>
+References: <20041020164934.37651.qmail@web25201.mail.ukl.yahoo.com>
+Message-ID: <1A73C0BD-22D6-11D9-B2C2-000A95BB392A@lmi.net>
+
+Hi George,
+
+This should cause no problems -- the .cal interpreter ignores "white 
+space" including carriage returns and linefeeds, except as word 
+separators.
+
+-Greg
+
+> From: George Chadwick <g_a_chadwick@yahoo.co.uk>
+> Date: October 20, 2004 9:49:34 AM PDT
+>
+Hello Radiance gurus and other folks.
+
+Asking from a standpoint of ignorance in Radiance/UNIX, will it do any 
+harm if I convert all the supplied .cal files to DOS-readable files, by 
+stripping out what I presume are the bare line-feeds ? a UNIX trademark 
+I presume - ?and substituting DOS return characters, so they don?t 
+cause unreadable/invisible characters and line overflows in my 
+DOS/Windows word-processing apps?
+
+As it happens, I am forced to use the command line in a DOS box in a 
+Window$ environment to run the Radiance bin/programs. ?I got these by 
+installing DeskRad. ?Thanks to obligatory corporate hardware/software 
+upgrades I lost AutoCrap2000 forever, so I can't use DeskRad itself. 
+?Undaunted I am hoping to learn to use Radiance directly in the 
+DOS-box, hands-on from scratch.
+
+Your humble novice in trepidation
+
+George Chadwick
+
+
+From gward at lmi.net  Thu Oct 21 20:53:48 2004
+From: gward at lmi.net (Greg Ward)
+Date: Thu Oct 21 20:54:53 2004
+Subject: [Radiance-general] Radiance books available in Europe
+Message-ID: <8A9C8A95-2392-11D9-A5BA-000A95BB392A@lmi.net>
+
+We have 9 new copies of "Rendering with Radiance" available to European 
+addresses at a cost of 90 CHF (Swiss Francs) per copy, including 
+shipping.  These are books that were sent by mistake from 
+BookSurge.com, following the original order for the workshop, which 
+also arrived too late to be distributed.  Those books, however, were 
+already spoken for.  These are not.
+
+If you are interested in obtaining a copy of the book and you live in 
+Europe, please write to Raphael Compagnon and he will take orders on a 
+first-come, first-served basis.  Payment will be made by credit card.  
+Raphael's e-mail address is:
+	<raphael.compagnon@eif.ch>
+
+The chief advantage of ordering one of these books rather than going 
+through Amazon or BookSurge is that you will get your order much 
+sooner.  Again, this is only for European addresses, since it would 
+cost too much to ship them overseas (again).
+
+Thanks!
+-Greg
+
+
+From gward at lmi.net  Fri Oct 22 00:37:51 2004
+From: gward at lmi.net (Greg Ward)
+Date: Fri Oct 22 00:38:56 2004
+Subject: [Radiance-general] Official RADIANCE 3.6 release
+Message-ID: <D75E3533-23B1-11D9-8F49-000A95BB392A@lmi.net>
+
+Well, it's about time.
+
+With Georg Mischler's and Peter Apian-Bennewitz's help, we now have a 
+new, official release of Radiance: Version 3.6.  This is essentially 
+the HEAD release with an official designation, so the only real benefit 
+to installing it is knowing where you stand in relation to other users 
+of the system.  Also, we have made Linux and Mac OS X binaries 
+available for your convenience, and with the generous help of our 
+community, will hopefully be adding to this list in the days and weeks 
+ahead.
+
+ From the U.S., the new distribution may be downloaded from the LBNL 
+Radiance website:
+
+	http://radsite.lbl.gov/radiance/download.html
+
+ From Europe, it will be closer to use Peter's radiance-online server:
+
+	http://www.radiance-online.org/software/
+
+Note that the links to binaries may not be updated immediately for the 
+new release.  To find out what release you have installed, "rpict 
+-version" should tell you.  The official 3.6 version will say:
+
+	RADIANCE 3.6 official release 21 Oct 2004 by Greg Ward
+
+Incidentally, I have a number of CDs leftover from the workshop.  If 
+anyone wants to send me a self-addressed, stamped envelope, I'll be 
+happy to mail one out to them.  The postage is probably a dollar or so, 
+and the envelope has to fit a CD.  Probably most of you who have an 
+interest have already downloaded a copy from radiance-online, but in 
+case there are some folks stuck with a 56K modem, this is your chance.
+
+-Greg
+
+P.S.  My address for the CD offer:
+	1200 Dartmouth St., #C
+	Albany, CA  94706-2358
+
+
+From debatin_2 at relux.ch  Fri Oct 22 09:58:53 2004
+From: debatin_2 at relux.ch (Siegbert Debatin)
+Date: Fri Oct 22 09:58:43 2004
+Subject: [Radiance-general] Official RADIANCE 3.6 release
+In-Reply-To: <D75E3533-23B1-11D9-8F49-000A95BB392A@lmi.net>
+References: <D75E3533-23B1-11D9-8F49-000A95BB392A@lmi.net>
+Message-ID: <opsf9hsfipwm82zg@mail.relux.ch>
+
+On Thu, 21 Oct 2004 15:37:51 -0700, Greg Ward <gward@lmi.net> wrote:
+> With Georg Mischler's and Peter Apian-Bennewitz's help, we now have a 
+> new, official release of Radiance: Version 3.6.  This is essentially the 
+> HEAD release with an official designation, so the only real benefit to 
+> installing it is knowing where you stand in relation to other users of 
+> the system.  Also, we have made Linux and Mac OS X binaries available 
+> for your convenience, and with the generous help of our community, will 
+> hopefully be adding to this list in the days and weeks ahead.
+
+This version does not compile on Windows for 2 main reasons:
+1. The folder build_utils is missing in the distribution, so the SCons 
+build script aborts.
+2. The changes I sent to Georg Mischler beginning this week are missing. 
+If you fix problem 1, the build process will terminate with errors.
+
+Regards
+
+Siegbert
+-- 
+Dr.-Ing. Siegbert Debatin
+Softwareentwicklung
+Relux Informatik AG      Dornacherstr. 377       CH-4053 Basel
+Tel. ++41 61 333 07 70   Fax: ++41 61 333 07 72
+
+From toast at becausewecan.org  Sat Oct 23 21:25:31 2004
+From: toast at becausewecan.org (Jeffrey McGrew)
+Date: Sat Oct 23 21:25:31 2004
+Subject: [Radiance-general] ranimate movies
+In-Reply-To: <1098288513.41768d81255d4@sms.ed.ac.uk>
+References: <1098288513.41768d81255d4@sms.ed.ac.uk>
+Message-ID: <417AB02B.6050100@becausewecan.org>
+
+
+If you're running in Linux or Cygwin, you can have a little shell
+script convert all of your PIC files into TIFFs or JPEGs. This is what
+I do, and here is a little shell script I wrote to help (my first! be
+gentle):
+
+
+#!/bin/sh
+# Toast's first stab at a useful program
+# stand back parts may fly off at any moment
+
+for file in $( ls *.pic )
+	do
+	echo "Now converting '$file'..."
+	ra_tiff $file $file.tif
+done
+echo "Finished!"
+
+This will just give you a bunch of TIFFs. I then run a script to
+convert them all into Jpegs (I do this in two steps, 'cause sometimes
+I just want to convert all my PICs to TIFF so I can bring them into
+Photoshop when doing stills):
+
+#!/bin/sh
+# Toast's second stab at a useful program
+# stand back parts may still fly off at any moment
+
+for file in $( ls *.tif )
+	do
+	echo "Now converting '$file'..."
+	convert $file $file.jpg
+done
+echo "Finished!"
+
+This one relies upon the Imagemagik set of tools and it's excellent
+'convert'. Both of these work under Cygwin or Linux with no
+modification. Both of these are basic in the extreme, and once I have
+the time I'll put something in there that renames them all too, but it 
+at least should give you an idea of how you might automate your 
+animation workflow...
+
+Jeffrey McGrew
+
+Tarik Rahman wrote:
+
+> Hi
+> I'm running ranimate and I get the .pic frame files stored in the directory
+> along with the .unf files. What are the .unf files and how can you view the
+> animation like a movie e.g. in some media player?
+> Thanks
+> 
+> Tarik
+> 
+> --
+> Tarik Rahman
+> PhD student, Institue of Perception, Action and Behaviour
+> School of Informatics
+> University of Edinburgh
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+
+
+
+From mstock at umich.edu  Mon Oct 25 01:04:48 2004
+From: mstock at umich.edu (Mark Stock)
+Date: Mon Oct 25 01:04:59 2004
+Subject: [Radiance-general] Mac OS-X rpict problem?
+Message-ID: <Pine.SOL.4.58.0410241850290.9099@timepilot.gpcc.itd.umich.edu>
+
+I am using the Radiance 3.6 official release Mac binaries to try
+to set up a large cluster rendering. I wrote a runme.sh file to
+control things. I pared it down when the first portion dies in
+rpict.
+
+First, here are the errors:
+
+inquiry:~/p46_base] admin% ./runme.sh
+rpict: 4048 rays, 0.00% after 0.000u 0.000s 0.000r hours on inquiry
+rpict: 4274161 rays, 2.80% after 0.003u 0.000s 0.003r hours on inquiry
+rpict: 8750728 rays, 5.80% after 0.006u 0.000s 0.006r hours on inquiry
+rpict: consistency - unexpected object call
+./runme.sh: line 16: 29584 Abort trap              rpict -t 10 -vta -vp
+0 1 0.5 -vd 0 -1 0 -vh 120 -vv 120 -ps 1 -dj 0.6 -ms 0.03 -ab 2 -ad 8
+-aa 0 -as 0 -x $res -y $res -o img.pic scene9f.oct
+pfilt: truncated input (y=924)
+ra_tiff: error reading Radiance picture
+
+-bash-2.05b$ more runme.sh
+#!/bin/sh
+
+res=1000
+
+rm img.pic sync args img.tiff
+oconv -f colors.rad cube2f.rad > cube2f_instance.oct
+oconv -f colors.rad cube4f.rad > cube4f_instance.oct
+oconv -f colors.rad cube6f.rad > cube6f_instance.oct
+oconv -f colors.rad cube8f.rad > cube8f_instance.oct
+oconv scene9f.rad > scene9f.oct
+
+rpict -t 10 -vta -vp 0 1 0.5 -vd 0 -1 0 -vh 120 -vv 120 -ps 1 -dj
+0.6 -ms 0.03 -ab 2 -ad 8 -aa 0 -as 0 -x $res -y $res -o img.pic
+scene9f.oct
+
+pfilt -1 -e -4 -x /4 -y /4 img.pic | ra_tiff -  img.tiff
+
+----------
+
+I ran the same set of commands, from a sh script, on my Linux P4
+with no difficulties. We also tried rebuilding the binaries from
+the 3.6 official release, but found the same errors.
+
+The scene consists of multiple fractal nested octrees
+(scene9f.rad), with the rest being:
+
+----------
+!gensky 9 12 17 -a 42.53 -o 118.05 -m 105 -g .2
+
+skyfunc glow ground_glow
+0
+0
+4 1 1 1 0
+
+ground_glow source ground
+0
+0
+4 0 0 -1 160
+
+skyfunc glow sky_glow
+0
+0
+4 1 1 1 0
+
+sky_glow source sky
+0
+0
+4 0 0 1 200
+
+void plastic mat 0 0 5   0.6 0.6 0.6  0.0 0.0
+void mist misttype 1 sun 0 7  0.3 0.3 0.3  0.7 0.7 0.7  0.3
+void alias anti misttype
+
+misttype cylinder mistbox 0 0 7  0 0 0  0 0 2  10
+misttype ring mistbottom 0 0 8  0 0 0  0 0 -1  0 10
+misttype ring misttop 0 0 8  0 0 2  0 0 1  0 10
+
+!xform -t -0.5 -0.5 0.0 cube9f.rad
+
+void plastic flmat 0 0 5  0.4 0.4 0.4  0.0 0.0
+flmat ring floor 0 0 8  0 0 -0.0002  0 0 1  0 100
+
+anti bubble eyepoint 0 0 4  0 1 0.5  0.001
+----------
+
+The final image looks something like this (temporary URL):
+http://mark.technolope.org/lookhere/image_d06/p46_base/img20_batch_1000.png
+
+Is rpict on Macs wrong, or is it my input?
+
+Mark
+
+From gward at lmi.net  Mon Oct 25 19:16:55 2004
+From: gward at lmi.net (Greg Ward)
+Date: Mon Oct 25 20:16:26 2004
+Subject: [Radiance-general] Mac OS-X rpict problem?
+In-Reply-To: <Pine.SOL.4.58.0410241850290.9099@timepilot.gpcc.itd.umich.edu>
+References: <Pine.SOL.4.58.0410241850290.9099@timepilot.gpcc.itd.umich.edu>
+Message-ID: <AB7906BA-26A9-11D9-B0A0-000A95BB392A@lmi.net>
+
+I have discovered the source of this error, with Mark's help.  It comes 
+from a peculiar combination of the mist type with the new source 
+obstruction rotuines.  It is not an input error -- no input should ever 
+cause a consistency error.  If you get an error like this, you will 
+need to download and compile the new version of src/rt/srcobstr.c or 
+use the HEAD release.  We may offer a patch to the 3.6 release at a 
+future date if this (or other) problems warrant it.
+
+-Greg
+
+> From: Mark Stock <mstock@umich.edu>
+> Date: October 24, 2004 4:04:48 PM PDT
+>
+> I am using the Radiance 3.6 official release Mac binaries to try
+> to set up a large cluster rendering. I wrote a runme.sh file to
+> control things. I pared it down when the first portion dies in
+> rpict.
+>
+> First, here are the errors:
+>
+> inquiry:~/p46_base] admin% ./runme.sh
+> rpict: 4048 rays, 0.00% after 0.000u 0.000s 0.000r hours on inquiry
+> rpict: 4274161 rays, 2.80% after 0.003u 0.000s 0.003r hours on inquiry
+> rpict: 8750728 rays, 5.80% after 0.006u 0.000s 0.006r hours on inquiry
+> rpict: consistency - unexpected object call
+> ./runme.sh: line 16: 29584 Abort trap              rpict -t 10 -vta -vp
+> 0 1 0.5 -vd 0 -1 0 -vh 120 -vv 120 -ps 1 -dj 0.6 -ms 0.03 -ab 2 -ad 8
+> -aa 0 -as 0 -x $res -y $res -o img.pic scene9f.oct
+> pfilt: truncated input (y=924)
+> ra_tiff: error reading Radiance picture
+> ...
+
+
+From nickd at xco2.com  Tue Oct 26 10:41:14 2004
+From: nickd at xco2.com (Nick Devlin)
+Date: Tue Oct 26 10:41:15 2004
+Subject: [Radiance-general] Rendering exclude options
+Message-ID: <000001c4bb37$8d89a4e0$2568a8c0@Nick>
+
+Dear All, 
+ 
+A simple question - I suspect to the more able (then me) of you out
+there.. Is it possible to exclude planes in a certain orientations from
+an rpict calculation. For example, I would like to use radiance to
+create a picture showing the vertical sky component on vertical
+surfaces. Therefore I would like to exclude the horizontal surfaces to
+prevent them from cluttering up the image. 
+ 
+Ideally, I would anticipate being able to overlay a contour image which
+excludes the horizontal surfaces over a luminance image which includes
+them. I suppose I could generate this from two separate sets of
+geometry, but this is a little clunky and may result in some inaccurate
+results, where the inter-reflections may be important and or
+significant. Any thoughts would be gratefully received.
+ 
+Many thanks 
+ 
+Nick
+ 
+ 
+
+XCO2 
+
+
+XCO2 conisbee  Ltd
+1-5 Offord Street
+London N1 1DH
+Tel: + 44 (0)20 7700 1000
+Fax: + 44 (0)20 7700 4455
+Email: nickd@xco2.com
+Web: http://www.xco2.com 
+
+engineering sustainability 
+
+
+---
+This e-mail and any attachment contains information which is private and
+confidential and is intended for named recipient(s) only. If you are not
+named then you are not authorised to read, copy or use this e-mail or
+any
+attachment. If you have received this e-mail in error, please notify the
+sender by return e-mail and then destroy it.
+--- 
+ 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20041026/60afd012/attachment.html
+From jelle.feringa at ezct.net  Tue Oct 26 12:27:47 2004
+From: jelle.feringa at ezct.net (Jelle Feringa // EZCT / Paris)
+Date: Tue Oct 26 12:27:40 2004
+Subject: [Radiance-general] python / shell scripting radiance
+Message-ID: <20041026102736.96B3118000AE@mwinf0108.wanadoo.fr>
+
+Somewhat off-topic, but maybe a relevant curiosity;
+ 
+I'm just starting to script/extend radiance using python (win32).
+I'm interested whether other people are using radiance in this way -I
+suppose so, I'm sure Georg Mischler has extensive experience-
+Is anyone aware of python/radiance scripts available online, or could point
+me in the direction of specific python/radiance content available online
+(perhaps willing to share?). My interest is mostly automating rendering
+tasks. From that I intend to see whether it could be interesting to combine
+genetic algorithms with radiance to automate architectural research. I have
+-modest- experience in computing this way, but initial research focused on
+GA/FEM simulation. An example of such an experiment would be to parameterize
+a window, the placement of the window, or the material in the room, and to
+search for a solution -using a GA- where there would be a constant luminance
+in the room. In order to conduct these experiments I first need to progress
+in automating rendering tasks.
+ 
+Cheers!
+ 
+JF
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20041026/8a0a2201/attachment.htm
+From atelier at iebele.nl  Tue Oct 26 14:26:17 2004
+From: atelier at iebele.nl (iebele)
+Date: Tue Oct 26 14:24:59 2004
+Subject: [Radiance-general] python / shell scripting radiance
+References: <20041026102736.96B3118000AE@mwinf0108.wanadoo.fr>
+Message-ID: <417E4269.6040005@iebele.nl>
+
+He Jelle!,
+
+First, what do you mean with  GA/FEM ?
+
+I do not know anything of Phyton, but I have heard of this:
+
+Blender3d works with Python, and also an export to Radiance seems to be 
+available.  
+Blender should be able to create booleans too, you will need that if you 
+intend to create parametric windows.
+If both is true, you just have to dig in Blender's source to find out 
+how you can benefit.
+The sourcecode of Blender is free. You can download it from 
+www.blender3d.org
+
+Some blender developpers are Dutch, that also might be easy for you.
+
+Iebele
+
+
+
+
+
+Jelle Feringa // EZCT / Paris wrote:
+
+> Somewhat off-topic, but maybe a relevant curiosity;
+>
+>  
+>
+> I'm just starting to script/extend radiance using python (win32).
+>
+> I'm interested whether other people are using radiance in this way -I 
+> suppose so, I'm sure Georg Mischler has extensive experience-
+>
+> Is anyone aware of python/radiance scripts available online, or could 
+> point me in the direction of specific python/radiance content 
+> available online (perhaps willing to share?). My interest is mostly 
+> automating rendering tasks. From that I intend to see whether it could 
+> be interesting to combine genetic algorithms with radiance to automate 
+> architectural research. I have -modest- experience in computing this 
+> way, but initial research focused on GA/FEM simulation. An example of 
+> such an experiment would be to parameterize a window, the placement of 
+> the window, or the material in the room, and to search for a solution 
+> -using a GA- where there would be a constant luminance in the room. In 
+> order to conduct these experiments I first need to progress in 
+> automating rendering tasks.
+>
+>  
+>
+> Cheers!
+>
+>  
+>
+> JF
+>
+>------------------------------------------------------------------------
+>
+>_______________________________________________
+>Radiance-general mailing list
+>Radiance-general@radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-general
+>  
+>
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20041026/aab8c1c1/attachment.html
+From gward at lmi.net  Tue Oct 26 17:43:40 2004
+From: gward at lmi.net (Greg Ward)
+Date: Tue Oct 26 17:44:55 2004
+Subject: [Radiance-general] Rendering exclude options
+In-Reply-To: <000001c4bb37$8d89a4e0$2568a8c0@Nick>
+References: <000001c4bb37$8d89a4e0$2568a8c0@Nick>
+Message-ID: <CF5A89A0-2765-11D9-8218-000A95BB392A@lmi.net>
+
+Hi Nick,
+
+You should be able to do what you want using pinterp and falsecolor.  
+I'll assume that you desire isolux contours on vertical surfaces in my 
+instructions, below.
+
+1) Generate an irradiance image using a parallel view to render the 
+vertical surfaces you are interested in with the -i option.  This will 
+exclude surfaces perpendicular (horizontal surfaces in particular), but 
+may include surfaces at odd angles.  Hopefully, this is OK.  At the 
+same time, you should use the -z option of rpict to create a z-buffer 
+to go with your rendering, and set -pj 0.  Let's call this 
+"irradiance.pic", and call the z-buffer "irradiance.zbf".
+
+2) Generate a standard image of the same size but without the -i or -z 
+options.  (Actually, you may use the -z option with either rendering -- 
+you just don't need it for both as it will be the same.)  Again, set 
+-pj 0 as before, so your pixels line up.  Let's call this 
+"standard.pic".  You will probably want to pass this image through 
+pcomb or pfilt to optimize the exposure for display, but don't alter 
+the resolution or the z-buffer won't be valid.
+
+3) Run these two renderings through falsecolor to generate a contour 
+plot, using Rob Guglielmetti's new -lw option to set the label width to 
+0.  You must do this in a special way to preserve the view string 
+needed in Step 5:
+
+	% getinfo < standard.pic | grep '^VIEW=' > contour.pic
+	% falsecolor -cl -lw 0 -i irradiance.pic -p standard.pic [other 
+options] >> contour.pic
+
+4) Generate a standard image from the view you actually want to see, 
+which I'll assume is either a perspective view or one coming from a 
+different angle to include some vertical surfaces.  You must also 
+generate a z-buffer for this image using rpict's -z option.  Let's call 
+this "view.pic", and the z-buffer "view.zbf".  You will probably want 
+to pass this image through pcomb or pfilt to optimize the exposure for 
+display, but follow the same procedure as in Step 2.
+
+5) Use pinterp to combine the two images, giving the contour image 
+first and using the -q option to avoid averaging:
+
+	% pinterp -x 1024 -y 1024 -q -f0 -vf view.pic contour.pic 
+irradiance.zbf view.pic view.zbf > combined.pic
+
+The -x 1024 -y 1024 options are to set the output resolution, which 
+should match the resolutions of the input images.  If you want to 
+produce an anti-aliased result, then go through with resolutions that 
+are twice or three times what you desire in the end, then pass 
+"combined.pic" through pfilt with options to filter down the result.  
+Any filtering earlier in the pipeline will break everything.
+
+I hope this works -- let me know how it turns out.  (And you thought it 
+was a simple question!)
+
+-Greg
+
+> From: "Nick Devlin" <nickd@xco2.com>
+> Date: October 26, 2004 1:41:14 AM PDT
+>
+Dear All,
+
+A simple question ? I suspect to the more able (then me) of you out 
+there?. Is it possible to exclude planes in a certain orientations from 
+an rpict calculation. For example, I would like to use radiance to 
+create a picture showing the vertical sky component on vertical 
+surfaces. Therefore I would like to exclude the horizontal surfaces to 
+prevent them from cluttering up the image.
+
+Ideally, I would anticipate being able to overlay a contour image which 
+excludes the horizontal surfaces over a luminance image which includes 
+them. I suppose I could generate this from two separate sets of 
+geometry, but this is a little clunky and may result in some inaccurate 
+results, where the inter-reflections may be important and or 
+significant. Any thoughts would be gratefully received.
+
+Many thanks
+
+Nick
+
+? XCO2 conisbee ?Ltd
+1-5  Offord Street
+London N1 1DH
+Tel: + 44 (0)20 7700 1000
+Fax: + 44 (0)20 7700 4455
+Email: nickd@xco2.com
+Web: http://www.xco2.com
+
+  engineering sustainability
+
+
+From rpg at rumblestrip.org  Tue Oct 26 18:18:45 2004
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Tue Oct 26 18:18:49 2004
+Subject: [Radiance-general] Rendering exclude options
+In-Reply-To: <CF5A89A0-2765-11D9-8218-000A95BB392A@lmi.net>
+References: <000001c4bb37$8d89a4e0$2568a8c0@Nick>
+	<CF5A89A0-2765-11D9-8218-000A95BB392A@lmi.net>
+Message-ID: <417E78E5.1060609@rumblestrip.org>
+
+Greg Ward wrote:
+> I hope this works -- let me know how it turns out.  (And you thought it 
+> was a simple question!)
+
+Damn, my head just exploded.
+
+These recipes you come up with are just too cool, Greg.  And I'm not 
+just saying that because I have no head at the moment.  I should collect 
+these tips into a little "cookbook", for the unix pipeline-challenged, 
+like myself.  Examples like these really illustrate the power and 
+enormous flexibility of Radiance!
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+From nickd at xco2.com  Wed Oct 27 15:12:24 2004
+From: nickd at xco2.com (Nick Devlin)
+Date: Wed Oct 27 15:12:20 2004
+Subject: [Radiance-general] Rendering Exclude Options - follow up
+Message-ID: <000001c4bc26$9993b5b0$2568a8c0@Nick>
+
+Greg, 
+
+Thanks for the heads up. The logic looks very sound, and I got as far as
+stage 3, when it barfed at -lw as a bad option. This I assume means that
+I don?t have the latest version that includes Rob's option. The
+difficulty at this stage is that I am running it under Cygwin and am not
+confident about compiling it. 
+
+However, will try compliling the latest release on one of the mac's in
+the office and see how I get on - however for now I have another
+deadline looming. Many thanks though as I suspect your solution does
+exactly what I wanted. GREAT!!
+
+Nick
+
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of
+radiance-general-request@radiance-online.org
+Sent: None
+To: radiance-general@radiance-online.org
+Subject: Radiance-general Digest, Vol 8, Issue 13
+
+
+Send Radiance-general mailing list submissions to
+	radiance-general@radiance-online.org
+
+To subscribe or unsubscribe via the World Wide Web, visit
+	http://www.radiance-online.org/mailman/listinfo/radiance-general
+or, via email, send a message with subject or body 'help' to
+	radiance-general-request@radiance-online.org
+
+You can reach the person managing the list at
+	radiance-general-owner@radiance-online.org
+
+When replying, please edit your Subject line so it is more specific than
+"Re: Contents of Radiance-general digest..."
+
+
+Today's Topics:
+
+   1. python / shell scripting radiance (Jelle Feringa // EZCT / Paris)
+   2. Re: python / shell scripting radiance (iebele)
+   3. Re: Rendering exclude options (Greg Ward)
+   4. Re: Rendering exclude options (Rob Guglielmetti)
+
+
+----------------------------------------------------------------------
+
+Message: 1
+Date: Tue, 26 Oct 2004 12:27:47 +0200
+From: "Jelle Feringa // EZCT / Paris" <jelle.feringa@ezct.net>
+Subject: [Radiance-general] python / shell scripting radiance
+To: <radiance-general@radiance-online.org>
+Message-ID: <20041026102736.96B3118000AE@mwinf0108.wanadoo.fr>
+Content-Type: text/plain; charset="us-ascii"
+
+Somewhat off-topic, but maybe a relevant curiosity;
+ 
+I'm just starting to script/extend radiance using python (win32). I'm
+interested whether other people are using radiance in this way -I
+suppose so, I'm sure Georg Mischler has extensive experience- Is anyone
+aware of python/radiance scripts available online, or could point me in
+the direction of specific python/radiance content available online
+(perhaps willing to share?). My interest is mostly automating rendering
+tasks. From that I intend to see whether it could be interesting to
+combine genetic algorithms with radiance to automate architectural
+research. I have
+-modest- experience in computing this way, but initial research focused
+on GA/FEM simulation. An example of such an experiment would be to
+parameterize a window, the placement of the window, or the material in
+the room, and to search for a solution -using a GA- where there would be
+a constant luminance in the room. In order to conduct these experiments
+I first need to progress in automating rendering tasks.
+ 
+Cheers!
+ 
+JF
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL:
+http://radiance-online.org/pipermail/radiance-general/attachments/200410
+26/8a0a2201/attachment.html
+
+------------------------------
+
+Message: 2
+Date: Tue, 26 Oct 2004 14:26:17 +0200
+From: iebele <atelier@iebele.nl>
+Subject: Re: [Radiance-general] python / shell scripting radiance
+To: Radiance general discussion <radiance-general@radiance-online.org>
+Message-ID: <417E4269.6040005@iebele.nl>
+Content-Type: text/plain; charset="us-ascii"
+
+He Jelle!,
+
+First, what do you mean with  GA/FEM ?
+
+I do not know anything of Phyton, but I have heard of this:
+
+Blender3d works with Python, and also an export to Radiance seems to be 
+available.  
+Blender should be able to create booleans too, you will need that if you
+
+intend to create parametric windows.
+If both is true, you just have to dig in Blender's source to find out 
+how you can benefit.
+The sourcecode of Blender is free. You can download it from 
+www.blender3d.org
+
+Some blender developpers are Dutch, that also might be easy for you.
+
+Iebele
+
+
+
+
+
+Jelle Feringa // EZCT / Paris wrote:
+
+> Somewhat off-topic, but maybe a relevant curiosity;
+>
+>  
+>
+> I'm just starting to script/extend radiance using python (win32).
+>
+> I'm interested whether other people are using radiance in this way -I
+> suppose so, I'm sure Georg Mischler has extensive experience-
+>
+> Is anyone aware of python/radiance scripts available online, or could
+> point me in the direction of specific python/radiance content 
+> available online (perhaps willing to share?). My interest is mostly 
+> automating rendering tasks. From that I intend to see whether it could
+
+> be interesting to combine genetic algorithms with radiance to automate
+
+> architectural research. I have -modest- experience in computing this 
+> way, but initial research focused on GA/FEM simulation. An example of 
+> such an experiment would be to parameterize a window, the placement of
+
+> the window, or the material in the room, and to search for a solution 
+> -using a GA- where there would be a constant luminance in the room. In
+
+> order to conduct these experiments I first need to progress in 
+> automating rendering tasks.
+>
+>  
+>
+> Cheers!
+>
+>  
+>
+> JF
+>
+>-----------------------------------------------------------------------
+>-
+>
+>_______________________________________________
+>Radiance-general mailing list Radiance-general@radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-general
+>  
+>
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL:
+http://radiance-online.org/pipermail/radiance-general/attachments/200410
+26/aab8c1c1/attachment-0001.html
+
+------------------------------
+
+Message: 3
+Date: Tue, 26 Oct 2004 08:43:40 -0700
+From: Greg Ward <gward@lmi.net>
+Subject: Re: [Radiance-general] Rendering exclude options
+To: Radiance general discussion <radiance-general@radiance-online.org>
+Message-ID: <CF5A89A0-2765-11D9-8218-000A95BB392A@lmi.net>
+Content-Type: text/plain; charset=WINDOWS-1252; format=flowed
+
+Hi Nick,
+
+You should be able to do what you want using pinterp and falsecolor.  
+I'll assume that you desire isolux contours on vertical surfaces in my 
+instructions, below.
+
+1) Generate an irradiance image using a parallel view to render the 
+vertical surfaces you are interested in with the -i option.  This will 
+exclude surfaces perpendicular (horizontal surfaces in particular), but 
+may include surfaces at odd angles.  Hopefully, this is OK.  At the 
+same time, you should use the -z option of rpict to create a z-buffer 
+to go with your rendering, and set -pj 0.  Let's call this 
+"irradiance.pic", and call the z-buffer "irradiance.zbf".
+
+2) Generate a standard image of the same size but without the -i or -z 
+options.  (Actually, you may use the -z option with either rendering -- 
+you just don't need it for both as it will be the same.)  Again, set 
+-pj 0 as before, so your pixels line up.  Let's call this 
+"standard.pic".  You will probably want to pass this image through 
+pcomb or pfilt to optimize the exposure for display, but don't alter 
+the resolution or the z-buffer won't be valid.
+
+3) Run these two renderings through falsecolor to generate a contour 
+plot, using Rob Guglielmetti's new -lw option to set the label width to 
+0.  You must do this in a special way to preserve the view string 
+needed in Step 5:
+
+	% getinfo < standard.pic | grep '^VIEW=' > contour.pic
+	% falsecolor -cl -lw 0 -i irradiance.pic -p standard.pic [other 
+options] >> contour.pic
+
+4) Generate a standard image from the view you actually want to see, 
+which I'll assume is either a perspective view or one coming from a 
+different angle to include some vertical surfaces.  You must also 
+generate a z-buffer for this image using rpict's -z option.  Let's call 
+this "view.pic", and the z-buffer "view.zbf".  You will probably want 
+to pass this image through pcomb or pfilt to optimize the exposure for 
+display, but follow the same procedure as in Step 2.
+
+5) Use pinterp to combine the two images, giving the contour image 
+first and using the -q option to avoid averaging:
+
+	% pinterp -x 1024 -y 1024 -q -f0 -vf view.pic contour.pic 
+irradiance.zbf view.pic view.zbf > combined.pic
+
+The -x 1024 -y 1024 options are to set the output resolution, which 
+should match the resolutions of the input images.  If you want to 
+produce an anti-aliased result, then go through with resolutions that 
+are twice or three times what you desire in the end, then pass 
+"combined.pic" through pfilt with options to filter down the result.  
+Any filtering earlier in the pipeline will break everything.
+
+I hope this works -- let me know how it turns out.  (And you thought it 
+was a simple question!)
+
+-Greg
+
+> From: "Nick Devlin" <nickd@xco2.com>
+> Date: October 26, 2004 1:41:14 AM PDT
+>
+Dear All,
+
+A simple question ? I suspect to the more able (then me) of you out 
+there
+. Is it possible to exclude planes in a certain orientations from 
+an rpict calculation. For example, I would like to use radiance to 
+create a picture showing the vertical sky component on vertical 
+surfaces. Therefore I would like to exclude the horizontal surfaces to 
+prevent them from cluttering up the image.
+
+Ideally, I would anticipate being able to overlay a contour image which 
+excludes the horizontal surfaces over a luminance image which includes 
+them. I suppose I could generate this from two separate sets of 
+geometry, but this is a little clunky and may result in some inaccurate 
+results, where the inter-reflections may be important and or 
+significant. Any thoughts would be gratefully received.
+
+Many thanks
+
+Nick
+
+? XCO2 conisbee ?Ltd
+1-5  Offord Street
+London N1 1DH
+Tel: + 44 (0)20 7700 1000
+Fax: + 44 (0)20 7700 4455
+Email: nickd@xco2.com
+Web: http://www.xco2.com
+
+  engineering sustainability
+
+
+
+
+------------------------------
+
+Message: 4
+Date: Tue, 26 Oct 2004 12:18:45 -0400
+From: Rob Guglielmetti <rpg@rumblestrip.org>
+Subject: Re: [Radiance-general] Rendering exclude options
+To: Radiance general discussion <radiance-general@radiance-online.org>
+Message-ID: <417E78E5.1060609@rumblestrip.org>
+Content-Type: text/plain; charset=windows-1252; format=flowed
+
+Greg Ward wrote:
+> I hope this works -- let me know how it turns out.  (And you thought 
+> it
+> was a simple question!)
+
+Damn, my head just exploded.
+
+These recipes you come up with are just too cool, Greg.  And I'm not 
+just saying that because I have no head at the moment.  I should collect
+
+these tips into a little "cookbook", for the unix pipeline-challenged, 
+like myself.  Examples like these really illustrate the power and 
+enormous flexibility of Radiance!
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+
+
+------------------------------
+
+_______________________________________________
+Radiance-general mailing list Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+End of Radiance-general Digest, Vol 8, Issue 13
+***********************************************
+
+
+From rpg at rumblestrip.org  Wed Oct 27 15:35:31 2004
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Wed Oct 27 15:35:39 2004
+Subject: [Radiance-general] Rendering Exclude Options - follow up
+In-Reply-To: <000001c4bc26$9993b5b0$2568a8c0@Nick>
+References: <000001c4bc26$9993b5b0$2568a8c0@Nick>
+Message-ID: <417FA423.6060103@rumblestrip.org>
+
+Nick Devlin wrote:
+> Greg, 
+> 
+> Thanks for the heads up. The logic looks very sound, and I got as far as
+> stage 3, when it barfed at -lw as a bad option. This I assume means that
+> I don?t have the latest version that includes Rob's option. The
+> difficulty at this stage is that I am running it under Cygwin and am not
+> confident about compiling it. 
+
+The good news is that falsecolor is really just a shell script -- no 
+compiling necessary.  I've attached a copy of falsecolor from my 
+computer, which has the -lw & -lh options.  Place this in your bin 
+directory -- or wherever you installed the radiance binaries -- and you 
+should be good to go. (make sure you reset the permissions to make it 
+executable.)
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+-------------- next part --------------
+#!/bin/csh -fe
+# RCSid: $Id: falsecolor.csh,v 2.9 2004/03/08 21:39:32 greg Exp $
+#
+# Create false color image with legend
+#
+# Added user-definable legend 2004/01/20 Rob Guglielmetti
+
+set td=/usr/tmp/fc$$
+onintr quit
+set mult=179
+set label=Nits
+set scale=1000
+set decades=0
+set redv='1.6*v-.6'
+set grnv='if(v-.375,1.6-1.6*v,8/3*v)'
+set bluv='1-8/3*v'
+set ndivs=8
+set picture='-'
+set cpict=
+set loff=0
+set legwidth=100
+set legheight=200
+while ($#argv > 0)
+	switch ($argv[1])
+	case -lw:
+		shift argv
+		set legwidth="$argv[1]"
+		breaksw
+	case -lh:
+		shift argv
+		set legheight="$argv[1]"
+		breaksw
+	case -m:
+		shift argv
+		set mult="$argv[1]"
+		breaksw
+	case -s:
+		shift argv
+		set scale="$argv[1]"
+		breaksw
+	case -l:
+		shift argv
+		set label="$argv[1]"
+		breaksw
+	case -log:
+		shift argv
+		set decades=$argv[1]
+		breaksw
+	case -r:
+		shift argv
+		set redv="$argv[1]"
+		breaksw
+	case -g:
+		shift argv
+		set grnv="$argv[1]"
+		breaksw
+	case -b:
+		shift argv
+		set bluv="$argv[1]"
+		breaksw
+	case -i:
+		shift argv
+		set picture="$argv[1]"
+		breaksw
+	case -p:
+		shift argv
+		set cpict="$argv[1]"
+		breaksw
+	case -ip:
+	case -pi:
+		shift argv
+		set picture="$argv[1]"
+		set cpict="$argv[1]"
+		breaksw
+	case -cl:
+		set docont=a
+		set loff=12
+		breaksw
+	case -cb:
+		set docont=b
+		set loff=13
+		breaksw
+	case -e:
+		set doextrem
+		set needfile
+		breaksw
+	case -n:
+		shift argv
+		set ndivs="$argv[1]"
+		breaksw
+	default:
+		echo bad option "'$argv[1]'" >/dev/tty
+		exit 1
+	endsw
+	shift argv
+end
+mkdir $td
+cat > $td/pc0.cal <<_EOF_
+PI : 3.14159265358979323846 ;
+scale : $scale ;
+mult : $mult ;
+ndivs : $ndivs ;
+
+or(a,b) : if(a,a,b);
+EPS : 1e-7;
+neq(a,b) : if(a-b-EPS,1,b-a-EPS);
+btwn(a,x,b) : if(a-x,-1,b-x);
+clip(x) : if(x-1,1,if(x,x,0));
+frac(x) : x - floor(x);
+boundary(a,b) : neq(floor(ndivs*a+.5),floor(ndivs*b+.5));
+
+isconta = if(btwn(0,v,1),or(boundary(vleft,vright),boundary(vabove,vbelow)),-1);
+iscontb = if(btwn(0,v,1),btwn(.4,frac(ndivs*v),.6),-1); 
+
+ro = if(in,clip($redv),ra);
+go = if(in,clip($grnv),ga);
+bo = if(in,clip($bluv),ba);
+
+ra = 0;
+ga = 0;
+ba = 0;
+
+in = 1;
+_EOF_
+cat > $td/pc1.cal <<_EOF_
+norm : mult/scale/le(1);
+
+v = map(li(1)*norm);
+
+vleft = map(li(1,-1,0)*norm);
+vright = map(li(1,1,0)*norm);
+vabove = map(li(1,0,1)*norm);
+vbelow = map(li(1,0,-1)*norm);
+
+map(x) = x;
+
+ra = ri(nfiles);
+ga = gi(nfiles);
+ba = bi(nfiles);
+_EOF_
+set pc0args=(-f $td/pc0.cal)
+set pc1args=(-f $td/pc1.cal)
+if ($?docont) then
+	set pc0args=($pc0args -e "in=iscont$docont")
+endif
+if ("$cpict" == "") then
+	set pc1args=($pc1args -e 'ra=0;ga=0;ba=0')
+else if ("$cpict" == "$picture") then
+	set cpict=
+endif
+if ($?needfile && "$picture" == '-') then
+	cat > $td/picture
+	set picture=$td/picture
+endif
+if ("$decades" != "0") then
+	set pc1args=($pc1args -e "map(x)=if(x-10^-$decades,log10(x)/$decades+1,0)")
+	set imap="imap(y)=10^((y-1)*$decades)"
+else
+	set imap="imap(y)=y"
+endif
+if ( $legwidth > 20 && $legheight > 40 ) then
+pcomb $pc0args -e 'v=(y+.5)/yres;vleft=v;vright=v' \
+		-e 'vbelow=(y-.5)/yres;vabove=(y+1.5)/yres' \
+		-x $legwidth -y $legheight > $td/scol.pic
+( echo $label; cnt $ndivs \
+		| rcalc -e '$1='"($scale)*imap(($ndivs-.5-"'$1'")/$ndivs)" \
+		-e "$imap" | sed -e 's/\(\.[0-9][0-9][0-9]\)[0-9]*/\1/' ) \
+	| psign -s -.15 -cf 1 1 1 -cb 0 0 0 \
+		-h `ev "floor($legheight/$ndivs+.5)"` > $td/slab.pic
+else
+	set legwidth=0
+	set legheight=0
+	(echo "" ; echo "-Y 1 +X 1" ; echo "aaa" ) > $td/scol.pic
+	cp $td/scol.pic $td/slab.pic
+endif
+if ( $?doextrem ) then
+	pextrem -o $picture > $td/extrema
+	set minpos=`sed 2d $td/extrema | rcalc -e '$2=$2;$1=$1+'"$legwidth"`
+	set minval=`rcalc -e '$1=($3*.27+$4*.67+$5*.06)*'"$mult" $td/extrema | sed -e 2d -e 's/\(\.[0-9][0-9][0-9]\)[0-9]*/\1/'`
+	set maxpos=`sed 1d $td/extrema | rcalc -e '$2=$2;$1=$1+'"$legwidth"`
+	set maxval=`rcalc -e '$1=($3*.27+$4*.67+$5*.06)*'"$mult" $td/extrema | sed -e 1d -e 's/\(\.[0-9][0-9][0-9]\)[0-9]*/\1/'`
+	psign -s -.15 -a 2 -h 16 $minval > $td/minv.pic
+	psign -s -.15 -a 2 -h 16 $maxval > $td/maxv.pic
+	pcomb $pc0args $pc1args $picture $cpict \
+		| pcompos $td/scol.pic 0 0 -t .2 $td/slab.pic 0 $loff \
+		  - $legwidth 0 $td/minv.pic $minpos $td/maxv.pic $maxpos
+else
+	pcomb $pc0args $pc1args $picture $cpict \
+		| pcompos $td/scol.pic 0 0 -t .2 $td/slab.pic 0 $loff - $legwidth 0
+endif
+quit:
+rm -rf $td
+From g_a_chadwick at yahoo.co.uk  Wed Oct 27 17:46:20 2004
+From: g_a_chadwick at yahoo.co.uk (George Chadwick)
+Date: Wed Oct 27 17:46:26 2004
+Subject: [Radiance-general] Approximating the gross daylight flux through
+	venetian blinds.
+Message-ID: <20041027154621.29889.qmail@web25205.mail.ukl.yahoo.com>
+
+Hello Radiance people
+ 
+1) Anything wrong with this idea?:   ?If venetian blinds are involved, 
+to get to the daylight factor with an overcast sky environment, 
+cut a corner by using a few primitives with complex behaviour to 
+approximate the gross daylight fluxes through the blinds, instead of 
+modelling the same using an awful lot of fiddly primitives albeit 
+with simpler materials.? (More details below.)
+ 
+2) If you have tried to use BRDFs or other types of materials with 
+the same idea in mind do you have experiences to relate, 
+supportive or otherwise? 
+ 
+3) Does anybody know where I can get good data on venetian blinds re 
+typical performance and typical material surface properties?
+ 
+4) Details:
+ 
+I?m usually under pressure to give the right answer yesterday, at all 
+costs and at no cost. So I went for quick and dirty. I asked around 
+whether quick and dirty would be fine if in professional hands 
+with some of the others here.
+ 
+This generally got a lot of smiling for some reason; personally I can?t 
+see how being forced into lack of rigour due to expedience could be 
+cause for amusement in any true professional. I took their smiling as 
+showing their support for my approach.
+ 
+The supporting environment was no magnificent computing facilities, 
+no Unix, no full-scale lab test rigs, no photometers etc., as yet no 
+Cygwin, Photon Map, or Raydirect/Exergia's radiance 
+preprocessors for blinds/mktis, or anything more recent than the 
+compiled binaries from DeskTop Radiance. I haven?t tried using 
+prismatic materials yet. I?ve also yet to read the 2001 paper on daylight 
+simulations for a full-scale test office with outer venetian blinds that 
+Christoph Reinhart kindly sent me, and the stuff re Photon Maps. 
+Adding onto all that is my general ignorance and minimal Radiance 
+experience, so you'll agree that it's a truly impressive setup.
+ 
+Reasonable rigour for my purposes was expectation of a daylight factor 
+end figure being within 2:1 of ?actual?. I.e. the final answer only needed 
+to distinguish whether the daylight factor was either say 0.5% to 1%, 
+or 1% to 2%. 
+ 
+The rad files I made grossly simplified the building?s complex facade so 
+as to more easily do the computing and extract the daylight factor 
+statistics I needed from the Radiance lux levels. 
+ 
+The daylight problem was a large geometrically complex multi-storey 
+atrium building, with a triple-glazed fa?ade with 3 kinds of glass and 
+interstitial venetian blinds, proposed for a built-up city centre location 
+with complex geometry and lots of materials to model. The design basis 
+was the usual overcast sky. Not interested in direct sunlight.
+ 
+Clearly there?d have been some differences from the real world in 
+assuming the materials and surface reflectances etc., but I'd only 
+wanted the rough illuminance distributions anyway; not the fine details.
+ 
+So being neither purist nor pure, I pressed on and:
+ 
+- modelled a small Test Room A with the triple fa?ade modelled 
+  accurately in geometric detail, using Optics5 data for each sheet 
+  of glass, and assumed reflectances and detailed geometry for the 
+  venetian blinds.
+ 
+- modelled a Test Room B of the same dimensions, but with a 
+  pseudo-fa?ade of simple plane elements with BRDFs,
+ 
+- tweaked the BRDFs until the renderings compared well between 
+  Rooms A and B under 3 outside environments, with external 
+  obstructions, materials and ground planes,
+ 
+- applied the fa?ade and BRDFs of Test Room B to my big models, 
+  so I can crank out the illuminances and extract the daylight statistics.
+ 
+Et voil?, yet how far will I be able to trust the end result?
+ 
+Regards
+George Chadwick
+==
+Possibly related stuff found in these threads:
+-   Gerold Furler   - query on BRDF - Venetian blinds 
+     - Feb 1995
+-   Greg Ward - Amarpreet Sethi - Barbara Matusiak -Peter 
+     Apian-Bennewitz -Carsten Bauer  - - ?Modeling blinds - 
+     Suggesting photon-map? Oct 2003.
+-   Greg Ward -Jack de Valpine - Daniel Lash - Alex Summerfield - 
+     - ?Query about accurately modelling glazing? Jan 2004.
+-   Anthony Farrell - Phillip Greenup - Jack de Valpine - - 
+     ?Prismatic glazing-blind reflector system analysis? 
+     Feb 2004.
+ 
+
+		
+---------------------------------
+ ALL-NEW Yahoo! Messenger - all new features - even more fun!  
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20041027/dc6d78c5/attachment-0001.htm
+From gward at lmi.net  Wed Oct 27 18:42:20 2004
+From: gward at lmi.net (Greg Ward)
+Date: Wed Oct 27 18:43:31 2004
+Subject: [Radiance-general] Approximating the gross daylight flux through
+	venetian blinds.
+In-Reply-To: <20041027154621.29889.qmail@web25205.mail.ukl.yahoo.com>
+References: <20041027154621.29889.qmail@web25205.mail.ukl.yahoo.com>
+Message-ID: <2B93FDA4-2837-11D9-9514-000A95BB392A@lmi.net>
+
+Hi George,
+
+That's quite an e-mail.  At least you've done your research.  However, 
+I don't think you'll get anyone to "bless" your calculation based on 
+your current approach.  I won't even hazard a guess as to how close 
+your results are to correct.  (I hesitate to make any claims about my 
+own calculations for that matter.)
+
+Given the amount of time you must have spent on this, even on composing 
+this e-mail, don't you think you should spend a little time getting a 
+newer version of Radiance onto your computer?  Just a thought.
+
+Here are some others:
+
+> - modelled a small Test Room A with the triple fa?ade modelled
+> ? accurately in geometric detail, using Optics5 data for each sheet
+> ? of glass, and assumed reflectances and detailed geometry for the
+> ? venetian blinds.
+
+Does Optics5 do ray-tracing to figure out the spatial distribution of 
+light coming from scattered sources?  I had no idea it had such a 
+capability!  I really should talk to my compatriots at LBNL more 
+often...
+
+> ?- modelled a Test Room B of the same dimensions, but with a
+> ? pseudo-fa?ade of simple plane elements with BRDFs,
+
+Using BRTDfunc, or what?
+
+> ?- tweaked the BRDFs until the renderings compared well between
+> ? Rooms A and B under 3 outside environments, with external
+> ? obstructions, materials and ground planes,
+
+This is the part that has me most worried.  Getting a reasonable match 
+in a few different scenarios is no substitute for good modeling.
+
+> ?- applied the fa?ade and BRDFs of Test Room B to my big models,
+> ? so I can crank out the illuminances and extract the daylight 
+> statistics.
+
+It should be possible to arrive at a reasonable BRTDfunc approximation 
+to blinds based on a particular slat spacing, angle, and reflectance.  
+It would take me a week or so to do it, though.  I wouldn't trust 
+plasfunc or any of the other types, because they don't include a pure 
+transmitted component, which you will certainly have with venetian 
+blinds.  In short, I think for the time being at least, you should 
+stick with a mkillum-driven calculation, or rely on the basic Radiance 
+interreflection calculation with some large values for -ad and -as if 
+all you want are a few data points per time step.
+
+That's my two cents.  I hope the others have something more to say, 
+because I know there are users out there with more experience with 
+daylight simulations than I have....
+
+-Greg
+
+
+From MdelaFuente at wmtao.com  Thu Oct 28 15:40:27 2004
+From: MdelaFuente at wmtao.com (Mark de la Fuente)
+Date: Thu Oct 28 15:41:29 2004
+Subject: [Radiance-general] Solar Footprint
+Message-ID: <s180b0a0.072@wmtao.com>
+
+Hi group,
+ 
+Just curious if anyone has tried this before.
+ 
+I need to make a diagram showing where direct sunlight hits the floor
+in a room with an odd skylight.  I have a basic idea just from using a
+solar chart, but I would like to accurately illustrate every possible
+sun patch location.
+ 
+My thought was to make a loop where I render all possible sun positions
+for half the year (renderings with sun only, no sky, and with -av 0 0 0
+-ab 0) and add all the images together as I go.  The resulting image
+would show where the sunlight is falling for the entire year.  Depending
+on how fine I make my sky changes, this might result in quite a few
+calculations.  (6 months x 16 hrs per day =  96 calculations.. not too
+bad)
+ 
+Has anyone tried to do this before?
+ 
+Mark
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20041028/9cd4f7c5/attachment.html
+From rpg at rumblestrip.org  Thu Oct 28 16:12:34 2004
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Thu Oct 28 16:12:34 2004
+Subject: [Radiance-general] Solar Footprint
+In-Reply-To: <s180b0a0.072@wmtao.com>
+References: <s180b0a0.072@wmtao.com>
+Message-ID: <4180FE52.8080206@rumblestrip.org>
+
+Mark de la Fuente wrote:
+> Hi group,
+>  
+> Just curious if anyone has tried this before.
+>  
+> I need to make a diagram showing where direct sunlight hits the floor in 
+> a room with an odd skylight.  I have a basic idea just from using a 
+> solar chart, but I would like to accurately illustrate every possible 
+> sun patch location.
+>  
+> My thought was to make a loop where I render all possible sun positions 
+> for half the year (renderings with sun only, no sky, and with -av 0 0 
+> 0 -ab 0) and add all the images together as I go.  The resulting image 
+> would show where the sunlight is falling for the entire year.  Depending 
+> on how fine I make my sky changes, this might result in quite a 
+> few calculations.  (6 months x 16 hrs per day =  96 calculations.. not 
+> too bad)
+>  
+> Has anyone tried to do this before?
+
+I've always used animations for that sort of thing, but your idea sounds 
+cool.  One thing that you may want to do is actually give your ambient 
+value a little boost, so that the other surfaces are slightly 
+illuminated.  Otherwise, it's tough to tell what you're looking at. The 
+direct sun patch against an all-black background could be tough to place 
+in context, depending on what is illuminated by the sun. John M. shared 
+a tip at last year's workshop too, he used a green-tinted ambient value 
+(-av 0 .5 0) so that it's clear what illumination is "fake" and what is 
+direct sun.  Giving your model a little "ambient glow" with -av will 
+make for a clearer rendering, I think.
+
+I've never merged images together like that and would be interested to 
+hear how you go about it, and what issues there are to consider, such as 
+exposure & filtering.  I'd love to see what you come up with.  This 
+could be a useful tool.
+
+P.S.
+Since you're doing -ab 0, the number of calculations shouldn't be a 
+cause for alarm, the direct calculation is really fast.
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+From raphael.compagnon at eif.ch  Thu Oct 28 17:10:56 2004
+From: raphael.compagnon at eif.ch (Raphael Compagnon)
+Date: Thu Oct 28 17:11:06 2004
+Subject: [Radiance-general] Solar Footprint
+In-Reply-To: <s180b0a0.072@wmtao.com>
+Message-ID: <5.1.0.14.2.20041028164646.0265d488@pop.eif.ch>
+
+Mark,
+
+I suggest you to generate a single radiance scene file containing as many 
+suns as you need. Then using a single radiance run you will get the 
+expected result.
+
+I  is a small program  I have used to generate multiple gensky calls for a 
+whole year:
+
+#include <stdio.h>
+#include <stdlib.h>
+void main() {
+         int mois,jour,heure;
+         int nj[12] = {31,28,31,30,31,30,31,31,30,31,30,31};
+         double hh;
+         for (mois=0;mois<12;mois++) {
+                 for (jour=0;jour<nj[mois];jour++) {
+                         for (heure=0;heure<24;heure++) {
+                                 hh=heure + (double) rand()/RAND_MAX;
+                                 /* Adjust latitude, longitude and timezone 
+according to your location hereafter */
+                                 printf("gensky %d %d %.4lf -a 46.4824 -o 
+-7.0894 -m -15\n",mois+1,jour+1,hh);
+                                 }
+                         }
+                 }
+         exit(0);
+}
+
+You will note that I have added a random perturbation on the hour parameter 
+in order to avoid having all the suns aligned on meridian lines.
+
+Raphael Compagnon
+
+At 28.10.2004 15:40, you wrote:
+>Hi group,
+>
+>Just curious if anyone has tried this before.
+>
+>I need to make a diagram showing where direct sunlight hits the floor in a 
+>room with an odd skylight.  I have a basic idea just from using a solar 
+>chart, but I would like to accurately illustrate every possible sun patch 
+>location.
+>
+>My thought was to make a loop where I render all possible sun positions 
+>for half the year (renderings with sun only, no sky, and with -av 0 0 0 
+>-ab 0) and add all the images together as I go.  The resulting image would 
+>show where the sunlight is falling for the entire year.  Depending on how 
+>fine I make my sky changes, this might result in quite a few 
+>calculations.  (6 months x 16 hrs per day =  96 calculations.. not too bad)
+>
+>Has anyone tried to do this before?
+>
+>Mark
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20041028/85cdc2f4/attachment.htm
+From jm at dmu.ac.uk  Thu Oct 28 18:56:56 2004
+From: jm at dmu.ac.uk (John Mardaljevic)
+Date: Thu Oct 28 18:57:18 2004
+Subject: [Radiance-general] Solar Footprint
+Message-ID: <418124D8.40109@dmu.ac.uk>
+
+Mark,
+
+This paper (below) describes one way to accelerate the computation of
+annual irradiation images.
+
+Mardaljevic, J. & Rylatt M. (2003). Irradiation mapping of complex urban 
+environments: an image-based approach. Energy and Buildings, Vol. 35, 
+pp. 27-35
+
+I can send you a PDF if you have trouble finding it.  Unfortunately,
+this appeared just before Elsevier decided to leave the colour in the
+PDFs.
+
+The presentation "Precision modelling of parametrically defined solar
+shading systems: Pseudo-Changi" gives some more examples (in colour).
+It's in the list here:
+http://www.iesd.dmu.ac.uk/~jm/publications.html
+
+-John
+
+-----------------------------------------------
+Dr. John Mardaljevic
+Senior Research Fellow
+Institute of Energy and Sustainable Development
+De Montfort University
+The Gateway
+Leicester
+LE1 9BH, UK
++44 (0) 116 257 7972
++44 (0) 116 257 7981 (fax)
+
+jm@dmu.ac.uk
+http://www.iesd.dmu.ac.uk/~jm
+
+From gward at lmi.net  Thu Oct 28 20:42:45 2004
+From: gward at lmi.net (Greg Ward)
+Date: Thu Oct 28 20:43:58 2004
+Subject: [Radiance-general] Approximating the gross daylight flux through
+	venetian blinds.
+In-Reply-To: <20041028111437.4603.qmail@web25202.mail.ukl.yahoo.com>
+References: <20041028111437.4603.qmail@web25202.mail.ukl.yahoo.com>
+Message-ID: <28AD8CC7-2911-11D9-A953-000A95BB392A@lmi.net>
+
+Hi George,
+
+> Newer version of Radiance:
+>
+> I'm embarrassed by your raising the subject of
+>  me getting a newer version of Radiance onto
+>  my computer; that's been on my mind. I do
+>  need to catch up but to my shame have done
+>  nothing. Richard Morris at Arup Lighting in
+>  London helpfully suggested Cygwin as
+>  the way I can get more in line with everybody else
+>  and up to speed despite being a Window$ user,
+>  and pointed me to Francesco Anselmo's site.
+
+That's a good suggestion, though you might want to wait until Francesco 
+compiles the latest 3.6.1 release, which just came out yesterday.  That 
+way, you'll be sure to have the most recent additions.  I haven't used 
+Cygwin (or PC's) myself, but I guess it works.  FreeBSD is my favorite 
+option on Intel hardware -- much easier to manage than Linux for most 
+things, though of course Linux comes with a friendlier desktop these 
+days.  If you can afford it, an Apple running OS X is a very good 
+investment.  The time you save in administering it will more than 
+compensate for the higher price tag, and the G5 performance is quite 
+competitive with Intel and AMD machines these days.  Plus, you'd get to 
+run all your Office applications and Photosphere to boot!
+
+> Optics5 data:
+>
+> ?My apologies for being unclear on using Optics5
+>  data:? all I did was take the rad file outputs from
+>  Optics5 for each proprietary type of glass and
+>  put that data into my Radiance materials files,
+>  nothing more. How sophisticated Optics5 output is,
+>  I have no idea. I guess in an ideal world
+>  Optics5 would spool off a customised Radiance
+>  BRTDfunc for each glass type or combination of
+>  glass and framing in a glazing system, but
+>  somehow I don't suppose it actually can. I am
+>  guessing what you get are averaged values
+>  derived from hemispherical test data which you
+>  use as simple transmission and reflection
+>  factors. I can't see the incident angle figuring in
+>  the output anywhere. Maybe someone would
+>  like to put me right.
+
+You didn't post your reply to radiance-general -- just to me.  Did you 
+mean to post it?  I will post this reply in case others want to pipe 
+in.  I don't have any experience with Optics 5, other than files people 
+have shown me.  From what I can tell, it does a pretty rudimentary job 
+modeling glazings in Radiance -- not even accounting for Fresnel 
+effects on reflection and transmission.  The glaze script I wrote for 
+Visarc does a more reasonable job in this regard, but lacks the 
+extensive database of Optics 5.  I misunderstood and thought you had 
+used it to compute the BRDF for the blinds, which I didn't think it 
+could do.  I guess from what you say, it can't.
+
+> Mkillum-driven calculations:
+>
+> Thanks to your advice on using mkillum-driven
+>  calculations, it's now full steam ahead with that.
+> As I'm using mkillum for the first time, I am taking
+>  it as read that there will be a way I can use an
+>  illum to account for all those room cases
+>  with different external obstructions and
+>  significant reflections arising from the rooms'
+>  external contexts.
+
+Yes, that is correct.  Mkillum simply acts as a "go-between," mediating 
+and accelerating the window contributions in your model.  As I said in 
+my first reply, it doesn't help so much if all you're doing is 
+calculating a few illuminance values, but if what you want is a nice 
+polished image, I've found it to be indispensible.  I only wish it were 
+a little easier to use.
+
+> BRTDfunc:
+>
+> There would be a huge cheer from me if
+>  you were to publish a BRTDfunc with macro
+>  performance approximating reasonably to
+>  venetian blinds.?
+
+Unfortunately, a good cheer might not be quite enough motivation, but 
+I'll give it a look.
+
+> I do take right on my chin your point about
+>  my getting a reasonable match in a couple of
+>  arbitrary cases being no substitute for good
+>  modelling. I?m still interested in any real
+>  world venetian blind physical data, such as
+>  anyone may have, not just so as to provide
+>  capability for validation of whatever the
+>  BRTDfunc may turn out to be, but also
+>  generally for other studies.
+
+I know Kostantinos Papamichael did a fair amount of research on 
+venetian blinds for his Ph.D.  You should be able to find some of his 
+articles.  Go to the following URL and type in Papamichael.  That name 
+shouldn't create a lot of search collisions:
+
+	http://www-library.lbl.gov/lbnl_reports/sf
+
+> A thought: maybe it would be too much to go
+>  for in one function, but it seems to me that
+>  perhaps a useful general BRTDfunc for surfaces
+>  with pseudo-venetian-blind macroperformance
+>  properties would need switches for the user to?
+>  specify say a world vector normal to the slat axes
+>  and a slat angle relative to the surface normal.
+>  Then if possible maybe such a BRTDfunc could
+>  be made to work for vertical blinds too. Maybe I?m
+>  wrong, but my subjective impression is that real
+>  blinds have direct and diffuse transmissions which
+>  are both asymmetric w.r.t the azimuth angle of the
+>  incident ray relative to the slat axis in the surface
+>  plane, the diffuse distribution for each ray case
+>  being itself asymmetric w.r.t azimuth angle. Ouch.
+
+Yes, it should be possible.  Of course, a BRTDfunc for venetian blinds 
+won't account for all that goes on outside a window, because Radiance 
+does not sample the directional diffuse component of its BRDF types.  
+This is where mkillum and the photon mapping add-on will have the upper 
+hand.
+
+-Greg
+
+
+From gward at lmi.net  Fri Oct 29 04:43:16 2004
+From: gward at lmi.net (Greg Ward)
+Date: Fri Oct 29 04:44:37 2004
+Subject: [Radiance-general] Patch to 3.6 release
+Message-ID: <48FEB32B-2954-11D9-A977-000A95BB392A@lmi.net>
+
+Unfortunately, shortly after making the official Radiance 3.6 release, 
+two bugs surfaced that were rather serious, warranting a patch release. 
+  The first bug was reported by Mark Stock on this mailing list, and the 
+second was reported by Veronica Sundstedt to me privately.  Mark's 
+report related to the source occluder cache and mist materials, and 
+resulted in a consistency error (followed by an abort).  Not good.  
+Veronica's report related to light source edges becoming visible 
+through solid walls in rpict, which in some ways is even more serious 
+since it affects virtually every rendering.  Both bugs were simple 
+enough to fix, but should not have been in an official release.  The 
+first was the result of inadequate testing of the new occluder cache, 
+and the second was the result of a last-minute "fix" I made to a 
+routine for illum sources just prior to the 3.6 release.  I fixed the 
+reported problem, but created a new one that was 100 times worse.  Most 
+embarrassing.
+
+Both of these bugs have been repaired in the 3.6.1 patch release, which 
+is available in source and binary forms from 
+<http://radsite.lbl.gov/radiance/>.  I expect Peter Apian-Bennewitz 
+will update radiance-online.org shortly, but please do not download the 
+original 3.6 release that is on there now.  The new patched release is 
+named "rad3R6P1.tar.gz" and when compiled, "rpict -version" should give 
+you:
+
+	RADIANCE 3.6.1 patch release 27 Oct 2004 by Greg Ward
+
+In the process of further compile testing for this patch, I found 
+another, unrelated problem on 64-bit Athlon machines, where int32 was 
+sized as 64-bits, which broke the TIFF library as well as several 
+critical Radiance routines.  The new patch also incorporates this fix, 
+which only affects new compiles on Athalons, but it ended up requiring 
+a new version of "rad3R6supp.tar.gz", which contains the TIFF library.  
+If you are compiling on Athalon's with the HEAD release, you should 
+wait a day or two for Peter to update the files on radiance-online 
+before grabbing the updated version.
+
+Apologies to those who downloaded the 3.6 release thinking, "This 
+should be it for awhile."  Hopefully, there will be no embarrassing new 
+discoveries for a few weeks, at least....
+
+-Greg
+
+
+From gward at lmi.net  Fri Oct 29 05:28:27 2004
+From: gward at lmi.net (Greg Ward)
+Date: Fri Oct 29 05:29:41 2004
+Subject: [Radiance-general] Approximating the gross daylight flux through
+	venetian blinds.
+Message-ID: <98CB712E-295A-11D9-A977-000A95BB392A@lmi.net>
+
+I gave it a little more thought, and I'm note sure how useful it would 
+be to have a BRTDfunc that approximates the aggregate behavior of 
+venetian blinds.  The only context where this might prove useful is in 
+performing daylight analyses where you don't care about external 
+reflections and the users doesn't care to visualize the space.  Because 
+a BRTDfunc doesn't include the directional-diffuse portion in its 
+indirect component, it wouldn't get an accurate contribution from light 
+reflected off external surfaces.  The best it could do is get a 
+reasonable value for the indirect solar due to light hitting the blinds 
+directly.  Mathematically, even this would be difficult -- I'm guessing 
+it would take me a day or two  to work up a reasonable approximation.  
+As far as the appearance goes, one would see a semi-translucent 
+material if one was to visualize your model with this material, which 
+wouldn't end up looking like blinds at all.
+
+In summary, I don't think this would be much of an improvement over a 
+mkillum solution.  Does anyone else have some thoughts on this?
+
+-Greg
+
+
+From apian at pab-opto.de  Fri Oct 29 07:17:27 2004
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Fri Oct 29 07:46:22 2004
+Subject: [Radiance-general] Patch to 3.6 release
+In-Reply-To: <48FEB32B-2954-11D9-A977-000A95BB392A@lmi.net>
+References: <48FEB32B-2954-11D9-A977-000A95BB392A@lmi.net>
+Message-ID: <4181D267.30901@pab-opto.de>
+
+Greg Ward wrote:
+
+> Unfortunately, shortly after making the official Radiance 3.6 release, 
+> two bugs surfaced that were rather serious, warranting a patch 
+> release.  The first bug was reported by Mark Stock on this mailing 
+> list, and the second was reported by Veronica Sundstedt to me 
+> privately.  Mark's report related to the source occluder cache and 
+> mist materials, and resulted in a consistency error (followed by an 
+> abort).  Not good.  Veronica's report related to light source edges
+> ....
+
+Radiance-online webpages and generators have updated.
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+
+
+From jm at dmu.ac.uk  Fri Oct 29 10:51:55 2004
+From: jm at dmu.ac.uk (John Mardaljevic)
+Date: Fri Oct 29 10:52:15 2004
+Subject: [Radiance-general] Approximating the gross daylight flux through
+	venetian blinds.
+Message-ID: <418204AB.8030605@dmu.ac.uk>
+
+George,
+
+This paper may be helpful:
+
+ANALYSING RADIATION TRANSPORT THROUGH COMPLEX FENESTRATION SYSTEMS
+N.S. Campbell and J.K. Whittle
+http://www.ibpsa.org/proceedings/bs97/papers/P069.PDF
+
+ > The design basis was the usual overcast sky. Not interested in direct 
+ > sunlight.
+
+ > Clearly there?d have been some differences from the real world in
+ > assuming the materials and surface reflectances etc., but I'd only
+ > wanted the rough illuminance distributions anyway; not the fine
+ > details.
+
+I appreciate that a design basis is just that - and we don't have much
+choice if it is what the client wants.  However, I can't hold myself
+back from wondering just how useful is a daylight factor evaluation for
+the scenario you describe.  Surely, the blinds are there also to control
+direct sunlight?  Perhaps even it is their main purpose.
+
+-John
+
+-----------------------------------------------
+Dr. John Mardaljevic
+Senior Research Fellow
+Institute of Energy and Sustainable Development
+De Montfort University
+The Gateway
+Leicester
+LE1 9BH, UK
++44 (0) 116 257 7972
++44 (0) 116 257 7981 (fax)
+
+jm@dmu.ac.uk
+http://www.iesd.dmu.ac.uk/~jm
+
+From Christoph.Reinhart at nrc-cnrc.gc.ca  Fri Oct 29 18:10:21 2004
+From: Christoph.Reinhart at nrc-cnrc.gc.ca (Reinhart, Christoph)
+Date: Fri Oct 29 18:10:29 2004
+Subject: [Radiance-general] Approximating the gross daylight flux thro
+	ugh venetian blinds.
+Message-ID: <10C94843061E094A98C02EB77CFC32870F436D68@nrcmrdex1d.imsb.nrc.ca>
+
+Greg, I think that it would be REALLY useful for daylight-coefficient-based
+daylight simulations if someone (meaning you:)) came up with a BRTDFunc for
+blinds. This way one could simulate interior annual illuminance profiles
+with the blinds opened and closed. This is already possible if one simulates
+the blinds geometrically in gory detail (genblind), but the simulation times
+are horrendous. I assume the calculation time penalty would be less severe
+if one used "BRTDFunc" instead? To my knowledge, mkillum cannot  be used
+with a daylight coefficient approach since mkillum is tied to a specific sky
+condition? 
+
+Christoph
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Greg Ward
+Sent: Thursday, October 28, 2004 11:28 PM
+To: Radiance general discussion
+Subject: Re: [Radiance-general] Approximating the gross daylight flux
+through venetian blinds.
+
+I gave it a little more thought, and I'm note sure how useful it would be to
+have a BRTDfunc that approximates the aggregate behavior of venetian blinds.
+The only context where this might prove useful is in performing daylight
+analyses where you don't care about external reflections and the users
+doesn't care to visualize the space.  Because a BRTDfunc doesn't include the
+directional-diffuse portion in its indirect component, it wouldn't get an
+accurate contribution from light reflected off external surfaces.  The best
+it could do is get a reasonable value for the indirect solar due to light
+hitting the blinds directly.  Mathematically, even this would be difficult
+-- I'm guessing it would take me a day or two  to work up a reasonable
+approximation.  
+As far as the appearance goes, one would see a semi-translucent material if
+one was to visualize your model with this material, which wouldn't end up
+looking like blinds at all.
+
+In summary, I don't think this would be much of an improvement over a
+mkillum solution.  Does anyone else have some thoughts on this?
+
+-Greg
+
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+From marcdevon at hotmail.com  Fri Oct 29 19:59:09 2004
+From: marcdevon at hotmail.com (Marcus Jacobs)
+Date: Fri Oct 29 20:00:07 2004
+Subject: [Radiance-general] Reflectance of Image Map Based Materials
+Message-ID: <BAY101-F12G7Z2JQHeF000189c9@hotmail.com>
+
+Dear Group
+
+There have been previous post about how to obtain accurate (or as accurate 
+as can be expected) material decriptions for image maps used within scene. 
+The general approach seems to be to scan the material, calibrate it using a 
+macbethcal.cal calibration file, normalize it with normpat and later apply a 
+material with desired reflectances. My question is what would be a valid 
+approach for materials not scanned and calibrated? Many of the image maps 
+that I use I obtain from various sources (i.ow. the internet) such that I 
+can not get the exact reflectance of the material used for my image maps. 
+This would generally apply to the floor materials that I use. What I have 
+been doing has been a similar approach that I have used with Lightscape. 
+What I do is take the image apply it to a material and set the RGB 
+reflectance to a range similar to the recommended reflectance range that is 
+used in Lightscape. I question the validity of this approach.  I know that I 
+am in the minority in this group due to the fact that I wish to obtain a 
+visually pleasing image while at the same providing accuracy when it regards 
+the lighting distribution throughout the building. Any help would be 
+appreciated.
+
+
+Regards,
+
+Marcus
+
+
+
+From MdelaFuente at wmtao.com  Fri Oct 29 20:10:23 2004
+From: MdelaFuente at wmtao.com (Mark de la Fuente)
+Date: Fri Oct 29 20:11:08 2004
+Subject: [Radiance-general] Re: Solar Footprint
+Message-ID: <s182415d.085@wmtao.com>
+
+Rob, I like the off-color idea.. this is after all just a diagram.  To
+combine images all you need to do is type pcomb pic1.pic pic2.pic >
+newpicture.pic.  It just adds all the values together.  This has been a
+very useful for me in the past.  Keep in mind you are adding light, so
+you want to try and keep from "double dipping" sort of speak.  So you
+would not have light A and B in one picture and B and C in the other and
+add them up.  You would have A, B, and, C all in separate pictures. 
+This can be a big time saver if you are trying to develop images for
+various "scenes".
+ 
+Mark
+
+ 
+Mark de la Fuente wrote:
+> Hi group,
+>  
+> Just curious if anyone has tried this before.
+>  
+> I need to make a diagram showing where direct sunlight hits the floor
+in 
+> a room with an odd skylight.  I have a basic idea just from using a 
+> solar chart, but I would like to accurately illustrate every possible
+
+> sun patch location.
+>  
+> My thought was to make a loop where I render all possible sun
+positions 
+> for half the year (renderings with sun only, no sky, and with -av 0 0
+
+> 0 -ab 0) and add all the images together as I go.  The resulting
+image 
+> would show where the sunlight is falling for the entire year. 
+Depending 
+> on how fine I make my sky changes, this might result in quite a 
+> few calculations.  (6 months x 16 hrs per day =  96 calculations..
+not 
+> too bad)
+>  
+> Has anyone tried to do this before?
+ 
+I've always used animations for that sort of thing, but your idea
+sounds 
+cool.  One thing that you may want to do is actually give your ambient
+
+value a little boost, so that the other surfaces are slightly 
+illuminated.  Otherwise, it's tough to tell what you're looking at. The
+
+direct sun patch against an all-black background could be tough to
+place 
+in context, depending on what is illuminated by the sun. John M. shared
+
+a tip at last year's workshop too, he used a green-tinted ambient value
+
+(-av 0 .5 0) so that it's clear what illumination is "fake" and what is
+
+direct sun.  Giving your model a little "ambient glow" with -av will 
+make for a clearer rendering, I think.
+ 
+I've never merged images together like that and would be interested to
+
+hear how you go about it, and what issues there are to consider, such
+as 
+exposure & filtering.  I'd love to see what you come up with.  This 
+could be a useful tool.
+ 
+P.S.
+Since you're doing -ab 0, the number of calculations shouldn't be a 
+cause for alarm, the direct calculation is really fast.
+ 
+----
+ 
+      Rob Guglielmetti
+ 
+e. rpg@rumblestrip.org 
+w. www.rumblestrip.org 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20041029/79834406/attachment.html
+From gward at lmi.net  Fri Oct 29 20:11:55 2004
+From: gward at lmi.net (Greg Ward)
+Date: Fri Oct 29 20:13:06 2004
+Subject: [Radiance-general] Reflectance of Image Map Based Materials
+In-Reply-To: <BAY101-F12G7Z2JQHeF000189c9@hotmail.com>
+References: <BAY101-F12G7Z2JQHeF000189c9@hotmail.com>
+Message-ID: <04667FD4-29D6-11D9-9C82-000A95BB392A@lmi.net>
+
+Hi Marcus,
+
+If you know roughly the reflectance of the surface you want to model, 
+you can still use normpat (or more easily "pfilt -2 -e 2") to create an 
+image that has its overall value set to 1.  Then, simply apply the 
+desired reflectance as a neutral value to your surface (e.g., 20% 
+reflectance would be "0.2 0.2 0.2") and use the image map you have 
+downloaded.
+
+I hope this makes sense.
+-Greg
+
+> From: "Marcus Jacobs" <marcdevon@hotmail.com>
+> Date: October 29, 2004 10:59:09 AM PDT
+>
+> Dear Group
+>
+> There have been previous post about how to obtain accurate (or as 
+> accurate as can be expected) material decriptions for image maps used 
+> within scene. The general approach seems to be to scan the material, 
+> calibrate it using a macbethcal.cal calibration file, normalize it 
+> with normpat and later apply a material with desired reflectances. My 
+> question is what would be a valid approach for materials not scanned 
+> and calibrated? Many of the image maps that I use I obtain from 
+> various sources (i.ow. the internet) such that I can not get the exact 
+> reflectance of the material used for my image maps. This would 
+> generally apply to the floor materials that I use. What I have been 
+> doing has been a similar approach that I have used with Lightscape. 
+> What I do is take the image apply it to a material and set the RGB 
+> reflectance to a range similar to the recommended reflectance range 
+> that is used in Lightscape. I question the validity of this approach.  
+> I know that I am in the minority in this group due to the fact that I 
+> wish to obtain a visually pleasing image while at the same providing 
+> accuracy when it regards the lighting distribution throughout the 
+> building. Any help would be appreciated.
+>
+> Regards,
+>
+> Marcus
+
+
+From gward at lmi.net  Fri Oct 29 20:42:54 2004
+From: gward at lmi.net (Greg Ward)
+Date: Fri Oct 29 20:44:09 2004
+Subject: [Radiance-general] Approximating the gross daylight flux thro ugh
+	venetian blinds.
+In-Reply-To: <10C94843061E094A98C02EB77CFC32870F436D68@nrcmrdex1d.imsb.nrc.ca>
+References: <10C94843061E094A98C02EB77CFC32870F436D68@nrcmrdex1d.imsb.nrc.ca>
+Message-ID: <58549A04-29DA-11D9-9C82-000A95BB392A@lmi.net>
+
+Hi Christoph,
+
+You can use mkillum or any other aspect of Radiance for an annual 
+illuminance profile by creating a cumulative sky model from weather 
+data.  Using mkillum, you would pick up the appropriate external 
+reflections as well, which a BRTDfunc could not do.  If you want to 
+break down the profile over time, then you need to create a 
+time-stepped calculation, possibly using an acceleration scheme such as 
+the one you devised or those of John Mardaljevic or Raphael Compagnon.  
+In such cases, I can see where a BRTDfunc modeling blinds might be a 
+real time-saver, since it will avoid a lot of the sampling variance 
+caused by detailed blind geometry.  It still wouldn't pick up those 
+external reflections, though.
+
+-Greg
+
+> From: "Reinhart, Christoph" <Christoph.Reinhart@nrc-cnrc.gc.ca>
+> Date: October 29, 2004 9:10:21 AM PDT
+>
+> Greg, I think that it would be REALLY useful for 
+> daylight-coefficient-based
+> daylight simulations if someone (meaning you:)) came up with a 
+> BRTDFunc for
+> blinds. This way one could simulate interior annual illuminance 
+> profiles
+> with the blinds opened and closed. This is already possible if one 
+> simulates
+> the blinds geometrically in gory detail (genblind), but the simulation 
+> times
+> are horrendous. I assume the calculation time penalty would be less 
+> severe
+> if one used "BRTDFunc" instead? To my knowledge, mkillum cannot  be 
+> used
+> with a daylight coefficient approach since mkillum is tied to a 
+> specific sky
+> condition?
+>
+> Christoph
+
+
+From tiago at tkh.att.ne.jp  Fri Oct 29 20:50:25 2004
+From: tiago at tkh.att.ne.jp (Santiago Torres)
+Date: Fri Oct 29 20:48:07 2004
+Subject: [Radiance-general] Approximating the gross daylight flux through
+	venetian blinds.
+In-Reply-To: <10C94843061E094A98C02EB77CFC32870F436D68@nrcmrdex1d.imsb.nrc.ca>
+Message-ID: <ABEIIOCILNBBDDEPEPICKEGICDAA.tiago@tkh.att.ne.jp>
+
+
+Hello,
+There`s a new paper that is related, but can be accessed online only (as far
+as I know):
+
+M. Andersen, M. Rubin, R. Powles, J.-L. Scartezzini, Bi-directional
+transmission properties of venetian blinds: experimental assessment compared
+to ray-tracing simulations, Solar Energy, In Press.
+
+It discuses mainly the method to measure BRTDs, but not much about the
+application to simulations. If somebody has more information about this
+research, I would also be interested to know.
+On the other hand, to simulate blinds, would it be possible to combine a
+BRTD with a linear function that accounts for the slats? I mean, can the
+BRTDfunc be dependent on the object coordinates? just an idea, I don`t know
+if it makes much sense.
+
+Regards,
+Santiago
+
+
+> -----Original Message-----
+> From: radiance-general-bounces@radiance-online.org
+> [mailto:radiance-general-bounces@radiance-online.org]On Behalf Of
+> Reinhart, Christoph
+> Sent: Saturday, October 30, 2004 1:10 AM
+> To: 'Radiance general discussion'
+> Subject: RE: [Radiance-general] Approximating the gross daylight flux
+> through venetian blinds.
+>
+>
+> Greg, I think that it would be REALLY useful for
+> daylight-coefficient-based
+> daylight simulations if someone (meaning you:)) came up with a
+> BRTDFunc for
+> blinds. This way one could simulate interior annual illuminance profiles
+> with the blinds opened and closed. This is already possible if
+> one simulates
+> the blinds geometrically in gory detail (genblind), but the
+> simulation times
+> are horrendous. I assume the calculation time penalty would be less severe
+> if one used "BRTDFunc" instead? To my knowledge, mkillum cannot  be used
+> with a daylight coefficient approach since mkillum is tied to a
+> specific sky
+> condition?
+>
+> Christoph
+>
+
+
+
+From gward at lmi.net  Fri Oct 29 21:15:34 2004
+From: gward at lmi.net (Greg Ward)
+Date: Fri Oct 29 22:24:57 2004
+Subject: [Radiance-general] Approximating the gross daylight flux through
+	venetian blinds.
+In-Reply-To: <ABEIIOCILNBBDDEPEPICKEGICDAA.tiago@tkh.att.ne.jp>
+References: <ABEIIOCILNBBDDEPEPICKEGICDAA.tiago@tkh.att.ne.jp>
+Message-ID: <E858ED1A-29DE-11D9-8954-000A95BB392A@lmi.net>
+
+I haven't read this paper -- thanks for pointing it out.  I know that 
+Marilyne Anderson is continuing her measurement work now that she's at 
+MIT.
+
+Regarding your suggestion with the BRTDfunc, if I understand you 
+correctly, you are suggesting that it might be possible to simulate the 
+apprearance of slats in the model.  I agree, but I think that might 
+defeat the purpose of using such a model, as we would be reintroducing 
+irregularities in the light coming through that would then require 
+heavier sampling to resolve.  That is the current problem with venetian 
+blind models -- it's not that Radiance can't handle the complex 
+geometry, quite the contrary.  It is simply that the slats themselves 
+cause a large variance in the penetrating radiation, to the point where 
+many ray samples are needed to resolve the agregate (i.e., integrated) 
+behavior.
+
+I hope I didn't misunderstand what you were saying.
+
+-Greg
+
+
+From MdelaFuente at wmtao.com  Fri Oct 29 23:02:07 2004
+From: MdelaFuente at wmtao.com (Mark de la Fuente)
+Date: Fri Oct 29 23:02:44 2004
+Subject: [Radiance-general] Re: Solar Footprint
+Message-ID: <s1826993.056@wmtao.com>
+
+Raphael, thank you for your response.  Random perturbation noted.  You
+guys think of everything!  :)
+ 
+I was under the impression that if you call out the longitude and the
+standard meridian that Radiance will figure out where the sun needs to
+be in relation to your exact location.
+ 
+Making one sky with all possible sun conditions was option B.  But I
+had not been able to get it to work.  I believe the problem lies in the
+fact that when gensky creates the sky, it always uses the same naming
+convention.  I have been creating csh scrips (running Cygwin) and have
+been unhappy about how fickle they seem to be.  What is this written in?
+ Unfortunately I don't understand what the script is doing so I could
+not really use it.
+ 
+Anyway, I wrote a script and wound up with the following sky.
+ 
+http://images.ofoto.com/photos887/5/91/16/85/95/0/95851691506_0_ALB.jpg
+ 
+It is very strange that the suns don't line up like they do on a sun
+chart.  Any idea why this is so?
+ 
+Start of file.....
+ 
+#!/bin/csh -fv
+#
+###  This script generates multiple skies and then creates one multiple
+sky octree.
+#    
+ 
+### Daylighting parameters
+ 
+set day = "21"
+ 
+rm ./scene/xskies.rad
+
+foreach month (012 001 002 003 004 005 006)
+foreach hr (005 006 007 008 009 010 011 012 013 014 015 016 017 018 019
+020)
+ 
+gensky $month $day $hr +s -a 38.7 -o 90.5 -m 90 >
+./skies/'sky'$month$day$hr'.rad'
+echo "\!xform -n sky ./skies/sky$month$day$hr.rad" >>
+./scene/xskies.rad
+
+end
+end
+ 
+oconv -f ./scene/xskies.rad ./skies/sky.rad > ./octree/skies.oct
+ 
+... end of file
+ 
+Mark
+ 
+ 
+ 
+ 
+ 
+Message: 3
+Date: Thu, 28 Oct 2004 17:10:56 +0200
+From: Raphael Compagnon <raphael.compagnon@eif.ch>
+Subject: Re: [Radiance-general] Solar Footprint
+To: Radiance general discussion <radiance-general@radiance-online.org>
+Message-ID: <5.1.0.14.2.20041028164646.0265d488@pop.eif.ch>
+Content-Type: text/plain; charset="us-ascii"
+ 
+Mark,
+ 
+I suggest you to generate a single radiance scene file containing as
+many 
+suns as you need. Then using a single radiance run you will get the 
+expected result.
+ 
+I  is a small program  I have used to generate multiple gensky calls
+for a 
+whole year:
+ 
+#include <stdio.h>
+#include <stdlib.h>
+void main() {
+         int mois,jour,heure;
+         int nj[12] = {31,28,31,30,31,30,31,31,30,31,30,31};
+         double hh;
+         for (mois=0;mois<12;mois++) {
+                 for (jour=0;jour<nj[mois];jour++) {
+                         for (heure=0;heure<24;heure++) {
+                                 hh=heure + (double) rand()/RAND_MAX;
+                                 /* Adjust latitude, longitude and
+timezone 
+according to your location hereafter */
+                                 printf("gensky %d %d %.4lf -a 46.4824
+-o 
+-7.0894 -m -15\n",mois+1,jour+1,hh);
+                                 }
+                         }
+                 }
+         exit(0);
+}
+ 
+You will note that I have added a random perturbation on the hour
+parameter 
+in order to avoid having all the suns aligned on meridian lines.
+ 
+Raphael Compagnon
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20041029/acdad060/attachment-0001.htm
+From mstock at umich.edu  Fri Oct 29 23:20:00 2004
+From: mstock at umich.edu (Mark Stock)
+Date: Fri Oct 29 23:20:07 2004
+Subject: [Radiance-general] Re: Solar Footprint
+In-Reply-To: <s1826993.056@wmtao.com>
+References: <s1826993.056@wmtao.com>
+Message-ID: <Pine.LNX.4.61.0410291717070.14714@smith.gpcc.itd.umich.edu>
+
+
+On Fri, 29 Oct 2004, Mark de la Fuente wrote:
+>
+> Anyway, I wrote a script and wound up with the following sky.
+>
+> http://images.ofoto.com/photos887/5/91/16/85/95/0/95851691506_0_ALB.jpg
+>
+> It is very strange that the suns don't line up like they do on a sun
+> chart.  Any idea why this is so?
+
+Do a search for "analemma" (or "analema") and see why what you've 
+found is to be expected.
+
+I especially like the image on:
+http://vrum.chat.ru/Photo/Astro/analema.htm
+
+Mark
+
+From tiago at tkh.att.ne.jp  Fri Oct 29 23:31:02 2004
+From: tiago at tkh.att.ne.jp (Santiago Torres)
+Date: Fri Oct 29 23:28:42 2004
+Subject: [Radiance-general] Approximating the gross daylight flux
+	throughvenetian blinds.
+In-Reply-To: <E858ED1A-29DE-11D9-8954-000A95BB392A@lmi.net>
+Message-ID: <ABEIIOCILNBBDDEPEPICCEGKCDAA.tiago@tkh.att.ne.jp>
+
+
+Yes, that`s what I meant. Now I understand the problem. I just thought it
+would save some calculation of the interreflections between slats, but
+surely that`s not significant.
+Thank you for the clarification.
+
+Santiago
+
+
+> -----Original Message-----
+> From: radiance-general-bounces@radiance-online.org
+> [mailto:radiance-general-bounces@radiance-online.org]On Behalf Of
+> Greg Ward
+> Sent: Saturday, October 30, 2004 4:16 AM
+> To: Radiance general discussion
+> Subject: Re: [Radiance-general] Approximating the gross daylight
+> flux throughvenetian blinds.
+>
+>
+> I haven't read this paper -- thanks for pointing it out.  I know that
+> Marilyne Anderson is continuing her measurement work now that she's at
+> MIT.
+>
+> Regarding your suggestion with the BRTDfunc, if I understand you
+> correctly, you are suggesting that it might be possible to simulate the
+> apprearance of slats in the model.  I agree, but I think that might
+> defeat the purpose of using such a model, as we would be reintroducing
+> irregularities in the light coming through that would then require
+> heavier sampling to resolve.  That is the current problem with venetian
+> blind models -- it's not that Radiance can't handle the complex
+> geometry, quite the contrary.  It is simply that the slats themselves
+> cause a large variance in the penetrating radiation, to the point where
+> many ray samples are needed to resolve the agregate (i.e., integrated)
+> behavior.
+>
+> I hope I didn't misunderstand what you were saying.
+>
+> -Greg
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+
+
+From MdelaFuente at wmtao.com  Sat Oct 30 00:56:46 2004
+From: MdelaFuente at wmtao.com (Mark de la Fuente)
+Date: Sat Oct 30 00:57:30 2004
+Subject: [Radiance-general] Re: Solar
+	Footprint&In-Reply-To=s1826993.056@wmtao.com
+Message-ID: <s1828480.073@wmtao.com>
+
+Very cool picture.  What I was trying to point out is that my sun
+positions are not lining up the way I think they should.  Instead of
+being in a smooth curve, they are forming "S" shaped lines and that has
+me confused.  (But, I was able to create your analema by only looking at
+one hour 12 times a year. -  If you combined this with pfilt's star
+pattern, you might be able to make some interesting images.)
+ 
+Mark
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20041029/632b6cd7/attachment.html
+From gward at lmi.net  Sat Oct 30 00:57:03 2004
+From: gward at lmi.net (Greg Ward)
+Date: Sat Oct 30 00:58:17 2004
+Subject: [Radiance-general] Approximating the gross daylight flux
+	throughvenetian blinds.
+In-Reply-To: <ABEIIOCILNBBDDEPEPICCEGKCDAA.tiago@tkh.att.ne.jp>
+References: <ABEIIOCILNBBDDEPEPICCEGKCDAA.tiago@tkh.att.ne.jp>
+Message-ID: <D945F917-29FD-11D9-8FDF-000A95BB392A@lmi.net>
+
+Actually, the slat interreflection is significant, but modeling slats 
+in the BRDTfunc directly won't incorporate such behavior, since the 
+surface is flat and therefore doesn't see itself.  I have to model the 
+interreflections mathematically, and that's the tricky part.  That's 
+the part I think will take a day or two to work out, if I'm able to do 
+it at all.
+
+-Greg
+
+> From: "Santiago Torres" <tiago@tkh.att.ne.jp>
+> Date: October 29, 2004 2:31:02 PM PDT
+>
+> Yes, that`s what I meant. Now I understand the problem. I just thought 
+> it
+> would save some calculation of the interreflections between slats, but
+> surely that`s not significant.
+> Thank you for the clarification.
+>
+> Santiago
+
+
+From grobe at gmx.net  Sat Oct 30 01:26:33 2004
+From: grobe at gmx.net (Lars Grobe)
+Date: Sat Oct 30 01:26:35 2004
+Subject: [Radiance-general] Reflectance of Image Map Based Materials
+References: <BAY101-F12G7Z2JQHeF000189c9@hotmail.com>
+Message-ID: <21405.1099092393@www72.gmx.net>
+
+Hi,
+
+I use the maps only to vary the brightness of the materials. So I use an
+image, apply normpat to it (so the average pixel value is one) and use it as
+colorpict on a well defined material.
+
+So the question of defining accurate physical properties remains in the
+materials' definitions. I use "calibrated" pictures for these, too, but of
+course you could use any RELIABLE source of information for these. In fact,
+there are better ways to measure reflectance than calibrated photo scans...
+
+I have no idea about the reliability of the materials defined in
+lightscape's libraries. Also you need to find out the definition of
+Lightscape rgb (what does it mean as material properties?). That is a real
+Lightscape question, the definition of the values that must be supplied in
+radiance are well documented in "Rendering with Radiance" as well as in the
+included documentation.
+
+The other way to use image maps, I asked about some months ago on this list,
+was to use colored image maps with defined materials. It seams to be to hard
+too achieve valid results that way too me, so I didn't try any more. The
+third is too have calibrated image maps on a neutral material, so that the
+reflectance is ONLY defined by the picture values, but as I understood that
+is not the way you want to / can go.
+
+Good luck, CU, Lars.
+
+
+> Dear Group
+> 
+> There have been previous post about how to obtain accurate (or as accurate
+> as can be expected) material decriptions for image maps used within scene.
+> The general approach seems to be to scan the material, calibrate it using
+> a 
+> macbethcal.cal calibration file, normalize it with normpat and later apply
+> a 
+> material with desired reflectances. My question is what would be a valid 
+> approach for materials not scanned and calibrated? Many of the image maps 
+> that I use I obtain from various sources (i.ow. the internet) such that I 
+> can not get the exact reflectance of the material used for my image maps. 
+> This would generally apply to the floor materials that I use. What I have 
+> been doing has been a similar approach that I have used with Lightscape. 
+> What I do is take the image apply it to a material and set the RGB 
+> reflectance to a range similar to the recommended reflectance range that
+> is 
+> used in Lightscape. I question the validity of this approach.  I know that
+> I 
+> am in the minority in this group due to the fact that I wish to obtain a 
+> visually pleasing image while at the same providing accuracy when it
+> regards 
+> the lighting distribution throughout the building. Any help would be 
+> appreciated.
+> 
+> 
+> Regards,
+> 
+> Marcus
+> 
+> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+
+
+From cbauer- at t-online.de  Sat Oct 30 18:21:16 2004
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Sat Oct 30 17:11:57 2004
+Subject: [Radiance-general] Re:
+	Solar	Footprint&In-Reply-To=s1826993.056@wmtao.com
+References: <s1828480.073@wmtao.com>
+Message-ID: <4183BF7C.8000308@t-online.de>
+
+Mark de la Fuente wrote:
+> Very cool picture.  What I was trying to point out is that my sun 
+> positions are not lining up the way I think they should.  Instead of 
+
+The effect is a result of a) the earth orbit around the sun being an 
+ellipse and b) the inclination of the earth's rotation axis v.s the 
+orbit plane. The elliptic orbit results in a periodically varying speed 
+of the earth along it's path around the sun, which changes the length of 
+the solar day, i.e the time from one culmination to another. Overlayed 
+on this is b), the fact that the sun doesn't move along the projected 
+earth equator ('ecliptic') in the sky, but changes it's height during a 
+year.
+
+People in the stone age didn' t have this problem, they still could live 
+with that (roughly) +/- 15 min time difference (max. amplitude for mean 
+latitudes around 50?, compared to a mean solar time of exact 24 hours) 
+during a years period. They didn't have to bother about computers and 
+Radiance parameters also...
+
+-cb
+
+
+From cbauer- at t-online.de  Sun Oct 31 00:49:43 2004
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Sat Oct 30 23:40:22 2004
+Subject: [Radiance-general] Re: Solar
+	Footprint&In-Reply-To=s1826993.056@wmtao.com
+References: <s1828480.073@wmtao.com> <4183BF7C.8000308@t-online.de>
+Message-ID: <41841A87.9010806@t-online.de>
+
+a (last) correction o the analema topic:
+
+I've looked it up again (it's a long time since I've occupied myself 
+with this) - that time shift does evidently not depend on the latitude, 
+and with the height of the sun I didn't mean that the sun is higher in 
+summer than in winter :-), but that this angle also influences the 
+mentioned difference between mean and real solar time ..
+
+ok, has not much to do with lighting and ray tracing, but at least the 
+info here on the list should be correct ..
+
+-cb
+
+
+From grobe at gmx.net  Sun Oct 31 22:24:51 2004
+From: grobe at gmx.net (Lars Grobe)
+Date: Sun Oct 31 22:25:07 2004
+Subject: [Radiance-general] replmarks in 3.6
+Message-ID: <1604.1099257891@www30.gmx.net>
+
+Hi,
+
+has anyone tried the replmarks tool with newer releases (>3.5) of radiance?
+I have 3.6 and a head-release about four weeks old on OS X. I get 'bad
+instance "my_instance"' type errors I never saw before and now I am
+wondering if there have been changes in radiance or if it is my system that
+causes these errors?
+
+I use instances a lot, has anyone tried xform, replmarks and the other tools
+on scenes with lots of instances in current releases? Have there been any
+changes applied to the code in these areas?
+
+TIA+CU Lars.
+
+

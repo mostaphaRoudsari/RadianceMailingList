@@ -1,0 +1,4475 @@
+From maricanis at gmail.com  Thu Dec  3 03:28:03 2009
+From: maricanis at gmail.com (Marija Velickovic)
+Date: Thu Dec  3 03:28:29 2009
+Subject: [Radiance-general] Parallel processes within rtcontrib
+Message-ID: <124b40400912030328t7d4cfef7kf832909ba934710f@mail.gmail.com>
+
+Hi all,
+
+Does someone has an experience with parallel rtrace processes execution
+within rtcontrib program?
+This is set with -n option in rtcontrib, which in child rtrace processes
+uses -PP option.
+
+It works perfectly in Linux, but I couldn't make it work in Windows.
+
+For command like this:
+rtcontrib -n 2  -I+ -V- -h-  -b tbin -o outfile.txt -m sky  -f tregenza.cal
+@param.opt octree.oct < points.txt
+
+I've got errors:
+bin/rtrace: fatal - command line error at '-PP'
+rtcontrib: system - select call error in wait_rproc()
+bin/rtrace: fatal - command line error at '-PP'
+
+If started without -n option rtcontrib works without problems in both OS.
+
+Since in Windows I'm using Francesco's MinGW Radiance binaries, I suspected
+that my binaries aren't up to date.
+I downloaded current Radiance version from CVS and rebuild all programs with
+scons in Windows.
+After that error remains the same, and -PP option in rtrace is not
+recognized.
+
+Greg suggested that is could be a problem with file locking, but no idea how
+to solve this.
+Maybe some variables/flags should be set during compilation on Windows!?
+
+Any suggestions are welcome,
+Marija
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091203/8b3044a8/attachment.htm
+From bei.xiao at gmail.com  Fri Dec  4 18:31:34 2009
+From: bei.xiao at gmail.com (bei.xiao@gmail.com)
+Date: Fri Dec  4 18:31:43 2009
+Subject: [Radiance-general] spatial scale in .obj file
+Message-ID: <a38244780912041831w652c41e8s85077bb888396d62@mail.gmail.com>
+
+Hi,
+  Does anyone know how to recover the spatial scale in an .obj file?
+For example, I have an .obj file of a sphere, without any more
+information, can I recover its radius in cm?  Also, is the number in
+.obj or .rad file specified in cm? Attached please find the .obj file
+of the sphere.
+
+Thank you very much.
+
+Bei
+
+-- 
+Daily quote:
+
+"Real generosity toward the future lies in giving all to the present. "
+
+-Albert Camus
+
+Bei Xiao, PhD
+Postdoctoral Scientist
+The Smith-Kettlewell Eye Institute
+2318 Fillmore Street
+San Francisco, CA 94115
+(415) 3452149
+flickr:www.flickr.com/photos/slowtempo
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: test.obj
+Type: application/octet-stream
+Size: 50489 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20091204/999c7779/test-0001.obj
+From jacobs.axel at gmail.com  Sat Dec  5 06:45:48 2009
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Sat Dec  5 06:39:10 2009
+Subject: [Radiance-general] Parallel processes within rtcontrib
+In-Reply-To: <4b1818e1.4c44f10a.3eb1.fffffa02SMTPIN_ADDED@mx.google.com>
+References: <4b1818e1.4c44f10a.3eb1.fffffa02SMTPIN_ADDED@mx.google.com>
+Message-ID: <4B1A721C.3090204@gmail.com>
+
+Marija
+
+> It works perfectly in Linux, but I couldn't make it work in Windows.
+>
+> For command like this:
+> rtcontrib -n 2  -I+ -V- -h-  -b tbin -o outfile.txt -m sky  -f tregenza.cal
+> @param.opt octree.oct<  points.txt
+>
+> I've got errors:
+> bin/rtrace: fatal - command line error at '-PP'
+> rtcontrib: system - select call error in wait_rproc()
+> bin/rtrace: fatal - command line error at '-PP'
+
+> Greg suggested that is could be a problem with file locking, but no idea how
+> to solve this.
+> Maybe some variables/flags should be set during compilation on Windows!?
+
+I recently looked into various ways of running Radiance/LEARNIX on a 
+Windows machine. Francesco's web site was down (fixed now), so I had to 
+compile Cygwin Radiance myself. I did not try mingw, but believe it to 
+be somewhat similar to cygwin in performance.
+
+When running Mark's benchmark, I encountered the same problem that you 
+are describing with rpiece. Trying to figure out why this wouldn't work, 
+I played around with the bench4 makefile, and came to the same 
+conclusion that Greg suggested. The syncfile which coordinates the 
+different rtrace/rpict processes is opened multiple times, each process 
+reading from and writing to the same file.
+
+I believe it to be a 'feature' of the Windows OS that users are 
+protected from themselves at all cost, so I'd be surprised if there was 
+a mechanism that would allow you to disable this file-locking. Having 
+said that, I am no expert in such matters.
+
+If you have a multi-core machine and really need the extra speed, I 
+suggest you look into running Radiance on LINUX inside a virtual 
+machine. Sun's VirtualBox is very good and open source. It is comparable 
+in speed to cygwin Radiance, but will utilise all cores/processors. You 
+can double the speed again by running LINUX natively, to which there are 
+a number of different approaches.
+
+To get an idea about VirtualBox under Windows and the speed increase 
+that you can expect, please see 'Running LEARNIX' which is available 
+from the LEARNIX documentation page:
+
+http://luminance.londonmet.ac.uk/learnix/docs.shtml
+
+I know this doesn't really answer your question, but might provide an 
+acceptable work-around for your problem.
+
+Axel
+
+From gregoryjward at gmail.com  Sat Dec  5 09:06:14 2009
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Sat Dec  5 09:06:24 2009
+Subject: [Radiance-general] Re: spatial scale in .obj file
+In-Reply-To: <a38244780912041831w652c41e8s85077bb888396d62@mail.gmail.com>
+References: <a38244780912041831w652c41e8s85077bb888396d62@mail.gmail.com>
+Message-ID: <C6212EB4-79C3-4DDC-9589-2FBF17D63ABF@lmi.net>
+
+Hi Bei,
+
+The command:
+
+	% obj2rad test.obj | getbbox
+
+returns:
+      xmin      xmax      ymin      ymax      zmin      zmax
+  -1.58231   1.51769   18.3588   21.4588  0.949999      4.05
+
+ From this, you can deduce that the sphere has a radius of 3.1 and is  
+centered at the average of the above coordinates, or (-.0323, 19.9,  
+2.5).  You can also run objview on the output of obj2rad (after adding  
+a material) and look at it.
+
+In general, we discourage people from posting attachments to the  
+mailing list, but this one was pretty small so hopefully it won't  
+cause any trouble.
+
+Cheers,
+-Greg
+
+> From: bei.xiao@gmail.com
+> Date: December 4, 2009 6:31:34 PM PST
+>
+> Hi,
+>  Does anyone know how to recover the spatial scale in an .obj file?
+> For example, I have an .obj file of a sphere, without any more
+> information, can I recover its radius in cm?  Also, is the number in
+> .obj or .rad file specified in cm? Attached please find the .obj file
+> of the sphere.
+>
+> Thank you very much.
+>
+> Bei
+>
+> -- 
+> Daily quote:
+>
+> "Real generosity toward the future lies in giving all to the  
+> present. "
+>
+> -Albert Camus
+>
+> Bei Xiao, PhD
+> Postdoctoral Scientist
+> The Smith-Kettlewell Eye Institute
+> 2318 Fillmore Street
+> San Francisco, CA 94115
+> (415) 3452149
+> flickr:www.flickr.com/photos/slowtempo
+
+From bei.xiao at gmail.com  Sat Dec  5 12:42:01 2009
+From: bei.xiao at gmail.com (bei.xiao@gmail.com)
+Date: Sat Dec  5 12:42:04 2009
+Subject: [Radiance-general] Re: spatial scale in .obj file
+In-Reply-To: <C6212EB4-79C3-4DDC-9589-2FBF17D63ABF@lmi.net>
+References: <a38244780912041831w652c41e8s85077bb888396d62@mail.gmail.com>
+	<C6212EB4-79C3-4DDC-9589-2FBF17D63ABF@lmi.net>
+Message-ID: <a38244780912051242q5a56c2eesceb3ce0a9e0ac8c2@mail.gmail.com>
+
+thank you so much! Sorry about the attachment.
+
+Bei
+
+On Sat, Dec 5, 2009 at 9:06 AM, Greg Ward <gregoryjward@gmail.com> wrote:
+> Hi Bei,
+>
+> The command:
+>
+> ? ? ? ?% obj2rad test.obj | getbbox
+>
+> returns:
+> ? ? xmin ? ? ?xmax ? ? ?ymin ? ? ?ymax ? ? ?zmin ? ? ?zmax
+> ?-1.58231 ? 1.51769 ? 18.3588 ? 21.4588 ?0.949999 ? ? ?4.05
+>
+> From this, you can deduce that the sphere has a radius of 3.1 and is
+> centered at the average of the above coordinates, or (-.0323, 19.9, 2.5).
+> ?You can also run objview on the output of obj2rad (after adding a material)
+> and look at it.
+>
+> In general, we discourage people from posting attachments to the mailing
+> list, but this one was pretty small so hopefully it won't cause any trouble.
+>
+> Cheers,
+> -Greg
+>
+>> From: bei.xiao@gmail.com
+>> Date: December 4, 2009 6:31:34 PM PST
+>>
+>> Hi,
+>> ?Does anyone know how to recover the spatial scale in an .obj file?
+>> For example, I have an .obj file of a sphere, without any more
+>> information, can I recover its radius in cm? ?Also, is the number in
+>> .obj or .rad file specified in cm? Attached please find the .obj file
+>> of the sphere.
+>>
+>> Thank you very much.
+>>
+>> Bei
+>>
+>> --
+>> Daily quote:
+>>
+>> "Real generosity toward the future lies in giving all to the present. "
+>>
+>> -Albert Camus
+>>
+>> Bei Xiao, PhD
+>> Postdoctoral Scientist
+>> The Smith-Kettlewell Eye Institute
+>> 2318 Fillmore Street
+>> San Francisco, CA 94115
+>> (415) 3452149
+>> flickr:www.flickr.com/photos/slowtempo
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+
+
+-- 
+Daily quote:
+
+"Real generosity toward the future lies in giving all to the present. "
+
+-Albert Camus
+
+Bei Xiao, PhD
+Postdoctoral Scientist
+The Smith-Kettlewell Eye Institute
+2318 Fillmore Street
+San Francisco, CA 94115
+(415) 3452149
+flickr:www.flickr.com/photos/slowtempo
+
+From bei.xiao at gmail.com  Sat Dec  5 13:20:14 2009
+From: bei.xiao at gmail.com (bei.xiao@gmail.com)
+Date: Sat Dec  5 13:20:17 2009
+Subject: [Radiance-general] Re: spatial scale in .obj file
+In-Reply-To: <C6212EB4-79C3-4DDC-9589-2FBF17D63ABF@lmi.net>
+References: <a38244780912041831w652c41e8s85077bb888396d62@mail.gmail.com>
+	<C6212EB4-79C3-4DDC-9589-2FBF17D63ABF@lmi.net>
+Message-ID: <a38244780912051320q5fc78db9y49e853aab61920d@mail.gmail.com>
+
+Hi Greg,
+  Just to confirm, is the unit of xmin in cm?
+
+Thanks.
+
+Bei
+
+On Sat, Dec 5, 2009 at 9:06 AM, Greg Ward <gregoryjward@gmail.com> wrote:
+> Hi Bei,
+>
+> The command:
+>
+> ? ? ? ?% obj2rad test.obj | getbbox
+>
+> returns:
+> ? ? xmin ? ? ?xmax ? ? ?ymin ? ? ?ymax ? ? ?zmin ? ? ?zmax
+> ?-1.58231 ? 1.51769 ? 18.3588 ? 21.4588 ?0.949999 ? ? ?4.05
+>
+> From this, you can deduce that the sphere has a radius of 3.1 and is
+> centered at the average of the above coordinates, or (-.0323, 19.9, 2.5).
+> ?You can also run objview on the output of obj2rad (after adding a material)
+> and look at it.
+>
+> In general, we discourage people from posting attachments to the mailing
+> list, but this one was pretty small so hopefully it won't cause any trouble.
+>
+> Cheers,
+> -Greg
+>
+>> From: bei.xiao@gmail.com
+>> Date: December 4, 2009 6:31:34 PM PST
+>>
+>> Hi,
+>> ?Does anyone know how to recover the spatial scale in an .obj file?
+>> For example, I have an .obj file of a sphere, without any more
+>> information, can I recover its radius in cm? ?Also, is the number in
+>> .obj or .rad file specified in cm? Attached please find the .obj file
+>> of the sphere.
+>>
+>> Thank you very much.
+>>
+>> Bei
+>>
+>> --
+>> Daily quote:
+>>
+>> "Real generosity toward the future lies in giving all to the present. "
+>>
+>> -Albert Camus
+>>
+>> Bei Xiao, PhD
+>> Postdoctoral Scientist
+>> The Smith-Kettlewell Eye Institute
+>> 2318 Fillmore Street
+>> San Francisco, CA 94115
+>> (415) 3452149
+>> flickr:www.flickr.com/photos/slowtempo
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+
+
+-- 
+Daily quote:
+
+"Real generosity toward the future lies in giving all to the present. "
+
+-Albert Camus
+
+Bei Xiao, PhD
+Postdoctoral Scientist
+The Smith-Kettlewell Eye Institute
+2318 Fillmore Street
+San Francisco, CA 94115
+(415) 3452149
+flickr:www.flickr.com/photos/slowtempo
+
+From gregoryjward at gmail.com  Sat Dec  5 13:32:49 2009
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Sat Dec  5 13:32:51 2009
+Subject: [Radiance-general] Re: spatial scale in .obj file
+In-Reply-To: <a38244780912051320q5fc78db9y49e853aab61920d@mail.gmail.com>
+References: <a38244780912041831w652c41e8s85077bb888396d62@mail.gmail.com>
+	<C6212EB4-79C3-4DDC-9589-2FBF17D63ABF@lmi.net>
+	<a38244780912051320q5fc78db9y49e853aab61920d@mail.gmail.com>
+Message-ID: <43CA331D-027A-45D9-B61A-B0C83A5E478B@lmi.net>
+
+Hi Bei,
+
+Radiance doesn't have any notion of length units, so they are whatever  
+was specified when creating them, or whatever units you want them to be.
+
+-Greg
+
+> From: bei.xiao@gmail.com
+> Date: December 5, 2009 1:20:14 PM PST
+>
+> Hi Greg,
+>  Just to confirm, is the unit of xmin in cm?
+>
+> Thanks.
+>
+> Bei
+>
+> On Sat, Dec 5, 2009 at 9:06 AM, Greg Ward <gregoryjward@gmail.com>  
+> wrote:
+>> Hi Bei,
+>>
+>> The command:
+>>
+>>        % obj2rad test.obj | getbbox
+>>
+>> returns:
+>>     xmin      xmax      ymin      ymax      zmin      zmax
+>>  -1.58231   1.51769   18.3588   21.4588  0.949999      4.05
+>>
+>> From this, you can deduce that the sphere has a radius of 3.1 and is
+>> centered at the average of the above coordinates, or (-.0323, 19.9,  
+>> 2.5).
+>>  You can also run objview on the output of obj2rad (after adding a  
+>> material)
+>> and look at it.
+>>
+>> In general, we discourage people from posting attachments to the  
+>> mailing
+>> list, but this one was pretty small so hopefully it won't cause any  
+>> trouble.
+>>
+>> Cheers,
+>> -Greg
+>>
+
+From maricanis at gmail.com  Mon Dec  7 00:38:04 2009
+From: maricanis at gmail.com (Marija Velickovic)
+Date: Mon Dec  7 00:38:28 2009
+Subject: [Radiance-general] Parallel processes within rtcontrib
+In-Reply-To: <4B1A721C.3090204@gmail.com>
+References: <4b1818e1.4c44f10a.3eb1.fffffa02SMTPIN_ADDED@mx.google.com> 
+	<4B1A721C.3090204@gmail.com>
+Message-ID: <124b40400912070038o2eb61803y28f491bce077377a@mail.gmail.com>
+
+Hi Axel,
+
+It good to know that someone else had the same problem, even if we don't
+have the solution (at least, for now).
+I know that Radiance is much faster and easier to use in Linux, since I'm
+usually using it there.
+I had an idea to include in some Python scripts in Windows rtcontib
+calculation, and was exploring options with parallel prosesses. Even without
+them, rtcontrib works fast and good enough in Windows.
+
+Thanks again,
+Marija
+
+
+
+On Sat, Dec 5, 2009 at 3:45 PM, Axel Jacobs <jacobs.axel@gmail.com> wrote:
+
+>
+> I recently looked into various ways of running Radiance/LEARNIX on a
+> Windows machine. Francesco's web site was down (fixed now), so I had to
+> compile Cygwin Radiance myself. I did not try mingw, but believe it to be
+> somewhat similar to cygwin in performance.
+>
+> When running Mark's benchmark, I encountered the same problem that you are
+> describing with rpiece. Trying to figure out why this wouldn't work, I
+> played around with the bench4 makefile, and came to the same conclusion that
+> Greg suggested. The syncfile which coordinates the different rtrace/rpict
+> processes is opened multiple times, each process reading from and writing to
+> the same file.
+>
+> I believe it to be a 'feature' of the Windows OS that users are protected
+> from themselves at all cost, so I'd be surprised if there was a mechanism
+> that would allow you to disable this file-locking. Having said that, I am no
+> expert in such matters.
+>
+> If you have a multi-core machine and really need the extra speed, I suggest
+> you look into running Radiance on LINUX inside a virtual machine. Sun's
+> VirtualBox is very good and open source. It is comparable in speed to cygwin
+> Radiance, but will utilise all cores/processors. You can double the speed
+> again by running LINUX natively, to which there are a number of different
+> approaches.
+>
+> To get an idea about VirtualBox under Windows and the speed increase that
+> you can expect, please see 'Running LEARNIX' which is available from the
+> LEARNIX documentation page:
+>
+> http://luminance.londonmet.ac.uk/learnix/docs.shtml
+>
+> I know this doesn't really answer your question, but might provide an
+> acceptable work-around for your problem.
+>
+> Axel
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091207/2155e1fb/attachment.htm
+From cbm at imi.aau.dk  Mon Dec  7 04:41:20 2009
+From: cbm at imi.aau.dk (Claus B. Madsen)
+Date: Mon Dec  7 04:41:20 2009
+Subject: [Radiance-general] Mapping from hemisphere projection to
+	latitude-longitude format
+Message-ID: <4B1CF7F0.9060308@imi.aau.dk>
+
+
+
+
+Dear list members,
+
+I use HDRShop to convert between mappings for environment maps, e.g., 
+from mirror ball to lat-long, etc.
+
+I now have two other mappings that I wish to convert to lat-long (though 
+I realize that both mappings will only give me half a sphere, e.g., top 
+half of lat-long map).
+
+1) An image taken with a Sigma 8mm 180 degree field-of-view fish eye 
+lens to take a high-res image of the sky (same hemispherical mapping as 
+RADIANCE renders into when using the -vth option for rview/rpict)
+
+2) An image of a diffuse hemi-sphere (diameter of 0.3 meters, turned out 
+on a lathe) spray painted with a diffuse grey
+
+
+I am convinced that both mappings are identical (i.e. identical to the 
+hemi-spherical projection model in RADIANCE). So far I have used the 
+'mirrorball closeup' format in HDRShop but found this to be the wrong 
+mapping yielding incorrect lat-long mappings. I have now understood the 
+entire geometrical issue and just need a piece of software to warp 
+hemisphere images to lat-longs ... perhaps a plugin for HDRShop?
+
+A couple of years ago I raised this issue with the people who wrote 
+HDRShop but they claimed the Sigma lens should be treated as mirror ball 
+closeup when re-mapping in HDRShop. I am now convinced this is not true 
+after having tested it  extensively.
+
+Sincerely,
+Claus
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: cbm.vcf
+Type: text/x-vcard
+Size: 354 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20091207/95f0f225/cbm.vcf
+From tbleicher at googlemail.com  Mon Dec  7 06:32:25 2009
+From: tbleicher at googlemail.com (Thomas Bleicher)
+Date: Mon Dec  7 06:32:31 2009
+Subject: [Radiance-general] Mapping from hemisphere projection to 
+	latitude-longitude format
+In-Reply-To: <4B1CF7F0.9060308@imi.aau.dk>
+References: <4B1CF7F0.9060308@imi.aau.dk>
+Message-ID: <89355c0f0912070632m551b01b6qced8e28b3ec2640c@mail.gmail.com>
+
+Claus.
+
+I used ImageMagick to convert from fisheye to rectangular projections.
+I wasn't much concerned with the accuracy so I can't tell if it's
+appropriate for you. You can find more here:
+
+http://www.fmwconcepts.com/imagemagick/index.php
+
+http://www.fmwconcepts.com/imagemagick/polar/index.php
+
+I also remember that I used one of the Radiance binaries to convert
+from one projection to another. I can't remember which tool it was and
+which conversions are possible. If you use a non-Radiance source image
+you have to convert it to Radiance hdr format and add the view
+specification to allow the conversion.
+
+Regards,
+Thomas
+
+On Mon, Dec 7, 2009 at 12:41 PM, Claus B. Madsen <cbm@imi.aau.dk> wrote:
+>
+>
+>
+> Dear list members,
+>
+> I use HDRShop to convert between mappings for environment maps, e.g., from
+> mirror ball to lat-long, etc.
+>
+> I now have two other mappings that I wish to convert to lat-long (though I
+> realize that both mappings will only give me half a sphere, e.g., top half
+> of lat-long map).
+>
+> 1) An image taken with a Sigma 8mm 180 degree field-of-view fish eye lens to
+> take a high-res image of the sky (same hemispherical mapping as RADIANCE
+> renders into when using the -vth option for rview/rpict)
+>
+> 2) An image of a diffuse hemi-sphere (diameter of 0.3 meters, turned out on
+> a lathe) spray painted with a diffuse grey
+>
+>
+> I am convinced that both mappings are identical (i.e. identical to the
+> hemi-spherical projection model in RADIANCE). So far I have used the
+> 'mirrorball closeup' format in HDRShop but found this to be the wrong
+> mapping yielding incorrect lat-long mappings. I have now understood the
+> entire geometrical issue and just need a piece of software to warp
+> hemisphere images to lat-longs ... perhaps a plugin for HDRShop?
+>
+> A couple of years ago I raised this issue with the people who wrote HDRShop
+> but they claimed the Sigma lens should be treated as mirror ball closeup
+> when re-mapping in HDRShop. I am now convinced this is not true after having
+> tested it ?extensively.
+>
+> Sincerely,
+> Claus
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+From gregoryjward at gmail.com  Mon Dec  7 09:10:20 2009
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon Dec  7 09:10:23 2009
+Subject: [Radiance-general] Re: Mapping from hemisphere projection to
+	latitude-longitude format
+In-Reply-To: <89355c0f0912070632m551b01b6qced8e28b3ec2640c@mail.gmail.com>
+References: <4B1CF7F0.9060308@imi.aau.dk>
+	<89355c0f0912070632m551b01b6qced8e28b3ec2640c@mail.gmail.com>
+Message-ID: <C5BAD207-6B60-4D76-AB68-FAE1BB4C42AE@lmi.net>
+
+This discussion really belongs on the HDRI mailing list, where you  
+might find some additional help.
+
+Cheers,
+-GReg
+
+--------------
+> From: Thomas Bleicher <tbleicher@googlemail.com>
+> Date: December 7, 2009 6:32:25 AM PST
+>
+> Claus.
+>
+> I used ImageMagick to convert from fisheye to rectangular projections.
+> I wasn't much concerned with the accuracy so I can't tell if it's
+> appropriate for you. You can find more here:
+>
+> http://www.fmwconcepts.com/imagemagick/index.php
+>
+> http://www.fmwconcepts.com/imagemagick/polar/index.php
+>
+> I also remember that I used one of the Radiance binaries to convert
+> from one projection to another. I can't remember which tool it was and
+> which conversions are possible. If you use a non-Radiance source image
+> you have to convert it to Radiance hdr format and add the view
+> specification to allow the conversion.
+>
+> Regards,
+> Thomas
+>
+> On Mon, Dec 7, 2009 at 12:41 PM, Claus B. Madsen <cbm@imi.aau.dk>  
+> wrote:
+>>
+>>
+>> Dear list members,
+>>
+>> I use HDRShop to convert between mappings for environment maps,  
+>> e.g., from
+>> mirror ball to lat-long, etc.
+>>
+>> I now have two other mappings that I wish to convert to lat-long  
+>> (though I
+>> realize that both mappings will only give me half a sphere, e.g.,  
+>> top half
+>> of lat-long map).
+>>
+>> 1) An image taken with a Sigma 8mm 180 degree field-of-view fish  
+>> eye lens to
+>> take a high-res image of the sky (same hemispherical mapping as  
+>> RADIANCE
+>> renders into when using the -vth option for rview/rpict)
+>>
+>> 2) An image of a diffuse hemi-sphere (diameter of 0.3 meters,  
+>> turned out on
+>> a lathe) spray painted with a diffuse grey
+>>
+>>
+>> I am convinced that both mappings are identical (i.e. identical to  
+>> the
+>> hemi-spherical projection model in RADIANCE). So far I have used the
+>> 'mirrorball closeup' format in HDRShop but found this to be the wrong
+>> mapping yielding incorrect lat-long mappings. I have now understood  
+>> the
+>> entire geometrical issue and just need a piece of software to warp
+>> hemisphere images to lat-longs ... perhaps a plugin for HDRShop?
+>>
+>> A couple of years ago I raised this issue with the people who wrote  
+>> HDRShop
+>> but they claimed the Sigma lens should be treated as mirror ball  
+>> closeup
+>> when re-mapping in HDRShop. I am now convinced this is not true  
+>> after having
+>> tested it  extensively.
+>>
+>> Sincerely,
+>> Claus
+
+From victorpermanent at gmail.com  Wed Dec  9 23:33:46 2009
+From: victorpermanent at gmail.com (Victor Li)
+Date: Wed Dec  9 23:33:55 2009
+Subject: [Radiance-general] material trans and glass?
+Message-ID: <be3956780912092333g2673f8b9ofef2081a8d749c67@mail.gmail.com>
+
+Dear everyone:
+
+in material definition, trans is a special type of glass. i used trans to
+define a glass like the following:
+
+void trans window
+
+7     0.325 0.325 0.325 0 0 1 0.3
+
+in glass definition we can do like the following
+
+void glass window
+
+3     0.325 0.325 0.325
+
+i used the different definition to simulae daylight illuminance and i found
+the result is different. Would you tell me what the two difference is?
+
+Best Regards!
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091210/9e5c0853/attachment.html
+From victorpermanent at gmail.com  Thu Dec 10 01:04:11 2009
+From: victorpermanent at gmail.com (Victor Li)
+Date: Thu Dec 10 01:04:14 2009
+Subject: [Radiance-general] Daylight factor
+Message-ID: <be3956780912100104w3ff65086w62a4deac27a9b210@mail.gmail.com>
+
+Dear:
+
+Daylight factors are expressed as the percentage of natural light falling on
+a work surface compared to that which would have fallen on a completely
+unobstructed horizontal surface under exactly the same sky conditions. Thus,
+a daylight factor of 5% on an internal surface means that it received only
+1/20th of the maximum available natural light.
+
+so we can calculate daylight factor by RADIANCE with a overcast sky. Then i
+calculated the illuminance under overcast sky. I found the distribution of
+illuminance and skyfactor in the room is different. For example, in the room
+ratio of minimum to average of daylight and illuminance are quite different.
+Would you tell me the reason?
+
+Best Regards!
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091210/dc8ec60d/attachment.htm
+From maricanis at gmail.com  Thu Dec 10 01:35:10 2009
+From: maricanis at gmail.com (Marija Velickovic)
+Date: Thu Dec 10 01:35:35 2009
+Subject: [Radiance-general] Daylight factor
+In-Reply-To: <be3956780912100104w3ff65086w62a4deac27a9b210@mail.gmail.com>
+References: <be3956780912100104w3ff65086w62a4deac27a9b210@mail.gmail.com>
+Message-ID: <124b40400912100135x31f9f39aw1b2a19d6ae4e7f91@mail.gmail.com>
+
+Hi Victor,
+
+For daylight factor calculation in Radiance you can use *dayfact* script
+included in Radiance distribution.
+It has interactive input ,so you can input all data you need, and it will
+calculate Df and various related images.
+
+If you want to calculate in only in few points, you can do it simple,
+calculate illuminance in points inside the building for overcast sky (with
+rtrace program), and just divide this values with overcast sky horizontal
+illuminance value.
+For example overcast sky for Paris for diffuse horizontal illuminance
+10000lux
+gensky 6 22 +11 -c -a 48.817 -o -2.483 -m -15 -B 55.866
+
+-B is irradiance an is calculated as 10000/179=55.866
+
+And rtrace command would be like:
+rtrace -I+ -h- -oov -ab 5 -ad 1024 -as 256 -aa 0.15 -ar 1000 octree.oct|
+rcalc -e '$1=$1; $2=$2; $3=$3;
+$4=(0.265*$4+0.670*$5+0.065*$6)*179'<points.txt >output.txt
+
+
+Note that you should put appropriate calculation parameters in rtrace to
+have accurate results.
+rcalc command above converts rtrace output from RGB to 1 illuminance value.
+
+So when you got illuminances inside the building just divide them with
+10000, to get DF values, or directly in rcalc divide with 10000 to get Df
+values on output:
+$4=(0.265*$4+0.670*$5+0.065*$6)*179/10000
+
+Hope this helps,
+Marija
+
+On Thu, Dec 10, 2009 at 10:04 AM, Victor Li <victorpermanent@gmail.com>wrote:
+
+> Dear:
+>
+> Daylight factors are expressed as the percentage of natural light falling
+> on a work surface compared to that which would have fallen on a completely
+> unobstructed horizontal surface under exactly the same sky conditions. Thus,
+> a daylight factor of 5% on an internal surface means that it received only
+> 1/20th of the maximum available natural light.
+>
+> so we can calculate daylight factor by RADIANCE with a overcast sky. Then i
+> calculated the illuminance under overcast sky. I found the distribution of
+> illuminance and skyfactor in the room is different. For example, in the room
+> ratio of minimum to average of daylight and illuminance are quite different.
+> Would you tell me the reason?
+>
+> Best Regards!
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091210/f8492768/attachment.html
+From jedev at visarc.com  Thu Dec 10 06:12:42 2009
+From: jedev at visarc.com (Jack de Valpine)
+Date: Thu Dec 10 06:12:52 2009
+Subject: [Radiance-general] material trans and glass?
+In-Reply-To: <be3956780912092333g2673f8b9ofef2081a8d749c67@mail.gmail.com>
+References: <be3956780912092333g2673f8b9ofef2081a8d749c67@mail.gmail.com>
+Message-ID: <4B2101DA.8060209@visarc.com>
+
+Hi Victor,
+
+The setting for trans are confusing to say the least (might be worth 
+searching the archives for threads on the topic). The mapping between 
+trans and something like glass is not 1:1. Note also that the Radiance 
+glass material uses "transmissivity" not transmittance, this term can be 
+calculated from transmittance. How did you figure out the parameters 
+that you have for your trans material?
+
+-Jack
+
+-- 
+# Jack de Valpine
+# president
+#
+# visarc incorporated
+# http://www.visarc.com
+#
+# channeling technology for superior design and construction
+
+
+
+Victor Li wrote:
+> Dear everyone:
+>
+> in material definition, trans is a special type of glass. i used trans 
+> to define a glass like the following:
+>
+> void trans window
+>
+> 7     0.325 0.325 0.325 0 0 1 0.3
+>
+> in glass definition we can do like the following
+>
+> void glass window
+>
+> 3     0.325 0.325 0.325
+>
+> i used the different definition to simulae daylight illuminance and i 
+> found the result is different. Would you tell me what the two 
+> difference is?
+>
+> Best Regards!
+>
+>
+> ------------------------------------------------------------------------
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>   
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091210/ad4915dd/attachment.htm
+From Christopher.Rush at arup.com  Thu Dec 10 06:33:26 2009
+From: Christopher.Rush at arup.com (Christopher Rush)
+Date: Thu Dec 10 06:34:08 2009
+Subject: [Radiance-general] Daylight factor
+In-Reply-To: <be3956780912100104w3ff65086w62a4deac27a9b210@mail.gmail.com>
+References: <be3956780912100104w3ff65086w62a4deac27a9b210@mail.gmail.com>
+Message-ID: <EB124710ADB8554C930FADF760BB2BE706914999@n-yexc01.global.arup.com>
+
+It would help to know your command process for calculating illuminance
+and daylight factor to troubleshoot.
+
+ 
+
+Also, if your rpict/rtrace ambient sampling settings are not stringent
+enough, differences could be due to random sampling variation between
+two different calculation runs.
+
+ 
+
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of
+Victor Li
+Sent: Thursday, December 10, 2009 4:04 AM
+To: Radiance general discussion
+Subject: [Radiance-general] Daylight factor
+
+ 
+
+Dear:
+
+Daylight factors are expressed as the percentage of natural light
+falling on a work surface compared to that which would have fallen on a
+completely unobstructed horizontal surface under exactly the same sky
+conditions. Thus, a daylight factor of 5% on an internal surface means
+that it received only 1/20th of the maximum available natural light.
+
+so we can calculate daylight factor by RADIANCE with a overcast sky.
+Then i calculated the illuminance under overcast sky. I found the
+distribution of illuminance and skyfactor in the room is different. For
+example, in the room ratio of minimum to average of daylight and
+illuminance are quite different. Would you tell me the reason?
+
+Best Regards!
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091210/ea89be8c/attachment-0001.html
+From grobe at gmx.net  Thu Dec 10 10:23:31 2009
+From: grobe at gmx.net (Lars Grobe)
+Date: Thu Dec 10 10:23:39 2009
+Subject: [Radiance-general] material trans and glass?
+In-Reply-To: <4B2101DA.8060209@visarc.com>
+References: <be3956780912092333g2673f8b9ofef2081a8d749c67@mail.gmail.com>
+	<4B2101DA.8060209@visarc.com>
+Message-ID: <20091210182331.159660@gmx.net>
+
+Hi!
+
+>> in material definition, trans is a special type of glass. i used
+>> trans to define a glass like the following:
+
+Hm, I never heard anyone calling trans a special case of glass.
+
+glass: special case of dielectric, for thin objects (a 1d-approach)
+plastic: special case of trans with no transmission
+
+The definition of a trans material usually requires some calculation, as the range of the parameters is usually not all that intuitive. I would also not expect exactly the same results, as both materials are optimized for different applications. The transmissive specularity of 0.3 you use in your trans material also certainly does not match the perfectly clear glass material.
+
+Especially I do not understand why using trans to be able to get daylight illuminance. It is not really made for this. Is there a special reason that you cannot use the glass modifier?
+
+Cheers,
+
+Lars.
+
+>> void trans window
+>>
+>> 7     0.325 0.325 0.325 0 0 1 0.3
+>>
+>> void glass window
+>>
+>> 3     0.325 0.325 0.325
+
+From Robert.Guglielmetti at nrel.gov  Thu Dec 10 12:38:51 2009
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Thu Dec 10 12:38:53 2009
+Subject: [Radiance-general] material trans and glass?
+In-Reply-To: <20091210182331.159660@gmx.net>
+Message-ID: <C746AA6B.17AB%robert.guglielmetti@nrel.gov>
+
+Page 325 of Rendering with Radiance has almost everything you could want to
+know about how the parameters work together. The last piece of info you need
+is the flowchart here:
+
+
+From Robert.Guglielmetti at nrel.gov  Thu Dec 10 12:40:55 2009
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Thu Dec 10 12:40:57 2009
+Subject: [Radiance-general] material trans and glass?
+In-Reply-To: <20091210182331.159660@gmx.net>
+Message-ID: <C746AAE7.17AD%robert.guglielmetti@nrel.gov>
+
+....er, here:
+
+http://www.schorsch.com/rayfront/manual/transdef.html
+
+So, that's:
+
+Page 325 of Rendering with Radiance has almost everything you could want to
+know about how the parameters work together. The last piece of info you need
+is the flowchart here:
+http://www.schorsch.com/rayfront/manual/transdef.html
+
+Sorry about that first email sans link.
+-- 
+Robert Guglielmetti  IES, LEED AP
+Building Energy Efficiency Engineer
+National Renewable Energy Laboratory (NREL)
+1617 Cole Blvd, MS-5202
+Golden, CO 80401
+robert.guglielmetti@nrel.gov
+303.275.4319
+
+
+From andrew.mcneil at arup.com  Thu Dec 10 12:42:43 2009
+From: andrew.mcneil at arup.com (Andrew McNeil)
+Date: Thu Dec 10 12:42:59 2009
+Subject: [Radiance-general] Mkillum bsdf + sample density
+Message-ID: <C7469D43.E0A3%andrew.mcneil@arup.com>
+
+Hi Everyone / Greg,
+
+Is there a way to specify both the sample density and a bsdf for mkillum?
+For example in the file I feed to mkillum I have:
+#@mkillum d=128 d=bsdf.xml
+
+The second ?d? seemingly reverts the sample density the default (32).  If I
+do it the other way I think it omits the bsdf data.  Am I missing a trick?
+
+Best,
+Andy
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091210/4edfda5a/attachment.htm
+From Robert.Guglielmetti at nrel.gov  Thu Dec 10 12:44:39 2009
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Thu Dec 10 12:44:41 2009
+Subject: [Radiance-general] material trans and glass?
+In-Reply-To: <20091210182331.159660@gmx.net>
+Message-ID: <C746ABC7.17B2%robert.guglielmetti@nrel.gov>
+
+On 12/10/09 11:23 AM, "Lars Grobe" <grobe@gmx.net> wrote:
+
+> Especially I do not understand why using trans to be able to get daylight
+> illuminance. It is not really made for this. Is there a special reason that
+> you cannot use the glass modifier?
+
+What do you mean by this, Lars? Trans is merely a material that can model
+diffuse transmittance, glass cannot. Both materials are used for daylight
+apertures. Maybe I don't understand your statement (always a possibility).
+-- 
+Robert Guglielmetti  IES, LEED AP
+Building Energy Efficiency Engineer
+National Renewable Energy Laboratory (NREL)
+1617 Cole Blvd, MS-5202
+Golden, CO 80401
+robert.guglielmetti@nrel.gov
+303.275.4319
+
+
+From gregoryjward at gmail.com  Thu Dec 10 14:55:41 2009
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu Dec 10 14:55:30 2009
+Subject: [Radiance-general] Mkillum bsdf + sample density
+In-Reply-To: <C7469D43.E0A3%andrew.mcneil@arup.com>
+References: <C7469D43.E0A3%andrew.mcneil@arup.com>
+Message-ID: <93DE99F1-4439-4533-959F-1EAE3D64BD89@lmi.net>
+
+Hi Andy,
+
+The mkillum sample density is set by the resolution of the BSDF, since  
+there's not much point in using more (or fewer) samples than the  
+transmission data allows.
+
+-Greg
+
+> From: Andrew McNeil <andrew.mcneil@arup.com>
+> Date: December 10, 2009 12:42:43 PM PST
+>
+> Hi Everyone / Greg,
+>
+> Is there a way to specify both the sample density and a bsdf for  
+> mkillum?
+> For example in the file I feed to mkillum I have:
+> #@mkillum d=128 d=bsdf.xml
+>
+> The second ?d? seemingly reverts the sample density the default  
+> (32).  If I do it the other way I think it omits the bsdf data.  Am  
+> I missing a trick?
+>
+> Best,
+> Andy
+
+From andrew.mcneil at arup.com  Thu Dec 10 16:17:04 2009
+From: andrew.mcneil at arup.com (Andrew McNeil)
+Date: Thu Dec 10 16:24:00 2009
+Subject: [Radiance-general] Mkillum bsdf + sample density
+In-Reply-To: <93DE99F1-4439-4533-959F-1EAE3D64BD89@lmi.net>
+Message-ID: <C746CF80.E0B7%andrew.mcneil@arup.com>
+
+Hi Greg,
+
+Thanks for your response, that d= option behavior makes sense now, but leads
+to a question about the number of output directions in illum.dat...
+
+My BSDF has 18 "latitudes"  and 24 "azimuths"  (432 divisions)
+The resulting illum.dat is 13x39 = 507 angles
+
+After considering your response, I guess the difference between 432 and 507
+is a result of a BSDF pattern that doesn't match the typical radiance
+hemisphere division scheme used by mkillum?
+
+I'm guessing that mkillum gets from 432 to 507 by:
+sqrt(432/pi) = 12
+12*pi = 38
+12+1 x 38+1  =  13 x 39  = 507
+Am I close?  I don't have an explanation for adding one to each dimension.
+
+Finally, the sampling pattern of my BSDF (18x24) and the hemisphere division
+used by mkillum (13x39) results in double-sampling of some BSDF angles and
+non-sampling of others.  In conclusion I would be best served by using the
+typical radiance hemisphere division ( m x pi*m ) to generate a BSDF that
+"agrees" with mkillum.  (or should I stop speculating...)
+
+Andy
+ 
+
+
+
+On 12/10/09 2:55 PM, "Greg Ward" <gregoryjward@gmail.com> wrote:
+
+> Hi Andy,
+> 
+> The mkillum sample density is set by the resolution of the BSDF, since
+> there's not much point in using more (or fewer) samples than the
+> transmission data allows.
+> 
+> -Greg
+> 
+>> From: Andrew McNeil <andrew.mcneil@arup.com>
+>> Date: December 10, 2009 12:42:43 PM PST
+>> 
+>> Hi Everyone / Greg,
+>> 
+>> Is there a way to specify both the sample density and a bsdf for
+>> mkillum?
+>> For example in the file I feed to mkillum I have:
+>> #@mkillum d=128 d=bsdf.xml
+>> 
+>> The second ?d? seemingly reverts the sample density the default
+>> (32).  If I do it the other way I think it omits the bsdf data.  Am
+>> I missing a trick?
+>> 
+>> Best,
+>> Andy
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+
+
+From victorpermanent at gmail.com  Thu Dec 10 17:34:20 2009
+From: victorpermanent at gmail.com (Victor Li)
+Date: Thu Dec 10 17:34:24 2009
+Subject: [Radiance-general] Daylight factor
+In-Reply-To: <EB124710ADB8554C930FADF760BB2BE706914999@n-yexc01.global.arup.com>
+References: <be3956780912100104w3ff65086w62a4deac27a9b210@mail.gmail.com>
+	<EB124710ADB8554C930FADF760BB2BE706914999@n-yexc01.global.arup.com>
+Message-ID: <be3956780912101734m3ebe9dacre2d6d1f81aee88d1@mail.gmail.com>
+
+The rtrace setting is "rtrace -I -h -dp 2048 -ar 32 -ms 0.063 -ds .2 -dt .05
+-dc .75 -dr 3 -sj 1 -st .01 -ab 8 -aa .1 -ad 512 -as 256 -av 0.01 0.01 0.01
+-lr 12 -lw .0005  -af 11.amb 11.oct < 11.pts > 11.dat"  And the two
+calculations of daylight factor and illuminance are all the same settings.
+What do you think?
+
+2009/12/10 Christopher Rush <Christopher.Rush@arup.com>
+
+>  It would help to know your command process for calculating illuminance
+> and daylight factor to troubleshoot.
+>
+>
+>
+> Also, if your rpict/rtrace ambient sampling settings are not stringent
+> enough, differences could be due to random sampling variation between two
+> different calculation runs.
+>
+>
+>
+> *From:* radiance-general-bounces@radiance-online.org [mailto:
+> radiance-general-bounces@radiance-online.org] *On Behalf Of *Victor Li
+> *Sent:* Thursday, December 10, 2009 4:04 AM
+> *To:* Radiance general discussion
+> *Subject:* [Radiance-general] Daylight factor
+>
+>
+>
+> Dear:
+>
+> Daylight factors are expressed as the percentage of natural light falling
+> on a work surface compared to that which would have fallen on a completely
+> unobstructed horizontal surface under exactly the same sky conditions. Thus,
+> a daylight factor of 5% on an internal surface means that it received only
+> 1/20th of the maximum available natural light.
+>
+> so we can calculate daylight factor by RADIANCE with a overcast sky. Then i
+> calculated the illuminance under overcast sky. I found the distribution of
+> illuminance and skyfactor in the room is different. For example, in the room
+> ratio of minimum to average of daylight and illuminance are quite different.
+> Would you tell me the reason?
+>
+> Best Regards!
+>
+> ____________________________________________________________
+> Electronic mail messages entering and leaving Arup  business
+> systems are scanned for acceptability of content and viruses
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091211/7409aab0/attachment-0001.html
+From victorpermanent at gmail.com  Thu Dec 10 19:22:33 2009
+From: victorpermanent at gmail.com (Victor Li)
+Date: Thu Dec 10 19:22:38 2009
+Subject: [Radiance-general] material trans and glass?
+In-Reply-To: <C746ABC7.17B2%robert.guglielmetti@nrel.gov>
+References: <20091210182331.159660@gmx.net>
+	<C746ABC7.17B2%robert.guglielmetti@nrel.gov>
+Message-ID: <be3956780912101922w3597a980gebb68a90c07772fa@mail.gmail.com>
+
+Sorry i made a mistake. I just want to compare the glass 3     0.325 0.325
+0.325  and trans 7     0.325 0.325 0.325 0 0 1 1 (not 0.3).
+
+In trans, the transmissive specularity is 1 which means the total daylight
+transmitted through the material will be specularly transmitted, like glass.
+So i defined the transmissive specularity is 1.
+
+Actually i had a look the webpage and i define the trans followed the
+instruction in the page.
+
+Note also that the Radiance glass material uses "transmissivity" not
+transmittance,
+so does trans use "transmittance" in the first three paremeters? What is the
+difference between transmittance and transmissivity?
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091211/bf065d5e/attachment.htm
+From gregoryjward at gmail.com  Thu Dec 10 20:30:12 2009
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu Dec 10 20:29:57 2009
+Subject: [Radiance-general] Mkillum bsdf + sample density
+In-Reply-To: <C746CF80.E0B7%andrew.mcneil@arup.com>
+References: <C746CF80.E0B7%andrew.mcneil@arup.com>
+Message-ID: <01240018-3522-480A-9E9D-EF02354899D2@lmi.net>
+
+Hi Andy,
+
+That's some good guessing!  Yes, the difference is due to the very  
+different sampling strata.  I had to check my code (line 444 of src/ 
+gen/mkillum2.c) to verify.  I don't add 1, but round-off to the  
+nearest integer, rather than the lesser one.
+
+With regards to the mismatch of samples, this does cause some issues,  
+particularly near the zenith, where the altitude/azimuth strata used  
+by mkillum are a very poor match to the Klems/Tregenza strata used for  
+the BSDF.  Mkillum does a reasonable job with normalization and sample  
+distribution to make sure some rays go through each little window (and  
+the s= setting can still affect this).  So long as the light and  
+distribution are not simultaneously "peaky," it all works out.
+
+Cheers,
+-Greg
+
+> From: Andrew McNeil <andrew.mcneil@arup.com>
+> Date: December 10, 2009 4:17:04 PM PST
+>
+> Hi Greg,
+>
+> Thanks for your response, that d= option behavior makes sense now,  
+> but leads
+> to a question about the number of output directions in illum.dat...
+>
+> My BSDF has 18 "latitudes"  and 24 "azimuths"  (432 divisions)
+> The resulting illum.dat is 13x39 = 507 angles
+>
+> After considering your response, I guess the difference between 432  
+> and 507
+> is a result of a BSDF pattern that doesn't match the typical radiance
+> hemisphere division scheme used by mkillum?
+>
+> I'm guessing that mkillum gets from 432 to 507 by:
+> sqrt(432/pi) = 12
+> 12*pi = 38
+> 12+1 x 38+1  =  13 x 39  = 507
+> Am I close?  I don't have an explanation for adding one to each  
+> dimension.
+>
+> Finally, the sampling pattern of my BSDF (18x24) and the hemisphere  
+> division
+> used by mkillum (13x39) results in double-sampling of some BSDF  
+> angles and
+> non-sampling of others.  In conclusion I would be best served by  
+> using the
+> typical radiance hemisphere division ( m x pi*m ) to generate a BSDF  
+> that
+> "agrees" with mkillum.  (or should I stop speculating...)
+>
+> Andy
+
+From Christopher.Rush at arup.com  Fri Dec 11 07:18:42 2009
+From: Christopher.Rush at arup.com (Christopher Rush)
+Date: Fri Dec 11 07:19:18 2009
+Subject: [Radiance-general] Daylight factor
+In-Reply-To: <be3956780912101734m3ebe9dacre2d6d1f81aee88d1@mail.gmail.com>
+References: <be3956780912100104w3ff65086w62a4deac27a9b210@mail.gmail.com><EB124710ADB8554C930FADF760BB2BE706914999@n-yexc01.global.arup.com>
+	<be3956780912101734m3ebe9dacre2d6d1f81aee88d1@mail.gmail.com>
+Message-ID: <EB124710ADB8554C930FADF760BB2BE7069150E5@n-yexc01.global.arup.com>
+
+What are the dimensions and resolution of your grid in 11.pts compared
+to the full boundary of your scene (including ground plane and anything
+else) in 11.oct? Maybe -ar is not high enough.
+
+ 
+
+What is your sky definition going into 11.oct?
+
+ 
+
+Do you have an rcalc command to convert the output in 11.dat?
+
+ 
+
+ 
+
+ 
+
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of
+Victor Li
+Sent: Thursday, December 10, 2009 8:34 PM
+To: Radiance general discussion
+Subject: Re: [Radiance-general] Daylight factor
+
+ 
+
+The rtrace setting is "rtrace -I -h -dp 2048 -ar 32 -ms 0.063 -ds .2 -dt
+.05 -dc .75 -dr 3 -sj 1 -st .01 -ab 8 -aa .1 -ad 512 -as 256 -av 0.01
+0.01 0.01 -lr 12 -lw .0005  -af 11.amb 11.oct < 11.pts > 11.dat"  And
+the two calculations of daylight factor and illuminance are all the same
+settings. What do you think?
+
+2009/12/10 Christopher Rush <Christopher.Rush@arup.com>
+
+It would help to know your command process for calculating illuminance
+and daylight factor to troubleshoot.
+
+ 
+
+Also, if your rpict/rtrace ambient sampling settings are not stringent
+enough, differences could be due to random sampling variation between
+two different calculation runs.
+
+ 
+
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of
+Victor Li
+Sent: Thursday, December 10, 2009 4:04 AM
+To: Radiance general discussion
+Subject: [Radiance-general] Daylight factor
+
+ 
+
+Dear:
+
+Daylight factors are expressed as the percentage of natural light
+falling on a work surface compared to that which would have fallen on a
+completely unobstructed horizontal surface under exactly the same sky
+conditions. Thus, a daylight factor of 5% on an internal surface means
+that it received only 1/20th of the maximum available natural light.
+
+so we can calculate daylight factor by RADIANCE with a overcast sky.
+Then i calculated the illuminance under overcast sky. I found the
+distribution of illuminance and skyfactor in the room is different. For
+example, in the room ratio of minimum to average of daylight and
+illuminance are quite different. Would you tell me the reason?
+
+Best Regards!
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+ 
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091211/add490c7/attachment.html
+From andrew.mcneil at arup.com  Fri Dec 11 08:35:03 2009
+From: andrew.mcneil at arup.com (Andrew McNeil)
+Date: Fri Dec 11 08:36:56 2009
+Subject: [Radiance-general] material trans and glass?
+In-Reply-To: <be3956780912101922w3597a980gebb68a90c07772fa@mail.gmail.com>
+Message-ID: <C747B4B7.E0D5%andrew.mcneil@arup.com>
+
+Hi Victor,
+
+Transmisivity is the amount of light NOT absorbed in one pass through the
+glazing.  Glass is a special case of dielectric optimized for glass that
+accounts for angular dependence of transmission and inter-reflection between
+front and back surfaces  (but is only modeled as a single surface in
+radiance).  The reason for using transmissivity I believe is related to the
+desire to maintain a valid input range of 0-1 for the parameters instead of
+something like 0 - 0.92.
+
+You can find the equation to get transmisivity given transmittance at the
+bottom of this page:
+http://www.schorsch.com/rayfront/manual/dielectricdef.html
+
+A glazing with reported VLT of 0.325 has a transmisivity of 0.354 so the
+material definition would be as follows:
+void glass glazing.325
+0
+0
+3  0.354  0.354  0.354
+
+And your other question - The first three parameters of trans is color which
+affect transmission and reflection.  Trans does not include inter-reflection
+or angular transmission properties exhibited by glass so the input values
+are transmission.
+Also on this page there is a nice diagram describing how trans works:
+http://www.schorsch.com/rayfront/manual/transdef.html
+
+Andy
+
+
+
+
+On 12/10/09 7:22 PM, "Victor Li" <victorpermanent@gmail.com> wrote:
+
+> Sorry i made a mistake. I just want to compare the glass 3 ??? 0.325 0.325
+> 0.325? and trans 7 ??? 0.325 0.325 0.325 0 0 1 1 (not 0.3).
+> 
+> In trans, the  transmissive specularity is 1 which means the total daylight
+> transmitted through the material will be specularly transmitted, like glass.
+> So i defined the   transmissive specularity is 1.
+> 
+> Actually i had a look the webpage and i define the trans followed the
+> instruction in the page.
+> 
+> Note also that the Radiance glass material uses "transmissivity" not
+> transmittance, 
+> so does trans use "transmittance" in the first three paremeters? What is the
+> difference between transmittance and transmissivity?
+> 
+> 
+> 
+> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091211/cf9dacc8/attachment-0001.htm
+From grobe at gmx.net  Fri Dec 11 09:35:44 2009
+From: grobe at gmx.net (Lars Grobe)
+Date: Fri Dec 11 09:35:49 2009
+Subject: [Radiance-general] material trans and glass?
+In-Reply-To: <C746ABC7.17B2%robert.guglielmetti@nrel.gov>
+References: <C746ABC7.17B2%robert.guglielmetti@nrel.gov>
+Message-ID: <20091211173544.130480@gmx.net>
+
+Hi...
+
+> What do you mean by this, Lars? Trans is merely a material that can model
+> diffuse transmittance, glass cannot. Both materials are used for daylight
+> apertures. Maybe I don't understand your statement (always a possibility).
+
+The cause of confusion was the typo in the original email. The original aim of the experiment was to compare glass and trans for the same set-up (so the question could arise why results were not the same). This comparision is only possible for clear glass. I tried to express that, as far as I understood, trans is not ment for this case, and I would not expect 100% identical results.
+
+However, it may be interesting to have a comparision of the three modifiers
+
+- glass
+- dielectric
+- trans
+
+to really quantify the variance for a given scene. Maybe for only direct calculation, and then for some ambient bounces. I will take a look at my copy of RwR to see where to expect differences. However, we do not even know how far off the two results were, so the discussion is a bit lacking of the numbers.
+
+Cheers,
+
+Lars.
+
+From victorpermanent at gmail.com  Sat Dec 12 19:36:59 2009
+From: victorpermanent at gmail.com (Victor Li)
+Date: Sat Dec 12 19:37:05 2009
+Subject: [Radiance-general] material trans and glass?
+In-Reply-To: <20091211173544.130480@gmx.net>
+References: <C746ABC7.17B2%robert.guglielmetti@nrel.gov>
+	<20091211173544.130480@gmx.net>
+Message-ID: <be3956780912121936g20460bafm62105762f255a1f5@mail.gmail.com>
+
+Thank you all very much!
+
+Andrew mentioned "Transmisivity is the amount of light NOT absorbed in one
+pass through the glazing.  "
+Does it mean that the Transmisivity is the amount of light transmitted and
+reflected by a meterial?
+
+
+>From the web "http://www.schorsch.com/rayfront/manual/dielectricdef.html" , "
+*Transmittance* is the total light transmitted through the pane including
+multiple reflections"
+
+
+So the difference between Transmisivity and Transmittance is the light
+reflected?
+
+
+According to Andrew's email, for glass with VLT of 0.325 has a transmisivity
+of 0.354. The glass is defined as
+
+void glass glazing.325
+0
+0
+3  0.354  0.354  0.354
+
+For trans with VLT 0.325 and no diffse transmission. Can we difine it as the
+following?
+
+void trans window.0.325
+
+7     0.325 0.325 0.325 0 0 1 1
+
+For glass, the light transmitted would be specular transmitted,  is it
+right?  If right, what is the differrence between above meteirals definition
+-  glass glazing.325 and trans window.0.325?
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091213/bd0fd79b/attachment.html
+From victorpermanent at gmail.com  Sat Dec 12 20:28:50 2009
+From: victorpermanent at gmail.com (Victor Li)
+Date: Sat Dec 12 20:28:53 2009
+Subject: [Radiance-general] Daylight factor
+In-Reply-To: <EB124710ADB8554C930FADF760BB2BE7069150E5@n-yexc01.global.arup.com>
+References: <be3956780912100104w3ff65086w62a4deac27a9b210@mail.gmail.com>
+	<EB124710ADB8554C930FADF760BB2BE706914999@n-yexc01.global.arup.com>
+	<be3956780912101734m3ebe9dacre2d6d1f81aee88d1@mail.gmail.com>
+	<EB124710ADB8554C930FADF760BB2BE7069150E5@n-yexc01.global.arup.com>
+Message-ID: <be3956780912122028o2c29bc2ajb206fd55c015cfb9@mail.gmail.com>
+
+Thank you very much!
+
+Actually i uesed ECOTET exported to DESKTOP RADIANCE to calculate. The only
+differernce between Daylight factor and Illuminance calculation is the -B
+0.558659 definition in 11_SKY.RAD
+In Daylight factor calculation the sky is defined as following:
+
+!gensky 12 21 12.00 -c -a 31.400 -o -121.400 -m -120.000 -B 0.558659 | xform
+-rz -27.000
+
+skyfunc glow sky_mat
+0
+0
+4
+     1 1 1 0
+
+sky_mat source sky
+0
+0
+4
+     0 0 1 180
+
+skyfunc glow ground_glow
+0
+0
+4
+     1 .8 .5 0
+
+ground_glow source ground
+0
+0
+4
+     0 0 -1 180
+
+In Illuminance calculation, the definition is :
+
+!gensky 12 21 12.00 -c -a 31.400 -o -121.400 -m -120.000 -B 0.558659 | xform
+-rz -27.000
+
+The rest is all the same.
+
+For converting the output, the ECOTECT can convert it automatically.
+
+
+2009/12/11 Christopher Rush <Christopher.Rush@arup.com>
+
+>  What are the dimensions and resolution of your grid in 11.pts compared to
+> the full boundary of your scene (including ground plane and anything else)
+> in 11.oct? Maybe ?ar is not high enough.
+>
+>
+>
+> What is your sky definition going into 11.oct?
+>
+>
+>
+> Do you have an rcalc command to convert the output in 11.dat?
+>
+>
+>
+>
+>
+>
+>
+> *From:* radiance-general-bounces@radiance-online.org [mailto:
+> radiance-general-bounces@radiance-online.org] *On Behalf Of *Victor Li
+> *Sent:* Thursday, December 10, 2009 8:34 PM
+> *To:* Radiance general discussion
+> *Subject:* Re: [Radiance-general] Daylight factor
+>
+>
+>
+> The rtrace setting is "rtrace -I -h -dp 2048 -ar 32 -ms 0.063 -ds .2 -dt
+> .05 -dc .75 -dr 3 -sj 1 -st .01 -ab 8 -aa .1 -ad 512 -as 256 -av 0.01 0.01
+> 0.01 -lr 12 -lw .0005  -af 11.amb 11.oct < 11.pts > 11.dat"  And the two
+> calculations of daylight factor and illuminance are all the same settings.
+> What do you think?
+>
+> 2009/12/10 Christopher Rush <Christopher.Rush@arup.com>
+>
+> It would help to know your command process for calculating illuminance and
+> daylight factor to troubleshoot.
+>
+>
+>
+> Also, if your rpict/rtrace ambient sampling settings are not stringent
+> enough, differences could be due to random sampling variation between two
+> different calculation runs.
+>
+>
+>
+> *From:* radiance-general-bounces@radiance-online.org [mailto:
+> radiance-general-bounces@radiance-online.org] *On Behalf Of *Victor Li
+> *Sent:* Thursday, December 10, 2009 4:04 AM
+> *To:* Radiance general discussion
+> *Subject:* [Radiance-general] Daylight factor
+>
+>
+>
+> Dear:
+>
+> Daylight factors are expressed as the percentage of natural light falling
+> on a work surface compared to that which would have fallen on a completely
+> unobstructed horizontal surface under exactly the same sky conditions. Thus,
+> a daylight factor of 5% on an internal surface means that it received only
+> 1/20th of the maximum available natural light.
+>
+> so we can calculate daylight factor by RADIANCE with a overcast sky. Then i
+> calculated the illuminance under overcast sky. I found the distribution of
+> illuminance and skyfactor in the room is different. For example, in the room
+> ratio of minimum to average of daylight and illuminance are quite different.
+> Would you tell me the reason?
+>
+> Best Regards!
+>
+> ____________________________________________________________
+>
+> Electronic mail messages entering and leaving Arup  business
+>
+> systems are scanned for acceptability of content and viruses
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091213/db268ee9/attachment.htm
+From victorpermanent at gmail.com  Sat Dec 12 20:48:37 2009
+From: victorpermanent at gmail.com (Victor Li)
+Date: Sat Dec 12 20:48:42 2009
+Subject: [Radiance-general] Daylight factor
+In-Reply-To: <be3956780912122028o2c29bc2ajb206fd55c015cfb9@mail.gmail.com>
+References: <be3956780912100104w3ff65086w62a4deac27a9b210@mail.gmail.com>
+	<EB124710ADB8554C930FADF760BB2BE706914999@n-yexc01.global.arup.com>
+	<be3956780912101734m3ebe9dacre2d6d1f81aee88d1@mail.gmail.com>
+	<EB124710ADB8554C930FADF760BB2BE7069150E5@n-yexc01.global.arup.com>
+	<be3956780912122028o2c29bc2ajb206fd55c015cfb9@mail.gmail.com>
+Message-ID: <be3956780912122048p76e3f115ifca0f1140ad892ea@mail.gmail.com>
+
+I have increased the -ar to 300, but the results are all the same.
+
+2009/12/13 Victor Li <victorpermanent@gmail.com>
+
+> Thank you very much!
+>
+> Actually i uesed ECOTET exported to DESKTOP RADIANCE to calculate. The only
+> differernce between Daylight factor and Illuminance calculation is the -B
+> 0.558659 definition in 11_SKY.RAD
+> In Daylight factor calculation the sky is defined as following:
+>
+> !gensky 12 21 12.00 -c -a 31.400 -o -121.400 -m -120.000 -B 0.558659 |
+> xform -rz -27.000
+>
+> skyfunc glow sky_mat
+> 0
+> 0
+> 4
+>      1 1 1 0
+>
+> sky_mat source sky
+> 0
+> 0
+> 4
+>      0 0 1 180
+>
+> skyfunc glow ground_glow
+> 0
+> 0
+> 4
+>      1 .8 .5 0
+>
+> ground_glow source ground
+> 0
+> 0
+> 4
+>      0 0 -1 180
+>
+> In Illuminance calculation, the definition is :
+>
+> !gensky 12 21 12.00 -c -a 31.400 -o -121.400 -m -120.000 -B 0.558659 |
+> xform -rz -27.000
+>
+> The rest is all the same.
+>
+> For converting the output, the ECOTECT can convert it automatically.
+>
+>
+> 2009/12/11 Christopher Rush <Christopher.Rush@arup.com>
+>
+>  What are the dimensions and resolution of your grid in 11.pts compared to
+>> the full boundary of your scene (including ground plane and anything else)
+>> in 11.oct? Maybe ?ar is not high enough.
+>>
+>>
+>>
+>> What is your sky definition going into 11.oct?
+>>
+>>
+>>
+>> Do you have an rcalc command to convert the output in 11.dat?
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>> *From:* radiance-general-bounces@radiance-online.org [mailto:
+>> radiance-general-bounces@radiance-online.org] *On Behalf Of *Victor Li
+>> *Sent:* Thursday, December 10, 2009 8:34 PM
+>> *To:* Radiance general discussion
+>> *Subject:* Re: [Radiance-general] Daylight factor
+>>
+>>
+>>
+>> The rtrace setting is "rtrace -I -h -dp 2048 -ar 32 -ms 0.063 -ds .2 -dt
+>> .05 -dc .75 -dr 3 -sj 1 -st .01 -ab 8 -aa .1 -ad 512 -as 256 -av 0.01 0.01
+>> 0.01 -lr 12 -lw .0005  -af 11.amb 11.oct < 11.pts > 11.dat"  And the two
+>> calculations of daylight factor and illuminance are all the same settings.
+>> What do you think?
+>>
+>> 2009/12/10 Christopher Rush <Christopher.Rush@arup.com>
+>>
+>> It would help to know your command process for calculating illuminance and
+>> daylight factor to troubleshoot.
+>>
+>>
+>>
+>> Also, if your rpict/rtrace ambient sampling settings are not stringent
+>> enough, differences could be due to random sampling variation between two
+>> different calculation runs.
+>>
+>>
+>>
+>> *From:* radiance-general-bounces@radiance-online.org [mailto:
+>> radiance-general-bounces@radiance-online.org] *On Behalf Of *Victor Li
+>> *Sent:* Thursday, December 10, 2009 4:04 AM
+>> *To:* Radiance general discussion
+>> *Subject:* [Radiance-general] Daylight factor
+>>
+>>
+>>
+>> Dear:
+>>
+>> Daylight factors are expressed as the percentage of natural light falling
+>> on a work surface compared to that which would have fallen on a completely
+>> unobstructed horizontal surface under exactly the same sky conditions. Thus,
+>> a daylight factor of 5% on an internal surface means that it received only
+>> 1/20th of the maximum available natural light.
+>>
+>> so we can calculate daylight factor by RADIANCE with a overcast sky. Then
+>> i calculated the illuminance under overcast sky. I found the distribution of
+>> illuminance and skyfactor in the room is different. For example, in the room
+>> ratio of minimum to average of daylight and illuminance are quite different.
+>> Would you tell me the reason?
+>>
+>> Best Regards!
+>>
+>> ____________________________________________________________
+>>
+>> Electronic mail messages entering and leaving Arup  business
+>>
+>> systems are scanned for acceptability of content and viruses
+>>
+>>
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general@radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>
+>>
+>>
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general@radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>
+>>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091213/93eb632d/attachment-0001.html
+From Christopher.Rush at arup.com  Mon Dec 14 06:39:37 2009
+From: Christopher.Rush at arup.com (Christopher Rush)
+Date: Mon Dec 14 09:13:26 2009
+Subject: [Radiance-general] Daylight factor
+In-Reply-To: <be3956780912122028o2c29bc2ajb206fd55c015cfb9@mail.gmail.com>
+References: <be3956780912100104w3ff65086w62a4deac27a9b210@mail.gmail.com><EB124710ADB8554C930FADF760BB2BE706914999@n-yexc01.global.arup.com><be3956780912101734m3ebe9dacre2d6d1f81aee88d1@mail.gmail.com><EB124710ADB8554C930FADF760BB2BE7069150E5@n-yexc01.global.arup.com>
+	<be3956780912122028o2c29bc2ajb206fd55c015cfb9@mail.gmail.com>
+Message-ID: <EB124710ADB8554C930FADF760BB2BE70695EE49@n-yexc01.global.arup.com>
+
+You have the same -B 0.558659 in both the daylight factor and
+illuminance calculations. I'm afraid I can't help much more, as I'm not
+sure what Ecotect does with the data that comes out of your Radiance
+process.
+
+ 
+
+Also, I'm still not sure what command you're actually using to generate
+your data results.
+
+ 
+
+-Chris
+
+ 
+
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of
+Victor Li
+Sent: Saturday, December 12, 2009 11:29 PM
+To: Radiance general discussion
+Subject: Re: [Radiance-general] Daylight factor
+
+ 
+
+Thank you very much!
+
+Actually i uesed ECOTET exported to DESKTOP RADIANCE to calculate. The
+only differernce between Daylight factor and Illuminance calculation is
+the -B 0.558659 definition in 11_SKY.RAD 
+In Daylight factor calculation the sky is defined as following:
+
+!gensky 12 21 12.00 -c -a 31.400 -o -121.400 -m -120.000 -B 0.558659 |
+xform -rz -27.000
+
+skyfunc glow sky_mat
+0
+0
+4
+     1 1 1 0
+
+sky_mat source sky
+0
+0
+4
+     0 0 1 180
+
+skyfunc glow ground_glow
+0
+0
+4
+     1 .8 .5 0
+
+ground_glow source ground
+0
+0
+4
+     0 0 -1 180
+
+In Illuminance calculation, the definition is :
+
+!gensky 12 21 12.00 -c -a 31.400 -o -121.400 -m -120.000 -B 0.558659 |
+xform -rz -27.000
+
+The rest is all the same.
+
+For converting the output, the ECOTECT can convert it automatically.
+
+
+
+2009/12/11 Christopher Rush <Christopher.Rush@arup.com>
+
+What are the dimensions and resolution of your grid in 11.pts compared
+to the full boundary of your scene (including ground plane and anything
+else) in 11.oct? Maybe -ar is not high enough.
+
+ 
+
+What is your sky definition going into 11.oct?
+
+ 
+
+Do you have an rcalc command to convert the output in 11.dat?
+
+ 
+
+ 
+
+ 
+
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of
+Victor Li
+Sent: Thursday, December 10, 2009 8:34 PM
+To: Radiance general discussion
+Subject: Re: [Radiance-general] Daylight factor
+
+ 
+
+The rtrace setting is "rtrace -I -h -dp 2048 -ar 32 -ms 0.063 -ds .2 -dt
+.05 -dc .75 -dr 3 -sj 1 -st .01 -ab 8 -aa .1 -ad 512 -as 256 -av 0.01
+0.01 0.01 -lr 12 -lw .0005  -af 11.amb 11.oct < 11.pts > 11.dat"  And
+the two calculations of daylight factor and illuminance are all the same
+settings. What do you think?
+
+2009/12/10 Christopher Rush <Christopher.Rush@arup.com>
+
+It would help to know your command process for calculating illuminance
+and daylight factor to troubleshoot.
+
+ 
+
+Also, if your rpict/rtrace ambient sampling settings are not stringent
+enough, differences could be due to random sampling variation between
+two different calculation runs.
+
+ 
+
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of
+Victor Li
+Sent: Thursday, December 10, 2009 4:04 AM
+To: Radiance general discussion
+Subject: [Radiance-general] Daylight factor
+
+ 
+
+Dear:
+
+Daylight factors are expressed as the percentage of natural light
+falling on a work surface compared to that which would have fallen on a
+completely unobstructed horizontal surface under exactly the same sky
+conditions. Thus, a daylight factor of 5% on an internal surface means
+that it received only 1/20th of the maximum available natural light.
+
+so we can calculate daylight factor by RADIANCE with a overcast sky.
+Then i calculated the illuminance under overcast sky. I found the
+distribution of illuminance and skyfactor in the room is different. For
+example, in the room ratio of minimum to average of daylight and
+illuminance are quite different. Would you tell me the reason?
+
+Best Regards!
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+ 
+
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+ 
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091214/25e68a15/attachment.htm
+From tbleicher at googlemail.com  Sun Dec 13 05:51:08 2009
+From: tbleicher at googlemail.com (Thomas Bleicher)
+Date: Mon Dec 14 09:17:07 2009
+Subject: [Radiance-general] material trans and glass?
+In-Reply-To: <be3956780912121936g20460bafm62105762f255a1f5@mail.gmail.com>
+References: <C746ABC7.17B2%robert.guglielmetti@nrel.gov>
+	<20091211173544.130480@gmx.net>
+	<be3956780912121936g20460bafm62105762f255a1f5@mail.gmail.com>
+Message-ID: <89355c0f0912130551k1adc7bb7xbec31cc9ae3414c4@mail.gmail.com>
+
+On Sun, Dec 13, 2009 at 3:36 AM, Victor Li <victorpermanent@gmail.com> wrote:
+
+> From the web "http://www.schorsch.com/rayfront/manual/dielectricdef.html" ,
+> " Transmittance is the total light transmitted through the pane including
+> multiple reflections"
+>
+> So the difference between Transmisivity and Transmittance is the light
+> reflected?
+
+I would go with this definition. But the reflections here are those that
+happen between two parallel interfaces of a refracting material as the
+front and back of a sheet of float glass. Some light is reflected at
+the back of the sheet when the light exits the glass. This light will
+travel back through the glass to the front and again a small amount
+will be reflected towards the back and so on.
+
+The formula to calculate transmissivity from the transmittance of glass
+(VLT) takes these inter-reflections into account and so you can model
+the two interfaces of a single pane of float glass with one single polygon
+in Radiance and you don't have to calculate the reflections during the
+ray tracing process.
+
+> According to Andrew's email, for glass with VLT of 0.325
+> has a transmisivity of 0.354. The glass is defined as
+>
+> void glass glazing.325
+> 0
+> 0
+> 3 ?0.354 ?0.354 ?0.354
+>
+> For trans with VLT 0.325 and no diffse transmission.
+> Can we difine it as the following?
+>
+> void trans window.0.325
+>
+> 7 ??? 0.325 0.325 0.325 0 0 1 1
+
+The correct definition would be
+void trans window.0.325
+0
+0
+7 0.325 0.325 0.325 0 0 1 1
+
+This produces a dark clear material without any specularity that has
+a VTL of 0.325 (or nearly as far as I can tell from my tests). But it
+is not the same as glass.
+
+> For glass, the light transmitted would be specular transmitted,
+> is it right? If right, what is the differrence between above meteirals
+> definition - glass glazing.325 and trans window.0.325?
+
+The most obvious one is that "glass" is a specialised "dielectric"
+material type which modulates the reflection according to the
+angle and refraction index of the material. So if you want to
+reflections/refractions of glass with another material you should
+start with "dielectric" not "trans"
+
+The "window.0.325" material defined above has not specularity
+and no roughness. The glass material has a visible specularity.
+Just create a small test scene with a bubble of glass/trans and
+a light source (like the sun) and you will see the difference.
+
+If you don't care about the particular refraction of glass and
+specular refraction and only focus on VTL you could say the
+materials are similar or equal depending on your use.
+
+Regards,
+Thomas
+
+From tbleicher at googlemail.com  Sun Dec 13 04:03:39 2009
+From: tbleicher at googlemail.com (Thomas Bleicher)
+Date: Mon Dec 14 09:17:13 2009
+Subject: [Radiance-general] Daylight factor
+In-Reply-To: <be3956780912122028o2c29bc2ajb206fd55c015cfb9@mail.gmail.com>
+References: <be3956780912100104w3ff65086w62a4deac27a9b210@mail.gmail.com>
+	<EB124710ADB8554C930FADF760BB2BE706914999@n-yexc01.global.arup.com>
+	<be3956780912101734m3ebe9dacre2d6d1f81aee88d1@mail.gmail.com>
+	<EB124710ADB8554C930FADF760BB2BE7069150E5@n-yexc01.global.arup.com>
+	<be3956780912122028o2c29bc2ajb206fd55c015cfb9@mail.gmail.com>
+Message-ID: <89355c0f0912130403w283efb87l3c77285a0fbb65bd@mail.gmail.com>
+
+Victor.
+
+There are a couple of things you should change. If you can't change the
+options ECOTECT uses you can run the simulation manually as Marija
+has shown above and then read the results back into ECOTECT.
+
+More details within:
+
+On Sun, Dec 13, 2009 at 4:28 AM, Victor Li <victorpermanent@gmail.com> wrote:
+> Thank you very much!
+>
+> Actually i uesed ECOTET exported to DESKTOP RADIANCE to calculate.
+> The only differernce between Daylight factor and Illuminance calculation is
+> the -B 0.558659 definition in 11_SKY.RAD
+>
+> In Daylight factor calculation the sky is defined as following:
+>
+> !gensky 12 21 12.00 -c -a 31.400 -o -121.400 -m -120.000 -B 0.558659 | xform
+> -rz -27.000
+
+I can't see a difference between the two gensky commands below but the
+"-B 0.558659" will create a sky with 100 Lux diffuse vertical illuminance. This
+is very low if you want to calculate Lux values. The only reason to do this
+is that you don't have to convert from a 10000 Lux baseline to 100 Lux (or %)
+if you want to calculate daylight factors.
+
+Since both setups and scene files (skies) are the same you would
+expect the same values for both calculations. However, your settings
+for the rtrace command are not very accurate so the absolute results
+are going to be different. You haven't told us yet how big the difference
+is, btw.
+
+[copied from an older mail]:
+>> The rtrace setting is "rtrace -I -h -dp 2048 -ar 32 -ms 0.063 -ds .2 -dt
+>> .05 -dc .75 -dr 3 -sj 1 -st .01 -ab 8 -aa .1 -ad 512 -as 256 -av 0.01 0.01
+>> 0.01 -lr 12 -lw .0005  -af 11.amb 11.oct < 11.pts > 11.dat"  And the two
+
+For more accuracy I would use something like:
+"-ar 128 -ab 6 -aa 0.01 -ad 2048 -as 256"
+
+Mind you, I don't know anything about your scene so these may not
+be the right settings at all.
+
+The remaining settings are less important in a daylight calculation
+without sun. I would also remove the "-av 0.01 0.01 0.01" because
+that would introduce a large amount of artificial ambient light that
+is too high for you 100Lux outdoor illuminance.
+
+[...]
+
+> skyfunc glow ground_glow
+> 0
+> 0
+> 4
+> ???? 1 .8 .5 0
+>
+> ground_glow source ground
+> 0
+> 0
+> 4
+> ???? 0 0 -1 180
+
+This creates a "ground" hemisphere that is nearly as bright as
+the sky (about 80%). You should reduce the values in the
+ground_glow definition to a quarter of their current setting
+(unless you have ground covered in snow):
+
+skyfunc glow ground_glow
+0
+0
+4
+     0.25 0.2 0.125 0
+
+[...]
+
+
+> In Illuminance calculation, the definition is :
+>
+> !gensky 12 21 12.00 -c -a 31.400 -o -121.400 -m -120.000 -B 0.558659 | xform
+> -rz -27.000
+>
+> The rest is all the same.
+>
+> For converting the output, the ECOTECT can convert it automatically.
+
+ECOTECT can read "single" value and "[r,g,b]" value output, but the
+values have to be in the right scale. If you want your DF values
+to mean anything you have to know the outside illuminance of the
+sky and scale all the values if it is anything else than 100 lux.
+
+Hth,
+Thomas
+
+From gregoryjward at gmail.com  Mon Dec 14 13:02:00 2009
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Mon Dec 14 19:25:59 2009
+Subject: [Radiance-general] Re: radiance-online appears to be down
+In-Reply-To: <39594E74-D705-49A2-ADE6-02AA7A76CCC7@lbl.gov>
+References: <F620932E-1223-4D75-8F20-C248DFF1B794@gmail.com>
+	<39594E74-D705-49A2-ADE6-02AA7A76CCC7@lbl.gov>
+Message-ID: <59CCFE3F-2873-442B-BE17-ED6E1B250F19@gmail.com>
+
+Thanks, Danny.
+
+I'll copy this to the Radiance list so people will know when it comes  
+back up.
+
+Best,
+-Greg
+
+> From: Daniel Fuller <DEFuller@lbl.gov>
+> Date: December 14, 2009 12:47:17 PM PST
+>
+> Hi Greg -
+>
+> The power is out in bldg 90 - several other building across the lab  
+> - perhaps for 24hrs.
+>
+> Radsite also among others.
+>
+> Its due to a blown transformer damaged by moisture.
+>
+> Hopefully the sites will be back up as soon as possible.
+>
+> -Dan
+>
+>
+> On Dec 14, 2009, at 11:57 AM, Gregory J. Ward wrote:
+>
+>> Hi Danny,
+>>
+>> Looks like radiance-online.org isn't responding.  Any idea what's  
+>> going on with it?
+>>
+>> Thanks!
+>> -Greg
+>
+
+From gregoryjward at gmail.com  Tue Dec 15 10:56:18 2009
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue Dec 15 10:55:58 2009
+Subject: [Radiance-general] New rtrace -n option
+Message-ID: <B682CA97-2AE7-4794-82B2-A7771FB9B5A7@gmail.com>
+
+Hi All,
+
+I just finished testing a new parallel processing option for rtrace (- 
+n).  It should work on all multicore Unix (Linux, Mac OS X) machines.   
+Download the HEAD from www.radiance-online.org and give it a whirl.   
+Getting the -I option working was the real trick, so let me know of  
+any differences you spot in your results if you use it.
+
+The only major caveat is that the -o*t* (trace tree) options won't  
+work properly, as all the output will be randomly interleaved.  Not  
+much I can do about that, I'm afraid.
+
+Please don't ask when -n will be added to rpict.  It won't.  I have  
+spent some time looking at it, and we're stuck with rpiece for the  
+forseeable future.  The good news is that rpiece works just fine on  
+multicore machines.  It's only when you open it up to a network of  
+machines that it starts to be troublesome, and a -n option in rpict  
+wouldn't help that situation, anyway.
+
+Cheers,
+-Greg
+
+From Robert.Guglielmetti at nrel.gov  Tue Dec 15 12:56:21 2009
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Tue Dec 15 13:20:43 2009
+Subject: [Radiance-general] New rtrace -n option
+In-Reply-To: <B682CA97-2AE7-4794-82B2-A7771FB9B5A7@gmail.com>
+Message-ID: <C74D4605.1890%robert.guglielmetti@nrel.gov>
+
+On 12/15/09 11:56 AM, "Gregory J. Ward" <gregoryjward@gmail.com> wrote:
+
+> Hi All,
+> 
+> I just finished testing a new parallel processing option for rtrace (-
+> n).  It should work on all multicore Unix (Linux, Mac OS X) machines.
+> Download the HEAD from www.radiance-online.org and give it a whirl.
+
+Hmmm. I downloaded the HEAD, ran makeall, but rtrace gives an unknown option
+error on -n. My rtrace binary is five minutes old, and the rtrace.c file it
+was compiled from is dated Dec 14 00:31. Did I jump on that download a
+little too fast, Greg?
+
+
+From Robert.Guglielmetti at nrel.gov  Tue Dec 15 14:36:37 2009
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Tue Dec 15 14:36:43 2009
+Subject: [Radiance-general] New rtrace -n option
+In-Reply-To: <C74D4605.1890%robert.guglielmetti@nrel.gov>
+Message-ID: <C74D5D85.1894%robert.guglielmetti@nrel.gov>
+
+On 12/15/09 1:56 PM, "Robert Guglielmetti" <robert.guglielmetti@nrel.gov>
+wrote:
+
+> Hmmm. I downloaded the HEAD, ran makeall, but rtrace gives an unknown option
+> error on -n. My rtrace binary is five minutes old, and the rtrace.c file it
+> was compiled from is dated Dec 14 00:31. Did I jump on that download a
+> little too fast, Greg?
+
+In what should come as no surprise to anyone on this list, this was a user
+error situation. Sorry.
+
+$ ls -l /usr/local/bin/rtrace
+$ -rwxr-xr-x  1 root  wheel  397736 Dec 15 13:09 /usr/local/bin/rtrace
+$ which rtrace
+$ /usr/local/bin/RAY/rtrace (you idiot)
+
+OK, so that's sorted. But in testing out the -n option, I do notice a
+strange behavior. If you have a bogus material definition in your scene
+files -- even if it is not referenced in the octree -- using rtrace with the
+-n option will throw a fatal error about the material definition and quit.
+Again, this is not a material that is actually used in the octree, no ray
+would ever need to evaluate the definition; it's an unassigned material that
+happens to reference a .cal file that's not on my system. But I compiled an
+octree and I ran rpict twice on the same octree. Once without the -n, and
+that ran fine. Then I ran the same exact command adding "-n 10" and I got
+this error:
+
+rtrace: fatal - cannot find function file "glaz.cal"
+
+I went back and deleted the bogus material from my material file completely,
+recompiled, and now rtrace -n works. Not sure what's going on there.
+
+Thank you for this addition, Greg! It's nice to feed rtrace one grid and
+watch top automatically fill up with all these rtrace processes!
+
+- Rob G.
+
+
+From gregoryjward at gmail.com  Tue Dec 15 15:21:16 2009
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue Dec 15 15:20:48 2009
+Subject: [Radiance-general] New rtrace -n option
+In-Reply-To: <C74D5D85.1894%robert.guglielmetti@nrel.gov>
+References: <C74D5D85.1894%robert.guglielmetti@nrel.gov>
+Message-ID: <1DBFDECA-E8BD-42CF-81EF-C0D345C3AE1C@lmi.net>
+
+Hi Rob,
+
+Thanks for the feedback.
+
+The bogus material error is caused by the function preload_objs(),  
+which goes through and loads all the auxiliary data (including .cal  
+files) for all scene objects, whether referenced or not.  This  
+function is called by any of the shared-memory parallel execution  
+modes to maximize static shared data, thereby minimizing system memory  
+use.  The same thing would happen with the -PP option.
+
+Cheers,
+-Greg
+
+> From: "Guglielmetti, Robert" <Robert.Guglielmetti@nrel.gov>
+> Date: December 15, 2009 2:36:37 PM PST
+>
+> On 12/15/09 1:56 PM, "Robert Guglielmetti" <robert.guglielmetti@nrel.gov 
+> >
+> wrote:
+>
+>> Hmmm. I downloaded the HEAD, ran makeall, but rtrace gives an  
+>> unknown option
+>> error on -n. My rtrace binary is five minutes old, and the rtrace.c  
+>> file it
+>> was compiled from is dated Dec 14 00:31. Did I jump on that  
+>> download a
+>> little too fast, Greg?
+>
+> In what should come as no surprise to anyone on this list, this was  
+> a user
+> error situation. Sorry.
+>
+> $ ls -l /usr/local/bin/rtrace
+> $ -rwxr-xr-x  1 root  wheel  397736 Dec 15 13:09 /usr/local/bin/rtrace
+> $ which rtrace
+> $ /usr/local/bin/RAY/rtrace (you idiot)
+>
+> OK, so that's sorted. But in testing out the -n option, I do notice a
+> strange behavior. If you have a bogus material definition in your  
+> scene
+> files -- even if it is not referenced in the octree -- using rtrace  
+> with the
+> -n option will throw a fatal error about the material definition and  
+> quit.
+> Again, this is not a material that is actually used in the octree,  
+> no ray
+> would ever need to evaluate the definition; it's an unassigned  
+> material that
+> happens to reference a .cal file that's not on my system. But I  
+> compiled an
+> octree and I ran rpict twice on the same octree. Once without the - 
+> n, and
+> that ran fine. Then I ran the same exact command adding "-n 10" and  
+> I got
+> this error:
+>
+> rtrace: fatal - cannot find function file "glaz.cal"
+>
+> I went back and deleted the bogus material from my material file  
+> completely,
+> recompiled, and now rtrace -n works. Not sure what's going on there.
+>
+> Thank you for this addition, Greg! It's nice to feed rtrace one grid  
+> and
+> watch top automatically fill up with all these rtrace processes!
+>
+> - Rob G.
+
+From Robert.Guglielmetti at nrel.gov  Tue Dec 15 15:33:12 2009
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Tue Dec 15 15:33:16 2009
+Subject: [Radiance-general] New rtrace -n option
+In-Reply-To: <1DBFDECA-E8BD-42CF-81EF-C0D345C3AE1C@lmi.net>
+Message-ID: <C74D6AC8.189D%robert.guglielmetti@nrel.gov>
+
+On 12/15/09 4:21 PM, "Greg Ward" <gregoryjward@gmail.com> wrote:
+
+> Hi Rob,
+> 
+> Thanks for the feedback.
+> 
+> The bogus material error is caused by the function preload_objs(),
+> which goes through and loads all the auxiliary data (including .cal
+> files) for all scene objects, whether referenced or not.
+
+Thank you again, makes perfect sense.
+
+- Rob
+
+
+From victorpermanent at gmail.com  Wed Dec 16 01:57:47 2009
+From: victorpermanent at gmail.com (Victor Li)
+Date: Wed Dec 16 01:57:53 2009
+Subject: [Radiance-general] Daylight factor
+In-Reply-To: <89355c0f0912130403w283efb87l3c77285a0fbb65bd@mail.gmail.com>
+References: <be3956780912100104w3ff65086w62a4deac27a9b210@mail.gmail.com>
+	<EB124710ADB8554C930FADF760BB2BE706914999@n-yexc01.global.arup.com>
+	<be3956780912101734m3ebe9dacre2d6d1f81aee88d1@mail.gmail.com>
+	<EB124710ADB8554C930FADF760BB2BE7069150E5@n-yexc01.global.arup.com>
+	<be3956780912122028o2c29bc2ajb206fd55c015cfb9@mail.gmail.com>
+	<89355c0f0912130403w283efb87l3c77285a0fbb65bd@mail.gmail.com>
+Message-ID: <be3956780912160157y16436871r3da7143d128d7488@mail.gmail.com>
+
+Actually i just export the model from ECOTECT to RADIANCE, and i chang some
+parameters and run the simulation manually like Marija has shown above.
+
+The first time i calculated the daylgith factor in a grid
+I run it by define: gensky 12 21 12.00 -c -a 31.400 -o -121.400 -m -120.000
+-B 0.558659,
+-B 0.558659 means the diffuse horizontal illuminance is 100lux outside then
+the internal illuminance is the dylight factor.
+
+The second time i just calculated the internal illuminance in a grid under
+overcast sky in the same time as the first time. I defined the sky : gensky
+12 21 12.00 -c -a 31.400 -o -121.400 -m -120.000
+
+In the grid, i can calculate the external diffuse horizontal illuminance at
+that time under overcast sky in the same point by  the external diffuse
+horizontal illuminance = the internal illuminance/ daylight factor.
+However, i calculated the the external diffuse horizontal illuminance by
+different points the results are different. Actually the results should be
+the same because it the external diffuse horizontal illuminance. So why is
+it different?
+
+
+
+
+2009/12/13 Thomas Bleicher <tbleicher@googlemail.com>
+
+> Victor.
+>
+> There are a couple of things you should change. If you can't change the
+> options ECOTECT uses you can run the simulation manually as Marija
+> has shown above and then read the results back into ECOTECT.
+>
+> More details within:
+>
+> On Sun, Dec 13, 2009 at 4:28 AM, Victor Li <victorpermanent@gmail.com>
+> wrote:
+> > Thank you very much!
+> >
+> > Actually i uesed ECOTET exported to DESKTOP RADIANCE to calculate.
+> > The only differernce between Daylight factor and Illuminance calculation
+> is
+> > the -B 0.558659 definition in 11_SKY.RAD
+> >
+> > In Daylight factor calculation the sky is defined as following:
+> >
+> > !gensky 12 21 12.00 -c -a 31.400 -o -121.400 -m -120.000 -B 0.558659 |
+> xform
+> > -rz -27.000
+>
+> I can't see a difference between the two gensky commands below but the
+> "-B 0.558659" will create a sky with 100 Lux diffuse vertical illuminance.
+> This
+> is very low if you want to calculate Lux values. The only reason to do this
+> is that you don't have to convert from a 10000 Lux baseline to 100 Lux (or
+> %)
+> if you want to calculate daylight factors.
+>
+> Since both setups and scene files (skies) are the same you would
+> expect the same values for both calculations. However, your settings
+> for the rtrace command are not very accurate so the absolute results
+> are going to be different. You haven't told us yet how big the difference
+> is, btw.
+>
+> [copied from an older mail]:
+> >> The rtrace setting is "rtrace -I -h -dp 2048 -ar 32 -ms 0.063 -ds .2 -dt
+> >> .05 -dc .75 -dr 3 -sj 1 -st .01 -ab 8 -aa .1 -ad 512 -as 256 -av 0.01
+> 0.01
+> >> 0.01 -lr 12 -lw .0005  -af 11.amb 11.oct < 11.pts > 11.dat"  And the two
+>
+> For more accuracy I would use something like:
+> "-ar 128 -ab 6 -aa 0.01 -ad 2048 -as 256"
+>
+> Mind you, I don't know anything about your scene so these may not
+> be the right settings at all.
+>
+> The remaining settings are less important in a daylight calculation
+> without sun. I would also remove the "-av 0.01 0.01 0.01" because
+> that would introduce a large amount of artificial ambient light that
+> is too high for you 100Lux outdoor illuminance.
+>
+> [...]
+>
+> > skyfunc glow ground_glow
+> > 0
+> > 0
+> > 4
+> >      1 .8 .5 0
+> >
+> > ground_glow source ground
+> > 0
+> > 0
+> > 4
+> >      0 0 -1 180
+>
+> This creates a "ground" hemisphere that is nearly as bright as
+> the sky (about 80%). You should reduce the values in the
+> ground_glow definition to a quarter of their current setting
+> (unless you have ground covered in snow):
+>
+> skyfunc glow ground_glow
+> 0
+> 0
+> 4
+>      0.25 0.2 0.125 0
+>
+> [...]
+>
+>
+> > In Illuminance calculation, the definition is :
+> >
+> > !gensky 12 21 12.00 -c -a 31.400 -o -121.400 -m -120.000 -B 0.558659 |
+> xform
+> > -rz -27.000
+> >
+> > The rest is all the same.
+> >
+> > For converting the output, the ECOTECT can convert it automatically.
+>
+> ECOTECT can read "single" value and "[r,g,b]" value output, but the
+> values have to be in the right scale. If you want your DF values
+> to mean anything you have to know the outside illuminance of the
+> sky and scale all the values if it is anything else than 100 lux.
+>
+> Hth,
+> Thomas
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091216/d597e8ac/attachment.html
+From victorpermanent at gmail.com  Wed Dec 16 02:14:02 2009
+From: victorpermanent at gmail.com (Victor Li)
+Date: Wed Dec 16 02:14:25 2009
+Subject: [Radiance-general] material trans and glass?
+In-Reply-To: <89355c0f0912130551k1adc7bb7xbec31cc9ae3414c4@mail.gmail.com>
+References: <C746ABC7.17B2%robert.guglielmetti@nrel.gov>
+	<20091211173544.130480@gmx.net>
+	<be3956780912121936g20460bafm62105762f255a1f5@mail.gmail.com>
+	<89355c0f0912130551k1adc7bb7xbec31cc9ae3414c4@mail.gmail.com>
+Message-ID: <be3956780912160214t345ef7a8tff16685470c37f@mail.gmail.com>
+
+>
+> I would go with this definition. But the reflections here are those that
+> happen between two parallel interfaces of a refracting material as the
+> front and back of a sheet of float glass. Some light is reflected at
+> the back of the sheet when the light exits the glass. This light will
+> travel back through the glass to the front and again a small amount
+> will be reflected towards the back and so on.
+>
+> I know what you mean but i am sitill confused the difference between
+Transmisivity and Transmittance?
+
+What is the difference between the first three parameters and trans (the
+second to last parameter) in trans definition?
+
+
+The formula to calculate transmissivity from the transmittance of glass
+> (VLT) takes these inter-reflections into account and so you can model
+> the two interfaces of a single pane of float glass with one single polygon
+> in Radiance and you don't have to calculate the reflections during the
+> ray tracing process.
+>
+> > According to Andrew's email, for glass with VLT of 0.325
+> > has a transmisivity of 0.354. The glass is defined as
+> >
+> > void glass glazing.325
+> > 0
+> > 0
+> > 3  0.354  0.354  0.354
+> >
+> > For trans with VLT 0.325 and no diffse transmission.
+> > Can we difine it as the following?
+> >
+> > void trans window.0.325
+> >
+> > 7     0.325 0.325 0.325 0 0 1 1
+>
+> The correct definition would be
+> void trans window.0.325
+> 0
+> 0
+> 7 0.325 0.325 0.325 0 0 1 1
+>
+> This produces a dark clear material without any specularity that has
+> a VTL of 0.325 (or nearly as far as I can tell from my tests). But it
+> is not the same as glass.
+>
+> > For glass, the light transmitted would be specular transmitted,
+> > is it right? If right, what is the differrence between above meteirals
+> > definition - glass glazing.325 and trans window.0.325?
+>
+> The most obvious one is that "glass" is a specialised "dielectric"
+> material type which modulates the reflection according to the
+> angle and refraction index of the material. So if you want to
+> reflections/refractions of glass with another material you should
+> start with "dielectric" not "trans"
+>
+> The "window.0.325" material defined above has not specularity
+> and no roughness. The glass material has a visible specularity.
+> Just create a small test scene with a bubble of glass/trans and
+> a light source (like the sun) and you will see the difference.
+>
+> If you don't care about the particular refraction of glass and
+> specular refraction and only focus on VTL you could say the
+> materials are similar or equal depending on your use.
+>
+> Actually i run the simulations by two different materials i found the
+illuminance in the room is a little different. Why is it different?
+
+ For "dielectric" definition, is anyone can tell me where i can find the
+detailed definition and the instruction fo corresponding parameters?
+
+Best Regards!
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091216/c10fdcd7/attachment-0001.html
+From maricanis at gmail.com  Wed Dec 16 02:17:07 2009
+From: maricanis at gmail.com (Marija Velickovic)
+Date: Wed Dec 16 02:17:33 2009
+Subject: [Radiance-general] Daylight factor
+In-Reply-To: <be3956780912160157y16436871r3da7143d128d7488@mail.gmail.com>
+References: <be3956780912100104w3ff65086w62a4deac27a9b210@mail.gmail.com> 
+	<EB124710ADB8554C930FADF760BB2BE706914999@n-yexc01.global.arup.com> 
+	<be3956780912101734m3ebe9dacre2d6d1f81aee88d1@mail.gmail.com> 
+	<EB124710ADB8554C930FADF760BB2BE7069150E5@n-yexc01.global.arup.com> 
+	<be3956780912122028o2c29bc2ajb206fd55c015cfb9@mail.gmail.com> 
+	<89355c0f0912130403w283efb87l3c77285a0fbb65bd@mail.gmail.com> 
+	<be3956780912160157y16436871r3da7143d128d7488@mail.gmail.com>
+Message-ID: <124b40400912160217w3e405512q5c6a70740622f76@mail.gmail.com>
+
+Hi Victor,
+
+You don't need 2 calculations, just one.
+With the overcast sky:
+gensky 12 21 12.00 -c -a 31.400 -o -121.400 -m -120.000 -B 0.558659,
+calculate internal illuminances with rtrace, and then just divide this
+values with 100lux (sky diffuse horizontal illuminance).
+No need to calculate illuminances in the same point when there is no
+building, since diffuse horizontal illuminance means exactly that:
+
+**
+*diffuse horizontal
+illuminance*<http://www.satel-light.com/guide/glosatod.htm#evd>:Illuminance
+produced by the visible part of the diffuse solar radiation on
+a horizontal surface on the earth.
+
+Also, I think you should use sky with higher diffuse illuminance, at least
+1000lux, because with such low outside lux, like the ones you have, results
+inside may be too low, and errors due to ambient calculation may be more
+visible.
+
+Hope this helps,
+Marija
+
+On Wed, Dec 16, 2009 at 10:57 AM, Victor Li <victorpermanent@gmail.com>wrote:
+
+> Actually i just export the model from ECOTECT to RADIANCE, and i chang some
+> parameters and run the simulation manually like Marija has shown above.
+>
+> The first time i calculated the daylgith factor in a grid
+> I run it by define: gensky 12 21 12.00 -c -a 31.400 -o -121.400 -m -120.000
+> -B 0.558659,
+> -B 0.558659 means the diffuse horizontal illuminance is 100lux outside then
+> the internal illuminance is the dylight factor.
+>
+> The second time i just calculated the internal illuminance in a grid under
+> overcast sky in the same time as the first time. I defined the sky : gensky
+> 12 21 12.00 -c -a 31.400 -o -121.400 -m -120.000
+>
+> In the grid, i can calculate the external diffuse horizontal illuminance at
+> that time under overcast sky in the same point by  the external diffuse
+> horizontal illuminance = the internal illuminance/ daylight factor.
+> However, i calculated the the external diffuse horizontal illuminance by
+> different points the results are different. Actually the results should be
+> the same because it the external diffuse horizontal illuminance. So why is
+> it different?
+>
+>
+>
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091216/47e98903/attachment.htm
+From tbleicher at googlemail.com  Wed Dec 16 05:09:51 2009
+From: tbleicher at googlemail.com (Thomas Bleicher)
+Date: Wed Dec 16 05:09:59 2009
+Subject: [Radiance-general] Daylight factor
+In-Reply-To: <be3956780912160157y16436871r3da7143d128d7488@mail.gmail.com>
+References: <be3956780912100104w3ff65086w62a4deac27a9b210@mail.gmail.com>
+	<EB124710ADB8554C930FADF760BB2BE706914999@n-yexc01.global.arup.com>
+	<be3956780912101734m3ebe9dacre2d6d1f81aee88d1@mail.gmail.com>
+	<EB124710ADB8554C930FADF760BB2BE7069150E5@n-yexc01.global.arup.com>
+	<be3956780912122028o2c29bc2ajb206fd55c015cfb9@mail.gmail.com>
+	<89355c0f0912130403w283efb87l3c77285a0fbb65bd@mail.gmail.com>
+	<be3956780912160157y16436871r3da7143d128d7488@mail.gmail.com>
+Message-ID: <89355c0f0912160509k6d6a12f3m2330665c114267ef@mail.gmail.com>
+
+On Wed, Dec 16, 2009 at 9:57 AM, Victor Li <victorpermanent@gmail.com> wrote:
+> Actually i just export the model from ECOTECT to RADIANCE, and i chang some
+> parameters and run the simulation manually like Marija has shown above.
+>
+> The first time i calculated the daylgith factor in a grid
+> I run it by define: gensky 12 21 12.00 -c -a 31.400 -o -121.400 -m -120.000
+> -B 0.558659,
+> -B 0.558659 means the diffuse horizontal illuminance is 100lux outside then
+> the internal illuminance is the dylight factor.
+
+In principle that is correct. But other options in your rtrace command
+introduce a rather high inaccuracy and some additional light which
+will have a bigger effect on the results if you use an illuminance of
+only 100 lux. If you use 10000 lux and devide by 100 you reduce
+some of these effects.
+
+> The second time i just calculated the internal illuminance in a grid under
+> overcast sky in the same time as the first time. I defined the sky : gensky
+> 12 21 12.00 -c -a 31.400 -o -121.400 -m -120.000
+>
+> In the grid, i can calculate the external diffuse horizontal illuminance at
+> that time under overcast sky in the same point by? the external diffuse
+> horizontal illuminance = the internal illuminance/ daylight factor.
+> However, i calculated the the external diffuse horizontal illuminance by
+> different points the results are different. Actually the results should be
+> the same because it the external diffuse horizontal illuminance. So why is
+> it different?
+
+Radiance has some built-in randomisation. Therefore the result of
+two identical calculations will be slightly different. Learning to choose
+the correct options to minimise this difference is one of the challanges
+of Radiance.
+
+In your example I assume that the first set of daylight factors is rather
+inaccurate. You now multiply this error by your internal illuminances
+(which might be inaccurate, too). If your daylight factor is off by 1%
+this can easily result in a difference of a few hundret lux.
+
+It would realy help us if you could mention the actual results
+of your calculations in your emails. Then we could see if the
+errors are within the expected margin of your settings.
+
+You should try your calculations with modified parameters
+as suggested and with an increased sky illuminance to see
+if your errors are still the same.
+
+Regards,
+Thomas
+
+From tbleicher at googlemail.com  Wed Dec 16 05:32:52 2009
+From: tbleicher at googlemail.com (Thomas Bleicher)
+Date: Wed Dec 16 05:33:00 2009
+Subject: [Radiance-general] material trans and glass?
+In-Reply-To: <be3956780912160214t345ef7a8tff16685470c37f@mail.gmail.com>
+References: <C746ABC7.17B2%robert.guglielmetti@nrel.gov>
+	<20091211173544.130480@gmx.net>
+	<be3956780912121936g20460bafm62105762f255a1f5@mail.gmail.com>
+	<89355c0f0912130551k1adc7bb7xbec31cc9ae3414c4@mail.gmail.com>
+	<be3956780912160214t345ef7a8tff16685470c37f@mail.gmail.com>
+Message-ID: <89355c0f0912160532g5b56eb6dq39d7eef530c52a2a@mail.gmail.com>
+
+On Wed, Dec 16, 2009 at 10:14 AM, Victor Li <victorpermanent@gmail.com> wrote:
+
+> I know what you mean but i am sitill confused the difference between
+> Transmisivity and Transmittance?
+
+It's just how it is. If you want to define the glass material
+correctly you have to convert VTL to transittance via formula.
+End of existencial uncertainty.
+
+> What is the difference between the first three parameters and trans (the
+> second to last parameter) in trans definition?
+
+Obviously the material could have any color. You define the
+color of the transmitted and reflected light via the first three
+parameters. The actual transmittance is the sixth parameter
+(second to last). If you'd set this to 0 you would effectively
+get an opaque material of the specified color.
+
+In your example the color is identical to the transmittance
+because you set the transmittance parameter to 1 which
+eliminates the complexity of finding the right values for all
+7 parameters. If your transmittance in less than 1 you have
+to calculate the red, green and blue components from their
+average value and the transmittance. The formula for this is
+given in the Rendering with Radiance book.
+
+
+
+[... on difference between glass and trans]
+
+> Actually i run the simulations by two different materials i found the
+> illuminance in the room is a little different. Why is it different?
+
+We need to know how much different it is to comment on that.
+Can you please quote the numbers you get from the simulations.
+
+One obviouse difference is that the glass material will appear
+less translucent at an angle than orthogonal to the surface.
+The trans material will keep it's 0.325 transmittance at all
+angles.
+
+If you try to compare the two materials you have to use
+a method that is not susceptible to these differences.
+
+
+> ?For "dielectric" definition, is anyone can tell me where i can find the
+> detailed definition and the instruction fo corresponding parameters?
+
+You can find documentation for Radiance here:
+
+http://radsite.lbl.gov/radiance/framer.html
+
+In particular this guide might be helpful. I think it lists all
+material types and parameters.
+
+http://radsite.lbl.gov/radiance/refer/usman1.pdf
+
+
+Regards,
+Thomas
+
+From coralie.cauwerts at uclouvain.be  Thu Dec 17 02:00:32 2009
+From: coralie.cauwerts at uclouvain.be (Coralie Cauwerts)
+Date: Thu Dec 17 02:07:04 2009
+Subject: [Radiance-general] translucent panel ( trans material )
+Message-ID: <002f01ca7eff$c53a6820$4faf3860$@cauwerts@uclouvain.be>
+
+Hello Everyone,  
+
+ 
+
+I know characteristics of a 4mm thick translucent panel (measured with a spectrophotometer). I try to introduce it in RADIANCE.
+
+ 
+
+Measurements on the exterior side (glossy) give : 
+
+Transmittance_diffuse = 75.5% and transmittance_spec = 9.1%
+
+Reflectance_diffuse = 7.7%
+
+Absorptance = 7.8%
+
+ 
+
+Measurements on the interior side (mat) give : 
+
+Transmittance_diffuse = 81.6% and transmittance_spec = 8.9%
+
+Reflectance_diffuse = 7.8%
+
+Absorptance = 1.6%
+
+ 
+
+I?m not sure that I introduced it in RADIANCE in a correct way ?
+
+(following formulas p325 in Rendering with Radiance)
+
+void trans vitr_dif
+
+0
+
+0
+
+7     0.71 0.77 0.77 0 0.1 0.99 0.0012
+
+With 
+
+Cr = 0.074
+
+Cg = 0.08
+
+Cb = 0.08
+
+Rd = 0.265*Cr+0.67*Cg+0.065*Cb = 0.07841
+
+Rs = 0
+
+Sr = 0.1
+
+Td = 75.5
+
+Ts = 0.091
+
+ 
+
+Thank you for your help !
+
+ 
+
+Coralie
+
+ 
+
+-----------------------------------------------------------------------------------------
+Coralie Cauwerts
+
+Researcher
+
+Universit? catholique de Louvain
+
+Belgium
+
+ 
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091217/0a4f219d/attachment.html
+From Gunter.Pueltz at MuellerBBM.de  Thu Dec 17 02:12:39 2009
+From: Gunter.Pueltz at MuellerBBM.de (Pueltz, Gunter)
+Date: Thu Dec 17 02:12:56 2009
+Subject: [Radiance-general] material trans and glass?
+Message-ID: <D30F19CCD96EF64BB816E0D0D7CADCF87F8E3D@smex02.mbbm.de>
+
+Hi Andy,
+ 
+I followed your link and studied the description of the material GLASS in
+the rayfront manual (see below).
+I found, that GLASS is a special form of dielectric for modelling a thin
+glas pane without internal reflections within the glas pane itself.
+GLASS produces one ray, which is transmitted, and a second ray, which is
+reflected - so far, so good.
+ 
+Now my question: I am looking for a diagram or an equation of GLASS, which
+shows the angle-dependancies. 
+It is well known, that with more normal incidence transmission of rays is
+increasing and reflection is decreasing;
+with more sloped incidence angle transmission of rays decreases and
+refelctions increases ....
+ 
+Where can I find a documentation about this angle dependancies of the
+material GLASS ?
+ 
+-Gunter  
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org]On Behalf Of Andrew
+McNeil
+Sent: Friday, December 11, 2009 5:35 PM
+To: Radiance general discussion
+Subject: Re: [Radiance-general] material trans and glass?
+
+
+Hi Victor,
+
+Transmisivity is the amount of light NOT absorbed in one pass through the
+glazing.  Glass is a special case of dielectric optimized for glass that
+accounts for angular dependence of transmission and inter-reflection between
+front and back surfaces  (but is only modeled as a single surface in
+radiance).  The reason for using transmissivity I believe is related to the
+desire to maintain a valid input range of 0-1 for the parameters instead of
+something like 0 - 0.92.
+
+You can find the equation to get transmisivity given transmittance at the
+bottom of this page:
+http://www.schorsch.com/rayfront/manual/dielectricdef.html
+<http://www.schorsch.com/rayfront/manual/dielectricdef.html>  
+
+A glazing with reported VLT of 0.325 has a transmisivity of 0.354 so the
+material definition would be as follows:
+void glass glazing.325
+0
+0
+3  0.354  0.354  0.354
+
+And your other question - The first three parameters of trans is color which
+affect transmission and reflection.  Trans does not include inter-reflection
+or angular transmission properties exhibited by glass so the input values
+are transmission.
+Also on this page there is a nice diagram describing how trans works:
+http://www.schorsch.com/rayfront/manual/transdef.html
+<http://www.schorsch.com/rayfront/manual/transdef.html> 
+
+Andy
+
+
+
+
+On 12/10/09 7:22 PM, "Victor Li" <victorpermanent@gmail.com> wrote:
+
+
+
+Sorry i made a mistake. I just want to compare the glass 3     0.325 0.325
+0.325  and trans 7     0.325 0.325 0.325 0 0 1 1 (not 0.3). 
+
+In trans, the  transmissive specularity is 1 which means the total daylight
+transmitted through the material will be specularly transmitted, like glass.
+So i defined the   transmissive specularity is 1. 
+
+Actually i had a look the webpage and i define the trans followed the
+instruction in the page. 
+
+Note also that the Radiance glass material uses "transmissivity" not
+transmittance, 
+so does trans use "transmittance" in the first three paremeters? What is the
+difference between transmittance and transmissivity?
+
+
+
+
+
+  _____  
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+<http://www.radiance-online.org/mailman/listinfo/radiance-general> 
+
+
+____________________________________________________________
+
+Electronic mail messages entering and leaving Arup  business
+
+systems are scanned for acceptability of content and viruses
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091217/82d1a3dd/attachment.htm
+From achim.geissler at intergga.ch  Thu Dec 17 02:47:10 2009
+From: achim.geissler at intergga.ch (Achim Geissler)
+Date: Thu Dec 17 02:47:20 2009
+Subject: [Radiance-general] translucent panel ( trans material )
+In-Reply-To: <002f01ca7eff$c53a6820$4faf3860$@cauwerts@uclouvain.be>
+References: <002f01ca7eff$c53a6820$4faf3860$@cauwerts@uclouvain.be>
+Message-ID: <001701ca7f06$4959be70$dc0d3b50$@geissler@intergga.ch>
+
+Dear Coralie
+
+ 
+
+if you have the full spectro-data, there may be a different path: There is a tool called ?glaze? (a script found in the standard radiance installation). With this script, you can convert Optics (?Optics? being the freeware program from the LBNL) spectral data into a more detailed Radiance description (type ?BRTDfunc?) by exporting from Optics in ?Radiance Format? and then entering this data in the ?glaze? script.
+
+ 
+
+I am laboring under the possible delusion that this is generally a better description for ?advanced? glazing products (and possibly any translucent materials). However, I am quite new at this.
+
+ 
+
+Regards
+
+Achim
+
+ 
+
+ 
+
+From: radiance-general-bounces@radiance-online.org [mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Coralie Cauwerts
+Sent: Donnerstag, 17. Dezember 2009 11:01
+To: radiance-general@radiance-online.org
+Subject: [Radiance-general] translucent panel ( trans material )
+
+ 
+
+Hello Everyone,  
+
+ 
+
+I know characteristics of a 4mm thick translucent panel (measured with a spectrophotometer). I try to introduce it in RADIANCE.
+
+ 
+
+Measurements on the exterior side (glossy) give : 
+
+Transmittance_diffuse = 75.5% and transmittance_spec = 9.1%
+
+Reflectance_diffuse = 7.7%
+
+Absorptance = 7.8%
+
+ 
+
+Measurements on the interior side (mat) give : 
+
+Transmittance_diffuse = 81.6% and transmittance_spec = 8.9%
+
+Reflectance_diffuse = 7.8%
+
+Absorptance = 1.6%
+
+ 
+
+I?m not sure that I introduced it in RADIANCE in a correct way ?
+
+(following formulas p325 in Rendering with Radiance)
+
+void trans vitr_dif
+
+0
+
+0
+
+7     0.71 0.77 0.77 0 0.1 0.99 0.0012
+
+With 
+
+Cr = 0.074
+
+Cg = 0.08
+
+Cb = 0.08
+
+Rd = 0.265*Cr+0.67*Cg+0.065*Cb = 0.07841
+
+Rs = 0
+
+Sr = 0.1
+
+Td = 75.5
+
+Ts = 0.091
+
+ 
+
+Thank you for your help !
+
+ 
+
+Coralie
+
+ 
+
+-----------------------------------------------------------------------------------------
+Coralie Cauwerts
+
+Researcher
+
+Universit? catholique de Louvain
+
+Belgium
+
+ 
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091217/73c1a11b/attachment.html
+From tbleicher at googlemail.com  Thu Dec 17 02:56:49 2009
+From: tbleicher at googlemail.com (Thomas Bleicher)
+Date: Thu Dec 17 02:56:53 2009
+Subject: [Radiance-general] material trans and glass?
+In-Reply-To: <D30F19CCD96EF64BB816E0D0D7CADCF87F8E3D@smex02.mbbm.de>
+References: <D30F19CCD96EF64BB816E0D0D7CADCF87F8E3D@smex02.mbbm.de>
+Message-ID: <89355c0f0912170256w6a3a64c0qd779496ad4a53d3d@mail.gmail.com>
+
+Gunter.
+
+Some heavy reading on the materials can be found hear:
+
+http://radsite.lbl.gov/radiance/refer/materials.pdf
+
+Hope you kept your math skills ...
+
+Regards,
+Thomas
+
+
+On Thu, Dec 17, 2009 at 10:12 AM, Pueltz, Gunter
+<Gunter.Pueltz@muellerbbm.de> wrote:
+> Hi Andy,
+>
+> I followed your link and studied the description of the material GLASS in
+> the rayfront manual (see below).
+> I found, that GLASS is a special form of dielectric for modelling a thin
+> glas pane without?internal reflections within the glas pane itself.
+> GLASS produces one ray, which is transmitted, and a second ray, which is
+> reflected - so far, so good.
+>
+> Now my question: I am looking for a diagram or an equation of GLASS, which
+> shows the angle-dependancies.
+> It is well?known, that with more normal incidence transmission of rays is
+> increasing and reflection is decreasing;
+> with more sloped incidence angle transmission of rays decreases and
+> refelctions increases ....
+>
+> Where can I find a documentation about this angle dependancies of the
+> material GLASS ?
+>
+> -Gunter
+
+From jedev at visarc.com  Thu Dec 17 06:08:27 2009
+From: jedev at visarc.com (Jack de Valpine)
+Date: Thu Dec 17 06:08:09 2009
+Subject: [Radiance-general] translucent panel ( trans material )
+In-Reply-To: <001701ca7f06$4959be70$dc0d3b50$@geissler@intergga.ch>
+References: <002f01ca7eff$c53a6820$4faf3860$@cauwerts@uclouvain.be>
+	<001701ca7f06$4959be70$dc0d3b50$@geissler@intergga.ch>
+Message-ID: <4B2A3B5B.4090302@visarc.com>
+
+Hi Coralie and Achim,
+
+A couple of comments. Optics 5 models thermal and spectral optical 
+properties of a wide range of glazing based on measured data. However it 
+does not contain a model for for diffusely transmitting materials. So 
+for modeling complex glazing systems and exporting data for use in the 
+"glaze" script it is a great place to start, however it will not help 
+with the kind of data that it looks like Coralie has available, which 
+suggests a material with a large diffuse transmitting component.
+
+There are a few things to note about the information that Coralie 
+provided. One is that it looks like one side is "shiny" or specular 
+while the other is "mat" or diffuse. The trans material will not give 
+you control over what happens on each side of the material. Based on 
+this alone it is likely that this is a material that would be better 
+characterized using the BRTDfunc material type. This allows for more 
+flexibility in describing material behavior. However, this being said 
+there is one thing that is a little puzzling (there are others who may 
+chime in on this who know more), this is that your measurments show 
+different transmittance (total) depending on the side of the material. 
+Is this possible? This certainly cannot be modeled with the "trans" 
+material type.
+
+Regards,
+
+-Jack de Valpine
+
+-- 
+# Jack de Valpine
+# president
+#
+# visarc incorporated
+# http://www.visarc.com
+#
+# channeling technology for superior design and construction
+
+
+
+Achim Geissler wrote:
+>
+> Dear Coralie
+>
+>  
+>
+> if you have the full spectro-data, there may be a different path: 
+> There is a tool called ?glaze? (a script found in the standard 
+> radiance installation). With this script, you can convert Optics 
+> (?Optics? being the freeware program from the LBNL) spectral data into 
+> a more detailed Radiance description (type ?BRTDfunc?) by exporting 
+> from Optics in ?Radiance Format? and then entering this data in the 
+> ?glaze? script.
+>
+>  
+>
+> I am laboring under the possible delusion that this is generally a 
+> better description for ?advanced? glazing products (and possibly any 
+> translucent materials). However, I am quite new at this.
+>
+>  
+>
+> Regards
+>
+> Achim
+>
+>  
+>
+>  
+>
+> *From:* radiance-general-bounces@radiance-online.org 
+> [mailto:radiance-general-bounces@radiance-online.org] *On Behalf Of 
+> *Coralie Cauwerts
+> *Sent:* Donnerstag, 17. Dezember 2009 11:01
+> *To:* radiance-general@radiance-online.org
+> *Subject:* [Radiance-general] translucent panel ( trans material )
+>
+>  
+>
+> Hello Everyone,  
+>
+>  
+>
+> I know characteristics of a 4mm thick translucent panel (measured with 
+> a spectrophotometer). I try to introduce it in RADIANCE.
+>
+>  
+>
+> Measurements on the exterior side (glossy) give :
+>
+> Transmittance_diffuse = 75.5% and transmittance_spec = 9.1%
+>
+> Reflectance_diffuse = 7.7%
+>
+> Absorptance = 7.8%
+>
+>  
+>
+> Measurements on the interior side (mat) give :
+>
+> Transmittance_diffuse = 81.6% and transmittance_spec = 8.9%
+>
+> Reflectance_diffuse = 7.8%
+>
+> Absorptance = 1.6%
+>
+>  
+>
+> I?m not sure that I introduced it in RADIANCE in a correct way ?
+>
+> (following formulas p325 in Rendering with Radiance)
+>
+> void trans vitr_dif
+>
+> 0
+>
+> 0
+>
+> 7     0.71 0.77 0.77 0 0.1 0.99 0.0012
+>
+> With
+>
+> Cr = 0.074
+>
+> Cg = 0.08
+>
+> Cb = 0.08
+>
+> Rd = 0.265*Cr+0.67*Cg+0.065*Cb = 0.07841
+>
+> Rs = 0
+>
+> Sr = 0.1
+>
+> Td = 75.5
+>
+> Ts = 0.091
+>
+>  
+>
+> Thank you for your help !
+>
+>  
+>
+> Coralie
+>
+>  
+>
+> *-----------------------------------------------------------------------------------------
+> *Coralie Cauwerts
+>
+> Researcher
+>
+> Universit? catholique de Louvain
+>
+> Belgium
+>
+>  
+>
+> ------------------------------------------------------------------------
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>   
+
+From andrew.mcneil at arup.com  Thu Dec 17 15:44:06 2009
+From: andrew.mcneil at arup.com (Andrew McNeil)
+Date: Thu Dec 17 15:44:23 2009
+Subject: [Radiance-general] translucent panel ( trans material )
+In-Reply-To: <4B2A3B5B.4090302@visarc.com>
+Message-ID: <C7500246.E209%andrew.mcneil@arup.com>
+
+Hi Coralie,
+
+I was thinking the same thing as Jack, is it possible to have different
+transmission for each side?  And even more puzzling, is it possible for a
+substance to absorb five times more light in one direction compared to the
+other?  Perhaps you could tell us how these values were measured?
+
+Using your values for the exterior side I get the following trans definition
+(including sr=0.1):
+
+void trans transmat
+0
+0
+7 0.887 0.959 0.959 0.000 0.100 0.917 0.108
+
+If you change your Td from 75.5 to 0.755 I think your results will agree
+with mine.
+
+Using your values for the interior side I get a trans definition with values
+for A2 and A3 that are out of range, so something isn't quite right.  Again
+I think we could help if your shared your method for measuring your
+translucent panel.
+
+Best,
+Andrew
+
+
+On 12/17/09 6:08 AM, "Jack de Valpine" <jedev@visarc.com> wrote:
+
+> Hi Coralie and Achim,
+> 
+> A couple of comments. Optics 5 models thermal and spectral optical
+> properties of a wide range of glazing based on measured data. However it
+> does not contain a model for for diffusely transmitting materials. So
+> for modeling complex glazing systems and exporting data for use in the
+> "glaze" script it is a great place to start, however it will not help
+> with the kind of data that it looks like Coralie has available, which
+> suggests a material with a large diffuse transmitting component.
+> 
+> There are a few things to note about the information that Coralie
+> provided. One is that it looks like one side is "shiny" or specular
+> while the other is "mat" or diffuse. The trans material will not give
+> you control over what happens on each side of the material. Based on
+> this alone it is likely that this is a material that would be better
+> characterized using the BRTDfunc material type. This allows for more
+> flexibility in describing material behavior. However, this being said
+> there is one thing that is a little puzzling (there are others who may
+> chime in on this who know more), this is that your measurments show
+> different transmittance (total) depending on the side of the material.
+> Is this possible? This certainly cannot be modeled with the "trans"
+> material type.
+> 
+> Regards,
+> 
+> -Jack de Valpine
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+
+
+From kbaker at syska.com  Thu Dec 17 18:48:11 2009
+From: kbaker at syska.com (Baker, Kristopher)
+Date: Thu Dec 17 18:49:25 2009
+Subject: [Radiance-general] translucent panel ( trans material )
+Message-ID: <EE41612A90B95246A07BF34E071CECAE035C4D52B3@SHEX01.syskamail.syska.net>
+
+________________________________
+From: radiance-general-bounces@radiance-online.org
+To: radiance-general@radiance-online.org
+Sent: Thu Dec 17 05:00:32 2009
+Subject: [Radiance-general] translucent panel ( trans material )
+Hello Everyone,
+
+I know characteristics of a 4mm thick translucent panel (measured with a spectrophotometer). I try to introduce it in RADIANCE.
+
+Measurements on the exterior side (glossy) give :
+Transmittance_diffuse = 75.5% and transmittance_spec = 9.1%
+Reflectance_diffuse = 7.7%
+Absorptance = 7.8%
+
+Measurements on the interior side (mat) give :
+Transmittance_diffuse = 81.6% and transmittance_spec = 8.9%
+Reflectance_diffuse = 7.8%
+Absorptance = 1.6%
+
+I?m not sure that I introduced it in RADIANCE in a correct way ?
+(following formulas p325 in Rendering with Radiance)
+void trans vitr_dif
+0
+0
+7     0.71 0.77 0.77 0 0.1 0.99 0.0012
+With
+Cr = 0.074
+Cg = 0.08
+Cb = 0.08
+Rd = 0.265*Cr+0.67*Cg+0.065*Cb = 0.07841
+Rs = 0
+Sr = 0.1
+Td = 75.5
+Ts = 0.091
+
+Thank you for your help !
+
+Coralie
+
+-----------------------------------------------------------------------------------------
+Coralie Cauwerts
+Researcher
+Universit? catholique de Louvain
+Belgium
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091217/59f91bea/attachment.htm
+From rpg at rumblestrip.org  Thu Dec 17 20:30:55 2009
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Thu Dec 17 20:31:00 2009
+Subject: [Radiance-general] rtrace -n question
+Message-ID: <03C1DDB4-CF76-4997-95AB-8368C9908CD4@rumblestrip.org>
+
+Hi everyone,
+
+So ah, I played with the rtrace -n option a bit, and got results I don't understand. Anyone interested in having a look, please visit this page:
+
+http://www.rumblestrip.org/interests/light/rtrace-multiprocessing-option-initial-test-results/
+
+- Rob
+From andrew.mcneil at arup.com  Thu Dec 17 23:00:00 2009
+From: andrew.mcneil at arup.com (Andrew McNeil)
+Date: Thu Dec 17 23:09:26 2009
+Subject: [Radiance-general] rtrace -n question
+In-Reply-To: <03C1DDB4-CF76-4997-95AB-8368C9908CD4@rumblestrip.org>
+Message-ID: <C7506870.E226%andrew.mcneil@arup.com>
+
+Hi Rob,
+
+When there is no ambient file there is usually an ambient cache created in
+memory.  If you don't have an ambient file each rtrace process will build
+its own cache.  I'm guessing that each process spends most of the time
+building the cache with a first point and the subsequent calculations are
+very quick.  Because getting the cache to saturation is the majority of the
+calculation time and each processor is doing this independently before
+really getting going on the points it won't matter if you have 1 or 16
+processors, the simulation will take the same amount of time.
+
+To completely turn off the ambient cache use -aa 0.  I expect you will see a
+linear correlation between number of processes and simulation times, but the
+sim times will be much much longer.
+
+On a side note, I'm very jealous of your 16 core mac pro!
+
+Andy
+
+
+
+
+On 12/17/09 8:30 PM, "Rob Guglielmetti" <rpg@rumblestrip.org> wrote:
+
+> Hi everyone,
+> 
+> So ah, I played with the rtrace -n option a bit, and got results I don't
+> understand. Anyone interested in having a look, please visit this page:
+> 
+> http://www.rumblestrip.org/interests/light/rtrace-multiprocessing-option-initi
+> al-test-results/
+> 
+> - Rob
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+
+
+From gregoryjward at gmail.com  Fri Dec 18 07:47:12 2009
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri Dec 18 07:46:44 2009
+Subject: [Radiance-general] rtrace -n question
+In-Reply-To: <C7506870.E226%andrew.mcneil@arup.com>
+References: <C7506870.E226%andrew.mcneil@arup.com>
+Message-ID: <2268F659-56BC-4FD3-AE96-0308B2F86FB1@lmi.net>
+
+I agree with Andy's assessment.  I also don't think you'll see a  
+linear acceleration past 8 processes, as the MacPro doesn't really  
+have 16 processors, only 16 threads on 8 cores.  It's not nearly the  
+same, which is why I'm holding out for more processors before I  
+upgrade my old PowerMac G5 Quad.
+
+-Greg
+
+> From: Andrew McNeil <andrew.mcneil@arup.com>
+> Date: December 17, 2009 11:00:00 PM PST
+>
+> Hi Rob,
+>
+> When there is no ambient file there is usually an ambient cache  
+> created in
+> memory.  If you don't have an ambient file each rtrace process will  
+> build
+> its own cache.  I'm guessing that each process spends most of the time
+> building the cache with a first point and the subsequent  
+> calculations are
+> very quick.  Because getting the cache to saturation is the majority  
+> of the
+> calculation time and each processor is doing this independently before
+> really getting going on the points it won't matter if you have 1 or 16
+> processors, the simulation will take the same amount of time.
+>
+> To completely turn off the ambient cache use -aa 0.  I expect you  
+> will see a
+> linear correlation between number of processes and simulation times,  
+> but the
+> sim times will be much much longer.
+>
+> On a side note, I'm very jealous of your 16 core mac pro!
+>
+> Andy
+>
+> On 12/17/09 8:30 PM, "Rob Guglielmetti" <rpg@rumblestrip.org> wrote:
+>
+>> Hi everyone,
+>>
+>> So ah, I played with the rtrace -n option a bit, and got results I  
+>> don't
+>> understand. Anyone interested in having a look, please visit this  
+>> page:
+>>
+>> http://www.rumblestrip.org/interests/light/rtrace-multiprocessing-option-initi
+>> al-test-results/
+>>
+>> - Rob
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general@radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+> ____________________________________________________________
+> Electronic mail messages entering and leaving Arup  business
+> systems are scanned for acceptability of content and viruses
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+From rpg at rumblestrip.org  Fri Dec 18 08:26:38 2009
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Fri Dec 18 08:26:43 2009
+Subject: [Radiance-general] rtrace -n question
+In-Reply-To: <2268F659-56BC-4FD3-AE96-0308B2F86FB1@lmi.net>
+References: <C7506870.E226%andrew.mcneil@arup.com>
+	<2268F659-56BC-4FD3-AE96-0308B2F86FB1@lmi.net>
+Message-ID: <E8566399-369E-434A-A9F6-FEE093328131@rumblestrip.org>
+
+OK, thanks guys. It's not as if I wouldn't use caching normally, I just saw something that didn't make sense to me. Thanks for straightening me out. 
+
+As far as the hyperthreading, I did do some tests and it seemed to be nearly linear to 15 or so, for mkillum at least. But those weren't as controlled as the testing I did yesterday with rtrace -n. I'll have to look at that some more. Anyway thanks guys!
+
+- Rob
+
+On Dec 18, 2009, at 8:47 AM, Greg Ward wrote:
+
+> I agree with Andy's assessment.  I also don't think you'll see a linear acceleration past 8 processes, as the MacPro doesn't really have 16 processors, only 16 threads on 8 cores.  It's not nearly the same, which is why I'm holding out for more processors before I upgrade my old PowerMac G5 Quad.
+> 
+> -Greg
+> 
+>> From: Andrew McNeil <andrew.mcneil@arup.com>
+>> Date: December 17, 2009 11:00:00 PM PST
+>> 
+>> Hi Rob,
+>> 
+>> When there is no ambient file there is usually an ambient cache created in
+>> memory.  If you don't have an ambient file each rtrace process will build
+>> its own cache.  I'm guessing that each process spends most of the time
+>> building the cache with a first point and the subsequent calculations are
+>> very quick.  Because getting the cache to saturation is the majority of the
+>> calculation time and each processor is doing this independently before
+>> really getting going on the points it won't matter if you have 1 or 16
+>> processors, the simulation will take the same amount of time.
+>> 
+>> To completely turn off the ambient cache use -aa 0.  I expect you will see a
+>> linear correlation between number of processes and simulation times, but the
+>> sim times will be much much longer.
+>> 
+>> On a side note, I'm very jealous of your 16 core mac pro!
+>> 
+>> Andy
+>> 
+>> On 12/17/09 8:30 PM, "Rob Guglielmetti" <rpg@rumblestrip.org> wrote:
+>> 
+>>> Hi everyone,
+>>> 
+>>> So ah, I played with the rtrace -n option a bit, and got results I don't
+>>> understand. Anyone interested in having a look, please visit this page:
+>>> 
+>>> http://www.rumblestrip.org/interests/light/rtrace-multiprocessing-option-initi
+>>> al-test-results/
+>>> 
+>>> - Rob
+>>> _______________________________________________
+>>> Radiance-general mailing list
+>>> Radiance-general@radiance-online.org
+>>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>> 
+>> ____________________________________________________________
+>> Electronic mail messages entering and leaving Arup  business
+>> systems are scanned for acceptability of content and viruses
+>> 
+>> 
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general@radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From coralie.cauwerts at uclouvain.be  Fri Dec 18 09:45:06 2009
+From: coralie.cauwerts at uclouvain.be (Coralie Cauwerts)
+Date: Fri Dec 18 09:45:19 2009
+Subject: [Radiance-general] Re: translucent panel ( trans material )
+Message-ID: <000c01ca8009$d5ec61e0$81c525a0$@cauwerts@uclouvain.be>
+
+Hi all,  
+
+ 
+
+Thanks for your responses.
+
+Values were measured with a spectrophotometer UV-VIS-NIR. The reference is a
+spectralon. I know that measurements are only indicative because some errors
+can occur when diffuse material is measured with this kind of method but I
+have no other source of information about the material.
+
+In my model, only the ?interior side? of the glass is visible.
+
+Andrew, I agree with your correction, I saw my mistake yesterday 
+
+
+ 
+
+Coralie
+----------------------------------------------------------------------------
+-------------
+
+Coralie Cauwerts
+
+Researcher
+
+Universit? catholique de Louvain
+
+Belgium
+
+ 
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091218/785cd7df/attachment.html
+From andrew.mcneil at arup.com  Fri Dec 18 09:49:25 2009
+From: andrew.mcneil at arup.com (Andrew McNeil)
+Date: Fri Dec 18 09:49:36 2009
+Subject: [Radiance-general] Mkillum bsdf + sample density
+In-Reply-To: <01240018-3522-480A-9E9D-EF02354899D2@lmi.net>
+Message-ID: <C75100A5.E251%andrew.mcneil@arup.com>
+
+Hi Everyone,
+
+Earlier this week Greg inspired me to look deeper into mkillum code to
+understand exactly how mkillum gets arrives at the illum.dat output
+resolution.  It resulted in a double a-ha moment that I wanted to share to
+close out this thread.
+
+First A-ha: the reason for the apparent +1 in the illum.dat resolution:
+
+Following the calculation for hemisphere divisions in the mkillum code I
+still got a sampling resolution of 12x38 instead of 13x39 that is written to
+the illum.dat file.  It turns out that the hemisphere sampling resolution
+*is* 12 x 38, but mkillum purposely writes writes an illum.dat array that is
+one greater in both dimensions.  It makes perfect sense when I consider
+interpolation.  
+
+The 0 degree phi value is repeated as a 360 degree value (line 363 of
+mkillum3.c). This simplifies interpolation between the last phi value and
+the first phi value in a theta row.
+
+The extra theata row is less than 0 degrees (or greater than 90 degrees
+altitude). This is added so to allow interpolation towards a consistent
+zenith value.  The extra values in the illum array are twice the average of
+the values in the upper theta row minus the value in the current phi
+division (line 267 of mkillum3.c).  The values are place on the other side
+of the zenith (over the top).  The result is that as theta approaches zenith
+the interpolated result approaches the same zenith value for all phi
+divisions.  
+
+In most cases this avoids anomalies at the zenith.
+
+
+Second A-Ha: The cause of an artifact I was witnessing when testing my bsdf
+with mkillum:
+http://www.mcneilorama.com/radiance/BSDF/mkillum.html
+(See sun position 2 & 3)
+
+The over the top interpolation explains an artifact that occurs when one of
+the illum values in the near zenith row is much greater the the others in
+the  row ( in this case due to direct sunlight).  The high value increases
+the computed average for the zenith.  Then the over the top interpolations
+create a bright circle between the upper theta row and the zenith.
+
+Now that I know what causes the artifact I can safely ignore it.  These sun
+positions used in the renderings are simply for testing the behavior.  The
+sun will never be close to the zenith of the mkillum.  In fact the panelite
+dimensions were specifically determined to preclude sunlight from passing
+directly into the gallery.
+
+
+
+
+
+
+On 12/10/09 8:30 PM, "Greg Ward" <gregoryjward@gmail.com> wrote:
+
+> Hi Andy,
+> 
+> That's some good guessing!  Yes, the difference is due to the very
+> different sampling strata.  I had to check my code (line 444 of src/
+> gen/mkillum2.c) to verify.  I don't add 1, but round-off to the
+> nearest integer, rather than the lesser one.
+> 
+> With regards to the mismatch of samples, this does cause some issues,
+> particularly near the zenith, where the altitude/azimuth strata used
+> by mkillum are a very poor match to the Klems/Tregenza strata used for
+> the BSDF.  Mkillum does a reasonable job with normalization and sample
+> distribution to make sure some rays go through each little window (and
+> the s= setting can still affect this).  So long as the light and
+> distribution are not simultaneously "peaky," it all works out.
+> 
+> Cheers,
+> -Greg
+> 
+>> From: Andrew McNeil <andrew.mcneil@arup.com>
+>> Date: December 10, 2009 4:17:04 PM PST
+>> 
+>> Hi Greg,
+>> 
+>> Thanks for your response, that d= option behavior makes sense now,
+>> but leads
+>> to a question about the number of output directions in illum.dat...
+>> 
+>> My BSDF has 18 "latitudes"  and 24 "azimuths"  (432 divisions)
+>> The resulting illum.dat is 13x39 = 507 angles
+>> 
+>> After considering your response, I guess the difference between 432
+>> and 507
+>> is a result of a BSDF pattern that doesn't match the typical radiance
+>> hemisphere division scheme used by mkillum?
+>> 
+>> I'm guessing that mkillum gets from 432 to 507 by:
+>> sqrt(432/pi) = 12
+>> 12*pi = 38
+>> 12+1 x 38+1  =  13 x 39  = 507
+>> Am I close?  I don't have an explanation for adding one to each
+>> dimension.
+>> 
+>> Finally, the sampling pattern of my BSDF (18x24) and the hemisphere
+>> division
+>> used by mkillum (13x39) results in double-sampling of some BSDF
+>> angles and
+>> non-sampling of others.  In conclusion I would be best served by
+>> using the
+>> typical radiance hemisphere division ( m x pi*m ) to generate a BSDF
+>> that
+>> "agrees" with mkillum.  (or should I stop speculating...)
+>> 
+>> Andy
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+
+
+From gregoryjward at gmail.com  Fri Dec 18 10:14:45 2009
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri Dec 18 10:14:28 2009
+Subject: [Radiance-general] Mkillum bsdf + sample density
+In-Reply-To: <C75100A5.E251%andrew.mcneil@arup.com>
+References: <C75100A5.E251%andrew.mcneil@arup.com>
+Message-ID: <3C48D6DC-2C5F-4277-B804-F79274AC4369@lmi.net>
+
+Hi Andy,
+
+Nice analysis.  I had forgotten about this bit of trickery near the  
+zenith.  The general assumption with mkillum is that it won't be  
+relied upon for the direct component, which is why an illum is  
+produced rather than a light by default.  Once you have a non- 
+diffusing system that is relying entirely on mkillum, you're in a bit  
+of trouble.  This is a key caveat that needs to be worked out somehow  
+in the BSDF case....
+
+Cheers,
+-Greg
+
+> From: Andrew McNeil <andrew.mcneil@arup.com>
+> Date: December 18, 2009 9:49:25 AM PST
+>
+> Hi Everyone,
+>
+> Earlier this week Greg inspired me to look deeper into mkillum code to
+> understand exactly how mkillum gets arrives at the illum.dat output
+> resolution.  It resulted in a double a-ha moment that I wanted to  
+> share to
+> close out this thread.
+>
+> First A-ha: the reason for the apparent +1 in the illum.dat  
+> resolution:
+>
+> Following the calculation for hemisphere divisions in the mkillum  
+> code I
+> still got a sampling resolution of 12x38 instead of 13x39 that is  
+> written to
+> the illum.dat file.  It turns out that the hemisphere sampling  
+> resolution
+> *is* 12 x 38, but mkillum purposely writes writes an illum.dat array  
+> that is
+> one greater in both dimensions.  It makes perfect sense when I  
+> consider
+> interpolation.
+>
+> The 0 degree phi value is repeated as a 360 degree value (line 363 of
+> mkillum3.c). This simplifies interpolation between the last phi  
+> value and
+> the first phi value in a theta row.
+>
+> The extra theata row is less than 0 degrees (or greater than 90  
+> degrees
+> altitude). This is added so to allow interpolation towards a  
+> consistent
+> zenith value.  The extra values in the illum array are twice the  
+> average of
+> the values in the upper theta row minus the value in the current phi
+> division (line 267 of mkillum3.c).  The values are place on the  
+> other side
+> of the zenith (over the top).  The result is that as theta  
+> approaches zenith
+> the interpolated result approaches the same zenith value for all phi
+> divisions.
+>
+> In most cases this avoids anomalies at the zenith.
+>
+>
+> Second A-Ha: The cause of an artifact I was witnessing when testing  
+> my bsdf
+> with mkillum:
+> http://www.mcneilorama.com/radiance/BSDF/mkillum.html
+> (See sun position 2 & 3)
+>
+> The over the top interpolation explains an artifact that occurs when  
+> one of
+> the illum values in the near zenith row is much greater the the  
+> others in
+> the  row ( in this case due to direct sunlight).  The high value  
+> increases
+> the computed average for the zenith.  Then the over the top  
+> interpolations
+> create a bright circle between the upper theta row and the zenith.
+>
+> Now that I know what causes the artifact I can safely ignore it.   
+> These sun
+> positions used in the renderings are simply for testing the  
+> behavior.  The
+> sun will never be close to the zenith of the mkillum.  In fact the  
+> panelite
+> dimensions were specifically determined to preclude sunlight from  
+> passing
+> directly into the gallery.
+
+From jm at dmu.ac.uk  Fri Dec 18 10:15:34 2009
+From: jm at dmu.ac.uk (John Mardaljevic)
+Date: Fri Dec 18 10:16:03 2009
+Subject: [Radiance-general] rtrace -n question
+Message-ID: <57D5DC3A-F38F-4D91-A83F-AFEAB639DB8B@dmu.ac.uk>
+
+Rob,
+
+I too was somewhat bemused/confused re: virtual cores.  If you find  
+the opportunity, could you also test it with totally independent  
+jobs?  In fact, varying multiple instances of the same job would do.   
+I'd dearly like to have my scepticism refuted.
+
+Cheers,
+
+-John
+
+-----------------------------------------------
+Dr. John Mardaljevic
+Reader in Daylight Modelling
+Institute of Energy and Sustainable Development
+De Montfort University
+The Gateway
+Leicester
+LE1 9BH, UK
++44 (0) 116 257 7972
++44 (0) 116 257 7981 (fax)
+
+jm@dmu.ac.uk
+http://www.iesd.dmu.ac.uk/~jm
+
+
+
+
+From andrew.mcneil at arup.com  Fri Dec 18 10:19:14 2009
+From: andrew.mcneil at arup.com (Andrew McNeil)
+Date: Fri Dec 18 10:19:23 2009
+Subject: [Radiance-general] Re: translucent panel ( trans material )
+In-Reply-To: <000c01ca8009$d5ec61e0$81c525a0$@cauwerts@uclouvain.be>
+Message-ID: <C75107A2.E25B%andrew.mcneil@arup.com>
+
+Hi Coralie,
+
+I?m not familiar with Spectralon or if there are different varieties of
+spectralon, but all the hits of my quick search reveals a substance with
+high diffuse reflectance.  And your measurements suggest high diffuse
+transmission.  Is it possible that you are confusing Td with Rd?  That would
+explain concerns regarding inconsistent transmission values for front and
+back.
+
+After talking with a materials guy, I now know that it is possible for a
+composite material to have different absorbance depending on direction of
+travel (ie if you have a silver coating on one side of glass, light from one
+side will pass through the glass twice while light from the other side may
+not pass through the material at all).  So for me that is no longer a
+puzzle. 
+
+Andy
+
+
+
+On 12/18/09 9:45 AM, "Coralie Cauwerts" <coralie.cauwerts@uclouvain.be>
+wrote:
+
+> Hi all,? 
+>  
+> Thanks for your responses.
+> Values were measured with a spectrophotometer UV-VIS-NIR. The reference is a
+> spectralon. I know that measurements are only indicative because some errors
+> can occur when diffuse material is measured with this kind of method but I
+> have no other source of information about the material.
+> In my model, only the ?interior side? of the glass is visible.
+> Andrew, I agree with your correction, I saw my mistake yesterday ?
+>  
+> Coralie
+> ------------------------------------------------------------------------------
+> -----------
+> Coralie Cauwerts
+> Researcher
+> Universit? catholique de Louvain
+> Belgium
+>  
+> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091218/1ef01c00/attachment.htm
+From rpg at rumblestrip.org  Fri Dec 18 10:23:48 2009
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Fri Dec 18 10:23:55 2009
+Subject: [Radiance-general] rtrace -n question
+In-Reply-To: <57D5DC3A-F38F-4D91-A83F-AFEAB639DB8B@dmu.ac.uk>
+References: <57D5DC3A-F38F-4D91-A83F-AFEAB639DB8B@dmu.ac.uk>
+Message-ID: <53715019-D370-4457-8798-3BF51FB7C289@rumblestrip.org>
+
+On Dec 18, 2009, at 11:15 AM, John Mardaljevic wrote:
+
+> Rob,
+> 
+> I too was somewhat bemused/confused re: virtual cores.  If you find the opportunity, could you also test it with totally independent jobs?  In fact, varying multiple instances of the same job would do.  I'd dearly like to have my scepticism refuted.
+
+Lemme see what I can do. Turns out, my recollection of rpict scaling was related to a different test I did, where I subdivided a view into 40 tiles and sent them off to a cluster, not to my local machine. So in that case it should have been expected that I got a linear speed-up because it was distributed to different physical cores. But I did do a test of mkillum with the -n option and I thought I saw a linear increase to 15 on my local machine. This was a little while ago and I'll have to dig it up and look closely at it, as well as do a proper test of rtrace. I'll let you know what I find out but I'm not optimistic at this point. =8-/
+
+- Rob
+From bernd at bzed.de  Sat Dec 19 05:34:48 2009
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Sat Dec 19 15:53:12 2009
+Subject: [Radiance-general] eulumdat photometry tools
+In-Reply-To: <4B0B44D2.9070203@gmx.net>
+References: <4B0B44D2.9070203@gmx.net>
+Message-ID: <4B2CD678.3060107@bzed.de>
+
+Lars O. Grobe wrote:
+> As I know, handling of luminaire data can cause quite a headache. Just
+> happened to me, as I got some Eulumdat-formatted files. First I tried
+> Carsten's eulum2ies, but it crashes - I guess due to the hight
+> resolution in 1 degree steps for my files. Then I found something quite
+> interesting:
+> 
+> http://sourceforge.net/projects/qlumedit/
+> 
+> It is a QT-based tool, loading eulumdat files, processing the content so
+> that it can be displayed and edited in tables, creates some plot, and -
+> converts to IES!
+> 
+> Unfortunately I was not able to compile the QT3-sources, my knowledge on
+> QT is limited. But at least the Windows-binary runs without any problems
+> under Wine here.
+
+Hint: Qt4 was released a looong time ago now ;)
+On Debian the following works fine to build it:
+qmake-qt4
+make
+
+I have nothing here to test it, but the program stars just fine then.
+
+Have fun,
+
+Bernd
+
+
+-- 
+ Bernd Zeimetz                            Debian GNU/Linux Developer
+ http://bzed.de                                http://www.debian.org
+ GPG Fingerprints: 06C8 C9A2 EAAD E37E 5B2C BE93 067A AD04 C93B FF79
+                   ECA1 E3F2 8E11 2432 D485 DD95 EB36 171A 6FF9 435F
+
+From victorpermanent at gmail.com  Sun Dec 20 00:23:43 2009
+From: victorpermanent at gmail.com (Victor Li)
+Date: Sun Dec 20 00:23:47 2009
+Subject: [Radiance-general] material trans and glass?
+In-Reply-To: <89355c0f0912170256w6a3a64c0qd779496ad4a53d3d@mail.gmail.com>
+References: <D30F19CCD96EF64BB816E0D0D7CADCF87F8E3D@smex02.mbbm.de>
+	<89355c0f0912170256w6a3a64c0qd779496ad4a53d3d@mail.gmail.com>
+Message-ID: <be3956780912200023x280a7a07tfefe0b8c97f9b91f@mail.gmail.com>
+
+Does anyone tell me the definition and difference between Transmisivity and
+Transmittance?
+
+What is the definition of the frist 3 numbers and the second to last number
+of trans definitions?
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091220/7e9e6832/attachment.html
+From Christopher.Rush at arup.com  Sun Dec 20 08:41:51 2009
+From: Christopher.Rush at arup.com (Christopher Rush)
+Date: Sun Dec 20 08:42:00 2009
+Subject: [Radiance-general] material trans and glass?
+In-Reply-To: <be3956780912200023x280a7a07tfefe0b8c97f9b91f@mail.gmail.com>
+References: <D30F19CCD96EF64BB816E0D0D7CADCF87F8E3D@smex02.mbbm.de><89355c0f0912170256w6a3a64c0qd779496ad4a53d3d@mail.gmail.com>
+	<be3956780912200023x280a7a07tfefe0b8c97f9b91f@mail.gmail.com>
+Message-ID: <EB124710ADB8554C930FADF760BB2BE7069FB410@n-yexc01.global.arup.com>
+
+The formula I have to go from total transmission to transmissivity is
+
+ 
+
+=(SQRT(0.8402528435+0.0072522239*Transmission^2)-0.9166530661)/0.0036261
+19/Transmission
+
+ 
+
+ 
+
+For trans definition from page 325-326 of Rendering with Radiance:
+
+ 
+
+Where:
+
+Cr,Cg,Cb are the diffuse reflectance in R,G,B channels, and Rd is the
+photopic average of those.
+
+Rs is reflected specularity (fraction reflected off first surface in
+mirror fashion)
+
+Sr is surface roughness similar to plastic
+
+Td is diffuse transmissivity (fraction transmitted diffusely in a
+scattering fashion)
+
+Ts is fraction transmitted as a beam (like through clear glass, not
+scattered)
+
+ 
+
+In reverse order, the parameters for trans can be calculated as:
+
+ 
+
+A7=Ts / (Td + Ts)
+
+A6=(Td + Ts) / ( Rd + Td + Ts)
+
+A5=Sr
+
+A4=Rs
+
+A3=Cb / ( (1-Rs)*(1-A6) )
+
+A2=Cg / ( (1-Rs)*(1-A6) )
+
+A1=Cr / ( (1-Rs)*(1-A6) )
+
+ 
+
+Then the -st setting for rpict or rtrace should be:
+
+ 
+
+St=A6*A7*( 1 - photopic average(A1,A2,A3) * A4 )
+
+ 
+
+ 
+
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of
+Victor Li
+Sent: Sunday, December 20, 2009 3:24 AM
+To: Radiance general discussion
+Subject: Re: [Radiance-general] material trans and glass?
+
+ 
+
+Does anyone tell me the definition and difference between Transmisivity
+and Transmittance? 
+
+What is the definition of the frist 3 numbers and the second to last
+number of trans definitions?
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091220/f83a02d5/attachment.html
+From grobe at gmx.net  Sun Dec 20 16:59:23 2009
+From: grobe at gmx.net (Lars Grobe)
+Date: Sun Dec 20 16:59:30 2009
+Subject: [Radiance-general] material trans and glass?
+In-Reply-To: <EB124710ADB8554C930FADF760BB2BE7069FB410@n-yexc01.global.arup.com>
+References: <D30F19CCD96EF64BB816E0D0D7CADCF87F8E3D@smex02.mbbm.de><89355c0f0912170256w6a3a64c0qd779496ad4a53d3d@mail.gmail.com>
+	<be3956780912200023x280a7a07tfefe0b8c97f9b91f@mail.gmail.com>
+	<EB124710ADB8554C930FADF760BB2BE7069FB410@n-yexc01.global.arup.com>
+Message-ID: <20091221005923.261830@gmx.net>
+
+Hi,
+
+Christopher gave you the formulae. To understand the difference, the definitions in RwR are quite useful. To make it easy to understand, the transmittance is what you can measure from a real, physical sample. It is light out / light in. Simple. But as we know, there are more effects then absorption affecting the transmittance, namely it is not only the body but also the surfaces of it (the interface between the solid and, e.g., air) which influence the amount of light traveling through a dielectric object. These surface effects, depending on the index of refraction of the solid and surrounding media, tell you about the light which is reflected. This happens both at the outside of a glass pane (which is what you see when looking at your mirror image in the subway while in a dark tunnel) and at the inside, which is used e.g. for transmitting light through optical fibre. I am sure that you can get a better explanaition from any physics book. So what this means is that while the!
+  transmissivity of a cube of glass would be constant wherever it is, its transmittance would change when surrounded by air, water or oil, due to the different refractive indices of the surrounding media.
+
+Now why is it that complicated, why do trans and glass expect different characteristics?
+
+Remember that glass is just a handy way to model thin dielectric surfaces for windows. This means that a lot is known that would have to be modeled for a generic material as trans. A window glass has a known refractive index as the surrounding media (air) has, the approximate light transport by in the material can be estimated. So you just give the materials property as what light is NOT absorbed when traveling through it once, the surfaces' influence can be calculated by the software.
+
+Trans is generic, it could describe a thick block of material, or a material with any refractive index. So the software needs the information on what happens on the surfaces - so you need to know how much light is reflected. In other words, you are the one measuring or calculating the reflectance, radiance expects the result and thus does not have to care about the refractive properties any more.
+
+However, I would still refuse to take trans as the counterpart for glass - better look at dielectric. This is actually the more generic type for glass, and it again allows you to define the refractive indices of the object and the surrounding media. Other than trans, it will use these to calculate the surface effects. But other then glass, it HAS to calculate them according to the thickness, and refractive indices as given, and cannot assume a simplified model with a thin object and standard refractive properties. So again, you have to give the transmissivity. Other then for glass, it needs to be defined per unit length - while the surface properties only depend on the refractive indices, the absorption depends on the thickness, or betther on the length that light travels through the material.
+
+So it is all about using the appropriate modifier for the given task. Glass for thin glass surfaces in air, dielectric for thicker dielectric surfaces or objects which are not surrounded by air (then you need the interface modifier and dielectric), and trans when you know from measurements or calcultation the reflective properties and need the additional parameters and do not need the optimizations of the others. The rest can be found in literature on physics and optics. As I surely made some mistakes while typing the above late at night, I would recommend some good book instead as this is not specific to Radiance.
+
+Cheers,
+
+Lars.
+
+> Does anyone tell me the definition and difference between Transmisivity
+> and Transmittance?
+
+From MdelaFuente at wmtao.com  Tue Dec 22 09:07:29 2009
+From: MdelaFuente at wmtao.com (Mark de la Fuente)
+Date: Tue Dec 22 09:08:13 2009
+Subject: [Radiance-general] Combining Ambient Files
+Message-ID: <4B30A86F.B450.0049.0@wmtao.com>
+
+Radiance Group,
+ 
+Using pcomb it's possible add images together. 
+ 
+Is it possible to combine ambient files in a similar way?
+ 
+I'm running a simulation on a Cygwin (windows) computer.  Windows won't let us share the ambient file, so creating multiple views of large scenes takes longer to do, as processors sit idle. Is it possible to run multiple rpicts of the same octree, each one with a different view and associated ambient file, and then add the ambient files together for use in future runs?
+ 
+Thank you for your thoughts.
+ 
+Mark de la Fuente
+
+[{--Wm. Tao & Associates, Inc.--}] This message and content is privileged, intended only for recipients named and/or addressed.  If the receiver/reader is not a representative of the intended recipient, any review, forwarding, dissemination or copying of this message or its content, in part or in whole, is prohibited. If you have received this message in error, please notify the sender immediately by Reply email, and Delete the original message and attachments.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091222/3841ec53/attachment.htm
+From Robert.Guglielmetti at nrel.gov  Tue Dec 22 09:18:31 2009
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Tue Dec 22 09:18:34 2009
+Subject: [Radiance-general] Combining Ambient Files
+In-Reply-To: <4B30A86F.B450.0049.0@wmtao.com>
+Message-ID: <C7564D77.199C%robert.guglielmetti@nrel.gov>
+
+On 12/22/09 10:07 AM, "Mark de la Fuente" <MdelaFuente@wmtao.com> wrote:
+
+> I'm running a simulation on a Cygwin (windows) computer.  Windows won't let us
+> share the ambient file, so creating multiple views of large scenes takes
+> longer to do, as processors sit idle. Is it possible to run multiple rpicts of
+> the same octree, each one with a different view and associated ambient file,
+> and then add the ambient files together for use in future runs?
+
+Hi Mark,
+
+You can do that with the lookamb utility. You use lookamb -h -d to print the
+contents of the ambient file sans header to STDOUT, then pipe that back to
+lookamb with -r to roll them all up into one ambient file.
+
+- Rob
+
+
+From gregoryjward at gmail.com  Tue Dec 22 10:16:20 2009
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue Dec 22 10:15:30 2009
+Subject: [Radiance-general] Combining Ambient Files
+In-Reply-To: <C7564D77.199C%robert.guglielmetti@nrel.gov>
+References: <C7564D77.199C%robert.guglielmetti@nrel.gov>
+Message-ID: <2013A2AD-CF2B-4727-9D6E-DCD3838047E2@lmi.net>
+
+Hi Mark,
+
+Rob is basically right.  There is an even simpler method, though.  So  
+long as the ambient file was written correctly, you can append it from  
+another source using getinfo to remove the header:
+
+	getinfo - < machine2.amb >> machine1.amb
+
+If you are concerned that one or the other ambient file may not be  
+complete, the safer method is lookamb:
+
+	(lookamb -d machine1.amb ; lookamb -h -d machine2.amb) | lookamb -r >  
+combined.amb
+
+-Greg
+
+> From: "Guglielmetti, Robert" <Robert.Guglielmetti@nrel.gov>
+> Date: December 22, 2009 9:18:31 AM PST
+>
+> On 12/22/09 10:07 AM, "Mark de la Fuente" <MdelaFuente@wmtao.com>  
+> wrote:
+>
+>> I'm running a simulation on a Cygwin (windows) computer.  Windows  
+>> won't let us
+>> share the ambient file, so creating multiple views of large scenes  
+>> takes
+>> longer to do, as processors sit idle. Is it possible to run  
+>> multiple rpicts of
+>> the same octree, each one with a different view and associated  
+>> ambient file,
+>> and then add the ambient files together for use in future runs?
+>
+> Hi Mark,
+>
+> You can do that with the lookamb utility. You use lookamb -h -d to  
+> print the
+> contents of the ambient file sans header to STDOUT, then pipe that  
+> back to
+> lookamb with -r to roll them all up into one ambient file.
+>
+> - Rob
+
+From gregoryjward at gmail.com  Tue Dec 22 10:18:32 2009
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue Dec 22 10:17:43 2009
+Subject: [Radiance-general] Combining Ambient Files
+In-Reply-To: <2013A2AD-CF2B-4727-9D6E-DCD3838047E2@lmi.net>
+References: <C7564D77.199C%robert.guglielmetti@nrel.gov>
+	<2013A2AD-CF2B-4727-9D6E-DCD3838047E2@lmi.net>
+Message-ID: <32388F8D-73FA-4CB3-B667-0E56311C0095@gmail.com>
+
+Small goof -- the correct command is:
+
+	(lookamb -d machine1.amb ; lookamb -h -d machine2.amb) | lookamb -d - 
+r > combined.amb
+
+The second lookamb leaves off the header, which is why only the second  
+one has -h.
+
+-Greg
+
+> From: Greg Ward <gward@lmi.net>
+> Date: December 22, 2009 10:16:20 AM PST
+> Subject: Re: [Radiance-general] Combining Ambient Files
+>
+> Hi Mark,
+>
+> Rob is basically right.  There is an even simpler method, though.   
+> So long as the ambient file was written correctly, you can append it  
+> from another source using getinfo to remove the header:
+>
+> 	getinfo - < machine2.amb >> machine1.amb
+>
+> If you are concerned that one or the other ambient file may not be  
+> complete, the safer method is lookamb:
+>
+> 	(lookamb -d machine1.amb ; lookamb -h -d machine2.amb) | lookamb -r  
+> > combined.amb
+>
+> -Greg
+
+From MdelaFuente at wmtao.com  Tue Dec 22 12:45:47 2009
+From: MdelaFuente at wmtao.com (Mark de la Fuente)
+Date: Tue Dec 22 12:46:26 2009
+Subject: [Radiance-general] Combining Ambient Files
+Message-ID: <4B30DB99.B450.0049.0@wmtao.com>
+
+Greg and Rob.  Thanks, I will check out both tools.  After sending out my e-mail, I went ahead and tried to share the ambient file just for fun.  Now I've got 8 cores working on one ambient file (which is growing) and so far no errors after a few hours and many images...  In the past I don't think I've been able to do this.  Maybe having all cores in one machine rather than running multiple machines makes a difference!
+ 
+Mark
+
+[{--Wm. Tao & Associates, Inc.--}] This message and content is privileged, intended only for recipients named and/or addressed.  If the receiver/reader is not a representative of the intended recipient, any review, forwarding, dissemination or copying of this message or its content, in part or in whole, is prohibited. If you have received this message in error, please notify the sender immediately by Reply email, and Delete the original message and attachments.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091222/e9dc7738/attachment.html

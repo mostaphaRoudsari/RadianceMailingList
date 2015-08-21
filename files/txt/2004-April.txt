@@ -1,0 +1,3789 @@
+From Rob.Fitzsimmons at Summit.Fiserv.com  Thu Apr  1 22:18:49 2004
+From: Rob.Fitzsimmons at Summit.Fiserv.com (Fitzsimmons, Rob)
+Date: Thu Apr  1 22:19:38 2004
+Subject: [Radiance-general] ranimate question
+Message-ID: <7B2F6EA5E35E214882CB9828962BC3CF04D693D3@corvallis.summit.fiserv.com>
+
+Now that I've generated an anim.vf file, I want to use ranimate.
+I create test3.ran
+
+#test3.ran
+# The rad input file for our static scene:
+#RIF= test3.rif
+OCT= test3.oct
+render=   -ms 0.56 -ds .2 -dt .05 -dc .75 -dr 3 -sj 1 -st .01  -af
+test3a.amb -aa .1 -lr 12 -lw .0005 -ar 80 -ad 512 -as 256 -ab 2
+#the spool directory:
+DIRECTORY= anim
+# The view file containing one view per frame:
+VIEWFILE= anim.vf
+# The amount of temporary disk space available:
+DISKSPACE= 50   # megabytes
+
+When I try
+% ranimate test3.ran
+I get an error - Segmentation fault
+(looking in the archives, I've seen that error with mkillum, but not
+ranimate)
+
+So I try
+% ranimate -n -e test3.ran 
+then copy the1st  rpict line
+
+rpict -ms 0.56 -ds .2 -dt .05 -dc .75 -dr 3 -sj 1 -st .01 -af test3a.amb -aa
+.1 -lr 12 -lw .0005 -ar 80 -ad 512 -as 256 -ab 2 -vp -67.215 -32.308 12.2963
+-vd 0.840767 0.510078 -0.198076 -vh 50 -vv 50 -w0 -o anim/frame%03d.unf -x
+1280 -y 1280 -S 1 test3.oct < anim/anim.vf
+
+and paste it into a new shell
+
+That starts to work - producing .unf files
+I could do that, but then I'd have to pfilt each frame and remove the .unf
+files
+
+let me know if you need more details
+
+Thanks
+
+Rob F
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20040401/81f2ad6c/attachment.htm
+From gward at lmi.net  Fri Apr  2 20:31:16 2004
+From: gward at lmi.net (Greg Ward)
+Date: Fri Apr  2 20:32:50 2004
+Subject: [Radiance-general] Fwd: ranimate question
+Message-ID: <ED6D13E0-84D3-11D8-BA47-000A95BB392A@lmi.net>
+
+Just so no one else bothers about this.
+
+-Greg
+
+Begin forwarded message:
+
+> From: "Fitzsimmons, Rob" <Rob.Fitzsimmons@Summit.Fiserv.com>
+> Date: April 2, 2004 9:33:51 AM PST
+> To: "'Greg Ward '" <gward@lmi.net>
+> Subject: RE: ranimate question
+>
+> Thanks once again Greg for all of your help
+> I'm ranimating now!
+>
+> Rob
+>
+> -----Original Message-----
+> From: Greg Ward
+> To: Fitzsimmons, Rob
+> Sent: 4/2/2004 9:19 AM
+> Subject: Re: ranimate question
+>
+> Hi Rob,
+>
+> I don't get a segmentation violation when I run the binaries downloaded
+> for 3.5 from the Radiance website, but it does give me the following
+> error:
+>
+> ranimate test3.ran
+> ranimate: cannot execute on host "localhost"
+> ranimate: no working process servers
+>
+> I suspect there was some change (or changes) between the version of OS
+> X the precompiled binaries were built for and Panther, which I'm
+> running now.? Rather than trying to figure out what the problem is with
+>  those binaries, I recommend that you run a new set of binaries 
+> instead.
+> ? The latest version of ranimate seems to work just fine.
+>
+> If you cannot compile the HEAD distribution for some reason, at least
+> use the binary of ranimate that I am attaching to this e-mail.? Let me
+> know if this fixes your problem or not.
+>
+> -Greg
+>
+> P.S.? I really need to make a new release!
+>
+> ?<<ranimate.gz>>
+
+
+From js0754 at bris.ac.uk  Mon Apr  5 10:35:59 2004
+From: js0754 at bris.ac.uk (John Sutherland)
+Date: Mon Apr  5 10:35:19 2004
+Subject: [Radiance-general] Why is this happening in my renders?
+Message-ID: <000501c41ae9$05b02ab0$0300a8c0@cumberland>
+
+Ok,, my renders internally are doing odd things. The inside of the
+chapter house im modelling I would expect to be a little orangey as the
+textures are orangy-ish colour. Which is what I get when I do a render
+then run pcond -s, its too dark really for an unfiltered render:
+ 
+https://www.bris.ac.uk/fluff/u/js0754/0j8_md0p1NAu1fdWB6pt8A7o/12hrinter
+nal-s.jpg
+ 
+But when I run pcond -h the renders come out very grey, any idea why
+this is? Is it correct, is it something to do with the light levels, or
+contrast forcing it to grey?
+ 
+https://www.bris.ac.uk/fluff/u/js0754/2u4diWLd_7Kih_chtUlZTA7o/12hrinter
+nal-h.jpg
+ 
+If it is meant to be like this then why? Any ideas
+ 
+John
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20040405/add49c9d/attachment.html
+From Giulio.Antonutto at arup.com  Mon Apr  5 10:57:42 2004
+From: Giulio.Antonutto at arup.com (Giulio Antonutto)
+Date: Mon Apr  5 10:57:49 2004
+Subject: [Radiance-general] Why is this happening in my renders?
+Message-ID: <DC0CAEEA090E984C911D3B85B16C3F90FAF3BE@l-gnts05>
+
+I think you are right: it should be due to the low light levels => scotopic
+vision (option -c in pcond simulate this and it is bundled in the -h
+option).
+if you want to exclude the -c option, try to use "pcond -a+ -v+ -s+" instead
+of "pcond -h+"
+cheers,
+giulio
+ 
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org]On Behalf Of John
+Sutherland
+Sent: 05 April 2004 09:36
+To: radiance-general@radiance-online.org
+Subject: [Radiance-general] Why is this happening in my renders?
+
+
+Ok,, my renders internally are doing odd things. The inside of the chapter
+house im modelling I would expect to be a little orangey as the textures are
+orangy-ish colour. Which is what I get when I do a render then run pcond -s,
+its too dark really for an unfiltered render:
+ 
+https://www.bris.ac.uk/fluff/u/js0754/0j8_md0p1NAu1fdWB6pt8A7o/12hrinternal-
+s.jpg
+<https://www.bris.ac.uk/fluff/u/js0754/0j8_md0p1NAu1fdWB6pt8A7o/12hrinternal
+-s.jpg> 
+ 
+But when I run pcond -h the renders come out very grey, any idea why this
+is? Is it correct, is it something to do with the light levels, or contrast
+forcing it to grey?
+ 
+https://www.bris.ac.uk/fluff/u/js0754/2u4diWLd_7Kih_chtUlZTA7o/12hrinternal-
+h.jpg
+<https://www.bris.ac.uk/fluff/u/js0754/2u4diWLd_7Kih_chtUlZTA7o/12hrinternal
+-h.jpg> 
+ 
+If it is meant to be like this then why? Any ideas
+ 
+John
+
+___________________________________________________________________
+Electronic mail messages entering and leaving Arup business
+systems are scanned for acceptability of content and viruses.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20040405/175d5ab6/attachment.htm
+From schorsch at schorsch.com  Mon Apr  5 18:55:25 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Mon Apr  5 18:55:31 2004
+Subject: [Radiance-general] Tutorial and Seminar 6/7. May 2004 in
+	Braunschweig
+Message-ID: <Pine.BSF.4.58.0404051233310.7392@emancholl.pair.com>
+
+Hi all,
+
+just wanted to get rid of a short announcement:
+
+
+  Two Radiance Based German Language Training Events.
+
+
+  3D-Lighting Software Tutorial
+  Thu, May 6th 2004
+  http://www.al-ware.com/index.php?CATID=242&SUBCATID=243&LANGID=6
+
+  Practical Lighting Seminar
+  Thu, May 7th 2004
+  http://www.al-ware.com/index.php?CATID=242&SUBCATID=244&LANGID=6
+
+  Simulation Laboratory
+  Institute for Building and Solar Technology IGS
+  Technical University Braunschweig
+  Germany
+
+
+Those two events are planned by Andreas Lahme from ALWare, who
+has been (and still is) developing 3DSolar, the building modeller
+software for Rayfront/Radiance, as well as a suite of analysis
+and documentation tools.
+
+We will be holding the tutorial session together. Andreas will
+teach modelling and analysis, I will teach the Radiance/Rayfront
+related parts. We will first introduce the simulation principles,
+and then walk the participants through projects interactively.
+This course is meant for people who are interested to see whether
+the presented software is suitable to solve their problems, but
+existing users are of course also welcome.
+
+Andreas will teach the Seminar with Prof. Friedrich Sick.
+The focus of this part is less on pressing the right buttons,
+but more on solving practical problems in daylighting design.
+The subject matter includes daylighting fundamentals, design
+procedures, evaluation criteria, and the economical use of the
+available software tools. The target audience are architects and
+engineers who want a to reach a better understanding on how to
+work with daylight when designing buildings.
+
+Both events are in german language. There are computers available
+(probably one per two participants) for an immediate hands-on
+learning experience. Demonstration examples may be adapted to the
+interests of the participants, or even fully contributed by them.
+It is possible to participate for only one day (270.- Euro + VAT),
+or for both together (486.- Euro + VAT).
+
+If you're interested, please contact Andreas Lahme for further
+details and registration info:
+
+  ALware Andreas Lahme
+  Leopoldstrasse 7a
+  38100 Braunschweig
+  Germany
+  tel: +49 (0)531 / 250 72 80
+  fax: +49 (0)531 / 250 72 81
+  e-mail: info@alware.de
+
+
+I'd be happy to see some of you there!
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From cjprocha at yahoo.com  Tue Apr  6 15:46:28 2004
+From: cjprocha at yahoo.com (Caroline Prochazka)
+Date: Tue Apr  6 15:46:40 2004
+Subject: [Radiance-general] Exterior light levels and daylight factors
+Message-ID: <20040406134628.50045.qmail@web11301.mail.yahoo.com>
+
+Hello,
+I am a graduate student in architecture at the
+University of Waterloo, Canada. My thesis centres on
+the modelling of two Canadian 'sustainable' buildings
+to investigate the relationship between daylighting
+and energy consumption for heating and cooling. I am
+modelling each building in Desktop Radiance in order
+to evaluate the performance of both Ecotect and
+Energy-10 in daylighting analysis.
+
+I had hoped to use Desktop Radiance to evaluate
+daylight factors in key areas of the buildings. While
+I am able to model fairly realistic interior
+illumination results and analyse these using the False
+Colour plot I have encountered several problems:
+
+1. When I opt for a daylight factor plot, the scale
+remains at a range of 0 to 1.0 and is unaffected by
+any changes I try to make through the analysis
+dialogue box.  The result in Radiance is a washed out
+image all in the 'maximum' colour (my other software
+suggests DF% between 2 and 4%) confirming DF%>1.0
+How can I adjust the scale for DF% readings in Desktop
+Radiance?
+
+2. I am trying to assess the effect of changing
+glazing types. For daylight studies in the late winter
+afternoon (based on sun charts and other software, I'm
+using 4pm Dec21, where the sun is not yet set, but
+very low in the sky), where I have not modelled any
+surrounding obstructions such as trees or buildings,
+my internal illuminance levels are consistently about
+200 lux, even on the east side of the building. Common
+sense tells me there should be MUCH MUCH less light
+than this...probably no more than 100 lux. Also, when
+changing glazing types (ie, from clear to reflective)
+a significant change is noticed for noon hour
+lighting, but the 4pm Dec21 lighting remains at 200
+lux. What could I be mis-assuming?
+
+I have recently run a few simplified test models and
+compared my results to true exterior light conditions
+using a hand-held light meter. The results are
+somewhat frustrating, but interesting nonetheless.
+
+My questions here are particularly:
+3. How does Radiance calculate the external light
+levels?
+4. On a perfectly clear morning in a low pollution
+area (assumed turbidity=2) my light meter reading read
+approx. 55600 lux. A Radiance test (modelling an
+unobstructed horizontal plane outdoors) for the same
+date and time, and lat. long settings, with
+turbidity=2 produced an exterior light level of 47000
+lux (15% off the true reading!). While there may have
+been some diffuse reflection off nearby buildings,
+there was certainly no direct reflection or shadow on
+the light meter. This seems to be much too large a
+difference. Any suggestions?
+
+Apologies for the long email. I often read that these
+software applications are tested and confirmed but my
+data isn't showing an appropriate correlation of the
+simulation to reality. Any remarks would be greatly
+appreciated.
+
+Caroline Prochazka
+M.Arch candidate
+University of Waterloo
+
+
+__________________________________
+Do you Yahoo!?
+Yahoo! Small Business $15K Web Design Giveaway 
+http://promotions.yahoo.com/design_giveaway/
+
+From Giulio.Antonutto at arup.com  Tue Apr  6 16:01:01 2004
+From: Giulio.Antonutto at arup.com (Giulio Antonutto)
+Date: Tue Apr  6 16:01:06 2004
+Subject: [Radiance-general] Exterior light levels and daylight factors
+Message-ID: <DC0CAEEA090E984C911D3B85B16C3F90FAF3CF@l-gnts05>
+
+47000 comparato a 55600....
+be' non e' mica male...
+...boh!
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org]On Behalf Of
+Caroline Prochazka
+Sent: 06 April 2004 14:46
+To: radiance-general@radiance-online.org
+Subject: [Radiance-general] Exterior light levels and daylight factors
+
+4. On a perfectly clear morning in a low pollution
+area (assumed turbidity=2) my light meter reading read
+approx. 55600 lux. A Radiance test (modelling an
+unobstructed horizontal plane outdoors) for the same
+date and time, and lat. long settings, with
+turbidity=2 produced an exterior light level of 47000
+lux (15% off the true reading!). While there may have
+been some diffuse reflection off nearby buildings,
+there was certainly no direct reflection or shadow on
+the light meter. This seems to be much too large a
+difference. Any suggestions?
+
+__
+
+___________________________________________________________________
+Electronic mail messages entering and leaving Arup business
+systems are scanned for acceptability of content and viruses.
+
+From Giulio.Antonutto at arup.com  Tue Apr  6 16:39:06 2004
+From: Giulio.Antonutto at arup.com (Giulio Antonutto)
+Date: Tue Apr  6 16:39:15 2004
+Subject: [Radiance-general] Exterior light levels and daylight factors
+Message-ID: <DC0CAEEA090E984C911D3B85B16C3F90FAF3D2@l-gnts05>
+
+I did some validation measurements, some years ago, for my thesis... (not as
+good as some others did before me... )
+The values I had were quite different from the expected (radiance
+calculated).
+At the time I had not reliable information on the value of the turbidity
+factor for the area I was studying.... what happened then it is another
+story...
+but going back to your problem:
+
+I think that calculated illuminance can be the same only if you have a way
+of measuring the sky luminance distribution.... (not CIE standard but
+real...)
+I think that the best paper you can find on it is the Mardaljevic PHD
+thesis...
+(http://www.iesd.dmu.ac.uk/~jm/sg98.htm)
+
+The values that you have aren't so bad... compared to mine (I remember
+something like 30% RER..)  
+;-((
+
+PS - a recent post pointed out the limits of simulating low altitude sun
+skies... (Perez sky model have the same limitation with low angles, where
+uncertainty is really high) ... so the only way is to override the sky
+definition and constrain it to a known illuminance value... I guess... but
+you have still no way of knowing the luminance dist...
+---------------------
+about the falsecolor images you should try to use on the dos terminal:
+falsecolor -s maxvalue -n numberof intervals -l label -m multiplier -i
+yourpicture > finalimage
+
+if gives you an error try this:
+falsecolor -s maxvalue -n numberof intervals -l label -m multiplier -ip
+yourpicture > finalimage
+
+where multiplier is:
+179 for illuminance and luminance (depending on the type of image)
+179/external_illuminance for daylight factor plots
+
+cheers,
+giulio
+----------------------------------------------------------------------------
+------------------------
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org]On Behalf Of
+Caroline Prochazka
+Sent: 06 April 2004 14:46
+To: radiance-general@radiance-online.org
+Subject: [Radiance-general] Exterior light levels and daylight factors
+
+
+Hello,
+I am a graduate student in architecture at the
+University of Waterloo, Canada. My thesis centres on
+the modelling of two Canadian 'sustainable' buildings
+to investigate the relationship between daylighting
+and energy consumption for heating and cooling. I am
+modelling each building in Desktop Radiance in order
+to evaluate the performance of both Ecotect and
+Energy-10 in daylighting analysis.
+
+I had hoped to use Desktop Radiance to evaluate
+daylight factors in key areas of the buildings. While
+I am able to model fairly realistic interior
+illumination results and analyse these using the False
+Colour plot I have encountered several problems:
+
+1. When I opt for a daylight factor plot, the scale
+remains at a range of 0 to 1.0 and is unaffected by
+any changes I try to make through the analysis
+dialogue box.  The result in Radiance is a washed out
+image all in the 'maximum' colour (my other software
+suggests DF% between 2 and 4%) confirming DF%>1.0
+How can I adjust the scale for DF% readings in Desktop
+Radiance?
+
+2. I am trying to assess the effect of changing
+glazing types. For daylight studies in the late winter
+afternoon (based on sun charts and other software, I'm
+using 4pm Dec21, where the sun is not yet set, but
+very low in the sky), where I have not modelled any
+surrounding obstructions such as trees or buildings,
+my internal illuminance levels are consistently about
+200 lux, even on the east side of the building. Common
+sense tells me there should be MUCH MUCH less light
+than this...probably no more than 100 lux. Also, when
+changing glazing types (ie, from clear to reflective)
+a significant change is noticed for noon hour
+lighting, but the 4pm Dec21 lighting remains at 200
+lux. What could I be mis-assuming?
+
+I have recently run a few simplified test models and
+compared my results to true exterior light conditions
+using a hand-held light meter. The results are
+somewhat frustrating, but interesting nonetheless.
+
+My questions here are particularly:
+3. How does Radiance calculate the external light
+levels?
+4. On a perfectly clear morning in a low pollution
+area (assumed turbidity=2) my light meter reading read
+approx. 55600 lux. A Radiance test (modelling an
+unobstructed horizontal plane outdoors) for the same
+date and time, and lat. long settings, with
+turbidity=2 produced an exterior light level of 47000
+lux (15% off the true reading!). While there may have
+been some diffuse reflection off nearby buildings,
+there was certainly no direct reflection or shadow on
+the light meter. This seems to be much too large a
+difference. Any suggestions?
+
+Apologies for the long email. I often read that these
+software applications are tested and confirmed but my
+data isn't showing an appropriate correlation of the
+simulation to reality. Any remarks would be greatly
+appreciated.
+
+Caroline Prochazka
+M.Arch candidate
+University of Waterloo
+
+
+__________________________________
+Do you Yahoo!?
+Yahoo! Small Business $15K Web Design Giveaway 
+http://promotions.yahoo.com/design_giveaway/
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+___________________________________________________________________
+Electronic mail messages entering and leaving Arup business
+systems are scanned for acceptability of content and viruses.
+
+From rpg at rumblestrip.org  Tue Apr  6 17:37:21 2004
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Tue Apr  6 17:38:13 2004
+Subject: [Radiance-general] Exterior light levels and daylight factors
+In-Reply-To: <20040406134628.50045.qmail@web11301.mail.yahoo.com>
+References: <20040406134628.50045.qmail@web11301.mail.yahoo.com>
+Message-ID: <4072CEB1.4090105@rumblestrip.org>
+
+Hi Caroline,
+
+First off, there is a Desktop-Radiance Yahoo forum, and you should 
+definitely ask around on there too, especially for your falsecolor scale 
+questions.  I'm not familiar with the Windows version(s) of the various 
+Radiance binaries.
+
+Giulio gave you some good leads there regarding sky simulations.  This 
+kind of question pops up on here regularly, and indeed I went through 
+the exact same experience as you.  I'd read about how accurate Radiance 
+could be (read that again, the semantics are important), then did my 
+first daylight simulation and was disappointed.  Lots of words have been 
+put down on paper about the difference between real, measured skies and 
+simulated ones.  Papers with lots of Greek symbols fill the servers at 
+universities & research facilities worldwide.  Greg Ward can cut through 
+the haze as well as anyone regarding this, but being all smart and 
+"mathy", his explanations still confused me for a while.  Eventually I 
+got it:
+
+Nature is way too complicated.  To think that one or even a thousand 
+formulas could mathematically describe the luminance distribution of the 
+nearly infinite number of skies is pure folly.
+
+What has been proven by Dr. Mardaljevic is that Radiance can simulate 
+lit environments with a high degree of accuracy.  What he had was an 
+incredibly fine dataset of real sky luminance and building interior 
+illuminance.  When this data was fed to Radiance, he got very close to 
+the same answers.  But most of us do *not* have an incredibly fine 
+dataset of real sky luminance and building interior illuminance, we have 
+a lat/long, maybe some sky turbidity info, and the woefully inadequate 
+suite of sky conditions descriptors "clear, intermediate and overcast". 
+  Whoopie. So, it's no wonder that our initial forays into daylight 
+simulation with Radiance tend to be confidence shakers.
+
+The truth is Radiance can be as accurate as you want, but most of us are 
+starting with input that is inherently inaccurate.  It's a good starting 
+point, but you simply can't expect your results to match up to reality 
+with any kind of high precision when using these basic CIE skies.  Don't 
+get me wrong, the CIE skies can still be used to make valid design 
+decisions, and certainly comparative studies of building form and 
+material will be quite valid.  But it's when people want to take a light 
+meter and have the LCD display show the same number that Radiance spat 
+out that the disappointment creeps in.  For pure numeric accuracy, which 
+Dr. M proved is possible, you need more measured info about your site. 
+My experience with Radiance is that it's very very good, certainly the 
+best available tool out there for daylighting analysis.  But I don't 
+expect my numbers to be ?5%, or even ?10% sometimes.  But I believe ?20% 
+is a fair goal.  Our faith in the numbers is based on experience and 
+intuition and we have to work hard to get this point across to our 
+clients all the time.  In my view, it's been worth the effort.
+
+Hopefully the Greek symbols types will weigh in on this too; it's an 
+interesting topic.
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+
+And, while I'm thinking of it, from Ian Ashdown's excellent "Thinking 
+Photometrically" Lightfair course notes 
+(http://www.helios32.com/Thinking%20Photometrically%20II.pdf):
+
+"One major problem is that the calculations are necessarily based on the 
+various CIE or IESNA sky models, which predict illuminances based on 
+average sky conditions. It is not uncommon for instantaneous measured 
+illuminances to be more than twice or less than half of the mean 
+illuminances predicted by clear and overcast sky models; the situation
+for partly cloudy skies is even worse.
+
+"As for daylighting calculations, it is likely that Jongewaard (1993) is 
+correct ? the results are only as accurate as the accuracy of the input 
+data. Done with care, it should be possible to obtain ?20 percent 
+accuracy in the photometric predictions. However, this requires detailed 
+knowledge and accurate modeling of both the indoor and outdoor 
+environments. If this cannot be done, it may be advisable to walk softly 
+and carry a calibrated photometer.
+
+
+
+From rpg at rumblestrip.org  Thu Apr  8 17:36:57 2004
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Thu Apr  8 17:37:48 2004
+Subject: [Radiance-general] Compiling Radiance on Fedora
+Message-ID: <40757199.5010502@rumblestrip.org>
+
+Howdy,
+
+Just a note to let you all know, I just installed the latest HEAD 
+release on a Fedora Core 1 Linux box, and had the same libtiff errors 
+that Etienne Canard had back in January.  Luckily Mark Stock's tip 
+worked, from this post:
+
+http://www.radiance-online.org/pipermail/radiance-general/2004-January/001422.html
+
+Thanks Mark!  Users who get this error will not have any of the binaries 
+from the /src/px directory built, not just ximage and the others that 
+Etienne mentioned in his post.
+
+I thought I'd mention this since Red Hat is dropping support for RHL9 at 
+the end of the month, and I'd expect a few of you out there will be 
+migrating to Fedora. (?)
+
+P.S.
+After installing Fedora (http://fedora.redhat.com/) on a test server, 
+and liking what I saw, I have installed it on my production Radiance box 
+and thanks to Mark I now have Radiance running on it, and it's really 
+quite nice.  And the yum package manager is downright yummy!  =8-)
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+From cbauer- at t-online.de  Mon Apr 12 17:33:05 2004
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Mon Apr 12 15:35:53 2004
+Subject: [Radiance-general] Announcement: radzilla0.5 !
+Message-ID: <407AB6B1.7010406@t-online.de>
+
+Ahoi all !
+
+Long time, no hear ...
+
+I've messed again with the Radiance-code and produced  a first (still 
+unfinished) test  version of RADZILLA.
+
+Beware, this is nothing for the faint hearted, as a lot of things are 
+currently in progress, experimental, not
+implemented yet, whatever. Despite this, this current test version is 
+already quite useful especially for visualization projects..
+
+So all you Indiana Jones's of raytracing: check out
+
+http://www.cb-d.de/radzilla2.html
+
+be prepared for everything and have FUN!
+
+Carsten Bauer
+
+
+
+From gward at lmi.net  Mon Apr 12 19:44:52 2004
+From: gward at lmi.net (Greg Ward)
+Date: Mon Apr 12 19:49:44 2004
+Subject: [Radiance-general] Re: Announcement: radzilla0.5 !
+In-Reply-To: <407AB6B1.7010406@t-online.de>
+References: <407AB6B1.7010406@t-online.de>
+Message-ID: <1A7A9E0A-8CA9-11D8-B2F7-000A95BB392A@lmi.net>
+
+What can I say besides, "Wow!"  This is very exciting.  I'm glad that 
+you felt inspired to work on this, as this seems like a whole new 
+direction and potential for our little community.  I encourage people 
+to try it out, do comparisons, validations, etc.  I've thought many 
+times of rewriting Radiance over the years, and never managed to find 
+the funds or free time even to begin.  Thanks, Carsten!!
+
+-Greg
+
+"Lookout!  RADZILLA is coming!"
+
+> From: cbauer-@t-online.de (Carsten Bauer)
+> Date: April 12, 2004 8:33:05 AM PDT
+>
+> Ahoi all !
+>
+> Long time, no hear ...
+>
+> I've messed again with the Radiance-code and produced  a first (still 
+> unfinished) test  version of RADZILLA.
+>
+> Beware, this is nothing for the faint hearted, as a lot of things are 
+> currently in progress, experimental, not
+> implemented yet, whatever. Despite this, this current test version is 
+> already quite useful especially for visualization projects..
+>
+> So all you Indiana Jones's of raytracing: check out
+>
+> http://www.cb-d.de/radzilla2.html
+>
+> be prepared for everything and have FUN!
+>
+> Carsten Bauer
+
+
+From rpg at rumblestrip.org  Mon Apr 12 21:28:46 2004
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Mon Apr 12 21:29:25 2004
+Subject: [Radiance-general] Announcement: radzilla0.5 !
+In-Reply-To: <407AB6B1.7010406@t-online.de>
+References: <407AB6B1.7010406@t-online.de>
+Message-ID: <407AEDEE.1020601@rumblestrip.org>
+
+Carsten Bauer wrote:
+
+> Long time, no hear ...
+
+Good to hear from ya again, Carsten!
+
+> I've messed again with the Radiance-code and produced  a first (still 
+> unfinished) test  version of RADZILLA.
+
+I read through the release notes, and I have an announcement:
+The reports of my death are greatly exaggerated.  And AFAIK, Roland 
+(whom you also refer to as late & great) is great, but definitely not 
+late.  =8-)
+
+I played with RADZILLA briefly during lunch here.  Some notes:
+1. Your source code compiled just fine on Fedora Core 1.
+2. How do I specify a .rif file with radz?
+3. Getinfo likes radzilla octrees, but the 
+model-viewing-utility-formerly-named-rview does not.  I guess that's 
+because getinfo is simply a header reader, whereas rview is dealing with 
+the octree more intimately.  Any plans to make an rzrvu?  Will you paint 
+my house when you're done re-writing Radiance?
+
+Keep up the good work!  Interesting stuff, Carsten.  This is such a fun 
+group.
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+From cbauer- at t-online.de  Tue Apr 13 16:11:52 2004
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Tue Apr 13 14:09:50 2004
+Subject: [Radiance-general] Announcement: radzilla0.5 !
+References: <407AB6B1.7010406@t-online.de> <407AEDEE.1020601@rumblestrip.org>
+Message-ID: <407BF528.20108@t-online.de>
+
+> Hi Rob
+
+
+
+>
+> I read through the release notes, and I have an announcement:
+> The reports of my death are greatly exaggerated.  And AFAIK, Roland 
+> (whom you also refer to as late & great) is great, but definitely not 
+> late.  =8-)
+
+
+This one is fixed now !! Learning English on the fly... thanx for the 
+corrections!!!
+
+>
+> I played with RADZILLA briefly during lunch here.  Some notes:
+> 1. Your source code compiled just fine on Fedora Core 1.
+> 2. How do I specify a .rif file with radz?
+> 3. Getinfo likes radzilla octrees, but the 
+> model-viewing-utility-formerly-named-rview does not.  I guess that's 
+> because getinfo is simply a header reader, whereas rview is dealing 
+> with the octree more intimately.  Any plans to make an rzrvu?  Will 
+> you paint my house when you're done re-writing Radiance? 
+
+radz can be handled like rad (except the mandatory executable name), so type
+radz -x rzpict 'riffilename' with 'riffilename' being a normal RADIANCE 
+.rif file
+
+Concerning further stuff (rzrvu): It should be rather straightforward to 
+convert e.g. rvu to deal with
+RADZILLA octrees as well, once the general framework is established. So 
+you can expect more functionality coming soon.
+
+Just a quick note: I'm currently on a one weeks holiday, so this 
+certainly means some delay on my side for answering questions  etc. But 
+I'll be back working on the stuff next week...
+
+And concering your house: It depends what kind of artwork you want your 
+house to be after I'm finished with it ..:-)
+
+-Carsten
+
+
+From js0754 at bris.ac.uk  Tue Apr 13 22:22:17 2004
+From: js0754 at bris.ac.uk (John Sutherland)
+Date: Tue Apr 13 22:21:35 2004
+Subject: [Radiance-general] No rendering on the other side of glass? check
+	this out?
+Message-ID: <000001c42195$09bef610$a200a8c0@cumberland>
+
+Very odd.. Why do my renders not render any object apart from the floor
+on the otherside of the stained glass on my Chapter house? There is
+definitely a second side to the chapter house there! For some reason it
+doesn't render it through glass? Any Idea what the problem is? Check out
+the picture.
+ 
+https://www.bris.ac.uk/fluff/u/js0754/3wonqQ8hLm8qJhhmUSMi1Q7y/sideexter
+nal2-h.jpg
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20040413/cb62f450/attachment.html
+From schorsch at schorsch.com  Tue Apr 13 23:29:42 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Tue Apr 13 23:48:13 2004
+Subject: [Radiance-general] No rendering on the other side of glass?
+	check this out?
+In-Reply-To: <000001c42195$09bef610$a200a8c0@cumberland>
+References: <000001c42195$09bef610$a200a8c0@cumberland>
+Message-ID: <Pine.BSF.4.58.0404131725020.10039@emancholl.pair.com>
+
+John Sutherland wrote:
+
+> Very odd.. Why do my renders not render any object apart from the floor
+> on the otherside of the stained glass on my Chapter house? There is
+> definitely a second side to the chapter house there! For some reason it
+> doesn't render it through glass? Any Idea what the problem is? Check out
+> the picture.
+>
+> https://www.bris.ac.uk/fluff/u/js0754/3wonqQ8hLm8qJhhmUSMi1Q7y/sideexter
+> nal2-h.jpg
+
+
+No problem with that rendering. Just an expectation-mismatch.
+What you see in the window is not the "other side", but rather
+the reflection of the scene behind you. The interior is much
+too dark in comparison to be visible.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From js0754 at bris.ac.uk  Wed Apr 14 10:57:58 2004
+From: js0754 at bris.ac.uk (John Sutherland)
+Date: Wed Apr 14 11:03:33 2004
+Subject: [Radiance-general] No rendering on the other side of glass? check
+	this out?
+Message-ID: <000001c421fe$9551c3b0$8a00a8c0@cumberland>
+
+Ahhhh ok, makes sense... this is not what I was expecting. As the inside
+is dark, and so is the glass, I was expecting the glass not to reflect
+much light? What properties do I need to play with to get what I was
+expecting, ie darker looking glass from the outside, not reflecting
+much? You must know what I mean, like stainglass on churches, its very
+murky from outside, definetly cant see much reflection in it.
+ 
+Cheers guys!
+John
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20040414/24c213fe/attachment.htm
+From rpg at rumblestrip.org  Wed Apr 14 15:47:10 2004
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Wed Apr 14 15:47:46 2004
+Subject: [Radiance-general] No rendering on the other side of glass? check
+	this out?
+In-Reply-To: <000001c421fe$9551c3b0$8a00a8c0@cumberland>
+References: <000001c421fe$9551c3b0$8a00a8c0@cumberland>
+Message-ID: <407D40DE.2030203@rumblestrip.org>
+
+John Sutherland wrote:
+
+> Ahhhh ok, makes sense?.. this is not what I was expecting. As the inside 
+> is dark, and so is the glass, I was expecting the glass not to reflect 
+> much light? What properties do I need to play with to get what I was 
+> expecting, ie darker looking glass from the outside, not reflecting 
+> much? You must know what I mean, like stainglass on churches, its very 
+> murky from outside, definetly cant see much reflection in it?
+
+If you're using trans for the glass, you could give it some roughness; 
+that would help.  I think there's also a .cal file that simulates a 
+dirty surface?  Both things would help your cause. Right now you have a 
+mirror-smooth surface there, which I believe is causing your problem there.
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+From schorsch at schorsch.com  Wed Apr 14 17:27:07 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Wed Apr 14 17:27:15 2004
+Subject: [Radiance-general] No rendering on the other side of glass?
+	check this out?
+In-Reply-To: <407D40DE.2030203@rumblestrip.org>
+References: <000001c421fe$9551c3b0$8a00a8c0@cumberland>
+	<407D40DE.2030203@rumblestrip.org>
+Message-ID: <Pine.BSF.4.58.0404141122510.35387@emancholl.pair.com>
+
+Rob Guglielmetti wrote:
+
+> John Sutherland wrote:
+>
+> > Ahhhh ok, makes sense?.. this is not what I was expecting. As the inside
+> > is dark, and so is the glass, I was expecting the glass not to reflect
+> > much light? What properties do I need to play with to get what I was
+> > expecting, ie darker looking glass from the outside, not reflecting
+> > much? You must know what I mean, like stainglass on churches, its very
+> > murky from outside, definetly cant see much reflection in it?
+>
+> If you're using trans for the glass, you could give it some roughness;
+> that would help.  I think there's also a .cal file that simulates a
+> dirty surface?  Both things would help your cause. Right now you have a
+> mirror-smooth surface there, which I believe is causing your problem there.
+
+
+You could simply make the reflected component diffuse, which
+is probably quite appropriate for this kind of glazing.
+Especially on the outside, the appearance is usually
+determined by dirt...
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From arrguedi at techunix.technion.ac.il  Fri Apr 16 11:06:43 2004
+From: arrguedi at techunix.technion.ac.il (Guedi Capeluto)
+Date: Fri Apr 16 10:11:35 2004
+Subject: [Radiance-general] Using MIST for  overcast sky
+Message-ID: <20040416080555.DFA78362D@techunix.technion.ac.il>
+
+Hi,
+ 
+I am trying to simulate the extinction of light inside a MIST volume, for
+different sky conditions.
+The simulations seems to work well using "sun" as the light source, but I
+have problems when using an overcast sky or a sunny sky with no sun (-s
+option).
+The light sources for the MIST volume are "sun" and "sky" which is defined
+using glow.
+Did MIST work for glow type light sources? If not, what do you recommend to
+use to simulate this case, with diffuse light coming from the sky?
+ 
+Thank you in advance,
+ 
+Guedi
+--- 
+Arch. Guedi Capeluto, D.Sc.
+Faculty of Architecture and Town Planning
+Technion - Israel Institute of Technology
+Technion City, Haifa 32000. Israel.
+Tel: +972.4.8294013    Fax: +972.4.8294617
+email: arrguedi@tx.technion.ac.il
+ 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20040416/e9b7394c/attachment.html
+From Giulio.Antonutto at arup.com  Fri Apr 16 15:56:43 2004
+From: Giulio.Antonutto at arup.com (Giulio Antonutto)
+Date: Fri Apr 16 15:56:57 2004
+Subject: [Radiance-general] Using MIST for  overcast sky
+Message-ID: <DC0CAEEA090E984C911D3B85B16C3F90FAF401@l-gnts05>
+
+hi,
+glow is considered as a light source by the direct component only within the
+given distance (4th number of glow definition) and I guess "mist" doesn't
+consider glow with 0 (or -1) because it is not a direct light source.
+ 
+a quick and probably useless (**) trick is to change the sky description 
+ 
+from
+skyfunc glow skyglow
+0
+0
+3 1 1  1
+to
+ 
+skyfunc light skyglow
+0
+0
+3 1 1  1
+ 
+this way the 1st bounce is now direct but -ds doesn't work on the sky and
+there is just a big point source above so ...  (**) 
+ 
+another trick (this time should be ok) is to create a big polygonal volume
+of brightfunc-light-sources with the sky distribution... in this case you
+could be able to use -ds.
+ 
+hope it helps,
+ 
+giulio
+ 
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org]On Behalf Of Guedi
+Capeluto
+Sent: 16 April 2004 10:07
+To: radiance-general@radiance-online.org
+Subject: [Radiance-general] Using MIST for overcast sky
+
+
+Hi,
+ 
+I am trying to simulate the extinction of light inside a MIST volume, for
+different sky conditions.
+The simulations seems to work well using "sun" as the light source, but I
+have problems when using an overcast sky or a sunny sky with no sun (-s
+option).
+The light sources for the MIST volume are "sun" and "sky" which is defined
+using glow.
+Did MIST work for glow type light sources? If not, what do you recommend to
+use to simulate this case, with diffuse light coming from the sky?
+ 
+Thank you in advance,
+ 
+Guedi
+--- 
+Arch. Guedi Capeluto, D.Sc.
+Faculty of Architecture and Town Planning
+Technion - Israel Institute of Technology
+Technion City, Haifa 32000. Israel.
+Tel: +972.4.8294013    Fax: +972.4.8294617
+email: arrguedi@tx.technion.ac.il
+ 
+
+___________________________________________________________________
+Electronic mail messages entering and leaving Arup business
+systems are scanned for acceptability of content and viruses.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20040416/723152f7/attachment.htm
+From pillo.pillo at tin.it  Fri Apr 16 17:00:49 2004
+From: pillo.pillo at tin.it (pillo.pillo@tin.it)
+Date: Fri Apr 16 17:01:15 2004
+Subject: [Radiance-general] Using MIST for  overcast sky
+In-Reply-To: <DC0CAEEA090E984C911D3B85B16C3F90FAF401@l-gnts05>
+Message-ID: <407E6C6000002A19@ims4a.cp.tin.it>
+
+ERRATA CORRIGE
+apparently -ds doesn't do the trick of subdividing the source for the mist...
+if you are simulating light from windows this shouldn't be an issue
+but if you have an open volume of atmosphere you may see bright areas of
+mist in corrispondence of the sources centres (depending on your mist settings).
+
+I guess the reason is that it is more efficient to only test the centre
+as usually sources are small compared to the scene dimensions... in your
+case it is the opposite... 
+any ideas how to solve this (a part using tons of small sources)?
+
+giulio
+
+>-- Messaggio originale --
+>From: Giulio Antonutto <Giulio.Antonutto@arup.com>
+>To: 'Radiance general discussion' <radiance-general@radiance-online.org>
+>Subject: RE: [Radiance-general] Using MIST for  overcast sky
+>Date: Fri, 16 Apr 2004 14:56:43 +0100
+>Reply-To: Radiance general discussion <radiance-general@radiance-online.org>
+>
+>
+>hi,
+>glow is considered as a light source by the direct component only within
+>the
+>given distance (4th number of glow definition) and I guess "mist" doesn't
+>consider glow with 0 (or -1) because it is not a direct light source.
+> 
+>a quick and probably useless (**) trick is to change the sky description
+>
+> 
+>from
+>skyfunc glow skyglow
+>0
+>0
+>3 1 1  1
+>to
+> 
+>skyfunc light skyglow
+>0
+>0
+>3 1 1  1
+> 
+>this way the 1st bounce is now direct but -ds doesn't work on the sky and
+>there is just a big point source above so ...  (**) 
+> 
+>another trick (this time should be ok) is to create a big polygonal volume
+>of brightfunc-light-sources with the sky distribution... in this case you
+>could be able to use -ds.
+> 
+>hope it helps,
+> 
+>giulio
+> 
+>-----Original Message-----
+>From: radiance-general-bounces@radiance-online.org
+>[mailto:radiance-general-bounces@radiance-online.org]On Behalf Of Guedi
+>Capeluto
+>Sent: 16 April 2004 10:07
+>To: radiance-general@radiance-online.org
+>Subject: [Radiance-general] Using MIST for overcast sky
+>
+>
+>Hi,
+> 
+>I am trying to simulate the extinction of light inside a MIST volume, for
+>different sky conditions.
+>The simulations seems to work well using "sun" as the light source, but
+I
+>have problems when using an overcast sky or a sunny sky with no sun (-s
+>option).
+>The light sources for the MIST volume are "sun" and "sky" which is defined
+>using glow.
+>Did MIST work for glow type light sources? If not, what do you recommend
+>to
+>use to simulate this case, with diffuse light coming from the sky?
+> 
+>Thank you in advance,
+> 
+>Guedi
+>--- 
+>Arch. Guedi Capeluto, D.Sc.
+>Faculty of Architecture and Town Planning
+>Technion - Israel Institute of Technology
+>Technion City, Haifa 32000. Israel.
+>Tel: +972.4.8294013    Fax: +972.4.8294617
+>email: arrguedi@tx.technion.ac.il
+> 
+>
+>___________________________________________________________________
+>Electronic mail messages entering and leaving Arup business
+>systems are scanned for acceptability of content and viruses.
+>_______________________________________________
+>Radiance-general mailing list
+>Radiance-general@radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+
+From gward at lmi.net  Fri Apr 16 19:11:47 2004
+From: gward at lmi.net (Greg Ward)
+Date: Fri Apr 16 19:12:00 2004
+Subject: [Radiance-general] Re: Using MIST for  overcast sky
+In-Reply-To: <407E6C6000002A19@ims4a.cp.tin.it>
+References: <407E6C6000002A19@ims4a.cp.tin.it>
+Message-ID: <2492875E-8FC9-11D8-ACD9-000A95BB392A@lmi.net>
+
+Unfortunately, mist is never going to work with distant sources, 
+because if your raise any extinction to an infinite power, no matter 
+how close to one it starts out, you get a zero result.  (From RwR Chap. 
+14, eq. 14.7, we see that light is absorbed as the power of distance.)  
+I just had a similar discussion with another user (Pablo Escanilla 
+<pabloe@ivo.cps.unizar.es>), who was simulating fog on a roadway.
+
+Real atmospheres are quite a bit more complex than setting a global 
+constant value for extinction and albedo.  Real atmospheres change with 
+altitude, often dramatically, so it doesn't become pitch dark as soon 
+as the fog rolls in.  Simulating large scale atmospherics in Radiance 
+means creating enormous "slabs" of mist with different extinctions at 
+different altitudes.  It can be done, but it's a bit of a pain and, as 
+far as I know, no one has yet made the attempt.
+
+As to sampling the sky dome, this is never going to work.  You are much 
+better off setting a sensible value for -av, which gets figured into 
+the mist calculation as an appropriate multiplier on albedo.  This was 
+my advice to Pablo.
+
+-Greg
+
+> From: "Guedi Capeluto" <arrguedi@techunix.technion.ac.il>
+> Date: April 16, 2004 2:06:43 AM PDT
+>
+Hi,
+
+I am trying to simulate the extinction of light inside a MIST volume, 
+for different sky conditions.
+
+The simulations seems to work well using "sun" as the light source, but 
+I have problems when using an overcast sky or a sunny sky with no sun 
+(-s option).
+
+The light sources for the MIST volume are "sun" and "sky" which is 
+defined using glow.
+
+Did MIST work for glow type light sources? If not, what do you 
+recommend to use to simulate this case, with diffuse light coming from 
+the sky?
+
+Thank you in advance,
+
+Guedi
+
+
+From cjprocha at yahoo.com  Fri Apr 16 20:57:45 2004
+From: cjprocha at yahoo.com (Caroline Prochazka)
+Date: Fri Apr 16 21:04:29 2004
+Subject: [Radiance-general] Radiance simulations maintain 200 lux minimum?
+Message-ID: <20040416185745.37206.qmail@span.corp.yahoo.com>
+
+Hello,
+I have been running several simulations in Radiance
+for Winter and Summer solstice at Toronto latitudes.
+For noon hour simulations the results are quite
+believable along perimeter areas. I have noticed
+however, that no matter what changes I make to my
+model, the lowest illuminance reading I can generate
+anywhere inside a daylit room is between 150 and 200
+lux. For afternoon models where the sun is at a
+low-angle, the core areas of my models should be below
+50 lux (from in-situ light measurements). I understand
+Radiance has trouble with low-angle sun simulations.
+But when I look at my noon hour models (sun very
+high), I notice that my core readings are also all
+around 200 lux...seemingly unable to drop below 200
+lux. My false colour plots do show minimum extrema
+lower than 200 lux, and areas in direct shadow, are
+shown more blue (closer to 50 lux on my scale). From
+in-situ measurements at desk height, though, it would
+seem that the drop off of illuminance levels from the
+perimeter to the core of a room is not adequately
+represented in my Radiance models. Can anyone offer a
+suggestion why my illuminance values, for the most
+part, bottom out at 200 lux?
+
+Regards,
+Caroline
+
+
+	
+		
+__________________________________
+Do you Yahoo!?
+Yahoo! Tax Center - File online by April 15th
+http://taxes.yahoo.com/filing.html
+
+From gward at lmi.net  Fri Apr 16 21:23:05 2004
+From: gward at lmi.net (Greg Ward)
+Date: Fri Apr 16 21:23:18 2004
+Subject: [Radiance-general] Re: Radiance simulations maintain 200 lux
+	minimum?
+In-Reply-To: <20040416185745.37206.qmail@span.corp.yahoo.com>
+References: <20040416185745.37206.qmail@span.corp.yahoo.com>
+Message-ID: <7C92C554-8FDB-11D8-8667-000A95BB392A@lmi.net>
+
+Hi Caroline,
+
+There are as many possible reasons to your problem as there are option 
+settings in rpict.  (I.e., a lot.)  You have to give us a little more 
+detail about what settings you are using in your rad input file (if 
+you're using rad) or your rendering/simulation command (if you're 
+calling rpict or rtrace directly).  Posting an image if you have a 
+website is also an incredible help.  If you haven't generated any 
+images, I recommend you do so, even if you don't require them for your 
+analysis.  Renderings are one of the best debugging tools ever 
+conceived.
+
+-Greg
+
+> From: Caroline Prochazka <cjprocha@yahoo.com>
+> Date: April 16, 2004 11:57:45 AM PDT
+>
+> Hello,
+> I have been running several simulations in Radiance
+> for Winter and Summer solstice at Toronto latitudes.
+> For noon hour simulations the results are quite
+> believable along perimeter areas. I have noticed
+> however, that no matter what changes I make to my
+> model, the lowest illuminance reading I can generate
+> anywhere inside a daylit room is between 150 and 200
+> lux. For afternoon models where the sun is at a
+> low-angle, the core areas of my models should be below
+> 50 lux (from in-situ light measurements). I understand
+> Radiance has trouble with low-angle sun simulations.
+> But when I look at my noon hour models (sun very
+> high), I notice that my core readings are also all
+> around 200 lux...seemingly unable to drop below 200
+> lux. My false colour plots do show minimum extrema
+> lower than 200 lux, and areas in direct shadow, are
+> shown more blue (closer to 50 lux on my scale). From
+> in-situ measurements at desk height, though, it would
+> seem that the drop off of illuminance levels from the
+> perimeter to the core of a room is not adequately
+> represented in my Radiance models. Can anyone offer a
+> suggestion why my illuminance values, for the most
+> part, bottom out at 200 lux?
+>
+> Regards,
+> Caroline
+
+
+From js0754 at bris.ac.uk  Sun Apr 18 14:41:51 2004
+From: js0754 at bris.ac.uk (John Sutherland)
+Date: Sun Apr 18 14:41:31 2004
+Subject: [Radiance-general] low lighting? is this normal?
+Message-ID: <000001c42542$85c49a20$2300a8c0@cumberland>
+
+After setting up some candles in my reconstruction using georg's advice
+with the candle RGB values. I used spheres with radius 0.0075 which
+worked out RGB values of
+ 
+R=16.575
+G=5.240
+B=0
+ 
+For the flames light material.( The base weightings of rgb for tallow
+candle flame were R 0.759 G 0.240 B 0)
+ 
+For a tallow candle, emitting 1 candela of light. When using these
+values my night renders look like this:
+ 
+http://homepage.ntlworld.com/mark.sutherland/internaltallow-h.jpg
+ 
+Which is not quite what I was expecting using pcond. I get the
+impression my lighting values are too low? But the results aren't too
+bad, so I thought I'd try to illuminating of a manuscript.
+ 
+In this next render I moved the candle right up close to the manuscript
+(its just off the bottom), but the illumination is not really enough to
+shift the book out of scotopic levels.
+ 
+http://homepage.ntlworld.com/mark.sutherland/outputbook22hrtallow-h.jpg
+ 
+A false colour image shows they levels barely get above 1.5 lux
+ 
+http://homepage.ntlworld.com/mark.sutherland/outputbook22hrtallow-hfalse
+color.jpg
+ 
+I thought id try a home experiment, I lit a candle in a pitch black room
+and moved a book varing distances away from the candle, and there was
+very little scotopic vision even at a distance of about a metre away.
+When I do a render without the candles at night the falsecolour images
+show very little increase in lux. Is lux a very sensitive scale? A small
+tiny increase in lux real life increases the visability a lot? But pcond
+'s filter is not sensitive enough, and also the limitation of the
+monitors contrast and lighting abilities not enough to show any
+difference? So many questions!
+ 
+The problem is that using the RGB lighting values suggested, they don't
+appear to be able to illuminate the manuscript to a reasonable looking
+level, even though in real life a candle could. Wheres my problem?
+ 
+John
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20040418/044390b8/attachment.html
+From arrguedi at techunix.technion.ac.il  Sun Apr 18 18:06:50 2004
+From: arrguedi at techunix.technion.ac.il (Guedi Capeluto)
+Date: Sun Apr 18 17:06:10 2004
+Subject: [Radiance-general] RE: Using MIST for  overcast sky
+In-Reply-To: <2492875E-8FC9-11D8-ACD9-000A95BB392A@lmi.net>
+Message-ID: <20040418150546.37133365D@techunix.technion.ac.il>
+
+Thank you very much for your answer.
+
+My intention was not simulating light extinction through the atmosphere but
+once light reaches a mist object which is on the ground, (I exactly know the
+extinction coefficient within it), analyze the light (direct from sun and
+diffuse from sky dome) extinction inside this small volume.
+
+Since I need to know the light levels (illuminance) inside the volume at
+different depths, it seems to me that the -av approach will not work.
+
+Any suggestion?
+
+Thanks in advance,
+Guedi
+
+
+
+-----Original Message-----
+From: Greg Ward [mailto:gward@lmi.net]
+Sent: Friday, April 16, 2004 7:12 PM
+To: Radiance general discussion
+Cc: pillo.pillo@tin.it; arrguedi@techunix.technion.ac.il
+Subject: Re: Using MIST for overcast sky
+
+Unfortunately, mist is never going to work with distant sources,
+because if your raise any extinction to an infinite power, no matter
+how close to one it starts out, you get a zero result.  (From RwR Chap.
+14, eq. 14.7, we see that light is absorbed as the power of distance.)
+I just had a similar discussion with another user (Pablo Escanilla
+<pabloe@ivo.cps.unizar.es>), who was simulating fog on a roadway.
+
+Real atmospheres are quite a bit more complex than setting a global
+constant value for extinction and albedo.  Real atmospheres change with
+altitude, often dramatically, so it doesn't become pitch dark as soon
+as the fog rolls in.  Simulating large scale atmospherics in Radiance
+means creating enormous "slabs" of mist with different extinctions at
+different altitudes.  It can be done, but it's a bit of a pain and, as
+far as I know, no one has yet made the attempt.
+
+As to sampling the sky dome, this is never going to work.  You are much
+better off setting a sensible value for -av, which gets figured into
+the mist calculation as an appropriate multiplier on albedo.  This was
+my advice to Pablo.
+
+-Greg
+
+> From: "Guedi Capeluto" <arrguedi@techunix.technion.ac.il>
+> Date: April 16, 2004 2:06:43 AM PDT
+>
+Hi,
+
+I am trying to simulate the extinction of light inside a MIST volume,
+for different sky conditions.
+
+The simulations seems to work well using "sun" as the light source, but
+I have problems when using an overcast sky or a sunny sky with no sun
+(-s option).
+
+The light sources for the MIST volume are "sun" and "sky" which is
+defined using glow.
+
+Did MIST work for glow type light sources? If not, what do you
+recommend to use to simulate this case, with diffuse light coming from
+the sky?
+
+Thank you in advance,
+
+Guedi
+
+
+
+From MdelaFuente at wmtao.com  Sun Apr 18 18:50:58 2004
+From: MdelaFuente at wmtao.com (Mark de la Fuente)
+Date: Sun Apr 18 18:51:51 2004
+Subject: [Radiance-general] Ranimate / Mkillum issue
+Message-ID: <s0826bc3.082@wmtao.com>
+
+** Proprietary **
+
+Group,
+
+A couple of months ago I ran a series of simulations tracking the sun
+across a space.  Since then I've gone back and tried to clean up and
+improve the animations (for marketing purposes) only I've run into what
+seems to be either a glitch or more likely a user error.  I'm using rad
+and ranimate to automate the process.
+
+My rif file looks like this...
+
+EXPOSURE= 1
+DETAIL= H
+EYESEP= .225
+INDIRECT= 2
+materials= ./material/mat.rad
+OCTREE= ./octree/lobby_a.oct
+PENUMBRAS= T
+PICTURE= ./images/lobby
+QUALITY= H
+RESOLUTION= 512
+illum= ./scene/illums.rad
+scene= ./scene/ground.rad ./scene/floor.rad ./scene/ceiling.rad
+./scene/aluminum.rad
+scene= ./scene/brick_xy.rad ./scene/brick_xz.rad ./scene/brick_yz.rad
+./scene/brick_45.rad ./scene/brick_135.rad
+scene= ./scene/glaz_exterior.rad ./scene/glaz_interior.rad
+./scene/glass_door.rad ./scene/glaz_ripple.rad
+scene= ./scene/wall.rad ./scene/rug.rad ./scene/wood.rad
+./scene/wood_wall.rad
+scene= ./scene/steel.rad ./scene/slats1.rad ./scene/slats2.rad
+./scene/drapes.rad
+UP= Z
+VARIABILITY= H
+view= vw1 -vf ./views/v1.vp
+ZONE= I 0 17 0 19 0 9
+render= -t 10
+
+My ran file looks like this...
+
+BASENAME= anim2/frame%03d
+DIRECTORY= anim2
+DISKSPACE= 500
+START= 1
+END= 53
+host= localhost
+INTERPOLATE= 0
+MBLUR= 0
+OVERSAMPLE= 3
+RESOLUTION= 512
+RSH= rsh
+RTRACE= F
+VIEWFILE= ./views/v1.vp
+ANIMATE= genoctree_a.script
+EXPOSURE= ./exposure/exp_a_interpolated_15.rad
+RIF= lobby_a.rif
+
+And my octree generator looks like this...
+
+frame=$1
+tmp=sun.rad
+time=`ev "5.25+($frame/4)"`
+gensky 3 21 $time +s -a 38.7 -o 90.5 -m 90 > $tmp
+oconv -i ./octree/lobby_a1.oct -f $tmp sky.rad
+rm $tmp
+
+The problem is that the illum.dat files are not being updated for each
+image and considering the fact that the sky is changing for each frame,
+it seems to me like they should be.  Perhaps ranimate was really only
+meant to deal with static lighting scenes with movable objects/camera
+positions?
+
+Any comments would be appreciated.
+
+Thanks!
+
+Mark de la Fuente
+
+From gward at lmi.net  Mon Apr 19 01:26:20 2004
+From: gward at lmi.net (Greg Ward)
+Date: Mon Apr 19 01:26:33 2004
+Subject: [Radiance-general] Ranimate / Mkillum issue
+In-Reply-To: <s0826bc3.082@wmtao.com>
+References: <s0826bc3.082@wmtao.com>
+Message-ID: <CCD00350-918F-11D8-9D8D-000A95BB392A@lmi.net>
+
+Hi Mark,
+
+> From: "Mark de la Fuente" <MdelaFuente@wmtao.com>
+> Date: April 18, 2004 9:50:58 AM PDT
+>
+> ** Proprietary **
+
+Huh?  If this information is really "proprietary," the last thing you 
+should be doing is posting it to a public discussion list.  I assume 
+you meant another word, here.
+
+> [...]
+> The problem is that the illum.dat files are not being updated for each
+> image and considering the fact that the sky is changing for each frame,
+> it seems to me like they should be.  Perhaps ranimate was really only
+> meant to deal with static lighting scenes with movable objects/camera
+> positions?
+
+Indeed, ranimate's support of changing illumination and geometry is 
+minimal.  You are responsible for any frame updates yourself within 
+your "genoctree_a.script" file.  You are free to use rad to help you 
+with this.  Your script file currently changes the sky and expects 
+ranimate to figure out what that means, but how could it?  What you 
+need to do is make the octree created by rad depend on some file that 
+is altered in your script, like so:
+
+	frame=$1
+	time=`ev "5.25+($frame/4)"`
+	gensky 3 21 $time +s -a 38.7 -o 90.5 -m 90 > sun.rad
+	rad -v 0
+	cat ./octree/lobby_a.oct
+
+Then, to "lobby_a.rif" you should add:
+
+	scene= sun.rad sky.rad
+
+Your current rad input file is broken in the sense that it doesn't have 
+the information it needs to generate correct illum's.  This is where 
+your problems began.
+
+Hope this helps.
+-Greg
+
+
+From gward at lmi.net  Mon Apr 19 01:30:16 2004
+From: gward at lmi.net (Greg Ward)
+Date: Mon Apr 19 01:30:32 2004
+Subject: [Radiance-general] Re: Using MIST for  overcast sky
+In-Reply-To: <20040418150546.37133365D@techunix.technion.ac.il>
+References: <20040418150546.37133365D@techunix.technion.ac.il>
+Message-ID: <5966AEC9-9190-11D8-9D8D-000A95BB392A@lmi.net>
+
+Hi Guedi,
+
+Well, then you can try Pillo's suggestion of simulating the sky as many 
+small sources, but I don't hold out much hope that you'll get an 
+accurate answer.  What local phenomenon are you trying to simulate, 
+exactly?  A puff of smoke?
+
+-Greg
+
+Begin forwarded message:
+
+> From: "Guedi Capeluto" <arrguedi@techunix.technion.ac.il>
+> Date: April 18, 2004 9:06:50 AM PDT
+>
+> Thank you very much for your answer.
+>
+> My intention was not simulating light extinction through the 
+> atmosphere but
+> once light reaches a mist object which is on the ground, (I exactly 
+> know the
+> extinction coefficient within it), analyze the light (direct from sun 
+> and
+> diffuse from sky dome) extinction inside this small volume.
+>
+> Since I need to know the light levels (illuminance) inside the volume 
+> at
+> different depths, it seems to me that the -av approach will not work.
+>
+> Any suggestion?
+>
+> Thanks in advance,
+> Guedi
+
+
+From shakespe at indiana.edu  Mon Apr 19 03:15:36 2004
+From: shakespe at indiana.edu (Shakespeare, Robert A.)
+Date: Mon Apr 19 03:15:44 2004
+Subject: [Radiance-general] low lighting? is this normal?
+Message-ID: <C4DB975B8FB42B44AB8CD12824D239F201430009@iu-mssg-mbx07.exchange.iu.edu>
+
+            While other can remark on pcond and how it represents
+scotopic/photopic adaptation, I would like to comment on the lighting
+design issue. The close-up of the manuscript indicates a dominant
+grazing highlight from the right and less contribution from the left. I
+also note the shadows cast by the candle configuration.. front candles
+blocking rear candles... at least that is my guess.  Consider
+reorganizing the candles so that each has a full "sightline" to the
+manuscript. Additionally increase the luminance of the page by moving
+the candles closer and by reducing the cosine effect by repositioning.
+To reduce the masking shadow cast by a reader, consider elevating the
+light sources.
+            Radiance provides fairly accurate representations of
+lighting choices. Though there have been a few occasions where I gasped
+with disbelief at a rendering of a lighting scheme I was testing, I must
+acknowledge that Radiance typically illustrates the flaws and strengths
+of the design choices.  
+ 
+-Rob Shakespeare
+ 
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of John
+Sutherland
+Sent: Sunday, April 18, 2004 7:42 AM
+To: Radiance-general@radiance-online.org
+Subject: [Radiance-general] low lighting? is this normal?
+ 
+After setting up some candles in my reconstruction using georg's advice
+with the candle RGB values. I used spheres with radius 0.0075 which
+worked out RGB values of
+ 
+R=16.575
+G=5.240
+B=0
+ 
+For the flames light material.( The base weightings of rgb for tallow
+candle flame were R 0.759 G 0.240 B 0)
+ 
+For a tallow candle, emitting 1 candela of light. When using these
+values my night renders look like this:
+ 
+http://homepage.ntlworld.com/mark.sutherland/internaltallow-h.jpg
+ 
+Which is not quite what I was expecting using pcond... I get the
+impression my lighting values are too low? But the results aren't too
+bad, so I thought I'd try to illuminating of a manuscript.
+ 
+In this next render I moved the candle right up close to the manuscript
+(its just off the bottom), but the illumination is not really enough to
+shift the book out of scotopic levels.
+ 
+http://homepage.ntlworld.com/mark.sutherland/outputbook22hrtallow-h.jpg
+ 
+A false colour image shows they levels barely get above 1.5 lux
+ 
+http://homepage.ntlworld.com/mark.sutherland/outputbook22hrtallow-hfalse
+color.jpg
+ 
+I thought id try a home experiment, I lit a candle in a pitch black room
+and moved a book varing distances away from the candle, and there was
+very little scotopic vision even at a distance of about a metre away.
+When I do a render without the candles at night the falsecolour images
+show very little increase in lux. Is lux a very sensitive scale? A small
+tiny increase in lux real life increases the visability a lot? But pcond
+'s filter is not sensitive enough, and also the limitation of the
+monitors contrast and lighting abilities not enough to show any
+difference? So many questions!
+ 
+The problem is that using the RGB lighting values suggested, they don't
+appear to be able to illuminate the manuscript to a reasonable looking
+level, even though in real life a candle could. Wheres my problem?
+ 
+John
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20040418/352b9601/attachment-0001.htm
+From arrguedi at techunix.technion.ac.il  Mon Apr 19 09:52:39 2004
+From: arrguedi at techunix.technion.ac.il (Guedi Capeluto)
+Date: Mon Apr 19 08:51:40 2004
+Subject: [Radiance-general] RE: Using MIST for  overcast sky
+In-Reply-To: <5966AEC9-9190-11D8-9D8D-000A95BB392A@lmi.net>
+Message-ID: <20040419065134.DC45836FC@techunix.technion.ac.il>
+
+Thanks Greg,
+
+Our intention is to simulate light extinction inside a tree (yes yes...a
+tree) or a group of trees with the purpose of studying light penetration
+according to different morphologies. The mist approach looked to me much
+simpler than modeling the whole tree (or a lot of trees), considering than
+even in this case the model will be just an approximation.
+
+Anyway I will try constructing a dome from polygons
+brightfunc-light-sources, as Giulio suggested.
+
+Guedi
+
+
+
+
+
+
+
+-----Original Message-----
+From: Greg Ward [mailto:gward@lmi.net]
+Sent: Monday, April 19, 2004 1:30 AM
+To: Guedi Capeluto; Radiance general discussion
+Cc: pillo.pillo@tin.it
+Subject: Re: Using MIST for overcast sky
+
+Hi Guedi,
+
+Well, then you can try Pillo's suggestion of simulating the sky as many
+small sources, but I don't hold out much hope that you'll get an
+accurate answer.  What local phenomenon are you trying to simulate,
+exactly?  A puff of smoke?
+
+-Greg
+
+Begin forwarded message:
+
+> From: "Guedi Capeluto" <arrguedi@techunix.technion.ac.il>
+> Date: April 18, 2004 9:06:50 AM PDT
+>
+> Thank you very much for your answer.
+>
+> My intention was not simulating light extinction through the
+> atmosphere but
+> once light reaches a mist object which is on the ground, (I exactly
+> know the
+> extinction coefficient within it), analyze the light (direct from sun
+> and
+> diffuse from sky dome) extinction inside this small volume.
+>
+> Since I need to know the light levels (illuminance) inside the volume
+> at
+> different depths, it seems to me that the -av approach will not work.
+>
+> Any suggestion?
+>
+> Thanks in advance,
+> Guedi
+
+
+
+From MdelaFuente at wmtao.com  Mon Apr 19 16:18:51 2004
+From: MdelaFuente at wmtao.com (Mark de la Fuente)
+Date: Mon Apr 19 16:19:31 2004
+Subject: [Radiance-general] Ranimate / Mkillum issue
+Message-ID: <s083998d.075@wmtao.com>
+
+** Proprietary **
+
+Greg, sorry about the proprietary bit.  My e-mail was adding this
+automatically.  I think I just fixed it.  Please disregard if I did not.
+ If anything, I hope that people trying to use rad and ranimate for this
+sort of thing will avoid problems thanks to this discussion.  Originally
+these animations were run without illum surfaces, so this never came
+up.
+
+Thanks for the help.
+
+Mark
+
+From gward at lmi.net  Mon Apr 19 17:45:01 2004
+From: gward at lmi.net (Greg Ward)
+Date: Mon Apr 19 17:45:19 2004
+Subject: [Radiance-general] Re: Ranimate / Mkillum issue
+In-Reply-To: <s083998d.075@wmtao.com>
+References: <s083998d.075@wmtao.com>
+Message-ID: <85418D2B-9218-11D8-8508-000A95BB392A@lmi.net>
+
+	** Non-proprietary, but possibly hazardous **
+
+Hi Mark,
+
+I hope by this you mean that you were able to solve your problem.  Good 
+-- although I noticed an omission in my original response.  I should 
+have written:
+
+	frame=$1
+	time=`ev "5.25+($frame/4)"`
+	gensky 3 21 $time +s -a 38.7 -o 90.5 -m 90 > sun.rad
+	rad -v 0 lobby_a.rif
+	cat ./octree/lobby_a.oct
+
+I missed the "lobby_a.rif" needed for the rad command.
+
+-Greg
+
+> From: "Mark de la Fuente" <MdelaFuente@wmtao.com>
+> Date: April 19, 2004 7:18:51 AM PDT
+>
+> ** Proprietary **
+>
+> Greg, sorry about the proprietary bit.  My e-mail was adding this
+> automatically.  I think I just fixed it.  Please disregard if I did 
+> not.
+>  If anything, I hope that people trying to use rad and ranimate for 
+> this
+> sort of thing will avoid problems thanks to this discussion.  
+> Originally
+> these animations were run without illum surfaces, so this never came
+> up.
+>
+> Thanks for the help.
+>
+> Mark
+
+
+From cjprocha at yahoo.com  Mon Apr 19 18:36:06 2004
+From: cjprocha at yahoo.com (Caroline Prochazka)
+Date: Mon Apr 19 18:43:06 2004
+Subject: [Radiance-general] Re: Radiance simulations maintain 200 lux minimum
+Message-ID: <20040419163606.56522.qmail@web11307.mail.yahoo.com>
+
+Hello all,
+
+As Greg suggested, I have posted my results to my
+website. No fancy links between them, and the text
+files are done as jpegs, but the info is there.
+
+I ran simulations of a 15m x 15m room. The west wall
+has 4 windows and the north, south and east walls each
+have 1 central window. I simulated December 21st in
+Toronto for noon, 4pm and 6pm. According to other
+software and my weather data, there is no sunlight at
+6pm on Dec21, and the sun is quite low, but not yet
+set at 4pm. I did not model any exterior obstructions.
+
+Using the Desktop Radiance interface in AutoCAD I
+generated .rif files for the time/day selections
+(Radiance>Simulation>Camera...). Then in Command
+Prompt I performed RAD on the various .rif files.
+
+The sky definitions all appear identical, except for
+the time markers in the top line.
+The .riff and sky.rad files are posted here:
+http://www.geocities.com/cjprocha/Sky_and_Rif_files.jpg
+
+The RAD command ran through my camera views
+successfully, but generated some warnings:
+warning - no light source found. Well of course, I
+have no luminaires (as suggested in the Desktop
+Radiance FAQ), I am studying daylighting, so I presume
+I can move on despite this message.
+and
+warning - aiming failure for light source
+"softwaretest4_38.4.2". Looking at the DesktopRadiance
+FAQ, online, there would not seem to be any reason for
+this warning, based on the model I have drawn. No
+concave items, no cylinders, no rings with holes, etc.
+
+The entire script for my RAD run of Dec 21 at noon is
+posted here:
+http://www.geocities.com/cjprocha/Rad_Script.jpg
+apologies for the fuzziness.
+
+So the resulting images are posted as follows:
+December 21, noon:
+http://www.geocities.com/cjprocha/Dec21_12_ca6_images.jpg
+December 21, 4pm:
+http://www.geocities.com/cjprocha/Dec21_16_ca6_images.jpg
+December 21, 6pm:
+http://www.geocities.com/cjprocha/Dec21_18_ca6_images.jpg
+The false color maps are generated within the winimage
+screen (Analysis>False color>choose metric,
+illuminance, max=1000, intervals=10)
+
+Note the centre of the floor of the room (roughly the
+centre of the floor area as I have cast my camera
+view) is near 200 lux in all three cases, even when
+there are no luminaires and the scene is after
+sun-set.
+
+I've also noticed that the 6pm version produces an
+ambient glow in the room, both in general and more
+specifically along the ceiling edge. Where is this
+light coming from? 
+
+Things I HAVE checked. 
+1.All planes are in contact along all edges. 
+2.All windows have their surface normals pointing 
+inwards. 
+3.Double and triple checked (multiple runs with same
+results) each of these simulations.
+
+I am a new user so my use of the Command Prompt to do
+most of this is limited. Any suggestions would be
+greatly appreciated, though.
+
+
+Caroline
+
+
+	
+		
+__________________________________
+Do you Yahoo!?
+Yahoo! Photos: High-quality 4x6 digital prints for 25¢
+http://photos.yahoo.com/ph/print_splash
+
+From gward at lmi.net  Mon Apr 19 19:09:42 2004
+From: gward at lmi.net (Greg Ward)
+Date: Mon Apr 19 19:09:58 2004
+Subject: [Radiance-general] Re: Radiance simulations maintain 200 lux
+	minimum
+In-Reply-To: <20040419163606.56522.qmail@web11307.mail.yahoo.com>
+References: <20040419163606.56522.qmail@web11307.mail.yahoo.com>
+Message-ID: <596A8256-9224-11D8-B291-000A95BB392A@lmi.net>
+
+Hi Caroline,
+
+Thanks for posting your input and images.  The mostly likely cause of 
+your problems is that you left rad to set the default value for -av, 
+which is based on your exposure.  Since you use the -2 option to pfilt, 
+you don't see the effect this exposure setting has on your image, 
+therefore you don't realize that it is probably too high.  You need to 
+either manually set the -av value in your render= line, or figure out 
+what the correct exposure should be for your scene and use that in your 
+EXPOSURE= setting.  Then, the light should be better balanced.
+
+A lot of people set -av 0 0 0 as a matter of course in their 
+daylighting simulations.  Although such a conservative setting is 
+guaranteed to underestimate your lighting levels, it is often better 
+than ending up with too much light where it does not belong, like you 
+are seeing here.  At least you noticed it!
+
+The Unix version of radiance comes with a script called compamb that 
+automatically determines an appropriate ambient value (and exposure) 
+given a rad input file.  I don't believe this is included in 
+DesktopRadiance, but you can look for it.
+
+Good luck!
+-Greg
+
+
+From jedev at visarc.com  Mon Apr 19 19:15:34 2004
+From: jedev at visarc.com (Jack de Valpine)
+Date: Mon Apr 19 19:15:44 2004
+Subject: [Radiance-general] Re: Radiance simulations maintain 200 lux
+	minimum
+In-Reply-To: <20040419163606.56522.qmail@web11307.mail.yahoo.com>
+References: <20040419163606.56522.qmail@web11307.mail.yahoo.com>
+Message-ID: <40840936.7010601@visarc.com>
+
+Hi Caroline,
+
+I can think of three possible things that you might want to look into:
+
+   1. Illums - these are imposter geometry to help optimize daylight
+      simulation in interior environments. I see that you have the
+      illum= line in the rif file, however since you are getting the
+      warning about "no lights found" it is likely that there is some
+      problem: A) illum geometry is directionally dependant, the surface
+      normal must point into the room. To create a polygon in Autocad
+      with the normal pointing into the room, the polygon (a closed
+      pline or 3dface for example) can be constructed by generating
+      vertices in a counter clockwise manner, for example if the polygon
+      is built in the xy plane then drawing it counter clockwise would
+      result in a normal that point in positive z. B) I do not use the
+      rad program so I am not so sure about this, but does the geometry
+      that appears in the illum= line also need to apear in the scene= line?
+   2. Ambient value - this allows a baseline ambient value to be
+      established for the scene, this can be estimated or precalculated
+      with a different script (although I am not sure how DR deals with
+      this). If this value is too high then the images can have the kind
+      of "glowy" appearance. I am guessing that a default value is being
+      used from the information in the rif file. This may need to
+      estimated by hand for best results.
+   3. Indirect - this indicates how many ambient bounces to calculate.
+      If you are after accurate results this number probably needs to be
+      2 and perhaps more depending on other factors.
+
+-Jack
+
+Caroline Prochazka wrote:
+
+>Hello all,
+>
+>As Greg suggested, I have posted my results to my
+>website. No fancy links between them, and the text
+>files are done as jpegs, but the info is there.
+>
+>I ran simulations of a 15m x 15m room. The west wall
+>has 4 windows and the north, south and east walls each
+>have 1 central window. I simulated December 21st in
+>Toronto for noon, 4pm and 6pm. According to other
+>software and my weather data, there is no sunlight at
+>6pm on Dec21, and the sun is quite low, but not yet
+>set at 4pm. I did not model any exterior obstructions.
+>
+>Using the Desktop Radiance interface in AutoCAD I
+>generated .rif files for the time/day selections
+>(Radiance>Simulation>Camera...). Then in Command
+>Prompt I performed RAD on the various .rif files.
+>
+>The sky definitions all appear identical, except for
+>the time markers in the top line.
+>The .riff and sky.rad files are posted here:
+>http://www.geocities.com/cjprocha/Sky_and_Rif_files.jpg
+>
+>The RAD command ran through my camera views
+>successfully, but generated some warnings:
+>warning - no light source found. Well of course, I
+>have no luminaires (as suggested in the Desktop
+>Radiance FAQ), I am studying daylighting, so I presume
+>I can move on despite this message.
+>and
+>warning - aiming failure for light source
+>"softwaretest4_38.4.2". Looking at the DesktopRadiance
+>FAQ, online, there would not seem to be any reason for
+>this warning, based on the model I have drawn. No
+>concave items, no cylinders, no rings with holes, etc.
+>
+>The entire script for my RAD run of Dec 21 at noon is
+>posted here:
+>http://www.geocities.com/cjprocha/Rad_Script.jpg
+>apologies for the fuzziness.
+>
+>So the resulting images are posted as follows:
+>December 21, noon:
+>http://www.geocities.com/cjprocha/Dec21_12_ca6_images.jpg
+>December 21, 4pm:
+>http://www.geocities.com/cjprocha/Dec21_16_ca6_images.jpg
+>December 21, 6pm:
+>http://www.geocities.com/cjprocha/Dec21_18_ca6_images.jpg
+>The false color maps are generated within the winimage
+>screen (Analysis>False color>choose metric,
+>illuminance, max=1000, intervals=10)
+>
+>Note the centre of the floor of the room (roughly the
+>centre of the floor area as I have cast my camera
+>view) is near 200 lux in all three cases, even when
+>there are no luminaires and the scene is after
+>sun-set.
+>
+>I've also noticed that the 6pm version produces an
+>ambient glow in the room, both in general and more
+>specifically along the ceiling edge. Where is this
+>light coming from? 
+>
+>Things I HAVE checked. 
+>1.All planes are in contact along all edges. 
+>2.All windows have their surface normals pointing 
+>inwards. 
+>3.Double and triple checked (multiple runs with same
+>results) each of these simulations.
+>
+>I am a new user so my use of the Command Prompt to do
+>most of this is limited. Any suggestions would be
+>greatly appreciated, though.
+>
+>
+>Caroline
+>
+>
+>	
+>		
+>__________________________________
+>Do you Yahoo!?
+>Yahoo! Photos: High-quality 4x6 digital prints for 25?
+>http://photos.yahoo.com/ph/print_splash
+>
+>_______________________________________________
+>Radiance-general mailing list
+>Radiance-general@radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>  
+>
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20040419/f7ae3433/attachment.html
+From rpg at rumblestrip.org  Mon Apr 19 20:20:29 2004
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Mon Apr 19 20:21:00 2004
+Subject: [Radiance-general] Re: Radiance simulations maintain 200 lux
+	minimum
+In-Reply-To: <40840936.7010601@visarc.com>
+References: <20040419163606.56522.qmail@web11307.mail.yahoo.com>
+	<40840936.7010601@visarc.com>
+Message-ID: <4084186D.5080903@rumblestrip.org>
+
+Jack de Valpine wrote:
+
+>       B) I do not use the
+>       rad program so I am not so sure about this, but does the geometry
+>       that appears in the illum= line also need to apear in the scene= line?
+
+Nope.
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+From MdelaFuente at wmtao.com  Mon Apr 19 23:27:34 2004
+From: MdelaFuente at wmtao.com (Mark de la Fuente)
+Date: Mon Apr 19 23:28:30 2004
+Subject: [Radiance-general] Re: Ranimate / Mkillum issue
+Message-ID: <s083fe19.095@wmtao.com>
+
+Quite Hazardous! :)
+
+I did get it to work, although not quite the way you suggested.  Not
+sure what the problem is with Cygwin & rad, but I almost always get a
+core dump when rad tries to oconv something big.  Therefore I needed to
+get around this problem as well as I was getting tired of manually
+oconving after each core dump...  (BTW, it's been great having Cygwin as
+an option for running radiance on a Windows system)
+
+The one problem I'm still having (not really a problem) is that I can't
+get mkillum to generate all of its *.dat files in the illums folder. 
+This is making it harder to keep everything nice and clean since I end
+up with 82 files for every run and there are 53 runs!  Best I can do to
+clean this up is to remove the old *.dat files before I begin the next
+mkillum process.
+
+Also, I can't quite settle on the best looking view..  But I don't
+expect much help there!
+
+My final octree generator looks as follows.  Basically I pulled the
+light sources and octree updating from rad.  This eliminated both of my
+problems.  We'll see how long this takes with all the variables set to
+high.....
+
+frame=$1
+time=`ev "5.25+($frame/4)"`
+gensky 3 21 $time +s -a 38.7 -o 90.5 -m 90 > sun.rad
+oconv -f -i ./octree/lobby_b.oct sun.rad sky.rad >
+./octree/lobby_b0.oct
+rm *.dat
+mkillum @anim1/render.opt ./octree/lobby_b0.oct "<" ./scene/illums.rad
+> ./illums/processedillums.rad
+oconv -f -i ./octree/lobby_b0.oct ./illums/processedillums.rad
+
+Greg, thanks for the hand.
+
+Mark
+
+From gward at lmi.net  Tue Apr 20 00:15:04 2004
+From: gward at lmi.net (Greg Ward)
+Date: Tue Apr 20 00:17:08 2004
+Subject: [Radiance-general] Re: Ranimate / Mkillum issue
+In-Reply-To: <s083fe19.095@wmtao.com>
+References: <s083fe19.095@wmtao.com>
+Message-ID: <02093A5B-924F-11D8-AD57-000A95BB392A@lmi.net>
+
+Hi Mark,
+
+I'm not quite sure what to suggest about the core dump -- I found out 
+on another project that Cygwin isn't all that good with memory use.
+
+As for mkillum creating extra *.dat files, you need to set the f= 
+option as explained in the man page to avoid this behavior.
+
+	http://radsite.lbl.gov/radiance/man_html/mkillum.1.html
+
+-Greg
+
+
+From MMoeck at engr.psu.edu  Tue Apr 20 14:41:28 2004
+From: MMoeck at engr.psu.edu (Martin Moeck)
+Date: Tue Apr 20 14:41:47 2004
+Subject: [Radiance-general] RE: cygwin and vmware
+Message-ID: <84F05BA9118BBD4A8FC6409808CE266C11382B@ENGRMAIL2.engr.psu.edu>
+
+I have very good experiences with vmware from www.vmware.com. It never crashed and I started to use it 5 years ago. 
+
+Martin, Penn State
+
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: not available
+Type: application/ms-tnef
+Size: 2118 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20040420/961f3482/attachment.bin
+From cjprocha at yahoo.com  Tue Apr 20 16:31:42 2004
+From: cjprocha at yahoo.com (Caroline Prochazka)
+Date: Tue Apr 20 16:31:47 2004
+Subject: [Radiance-general] Re: Re: Radiance simulations maintain 200 lux
+	minimum
+Message-ID: <20040420143142.61643.qmail@web11304.mail.yahoo.com>
+
+Great! Thanks for the suggestions. Indeed it seems as
+though -av will fix this. Next step is to try this on
+my larger simulations.
+An additional questions, as I am not too experienced
+with this application:
+
+As my primary use of Desktop Radiance centres on the
+changes in daylighting in a building as the glazing
+type changes, should I expect to need a different -av
+setting for each variation of the design? What is
+likely to be the greatest factor in setting my -av
+number - does it sound reasonable that for the same
+buidling geometry, I will probably find the same -av
+setting works throughout all glazing variations? Or
+will it be the date/time/location setting which is the
+biggest player? or something else? 
+
+...or should I just plan for this to take several
+tests of -av settings for each and every glazing
+variation?
+
+Cheers,
+Caroline
+
+
+	
+		
+__________________________________
+Do you Yahoo!?
+Yahoo! Photos: High-quality 4x6 digital prints for 25¢
+http://photos.yahoo.com/ph/print_splash
+
+From schorsch at schorsch.com  Tue Apr 20 16:45:12 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Tue Apr 20 16:45:21 2004
+Subject: [Radiance-general] Re: Re: Radiance simulations maintain 200
+	lux minimum
+In-Reply-To: <20040420143142.61643.qmail@web11304.mail.yahoo.com>
+References: <20040420143142.61643.qmail@web11304.mail.yahoo.com>
+Message-ID: <Pine.BSF.4.58.0404201039100.63910@emancholl.pair.com>
+
+Caroline Prochazka wrote:
+
+> As my primary use of Desktop Radiance centres on the
+> changes in daylighting in a building as the glazing
+> type changes, should I expect to need a different -av
+> setting for each variation of the design?
+
+As a principle, yes. Each variation will result in a
+different "general illumination level", which is what
+-av more or less represents.
+
+
+> What is
+> likely to be the greatest factor in setting my -av
+> number - does it sound reasonable that for the same
+> buidling geometry, I will probably find the same -av
+> setting works throughout all glazing variations? Or
+> will it be the date/time/location setting which is the
+> biggest player? or something else?
+
+If the primary variable is the transmittance of the
+glazing, then you can probably just scale -av linearly
+with that. If there are other modifications involved,
+you might still need to start experimenting from there.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From gward at lmi.net  Tue Apr 20 16:52:04 2004
+From: gward at lmi.net (Greg Ward)
+Date: Tue Apr 20 16:52:20 2004
+Subject: [Radiance-general] Re: Re: Radiance simulations maintain 200 lux
+	minimum
+In-Reply-To: <20040420143142.61643.qmail@web11304.mail.yahoo.com>
+References: <20040420143142.61643.qmail@web11304.mail.yahoo.com>
+Message-ID: <49E724BC-92DA-11D8-B32F-000A95BB392A@lmi.net>
+
+Hi Caroline,
+
+If you are changing all the glazing at once, you can simply scale the 
+-av parameter value by the transmittance of your glazings and that will 
+give you the correct relative changes.  In fact, excepting for angular 
+variations in transmittance, you could scale your entire result under 
+those circumstances.
+
+-Greg
+
+
+From toast at becausewecan.org  Tue Apr 20 17:53:11 2004
+From: toast at becausewecan.org (Jeffrey McGrew)
+Date: Tue Apr 20 17:53:18 2004
+Subject: [Radiance-general] RE: cygwin and vmware
+In-Reply-To: <84F05BA9118BBD4A8FC6409808CE266C11382B@ENGRMAIL2.engr.psu.edu>
+References: <84F05BA9118BBD4A8FC6409808CE266C11382B@ENGRMAIL2.engr.psu.edu>
+Message-ID: <40854767.5030701@becausewecan.org>
+
+
+I've found that Radiance on Cygwin is great for learning and for 
+setting up your Rad's and Rifs. But when I got to do a large 
+rendering, I then hand it over to a G4 Mac (since I don't have a Linux 
+box anymore). It's just been wonderful for learning, but I too have 
+had the segfaults sometimes when dealing with large RAD files. I've 
+taken to exporting my models from Revit to AutoCAD then using a LISP 
+routine to then export each layer out to a separate RAD file to try to 
+get around this, and it works pretty well.
+
+How is the speed with VMWare? I'd love to use it rather than trying to 
+make my laptop a dual-boot, however I do a lot of heavy 3D and need 
+whatever speed I can get sometimes...
+
+Thanks!
+
+Jeffrey McGrew
+
+Martin Moeck wrote:
+> I have very good experiences with vmware from www.vmware.com. It never crashed and I started to use it 5 years ago. 
+> 
+> Martin, Penn State
+> 
+> 
+> 
+> 
+> ------------------------------------------------------------------------
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+From MMoeck at engr.psu.edu  Tue Apr 20 18:50:32 2004
+From: MMoeck at engr.psu.edu (Martin Moeck)
+Date: Tue Apr 20 18:50:46 2004
+Subject: [Radiance-general] RE: cygwin and vmware
+Message-ID: <84F05BA9118BBD4A8FC6409808CE266C11382F@ENGRMAIL2.engr.psu.edu>
+
+ 
+
+	How is the speed with VMWare? I'd love to use it rather than trying to
+	make my laptop a dual-boot, however I do a lot of heavy 3D and need
+	whatever speed I can get sometimes...
+	
+	Thanks!
+	
+	Jeffrey McGrew
+	
+	
+	 
+	I use vmware on my laptop (1.7GHz, 512MB RAM) and on the 3GHz office PC. There is no slowdown - the speed is the same as if you would run it on native Linux/Unix. The setup on laptops is no problem whatsoever. vmware recognizes the graphics card automatically. Heavy 3D doesn't need more than 150 MB RAM, so I run Photoshop and Radiance even on the laptop at the same time. Actually, I use vmware more than Linux dualboot on the office PC, because you always need some microsoft programs. 
+	 
+	Martin 
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: not available
+Type: application/ms-tnef
+Size: 3910 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20040420/f6618f9e/attachment.bin
+From toast at becausewecan.org  Tue Apr 20 19:01:36 2004
+From: toast at becausewecan.org (Jeffrey McGrew)
+Date: Tue Apr 20 19:01:39 2004
+Subject: [Radiance-general] RE: cygwin and vmware
+In-Reply-To: <84F05BA9118BBD4A8FC6409808CE266C11382F@ENGRMAIL2.engr.psu.edu>
+References: <84F05BA9118BBD4A8FC6409808CE266C11382F@ENGRMAIL2.engr.psu.edu>
+Message-ID: <40855770.20101@becausewecan.org>
+
+
+
+Martin Moeck wrote:
+> 	I use vmware on my laptop (1.7GHz, 512MB RAM) and on the 3GHz office PC.
+
+Thanks for the tip! Wow I'll have to look more into this, for the 
+CAD/3D/BIM program I use in Windows-only, but I use a couple of things 
+on the Linux side too. Being able to run both at the same time would 
+be very keen.
+
+Thanks!
+
+Jeffrey
+
+From toast at becausewecan.org  Tue Apr 20 19:45:59 2004
+From: toast at becausewecan.org (Jeffrey McGrew)
+Date: Tue Apr 20 19:46:01 2004
+Subject: [Radiance-general] Radiance Render Server
+In-Reply-To: <40855770.20101@becausewecan.org>
+References: <84F05BA9118BBD4A8FC6409808CE266C11382F@ENGRMAIL2.engr.psu.edu>
+	<40855770.20101@becausewecan.org>
+Message-ID: <408561D7.8080503@becausewecan.org>
+
+
+OK, so I've got this idea to make a Radiance Render server. Basically 
+it will be a computer that sits in my closet, running Linux, that I 
+can e-mail it a render job and have it e-mail back the finished images.
+
+First off: Before I replicate a bunch of work, is there already 
+something like this out there available? I know that Design Workshop 
+has a render server available via a web form.
+
+Second off: Would it even be feasible to use e-mail as the way to 
+submit and receive jobs? The jobs would probably be rather large, so I 
+guess I'll have to figure something out. Just seems very simple to 
+make some programs that would take an e-mail and run with it than to 
+have to build a web front end or something...
+
+Thanks for any input,
+
+Jeffrey McGrew
+
+From schorsch at schorsch.com  Tue Apr 20 19:58:03 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Tue Apr 20 19:58:09 2004
+Subject: [Radiance-general] Radiance Render Server
+In-Reply-To: <408561D7.8080503@becausewecan.org>
+References: <84F05BA9118BBD4A8FC6409808CE266C11382F@ENGRMAIL2.engr.psu.edu>
+	<40855770.20101@becausewecan.org> <408561D7.8080503@becausewecan.org>
+Message-ID: <Pine.BSF.4.58.0404201351320.63910@emancholl.pair.com>
+
+Jeffrey McGrew wrote:
+
+> OK, so I've got this idea to make a Radiance Render server. Basically
+> it will be a computer that sits in my closet, running Linux, that I
+> can e-mail it a render job and have it e-mail back the finished images.
+>
+> First off: Before I replicate a bunch of work, is there already
+> something like this out there available? I know that Design Workshop
+> has a render server available via a web form.
+
+I usually try not to advertise here, but if you ask... ;)
+
+Rayfront has a server component, which makes it possible to
+send jobs to other machines on the local network. At the
+moment, the user needs to control that manually, but I'm
+working on queueing and load distribution functionality.
+
+
+> Second off: Would it even be feasible to use e-mail as the way to
+> submit and receive jobs? The jobs would probably be rather large, so I
+> guess I'll have to figure something out. Just seems very simple to
+> make some programs that would take an e-mail and run with it than to
+> have to build a web front end or something...
+
+Client and server need access to the same disk space,
+I don't think that using e-mail scales well enough.
+
+If the server(farm) was offsite (which Rayfront doesn't
+allow for reasons of security), other transport mechanisms
+would become necessary. Actually, a simple scp might
+do the trick.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From rpg at rumblestrip.org  Tue Apr 20 19:59:45 2004
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Tue Apr 20 20:00:12 2004
+Subject: [Radiance-general] Radiance Render Server
+In-Reply-To: <408561D7.8080503@becausewecan.org>
+References: <84F05BA9118BBD4A8FC6409808CE266C11382F@ENGRMAIL2.engr.psu.edu>	<40855770.20101@becausewecan.org>
+	<408561D7.8080503@becausewecan.org>
+Message-ID: <40856511.3000002@rumblestrip.org>
+
+Jeffrey McGrew wrote:
+
+> First off: Before I replicate a bunch of work, is there already 
+> something like this out there available? I know that Design Workshop has 
+> a render server available via a web form.
+
+The DW form is the only thing I've seen publicly too.
+
+> Second off: Would it even be feasible to use e-mail as the way to submit 
+> and receive jobs? The jobs would probably be rather large, so I guess 
+> I'll have to figure something out. 
+
+Well, it depends on what you need back.  The really large files tend to 
+be the octrees, the ambient cache files, and the Radiance pics, which 
+all get generated from your rad files which are relatively small.  Could 
+you make do with jpeg versions of the images?  They'd be much smaller 
+than the 32 bit Radiance images.  You could create a script that would 
+take your uploaded .rad files (and maybe a rif file), runs the 
+simulation, converts the pics to jpeg, and emails 'em back to you (or 
+generates some html so that you could view the images online).  All the 
+bulk of the simulation would still be on the RRS (Radiance Render 
+Server).  Maybe the script could pack up the simulation as a tar.gz 
+archive and a link to download the file could be added to the image html 
+page; this would get around any email file size limits too.
+
+Notice how there are no practical code samples here.  I'm good with the 
+ideas, but not with the programming. =8-)  Keep us posted on your 
+progress though!
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+From apian at pab-opto.de  Tue Apr 20 20:53:46 2004
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Tue Apr 20 22:05:02 2004
+Subject: [Radiance-general] Radiance Render Server
+In-Reply-To: <408561D7.8080503@becausewecan.org>
+References: <84F05BA9118BBD4A8FC6409808CE266C11382F@ENGRMAIL2.engr.psu.edu>	<40855770.20101@becausewecan.org>
+	<408561D7.8080503@becausewecan.org>
+Message-ID: <408571BA.6080504@pab-opto.de>
+
+Jeffrey McGrew wrote:
+
+>
+> OK, so I've got this idea to make a Radiance Render server. Basically 
+> it will be a computer that sits in my closet, running Linux, that I 
+> can e-mail it a render job and have it e-mail back the finished images.
+>
+> First off: Before I replicate a bunch of work, is there already 
+> something like this out there available? I know that Design Workshop 
+> has a render server available via a web form.
+>
+> Second off: Would it even be feasible to use e-mail as the way to 
+> submit and receive jobs? The jobs would probably be rather large, so I 
+> guess I'll have to figure something out. Just seems very simple to 
+> make some programs that would take an e-mail and run with it than to 
+> have to build a web front end or something...
+>
+> Thanks for any input,
+>
+> Jeffrey McGrew
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+if you want my arogant two-cent thoughts after some years of IT life: 
+the only reason for doing it by email is what the name of your domain 
+says: becausewecan.org
+
+   1. You'll be moving a couple of dozen megabytes for any serious work,
+      email gateways typically block very large emails, not to mention
+      folks with slow links. A sysadmin may rip out vital parts out of
+      someone using the system mail spool area as intermediate
+      octree/image storage.  ftp/http/scp is just better by design for
+      large volume
+   2. the server has to set up everything the specific job needs
+      (version of binaries, environment variables, libraries, ...),
+      which needs a bit of care with any method
+   3. web-based leaps to mind before email does (the latter probably
+      never leaps anyway...). Marc Fontoynont's group sat up something
+      for their Genelux program long ago (sorry, don't have any further
+      references to it)
+   4. how do your users pack their jobs ? zip,tar ? How do they verify
+      they have everything included ?
+   5. why setting up a server anyway? For an occasoanl user the various
+      boot-radiance-from-cd concepts are probably much quicker (right on
+      their machine), for bulk processing a render farm with file
+      sharing is approx 3 orders of magnitude faster and easier to manage
+   6. for public usage the server would have to implement some resource
+      management, otherwise any job may block the resources for an
+      unpredictable time
+
+if you still want to go and dig in (good!), my personal recommendation 
+would be PHP scripts on a webserver (very preferably Apache). Actually I 
+thought about it years ago at ISE, but just hadn't found a good reason 
+to offer it publicly. Internally we used our own job distribution system 
+(based on NFS) at ISE.
+
+cheers
+Peter
+
+-- 
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+
+
+From schorsch at schorsch.com  Tue Apr 20 23:39:53 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Tue Apr 20 23:39:57 2004
+Subject: [Radiance-general] Radiance Render Server
+In-Reply-To: <408571BA.6080504@pab-opto.de>
+References: <84F05BA9118BBD4A8FC6409808CE266C11382F@ENGRMAIL2.engr.psu.edu>
+	<40855770.20101@becausewecan.org> <408561D7.8080503@becausewecan.org>
+	<408571BA.6080504@pab-opto.de>
+Message-ID: <Pine.BSF.4.58.0404201718410.63910@emancholl.pair.com>
+
+Peter Apian-Bennewitz wrote:
+
+> Jeffrey McGrew wrote:
+>
+> >
+> > OK, so I've got this idea to make a Radiance Render server.
+>
+>    3. web-based leaps to mind before email does (the latter probably
+>       never leaps anyway...).
+
+
+Dont ask me why I didn't mention this an hour ago.
+
+Probably because I'm still more thinking of it as a project
+than a product. But I've been working on a web based online
+version of Rayfront for quite a while now. It's in beta, and
+the payment infrastructure is currently being integrated.
+
+The people who commissioned this will offer it as a service,
+or sell it as a "render appliance". You can buy a box to be
+installed in a rack in your server room, and all you need
+to access it for running simulations is a web browser with
+the flash plugin.
+
+
+>    4. how do your users pack their jobs ? zip,tar ? How do they verify
+>       they have everything included ?
+
+Upload a DXF file, compressed with zip or gzip if it
+gets too large otherwise. Other types of upload will be
+easy to add if there's a real need.
+
+
+>    5. why setting up a server anyway? For an occasoanl user the various
+>       boot-radiance-from-cd concepts are probably much quicker (right on
+>       their machine), for bulk processing a render farm with file
+>       sharing is approx 3 orders of magnitude faster and easier to manage
+
+How about a render farm in behind a server based interface?
+Those boot-radiance-from-cd concepts also don't come with
+tools for material assignment and simulation control
+
+
+>    6. for public usage the server would have to implement some resource
+>       management, otherwise any job may block the resources for an
+>       unpredictable time
+
+The available CPUs need to be adequate for the expecded
+load. In an in-house situation, you just file jobs into a
+queue. On a commercial service you can buy "render points",
+some of which get eaten up by each simulation you run.
+Other than that you have user and group management, so that
+several people from the same organisation can run their jobs
+and it all gets billed together.
+
+
+> if you still want to go and dig in (good!), my personal recommendation
+> would be PHP scripts on a webserver (very preferably Apache).
+
+Buzzword alarm:
+The online version of Rayfront is a multi-tier solution.
+It uses the Python-based web application server Zope running
+behind Apache, with XML-RPC connections to the Flash client and
+to the simulation backend.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From toast at becausewecan.org  Wed Apr 21 00:35:38 2004
+From: toast at becausewecan.org (Jeffrey McGrew)
+Date: Wed Apr 21 00:35:45 2004
+Subject: [Radiance-general] Radiance Render Server
+In-Reply-To: <408571BA.6080504@pab-opto.de>
+References: <84F05BA9118BBD4A8FC6409808CE266C11382F@ENGRMAIL2.engr.psu.edu>	<40855770.20101@becausewecan.org>	<408561D7.8080503@becausewecan.org>
+	<408571BA.6080504@pab-opto.de>
+Message-ID: <4085A5BA.606@becausewecan.org>
+
+> if you want my arogant two-cent thoughts after some years of IT life: 
+> the only reason for doing it by email is what the name of your domain 
+> says: becausewecan.org
+
+I love the input, that's why I posted it out to the list! ;-)
+
+>   1. You'll be moving a couple of dozen megabytes for any serious work,
+>      email gateways typically block very large emails, not to mention
+>      folks with slow links. A sysadmin may rip out vital parts out of
+>      someone using the system mail spool area as intermediate
+>      octree/image storage.  ftp/http/scp is just better by design for
+>      large volume
+
+A: See No. 3 below
+
+>   2. the server has to set up everything the specific job needs
+>      (version of binaries, environment variables, libraries, ...),
+>      which needs a bit of care with any method
+
+A: I was thinking that this would be a part of the solution, a .zip or 
+.tar file is sent to the 'RRS' (thanks for that) and then it's 
+unpacked, and any user-defined .cal's and such will be included within 
+that archive. The basic assumption is that everyone using this (which 
+would be my company, which right now consists of me ;-) ) would be on 
+the same page, Radiance-wise.
+
+>   3. web-based leaps to mind before email does (the latter probably
+>      never leaps anyway...). Marc Fontoynont's group sat up something
+>      for their Genelux program long ago (sorry, don't have any further
+>      references to it)
+
+Web stuff and FTP are all well and good, and a great way to go, if I 
+want to pay extra for a static IP and the task of managing my own 
+server. I'm mobile, working from a laptop, and while I can run stuff 
+under Cygwin (and do) it would be cooler/better/more feasible to have 
+the RRS do this while I'm working on something else and/or in transit.
+
+>   4. how do your users pack their jobs ? zip,tar ? How do they verify
+>      they have everything included ?
+
+I've got a flowchart that I worked out, that makes it e-mail back 
+error messages if something is left out or if there is an error.
+
+>   5. why setting up a server anyway? For an occasoanl user the various
+>      boot-radiance-from-cd concepts are probably much quicker (right on
+>      their machine), for bulk processing a render farm with file
+>      sharing is approx 3 orders of magnitude faster and easier to manage
+
+Two things: When rendering, I would like to work on my computer for 
+other things too, and those other things require Windows. Currently I 
+run Cygwin on my laptop, and use Radiance within there. This is 
+working well, but I would love to be able to hand these jobs off to a 
+faster computer, and a desktop/server gives a lot more bang for the 
+buck than a laptop in raw processor speed. It would also allow for the 
+RRS to run whatever OS is best on whatever hardware I can afford, and 
+then I can move the RRS to whatever platform I need, or in the future 
+to a cluster...
+
+Second is that it would be cool. No, Seriously. I work in Revit, dump 
+my models to AutoCAD, tweak layers and such, export to Radiance, send 
+the job off, and then keep working in Revit while my job 'bakes' on 
+the RRS and is sent back to me when done. How cool would that be? My 
+little RRS working away, day and night... Makes animations much more 
+feasible too!
+
+>   6. for public usage the server would have to implement some resource
+>      management, otherwise any job may block the resources for an
+>      unpredictable time
+
+This would primarily be for my own use, so I'm gonna start out small.
+
+> if you still want to go and dig in (good!), my personal recommendation 
+> would be PHP scripts on a webserver (very preferably Apache).
+
+Yeah, if I go with a web-thing it would probably be Apache on 
+Mandrake, using Python (just because it's what I'm a little familiar 
+with) or something.
+
+Thanks again, keep it coming!
+
+Jeffrey McGrew
+
+From ma0874 at bris.ac.uk  Wed Apr 21 20:12:55 2004
+From: ma0874 at bris.ac.uk (Matt Aranha)
+Date: Wed Apr 21 20:13:03 2004
+Subject: [Radiance-general] Using Mist
+Message-ID: <1082571175.3625.6.camel@localhost.localdomain>
+
+Hi,
+
+I'm new to Radiance and this list. I am trying to create some sort of
+underwater visualisation using Radiance. I have been told the Mist
+material is the way to go with it or possibly a Mixfunc with Trans and
+Mist.
+
+I have tried experimenting with Mist and Trans, both with limited
+success. Does anyone have any advice about how to achieve a realistic
+model?
+
+Cheers,
+
+matt
+
+
+From wxo110 at psu.edu  Sun Apr 25 22:17:28 2004
+From: wxo110 at psu.edu (WOOK JEA OH)
+Date: Sun Apr 25 22:17:34 2004
+Subject: [Radiance-general] glow&spotlight material
+Message-ID: <200404252017.QAA12644@webmail11.cac.psu.edu>
+
+Hi, This is woogie.
+
+I am trying to study material characteristic in Radiance by using Desktop
+Radiance in the DOS mode.
+
+I have some problems with glow and spotlight material.
+
+I made a simple scene with only two surfaces facing each other.
+One of surfaces is light source and the other is plastic.
+the plastic surface (1x1m) is 5m apart from the light source material(1x1m)
+
+And I plugged in different light source material to see if there is differernt.
+
+Light and illum material result in the same illuminance value as that by hand
+calcuation.
+
+When it comes to glow material, it seems to me odd.
+The first, It is said that the fourth argument, maxrad in the glow material can
+be negative, zero, and positive. 
+
+When the fourth argument is zero, illuminance value on the floor(1x1m) which is
+5m apart from the glow material(1x1) is not uniform.
+
+Light amd illum material result in the uniform illuminance value on the floor
+with the same geometry material setting.
+
+It seems to me that rendering parameter might not correct because the center of
+the floor is darker than the edge of the floor or it comes from Desktop
+Radiance or it is because I did not understand the fourth argument in the glow
+material.
+
+If anyone knows of my problem, please let me know.
+I am linking a file below
+
+http://www.personal.psu.edu/users/w/x/wxo110/radiance.htm
+
+I appreciate any comment about it.
+Thanks!
+
+>From woogie.
+
+
+From grobe at gmx.net  Mon Apr 26 12:18:03 2004
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Mon Apr 26 12:21:00 2004
+Subject: [Radiance-general] .oct-instances, overlapping octrees?
+Message-ID: <00D27D7A-976B-11D8-AC4B-000A959DDB22@gmx.net>
+
+Hi list.
+
+I have a question regarding the useage of octrees as instances. Are 
+problems experienced when the bounding boxes of instances overlap, or 
+only if the actual geometry contained in the instances overlap.
+
+E.g. if I have one hollow cube (instance1) and one small cube 
+(instance2) inside instance1, the bounding boxes overlap, while the 
+geometry doesn't conflict (because instance1 is like an empty room, 
+instance2 like a piece of furniture). Should I expect problems in such 
+configurations?
+
+The reason for my question is that I am "atomizing" a huge model into 
+small objects, which will be instances placed by markers. The objects' 
+geometries will all fit nicely and won't overlap, but of course a lot 
+of the octrees' bounding boxes will overlap, and I am a bit worried if 
+this concept will make trouble later...
+
+Greg Ward wrote in a reply to my ideas about geometrical structured 
+surfaces some time ago:
+"If we were to minimize code changes, we'd be using instances of some 
+kind with clipping, and we'd end up with a lot of overlapping 
+suboctrees.  Many on this list can tell you their headaches surrounding 
+those if you haven't had enough of your own.  Getting tighter bounds on 
+the instanced geometry would require some rather fundamental changes to 
+the handling of octrees, and still wouldn't completely remedy the 
+problems with side-by-side instances.  They just don't work that well."
+
+
+TIA+CU Lars.
+
+
+From grobe at gmx.net  Mon Apr 26 14:26:46 2004
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Mon Apr 26 14:26:31 2004
+Subject: [Radiance-general] material properties of ancient window panes?
+Message-ID: <FBA419AE-977C-11D8-A5BE-000A959DDB22@gmx.net>
+
+Hi,
+
+does anybody know a ressource for material properties of window panes 
+used in ancient buildings? I need data of window glass from byzanthine 
+times (500-700 AD). I know few about it, and for reference (to see how 
+good or how bad I guess) it would be great to compare with some 
+measured data. I will search the library for literature about glass 
+technology, maybe there is some reference to history. However, maybe 
+one has worked on such materials before?
+
+TIA + CU Lars.
+
+
+From MMoeck at engr.psu.edu  Mon Apr 26 15:11:44 2004
+From: MMoeck at engr.psu.edu (Martin Moeck)
+Date: Mon Apr 26 15:13:05 2004
+Subject: [Radiance-general] glow&spotlight material
+Message-ID: <84F05BA9118BBD4A8FC6409808CE266C113858@ENGRMAIL2.engr.psu.edu>
+
+The fourth argument can be set to 0. It is important to crank up the rpict ambient calulcation or you will miss the glow source, because it can only be caught by -ad and -as rays
+ 
+rpict -ab 1 -ad 8000 ... 
+ 
+Dr. Moeck
+
+	-----Original Message----- 
+	From: WOOK JEA OH [mailto:wxo110@psu.edu] 
+	Sent: Sun 4/25/2004 4:17 PM 
+	To: radiance-general@radiance-online.org 
+	Cc: 
+	Subject: [Radiance-general] glow&spotlight material
+	
+	
+
+	Hi, This is woogie.
+	
+	I am trying to study material characteristic in Radiance by using Desktop
+	Radiance in the DOS mode.
+	
+	I have some problems with glow and spotlight material.
+	
+	I made a simple scene with only two surfaces facing each other.
+	One of surfaces is light source and the other is plastic.
+	the plastic surface (1x1m) is 5m apart from the light source material(1x1m)
+	
+	And I plugged in different light source material to see if there is differernt.
+	
+	Light and illum material result in the same illuminance value as that by hand
+	calcuation.
+	
+	When it comes to glow material, it seems to me odd.
+	The first, It is said that the fourth argument, maxrad in the glow material can
+	be negative, zero, and positive.
+	
+	When the fourth argument is zero, illuminance value on the floor(1x1m) which is
+	5m apart from the glow material(1x1) is not uniform.
+	
+	Light amd illum material result in the uniform illuminance value on the floor
+	with the same geometry material setting.
+	
+	It seems to me that rendering parameter might not correct because the center of
+	the floor is darker than the edge of the floor or it comes from Desktop
+	Radiance or it is because I did not understand the fourth argument in the glow
+	material.
+	
+	If anyone knows of my problem, please let me know.
+	I am linking a file below
+	
+	http://www.personal.psu.edu/users/w/x/wxo110/radiance.htm
+	
+	I appreciate any comment about it.
+	Thanks!
+	
+	>From woogie.
+	
+	
+	_______________________________________________
+	Radiance-general mailing list
+	Radiance-general@radiance-online.org
+	http://www.radiance-online.org/mailman/listinfo/radiance-general
+	
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: not available
+Type: application/ms-tnef
+Size: 5222 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20040426/edc247d0/attachment.bin
+From gward at lmi.net  Mon Apr 26 16:59:42 2004
+From: gward at lmi.net (Greg Ward)
+Date: Mon Apr 26 17:00:03 2004
+Subject: [Radiance-general] glow&spotlight material
+In-Reply-To: <200404252017.QAA12644@webmail11.cac.psu.edu>
+References: <200404252017.QAA12644@webmail11.cac.psu.edu>
+Message-ID: <5948B0B2-9792-11D8-8BB1-000A95BB392A@lmi.net>
+
+Hi Woogie,
+
+What you are seeing is likely the result of a known anomaly in the 
+hemispherical sampling pattern used by the indirect calculation in 
+Radiance.  I think Charles Ehrlich was the first to point this out to 
+me -- the polar sampling I use on the hemisphere means that the exact 
+pole is never sampled, and there is a slight dip in the response to 
+indirect surfaces directly overhead as a result.  Since this is how you 
+arranged your scene, it is likely that this is the source of the odd 
+dip in value towards the center of the surface illuminated by the glow 
+source, as the glow only contributes to the indirect portion of 
+illuminance.
+
+To fix this problem would complicate the code and only reduce errors in 
+some very odd circumstances.  There are many other circumstances that 
+cause similar biases, so I never thought it worthwhile to change it.
+
+-Greg
+
+
+From js0754 at bris.ac.uk  Mon Apr 26 17:11:31 2004
+From: js0754 at bris.ac.uk (John Sutherland)
+Date: Mon Apr 26 17:11:15 2004
+Subject: [Radiance-general] material properties of ancient window panes?
+In-Reply-To: <FBA419AE-977C-11D8-A5BE-000A959DDB22@gmx.net>
+Message-ID: <000201c42ba0$c1a1baa0$5d00a8c0@cumberland>
+
+Ive not done any work on that specific period, but I tried to tackle
+this problem in my medieval abbey reconstruction of stained glass. 
+I found that for internal views of the glass the material glass was
+best, as it could be textured and propagated the light well into the
+room. As for external rendering, the glass was far too reflective,
+almost like a mirror , therefore I used trans. Have a play with the
+settings for it, the reflectivity can be adjusted etc, but I found it
+difficult to get the same internal lighting quality with trans.
+
+John
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Lars
+O. Grobe
+Sent: 26 April 2004 13:27
+To: radiance-general@radiance-online.org
+Subject: [Radiance-general] material properties of ancient window panes?
+
+Hi,
+
+does anybody know a ressource for material properties of window panes 
+used in ancient buildings? I need data of window glass from byzanthine 
+times (500-700 AD). I know few about it, and for reference (to see how 
+good or how bad I guess) it would be great to compare with some 
+measured data. I will search the library for literature about glass 
+technology, maybe there is some reference to history. However, maybe 
+one has worked on such materials before?
+
+TIA + CU Lars.
+
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+
+From grobe at gmx.net  Tue Apr 27 21:27:51 2004
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Tue Apr 27 21:29:20 2004
+Subject: [Radiance-general] material properties of ancient window panes?
+In-Reply-To: <000201c42ba0$c1a1baa0$5d00a8c0@cumberland>
+Message-ID: <F992BA71-9880-11D8-BEAA-000A959DDB22@gmx.net>
+
+Hi John,
+
+of course I watched your thread. In my model, the situation is a bit 
+different. I don't care about exterior appearance, the windows are 
+mainly light sources. However, as I am working on a model of a real 
+building, I don't want to create a glass material just by guessing, and 
+I am currently searching for e.g. measured data of glasses as used in 
+that time. However... as almost all the light goes through these 
+windows, the values of transmissivity and color will only change the 
+numeric results, not the perceived appearance, right? So it is not that 
+dangerous ;-)
+
+Thank you + CU, Lars.
+
+
+From whollycow at mac.com  Wed Apr 28 06:45:27 2004
+From: whollycow at mac.com (John An)
+Date: Wed Apr 28 06:45:14 2004
+Subject: [Radiance-general] Rendering with Radiance FINALLY available!
+Message-ID: <DEC72492-98CE-11D8-911A-000A95871DF2@mac.com>
+
+Hi all,
+
+Just wanted to announce that today, I received a copy of the revised 
+version of Rendering with Radiance.
+
+It is paperback, has no color plates, and does not include the original 
+cd, but, it has been revised, apparently to more accurately reflect 
+some of the changes and updates to Radiance since the 1st edition was 
+published in 1998.
+
+I found it through bn.com, but the actual dealer is BookSurge.  The 
+price, with shipping was about $38.
+
+http://www.booksurge.com/author.php3?accountID=IMPR02587
+
+
+From whollycow at mac.com  Wed Apr 28 13:48:46 2004
+From: whollycow at mac.com (John An)
+Date: Wed Apr 28 13:48:28 2004
+Subject: [Radiance-general] photon-mapping on the macintosh
+Message-ID: <01826D3A-990A-11D8-91F1-000A95871DF2@mac.com>
+
+Could somebody with experience with using the photon-mapping extension 
+to radiance on a Macintosh please point me to either:
+1) if it can be compiled on a Mac (I've been getting too many errors in 
+the compile to recount here)
+2) if there is a precompiled version available for download
+
+Thanks.
+
+
+From Giulio.Antonutto at arup.com  Wed Apr 28 15:29:06 2004
+From: Giulio.Antonutto at arup.com (Giulio Antonutto)
+Date: Wed Apr 28 15:29:14 2004
+Subject: [Radiance-general] photon-mapping on the macintosh
+Message-ID: <DC0CAEEA090E984C911D3B85B16C3F90FAF43E@l-gnts05>
+
+hi,
+I managed to compile it on a powerbook 1.25 G4
+so the answer  it's: yes it works!
+my system has:
+10.3.3 panther
+radiance 3.5 binaries
+pmap 3.28
+
+
+the way I did it is:
+
+download the archives from
+http://www.ise.fhg.de/alt-aber-aktiv/radiance/photon-map/download.html
+
+put all the archives .tar.gz in the same new directory called Test ( just a
+name.. )
+
+you decompress radiance archive (rad3R5.tar.gz) in the directory Test with
+tar -xvf rad3R5.tar.gz
+
+then there should be a new directory called ray inside Test. (I do this way
+because stuffit doesn't work...)
+
+now from the same location, inside Test, type 
+tar -xvf pmap-3.28.tar.gz
+
+you should have only two .gz file and a ray directory....
+
+
+now:
+
+
+1 - go into ray
+
+2 - type ./makeall install from ray
+
+3 - select the text editor you like (pico it's my preferred)
+
+4 - select a directory for the compiled binaries like ~/Desktop/bin (must be
+created before; be carefull with permission)
+
+5 - choose 7th option (macosX)
+
+6 - select the library location (be carefull with permission)
+
+7 - select your options by editing the file, if you dare ;-)) (I use
+defaults...)
+
+
+should be ok....
+
+cheers,
+giulio
+
+
+PS sometimes I use this optimisation with G4 and radiance (not with pmap):
+(you get up to 30% more)
+ -fast -mcpu=7450
+but could be a little buggy sometimes....
+
+
+
+
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org]On Behalf Of John
+An
+Sent: 28 April 2004 12:49
+To: radiance-general@radiance-online.org
+Subject: [Radiance-general] photon-mapping on the macintosh
+
+
+Could somebody with experience with using the photon-mapping extension 
+to radiance on a Macintosh please point me to either:
+1) if it can be compiled on a Mac (I've been getting too many errors in 
+the compile to recount here)
+2) if there is a precompiled version available for download
+
+Thanks.
+
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+___________________________________________________________________
+Electronic mail messages entering and leaving Arup business
+systems are scanned for acceptability of content and viruses.
+
+From Giulio.Antonutto at arup.com  Wed Apr 28 15:33:03 2004
+From: Giulio.Antonutto at arup.com (Giulio Antonutto)
+Date: Wed Apr 28 15:33:10 2004
+Subject: [Radiance-general] photon-mapping on the macintosh
+Message-ID: <DC0CAEEA090E984C911D3B85B16C3F90FAF440@l-gnts05>
+
+oops:
+
+tar -xzf ..... (not -xvf)
+cheers,
+giulio
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org]On Behalf Of Giulio
+Antonutto
+Sent: 28 April 2004 14:29
+To: 'Radiance general discussion'
+Subject: RE: [Radiance-general] photon-mapping on the macintosh
+
+
+hi,
+I managed to compile it on a powerbook 1.25 G4
+so the answer  it's: yes it works!
+my system has:
+10.3.3 panther
+radiance 3.5 binaries
+pmap 3.28
+
+
+the way I did it is:
+
+download the archives from
+http://www.ise.fhg.de/alt-aber-aktiv/radiance/photon-map/download.html
+
+put all the archives .tar.gz in the same new directory called Test ( just a
+name.. )
+
+you decompress radiance archive (rad3R5.tar.gz) in the directory Test with
+tar -xvf rad3R5.tar.gz
+
+then there should be a new directory called ray inside Test. (I do this way
+because stuffit doesn't work...)
+
+now from the same location, inside Test, type 
+tar -xvf pmap-3.28.tar.gz
+
+you should have only two .gz file and a ray directory....
+
+
+now:
+
+
+1 - go into ray
+
+2 - type ./makeall install from ray
+
+3 - select the text editor you like (pico it's my preferred)
+
+4 - select a directory for the compiled binaries like ~/Desktop/bin (must be
+created before; be carefull with permission)
+
+5 - choose 7th option (macosX)
+
+6 - select the library location (be carefull with permission)
+
+7 - select your options by editing the file, if you dare ;-)) (I use
+defaults...)
+
+
+should be ok....
+
+cheers,
+giulio
+
+
+PS sometimes I use this optimisation with G4 and radiance (not with pmap):
+(you get up to 30% more)
+ -fast -mcpu=7450
+but could be a little buggy sometimes....
+
+
+
+
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org]On Behalf Of John
+An
+Sent: 28 April 2004 12:49
+To: radiance-general@radiance-online.org
+Subject: [Radiance-general] photon-mapping on the macintosh
+
+
+Could somebody with experience with using the photon-mapping extension 
+to radiance on a Macintosh please point me to either:
+1) if it can be compiled on a Mac (I've been getting too many errors in 
+the compile to recount here)
+2) if there is a precompiled version available for download
+
+Thanks.
+
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+___________________________________________________________________
+Electronic mail messages entering and leaving Arup business
+systems are scanned for acceptability of content and viruses.
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+___________________________________________________________________
+Electronic mail messages entering and leaving Arup business
+systems are scanned for acceptability of content and viruses.
+
+From gward at lmi.net  Wed Apr 28 16:31:17 2004
+From: gward at lmi.net (Greg Ward)
+Date: Wed Apr 28 16:31:39 2004
+Subject: [Radiance-general] Rendering with Radiance FINALLY available!
+In-Reply-To: <DEC72492-98CE-11D8-911A-000A95871DF2@mac.com>
+References: <DEC72492-98CE-11D8-911A-000A95871DF2@mac.com>
+Message-ID: <B5B7DFB1-9920-11D8-A3EF-000A95BB392A@lmi.net>
+
+That's great news the book's finally available!  This is the first I've 
+heard of it.
+
+I just wanted to add a note regarding the "revised" version in the 
+title.  Not much was actually changed from the first edition, since we 
+didn't have time (or thought we didn't a year ago when we started this 
+process) to add any new chapters, which is what we'd really need to do. 
+  Plus, we were restricted to working with the PDF from Morgan Kaufmann, 
+since the originals were all lost.  All we did was fix a few typos and 
+formulas, since the opportunity presented itself.
+
+-Greg
+
+> From: John An <whollycow@mac.com>
+> Date: April 27, 2004 9:45:27 PM PDT
+>
+> Hi all,
+>
+> Just wanted to announce that today, I received a copy of the revised 
+> version of Rendering with Radiance.
+>
+> It is paperback, has no color plates, and does not include the 
+> original cd, but, it has been revised, apparently to more accurately 
+> reflect some of the changes and updates to Radiance since the 1st 
+> edition was published in 1998.
+>
+> I found it through bn.com, but the actual dealer is BookSurge.  The 
+> price, with shipping was about $38.
+>
+> http://www.booksurge.com/author.php3?accountID=IMPR02587
+
+I just went to this page -- what is my face doing up there?  Ugh.
+
+
+From schorsch at schorsch.com  Wed Apr 28 17:03:09 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Wed Apr 28 17:03:12 2004
+Subject: [Radiance-general] Rendering with Radiance FINALLY available!
+In-Reply-To: <B5B7DFB1-9920-11D8-A3EF-000A95BB392A@lmi.net>
+References: <DEC72492-98CE-11D8-911A-000A95871DF2@mac.com>
+	<B5B7DFB1-9920-11D8-A3EF-000A95BB392A@lmi.net>
+Message-ID: <Pine.BSF.4.58.0404281053090.79419@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> That's great news the book's finally available!  This is the first I've
+> heard of it.
+
+
+While it is indeed great that the book is available again for a
+reasonable price, the ordering process is slightly suboptimal.
+Whoever has a direct communication channel to booksurge might
+want to provide them some feedback: Asking for the buyers name
+and phone number etc, before informing them about the total
+costs (incl. shipping) is extremely bad style. You only need
+the country for that, no personally identifiable data.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From gward at lmi.net  Wed Apr 28 18:04:56 2004
+From: gward at lmi.net (Greg Ward)
+Date: Wed Apr 28 18:05:21 2004
+Subject: [Radiance-general] Re: Rendering with Radiance FINALLY available!
+Message-ID: <CB334D1C-992D-11D8-8408-000A95BB392A@lmi.net>
+
+Forwarded message from Charles Ehrlich <ehrlich@h-m-g.com>:
+
+BookSurge is in the midst of a web site revamp.  I have given loads of
+advice about their lousy interface.  The whole problem with the e-book
+being accidentally released was because their author's ordering website
+is suboptimal.
+
+There are other book outlets (amazon.com) that should be able to order
+the book in a few weeks.
+
+Yeehaw!
+
+-Chas
+
+> -----Original Message-----
+> From: Greg Ward [mailto:gward@lmi.net]
+> Sent: Wednesday, April 28, 2004 8:47 AM
+>
+> Hi Chas,
+>
+> I assume you saw this.  Is there someone at BookSurge who will listen?
+>
+> -Greg
+>
+> Begin forwarded message:
+>
+>> From: Georg Mischler <schorsch@schorsch.com>
+>> Date: April 28, 2004 8:03:09 AM PDT
+>>
+>> Greg Ward wrote:
+>>
+>>> That's great news the book's finally available!  This is the first
+>>> I've heard of it.
+>>
+>> While it is indeed great that the book is available again for a
+>> reasonable price, the ordering process is slightly suboptimal.
+>> Whoever has a direct communication channel to booksurge might want to
+>> provide them some feedback: Asking for the buyers name and phone
+>> number etc, before informing them about the total costs (incl.
+>> shipping) is extremely bad style. You only need the country for that,
+>> no personally identifiable data.
+>>
+>>
+>> -schorsch
+>>
+>> --
+>> Georg Mischler  --  simulations developer  --  schorsch at schorsch
+>> com
+>> +schorsch.com+  --  lighting design tools  --
+>> +http://www.schorsch.com/
+>>
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general@radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>
+>
+>
+>
+>
+
+
+From coyne at semanticlight.com  Wed Apr 28 21:58:06 2004
+From: coyne at semanticlight.com (Bob Coyne)
+Date: Wed Apr 28 22:00:37 2004
+Subject: [Radiance-general] Rendering with Radiance FINALLY available!
+In-Reply-To: <DEC72492-98CE-11D8-911A-000A95871DF2@mac.com>
+References: <DEC72492-98CE-11D8-911A-000A95871DF2@mac.com>
+Message-ID: <40900CCE.2020009@semanticlight.com>
+
+I just checked and it says it's $60 now!  I didn't
+realize it was an auction site. :-)
+
+John An wrote:
+
+> Hi all,
+>
+> Just wanted to announce that today, I received a copy of the revised 
+> version of Rendering with Radiance.
+>
+> It is paperback, has no color plates, and does not include the 
+> original cd, but, it has been revised, apparently to more accurately 
+> reflect some of the changes and updates to Radiance since the 1st 
+> edition was published in 1998.
+>
+> I found it through bn.com, but the actual dealer is BookSurge.  The 
+> price, with shipping was about $38.
+>
+> http://www.booksurge.com/author.php3?accountID=IMPR02587
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+
+From gward at lmi.net  Wed Apr 28 22:27:56 2004
+From: gward at lmi.net (Greg Ward)
+Date: Wed Apr 28 22:28:24 2004
+Subject: [Radiance-general] Rendering with Radiance FINALLY available!
+In-Reply-To: <40900CCE.2020009@semanticlight.com>
+References: <DEC72492-98CE-11D8-911A-000A95871DF2@mac.com>
+	<40900CCE.2020009@semanticlight.com>
+Message-ID: <88C99AA3-9952-11D8-B4B3-000A95BB392A@lmi.net>
+
+Sigh.  The price was for a paperback edition, which we did not 
+authorize, at a price we did not authorize.  BookSurge has made a 
+number of screw-ups, this being the most recent.  Since they did not 
+send us an author's copy as we requested or let us know when they were 
+making the book available as we requested, we only found out from 
+John's e-mail that it was for sale.  Chas contacted them and corrected 
+the situation, hence the price change.  (Technically, this is not an 
+"increase" because we never suggested the price they quoted.)  Perhaps 
+you recall that earlier, they put the PDF up for sale against our 
+wishes, and that was also caught by an astute user.
+
+I am sorry for the price change, but we did not intend to offer a 
+paperback version, and we would have to redo the cover (again) to make 
+it work.  Given the wear and tear we expect most people to get out of 
+it, we thought a hard cover was preferable.  The higher cost also 
+reflects the overhead of on-demand printing, I think.  Chas could tell 
+you more, and you should contact him if you wish to make any bulk 
+purchases.
+
+-Greg
+
+> From: Bob Coyne <coyne@semanticlight.com>
+> Date: April 28, 2004 12:58:06 PM PDT
+>
+> I just checked and it says it's $60 now!  I didn't
+> realize it was an auction site. :-)
+>
+> John An wrote:
+>
+>> Hi all,
+>>
+>> Just wanted to announce that today, I received a copy of the revised 
+>> version of Rendering with Radiance.
+>>
+>> It is paperback, has no color plates, and does not include the 
+>> original cd, but, it has been revised, apparently to more accurately 
+>> reflect some of the changes and updates to Radiance since the 1st 
+>> edition was published in 1998.
+>>
+>> I found it through bn.com, but the actual dealer is BookSurge.  The 
+>> price, with shipping was about $38.
+>>
+>> http://www.booksurge.com/author.php3?accountID=IMPR02587
+
+
+From D.Lash at shu.ac.uk  Thu Apr 29 12:14:37 2004
+From: D.Lash at shu.ac.uk (Daniel LASH(SED))
+Date: Thu Apr 29 12:14:46 2004
+Subject: [Radiance-general] optics5
+Message-ID: <fc.005b8ff101b001f8005b8ff101b001f8.1b002bb@amazon.shu.ac.uk>
+
+Hello,
+
+Just a quick query about generating windows in Optics5.  I have created a simple double glazed
+configuration of two 6mm layers of generic clear glass (the system is therefore symetrical i.e.
+optical properties are congruent for front and back).  The export as a rad file (named 'roofglass')
+creates a glass material and 2 brtdf materials (for front and back).  Which should I use, the
+glass, or one of the BRTDFs?  They return slightly differing results.  Is there a way of combining
+the all 3 somehow to get one BRTDF that covers front and back (and which is front and back anyway,
+front outside, back inside, assuming surface normals have been oriented inwards??).  The rad file
+looks like this;
+
+#
+# FileName= GlzSys.usr
+# Product Name= 
+# NFRC ID= 30000
+# Manufacturer Name= User
+# Glazing Type= Glazing system
+# Coated Side= Neither
+# Transmittance= 0.785
+# Front Reflectance= 0.144
+# Back Reflectance= 0.144
+# Thickness(mm)= 23.430
+# Appearance= 
+#
+
+
+void  glass       roofglass_glazing
+0
+0
+3     0.807     0.875     0.849
+
+void  BRTDfunc    roofglass_front
+10
+      0.134     0.147     0.147
+      0.740     0.803     0.779
+      0 0 0
+      .
+0
+9 0 0 0 0 0 0 0 0 0
+
+void  BRTDfunc    roofglass_back
+10
+      0.134     0.147     0.147
+      0.740     0.803     0.779
+      0 0 0
+      .
+0
+9 0 0 0 0 0 0 0 0 0
+
+
+many thanks
+
+Dan
+
+
+From coyne at semanticlight.com  Thu Apr 29 15:37:22 2004
+From: coyne at semanticlight.com (Bob Coyne)
+Date: Thu Apr 29 15:36:25 2004
+Subject: [Radiance-general] Rendering with Radiance FINALLY available!
+In-Reply-To: <88C99AA3-9952-11D8-B4B3-000A95BB392A@lmi.net>
+References: <DEC72492-98CE-11D8-911A-000A95871DF2@mac.com>	<40900CCE.2020009@semanticlight.com>
+	<88C99AA3-9952-11D8-B4B3-000A95BB392A@lmi.net>
+Message-ID: <40910512.3030405@semanticlight.com>
+
+Ah...thanks for the explanation. 
+
+I agree a hardcover is preferable and worth the extra $.
+
+Greg Ward wrote:
+
+> Sigh.  The price was for a paperback edition, which we did not 
+> authorize, at a price we did not authorize.  BookSurge has made a 
+> number of screw-ups, this being the most recent.  Since they did not 
+> send us an author's copy as we requested or let us know when they were 
+> making the book available as we requested, we only found out from 
+> John's e-mail that it was for sale.  Chas contacted them and corrected 
+> the situation, hence the price change.  (Technically, this is not an 
+> "increase" because we never suggested the price they quoted.)  Perhaps 
+> you recall that earlier, they put the PDF up for sale against our 
+> wishes, and that was also caught by an astute user.
+>
+> I am sorry for the price change, but we did not intend to offer a 
+> paperback version, and we would have to redo the cover (again) to make 
+> it work.  Given the wear and tear we expect most people to get out of 
+> it, we thought a hard cover was preferable.  The higher cost also 
+> reflects the overhead of on-demand printing, I think.  Chas could tell 
+> you more, and you should contact him if you wish to make any bulk 
+> purchases.
+>
+> -Greg
+>
+>> From: Bob Coyne <coyne@semanticlight.com>
+>> Date: April 28, 2004 12:58:06 PM PDT
+>>
+>> I just checked and it says it's $60 now!  I didn't
+>> realize it was an auction site. :-)
+>>
+>> John An wrote:
+>>
+>>> Hi all,
+>>>
+>>> Just wanted to announce that today, I received a copy of the revised 
+>>> version of Rendering with Radiance.
+>>>
+>>> It is paperback, has no color plates, and does not include the 
+>>> original cd, but, it has been revised, apparently to more accurately 
+>>> reflect some of the changes and updates to Radiance since the 1st 
+>>> edition was published in 1998.
+>>>
+>>> I found it through bn.com, but the actual dealer is BookSurge.  The 
+>>> price, with shipping was about $38.
+>>>
+>>> http://www.booksurge.com/author.php3?accountID=IMPR02587
+>>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+
+From whollycow at mac.com  Fri Apr 30 22:31:03 2004
+From: whollycow at mac.com (John An)
+Date: Fri Apr 30 22:30:46 2004
+Subject: [Radiance-general] rtrace for luminance values
+Message-ID: <4CABBBB9-9AE5-11D8-B043-000A95871DF2@mac.com>
+
+I have run into a problem that I think Mehlika Nur Inanici had a couple 
+of year's back.
+
+I am trying to use rtrace to get luminance values on top of a desk 
+surface.  The command I'm using is:
+
+cnt 6 12 1 | rcalc -e '$1=51+((72/6)*$1+6);$2=96+((144/12)*$2+6);$3=30' 
+\
+-e '$4=0;$5=0;$6=1' | rtrace -h -ov @../options_aa08_ab5 -af 
+b_b_m_2_bare_aa08_ad1024_ab5.amb -e 
+b_b_m_2_bare_illumgrid_task_08_l.out b_b_m.oct \
+| rcalc -e '$1=179*(.265*$1+.670*$2+.065*$3)' > 
+b_b_m_2_bare_illumgrid_task_08_l.dat
+
+The values reported by rtrace are in the range of 0.1 to 0.2 
+candela/meter squared.  However, in an image, I am getting values in 
+the range of 1.5 to 2.5 candela/meter squared (which is much more 
+reasonable).
+
+In response to Mehlika's question, Schorsch had mentioned that the 
+header to the pic file would give an exposure value, and that luminance 
+= 179*(.265*R+.670*G+.065*B) / e.  But I can't seem to find the 
+exposure.
+
+What am I missing?  Where am I not looking?
+
+Thanks.
+
+
+From MInanici at lbl.gov  Fri Apr 30 22:48:32 2004
+From: MInanici at lbl.gov (Mehlika Inanici)
+Date: Fri Apr 30 22:48:40 2004
+Subject: [Radiance-general] rtrace for luminance values
+In-Reply-To: <4CABBBB9-9AE5-11D8-B043-000A95871DF2@mac.com>
+References: <4CABBBB9-9AE5-11D8-B043-000A95871DF2@mac.com>
+Message-ID: <4092BBA0.8060106@lbl.gov>
+
+
+Hello John. You can use the getinfo command to look at the exposure of 
+an Radiance image. The exposure value is given as EXPOSURE=.... If there 
+is no exposure line, exposure is 1.00 by default.
+Hope it helps...
+Mehlika
+
+John An wrote:
+
+> I have run into a problem that I think Mehlika Nur Inanici had a 
+> couple of year's back.
+>
+> I am trying to use rtrace to get luminance values on top of a desk 
+> surface.  The command I'm using is:
+>
+> cnt 6 12 1 | rcalc -e '$1=51+((72/6)*$1+6);$2=96+((144/12)*$2+6);$3=30' \
+> -e '$4=0;$5=0;$6=1' | rtrace -h -ov @../options_aa08_ab5 -af 
+> b_b_m_2_bare_aa08_ad1024_ab5.amb -e 
+> b_b_m_2_bare_illumgrid_task_08_l.out b_b_m.oct \
+> | rcalc -e '$1=179*(.265*$1+.670*$2+.065*$3)' > 
+> b_b_m_2_bare_illumgrid_task_08_l.dat
+>
+> The values reported by rtrace are in the range of 0.1 to 0.2 
+> candela/meter squared.  However, in an image, I am getting values in 
+> the range of 1.5 to 2.5 candela/meter squared (which is much more 
+> reasonable).
+>
+> In response to Mehlika's question, Schorsch had mentioned that the 
+> header to the pic file would give an exposure value, and that 
+> luminance = 179*(.265*R+.670*G+.065*B) / e.  But I can't seem to find 
+> the exposure.
+>
+> What am I missing?  Where am I not looking?
+>
+> Thanks.
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+

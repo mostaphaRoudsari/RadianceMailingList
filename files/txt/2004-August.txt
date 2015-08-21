@@ -1,0 +1,1770 @@
+From MdelaFuente at wmtao.com  Mon Aug  2 16:42:38 2004
+From: MdelaFuente at wmtao.com (Mark de la Fuente)
+Date: Mon Aug  2 16:43:18 2004
+Subject: [Radiance-general] Re: Illum rules of thumb
+Message-ID: <s10e0c9e.023@wmtao.com>
+
+Georg,  Thanks for the detailed response!  You bring up a good point. 
+Since in this case the outside geometry is a downtown area, and the
+shading from all the buildings will have a great effect on the study,
+the illums will have to be subdivided to a reasonable degree in order to
+properly account for all the shadowing.
+ 
+Actually your response brings up another question! :)
+ 
+If one were to have a complex daylight entry system at the windows,
+wouldn't it make sense to run a mkillum calculation with illums outside
+first, and then a second mkillum calculation (with the first set of
+illum planes in the octree) of illum planes inside (beyond the daylight
+entry system)?  You could get carried away with this, but hopefully you
+get what I'm getting at.
+ 
+Mark
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20040802/e33ed7d0/attachment.html
+From Rob.Fitzsimmons at Summit.Fiserv.com  Tue Aug  3 21:05:20 2004
+From: Rob.Fitzsimmons at Summit.Fiserv.com (Fitzsimmons, Rob)
+Date: Tue Aug  3 21:05:48 2004
+Subject: [Radiance-general] view_param.cal
+Message-ID: <7B2F6EA5E35E214882CB9828962BC3CF04D695CF@corvallis>
+
+I'm trying to create the view_param.cal mentioned in RwR page 328
+
+I think I've typed it exactly as it is in the book, then copy it to
+/usr/local/lib/ray/view_param.cal
+_______________________________________
+
+{ view_param.cal
+    Arbitrary aspect ratio:
+    p = pixel aspect ratio (height/width=input)
+    h = horizontal view angle (input)
+    v = vertical view angle (output)
+}
+
+v = 114.6*atan(p*tan(h/114.6))
+
+{ View parameters specific to 35mm film
+   f = focal length of lens (input)
+   v35 = vertical view angle -vv (output)
+   h35 = horizontal view angle 0vh (output)
+}
+   v35 = 114.6*atan(17/f)
+   h35 = 114.6*atan(11.5/f)
+______________________________________
+
+but I get an error when I try to use it 
+calc  view_param.cal
+
+I get back:
+view_param.cal, line 15:
+   v35 = 114.6*atan(17/f)
+   ^ ';' expected
+
+What am I missing?
+Thanks
+Rob F
+
+
+From jedev at visarc.com  Tue Aug  3 21:18:34 2004
+From: jedev at visarc.com (Jack de Valpine)
+Date: Tue Aug  3 21:18:52 2004
+Subject: [Radiance-general] view_param.cal
+In-Reply-To: <7B2F6EA5E35E214882CB9828962BC3CF04D695CF@corvallis>
+References: <7B2F6EA5E35E214882CB9828962BC3CF04D695CF@corvallis>
+Message-ID: <410FE50A.3040801@visarc.com>
+
+Hi Rob,
+
+There are a couple of things here.
+
+   1. Each line of non-comment code in a cal needs to be terminated with
+      ';' (note comments are enclosed in {} and do not need to be
+      terminated by ';')
+   2. Depending on where rayinit.cal is located you may need to do the
+      following: calc /mypath/ray/rayinit.cal view_param.cal
+
+-Jack de Valpine
+
+Fitzsimmons, Rob wrote:
+
+>I'm trying to create the view_param.cal mentioned in RwR page 328
+>
+>I think I've typed it exactly as it is in the book, then copy it to
+>/usr/local/lib/ray/view_param.cal
+>_______________________________________
+>
+>{ view_param.cal
+>    Arbitrary aspect ratio:
+>    p = pixel aspect ratio (height/width=input)
+>    h = horizontal view angle (input)
+>    v = vertical view angle (output)
+>}
+>
+>v = 114.6*atan(p*tan(h/114.6))
+>
+>{ View parameters specific to 35mm film
+>   f = focal length of lens (input)
+>   v35 = vertical view angle -vv (output)
+>   h35 = horizontal view angle 0vh (output)
+>}
+>   v35 = 114.6*atan(17/f)
+>   h35 = 114.6*atan(11.5/f)
+>______________________________________
+>
+>but I get an error when I try to use it 
+>calc  view_param.cal
+>
+>I get back:
+>view_param.cal, line 15:
+>   v35 = 114.6*atan(17/f)
+>   ^ ';' expected
+>
+>What am I missing?
+>Thanks
+>Rob F
+>
+>
+>_______________________________________________
+>Radiance-general mailing list
+>Radiance-general@radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>  
+>
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20040803/40a5f49d/attachment.htm
+From Rob.Fitzsimmons at Summit.Fiserv.com  Tue Aug  3 22:48:33 2004
+From: Rob.Fitzsimmons at Summit.Fiserv.com (Fitzsimmons, Rob)
+Date: Tue Aug  3 22:49:08 2004
+Subject: [Radiance-general] view_param.cal
+Message-ID: <7B2F6EA5E35E214882CB9828962BC3CF04D695D1@corvallis>
+
+I'll remember that!
+Many thanks from a scripting noob! 
+
+Rob 
+
+-----Original Message-----
+From: Jack de Valpine
+To: Radiance general discussion
+Sent: 8/3/2004 12:18 PM
+Subject: Re: [Radiance-general] view_param.cal
+
+Hi Rob,
+
+There are a couple of things here.
+
+
+1.	Each line of non-comment code in a cal needs to be terminated
+with ';' (note comments are enclosed in {} and do not need to be
+terminated by ';')
+2.	Depending on where rayinit.cal is located you may need to do the
+following: calc /mypath/ray/rayinit.cal view_param.cal
+
+-Jack de Valpine
+
+Fitzsimmons, Rob wrote:
+
+
+I'm trying to create the view_param.cal mentioned in RwR page 328
+
+
+From marica at elfak.ni.ac.yu  Sat Aug  7 14:46:59 2004
+From: marica at elfak.ni.ac.yu (marija cvetkovic)
+Date: Sat Aug  7 14:46:51 2004
+Subject: [Radiance-general] Question about -av parameter
+Message-ID: <200408071446.59736.marica@elfak.ni.ac.yu>
+
+Hello,
+
+I have one simple question : how can I know which -av parameter value is most 
+accurate for a scene.
+
+I am rendering scene inside museum building, and I tried to follow procedure 
+for -av and EXPOSURE setting from RWR book. Resulting ambient values are 
+something around 5, but I think it is too high for interior.
+
+Since I have to compare real and simulated values how can I know which -av 
+value is good enough?
+
+Thanks,
+Marija Cvetkovic
+cveleglg@bankerinter.net
+
+
+From gward at lmi.net  Sat Aug  7 16:25:49 2004
+From: gward at lmi.net (Greg Ward)
+Date: Sat Aug  7 16:28:03 2004
+Subject: [Radiance-general] Question about -av parameter
+In-Reply-To: <200408071446.59736.marica@elfak.ni.ac.yu>
+References: <200408071446.59736.marica@elfak.ni.ac.yu>
+Message-ID: <AE10DF80-E87D-11D8-9775-00306540F848@lmi.net>
+
+Hi Marija,
+
+If the ambient value looks too high, then it probably is too high.  If 
+you need an ambient value for the interior, the procedure in the book 
+should be followed on an interior view.
+
+You should also investigate the "compamb" script:
+
+	http://radsite.lbl.gov/radiance/man_html/compamb.1.html
+
+This script relies on an operational rad input file, which it uses to 
+generate the ambient values for several views, setting -av 0 0 0.  It 
+then averages the ambient values computed by rpict into a suitable -av 
+setting, which it appends to your rad input file.  This is the 
+"scientific" way to set -av properly.
+
+-Greg
+
+> From: marija cvetkovic <marica@elfak.ni.ac.yu>
+> Date: August 7, 2004 5:46:59 AM PDT
+>
+> Hello,
+>
+> I have one simple question : how can I know which -av parameter value 
+> is most
+> accurate for a scene.
+>
+> I am rendering scene inside museum building, and I tried to follow 
+> procedure
+> for -av and EXPOSURE setting from RWR book. Resulting ambient values 
+> are
+> something around 5, but I think it is too high for interior.
+>
+> Since I have to compare real and simulated values how can I know which 
+> -av
+> value is good enough?
+>
+> Thanks,
+> Marija Cvetkovic
+> cveleglg@bankerinter.net
+
+
+From marcdevon at hotmail.com  Wed Aug 11 16:38:10 2004
+From: marcdevon at hotmail.com (Marcus Jacobs)
+Date: Wed Aug 11 16:52:30 2004
+Subject: [Radiance-general] Fuzzmaker Program
+Message-ID: <BAY2-F41k2zUa0eao1y00010a12@hotmail.com>
+
+Dear Group
+
+I came across a Radiance rendering of an orange and a tennis ball (I think 
+many people are familiar with this scene). I do understand that the fuzz on 
+the tennis ball is geometry. I am wondering if there exist a program a 
+program that created and/or instanced the geometry to create this.
+
+Thanks
+
+Marcus
+
+_________________________________________________________________
+Don’t just search. Find. Check out the new MSN Search! 
+http://search.msn.click-url.com/go/onm00200636ave/direct/01/
+
+
+From gward at lmi.net  Wed Aug 11 19:45:00 2004
+From: gward at lmi.net (Greg Ward)
+Date: Wed Aug 11 19:45:36 2004
+Subject: [Radiance-general] Fuzzmaker Program
+In-Reply-To: <BAY2-F41k2zUa0eao1y00010a12@hotmail.com>
+References: <BAY2-F41k2zUa0eao1y00010a12@hotmail.com>
+Message-ID: <2ABF167E-EBBE-11D8-ACFF-00306540F848@lmi.net>
+
+I found the original code, by Isaac Kwo, and mailed it to Marcus.  If 
+anyone else wants it, please ask him directly.
+
+-Greg
+
+> From: "Marcus Jacobs" <marcdevon@hotmail.com>
+> Date: August 11, 2004 7:38:10 AM PDT
+>
+> Dear Group
+>
+> I came across a Radiance rendering of an orange and a tennis ball (I 
+> think many people are familiar with this scene). I do understand that 
+> the fuzz on the tennis ball is geometry. I am wondering if there exist 
+> a program a program that created and/or instanced the geometry to 
+> create this.
+>
+> Thanks
+>
+> Marcus
+
+
+From MdelaFuente at wmtao.com  Thu Aug 12 16:23:04 2004
+From: MdelaFuente at wmtao.com (Mark de la Fuente)
+Date: Thu Aug 12 16:23:28 2004
+Subject: [Radiance-general] re-using ambient files
+Message-ID: <s11b36fd.087@wmtao.com>
+
+Hi group.
+ 
+I have some images where I'm picking up a scalloping effect along the
+edge of my illum plane.  I would like to re-run these images with a
+lower "ds" value as I believe this is the setting that is not fine
+enough.    Normally I would re-run the entire thing if I change a
+setting.  However due to the enormous size of the model, the amount of
+time it's taking, and the number of frames involved, I don't want to
+redo everything just for a slight improvements.  Can ambient files be
+re-used if the ds (or any of the "d" parameters for that matter) are
+changed?
+ 
+Also, while we are on the subject.  P.387 in RWR says you can relax the
+ad, as, and aa parameters after the overture calculation is done.  Is it
+possible to go the other way and increase the ad, as, (and reduce) the
+aa parameters "slightly"?  The idea being that one computed an image,
+found some splotches presumably because ad and as parameters were not
+high enough, and want to tweak the image with out taking as much time to
+re-run.  Or can you only relax the parameters?
+ 
+Thanks for any responses.  Hopefully some day I will have more answers
+than questions. :)
+ 
+Mark
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20040812/81662e19/attachment.html
+From MdelaFuente at wmtao.com  Thu Aug 12 18:16:40 2004
+From: MdelaFuente at wmtao.com (Mark de la Fuente)
+Date: Thu Aug 12 18:17:29 2004
+Subject: [Radiance-general] re-using ambient files
+Message-ID: <s11b51b2.023@wmtao.com>
+
+I found my answer... 
+http://www.radiance-online.org/pipermail/radiance-general/2004-January/001380.html
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20040812/f833cc6f/attachment.htm
+From anthony.farrell at dit.ie  Thu Aug 12 20:15:38 2004
+From: anthony.farrell at dit.ie (Anthony J. Farrell)
+Date: Thu Aug 12 20:12:46 2004
+Subject: [Radiance-general] Architectural model board material properties
+In-Reply-To: <01LDKP1C0M988X9WE4@mail.dit.ie>
+Message-ID: <OJEGILOIGGNAEAODNHIIAENOCDAA.anthony.farrell@dit.ie>
+
+Hi to one and all.
+
+Just a quick query that I am hoping some of the more enlightened may shed
+some light one....I am modelling a simple room that I constructed from
+standard black mounting board (card board, black one side, white the other).
+Cannon-Brookes (Simple scale models for daylighting design...CIBSE national
+lighting conference 1996, pp. 147-153) states that such mounting board will
+have a reflectance of 8.5%.
+
+If I wish to model this in Radiance, what specularity and roughness might
+anyone suggest...or perhaps you know of a reference that such work is
+presented? I will set the reflectance for the material by altering the
+material RAD file. The actual material I am using currently is
+Traffic_black, which has reflectance of 8.83% and zero specularity and
+roughness.
+
+Furthermore, the material file which I used in desktop radiance states a
+reflectance of 8.83 (Traffic black) but when I looked at the respective RAD
+file I get:
+
+#  RAL9017_Traffic_black RAL RAL840-HR
+#  0.02
+void plastic RAL9017_Traffic_black
+0
+0
+5  0.05098 0.070588 0.101961 0 0
+
+I assume these values for 8.83% reflectance were shown to have 5% red, 7%
+green, and 10% blue were shown to exist for this material (does anyone have
+a reference for this study?). What configuration should I use for mounting
+board to produce 8.5% or is there a great difference from the simulation end
+point?
+
+With kind regards,
+
+Anthony
+
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org]On Behalf Of
+radiance-general-request@radiance-online.org
+Sent: 12 August 2004 11:02
+To: radiance-general@radiance-online.org
+Subject: Radiance-general Digest, Vol 6, Issue 5
+
+
+Send Radiance-general mailing list submissions to
+	radiance-general@radiance-online.org
+
+To subscribe or unsubscribe via the World Wide Web, visit
+	http://www.radiance-online.org/mailman/listinfo/radiance-general
+or, via email, send a message with subject or body 'help' to
+	radiance-general-request@radiance-online.org
+
+You can reach the person managing the list at
+	radiance-general-owner@radiance-online.org
+
+When replying, please edit your Subject line so it is more specific
+than "Re: Contents of Radiance-general digest..."
+
+
+Today's Topics:
+
+   1. Fuzzmaker Program (Marcus Jacobs)
+   2. Re: Fuzzmaker Program (Greg Ward)
+
+
+----------------------------------------------------------------------
+
+Message: 1
+Date: Wed, 11 Aug 2004 14:38:10 +0000
+From: "Marcus Jacobs" <marcdevon@hotmail.com>
+Subject: [Radiance-general] Fuzzmaker Program
+To: radiance-general@radiance-online.org
+Message-ID: <BAY2-F41k2zUa0eao1y00010a12@hotmail.com>
+Content-Type: text/plain; format=flowed
+
+Dear Group
+
+I came across a Radiance rendering of an orange and a tennis ball (I think
+many people are familiar with this scene). I do understand that the fuzz on
+the tennis ball is geometry. I am wondering if there exist a program a
+program that created and/or instanced the geometry to create this.
+
+Thanks
+
+Marcus
+
+_________________________________________________________________
+Dont just search. Find. Check out the new MSN Search!
+http://search.msn.click-url.com/go/onm00200636ave/direct/01/
+
+
+
+
+------------------------------
+
+Message: 2
+Date: Wed, 11 Aug 2004 10:45:00 -0700
+From: Greg Ward <gward@lmi.net>
+Subject: Re: [Radiance-general] Fuzzmaker Program
+To: Radiance general discussion <radiance-general@radiance-online.org>
+Message-ID: <2ABF167E-EBBE-11D8-ACFF-00306540F848@lmi.net>
+Content-Type: text/plain; charset=US-ASCII; format=flowed
+
+I found the original code, by Isaac Kwo, and mailed it to Marcus.  If
+anyone else wants it, please ask him directly.
+
+-Greg
+
+> From: "Marcus Jacobs" <marcdevon@hotmail.com>
+> Date: August 11, 2004 7:38:10 AM PDT
+>
+> Dear Group
+>
+> I came across a Radiance rendering of an orange and a tennis ball (I
+> think many people are familiar with this scene). I do understand that
+> the fuzz on the tennis ball is geometry. I am wondering if there exist
+> a program a program that created and/or instanced the geometry to
+> create this.
+>
+> Thanks
+>
+> Marcus
+
+
+
+
+------------------------------
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+End of Radiance-general Digest, Vol 6, Issue 5
+**********************************************
+
+
+--
+This message has been scanned for content and
+viruses by the DIT Information Services MailScanner
+Service, and is believed to be clean.
+http://www.dit.ie
+
+
+-- 
+This message has been scanned for content and 
+viruses by the DIT Information Services MailScanner 
+Service, and is believed to be clean.
+http://www.dit.ie
+
+
+From mstock at umich.edu  Mon Aug 16 19:30:29 2004
+From: mstock at umich.edu (Mark Stock)
+Date: Mon Aug 16 19:30:36 2004
+Subject: [Radiance-general] Depth-of-field hack
+Message-ID: <Pine.SOL.4.58.0408161248340.20412@asteroids.gpcc.itd.umich.edu>
+
+Radiance users,
+
+Recently, I have been playing around with several Radiance
+programs that I never would ordinarily use, and I devised a new
+way to create depth-of-field blur. My primary motivation is
+for creating very large images of very complex scenes. I
+want to thank Greg for making time to meet me at SIGGRAPH,
+and for getting me started on this line of thinking.
+
+I have been creating images by using -aa 0 with -ps 1 for
+over a year now. In a little previous work
+(http://mark.technolope.org/radmisc/aa0_ps1_test/final.html)
+I found that the fastest renderings could be had with
+very low -ad but high oversampling. I wanted to find a
+method for depth-of-field blur that worked similarly,
+and would be compatible with this method.
+
+I first tried pdfblur, which outputs a series of views, each
+of which can be rendered with rpict or created with pinterp.
+The pinterp method is definitely faster, but, as expected,
+the pixels that were in focus were never recalculated, and,
+thus, remained spotty:
+http://mark.technolope.org/radiance/dof_tests/img06_30.png
+(-ad 4, pdfblur 0.003 0.4 30, reduced 4:1)
+
+Using pdfblur with rpict, though, forced resampling of each
+pixel, so it took longer, but I didn't have to reduce the
+final image at all to get this:
+http://mark.technolope.org/radiance/dof_tests/img03_30.png
+(-ad 4, pdfblur 0.003 0.4 30, not reduced)
+
+The problem that I see, though, is that some large images will
+need hundreds, if not thousands, of images blurred together
+to eliminate the sharp lines in the highly-blurred regions,
+while the oversampling technique rarely needs more that 36-64
+original pixels to each output one (6-8x oversampling).
+
+That's when I started reading lots of man pages. I wanted a way
+to simulate DOF within a single image. What I came up with could
+be used as an option to rpict, where it could be implemented more
+accurately, I presume, (and which I may just do sometime). It
+consists of a rather long command-line using vwrays (to create
+each pixels' view ray), vwright (to calculate numerous view
+parameters), rcalc (to adjust the view point and direction of
+each), and rtrace (to take that information and compute a pixel
+value).
+
+My first try only supported aperture specification, but set
+the focus distance to infinity. I then added a slightly-
+incorrect hack to point the view direction back toward the
+original view-at point. This is the script:
+
+vwrays -fd -vf vp -x 512 -y 512 | rcalc -id6 -e 'a:0.003;d:0.4'
+-e `vwright i < vp`
+-e 'theta=2*PI*rand(2*recno-1);r=0.5*a*sqrt(rand(2*recno))'
+-e 'r1=r*cos(theta);r2=r*sin(theta)'
+-e 'dx=r1*ihx+r2*ivx;dy=r1*ihy+r2*ivy;dz=r1*ihz+r2*ivz'
+-e '$1=ipx+dx;$2=ipy+dy;$3=ipz+dz'
+-e '$4=$4-dx/d;$5=$5-dy/d;$6=$6-dz/d'
+-od | rtrace -fdc -x 512 -y 512 @opts scene5f.oct > img04.pic
+
+The "a:0.003;d:0.4" line specifies aperture and focus distance.
+The "vp" file looks like this:
+rview -vta -vp 0.51 0.52 0.34 -vd -0.43427 -0.86854 0.238848 -vu
+0 0 1 -vh 70 -vv 70 -vo 0 -va 0 -vs 0 -vl 0
+The opts file looks like this:
+-ab 2 -ad 4 -aa 0 -as 0 -dj 0.7 -ms 0.03
+The resolution gets specified in two places on the command-line.
+
+At 512x512, this produced the following image:
+http://mark.technolope.org/radiance/dof_program/img04.png
+
+And at 4096x4096, reduced to 512x512 (aperture was not
+halved in radius calculation, thus appears more blurry):
+http://mark.technolope.org/radiance/dof_program/img05q.png
+
+And that's what I wanted to share. I hope someone finds it
+useful. I especially hope that someone improves on it. Right
+now it is less useful to me, as I cannot incorporate it
+into an rpiece batch job, or restart it if it dies.
+
+Mark
+mstock@umich.edu
+
+From apian at pab-opto.de  Mon Aug 16 22:53:46 2004
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Mon Aug 16 22:54:28 2004
+Subject: [Radiance-general] Depth-of-field hack
+In-Reply-To: <Pine.SOL.4.58.0408161248340.20412@asteroids.gpcc.itd.umich.edu>
+References: <Pine.SOL.4.58.0408161248340.20412@asteroids.gpcc.itd.umich.edu>
+Message-ID: <41211EDA.1070407@pab-opto.de>
+
+Hi Mark
+
+>...
+>
+>I first tried pdfblur, which outputs a series of views, each
+>of which can be rendered with rpict or created with pinterp.
+>  
+>
+I'm not quite sure I see the light here yet, but I'm interested, as 
+rshow had some experimental features of generating the views (actually 
+before realizing there are some cmdline tools buried deeply somewhere), 
+that's how the lower image at 
+http://www.pab-opto.de/radiance/render_vergleich/intro.htx was rendered 
+with 16 single views.
+
+Before decompiling the rcalc script, could you briefly say why your 
+method is faster ?
+
+To give a hint of the little bits I do understand: Out-of-focus pixels 
+average over a larger solid angle as in-focus ones. Even the solid-angle 
+of in-focus pixels is truly not zero, that's why we need oversampling to 
+avoid aliasing. Traditional methods calculate anti-aliased images with 
+shifted view points and directions which are than added to give the 
+blurred final result. Do I understand correctly that your method 
+incorporates the depth-of-field information into the per-pixel averaging 
+over the per-pixel-solid-angle ? Speed advantage would than come by 
+avoiding unnecessary rays. Is there an easy way to understand how ?
+With the old method, each of the images has the same size, so one pixel 
+is effectively oversampled by the number of images. Whether in-focus or 
+not. Are you saying that the out-of-focus ones need more sampling than 
+the in-focus ones ? And the in-focus don't gain much from the higher 
+sampling ?
+
+TIA
+Peter
+
+PS: nice Radiance webpages of yours
+
+-- 
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+
+
+From beixiao at mail.med.upenn.edu  Wed Aug 18 18:14:50 2004
+From: beixiao at mail.med.upenn.edu (Bei Xiao)
+Date: Wed Aug 18 18:14:58 2004
+Subject: [Radiance-general] Shinny objects that reflect their environment
+In-Reply-To: <s11b36fd.087@wmtao.com>
+References: <s11b36fd.087@wmtao.com>
+Message-ID: <Pine.SOL.4.58.0408181211020.786@pobox.upenn.edu>
+
+hi,
+  I want to render some shinny objects that reflect environment. For
+example, if I put a very shinny sphere on a checkerboard floor, in
+reality, we sholud be able to see mirror images of the floor on the sphere. However, I
+was not be able to render this using plastic material and my current
+parameters in Radiance. I can only see the specular highlight but
+no image is relfected onto the sphere. Does anyone have any experience
+with it that could give me some hints.
+
+Thanks,
+
+Bei
+
+From schorsch at schorsch.com  Wed Aug 18 18:57:20 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Wed Aug 18 18:57:34 2004
+Subject: [Radiance-general] Shinny objects that reflect their environment
+In-Reply-To: <Pine.SOL.4.58.0408181211020.786@pobox.upenn.edu>
+References: <s11b36fd.087@wmtao.com>
+	<Pine.SOL.4.58.0408181211020.786@pobox.upenn.edu>
+Message-ID: <Pine.BSF.4.58.0408181255280.62765@emancholl.pair.com>
+
+Bei Xiao wrote:
+
+> hi,
+>   I want to render some shinny objects that reflect environment. For
+> example, if I put a very shinny sphere on a checkerboard floor, in
+> reality, we sholud be able to see mirror images of the floor on the sphere.
+> However, I was not be able to render this using plastic material and my
+> current parameters in Radiance. I can only see the specular highlight but
+> no image is relfected onto the sphere. Does anyone have any experience
+> with it that could give me some hints.
+
+You will have to increase the specularity parameter of the
+material to a value close to 1 for this to work, and avoid
+using roughness.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From beixiao at mail.med.upenn.edu  Wed Aug 18 19:15:47 2004
+From: beixiao at mail.med.upenn.edu (Bei Xiao)
+Date: Wed Aug 18 19:15:55 2004
+Subject: [Radiance-general] Shinny objects that reflect their environment
+In-Reply-To: <Pine.BSF.4.58.0408181255280.62765@emancholl.pair.com>
+References: <s11b36fd.087@wmtao.com>
+	<Pine.SOL.4.58.0408181211020.786@pobox.upenn.edu>
+	<Pine.BSF.4.58.0408181255280.62765@emancholl.pair.com>
+Message-ID: <Pine.SOL.4.58.0408181314410.7463@pobox.upenn.edu>
+
+Thank you. But doesn't the roughness parameter control the blurring of the
+specular highlight of a surface? Why using it will preventing having any
+mirror image?
+
+
+On Wed, 18 Aug 2004, Georg Mischler wrote:
+
+>_Bei Xiao wrote:
+>_
+>_> hi,
+>_>   I want to render some shinny objects that reflect environment. For
+>_> example, if I put a very shinny sphere on a checkerboard floor, in
+>_> reality, we sholud be able to see mirror images of the floor on the sphere.
+>_> However, I was not be able to render this using plastic material and my
+>_> current parameters in Radiance. I can only see the specular highlight but
+>_> no image is relfected onto the sphere. Does anyone have any experience
+>_> with it that could give me some hints.
+>_
+>_You will have to increase the specularity parameter of the
+>_material to a value close to 1 for this to work, and avoid
+>_using roughness.
+>_
+>_
+>_-schorsch
+>_
+>_
+
+From rpg at rumblestrip.org  Wed Aug 18 20:29:12 2004
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Wed Aug 18 20:25:59 2004
+Subject: [Radiance-general] Shinny objects that reflect their environment
+In-Reply-To: <Pine.SOL.4.58.0408181314410.7463@pobox.upenn.edu>
+References: <s11b36fd.087@wmtao.com>	<Pine.SOL.4.58.0408181211020.786@pobox.upenn.edu>	<Pine.BSF.4.58.0408181255280.62765@emancholl.pair.com>
+	<Pine.SOL.4.58.0408181314410.7463@pobox.upenn.edu>
+Message-ID: <41239FF8.3050801@rumblestrip.org>
+
+Bei Xiao wrote:
+> Thank you. But doesn't the roughness parameter control the blurring of the
+> specular highlight of a surface? Why using it will preventing having any
+> mirror image?
+
+Specular highlights contribute to the mirror image.  Just give it a try, 
+setting roughness to zero.  My first experiment with a specular floor 
+material, I mistakenly set roughness to zero, and my floor looked like 
+an ice skating rink.  All objects in the room were reflected perfectly 
+in the floor.  Not saying it's realistic, just saying it's a quick 
+lesson in roughness' contribution to the mirror image you are seeking.
+
+Here's a good chart showing the effects of varying both specularity & 
+roughness:  http://www.artifice.com/radiance/rad_specularity.jpg
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+From mstock at umich.edu  Wed Aug 18 22:27:28 2004
+From: mstock at umich.edu (Mark Stock)
+Date: Wed Aug 18 22:27:33 2004
+Subject: [Radiance-general] Depth-of-field hack
+In-Reply-To: <41211EDA.1070407@pab-opto.de>
+References: <Pine.SOL.4.58.0408161248340.20412@asteroids.gpcc.itd.umich.edu>
+	<41211EDA.1070407@pab-opto.de>
+Message-ID: <Pine.SOL.4.58.0408181604270.3631@asteroids.gpcc.itd.umich.edu>
+
+Peter,
+
+Thank you for your comments. I hope the following response
+will be helpful.
+
+On Mon, 16 Aug 2004, Peter Apian-Bennewitz wrote:
+> >
+> >I first tried pdfblur, which outputs a series of views, each
+> >of which can be rendered with rpict or created with pinterp.
+> >
+> I'm not quite sure I see the light here yet, but I'm interested, as
+> rshow had some experimental features of generating the views (actually
+> before realizing there are some cmdline tools buried deeply somewhere),
+> that's how the lower image at
+> http://www.pab-opto.de/radiance/render_vergleich/intro.htx was rendered
+> with 16 single views.
+
+Right, that seems to be the method that pdfblur uses: creates a
+number of different views, each of which you need to create using
+either rpict or pinterp.
+
+> Before decompiling the rcalc script, could you briefly say why your
+> method is faster ?
+
+It is faster for a certain class of problems: very
+high-resolution images with significant depth-of-field effects.
+Its advantage lies in the fact that no sharp renderings are ever
+created---those sharp renderings cause the wispy sharp lines in
+the image you refer to, and one image that I linked to.
+
+The rcalc script borrows heavily from the rcalc expression
+inside of the pdfblur script. Where the pdfblur script applies
+depth-of-field blur on an image-wise basis, my command-line
+version applies it on a pixel-by-pixel basis.
+
+> To give a hint of the little bits I do understand: Out-of-focus pixels
+> average over a larger solid angle as in-focus ones. Even the solid-angle
+> of in-focus pixels is truly not zero, that's why we need oversampling to
+> avoid aliasing. Traditional methods calculate anti-aliased images with
+> shifted view points and directions which are than added to give the
+> blurred final result. Do I understand correctly that your method
+> incorporates the depth-of-field information into the per-pixel averaging
+> over the per-pixel-solid-angle ? Speed advantage would than come by
+> avoiding unnecessary rays. Is there an easy way to understand how ?
+
+Using pdfblur with pinterp, you *do* only resample pixels in
+areas where the blur effect is significant, thus saving time.
+This method, though, is not compatible with the "-aa 0 -ps 1"
+method that I presented earlier. This is because using -aa 0
+with a very low -ad value (4 or 8) gives very noisy images,
+and the entire image must always be oversampled in order to
+obtain smooth final images. With the understanding that the
+entire image needed to be resampled many times, I wanted a
+DOF method that would be noisy on a pixel-basis, but that would
+smooth out when the image size was filtered down.
+
+> With the old method, each of the images has the same size, so one pixel
+> is effectively oversampled by the number of images. Whether in-focus or
+> not. Are you saying that the out-of-focus ones need more sampling than
+> the in-focus ones ? And the in-focus don't gain much from the higher
+> sampling ?
+
+This is true for non-noisy images (with high settings for
+-ad and -as), and it the aim of pdfblur with pinterp, but
+is not the case for the very-high-resolution, noisy images
+that dominate my recent work. The most recent production
+image that I made was at 24,000^2 resolution, and used
+rather low-quality ambient value settings. After appropriate
+size reductions, a very fine quality 7200^2 image resulted.
+
+Note that because every pixel is resampled, I could very
+easily have rendered a larger number of images at the
+final resolution (7200^2) instead of one very large one.
+I may shift to that method in the future.
+
+> PS: nice Radiance webpages of yours
+
+Thanks! It's taken me a bit of time to assemble the material that
+is there, but there is ever more that I'd like to share. Within
+the next half-year, I hope to have a website up for my digital
+visual art, most of it created with Radiance. I'll be sure to
+notify the list when that happens.
+
+Mark
+
+From gward at lmi.net  Wed Aug 18 22:43:47 2004
+From: gward at lmi.net (Greg Ward)
+Date: Wed Aug 18 22:44:14 2004
+Subject: [Radiance-general] Depth-of-field hack
+In-Reply-To: <Pine.SOL.4.58.0408181604270.3631@asteroids.gpcc.itd.umich.edu>
+References: <Pine.SOL.4.58.0408161248340.20412@asteroids.gpcc.itd.umich.edu>
+	<41211EDA.1070407@pab-opto.de>
+	<Pine.SOL.4.58.0408181604270.3631@asteroids.gpcc.itd.umich.edu>
+Message-ID: <4DC7108E-F157-11D8-AC68-000A95BB392A@lmi.net>
+
+>> PS: nice Radiance webpages of yours
+>
+> Thanks! It's taken me a bit of time to assemble the material that
+> is there, but there is ever more that I'd like to share. Within
+> the next half-year, I hope to have a website up for my digital
+> visual art, most of it created with Radiance. I'll be sure to
+> notify the list when that happens.
+
+Something to look forward to...  The image you had hanging at SIGGRAPH 
+was amazing!
+
+-Greg
+
+
+From gward at lmi.net  Thu Aug 19 19:18:00 2004
+From: gward at lmi.net (Greg Ward)
+Date: Thu Aug 19 19:18:16 2004
+Subject: [Radiance-general] Re: radiance question
+In-Reply-To: <20040819152118.85786.qmail@web25203.mail.ukl.yahoo.com>
+References: <20040819152118.85786.qmail@web25203.mail.ukl.yahoo.com>
+Message-ID: <B87DCB9B-F203-11D8-B283-00306540F848@lmi.net>
+
+Hello Tou,
+
+I'm not much of a CAD user.  There is Desktop Radiance, which works 
+with AutoCAD release 14, and may be found at:
+
+	http://radsite.lbl.gov/deskrad/
+
+However, there are a number of other interfaces available, known better 
+to the Radiance online community than they are to me, so I am 
+forwarding your message to radiance-online's general mailing list.  To 
+enlist, go to:
+
+	http://www.radiance-online.org/
+
+and click on the "general subscription" link.
+
+-Greg
+
+Begin forwarded message:
+
+> From: oua tou <tou_oua@yahoo.fr>
+> Date: August 19, 2004 8:21:18 AM PDT
+> To: gward@lmi.net
+> Subject: radiance question
+>
+hi,
+? i began to work with radiance but i want if it is
+possible ,to reffer me and explaine me who can i
+tronslate from? any popular CAD format to Radiance i mean architectural 
+projects
+
+i will be thankfull if you replay me .
+
+Tou? Quebec
+
+  Cr?ez gratuitement votre Yahoo! Mail avec 100 Mo de stockage !
+Cr?ez votre Yahoo! Mail
+
+Le nouveau Yahoo! Messenger est arriv? ! D?couvrez toutes les 
+nouveaut?s pour dialoguer instantan?ment avec vos amis. T?l?chargez 
+GRATUITEMENT ici !
+
+From grobe at gmx.net  Fri Aug 20 13:33:58 2004
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Fri Aug 20 13:32:52 2004
+Subject: [Radiance-general] Re: radiance question
+In-Reply-To: <B87DCB9B-F203-11D8-B283-00306540F848@lmi.net>
+Message-ID: <D3CAA876-F29C-11D8-ADBE-000A959DDB22@gmx.net>
+
+Hi,
+
+just three ways:
+
+Use dxf. This makes sense if you are e.g. working with AutoCAD. Get 
+Georg Mischlers dxf2rad (www.schorsch.com), which is available for a 
+lot of platforms. When exporting, take care of the units (I have always 
+1unit=1meter, so the same as in most radiance apps). Use different 
+layers for materials. dxf2rad will use the layernames as modifiers in 
+the exported rad-model. Than write a material-mapping file, using 
+aliases. That way, you can use ONE material file, that you will re-use 
+for all your projects (simply adding new materials when needed) and put 
+all the layer-to-material information into the mapping-file, that will 
+be valid just for the model. If you are working on Mac or Unix, make 
+sure to encode the (ascii)-dxf file in the ms-dos world format.
+
+Use obj. This is available as an export option for different 
+3d-packages. It is supported by obj2rad and the new mesh primitive in 
+Radiance. Be careful, the coordinate system in radiance is with the 
+z-achis up! Many of these modeler use other coordinate systems! The 
+obj-export will often be triangulated, but you can use surface normals 
+(e.g. for smoothing) and texture coordinates. As such, I would always 
+prefer it for the not-so-classic architectural models containing lots 
+of curved surfaces.
+
+Use 3ds. This means that you first convert to mgf, than to rad. You can 
+get "smoothed" surfaces like with obj, and 3ds is available in many 
+3d-modelers, too. You can get some simple material definitions based on 
+the 3ds-file, so you should be able to view the exported rad-file 
+without changes by objview (the other formats' importers don't use the 
+material / color information). However, some of the advanced features 
+radiance offers with obj now are not available with 3ds (tecture 
+coordinates).
+
+If you have a big model, and used some kind of blocks (symbols, 
+references, however your cad calls them), you can try to import them as 
+instances or by using xform. This might help to reduce the memory 
+needed during rendering a lot, however, it adds complexity to the 
+import. Maybe we will have a converter that can handle blocks and 
+export them as such to radiance without user interaction (I read that 
+an early radout release was able to do so?).
+
+Be careful with some CAAD apps. Archicad e.g. tends to include all 
+details in the model, and if you want to render the overview of a large 
+building, you won't want all the door-locks and furniture in your 
+model. So try to control the details as needed (use layers etc, 
+assigning the void modifier can switch off objects, right?).
+
+What applications are you working with?
+
+I use dxf for most architectural models, obj for free-forms (curved 
+surfaces, smooth surfaces). U used radiance with AutoCAD, ArchiCAD, 
+FormZ, Vectorworks.
+
+Good luck, CU Lars.
+--
+Lars O. Grobe
+grobe@gmx.net
+
+
+From toast at becausewecan.org  Fri Aug 20 16:12:01 2004
+From: toast at becausewecan.org (Jeffrey McGrew)
+Date: Fri Aug 20 16:12:09 2004
+Subject: [Radiance-general] Re: radiance question
+In-Reply-To: <B87DCB9B-F203-11D8-B283-00306540F848@lmi.net>
+References: <20040819152118.85786.qmail@web25203.mail.ukl.yahoo.com>
+	<B87DCB9B-F203-11D8-B283-00306540F848@lmi.net>
+Message-ID: <412606B1.9000804@becausewecan.org>
+
+
+I use Revit. I export my models to a DWG, and then open them in 
+AutoCAD, clean-up some of the layers and such (it puts things on 
+layers named by category of the element, not by the element's 
+materials), and then run an old LISP routine called 'TORAD' that then 
+generates my Radiance files. I then create test renders under Cygwin, 
+and then when the project is ready I feed it to a OS X box I've got 
+acting as a 'render server'.
+
+However, I've just found out that Revit (which is a lot like ArchiCAD, 
+only more so ;) also includes into it's DWG/DXF exporting 'xdata' 
+about the material a surface is, so I'm currently investigating how to 
+write a new 'revit2rad' converter that would take a DXF from Revit and 
+turn it into a logical structure of Radiance files.
+
+Finally, there is a wonderful little 3D modeling program called 
+ECOTECT that allows you to make simple surface models and includes a 
+Radiance exporting feature & rendering front end. This you might find 
+to be your best bet to get into Radiance at first.
+
+Best of luck,
+
+Jeffrey McGrew
+
+From MdelaFuente at wmtao.com  Fri Aug 20 16:48:03 2004
+From: MdelaFuente at wmtao.com (Mark de la Fuente)
+Date: Fri Aug 20 16:49:00 2004
+Subject: [Radiance-general] Re: Radiance Question
+Message-ID: <s125c8f5.090@wmtao.com>
+
+I use radout... a better torad.  Works great.
+ 
+It can be downloaded from the rayfront website. 
+http://www.schorsch.com/
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20040820/ed842199/attachment.html
+From juliamundo at yahoo.com  Fri Aug 20 20:00:43 2004
+From: juliamundo at yahoo.com (=?iso-8859-1?q?Julia=20Mundo?=)
+Date: Fri Aug 20 20:07:30 2004
+Subject: [Radiance-general] Materials properties in desktop Radiance
+Message-ID: <20040820180043.80935.qmail@web52705.mail.yahoo.com>
+
+Dear all,
+ 
+I'm just starting to use desktop radiance. I have modeled a 3d building in Autocad and now I would like to add some new materials to the Library. My question is how can I input the transmission factor of materials? Because I think the material editor window only has the option of changing average reflectance, specularity and roughness.
+ 
+I will appreciate any help since the selection of different materials' properties is the main part of my work.
+ 
+Best wishes,
+ 
+Julia Mundo.
+
+		
+---------------------------------
+ ALL-NEW Yahoo! Messenger - all new features - even more fun!  
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20040820/92f0236f/attachment.htm
+From toast at becausewecan.org  Sat Aug 21 08:28:32 2004
+From: toast at becausewecan.org (Jeffrey McGrew)
+Date: Sat Aug 21 08:28:37 2004
+Subject: [Radiance-general] Re: Radiance Question
+In-Reply-To: <s125c8f5.090@wmtao.com>
+References: <s125c8f5.090@wmtao.com>
+Message-ID: <4126EB90.5070500@becausewecan.org>
+
+
+Radout, while vastly superior to TORAD, don't work none with AutoCAD 
+2004+. Just FYI. TORAD don't work, really, either, but it will make 
+RAD files (it just won't listen to option settings). And DXF2RAD, 
+well, the models I make in Revit seem to be either too much (lots and 
+lots of data) or dxf2rad doesn't like 2000 or 2004 DXF formats, for it 
+just crashes out when I try to run it under Windows. I haven't tried 
+it under Linux in a while, but I seem to remember it acting the same way.
+
+So, for now, it's Revit -> Autocad -> messing with layers and such -> 
+TORAD -> Radiance.
+and I'm trying to make something that will allow Revit -> (insert new 
+tool here) -> Radiance. ;)
+
+Jeffrey McGrew
+
+
+Mark de la Fuente wrote:
+> I use radout... a better torad.  Works great.
+>  
+> It can be downloaded from the rayfront website.  http://www.schorsch.com/
+> 
+> 
+> ------------------------------------------------------------------------
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+From rpg at rumblestrip.org  Thu Aug 26 17:33:24 2004
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Thu Aug 26 17:30:32 2004
+Subject: [Radiance-general] rad3R5supp.tar.gz corrupted on
+	radiance-online.org
+Message-ID: <412E02C4.2080106@rumblestrip.org>
+
+There seems to be a problem with rad3R5supp.tar.gz, the "support files" 
+archive on radiance-online.org.  I've downloaded it a couple times now 
+on two different machines, but it cannot be decompressed.  Peter, can 
+you take a look?  User error is certainly not out of the realm of 
+possibility here...
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+From jedev at visarc.com  Thu Aug 26 17:46:41 2004
+From: jedev at visarc.com (Jack de Valpine)
+Date: Thu Aug 26 17:46:52 2004
+Subject: [Radiance-general] rad3R5supp.tar.gz corrupted
+	on	radiance-online.org
+In-Reply-To: <412E02C4.2080106@rumblestrip.org>
+References: <412E02C4.2080106@rumblestrip.org>
+Message-ID: <412E05E1.2060502@visarc.com>
+
+Hi Rob,
+
+I just downloaded this a couple of days ago. The problem that I ran into 
+is that the stupid dialog box for saving the file (netscape and/or 
+windows xp) misinterprets the file extension. I was able to decompress 
+with 'tar -xvzf'
+
+-Jack
+
+Rob Guglielmetti wrote:
+
+> There seems to be a problem with rad3R5supp.tar.gz, the "support 
+> files" archive on radiance-online.org.  I've downloaded it a couple 
+> times now on two different machines, but it cannot be decompressed.  
+> Peter, can you take a look?  User error is certainly not out of the 
+> realm of possibility here...
+>
+> ----
+>
+>      Rob Guglielmetti
+>
+> e. rpg@rumblestrip.org
+> w. www.rumblestrip.org
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+
+
+
+From rpg at rumblestrip.org  Thu Aug 26 18:10:58 2004
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Thu Aug 26 18:07:51 2004
+Subject: [Radiance-general] rad3R5supp.tar.gz
+	corrupted	on	radiance-online.org
+In-Reply-To: <412E05E1.2060502@visarc.com>
+References: <412E02C4.2080106@rumblestrip.org> <412E05E1.2060502@visarc.com>
+Message-ID: <412E0B92.3090406@rumblestrip.org>
+
+Jack de Valpine wrote:
+
+> Hi Rob,
+> 
+> I just downloaded this a couple of days ago. The problem that I ran into 
+> is that the stupid dialog box for saving the file (netscape and/or 
+> windows xp) misinterprets the file extension. I was able to decompress 
+> with 'tar -xvzf'
+
+Hi Jack,
+
+I tried that too, without success.  Here's the last few lines from the 
+decompress:
+
+ray/lib/brick.pic
+ray/lib/brickweave.cal
+ray/lib/brickweave.pic
+tar: Skipping to next header
+tar: Archive contains obsolescent base-64 headers
+
+gzip: stdin: invalid compressed data--crc error
+tar: Child returned status 1
+tar: Error exit delayed from previous errors
+hatteras:~/Desktop admin$
+
+
+Ideas??
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+From apian at pab-opto.de  Thu Aug 26 22:39:25 2004
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Thu Aug 26 22:39:54 2004
+Subject: [Radiance-general] rad3R5supp.tar.gz corrupted
+	on	radiance-online.org
+In-Reply-To: <412E02C4.2080106@rumblestrip.org>
+References: <412E02C4.2080106@rumblestrip.org>
+Message-ID: <412E4A7D.5040907@pab-opto.de>
+
+Rob Guglielmetti wrote:
+
+> There seems to be a problem with rad3R5supp.tar.gz, the "support 
+> files" archive on radiance-online.org.  I've downloaded it a couple 
+> times now on two different machines, but it cannot be decompressed.  
+> Peter, can you take a look?  User error is certainly not out of the 
+> realm of possibility here...
+
+you're off the hook here. Yack! the file _is_ bad.
+Both disks in the Raid are reported "optimal", no entries in the event 
+log either. Machine up since 180 days. Very weird. Closer look scheduled.
+Meanwhile, the file is replaced by an intact one.
+
+Thanks for bringing it to my attention
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+
+
+From rpg at rumblestrip.org  Thu Aug 26 23:30:58 2004
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Thu Aug 26 23:26:44 2004
+Subject: [Radiance-general] rad3R5supp.tar.gz corrupted on
+	radiance-online.org
+In-Reply-To: <412E4A7D.5040907@pab-opto.de>
+References: <412E02C4.2080106@rumblestrip.org> <412E4A7D.5040907@pab-opto.de>
+Message-ID: <412E5692.2050403@rumblestrip.org>
+
+Peter Apian-Bennewitz wrote:
+
+> you're off the hook here. Yack! the file _is_ bad.
+> Both disks in the Raid are reported "optimal", no entries in the event 
+> log either. Machine up since 180 days. Very weird. Closer look scheduled.
+
+Lovely.  I'm in the midst of setting up a brand new Apple XServe, RAID1. 
+  In fact, I had just done a disk failure simulation and had repaired 
+the mirror, so my very first thought when that archive was corrupted on 
+my end was that it was a problem with *my* mirror!  I hope you find the 
+source of the problem.
+
+> Meanwhile, the file is replaced by an intact one.
+
+Great, thank you Peter.
+
+> Thanks for bringing it to my attention
+
+NP.
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+From pisuke at blueyonder.co.uk  Sat Aug 28 00:43:30 2004
+From: pisuke at blueyonder.co.uk (Francesco Anselmo)
+Date: Sat Aug 28 00:43:37 2004
+Subject: [Radiance-general] radiance + openmosix = :)
+Message-ID: <200408272343.30549.pisuke@blueyonder.co.uk>
+
+Hi all,
+
+I had some time to do a few experiments with
+openmosix and radiance during the past weeks.
+And, luckily, I've been successful, or at least
+now I know a little bit more about both systems ...
+
+Maybe somebody can be interested ...
+
+Probably many of you already know what openmosix is
+(and of course _all_ of you should know about radiance,
+even if day by day we discover something new about it ...):
+as far as I've understood, openmosix is a linux kernel 
+extension that provides single image clustering 
+capabilities to a network of linux boxes.
+In other words, instead of having a machine with a single
+processor, it is possible to see as many processors
+as all your networked linux boxes have.
+
+The main advantages of the openmosix approach to do parallel
+computation with radiance are:
+
+1. no need to use nfs (it can really be painful to choose
+   the right version and to set up the lockd daemon with
+   linux)
+2. no need to login to different machines to launch the rpiece
+   processes (no rsh or ssh or telnet or whatever needed)
+3. it works with rholo -n x, when x>1
+
+What you need: a few computers laying around, a linux distro
+(I prefer and suggest debian or knoppix/clusterknppix, maybe 
+gentoo can also be practical), a newtork switch + cables, 
+time, patience.
+
+At work, I've been able to put over and under my desk (kidnapped) 
+1, 2, 3, ..., 8 pc's, some old, some new (from 433Mhz PIII to 2.2Ghz PIV), 
+and I started doing some tests in my very little spare time. 
+It is a little bit hot now, and I get a headache after 5 minutes,
+but ...
+
+First I installed gnu/debian on each of them (well, I installed
+it on one and then cloned it with rsync), and then recompiled
+the linux kernel (2.4.26) with the unofficial openmosix patch
+from http://openmosix.snarc.org/download: I used the unofficial
+one because it is more updated, and I needed to have at least 
+kernel 2.4.26 for a couple of hardware devices on my laptop to work:
+it is very important for all the machines in the network to
+have the same kernel and openmosix versions, otherwise they
+won't communicate. There are no openmosix patches for 2.6.x kernels, 
+yet.
+
+After installing the kernel and compiling and installing radiance
+(I used the optimisations for the slowest processors in the cluster,
+PIII), I verified that everything was working: the new openmosix releases
+include an autodiscovery daemon that takes care of automaticaly
+adding new nodes to the cluster when they are available, and also use a 
+special load balancing algorithm to automatically migrate the processes to 
+the faster nodes. 
+Debian has two openmosix packages, one for the patch (the patch is not very 
+updated, 2.4.24, but also installs the daemon init scripts) and another for 
+the userspace programs, to monitor the cluster and manage the migration
+process. There also is an additional graphical interface, openmosixview,
+quite helpful.
+
+The first test I did was with rholo, and it worked pretty well with the
+network of slowest computers: when adding the faster ones, some processes
+were migrating to the fastest machines, other were spending a lot of time
+in deciding what to do, adding overhead to the system and slowing down
+the simulation. With rpiece it was even worse, and I was starting losing
+my faith ...
+
+As you may have noticed, my system is very asymmetrical, and this was
+the cause of many failures.
+
+After that, I've tried with the fastest ones (2.0 and 2.2GHz PIV), and
+after some failures I realized that I had to launch the rpiece processes
+in a different way, using some of the openmosix userspace tools.
+Now I use "runhome oconv [options]" to compile the octree on the fastest
+machine, and I launch a first rpiece process that stays on the first
+machine ("runhome rpiece @args &") and several new rpiece processes that
+are able to migrate to the other fast nodes with "mosrun -t 1 -d 700 rpiece 
+@args &". I understood that it is better to turn off the slower pc's or to
+keep them in a different network segment, otherwise they will make the
+system slower and slower. So a symmetrical cluster is far better.
+
+To make it possible to compare my results, I've benchmarked my 2-node cluster
+with the bench2 package as taken from Mark Stock's wonderful site, and here 
+are the results (radiance was compiled with PIV optimisations).
+
+standard bench2 on the 2.0GHz PIV
+21.92user 0.85system 0:23.45elapsed 97%CPU (0avgtext+0avgdata 0maxresident)k
+0inputs+0outputs (60294major+31417minor)pagefaults 0swaps
+rpict: 0 rays, 0.00% after 0.004u 0.000s 0.004r hours on leviathan
+rpict: 2740602 rays, 32.40% after 0.012u 0.000s 0.013r hours on leviathan
+rpict: 5594096 rays, 42.60% after 0.020u 0.000s 0.021r hours on leviathan
+rpict: 8454012 rays, 48.60% after 0.028u 0.000s 0.029r hours on leviathan
+rpict: 11120053 rays, 52.20% after 0.036u 0.000s 0.038r hours on leviathan
+rpict: 13856057 rays, 56.10% after 0.045u 0.000s 0.047r hours on leviathan
+rpict: 16533987 rays, 60.60% after 0.054u 0.001s 0.055r hours on leviathan
+rpict: 19224383 rays, 66.00% after 0.062u 0.001s 0.064r hours on leviathan
+rpict: 21936654 rays, 71.10% after 0.071u 0.001s 0.072r hours on leviathan
+rpict: 24532107 rays, 75.90% after 0.079u 0.001s 0.081r hours on leviathan
+rpict: 27207234 rays, 81.30% after 0.087u 0.001s 0.089r hours on leviathan
+rpict: 29704006 rays, 100.00% after 0.095u 0.001s 0.097r hours on leviathan
+341.47user 2.70system 5:49.37elapsed 98%CPU (0avgtext+0avgdata 0maxresident)k
+0inputs+0outputs (60349major+31607minor)pagefaults 0swaps
+0.46user 0.00system 0:00.52elapsed 87%CPU (0avgtext+0avgdata 0maxresident)k
+0inputs+0outputs (484major+66minor)pagefaults 0swaps
+
+So the rpict process has ended after 5:49.
+
+By changing the doit script to this:
+------------------------------------------------------------------------------
+rm -f scene.oct scene.pic scene.amb syncfile args
+/usr/bin/time runhome oconv scene.rad > scene.oct
+echo 4 4 > syncfile
+echo "-F syncfile -t 30 -vf v1.vf -af scene.amb -ab 1 -x 1000 -y 1000 \
+ -aa 0.2  -ar 32 -ad 128 -as 0 -lr 6 -lw 0.005 -o scene.pic scene.oct" > args
+/usr/bin/time runhome rpiece @args &
+/usr/bin/time mosrun -t 1 -d 700 rpiece @args &
+------------------------------------------------------------------------------
+
+I got the following result:
+
+21.85user 0.91system 0:22.94elapsed 99%CPU (0avgtext+0avgdata 0maxresident)k
+0inputs+0outputs (60294major+31417minor)pagefaults 0swaps
+FRAME 1: -vtv -vp 23.6453 -93.6881 26.4175 -vd -0.227921 0.911685 -0.341882 
+-vu 0 0 1 -vh 16.4264 -vv 16.4264 -vo 0 -va 0 -vs 1.5 -vl 1.5
+rpict: 0 rays, 0.00% after 0.004u 0.000s 0.008r hours on leviathan
+rpict: 3987 rays, 100.00% after 0.004u 0.000s 0.008r hours on leviathan
+FRAME 2: -vtv -vp 23.6453 -93.6881 26.4175 -vd -0.227921 0.911685 -0.341882 
+-vu 0 0 1 -vh 16.4264 -vv 16.4264 -vo 0 -va 0 -vs 1.5 -vl -0.5
+rpict: 3987 rays, 0.00% after 0.004u 0.000s 0.008r hours on leviathan
+FRAME 1: -vtv -vp 23.6453 -93.6881 26.4175 -vd -0.227921 0.911685 -0.341882 
+-vu 0 0 1 -vh 16.4264 -vv 16.4264 -vo 0 -va 0 -vs 1.5 -vl 0.5
+rpict: 0 rays, 0.00% after 0.004u 0.000s 0.009r hours on leviathan
+rpict: 4154 rays, 100.00% after 0.004u 0.000s 0.009r hours on leviathan
+FRAME 2: -vtv -vp 23.6453 -93.6881 26.4175 -vd -0.227921 0.911685 -0.341882 
+-vu 0 0 1 -vh 16.4264 -vv 16.4264 -vo 0 -va 0 -vs 1.5 -vl -1.5
+rpict: 4154 rays, 0.00% after 0.004u 0.000s 0.009r hours on leviathan
+rpict: 726110 rays, 100.00% after 0.006u 0.000s 0.012r hours on leviathan
+FRAME 3: -vtv -vp 23.6453 -93.6881 26.4175 -vd -0.227921 0.911685 -0.341882 
+-vu 0 0 1 -vh 16.4264 -vv 16.4264 -vo 0 -va 0 -vs 0.5 -vl 1.5
+rpict: 726110 rays, 0.00% after 0.006u 0.000s 0.012r hours on leviathan
+rpict: 492809 rays, 100.00% after 0.005u 0.001s 0.011r hours on leviathan
+FRAME 3: -vtv -vp 23.6453 -93.6881 26.4175 -vd -0.227921 0.911685 -0.341882 
+-vu 0 0 1 -vh 16.4264 -vv 16.4264 -vo 0 -va 0 -vs 0.5 -vl 0.5
+rpict: 492809 rays, 0.00% after 0.005u 0.001s 0.011r hours on leviathan
+rpict: 1324193 rays, 100.00% after 0.008u 0.001s 0.014r hours on leviathan
+FRAME 4: -vtv -vp 23.6453 -93.6881 26.4175 -vd -0.227921 0.911685 -0.341882 
+-vu 0 0 1 -vh 16.4264 -vv 16.4264 -vo 0 -va 0 -vs 0.5 -vl -0.5
+rpict: 1324193 rays, 0.00% after 0.008u 0.001s 0.014r hours on leviathan
+rpict: 3678661 rays, 88.80% after 0.013u 0.001s 0.019r hours on leviathan
+rpict: 3902848 rays, 100.00% after 0.014u 0.001s 0.020r hours on leviathan
+FRAME 4: -vtv -vp 23.6453 -93.6881 26.4175 -vd -0.227921 0.911685 -0.341882 
+-vu 0 0 1 -vh 16.4264 -vv 16.4264 -vo 0 -va 0 -vs 0.5 -vl -1.5
+rpict: 3902848 rays, 0.00% after 0.014u 0.001s 0.020r hours on leviathan
+rpict: 3959908 rays, 39.60% after 0.016u 0.001s 0.022r hours on leviathan
+rpict: 5912685 rays, 100.00% after 0.022u 0.001s 0.029r hours on leviathan
+FRAME 5: -vtv -vp 23.6453 -93.6881 26.4175 -vd -0.227921 0.911685 -0.341882 
+-vu 0 0 1 -vh 16.4264 -vv 16.4264 -vo 0 -va 0 -vs -0.5 -vl 1.5
+rpict: 5912685 rays, 0.00% after 0.022u 0.001s 0.029r hours on leviathan
+rpict: 6612613 rays, 100.00% after 0.021u 0.001s 0.028r hours on leviathan
+FRAME 5: -vtv -vp 23.6453 -93.6881 26.4175 -vd -0.227921 0.911685 -0.341882 
+-vu 0 0 1 -vh 16.4264 -vv 16.4264 -vo 0 -va 0 -vs -0.5 -vl 0.5
+rpict: 6612613 rays, 0.00% after 0.021u 0.001s 0.028r hours on leviathan
+rpict: 6599351 rays, 100.00% after 0.024u 0.001s 0.031r hours on leviathan
+FRAME 6: -vtv -vp 23.6453 -93.6881 26.4175 -vd -0.227921 0.911685 -0.341882 
+-vu 0 0 1 -vh 16.4264 -vv 16.4264 -vo 0 -va 0 -vs -0.5 -vl -0.5
+rpict: 6599351 rays, 0.00% after 0.024u 0.001s 0.031r hours on leviathan
+rpict: 8845669 rays, 69.60% after 0.027u 0.001s 0.037r hours on leviathan
+rpict: 8907044 rays, 18.00% after 0.031u 0.001s 0.039r hours on leviathan
+rpict: 10518921 rays, 100.00% after 0.031u 0.001s 0.044r hours on leviathan
+FRAME 6: -vtv -vp 23.6453 -93.6881 26.4175 -vd -0.227921 0.911685 -0.341882 
+-vu 0 0 1 -vh 16.4264 -vv 16.4264 -vo 0 -va 0 -vs -0.5 -vl -1.5
+rpict: 10518921 rays, 0.00% after 0.031u 0.001s 0.045r hours on leviathan
+rpict: 11029597 rays, 40.80% after 0.038u 0.001s 0.048r hours on leviathan
+rpict: 13086055 rays, 51.60% after 0.038u 0.001s 0.053r hours on leviathan
+rpict: 13229033 rays, 100.00% after 0.039u 0.001s 0.053r hours on leviathan
+FRAME 7: -vtv -vp 23.6453 -93.6881 26.4175 -vd -0.227921 0.911685 -0.341882 
+-vu 0 0 1 -vh 16.4264 -vv 16.4264 -vo 0 -va 0 -vs -1.5 -vl 1.5
+rpict: 13229033 rays, 0.00% after 0.039u 0.001s 0.053r hours on leviathan
+rpict: 13233114 rays, 100.00% after 0.039u 0.001s 0.053r hours on leviathan
+FRAME 8: -vtv -vp 23.6453 -93.6881 26.4175 -vd -0.227921 0.911685 -0.341882 
+-vu 0 0 1 -vh 16.4264 -vv 16.4264 -vo 0 -va 0 -vs -1.5 -vl 0.5
+rpict: 13233114 rays, 0.00% after 0.039u 0.001s 0.053r hours on leviathan
+rpict: 13263283 rays, 100.00% after 0.039u 0.001s 0.054r hours on leviathan
+FRAME 9: -vtv -vp 23.6453 -93.6881 26.4175 -vd -0.227921 0.911685 -0.341882 
+-vu 0 0 1 -vh 16.4264 -vv 16.4264 -vo 0 -va 0 -vs -1.5 -vl -0.5
+rpict: 13263283 rays, 0.00% after 0.039u 0.001s 0.054r hours on leviathan
+rpict: 13306793 rays, 75.60% after 0.046u 0.001s 0.056r hours on leviathan
+rpict: 14642671 rays, 100.00% after 0.042u 0.001s 0.057r hours on leviathan
+FRAME 10: -vtv -vp 23.6453 -93.6881 26.4175 -vd -0.227921 0.911685 -0.341882 
+-vu 0 0 1 -vh 16.4264 -vv 16.4264 -vo 0 -va 0 -vs -1.5 -vl -1.5
+rpict: 14642671 rays, 0.00% after 0.042u 0.001s 0.057r hours on leviathan
+rpict: 14338103 rays, 100.00% after 0.049u 0.001s 0.059r hours on leviathan
+177.45user 3.49system 3:33.27elapsed 84%CPU (0avgtext+0avgdata 0maxresident)k
+0inputs+0outputs (60493major+32009minor)pagefaults 0swaps
+rpict: 15387552 rays, 100.00% after 0.044u 0.001s 0.059r hours on leviathan
+159.67user 2.77system 3:40.42elapsed 73%CPU (0avgtext+0avgdata 0maxresident)k
+0inputs+0outputs (60894major+33670minor)pagefaults 0swaps
+
+So the rpiece processes ended after 3:40 (~63% of the previous time) 
+-> very promising, isn't it?
+
+You may have noticed that I've also shared the ambient file between the
+two processes (I haven't cheated, it was erased at the beginning of
+the simulation), and since the file was accessed on the same computer
+there was no need to set up a network file system, and there was no need to 
+think about file permissions and so on ...
+
+Hope you may find this useful ...
+
+Sorry for not writing very frequently.
+And for writing this much this time (!).
+
+I hope to see you all at the 2004 workshop
+(any news?).
+
+-- 
+Francesco Anselmo
+pisuke@blueyonder.co.uk
+
+From gward at lmi.net  Sat Aug 28 06:24:33 2004
+From: gward at lmi.net (Greg Ward)
+Date: Sat Aug 28 06:25:15 2004
+Subject: [Radiance-general] Final Radiance Workshop announcement
+In-Reply-To: <200408272343.30549.pisuke@blueyonder.co.uk>
+References: <200408272343.30549.pisuke@blueyonder.co.uk>
+Message-ID: <29E3789A-F8AA-11D8-B7D7-000A95BB392A@lmi.net>
+
+Thanks for the prompting, Francesco -- the Firbourg Radiance workshop 
+is definitely ON.
+
+Please send in your registrations if you haven't already!  Attached is 
+the announcement for those who have recently joined.
+
+Our registration deadline is imminent -- August 31 -- so sign up today 
+and don't delay!
+
+-Greg
+
+----------------
+
+CALL FOR PARTICIPATION -- THIRD ANNUAL RADIANCE WORKSHOP
+
+What: Scientific Applications Using RADIANCE
+
+Where: University of Applied Sciences of Fribourg, Switzerland 
+(www.eif.ch)
+
+When: October 11th & 12th (Monday & Tuesday) 2004
+
+Organizers: Raphael Compagnon and Greg Ward
+
+Registration:	CHF 205 for speakers (approx. 1.5 CHF per Euro)
+		CHF 270 for attendees
+		CHF 105 for students
+
+Fee includes: Coffee breaks, lunch both days, a dinner on Monday 
+evening, and a workshop CD-ROM
+
+Hotel:	Rooms of various categories have been pre-booked for 
+participants at rates specified on the hotel registration form
+
+Download registration forms from the workshop's web page: 
+http://www.eif.ch/~compag/rw2004/
+
+Deadline for registration:	August 31, 2004
+As early registrations greatly help us in organising the workshop, we 
+recommend
+that participants send their registration forms as soon as possible. 
+During the workshop
+we will make a prize drawing for 2 participants among those who have 
+registered before
+July 15. The 2 winners will get a 50% cash refund on their registration 
+fee!
+
+Purpose:
+To provide researchers with an opportunity to present their work with 
+Radiance, and to share ideas and solutions with other attendees.
+Participants are invited to give a talk, which will be limited to 30 
+minutes (~20 minute for the talk followed by ~10 minutes of open 
+discussion).
+No printed proceedings will be produced, but a CD-ROM will be 
+distributed to attendees that will include electronic materials 
+submitted by the speakers and edited by the organizers.
+
+At this workshop, we will introduce a special Problem Solving session 
+on the second day, where users may present their difficulties and seek 
+advice and suggestions, possibly working through solutions in a 
+collaborative "brain-storming" with Greg, Raphael, and other attendant 
+experts.  In addition, Georg Mischler and Andreas Lahme have been 
+invited to give a half-day tutorial on Rayfront, and will demonstrate 
+their new Radiance web rendering service.  Depending on the number of 
+talks we end up scheduling, we may or may not conduct the problem 
+solving session and Rayfront tutorial in parallel. Either way, everyone 
+should get a chance to ask questions, and ample opportunities to help 
+others with their problems as well.
+
+A list of planned speakers and preliminary titles is given below. The 
+list will be regularly updated on the workshop's web page.
+
+	? 	Forward ray tracing analysis of a light pipe, by Anthony Farrell
+	? 	Using image based lighting to assess glare under different 
+conditions by capturing the whole dynamic range of daylight, by 
+Santiago L. Torres
+	? 	Comparison and Analysis of quantitative and qualitative data on 
+luminous ambiances in interior spaces using Radiance, by Ljubica Mudri
+	? 	Calculation of luminaires using Radiance, by Krzysztof Wandachowicz
+	? 	Road lighting simulation with Radiance, by Giulio Antonutto
+	? 	Using Radiance to verify and inform some interesting simplified 
+daylighting and solar radiation models, by Darren Robinson
+	? 	Comparison of daylighting results obtained under the Belgian 
+artificial sky and with several daylighting software, by Magali Bodart
+	? 	Some experiments with irradiation modelling using cumulative skies, 
+by Darren Robinson
+	? 	Using Radiance for Right-To-Light and Solar Access Studies, by 
+Andrew Marsh
+	? 	3D Lighting: Integrated software modelling and simulation package 
+using 3Dsolar and Rayfront with Radiance, by Andreas Lahme
+	? 	Modeling of radiative heat transfer applying procedure of Radiance, 
+by Konrad Domke
+	? 	Material measurment & modelling, by Peter Apian-Bennewitz
+	? 	Blender based Radiance GUI, by Francesco Anselmo
+	? 	iPPF: a Radiance based online tool for solar and daylight access 
+studies in urban areas, by Raphael Compagnon
+	? 	Rayfront Tutorial, taught by Georg Mischler & Andreas Lahme
+	? 	Radiance problem-solving session, moderated by Greg Ward
+	? 	The Radzilla project, by Carsten Bauer
+	? 	LEARNIX bootable live CD-ROM, by Axel Jacob
+
+	? 	Using a new RADIANCE-based tool to evaluate daylight glare in 
+office spaces, by Jan Wienold
+
+The names and titles above are not final, and we may get new speakers 
+and lose some people before we can provide a proper workshop agenda in 
+September.
+
+By August 31 2004, we will also need the final titles and abstracts for 
+all the talks, along with any materials the speakers wish to include on 
+the workshop CD-ROM. At minimum, we would like to get a copy of each 
+speaker's presentation in PowerPoint, PDF, or HTML (preferred) format, 
+and a short bio with contact information. If the speaker also has test 
+scenes, images, and/or software they would like to share, these would 
+be most welcome. We need to get all of these materials in order to have 
+sufficient time to assemble them into a usable CD-ROM, so we cannot 
+promise to include anything submitted after the August 31 deadline.
+
+We look forward to meeting you at the workshop!
+
+Greg Ward and Raphael Compagnon
+
+
+From cbauer- at t-online.de  Sat Aug 28 17:01:27 2004
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Sat Aug 28 15:53:04 2004
+Subject: [Radiance-general] radiance + openmosix = :)
+References: <200408272343.30549.pisuke@blueyonder.co.uk>
+Message-ID: <41309E47.5010801@t-online.de>
+
+Hi Francesco,
+
+I can partly confirm the observations from your parallel rendering 
+experiments. I didn't use openmosix so far, but some time ago I wrote a 
+parallel Radiance using the PVM-Library ('Parallel Virtual Machine').
+
+This PVM provides a collection of routines for interprocess 
+communication on different sorts of machines. Instead of using rpiece I 
+changed the Radiance code to produce a set of master and slave modules, 
+one for the distribution of the work, the others for doing the rendering 
+and  collecting the results to produce the final picture. By this, I 
+also could avoid the Linux lock manager problem for the ambient files, 
+as I shared ambient values among the processes with help of the PVM 
+routines.
+
+Although PVM offers to connect all sorts of machines and OS-es together, 
+it is of course advisable to use a symmetric cluster built from machines 
+with comparable speed. (BTW, by this you also can use the same data 
+format on all machines and don't need to codec data into a separate 
+exchange buffer).
+
+I started with 4 equal 400MHz processors, when I later added faster 
+machines, I quickly observed that, e.g  the two 1.2 GHz machines already 
+finished almost all the blocks of the divided image when the four old 
+ones hardly managed to trace one block each. So it really doesn't pay 
+off to add slow machines to your cluster.
+
+Additionally, the overhead from parallelization was considerable. I 
+didn't really care about benchmarking, but I remember to have had an 
+overhead of rougly about 20% (with my PVM version), meaning when using 
+e.g. 4 machines, rendering was not 4 times but only ~3.2 times faster.( 
+-nb: PVM does no migrating, at least not the version from several years 
+ago). Its important to make the blocks small, because you almost always 
+will end up with the following: all machines finished long time ago but 
+only one still working on it's last block :-)
+
+Another totally different problem I observed was that sometimes the 
+block boundaries have been visible, i.e. the image showed a checkered 
+pattern, different blocks appeared with different brightnesses. I came 
+so far to attribute this effect to the direct calculation, but haven't 
+completely found out where exactly the cause lies.
+
+Nevertheless that migrating of openmosix sounds interesting, if I find 
+the time I'd like to have a look at it..
+
+so long & see you in Fribourg
+
+-Carsten
+
+
+
+
+From pisuke at blueyonder.co.uk  Mon Aug 30 00:20:21 2004
+From: pisuke at blueyonder.co.uk (Francesco Anselmo)
+Date: Mon Aug 30 00:20:30 2004
+Subject: [Radiance-general] radiance + openmosix = :)
+In-Reply-To: <41309E47.5010801@t-online.de>
+References: <200408272343.30549.pisuke@blueyonder.co.uk>
+	<41309E47.5010801@t-online.de>
+Message-ID: <200408292320.21058.pisuke@blueyonder.co.uk>
+
+Hi Carsten,
+
+Using the PVM library should be quite difficult compared to
+using openmosix: I forgot to mention that probably the best
+advantage of openmosix is that in many cases there is no need to change
+the application source code.
+
+But openmosix doesn't work with heterogeneous clusters, being a
+linux based product ...
+
+Thank you for your feedback, and for the great job you've done
+on Radzilla: unfortunately I only had the time to read the 
+documentation, but I hope to start using it very soon ...
+
+See you soon.
+
+Francesco
+
+From rpg at rumblestrip.org  Tue Aug 31 15:40:43 2004
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Tue Aug 31 15:40:55 2004
+Subject: [Radiance-general] OT: Lighting Standards
+Message-ID: <5AF0F9E2-FB53-11D8-AB5D-000393824274@rumblestrip.org>
+
+Hi folks,
+
+I hope some of you could offer some insight to a non-Radiance question. 
+  We have an overseas client who is insisting on a (what we believe to 
+be) very high minimum illuminance level for an outdoor promenade.
+
+While we have the IES' recommendations to the contrary, I was wondering 
+if any of you could recommend a source for illuminance standards 
+abroad.  The project is in Lebanon, but I'm interested in any sources 
+here.  Thanks in advance.
+
+P.S.
+I see today is the 31st, so after today it will be official.  I will 
+miss the Radiance Workshop this year.  :-(
+
+=================
+    Rob Guglielmetti
+www.rumblestrip.org
+
+

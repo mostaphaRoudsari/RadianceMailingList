@@ -1,0 +1,3163 @@
+From radiance-general@radiance-online.org  Sun Jun  1 19:59:45 2003
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Sun, 1 Jun 2003 11:59:45 -0700
+Subject: [Radiance-general] Re: physically-based landscapes
+In-Reply-To: <3ED7B3BA.3000600@rumblestrip.org>
+Message-ID: <3604AEB4-9463-11D7-A817-000A956D40C8@lmi.net>
+
+Hi Rob,
+
+You can certainly exclude any geometry you like from the ambient 
+calculation using the -ae option.   Each -ae value adds a material to 
+exclude from ambient calculations.  Named materials will get the -av 
+value rather than incurring any new interreflection calculations.  This 
+means that the mountains will have a rather flat appearance, and the 
+shadows will be too dark if you don't choose a reasonable outdoor value 
+for -av, which in turn could be too bright for your interior.  (It's a 
+problem.)
+
+Another option is to capture (using HDR photography) or render the 
+scenery using a fisheye lens in a separate step, then apply the results 
+to the window as a luminance distribution using a fisheye perspective 
+mapping.  The Radiance ray/lib/fisheye.cal does a lookup on a 180 
+degree angular fisheye image (-vta -vh 180 -vv 180).  I recommend using 
+two pictures -- a high-resolution for the view out the window and a 
+low-resolution for the light distribution.  You can compute the low 
+from the high using pfilt with the -1 option:
+
+pfilt -1 -x 32 -y 32 -r 1 window_hires.pic > window_lores.pic
+
+The scene specification for a west-facing window might look like so:
+
+void colorpict window_pict_hires
+9 red green blue window_hires.pic fisheye.cal fish_u fish_v -rz 90
+0
+0
+
+window_pict_hires glow window_glow
+0
+0
+4 1 1 1 0
+
+void colorpict window_pict_lores
+9 red green blue window_lores.pic fisheye.cal fish_u fish_v -rz 90
+0
+0
+
+window_pict_lores illum window_illum
+1 window_glow
+0
+3 1 1 1
+
+window_illum polygon window
+0
+0
+12
+	window_with_inward_normal
+
+------
+I haven't tried this, so I can't say for sure if it will work.  I 
+started this e-mail before I saw Carsten's, but didn't get a chance to 
+finish it until today.
+
+-Greg
+
+> From: Rob Guglielmetti <rpg@rumblestrip.org>
+>
+> I have to create some renderings of a space, which offers panoramic 
+> views of a distant mountain range.  We're doing some glare studies, so 
+> the luminance of the mountain is important to me.
+>
+> I could model the mountains, but because they are so far from my model 
+> I'll get ambient leaks, right?  Is there some way to exclude the 
+> distant geometry from adding values to the ambient cache?  I'm 
+> interested in doing some daylight animations, so if I could do it with 
+> representative 3D geometry (vs. using a texture map) I'd be ever so 
+> happy.
+>
+> Failing that, is there a way to apply a picture of the mountains to a 
+> local object?  My concern there is that if I have a large object close 
+> to the window it will reflect more light into the space than what 
+> would actually happen, with the mountain a mile away.
+>
+> Any pointers appreciated.
+>
+> P.S.  If I had a lightmap of this site, could I use it to do an 
+> image-based rendering?  All the image-based renderings I've seen are 
+> of objects being directly illuminated by the lightmap.   But if I put 
+> a local ground plane and my building into the center of a lightmap, 
+> would the interreflection be computed, and the interior of the space 
+> be rendered properly?  Would it be "accurate"?
+
+
+From radiance-general@radiance-online.org  Mon Jun  2 12:38:07 2003
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Mon, 2 Jun 2003 07:38:07 -0400 (EDT)
+Subject: [Radiance-general] Radiance - Mac Performance
+In-Reply-To: <8C25EF2A-9250-11D7-B9F1-000393824274@rumblestrip.org>
+Message-ID: <Pine.BSF.4.44.0306020716530.62083-100000@emancholl.pair.com>
+
+Rob Guglielmetti wrote:
+
+> On Thursday, May 29, 2003, at 10:40 PM, Marcus Jacobs wrote:
+> > I am in the evaluation phase in my quest to purchase a new computer.
+> > From what I have been told, the Motorola G4 processor is far superior
+> > in scientific calculations as compared to x-86 based processors (i.e.
+> > Intel/AMD).
+>
+> I was told similar, on this list in fact.  But the thing is, while that
+> may be true in theory, the bang for the buck king of the hill is still
+> over at AMD.
+
+You always have to say what you're comparing to. What Apple
+compares in their PR is the CPU frequencies. Since the PowerPC
+is a true RISC CPU, it will process about twice as much data per
+cycle. This means that eg. an 800 Mhz Mac will roughly equal
+a 1600 Mhz PC running Linux (your mileage may vary with Windows).
+
+It does *not* mean that this power will come at an equal price.
+There's simply no way for Apple to compete with the mass produced
+parts in a PC here, even if they have switched to use some of
+those as well.
+
+
+>  so I loaded RHL on an old Pentium 450 we
+> had lying around.  The calc times on that were about the same as the
+> times on my PowerBook, which is a G4 550 with 512MB of RAM.  I was told
+> there was probably something wrong with my hardware (stop laughing at
+> the double-entendre),
+
+Given the similar frequency range, it is indeed very likely that
+something is wrong here.  Note that laptops (on both sides) use
+different types of CPUs and probably other components, which will
+slow down a lot of stuff, even when the system doesn't switch to
+sleep mode in between...  Just think of the hard disks for
+example, which rotate relatively slow to reduce noise and power
+consumption.
+
+
+>   The simple fact of the matter is that you can buy more
+> Radiance-photon-number-crunching-per-dollar/euro/drachma/sheckel-what-
+> have-you with homebuilt PCs than you can with Apple's hardware.
+
+Mass production and competition between various manufacturers
+do have a noticeable effect.
+
+
+> >  the GNU C compiler has a SSE2  optimization option.
+
+CPU specific optimizations may add another dimension to the
+equation. Compilers will try to do something into that direction,
+but to get the most bang for the buck, some small key routines
+would have to be rewritten in assembler. Imagine a vector-matrix
+multiplication finishing in less than ten cycles on an Altivec
+CPU, instead of the several dozen it currently takes, and the
+Mac comparison would look very different to what it does now.
+
+
+
+> >  I do believe there can be some performance gains achieved
+> > if it can be used in conjunction with a 64 bit Operating System.
+
+> SuSE already has a 64 bit version of Linux, and I for one am unclear on
+> what that means for us Radiance people.  I'd love to hear some insight
+> about what the 64-bit movement means in terms of performance for the
+> typical rpict process. =8-)
+
+Probably not much. The main advantage of a 64 bit system is the
+larger address range. There may be compiler options that allow you
+to load several values into the same registers together, but I
+wouldn't expect any wonders from that if the software isn't written
+with it in mind. And other (or maybe the same) compiler options will
+cause harm, if they change eg. the size of an int.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-general@radiance-online.org  Mon Jun  2 14:12:14 2003
+From: radiance-general@radiance-online.org (Rob Guglielmetti)
+Date: Mon, 2 Jun 2003 09:12:14 -0400
+Subject: [Radiance-general] physically-based landscapes
+In-Reply-To: <200305310945.34284.cbauer-@t-online.de>
+Message-ID: <D3C9ECEA-94FB-11D7-B9F1-000393824274@rumblestrip.org>
+
+On Saturday, May 31, 2003, at 05:45 AM, Carsten Bauer wrote:
+
+> Hi Rob,
+>
+> is there snow on the mountain top? Can you go skiing over there?
+
+Yes and no.  There is snow on the peak, but I cannot go skiing over 
+there, because if you strapped a pair of skis to my feet and pushed me 
+down a snow covered hill, I'd turn into a dangerous projectile for 
+about five seconds before crashing.  It's definitely not what I'd call 
+skiing.  =8-)
+
+> Excluding objects form the ambient calculation is done by setting the 
+> -ae
+> parameter to the objects material name (-ae mat_name or -aE
+> file_with_matnames). So excluding the mountains is no problem, the 
+> drawback
+> is, that Radiance determines the resolution of its ambient cache (-ar
+> setting) dependent on the scene bounding cube. So a HUUUGE bounding 
+> cube
+> results in values spaced so far apart that probably only one falls 
+> into your
+> room. (Unless you set up -ar extremely high, if everything outside is
+> excluded, this might even work ...)
+
+See my response to Greg about this one...
+
+> But why not tread an intermediate path: set up a 3D landscape model 
+> and render
+> some pictures with it from your viewing point.  They contain the exact
+> radiance values, so in a second step you can map them with colorpict 
+> to a
+> plane made of  glow with fourth param set to zero, and put this plane 
+> 100 or
+> 200 m apart from your scene. This will keep the blowing up of the scene
+> reasonable and still deliver correct results. Do some checking if the
+> settings are right, i.e compare the landsscape rendering with your fake
+> landscape rendering, one never knows ...)
+
+OK, so this is basically using Radiance to create a "lightmap", instead 
+of using HDR, yes?  I assume I could further increase the accuracy by 
+using your method described here, but then also using mkillum to create 
+illum sources out of the window panes?
+
+Am I making any sense at all??!!
+
+Rob Guglielmetti
+rpg@rumblestrip.org
+www.rumblestrip.org
+
+
+From radiance-general@radiance-online.org  Mon Jun  2 13:46:13 2003
+From: radiance-general@radiance-online.org (Rob Guglielmetti)
+Date: Mon, 2 Jun 2003 08:46:13 -0400
+Subject: [Radiance-general] Re: physically-based landscapes
+In-Reply-To: <3604AEB4-9463-11D7-A817-000A956D40C8@lmi.net>
+Message-ID: <3171FA4E-94F8-11D7-B9F1-000393824274@rumblestrip.org>
+
+On Sunday, June 1, 2003, at 02:59 PM, Greg Ward wrote:
+
+> Hi Rob,
+>
+> You can certainly exclude any geometry you like from the ambient 
+> calculation using the -ae option.   Each -ae value adds a material to 
+> exclude from ambient calculations.  Named materials will get the -av 
+> value rather than incurring any new interreflection calculations.  
+> This means that the mountains will have a rather flat appearance, and 
+> the shadows will be too dark if you don't choose a reasonable outdoor 
+> value for -av, which in turn could be too bright for your interior.  
+> (It's a problem.)
+
+I knew about the -ae trick.  I just thought that since the exterior 
+would still have values, that they could get used inside.  Now I 
+realize that the direct calculation is one thing, *computed* ambient 
+values are another, and the *approximated* ambient values (by way of 
+the -av parameter) are another, and they all are separate.  Only 
+computed ambient values live in the ambient cache, and only computed 
+ambient values can be re-used elsewhere.  Yet another concept that 
+seems obvious now, but didn't an hour ago.  OK, so the easy cheat is to 
+exclude all the exterior objects from the ambient calculation, and live 
+with dark shadows on the mountain.  But Carsten says that the -ar is 
+based on the scene bounding cube, so even if I exclude the exterior 
+values I need to crank it up, yes?
+
+> Another option is to capture (using HDR photography) or render the 
+> scenery using a fisheye lens in a separate step, then apply the 
+> results to the window as a luminance distribution using a fisheye 
+> perspective mapping.  The Radiance ray/lib/fisheye.cal does a lookup 
+> on a 180 degree angular fisheye image (-vta -vh 180 -vv 180).  I 
+> recommend using two pictures -- a high-resolution for the view out the 
+> window and a low-resolution for the light distribution.  You can 
+> compute the low from the high using pfilt with the -1 option:
+
+I just wanna make sure I understand this.  This is the correct way to 
+achieve what I asked at the end of my email, yes?  A method for using 
+HDR lightmaps to illuminate the scene and have a pleasant (and 
+photometrically accurate) view out the window?  This would be, in a 
+word, cool.
+
+As I have never used colorpict and have limited experience with illum, 
+I just wanna make sure I get this:
+1. I take a hemispherical HDR image of the site.
+2. Colorpict and the fisheye.cal file takes the highres picture, and 
+applies it to a plane, and is rotated into the proper orientation.  Can 
+you explain the fish_u fish_v parameters?
+3. An illum source is created from the low res version of the pic, 
+mapped to the same polygon?  Why do you use a low res image for the 
+illum?
+
+The illum's luminous distribution function is the result of applying 
+the lightmap to the window pane, just the same as if I were to use 
+gensky?  The colorpict is purely for the view out, it does not 
+contribute to the illuminance of the interior space?
+
+Seems like a lot of work, 'specially for this brain, but it could be 
+worth it.  In the short term, I think I need to try one of the other 
+tacks.
+
+Rob Guglielmetti
+rpg@rumblestrip.org
+www.rumblestrip.org
+
+
+From radiance-general@radiance-online.org  Mon Jun  2 14:37:37 2003
+From: radiance-general@radiance-online.org (Rob Guglielmetti)
+Date: Mon, 02 Jun 2003 09:37:37 -0400
+Subject: [Radiance-general] Radiance - Mac Performance
+References: <Pine.BSF.4.44.0306020716530.62083-100000@emancholl.pair.com>
+Message-ID: <3EDB5321.90209@rumblestrip.org>
+
+Georg Mischler wrote:
+> You always have to say what you're comparing to. What Apple
+> compares in their PR is the CPU frequencies. Since the PowerPC
+> is a true RISC CPU, it will process about twice as much data per
+> cycle. This means that eg. an 800 Mhz Mac will roughly equal
+> a 1600 Mhz PC running Linux (your mileage may vary with Windows).
+
+Well, that's exactly what just didn't add up in my (admittedly basic) 
+tests.  But Mark Stock's Radiance speed tests page 
+(http://mark.technolope.org/pages/rad_bench.html) says the same thing. 
+The "RISC two-for-one-special" doesn't seem to be present when comparing 
+Radiance render times rom Apple & PC.  Pillo did a bunch of tests on G3 
+and G4 laptops; not sure if there is a desktop Mac timing on there. 
+Greg, maybe you wanna load up the test model on your new Mac hot rod??
+
+> Given the similar frequency range, it is indeed very likely that
+> something is wrong here.  Note that laptops (on both sides) use
+> different types of CPUs and probably other components, which will
+> slow down a lot of stuff, even when the system doesn't switch to
+> sleep mode in between...  Just think of the hard disks for
+> example, which rotate relatively slow to reduce noise and power
+> consumption.
+
+Yes, but my tests were done on small models that went straight into RAM 
+and stayed there.  I turned off all power save functions as well, as I 
+suspected that might have been the problem.  Perhaps there's still 
+something off.  Dunno.
+
+> Probably not much. The main advantage of a 64 bit system is the
+> larger address range. There may be compiler options that allow you
+> to load several values into the same registers together, but I
+> wouldn't expect any wonders from that if the software isn't written
+> with it in mind. And other (or maybe the same) compiler options will
+> cause harm, if they change eg. the size of an int.
+
+Thanks for this info...
+
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+
+From radiance-general@radiance-online.org  Tue Jun  3 09:43:29 2003
+From: radiance-general@radiance-online.org (Terrance Mc Minn)
+Date: Tue, 3 Jun 2003 16:43:29 +0800
+Subject: [Radiance-general] Radiance on bootable CDROM using Linux
+Message-ID: <A2B098B4E624D511BED900508BB92A5705E5844A@exmsb02.curtin.edu.au>
+
+Hello All,
+
+Version 2.02 of my CDROM image for this "Hard Drive-less Radiance for PC"
+has now been uploaded. See
+http://puffin2.curtin.edu.au/restricted/mcminn/radiance-cdrom.shtml. This
+version is still pegged at Radiance version 3.4.1
+
+Status of V2.02:
+  Upgrade to XFree86 version 4.2 - provides access to a host of new graphic
+cards
+  Recompile kernel without USB debug messages enabled - better access to
+solid state USB memory devices
+  Upgrade to discover 1.5 for hardware discovery
+  Compile in the 3ds2mgf file converters
+
+Future:
+  Upgrade to Radiance 3.5
+
+Please email any comments. 
+
+Regards
+
+Terry Mc Minn
+Faculty of Built Environment, Art and Design
+Curtin University of Technology
+GPO Box U 1987
+Perth 6845
+Western Australia
+Email: T.Mcminn@curtin.edu.au
+CRICOS Provider Code: 00301J
+
+From radiance-general@radiance-online.org  Tue Jun  3 16:17:09 2003
+From: radiance-general@radiance-online.org (Digital Architectural Illustration Services)
+Date: Tue, 3 Jun 2003 16:17:09 +0100
+Subject: [Radiance-general] Re: physically-based landscapes
+Message-ID: <000301c329e5$355ddfa0$6c6c8751@register>
+
+Dear Radiance users
+
+Continuing the discussion on the use of global illumination, I'd like to
+contribute three points to the discussion.
+
+1)  Orientation of the HDRI background image on the global environment cube.
+
+2)  Lighting ratios for correct exposure when using other light sources in
+conjunction with a global illumination background.
+
+3) Excluding materials and geometry with -ae argument in relation to -ar
+argument and determination of scene bounding cube values.
+
+-----------------------------------------------------------------------
+
+1)  When I was first experimenting with a global illumination background,
+the background was rendering rotated through 90 degrees.  This issue was
+mentioned by another user on this thread.  I corrected this problem by
+simply transposing two values in the CAL file angmap.cal.  Different CAD
+software sometimes re-orient the CAD model through 90 degrees, so
+experimentation may be necessary.  Here is the first
+version by Paul E. Debevec :
+
+####################################
+
+{
+angmap.cal
+
+Convert from directions in the world to coordinates on the angular sphere
+image
+
+-z is forward (outer edge of sphere)
++z is backward (center of sphere)
++y is up (toward top of sphere)
+}
+
+sb_u = 0.5 + DDx * r;
+sb_v = 0.5 + DDy * r;
+
+r = 0.159154943*acos(DDz)/sqrt(DDx*DDx + DDy*DDy);
+
+DDy = Py*norm;
+DDx = Px*norm;
+DDz = Pz*norm;
+
+norm = 1/sqrt(Py*Py + Px*Px + Pz*Pz);
+
+####################################
+
+Here is the corrected file for use with a cube with inward facing normals
+created in CAD software:
+
+####################################
+
+{
+angmap2.cal
+
+Convert from directions in the world to coordinates on the angular sphere
+image
+
+-z is forward (outer edge of sphere)
++z is backward (center of sphere)
++y is up (toward top of sphere)
+
+DDy and DDz were transposed for correct alignment.
+}
+
+sb_u = 0.5 + DDx * r;
+sb_v = 0.5 + DDy * r;
+
+r = 0.159154943*acos(DDz)/sqrt(DDx*DDx + DDy*DDy);
+
+DDz = Py*norm;
+DDx = Px*norm;
+DDy = Pz*norm;
+
+norm = 1/sqrt(Py*Py + Px*Px + Pz*Pz);
+
+####################################
+
+-----------------------------------------------------------------------
+
+2)  When using other light sources in conjunction with a global illumination
+background, it is necessary to consider the lighting ratios between
+different light sources and the global illumination background.  Radiance is
+so similar to real world lighting that a Radiance user should try and think
+like a photographer balancing lighting ratios on a set, for example.
+
+When I first experimented with global illumination backgrounds, I found
+that the HDRI image on the global environment cube was
+emitting light several thousand times more intense than spotlights in the
+scene, so when PFILT exposed for the background, illumination from the
+spotlights disappeared.  Either the spotlight intensity could be increased
+to an appropriate ratio, or in my case, I re-exposed the HDRI background
+with PFILT, reducing its intensity by several thousand times before using
+it as a global illumination background.  Experimentation is often necessary.
+
+-----------------------------------------------------------------------
+
+3)  Please can the issue be clarified concerning excluding materials and
+geometry with -ae argument in relation to -ar argument, ambient resolution
+and determination of scene bounding cube values.
+
+For example, if a small object is surrounded by a huge cube being used as
+the global illumination background, it would be desirable for the ambient
+resolution to be concerned only with the small object, otherwise a huge -ar
+value would be required, adversely influencing rendering time.  If the -ae
+argument is used to exclude a material and thus the associated geometry
+(preferably of the global illumination cube), does the ambient resolution
+determined by -ar now only consider the small object and divide the ambient
+resolution across this small object, or does it still look at the bounding
+cube for the whole scene, including the global illumination cube?
+
+-----------------------------------------------------------------------
+
+Users interested in viewing a high quality render using global illumination
+may be interested in viewing a current project (under construction) at the
+following Internet address:
+
+www.daiservices.btinternet.co.uk/Virtual_Sculpture/Virtual_Sculpture.htm
+
+
+John Graham
+DAI Services
+
+
+
+
+
+From radiance-general@radiance-online.org  Tue Jun  3 17:45:20 2003
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Tue, 3 Jun 2003 09:45:20 -0700
+Subject: [Radiance-general] Re: physically-based landscapes
+In-Reply-To: <3171FA4E-94F8-11D7-B9F1-000393824274@rumblestrip.org>
+Message-ID: <C3B0CB9B-95E2-11D7-8C3D-00306540F848@lmi.net>
+
+> From: Rob Guglielmetti <rpg@rumblestrip.org>
+>
+> I knew about the -ae trick.  I just thought that since the exterior 
+> would still have values, that they could get used inside.  Now I 
+> realize that the direct calculation is one thing, *computed* ambient 
+> values are another, and the *approximated* ambient values (by way of 
+> the -av parameter) are another, and they all are separate.  Only 
+> computed ambient values live in the ambient cache, and only computed 
+> ambient values can be re-used elsewhere.  Yet another concept that 
+> seems obvious now, but didn't an hour ago.  OK, so the easy cheat is 
+> to exclude all the exterior objects from the ambient calculation, and 
+> live with dark shadows on the mountain.  But Carsten says that the -ar 
+> is based on the scene bounding cube, so even if I exclude the exterior 
+> values I need to crank it up, yes?
+
+Yes, though you could set -ar 0 and you might get around this problem.  
+The disadvantage is that the calculation can go a bit nuts in the 
+little corners, but it's only a problem on high-resolution renderings.  
+Rtrace shouldn't be much affected.
+
+> I just wanna make sure I understand this.  This is the correct way to 
+> achieve what I asked at the end of my email, yes?  A method for using 
+> HDR lightmaps to illuminate the scene and have a pleasant (and 
+> photometrically accurate) view out the window?  This would be, in a 
+> word, cool.
+>
+> As I have never used colorpict and have limited experience with illum, 
+> I just wanna make sure I get this:
+> 1. I take a hemispherical HDR image of the site.
+> 2. Colorpict and the fisheye.cal file takes the highres picture, and 
+> applies it to a plane, and is rotated into the proper orientation.  
+> Can you explain the fish_u fish_v parameters?
+
+The fish_u and fish_v parameters are computed lookups into the image 
+that convert angles looking out the window into pixel positions.  See 
+Chapter 4 in RwR for details.
+
+> 3. An illum source is created from the low res version of the pic, 
+> mapped to the same polygon?  Why do you use a low res image for the 
+> illum?
+
+You could use mkillum to compute the distribution, but the effect would 
+be to reduce the resolution of the original image, which can be done 
+much faster with pfilt.
+
+> The illum's luminous distribution function is the result of applying 
+> the lightmap to the window pane, just the same as if I were to use 
+> gensky?  The colorpict is purely for the view out, it does not 
+> contribute to the illuminance of the interior space?
+
+No, it's the same as if you used mkillum.  The only difference is that 
+rpict -vta -vh 180 -vv 180 computes the window's light distribution 
+from a single viewpoint, where mkillum would average it over the entire 
+window.  If your window is small relative to the closest geometry, the 
+difference is vanishingly small.
+
+> Seems like a lot of work, 'specially for this brain, but it could be 
+> worth it.  In the short term, I think I need to try one of the other 
+> tacks.
+
+It's actually not that difficult -- try it.
+
+-Greg
+
+
+From radiance-general@radiance-online.org  Tue Jun  3 19:12:05 2003
+From: radiance-general@radiance-online.org (Santiago Torres)
+Date: Wed, 4 Jun 2003 03:12:05 +0900
+Subject: [Radiance-general] Re: physically-based landscapes
+In-Reply-To: <20030603100002.7306.97838.Mailman@darkside-animation.com>
+Message-ID: <ABEIIOCILNBBDDEPEPICEEGLCAAA.tiago@tkh.att.ne.jp>
+
+Dear all,
+
+I am very interested in this topic, but I`m not sure if I understood
+correctly, I must admit I`m still starting to understand Radiance.
+
+Basically, as I understand, Carsten`s and Greg`s methods differ in that the
+first maps the image in a plane situated outside the window and the second
+(through an 'ad hoc' function) directly on the window plane. My question is
+this:
+
+- If one maps the image in a plane outside the window there will be some
+paralax error (though minimum) which can be reduced with distance
+- And if the plane is on the window this should be noticeable
+- Or does it work like mkillum? would sun patches appear inside the room?
+- Or else: is there any way to map a HDR image in a source, something in the
+way skies are generated (maybe replacing the skyfunc?) and then use it as
+any other sky and/or ground? Somehow, for me this seems to be the most
+natural solution.
+
+I hope all this makes any sense. Thank you for your help. Best,
+
+Santiago.
+
+
+
+From radiance-general@radiance-online.org  Tue Jun  3 20:52:57 2003
+From: radiance-general@radiance-online.org (John An)
+Date: Tue, 3 Jun 2003 15:52:57 -0400
+Subject: [Radiance-general] Re: direct/indirect photometric
+In-Reply-To: <20030528100002.20009.38454.Mailman@darkside-animation.com>
+Message-ID: <F9676BE6-95FC-11D7-8A64-000A95871DF2@mac.com>
+
+>
+> Date: Tue, 27 May 2003 09:43:33 -0700 (PDT)
+> From: Charles Ehrlich <ckehrlich@yahoo.com>
+>
+>
+> Greg and John An, Unless the new version of Radiance is significantly 
+> different that when I wrote chapter 5, I do not think that you need to 
+> change A1 if you follow the method described in the book.  The method 
+> was specifically designed to address linear sources.  It is also the 
+> method employed in the luminaire editor in Desktop Radiance. Is it 
+> still true that the "lboxcorr" function automatically corrects for the 
+> surface area of the emitter?  If not, then we have a major re-write on 
+> our hands for the new edition. -Chas
+>
+
+Chas and Greg,
+
+Thanks for the info.  I was away on a short vacation, and just got 
+back.  I'm still more than a bit confused about accurately modeling 
+direct/indirect luminaires.  Could you tell me if I have this right?
+
+Background info:
+My space is modeled in inches.
+
+The photometric file is in feet (as reported by ies_read):
+
+Luminaire Dimensions
+--------------------
+Measurement units =       Feet
+Width =                   0.46
+Length =                  4.00
+Height =                  0.00
+
+
+Question 1:  I have noticed that the height for all of the 
+direct/indirect luminaires is 0.  How is that physically possible?  
+More importantly, how would a dimension of 0 ever "enclose" the 
+geometry of the luminaire?
+
+Question 2:  The actual luminaire dimensions are larger than the 
+dimensions given by ies_read.  For instance, the length of the 
+luminaire is listed in the cut sheet as being 53-5/8".  Which dimension 
+do I use to create the illum "enclosure?"
+
+
+I used the command:
+ies2rad -di -t white -i .56419 -o light2 d21998.ies
+
+and the resulting light2.rad file reads:
+
+# ies2rad -di -t white -i .56419 -o light2
+# Dimensions in inches
+#<IESNA:LM-63-1995
+#<[TEST] 21998
+#<[DATE] 05/31/2001
+#<[LUMCAT] AGDMWU232-F3-120-1/2-EB
+#<[LUMINAIRE] DAY-BRITE ADAGIO DIRECT/INDIRECT W/33-CELL SPECULAR LOUVER
+#<[LAMP] F32T8
+#<[BALLAST] ADVANCE REL-2P32-SC
+#<[MANUFAC] DayBrite-Capri-Omega(Genlyte Thomas Group)
+#<[_TIFF_FILE_NAME] AGD2
+#<[_VERSION] fo2ies 2.01
+#<Reflection factor 0.92, Test distance = 26 ft.
+# 60 watt luminaire, lamp*ballast factor = 0.88
+
+void brightdata light2_dist
+5 corr light2.dat source.cal src_phi4 src_theta
+0
+1 1364
+
+light2_dist illum light2_light
+0
+0
+3 1 1 1
+
+light2_light sphere light2.s
+0
+0
+4 0 0 0 0.56419
+
+____
+
+I edit this file to use lboxcorr.  I convert inches to meters (multiply 
+inches by .0254).
+...
+void brightdata light2_dist
+5 lboxcorr light2.dat source.cal src_phi4 src_theta
+0
+4 .815 1.363 .305 .0921
+...
+Question 3:  Because I used the -di option in the ies2rad command, I 
+thought that converting inches to meters was the way to go.  Should I 
+be converting feet to meters?
+____
+
+
+Question 4:  When I replace the illum sphere with a box, should I be 
+using the units of my model (inches) or sticking with meters?  In other 
+words, should I be using:
+
+!genbox light2_light light2.s 1.363 .305 .0921 \
+	| xform -t -.6815 -.1525 -.04605
+
+or
+
+!genbox light2_light light2.s 53.625 12 3.625 \
+	| xform -t -26.8125 -6 -1.8125
+
+I have tried both, and when I used meters, my image is black.  When I 
+use inches, I get a reasonable image of my space.
+
+Question 5:  Can the dimensions of the illum geometry be slightly 
+different than the dimensions defined for the lboxcorr function?  The 
+rounding required in converting back and forth between units would 
+inevitably result in some differences.
+
+
+
+
+Thanks again.
+
+
+John
+
+
+From radiance-general@radiance-online.org  Tue Jun  3 21:05:38 2003
+From: radiance-general@radiance-online.org (Charles Ehrlich)
+Date: Tue, 3 Jun 2003 13:05:38 -0700 (PDT)
+Subject: [Radiance-general] ambient value and ambient cache interaction
+In-Reply-To: <20030603100002.7306.97838.Mailman@darkside-animation.com>
+Message-ID: <20030603200538.70667.qmail@web80303.mail.yahoo.com>
+
+--0-1000010107-1054670738=:70122
+Content-Type: text/plain; charset=us-ascii
+
+I just wanted to respond to this statement...
+
+> Only computed ambient values live in the ambient cache, ...
+ 
+This is somewhat true, but misses an important point.  
+ 
+You can think about the -av ambient value as an estimated value for all of the ambient light in your scene that the ambient interreflection calculation can not "find."  It is applied to the "last bounce" of light during the ambient interreflection calculation.  The more -ab ambient bounces you have, the smaller its effect on the final value.  This is because the -av value is multiplied by the surface reflectance of each intervening surface beteen the "eye" and the "last bounce."  (If av=1.0, surface reflectance =0.5 and -ab 4, then effective  av=1.0*0.5*0.5*0.5*0.5=0.0625)
+ 
+This has the effect of "seeding" the ambient value cache with the -av ambient value.  If the estimate of the ambient value is way off, then it will affect the ambient values stored in the cache.
+ 
+-Chas
+
+--0-1000010107-1054670738=:70122
+Content-Type: text/html; charset=us-ascii
+
+<DIV>I just wanted to respond to this statement...<BR><BR>&gt; Only computed ambient values live in the ambient cache, ...</DIV>
+<DIV>&nbsp;</DIV>
+<DIV>This is somewhat true, but misses an important point.&nbsp; </DIV>
+<DIV>&nbsp;</DIV>
+<DIV>You can think about the -av ambient value as&nbsp;an estimated&nbsp;value for all&nbsp;of the ambient light in your&nbsp;scene that the ambient interreflection calculation can not "find."&nbsp; It is&nbsp;applied to the "last bounce" of light during the ambient interreflection calculation.&nbsp; The more -ab ambient bounces you have, the smaller its effect on the final value.&nbsp; This is because the -av value is multiplied by the surface reflectance of each intervening surface beteen the "eye" and the "last bounce."&nbsp; (If av=1.0, surface reflectance =0.5 and -ab 4, then&nbsp;effective &nbsp;av=1.0*0.5*0.5*0.5*0.5=0.0625)</DIV>
+<DIV>&nbsp;</DIV>
+<DIV>This has the effect of "seeding" the ambient value cache with the -av ambient value.&nbsp; If the estimate of the ambient value is way off, then it will affect the ambient values&nbsp;stored in the&nbsp;cache.</DIV>
+<DIV>&nbsp;</DIV>
+<DIV>-Chas</DIV>
+--0-1000010107-1054670738=:70122--
+
+From radiance-general@radiance-online.org  Tue Jun  3 21:24:40 2003
+From: radiance-general@radiance-online.org (Rob Guglielmetti)
+Date: Tue, 03 Jun 2003 16:24:40 -0400
+Subject: [Radiance-general] ambient value and ambient cache interaction
+References: <20030603200538.70667.qmail@web80303.mail.yahoo.com>
+Message-ID: <3EDD0408.9090603@rumblestrip.org>
+
+Hi Chas,
+
+Charles Ehrlich wrote:
+> I just wanted to respond to this statement...
+
+Thank you for adding to the fun...
+
+>  > Only computed ambient values live in the ambient cache, ...
+>  
+> This is somewhat true, but misses an important point. 
+>  
+> You can think about the -av ambient value as an estimated value for 
+> all of the ambient light in your scene that the ambient interreflection 
+> calculation can not "find."  It is applied to the "last bounce" of light 
+> during the ambient interreflection calculation.  The more -ab ambient 
+> bounces you have, the smaller its effect on the final value.  This is 
+> because the -av value is multiplied by the surface reflectance of each 
+> intervening surface beteen the "eye" and the "last bounce."  (If av=1.0, 
+> surface reflectance =0.5 and -ab 4, then effective 
+>  av=1.0*0.5*0.5*0.5*0.5=0.0625)
+>  
+> This has the effect of "seeding" the ambient value cache with the -av 
+> ambient value.  If the estimate of the ambient value is way off, then it 
+> will affect the ambient values stored in the cache.
+
+Thanks for the insight.  Now, if one made a grave error in the -av 
+setting, the erroneous "seeding" would still be kept to a minimum if one 
+still used lots of ambient bounces, since each bounce is another 
+facoring down of the -av, yes?
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+
+From radiance-general@radiance-online.org  Tue Jun  3 21:26:46 2003
+From: radiance-general@radiance-online.org (Charles Ehrlich)
+Date: Tue, 3 Jun 2003 13:26:46 -0700 (PDT)
+Subject: [Radiance-general] Lightswitch Wizard
+Message-ID: <20030603202646.9839.qmail@web80309.mail.yahoo.com>
+
+--0-1138727555-1054672006=:9399
+Content-Type: text/plain; charset=us-ascii
+
+Below is an announcement of an innovative online tool that uses Radiance.
+ 
+-Chas
+============
+ 
+>>> "Reinhart, Christoph" <Christoph.Reinhart@nrc-cnrc.gc.ca> 06/03/03 10:59AM >>>
+ My apologies for any cross postings. 
+ Dear colleagues,
+
+The National Research Council Canada and Natural Resources Canada have released an online RADIANCE-based daylighting analysis tool called the Lightswitch Wizard www.buildwiz.com. 
+
+The tool has been developed to support daylighting-related design decisions in commercial buildings during an early design stage. It offers a comparative, reliable, and fast analysis of the amount of daylight available in peripheral private offices as well as the lighting energy performance of automated lighting controls (occupancy sensors, photocells) compared to standard on/off switches. Blinds are either manually or automatically controlled. 
+
+Simulation results are based on pre-calculated RADIANCE simulations which are coupled with an empirical model that mimics manual lighting and blind control in single offices. Further information is provided in the online technical background, and glossary sections.
+
+A simulation should take between 20 seconds and 3 minutes to run, assuming moderate traffic on the server and a fast internet connection. 
+
+Your comments/suggestions are appreciated. Greetings from Ottawa,
+
+Christoph 
+
+Christoph "Tito" Reinhart, Ph.D.              tel: (613) 993-9703 
+Research Officer                                      fax: (613) 954-3733 
+Institute for Research in Construction      e-mail: christoph.reinhart@nrc-cnrc.gc.ca 
+National Research Council Canada        1200 Montreal Road M-24, Ottawa 
+Ontario K1A 0R6 Canada 
+Daylighting Analysis Software: 
+The Lightswitch Wizard (initial design)   www.buildwiz.com 
+DAYSIM (expert software)                       http://irc.nrc-cnrc.gc.ca/ie/light/daysim.html 
+
+
+--0-1138727555-1054672006=:9399
+Content-Type: text/html; charset=us-ascii
+
+<DIV>Below is an announcement of&nbsp;an innovative online tool that&nbsp;uses&nbsp;Radiance.</DIV>
+<DIV>&nbsp;</DIV>
+<DIV>-Chas</DIV>
+<DIV>============</DIV>
+<DIV>&nbsp;</DIV>
+<DIV>&gt;&gt;&gt; "Reinhart, Christoph" &lt;Christoph.Reinhart@nrc-cnrc.gc.ca&gt; 06/03/03 10:59AM &gt;&gt;&gt;<BR>
+<DIV><FONT face=Arial size=2><FONT face="Times New Roman" size=3>&nbsp;</FONT><SPAN style="FONT-FAMILY: Arial">My apologies for any cross postings.<?xml:namespace prefix = o ns = "urn:schemas-microsoft-com:office:office" /><o:p></o:p></SPAN> 
+<P class=MsoNormal style="TEXT-ALIGN: justify"><SPAN style="FONT-FAMILY: Arial">&nbsp;</SPAN><SPAN style="FONT-FAMILY: Arial">Dear colleagues,</SPAN></P>
+<P class=MsoNormal style="TEXT-ALIGN: justify"><SPAN style="FONT-FAMILY: Arial"></SPAN><SPAN style="FONT-FAMILY: Arial">The National Research Council Canada and Natural Resources Canada have released an online RADIANCE-based daylighting analysis tool called the <I>Lightswitch Wizard </I><A href="http://www.buildwiz.com/">www.buildwiz.com</A>. </SPAN></P>
+<P class=MsoNormal style="TEXT-ALIGN: justify"><SPAN style="FONT-FAMILY: Arial"></SPAN><SPAN style="FONT-FAMILY: Arial">The tool has been developed to support daylighting-related design decisions in commercial buildings during an early design stage. It offers a comparative, reliable, and fast analysis of the amount of daylight available in peripheral private offices as well as the lighting energy performance of automated lighting controls (occupancy sensors, photocells) compared to standard on/off switches. Blinds are either manually or automatically controlled. </SPAN></P>
+<P class=MsoNormal style="TEXT-ALIGN: justify"><SPAN style="FONT-FAMILY: Arial"></SPAN><SPAN style="FONT-SIZE: 9pt; FONT-FAMILY: Arial">S</SPAN><SPAN style="FONT-FAMILY: Arial">imulation results are based on pre-calculated RADIANCE simulations which are coupled with an empirical model that mimics manual lighting and blind control in single offices. Further information is provided in the online technical background, and glossary sections.</SPAN></P>
+<P class=MsoNormal style="TEXT-ALIGN: justify"><SPAN style="FONT-FAMILY: Arial"></SPAN><SPAN style="FONT-FAMILY: Arial">A simulation should take between 20 seconds and 3 minutes to run<SPAN class=092521817-03062003>,</SPAN> assuming moderate traffic on the server and a fast internet connection. </SPAN></P>
+<P class=MsoNormal style="TEXT-ALIGN: justify"><SPAN style="FONT-FAMILY: Arial"></SPAN><SPAN style="FONT-FAMILY: Arial">Your comments/suggestions are appreciated. Greetings from Ottawa,</SPAN></P>
+<P class=MsoNormal style="TEXT-ALIGN: justify"><SPAN style="FONT-FAMILY: Arial"></SPAN><SPAN style="FONT-FAMILY: Arial">Christoph </SPAN></P></FONT></DIV><FONT face=Arial><FONT size=-2>Christoph "Tito" Reinhart, Ph.D.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tel: (613) 993-9703</FONT></FONT> <BR><FONT face=Arial><FONT size=-2>Research Officer&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fax: (613) 954-3733</FONT></FONT> <BR><FONT face=Arial><FONT size=-2>Institute for Research in Construction&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e-mail: christoph.reinhart@nrc-cnrc.gc.ca</FONT></FONT> <BR><FONT face=Arial><FONT size=-2>National Research Council Canada&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1200 Montreal Road M-24, Ottawa</FONT></FONT> <BR><FONT face=Arial><FONT size=-2>Ontario K1A 0R6 Canada</FONT></FONT> 
+<P><U><FONT face=Arial><FONT size=-2>Daylighting Analysis Software:</FONT></FONT></U> <BR><FONT face=Arial><FONT size=-2>The Lightswitch Wizard (initial design)&nbsp;&nbsp; <U><FONT color=#000000><A href="http://www.buildwiz.com/lightswitch/index.cfm">www.buildwiz.com</A></FONT></U></FONT></FONT> <BR><FONT face=Arial><FONT size=-2>DAYSIM (expert software)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <U><FONT color=#000000><A href="http://irc.nrc-cnrc.gc.ca/ie/light/daysim.html">http://irc.nrc-cnrc.gc.ca/ie/light/daysim.html</A></FONT></U></FONT></FONT> </P></DIV>
+--0-1138727555-1054672006=:9399--
+
+From radiance-general@radiance-online.org  Tue Jun  3 21:34:07 2003
+From: radiance-general@radiance-online.org (Charles Ehrlich)
+Date: Tue, 3 Jun 2003 13:34:07 -0700 (PDT)
+Subject: [Radiance-general] RWR Edits to Chapter 5?
+Message-ID: <20030603203407.10685.qmail@web80304.mail.yahoo.com>
+
+--0-893309006-1054672447=:8402
+Content-Type: text/plain; charset=us-ascii
+
+I will be finishing my final editorial corrections to Chapter 5 of "Rendering With Radiance."  If anyone has found minor typos or simple corrections to the text, I would greatly appreciate hearing from you before the book goes out to be re-published.  Please put "RWR" in the subject line.
+ 
+Thanks in advance,
+ 
+-Chas
+ckehrlich@yahoo.com
+
+--0-893309006-1054672447=:8402
+Content-Type: text/html; charset=us-ascii
+
+<DIV>I will be finishing my final editorial corrections to Chapter 5 of "Rendering With Radiance."&nbsp; If anyone has found minor typos or simple corrections to the text, I would greatly appreciate hearing from you before the book goes out to be re-published.&nbsp; Please put "RWR" in the subject line.</DIV>
+<DIV>&nbsp;</DIV>
+<DIV>Thanks in advance,</DIV>
+<DIV>&nbsp;</DIV>
+<DIV>-Chas</DIV>
+<DIV><A href="mailto:ckehrlich@yahoo.com">ckehrlich@yahoo.com</A></DIV>
+--0-893309006-1054672447=:8402--
+
+From radiance-general@radiance-online.org  Tue Jun  3 22:24:29 2003
+From: radiance-general@radiance-online.org (Peter Apian-Bennewitz)
+Date: Tue, 03 Jun 2003 23:24:29 +0200
+Subject: [Radiance-general] Re: physically-based landscapes
+In-Reply-To: <ABEIIOCILNBBDDEPEPICEEGLCAAA.tiago@tkh.att.ne.jp>
+References: <ABEIIOCILNBBDDEPEPICEEGLCAAA.tiago@tkh.att.ne.jp>
+Message-ID: <3EDD120D.5050008@pab-opto.de>
+
+Santiago Torres wrote:
+
+>...
+>
+>Basically, as I understand, Carsten`s and Greg`s methods differ in that the
+>first maps the image in a plane situated outside the window and the second
+>(through an 'ad hoc' function) directly on the window plane. My question is
+>this:
+>
+>- If one maps the image in a plane outside the window there will be some
+>paralax error (though minimum) which can be reduced with distance
+>  
+>
+>- And if the plane is on the window this should be noticeable
+>- Or does it work like mkillum? would sun patches appear inside the room?
+>- Or else: is there any way to map a HDR image in a source, something in the
+>way skies are generated (maybe replacing the skyfunc?) and then use it as
+>any other sky and/or ground? Somehow, for me this seems to be the most
+>natural solution.
+>
+Mapping to a source works like mapping to a polygon, except that the
+image u,v coordinates in the cal file depend on the view direction
+vector Dx,Dy,Dz rather than on position coordinates Px,Py,Pz . The
+formular depends on the type of lense used to take the image, either
+fisheye (similar to an -vta image) or perspective wideangle.
+With mapping to source, parallax error increases with nearby objects.
+Specially when moving inside a room the outside looks a bit 'frozen' if
+modelled as a source mapped image only. See
+http://www.pab-opto.de/pers/animation/film2.html for an example of
+source mapping and animation made in 1994.
+Theoretical extra note: Imaging an image mapped to the window polygon
+with u,v coordinates depending on position _/and_/ view direction. The
+result would be indistinguishable from a 'real' view towards the
+outside. Eh voila - that would be a 'lightfield' as used as core idea in
+Greg's rholo.
+In pratice,for architectural simulation of one building, map the far
+surroundings (sky-line, etc) to the source, model the nearby buildings
+as 'bricks' and map photos onto their faces. There's an 1999 example of
+this at http://www.ise.fhg.de/alt-aber-aktiv/radiance/animation/ ,
+though we had not pushed the idea as far as I would had liked, then.
+
+>I hope all this makes any sense. 
+>
+it does. :-)
+
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+From radiance-general@radiance-online.org  Tue Jun  3 23:47:52 2003
+From: radiance-general@radiance-online.org (Carsten Bauer)
+Date: Tue, 3 Jun 2003 22:47:52 +0000
+Subject: [Radiance-general] Re: physically-based landscapes
+In-Reply-To: <ABEIIOCILNBBDDEPEPICEEGLCAAA.tiago@tkh.att.ne.jp>
+References: <ABEIIOCILNBBDDEPEPICEEGLCAAA.tiago@tkh.att.ne.jp>
+Message-ID: <200306032247.52512.cbauer-@t-online.de>
+
+Hi all,
+
+some more thoughts from my side ... I have the assumption that this is one of 
+those problems where one can easily miss something in the argumentation.
+
+1) where to put the HDR image:
+
+At the moment I'm a bit puzzled, too. If one maps an HDR image representing a 
+view of an outside landsacpe onto a window pane, - isn't this only exact for 
+this special point of view? Other rays from somewhere else in the room 
+hitting the illum made out of the image , won't they get assigned a wrong 
+value? (Just read Peter's mail, which in fact gives an answer to this...)
+
+At least this is the thinking behind the idea of mapping the landscape view to 
+- example -  a 100 m radius sphere like a dome over a 10x10x10m scene, thus 
+making parallax errors reasonably small, by keeping the blowing up of the 
+scene reasonable, too.. (Perhaps not as small as I think, I have to look at 
+Peter's examples..) The drawback of this method is, that such a large source 
+cannot be treated with the direct calc. anymore (illum/light) but must be 
+used as glow with 4. param zero and thus considered wtihin the ambient 
+calculation, affording in turn sufficiently high ambient parameters for a 
+trustworthy rendering. If you use the source type for the dome like Santiago 
+pointed out, you can add a separate sun like it is done with the usual gensky 
+procedure. 
+(Never did this so far, I have to admit ...)
+
+2) -ae / -ar
+
+As far as I know, -ae and -ar are independent parameters. Ambient cache 
+resolution specification with -ar always is relative to the whole scene 
+bounding cube, no matter what sort of objects are actually present. But there 
+might be another way out: imagine a small indoor scene with an adequare -ar 
+setting resulting in values spaced, say, half a meter apart. If you add a 
+several km wide outdoor bounding cube to it, you have to raise -ar 
+respectively. Normally this would result in an exploding memory requirement 
+for the ambient cache, but if everything in the outdoor part of the scene is 
+excluded with -ae, only values in the indoor part will be calculated. By this 
+you can have the same high absolute resolution within the indoor part like 
+before, and the high -ar setting shouldn't effect calculation time/memory 
+requremant at all.
+(Never tried this, either, but it sounds as if it could work...)
+
+-Carsten 
+
+
+From radiance-general@radiance-online.org  Tue Jun  3 23:08:27 2003
+From: radiance-general@radiance-online.org (Rob Guglielmetti)
+Date: Tue, 03 Jun 2003 18:08:27 -0400
+Subject: [Radiance-general] [Fwd: Re: physically-based landscapes]
+Message-ID: <3EDD1C5B.6050602@rumblestrip.org>
+
+This went to Greg, but should have gone to the list.  More thoughts on 
+this topic...
+
+-------- Original Message --------
+Subject: Re: physically-based landscapes
+Date: Tue, 03 Jun 2003 16:58:47 -0400
+From: Rob Guglielmetti <rpg@rumblestrip.org>
+Reply-To: rpg@rumblestrip.org
+To: Greg Ward <gward@lmi.net>
+References: <C3B0CB9B-95E2-11D7-8C3D-00306540F848@lmi.net>
+
+Greg Ward wrote:
+ >> From: Rob Guglielmetti <rpg@rumblestrip.org>
+
+ >> ... Carsten says that the -ar
+ >> is based on the scene bounding cube, so even if I exclude the exterior
+ >> values I need to crank it up, yes?
+ >
+ > Yes, though you could set -ar 0 and you might get around this problem.
+ > The disadvantage is that the calculation can go a bit nuts in the little
+ > corners, but it's only a problem on high-resolution renderings.  Rtrace
+ > shouldn't be much affected.
+
+Ahhh, but I *always* do renderings now, so that that ambient cache is
+well populated! =8-)  No matter, I'm much more interested in making
+option two work...
+
+ >> The illum's luminous distribution function is the result of applying
+ >> the lightmap to the window pane, just the same as if I were to use
+ >> gensky?  The colorpict is purely for the view out, it does not
+ >> contribute to the illuminance of the interior space?
+ >
+ > No, it's the same as if you used mkillum.  The only difference is that
+ > rpict -vta -vh 180 -vv 180 computes the window's light distribution from
+ > a single viewpoint, where mkillum would average it over the entire
+ > window.  If your window is small relative to the closest geometry, the
+ > difference is vanishingly small.
+
+Well, the window mullions are pretty deep, but other than that, no.
+Now, your method utilizes a hemispherical fisheye view.  Since typical
+HDR lightmaps are a re-mapping of two HDR images of a mirrored ball, one
+90 degrees off-axis to the other, I'm confused as to how my
+hemispherical image is to be rendered (or photographed).  If I do a
+hemispherical rendering of 0 0 0 0 0 1, I get the sky, but no ground.
+Vice versa gives me the ground plane but no sky.  Do I need a
+hemispherical view for each cardinal heading, or something like that?
+
+This brings me back to my original inquiry about this.  Maybe Santiago
+asked the question better than I did, in his recent follow-up (Hi
+Santiago!):
+
+"...is there any way to map a HDR image in a source, something in the
+way skies are generated (maybe replacing the skyfunc?) and then use it
+as any other sky and/or ground? Somehow, for me this seems to be the
+most natural solution."
+
+I'm imagining either an HDR photograph lightmap of the entire
+model-encompasing sphere, or a Radiance image of the same type of thing,
+   mapped to a large sphere, in essence.  Photometric accuracy of the
+distribution of the light in the space, as well as the view out the
+window wall are both important, so I thought this method might combine
+the two.  Sorry if I'm not explaining this well.
+
+----
+
+-RPG
+
+
+From radiance-general@radiance-online.org  Tue Jun  3 23:52:48 2003
+From: radiance-general@radiance-online.org (Randolph Fritz)
+Date: Tue, 3 Jun 2003 15:52:48 -0700
+Subject: [Radiance-general] mapping an image
+In-Reply-To: <3EDD1C5B.6050602@rumblestrip.org>
+Message-ID: <193A12C8-9616-11D7-B240-0030658EA95E@panix.com>
+
+On Tuesday, June 3, 2003, at 03:08  PM, Rob Guglielmetti wrote:
+> "...is there any way to map a HDR image in a source, something in the
+> way skies are generated (maybe replacing the skyfunc?) and then use it
+> as any other sky and/or ground? Somehow, for me this seems to be the
+> most natural solution."
+>
+> I'm imagining either an HDR photograph lightmap of the entire
+> model-encompasing sphere, or a Radiance image of the same type of 
+> thing,
+>   mapped to a large sphere, in essence.  Photometric accuracy of the
+> distribution of the light in the space, as well as the view out the
+> window wall are both important, so I thought this method might combine
+> the two.  Sorry if I'm not explaining this well.
+
+If you took a series of photographs, recorded exposures, and stitched 
+them together using the metered exposure and a bit of information about 
+the film (print film preferred, I think) to estimate actual luminance, 
+I think you could come up with a reasonable approximation for some 
+purposes.
+
+Randolph
+
+
+From radiance-general@radiance-online.org  Wed Jun  4 18:38:30 2003
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Wed, 4 Jun 2003 10:38:30 -0700
+Subject: [Radiance-general] Radiance timings on PowerMac
+Message-ID: <5B4E14E2-96B3-11D7-8497-000A956D40C8@lmi.net>
+
+Hi Mark,
+
+I ran your test on my 1.42 GHz PowerMac running OS X 10.2.6 using 
+Radiance 3.5 compiled with gcc 3.1 -O2, and got the following results:
+
+oconv scene.rad
+26.100u 2.050s 0:23.08 121.9%   0+0k 0+2io 0pf+0w
+rpict -t 30 -vf v1.vf -ab 1 -x 1000 -y 1000 scene.oct
+rpict: 34274852 rays, 100.00% after 0.144u 0.000s 0.152r hours on 
+anyhere.local.
+512.010u 6.820s 9:06.75 94.8%   0+0k 9+4io 0pf+0w
+pfilt -x /2 -y /2 scene.pic
+0.560u 0.010s 0:00.59 96.6%     0+0k 0+0io 0pf+0w
+
+Nice webpage!
+-Greg
+
+
+From radiance-general@radiance-online.org  Wed Jun  4 19:20:23 2003
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Wed, 4 Jun 2003 11:20:23 -0700
+Subject: [Radiance-general] Re: Radiance timings on PowerMac
+In-Reply-To: <Pine.SOL.4.44.0306041400560.6188-100000@robotron.gpcc.itd.umich.edu>
+Message-ID: <355A8A1E-96B9-11D7-AB3D-000A956D40C8@lmi.net>
+
+Hi Mark,
+
+Yes, my PowerMac is a dual-processor, so the system was taking 
+advantage of the second processor on the piped command output used by 
+oconv, apparently.  Two rpict processes would finish in the same time, 
+and both processors can be used simultaneously by programs such as 
+ranimate, ranimove, rpiece, rholo, and some of the scripts (like 
+falsecolor).
+
+-Greg
+
+> From: Mark Stock <mstock@umich.edu>
+> Date: Wed Jun 4, 2003  11:01:54  AM US/Pacific
+> To: Greg Ward <gward@lmi.net>
+> Subject: Re: Radiance timings on PowerMac
+>
+> Is that a dual-processor machine, Greg? The only place I've
+> ever seen user times greater than wall clock times is for
+> oconv on a dual-proc machine.
+>
+> Mark
+>
+> On Wed, 4 Jun 2003, Greg Ward wrote:
+>
+>> Hi Mark,
+>>
+>> I ran your test on my 1.42 GHz PowerMac running OS X 10.2.6 using
+>> Radiance 3.5 compiled with gcc 3.1 -O2, and got the following results:
+>>
+>> oconv scene.rad
+>> 26.100u 2.050s 0:23.08 121.9%   0+0k 0+2io 0pf+0w
+>> rpict -t 30 -vf v1.vf -ab 1 -x 1000 -y 1000 scene.oct
+>> rpict: 34274852 rays, 100.00% after 0.144u 0.000s 0.152r hours on
+>> anyhere.local.
+>> 512.010u 6.820s 9:06.75 94.8%   0+0k 9+4io 0pf+0w
+>> pfilt -x /2 -y /2 scene.pic
+>> 0.560u 0.010s 0:00.59 96.6%     0+0k 0+0io 0pf+0w
+>>
+>> Nice webpage!
+>> -Greg
+
+
+From radiance-general@radiance-online.org  Wed Jun  4 19:29:48 2003
+From: radiance-general@radiance-online.org (Mark Stock)
+Date: Wed, 4 Jun 2003 14:29:48 -0400 (EDT)
+Subject: [Radiance-general] Re: Radiance timings on PowerMac
+In-Reply-To: <355A8A1E-96B9-11D7-AB3D-000A956D40C8@lmi.net>
+Message-ID: <Pine.SOL.4.44.0306041421420.6188-100000@robotron.gpcc.itd.umich.edu>
+
+Greg,
+
+Yes, I've noticed that. I'm finally sitting on a dual-processor
+box here at work, though I have insufficient RAM here to render
+the kinds of scenes that I want. The image for SIGGRAPH this
+year will probably take up 1.5 GB of RAM once the ambient cache
+becomes fully populated. I'm shooting for a final resolution of
+28800x14400 pixels.
+
+A year or two ago, someone submitted a speed test for the
+same scene, Paul's bench2, using a dual-processor box and
+rad/rpiece. See note 8 on my bechmark page. The author found
+a 1.6 speedup for dual processors using 20-25 divisions in
+rad/rpiece.
+
+Is there no newer gcc for OSX than 3.1?
+
+Mark
+
+On Wed, 4 Jun 2003, Greg Ward wrote:
+>
+> Yes, my PowerMac is a dual-processor, so the system was taking
+> advantage of the second processor on the piped command output used by
+> oconv, apparently.  Two rpict processes would finish in the same time,
+> and both processors can be used simultaneously by programs such as
+> ranimate, ranimove, rpiece, rholo, and some of the scripts (like
+> falsecolor).
+>
+> -Greg
+>
+> > From: Mark Stock <mstock@umich.edu>
+> > Date: Wed Jun 4, 2003  11:01:54  AM US/Pacific
+> > To: Greg Ward <gward@lmi.net>
+> > Subject: Re: Radiance timings on PowerMac
+> >
+> > Is that a dual-processor machine, Greg? The only place I've
+> > ever seen user times greater than wall clock times is for
+> > oconv on a dual-proc machine.
+> >
+> > Mark
+> >
+> > On Wed, 4 Jun 2003, Greg Ward wrote:
+> >
+> >> Hi Mark,
+> >>
+> >> I ran your test on my 1.42 GHz PowerMac running OS X 10.2.6 using
+> >> Radiance 3.5 compiled with gcc 3.1 -O2, and got the following results:
+> >>
+> >> oconv scene.rad
+> >> 26.100u 2.050s 0:23.08 121.9%   0+0k 0+2io 0pf+0w
+> >> rpict -t 30 -vf v1.vf -ab 1 -x 1000 -y 1000 scene.oct
+> >> rpict: 34274852 rays, 100.00% after 0.144u 0.000s 0.152r hours on
+> >> anyhere.local.
+> >> 512.010u 6.820s 9:06.75 94.8%   0+0k 9+4io 0pf+0w
+> >> pfilt -x /2 -y /2 scene.pic
+> >> 0.560u 0.010s 0:00.59 96.6%     0+0k 0+0io 0pf+0w
+> >>
+> >> Nice webpage!
+> >> -Greg
+>
+>
+
+
+From radiance-general@radiance-online.org  Wed Jun  4 19:49:33 2003
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Wed, 4 Jun 2003 11:49:33 -0700
+Subject: [Radiance-general] Re: direct/indirect photometric
+In-Reply-To: <F9676BE6-95FC-11D7-8A64-000A95871DF2@mac.com>
+Message-ID: <4826E789-96BD-11D7-AB3D-000A956D40C8@lmi.net>
+
+I don't really have time for this, so my answers are going to be short.
+
+> From: John An <whollycow@mac.com>
+>
+> Chas and Greg,
+>
+> Thanks for the info.  I was away on a short vacation, and just got 
+> back.  I'm still more than a bit confused about accurately modeling 
+> direct/indirect luminaires.  Could you tell me if I have this right?
+>
+> Background info:
+> My space is modeled in inches.
+>
+> The photometric file is in feet (as reported by ies_read):
+>
+> Luminaire Dimensions
+> --------------------
+> Measurement units =       Feet
+> Width =                   0.46
+> Length =                  4.00
+> Height =                  0.00
+>
+>
+> Question 1:  I have noticed that the height for all of the 
+> direct/indirect luminaires is 0.  How is that physically possible?  
+> More importantly, how would a dimension of 0 ever "enclose" the 
+> geometry of the luminaire?
+
+The heights are set to zero by ies2rad to avoid a "dark band" at the 
+level of the luminaire when it's hung from the ceiling.  It's a hack to 
+avoid artifacts.  You're right that it cannot enclose any geometry this 
+way.
+
+>
+> Question 2:  The actual luminaire dimensions are larger than the 
+> dimensions given by ies_read.  For instance, the length of the 
+> luminaire is listed in the cut sheet as being 53-5/8".  Which 
+> dimension do I use to create the illum "enclosure?"
+
+Whatever you need to enclose the geometry you create.
+
+> I used the command:
+> ies2rad -di -t white -i .56419 -o light2 d21998.ies
+>
+> and the resulting light2.rad file reads:
+>
+> # ies2rad -di -t white -i .56419 -o light2
+> # Dimensions in inches
+> #<IESNA:LM-63-1995
+> #<[TEST] 21998
+> #<[DATE] 05/31/2001
+> #<[LUMCAT] AGDMWU232-F3-120-1/2-EB
+> #<[LUMINAIRE] DAY-BRITE ADAGIO DIRECT/INDIRECT W/33-CELL SPECULAR 
+> LOUVER
+> #<[LAMP] F32T8
+> #<[BALLAST] ADVANCE REL-2P32-SC
+> #<[MANUFAC] DayBrite-Capri-Omega(Genlyte Thomas Group)
+> #<[_TIFF_FILE_NAME] AGD2
+> #<[_VERSION] fo2ies 2.01
+> #<Reflection factor 0.92, Test distance = 26 ft.
+> # 60 watt luminaire, lamp*ballast factor = 0.88
+>
+> void brightdata light2_dist
+> 5 corr light2.dat source.cal src_phi4 src_theta
+> 0
+> 1 1364
+>
+> light2_dist illum light2_light
+> 0
+> 0
+> 3 1 1 1
+>
+> light2_light sphere light2.s
+> 0
+> 0
+> 4 0 0 0 0.56419
+>
+> ____
+>
+> I edit this file to use lboxcorr.  I convert inches to meters 
+> (multiply inches by .0254).
+> ...
+> void brightdata light2_dist
+> 5 lboxcorr light2.dat source.cal src_phi4 src_theta
+> 0
+> 4 .815 1.363 .305 .0921
+> ...
+> Question 3:  Because I used the -di option in the ies2rad command, I 
+> thought that converting inches to meters was the way to go.  Should I 
+> be converting feet to meters?
+
+The A2, A3, and A4 arguments should be in meters.  Where did you get 
+the 0.815 value?  I assume this is a lumen depreciation factor.
+
+> ____
+>
+>
+> Question 4:  When I replace the illum sphere with a box, should I be 
+> using the units of my model (inches) or sticking with meters?  In 
+> other words, should I be using:
+>
+> !genbox light2_light light2.s 1.363 .305 .0921 \
+> 	| xform -t -.6815 -.1525 -.04605
+>
+> or
+>
+> !genbox light2_light light2.s 53.625 12 3.625 \
+> 	| xform -t -26.8125 -6 -1.8125
+>
+> I have tried both, and when I used meters, my image is black.  When I 
+> use inches, I get a reasonable image of my space.
+
+You should use whatever corresponds to your -d? option -- inches in 
+this case.  I would recommend generating the box in meters then adding 
+-s 39.37 to your xform command to make it clear:
+
+!genbox light2_light light2.s 1.363 .305 .0921 \
+	| xform -s 39.37 -t -26.8125 -6 -1.8125
+
+>
+> Question 5:  Can the dimensions of the illum geometry be slightly 
+> different than the dimensions defined for the lboxcorr function?  The 
+> rounding required in converting back and forth between units would 
+> inevitably result in some differences.
+>
+
+They should be close -- they don't have to be exact.
+
+-Greg
+
+
+From radiance-general@radiance-online.org  Wed Jun  4 20:15:02 2003
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Wed, 4 Jun 2003 12:15:02 -0700
+Subject: [Radiance-general] Re: physically-based landscapes
+In-Reply-To: <3EDD0C07.7060701@rumblestrip.org>
+Message-ID: <D78BA6E2-96C0-11D7-AB3D-000A956D40C8@lmi.net>
+
+If you photograph or render a fisheye view, you don't have to bother 
+with the spheremap nonsense.  A fisheye view of the sky can replace 
+gensky.  Likewise for a fisheye view out the window.  If you want both 
+the sky and the ground for every possible viewpoint (rather than just 
+out the window), you'll need one fisheye up and one fisheye down (from 
+an bird's eye view).  As I recommended for the window, you should use a 
+lower resolution image for the light distribution than you use for the 
+view.  You'll learn a lot by trying the example I suggested in my 
+earlier e-mail.
+
+-Greg
+
+> From: Rob Guglielmetti <rpg@rumblestrip.org>
+
+>>> The illum's luminous distribution function is the result of applying 
+>>> the lightmap to the window pane, just the same as if I were to use 
+>>> gensky?  The colorpict is purely for the view out, it does not 
+>>> contribute to the illuminance of the interior space?
+>>  No, it's the same as if you used mkillum.  The only difference is 
+>> that rpict -vta -vh 180 -vv 180 computes the window's light 
+>> distribution from a single viewpoint, where mkillum would average it 
+>> over the entire window.  If your window is small relative to the 
+>> closest geometry, the difference is vanishingly small.
+>
+> Well, the window mullions are pretty deep, but other than that, no. 
+> Now, your method utilizes a hemispherical fisheye view.  Since typical 
+> HDR lightmaps are a re-mapping of two HDR images of a mirrored ball, 
+> one 90 degrees off-axis to the other, I'm confused as to how my 
+> hemispherical image is to be rendered (or photographed).  If I do a 
+> hemispherical rendering of 0 0 0 0 0 1, I get the sky, but no ground. 
+> Vice versa gives me the ground plane but no sky.  Do I need a 
+> hemispherical view for each cardinal heading, or something like that?
+>
+> This brings me back to my original inquiry about this.  Maybe Santiago 
+> asked the question better than I did, in his recent follow-up (Hi 
+> Santiago!):
+>
+> "...is there any way to map a HDR image in a source, something in the
+> way skies are generated (maybe replacing the skyfunc?) and then use it 
+> as any other sky and/or ground? Somehow, for me this seems to be the 
+> most natural solution."
+>
+> I'm imagining either an HDR photograph lightmap of the entire 
+> model-encompasing sphere, or a Radiance image of the same type of 
+> thing,  mapped to a large sphere, in essence.  Photometric accuracy of 
+> the distribution of the light in the space, as well as the view out 
+> the window wall are both important, so I thought this method might 
+> combine the two.  Sorry if I'm not explaining this well.
+
+
+From radiance-general@radiance-online.org  Wed Jun  4 23:30:01 2003
+From: radiance-general@radiance-online.org (Carsten Bauer)
+Date: Wed, 4 Jun 2003 22:30:01 +0000
+Subject: [Radiance-general] Re: physically-based landscapes
+In-Reply-To: <D78BA6E2-96C0-11D7-AB3D-000A956D40C8@lmi.net>
+References: <D78BA6E2-96C0-11D7-AB3D-000A956D40C8@lmi.net>
+Message-ID: <200306042230.02060.cbauer-@t-online.de>
+
+OK, even I got it now ... :-)
+
+the whole problem is quite a nice example in terms of understanding. In fact, 
+the spheremap nonsense is simply the projection of the fisheye view onto an 
+object. (the latter certainly unnecessary in this case)
+
+when it comes to picture mapping, one quickly thinks of putting a texture or 
+something onto an object, in the current case this would be like hanging a 
+photo of the view outside in front of the window ( or a windowless wall to 
+cheat the people..) this of course works only from one point of view.
+
+The procedure outlined in Gregs example differs form this, in the way that the 
+colorpict is used to modifiy - or in fact to create the *angular*  
+distribution of a lightsource which is put in place of the window pane 
+(comparable to the luminous intensity distribution data delivered by 
+luminaire manufacturers). This angular distribution then is of course 
+independent from the point of view, as it should be. 
+
+OK, this all is self evident and not worth to be mentioned at all for the 
+experienced scientists, but  - - -  
+
+Carsten
+
+
+From radiance-general@radiance-online.org  Thu Jun  5 06:14:40 2003
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Wed, 4 Jun 2003 22:14:40 -0700
+Subject: [Radiance-general] Re: physically-based landscapes
+In-Reply-To: <200306042230.02060.cbauer-@t-online.de>
+Message-ID: <9C1374B0-9714-11D7-B289-000A956D40C8@lmi.net>
+
+> From: cbauer-@t-online.de (Carsten Bauer)
+>
+> OK, this all is self evident and not worth to be mentioned at all for 
+> the
+> experienced scientists, but  - - -
+>
+
+This is anything but intuitive, which is why I keep insisting that Rob 
+try it to see what happens.  An angular view becomes the same as a 
+holographic (complete) view as the exterior geometry recedes to 
+infinity.
+
+-Greg
+
+
+From radiance-general@radiance-online.org  Thu Jun  5 14:30:34 2003
+From: radiance-general@radiance-online.org (Rob Guglielmetti)
+Date: Thu, 05 Jun 2003 09:30:34 -0400
+Subject: [Radiance-general] Re: physically-based landscapes
+References: <9C1374B0-9714-11D7-B289-000A956D40C8@lmi.net>
+Message-ID: <3EDF45FA.2070705@rumblestrip.org>
+
+Greg Ward wrote:
+
+> This is anything but intuitive, which is why I keep insisting that Rob 
+> try it to see what happens.  
+
+Yep, I intend to.  Life has intervened in this exploration for the 
+moment, so I haven't had a chance to try this yet.  Thanks Greg, for the 
+detailed example.  I *will* do some experimentation with it, just as 
+soon as I can.
+
+(he withdraws, and exits stage left; lights fade to black.)
+
+-RPG
+
+
+From radiance-general@radiance-online.org  Mon Jun  9 05:42:52 2003
+From: radiance-general@radiance-online.org (Santiago Torres)
+Date: Mon, 9 Jun 2003 13:42:52 +0900
+Subject: [Radiance-general] Re: physically-based landscapes
+In-Reply-To: <20030606100002.20186.11697.Mailman@darkside-animation.com>
+Message-ID: <ABEIIOCILNBBDDEPEPICEEHDCAAA.tiago@tkh.att.ne.jp>
+
+Hello again,
+
+Thank you Peter for your reply. The animation is really impressive. And I
+understand your point about parallax error. I guess there`s always a price
+with either method since there`s only one image map to start with. If I
+understood well Greg`s post, there are different ways to do this, each with
+pluses and minuses, depending in window size or distance to outside objects,
+etc. So, I`ve been trying what I could through the weekend with mixed
+results.
+
+First, I tried to map a rendered fisheye image of the sky to a source,
+replacing gensky, but there`s something strange with my transformations (the
+sky appears diamond shaped...:/), so I need to review the mapping, but it
+seems to be working. Like Rob said, the possibilities are really cool [Hi
+Rob!]
+
+I was thinking on taking HDRs of inside and outside of a building (at the
+same time) and then compare the results with inside renders using a mapped
+sky for outside. Has anybody tried it?
+
+OTOH, I defined a simple room with a sky outside (using gensky) and then
+took fisheye images of the sky and the view out of the window. I followed
+Greg`s instructions with fiseye.cal, and it worked perfectly (of course!)
+But when taking rtrace measurings, there was a slight difference between the
+model with the original sky and the mapped model (about 4.5%) Could this be
+because of the relative size of the window (1/9 of the wall in this case)?
+or maybe I`m doing something wrong? I assume the rtrace parameters have
+nothing to do since they`re the same in both cases, but maybe I`m wrong
+(again?)
+
+I understand all this was meant to help Rob with a particular practical
+problem but I was interested in the more general case. I am now in the
+process of measuring daylight in a real building, and I thought this could
+be a good way to validate results with renderings (I will nedd to use
+renderings later) Then, sorry if I diverge from the original post. And
+thanks again for your help.
+
+Santiago.
+
+
+
+From radiance-general@radiance-online.org  Mon Jun  9 20:05:44 2003
+From: radiance-general@radiance-online.org (Charles Ehrlich)
+Date: Mon, 9 Jun 2003 12:05:44 -0700 (PDT)
+Subject: [Radiance-general] Re: physically-based landscapes
+Message-ID: <20030609190544.26683.qmail@web80302.mail.yahoo.com>
+
+--0-1638762663-1055185544=:25181
+Content-Type: text/plain; charset=us-ascii
+
+ 
+First, I tried to map a rendered fisheye image of the sky to a source, replacing gensky, but there`s something strange with my transformations (the sky appears diamond shaped...:/),
+ 
+This is probably because the 180 degree  "ring" of your fisheye image (i.e., the horizon if the fisheye is pointing at zenith), needs to inscribe the square defined by the dimensions of the image.  Everything in the "corners" of the image will be looking down towards the ground and can be ignored or blacked-out.
+ 
+-Chas
+
+--0-1638762663-1055185544=:25181
+Content-Type: text/html; charset=us-ascii
+
+<DIV>&nbsp;</DIV>
+<BLOCKQUOTE dir=ltr style="MARGIN-RIGHT: 0px">
+<DIV><FONT size=2>First, I tried to map a rendered fisheye image of the sky to a source, replacing gensky, but there`s something strange with my transformations (the sky appears diamond shaped...:/),</FONT></DIV></BLOCKQUOTE>
+<DIV><FONT size=2></FONT>&nbsp;</DIV>
+<DIV><FONT size=2>This is probably because the 180 degree&nbsp; "ring" of your fisheye image&nbsp;(i.e., the horizon if the fisheye is pointing at zenith), needs to inscribe the square defined by the dimensions of the image.&nbsp; Everything in the "corners" of the image will be looking down towards the ground and can be ignored or blacked-out.</FONT></DIV>
+<DIV><FONT size=2></FONT>&nbsp;</DIV>
+<DIV><FONT size=2>-Chas</DIV></FONT>
+--0-1638762663-1055185544=:25181--
+
+From radiance-general@radiance-online.org  Wed Jun 11 18:16:34 2003
+From: radiance-general@radiance-online.org (Fitzsimmons, Rob)
+Date: Wed, 11 Jun 2003 10:16:34 -0700
+Subject: [Radiance-general] convert 48 bit tif to pic
+Message-ID: <7B2F6EA5E35E214882CB9828962BC3CF0224A343@corvallis.summit.fiserv.com>
+
+Hello
+Another question!
+I'm trying to convert a tif (16 bits per channel) to a .pic or .hdr so I can
+render with it
+I suspect it would involve  pvalue -r,
+but I don't know what to put for the many other options.
+Do I ignore the header,  -h?
+output 16 bit words -dw or -dW ?
+I'm sure this is a simple operation for most of you
+any help appreciated!
+
+Rob Fitz
+
+From radiance-general@radiance-online.org  Wed Jun 11 18:32:52 2003
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Wed, 11 Jun 2003 10:32:52 -0700
+Subject: [Radiance-general] Re: convert 48 bit tif to pic
+In-Reply-To: <7B2F6EA5E35E214882CB9828962BC3CF0224A343@corvallis.summit.fiserv.com>
+Message-ID: <BA79F71B-9C32-11D7-BFCE-00306540F848@lmi.net>
+
+Actually ra_tiff -r should work for 16-bit TIFFs.  Try it.
+
+-Greg
+
+> From: "Fitzsimmons, Rob" <Rob.Fitzsimmons@Summit.Fiserv.com>
+>
+> Hello
+> Another question!
+> I'm trying to convert a tif (16 bits per channel) to a .pic or .hdr so 
+> I can
+> render with it
+> I suspect it would involve  pvalue -r,
+> but I don't know what to put for the many other options.
+> Do I ignore the header,  -h?
+> output 16 bit words -dw or -dW ?
+> I'm sure this is a simple operation for most of you
+> any help appreciated!
+>
+> Rob Fitz
+
+
+From radiance-general@radiance-online.org  Mon Jun 16 04:55:10 2003
+From: radiance-general@radiance-online.org (Santiago Torres)
+Date: Mon, 16 Jun 2003 12:55:10 +0900
+Subject: [Radiance-general] Re: physically-based landscapes
+In-Reply-To: <20030610100002.30226.9408.Mailman@darkside-animation.com>
+Message-ID: <ABEIIOCILNBBDDEPEPICCEHLCAAA.tiago@tkh.att.ne.jp>
+
+Hello again,
+
+I`ve been trying more, and the mapping now works fine, so the sky finally
+looks like the original picture. However, I still have problems with the
+illuminance values. I am defining it like this:
+
+void colorpict skyfunc
+7 noop noop noop sky_orig.pic fisheye.cal fish_u fish_v -rx 90 -rz 180
+0
+1 1
+
+And then using skyfunc normally, like from gensky. The "mapped" sky gives me
+an illuminance 5 to 7 times lower than the original sky (although the
+distribution is the same). I could define the sky source seven times
+stronger to compensate, but I`m sure there must be an explanation for this
+and a correct solution. Please, what am I doing wrong?
+
+Another problem is when I apply the sky to a scene with a room and a window.
+If I follow Greg`s method to define the window, it works perfect, however if
+I use the mapping to define a sky and then define a window as I would do
+with a "gensky`d" sky, there seems to be no direct sunlight in the room.
+Again, what am I doing wrong?
+
+I assumed that the mapping to source could replace gensky more or less
+directly, but it seems I am missing something. Sorry for bothering again and
+thanks in advance for your help,
+
+Santiago.
+
+
+
+From radiance-general@radiance-online.org  Mon Jun 16 16:06:35 2003
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Mon, 16 Jun 2003 08:06:35 -0700
+Subject: [Radiance-general] Re: physically-based landscapes
+In-Reply-To: <ABEIIOCILNBBDDEPEPICCEHLCAAA.tiago@tkh.att.ne.jp>
+Message-ID: <1F47B328-A00C-11D7-A551-000A956D40C8@lmi.net>
+
+Hi Santiago,
+
+> From: "Santiago Torres" <tiago@tkh.att.ne.jp>
+>
+> I`ve been trying more, and the mapping now works fine, so the sky 
+> finally
+> looks like the original picture. However, I still have problems with 
+> the
+> illuminance values. I am defining it like this:
+>
+> void colorpict skyfunc
+> 7 noop noop noop sky_orig.pic fisheye.cal fish_u fish_v -rx 90 -rz 180
+> 0
+> 1 1
+
+What is the last real argument (A1=1) for?  I think fisheye.cal just 
+ignores it.
+
+> And then using skyfunc normally, like from gensky. The "mapped" sky 
+> gives me
+> an illuminance 5 to 7 times lower than the original sky (although the
+> distribution is the same). I could define the sky source seven times
+> stronger to compensate, but I`m sure there must be an explanation for 
+> this
+> and a correct solution. Please, what am I doing wrong?
+
+What is in sky_orig.pic?  Is it possible that you exposed it with pfilt 
+or something -- you need to have the original values in there.  The 
+direct output of rpict should work, but passing it through pfilt would 
+not.
+
+> Another problem is when I apply the sky to a scene with a room and a 
+> window.
+> If I follow Greg`s method to define the window, it works perfect, 
+> however if
+> I use the mapping to define a sky and then define a window as I would 
+> do
+> with a "gensky`d" sky, there seems to be no direct sunlight in the 
+> room.
+> Again, what am I doing wrong?
+
+Gensky creates a separate source for the sun, whereas it gets included 
+as a small spot in sky_orig.pic, which the indirect calculation is 
+hard-pressed to find.  To get it to work as gensky, you would have to 
+take the solar source from gensky and reapply it in your model.
+
+-Greg
+
+
+From radiance-general@radiance-online.org  Mon Jun 16 18:51:11 2003
+From: radiance-general@radiance-online.org (Bob Coyne)
+Date: Mon, 16 Jun 2003 13:51:11 -0400
+Subject: [Radiance-general] radiance speed question
+Message-ID: <3EEE038F.BD405441@semanticlight.com>
+
+Hi,
+
+I'm looking for a renderer to produce still images of scenes
+of polygonal data.  I want the beautiful pictures and type of
+effects achieved by raytracing and radiosity.  However, I'm
+not concerned with absolute accuracy and fidelity to reality
+which seems to be Radiance's strength.
+
+Given the above, would using Radiance be overkill?  And
+would I be paying a large penalty in performance (and complexity
+of specification) to get the kind of accuracy I don't need.
+Would I be better off with Povray or Mental Ray or some
+other renderer?
+
+Also, does anyone have some examples of final images along with
+how long they took to render, polygon count, number of lights, image
+resolution, cpu type/speed, and any other parameters that have a major
+impact on speed/quality.  That might help me get an idea of whether it's
+well suited to what I need.
+
+Thanks,
+Bob
+
+
+
+From radiance-general@radiance-online.org  Mon Jun 16 21:13:49 2003
+From: radiance-general@radiance-online.org (Lars Grobe)
+Date: Mon, 16 Jun 2003 22:13:49 +0200 (MEST)
+Subject: [Radiance-general] radiance speed question
+References: <3EEE038F.BD405441@semanticlight.com>
+Message-ID: <6837.1055794429@www16.gmx.net>
+
+Hi! 
+ 
+> effects achieved by raytracing and radiosity.  However, I'm 
+> not concerned with absolute accuracy and fidelity to reality 
+> which seems to be Radiance's strength. 
+ 
+In fact, radiance is simulation software with high accuracy. But 
+you can fine-tune all parameters, so can use it as a simple 
+renderer. If you are concerned about performance, take a look 
+at the ambient parameters, they have the biggest impact on 
+rendering time. Excluding most materials from ambient calculation 
+and setting good av-values might help. 
+ 
+Of course, radiance is not an easy renderer, but you get lots 
+of very powerful tools for cad-import, image processing, previews 
+and scripting tools. 
+ 
+Good luck, cu Lars. 
+
+-- 
++++ GMX - Mail, Messaging & more  http://www.gmx.net +++
+Bitte lächeln! Fotogalerie online mit GMX ohne eigene Homepage!
+
+
+From radiance-general@radiance-online.org  Tue Jun 17 08:15:53 2003
+From: radiance-general@radiance-online.org (Peter Apian-Bennewitz)
+Date: Tue, 17 Jun 2003 09:15:53 +0200
+Subject: [Radiance-general] radiance speed question
+In-Reply-To: <6837.1055794429@www16.gmx.net>
+References: <3EEE038F.BD405441@semanticlight.com> <6837.1055794429@www16.gmx.net>
+Message-ID: <3EEEC029.1090700@pab-opto.de>
+
+Lars Grobe wrote:
+
+>...
+> 
+>Of course, radiance is not an easy renderer, but you get lots 
+>of very powerful tools for cad-import, image processing, previews 
+>and scripting tools. 
+>
+PovRay is unkown to me, but I liked Rayshade a lot more for 
+just-image-rendering in terms of first-time handling and ease.  PovRay 
+may be more monolithic and canned-feature rich. Using Radiance's suite 
+of programs without practice is like navigating a race car through a 
+pedestrian area. Otherwise it's quite powerful, although RenderMan seems 
+to have an even more powerful functional language.
+Greg developped the core on a Sun 68040 machine years ago, so Radiance's 
+raytracing engine had to be nicely optimized.
+
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+From radiance-general@radiance-online.org  Tue Jun 17 12:49:20 2003
+From: radiance-general@radiance-online.org (John Mardaljevic)
+Date: Tue, 17 Jun 2003 12:49:20 +0100 (BST)
+Subject: [Radiance-general] Radiance-Users Course (UK) Update
+Message-ID: <E19SExl-0004Ab-00@saturn.dmu.ac.uk>
+
+A provisional date and course structure has been
+decided. Information here:
+
+http://www.iesd.dmu.ac.uk/~jm/radiance_course/update.htm
+
+We're still accepting registrations.
+
+Regards,
+
+-John
+
+-----------------------------------------------
+Dr. John Mardaljevic                     
+Senior Research Fellow
+Institute of Energy and Sustainable Development
+De Montfort University
+Scraptoft
+Leicester LE7 9SU, UK
++44 (0) 116 257 7972   
++44 (0) 116 257 7981 (fax)
+
+jm@dmu.ac.uk   
+http://www.iesd.dmu.ac.uk/~jm
+
+
+From radiance-general@radiance-online.org  Tue Jun 17 17:28:51 2003
+From: radiance-general@radiance-online.org (Santiago Torres)
+Date: Wed, 18 Jun 2003 01:28:51 +0900
+Subject: [Radiance-general] Re: physically-based landscapes
+In-Reply-To: <20030617100002.14995.62267.Mailman@darkside-animation.com>
+Message-ID: <ABEIIOCILNBBDDEPEPICKEHOCAAA.tiago@tkh.att.ne.jp>
+
+Hello. Thank you very much for your reply.
+
+> From: Greg Ward <gward@lmi.net>
+>
+> >
+> > void colorpict skyfunc
+> > 7 noop noop noop sky_orig.pic fisheye.cal fish_u fish_v -rx 90 -rz 180
+> > 0
+> > 1 1
+>
+> What is the last real argument (A1=1) for?  I think fisheye.cal just
+> ignores it.
+
+Yes, that`s right. It`s my mistake, I was trying something different first
+and it just stayed there, I didn`t realize.
+
+> What is in sky_orig.pic?  Is it possible that you exposed it with pfilt
+> or something -- you need to have the original values in there.  The
+> direct output of rpict should work, but passing it through pfilt would
+> not.
+
+I made it like this:
+
+rpict -vta -vd 0 0 1 -vu 0 1 0 -vv 180 -vh 180 -ab 1 -x 2048 -y 2048
+sky_orig.oct > sky_orig.pic
+
+And used that file. sky_orig.rad is a copy of the sky deffinition in the
+Radiance tutorial. Then tested illuminances with:
+
+echo "0 0 0 0 0 1" | rtrace -h -I+ -w -ab 1 sky_alter.oct
+
+> Gensky creates a separate source for the sun, whereas it gets included
+> as a small spot in sky_orig.pic, which the indirect calculation is
+> hard-pressed to find.  To get it to work as gensky, you would have to
+> take the solar source from gensky and reapply it in your model.
+
+Thank you, I will try it. But I still don`t understand why the mapping to
+the window works fine, if it is also coming from a pic file. Isn`t it the
+same if it is comming from the window or from the sky source?
+
+Thanks again for your help and best regards,
+
+Santiago.
+
+
+
+From radiance-general@radiance-online.org  Tue Jun 17 17:48:35 2003
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Tue, 17 Jun 2003 09:48:35 -0700
+Subject: [Radiance-general] Re: physically-based landscapes
+In-Reply-To: <ABEIIOCILNBBDDEPEPICKEHOCAAA.tiago@tkh.att.ne.jp>
+Message-ID: <8985BE62-A0E3-11D7-A912-000A956D40C8@lmi.net>
+
+Hi Santiago,
+
+I could make some guesses as to what's going on with your model, but 
+unless I see the actual files involved, I'm not going to be able to 
+figure it out.  Can you put together a gzip'ped tar file and mail it to 
+my account directly <gward@lmi.net>.  I'll have a look.  Be sure to 
+include the list of commands you've been using, what you expected, and 
+what you got.
+
+Thanks,
+-Greg
+
+
+From radiance-general@radiance-online.org  Wed Jun 18 16:57:26 2003
+From: radiance-general@radiance-online.org (Bruce Sounes)
+Date: Wed, 18 Jun 2003 16:57:26 +0100
+Subject: [Radiance-general] Compiling on CYGWIN
+Message-ID: <EF5077DDD024D411B6B100C0DFE0D9342DF2F7@SERVER01>
+
+This message is in MIME format. Since your mail reader does not understand
+this format, some or all of this message may not be legible.
+
+------_=_NextPart_001_01C335B2.505E3D30
+Content-Type: text/plain
+
+I have just received a new PC running Windows XP and rather than use the
+Radiance binaries that come with Desktop Radiance, I would like to compile
+the latest release under CYGWIN, which I believe is possible. In fact I
+successfully compiled a handful of the commands without really knowing what
+I was doing: the gen-routines, xform, oconv, mkillum, and several conversion
+routines. No rad, rtrace, rpict or rview.  
+ 
+I have installed Xfree86 which I guess is necessary for ximage, but from
+here on I am at sea. 
+ 
+My rmake script is as follows:
+ 
+#!/bin/sh
+exec make "SPECIAL=" \
+            "OPT=-O" \
+            "MACH= -DBIGMEM" \
+            ARCH=9 "COMPAT=bmalloc.o erf.o strcmp.o" \
+            INSTDIR=/ray/bin \
+            LIBDIR=/ray/lib \
+            CC=gcc "$@" -f Rmakefile
+ 
+Can anyone be of assistance.?
+ 
+Many thanks
+ 
+Bruce Sounes
+
+------_=_NextPart_001_01C335B2.505E3D30
+Content-Type: text/html
+Content-Transfer-Encoding: quoted-printable
+
+<html xmlns:o=3D"urn:schemas-microsoft-com:office:office" =
+xmlns:w=3D"urn:schemas-microsoft-com:office:word" =
+xmlns=3D"http://www.w3.org/TR/REC-html40">
+
+<head>
+<META HTTP-EQUIV=3D"Content-Type" CONTENT=3D"text/html; =
+charset=3DUS-ASCII">
+
+
+<meta name=3DProgId content=3DWord.Document>
+<meta name=3DGenerator content=3D"Microsoft Word 10">
+<meta name=3DOriginator content=3D"Microsoft Word 10">
+<link rel=3DFile-List href=3D"cid:filelist.xml@01C335BA.F86E6740">
+<!--[if gte mso 9]><xml>
+ <o:OfficeDocumentSettings>
+  <o:DoNotRelyOnCSS/>
+ </o:OfficeDocumentSettings>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:SpellingState>Clean</w:SpellingState>
+  <w:GrammarState>Clean</w:GrammarState>
+  <w:DocumentKind>DocumentEmail</w:DocumentKind>
+  <w:EnvelopeVis/>
+  <w:Compatibility>
+   <w:BreakWrappedTables/>
+   <w:SnapToGridInCell/>
+   <w:WrapTextWithPunct/>
+   <w:UseAsianBreakRules/>
+  </w:Compatibility>
+  <w:BrowserLevel>MicrosoftInternetExplorer4</w:BrowserLevel>
+ </w:WordDocument>
+</xml><![endif]-->
+<style>
+<!--
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{mso-style-parent:"";
+	margin:0cm;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Times New Roman";
+	mso-fareast-font-family:"Times New Roman";}
+a:link, span.MsoHyperlink
+	{color:blue;
+	text-decoration:underline;
+	text-underline:single;}
+a:visited, span.MsoHyperlinkFollowed
+	{color:purple;
+	text-decoration:underline;
+	text-underline:single;}
+span.EmailStyle17
+	{mso-style-type:personal-compose;
+	mso-style-noshow:yes;
+	mso-ansi-font-size:10.0pt;
+	mso-bidi-font-size:10.0pt;
+	font-family:Arial;
+	mso-ascii-font-family:Arial;
+	mso-hansi-font-family:Arial;
+	mso-bidi-font-family:Arial;
+	color:windowtext;}
+span.SpellE
+	{mso-style-name:"";
+	mso-spl-e:yes;}
+span.GramE
+	{mso-style-name:"";
+	mso-gram-e:yes;}
+@page Section1
+	{size:612.0pt 792.0pt;
+	margin:72.0pt 90.0pt 72.0pt 90.0pt;
+	mso-header-margin:35.4pt;
+	mso-footer-margin:35.4pt;
+	mso-paper-source:0;}
+div.Section1
+	{page:Section1;}
+-->
+</style>
+<!--[if gte mso 10]>
+<style>
+ /* Style Definitions */=20
+ table.MsoNormalTable
+	{mso-style-name:"Table Normal";
+	mso-tstyle-rowband-size:0;
+	mso-tstyle-colband-size:0;
+	mso-style-noshow:yes;
+	mso-style-parent:"";
+	mso-padding-alt:0cm 5.4pt 0cm 5.4pt;
+	mso-para-margin:0cm;
+	mso-para-margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:"Times New Roman";}
+</style>
+<![endif]-->
+</head>
+
+<body lang=3DEN-US link=3Dblue vlink=3Dpurple =
+style=3D'tab-interval:36.0pt'>
+
+<div class=3DSection1>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'>I have just received a new PC running Windows XP and =
+rather
+than use the Radiance binaries that come with Desktop Radiance, I would =
+like to
+compile the latest release under CYGWIN, which I believe is possible. =
+In fact I
+successfully compiled a handful of the commands without really knowing =
+what I
+was doing: the <span class=3DSpellE>gen</span>-routines, <span =
+class=3DSpellE>xform</span>,
+<span class=3DSpellE>oconv</span>, <span class=3DSpellE>mkillum</span>, =
+and several
+conversion routines. No <span class=3DSpellE>rad</span>, <span =
+class=3DSpellE>rtrace</span>,
+<span class=3DSpellE>rpict</span> or <span class=3DSpellE>rview</span>. =
+<span
+style=3D'mso-spacerun:yes'>&nbsp;</span><o:p></o:p></span></font></p>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'><o:p>&nbsp;</o:p></span></font></p>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'>I have installed Xfree86 which I guess is necessary =
+for <span
+class=3DSpellE>ximage</span>, but from here on I am at sea. =
+<o:p></o:p></span></font></p>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'><o:p>&nbsp;</o:p></span></font></p>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'>My <span class=3DSpellE>rmake</span> script is as =
+follows:<o:p></o:p></span></font></p>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'><o:p>&nbsp;</o:p></span></font></p>
+
+<p class=3DMsoNormal><span class=3DGramE><font size=3D2 =
+face=3DArial><span
+style=3D'font-size:10.0pt;font-family:Arial'>#!/</span></font></span><fo=
+nt
+size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;font-family:Arial'>bin/<span
+class=3DSpellE>sh</span><o:p></o:p></span></font></p>
+
+<p class=3DMsoNormal><span class=3DGramE><font size=3D2 =
+face=3DArial><span
+style=3D'font-size:10.0pt;font-family:Arial'>exec</span></font></span><f=
+ont
+size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;font-family:Arial'> make
+&quot;SPECIAL=3D&quot; \<o:p></o:p></span></font></p>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'><span =
+style=3D'mso-tab-count:1'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbs=
+p;&nbsp;&nbsp;&nbsp; </span>&quot;OPT=3D-O&quot;
+\<o:p></o:p></span></font></p>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'><span =
+style=3D'mso-tab-count:1'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbs=
+p;&nbsp;&nbsp;&nbsp; </span>&quot;MACH=3D
+-DBIGMEM&quot; \<o:p></o:p></span></font></p>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'><span =
+style=3D'mso-tab-count:1'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbs=
+p;&nbsp;&nbsp;&nbsp; </span>ARCH=3D9
+&quot;COMPAT=3D<span class=3DSpellE>bmalloc.o</span> <span =
+class=3DSpellE>erf.o</span>
+<span class=3DSpellE>strcmp.o</span>&quot; =
+\<o:p></o:p></span></font></p>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'><span =
+style=3D'mso-tab-count:1'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbs=
+p;&nbsp;&nbsp;&nbsp; </span>INSTDIR=3D/ray/bin
+\<o:p></o:p></span></font></p>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'><span =
+style=3D'mso-tab-count:1'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbs=
+p;&nbsp;&nbsp;&nbsp; </span>LIBDIR=3D/ray/lib
+\<o:p></o:p></span></font></p>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'><span =
+style=3D'mso-tab-count:1'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbs=
+p;&nbsp;&nbsp;&nbsp; </span>CC=3D<span
+class=3DSpellE>gcc</span> &quot;$@&quot; -f <span =
+class=3DSpellE>Rmakefile</span><o:p></o:p></span></font></p>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'><o:p>&nbsp;</o:p></span></font></p>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'>Can anyone be of =
+assistance.?<o:p></o:p></span></font></p>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'><o:p>&nbsp;</o:p></span></font></p>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'>Many thanks<o:p></o:p></span></font></p>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'><o:p>&nbsp;</o:p></span></font></p>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'>Bruce <span =
+class=3DSpellE>Sounes</span><o:p></o:p></span></font></p>
+
+</div>
+
+</body>
+
+</html>
+
+------_=_NextPart_001_01C335B2.505E3D30--
+
+From radiance-general@radiance-online.org  Wed Jun 18 19:48:20 2003
+From: radiance-general@radiance-online.org (Carsten Bauer)
+Date: Wed, 18 Jun 2003 18:48:20 +0000
+Subject: [Radiance-general] Compiling on CYGWIN
+In-Reply-To: <EF5077DDD024D411B6B100C0DFE0D9342DF2F7@SERVER01>
+References: <EF5077DDD024D411B6B100C0DFE0D9342DF2F7@SERVER01>
+Message-ID: <200306181848.20817.cbauer-@t-online.de>
+
+Hi Bruce,
+
+please give some more info on the process, e.g. error messages thrown at you 
+during the makeall install run, these are necessary for finding out what's 
+going on. Have the libraries got compiled sucessfully? ( check into 
+../ray/src/lib for librt.a and libradiance.a ). Differnet locations of X 
+headers may cause trouble. You probably need options like
+ -L/usr/X11R6/lib  -I/usr/include/X11
+(or similar with your correct paths for the cygwin installation) in your
+rmake file. Put them within the "MACH= .. " line.
+When errors during compiling appear, in the end the few sucessful compiled 
+executives don't get moved to the instdir, but remain in the production dir 
+(probably you might alreday have a rpict or so in ../ray/src/rt., who knows 
+...)
+
+Be patient, often it's just some minor thing which causes trouble ...
+
+-Carsten
+
+PS: I must admit that I talk about the general Linux/Unix installation, I 
+don't know anything about cygwin, so I cannot assure if there isn't a 
+fundamental problem or so..
+
+
+From radiance-general@radiance-online.org  Thu Jun 19 06:39:13 2003
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Wed, 18 Jun 2003 22:39:13 -0700
+Subject: [Radiance-general] Re: physically-based landscapes
+In-Reply-To: <ABEIIOCILNBBDDEPEPICIEHPCAAA.tiago@tkh.att.ne.jp>
+Message-ID: <5B9A7122-A218-11D7-BBCE-00306540F848@lmi.net>
+
+Hi Santiago,
+
+Thanks for sending me your files.  It really does help to see the 
+actual problem being worked on.
+
+The answer to your different values turns out to be quite simple, and 
+it is related to the problem I mentioned with the sun being too small 
+to capture with the default indirect parameters.  See my inline 
+comments, below.
+
+-Greg
+
+> From: "Santiago Torres" <tiago@tkh.att.ne.jp>
+> Date: Tue Jun 17, 2003  7:26:52  PM US/Pacific
+> To: "Greg Ward" <gward@lmi.net>
+> Subject: RE: physically-based landscapes
+>
+> Hello Greg,
+>
+> I am attaching a gziped tar of the files I used. I included the two sky
+> deffinitions (original and mapped) and the sky_orig.pic that maps into 
+> the
+> second sky (I reduced its size to half to make it lighter)
+>
+> I`m also including a simple room scene where I tried the direct sun
+> renderings with the three options (normal, mapped sky and the 
+> fisheye.cal
+> method as you described) in case you are interested in seeing these 
+> too.
+> Afterwards I thought that, if I take images of the real sky, the sun 
+> will be
+> added separately anyway, as I would be taking it with a different 
+> camera and
+> ND filters, so I hope it would work as a gensky sky.
+>
+> The readme file has an account of the files and commands I used. I 
+> hope it
+> is clearly explained.
+>
+> Thank you for your help.
+>
+> Santiago.
+----------------------------------
+Santiago's attached README:
+
+> Note on the files and commands used
+>
+> mapsky.cal is a variation of the fisheye.cal file.
+> The only differences are a rotation in the x axis and an extra "if" to 
+> render ground at constant illuminance.
+
+The following won't affect this particular test, but you need to change 
+the if calls in this file, as returning coordinates of (x,y)=(0.5,0.5) 
+as you do for the ground will actually return the zenith luminance.  
+You should return (x,y)=(0.05,0.05) instead to be sure to get the bit 
+of ground in the corner of the image.
+
+> sky_orig.rad and sky_orig.pic are as in normal procedure, i.e. with 
+> !gensky.
+>
+> sky_alter.rad is the mapped sky.
+>
+> room.rad is a simple scene where I tried the window sun patch, etc.
+> And room_greg.rad is an application of the method you described to map 
+> the window_view image into the window.
+> windview.pic and windview_lores.pic are the corresponding images.
+> I include this ones in case you are interested, the problem with the 
+> sun patch I will try to solve it as you suggested.
+>
+> Commands I used:
+>
+> oconv sky_orig.rad > sky_orig.oct
+> rpict -vta -vd 0 0 1 -vu 0 1 0 -vv 180 -vh 180 -ab 1 -x 2048 -y 2048 
+> sky_orig.oct > sky_orig.pic
+> oconv sky_alter.rad > sky_alter.oct
+> echo "0 0 0 0 0 1" | rtrace -h -I+ -w -ab 1 sky_orig.oct
+>
+> 3.719349e+02    3.719349e+02    3.864030e+02
+>
+> echo "0 0 0 0 0 1" | rtrace -h -I+ -w -ab 1 sky_alter.oct
+>
+> 5.205561e+01    5.205561e+01    6.651048e+01
+>
+> which is approximately 7 times lower for the alter sky (when I was 
+> expecting both to be the same)
+
+The discrepancy is due to the fact that the gensky command you used 
+includes a description of the sun, which is included as part of the 
+direct  calculation in rtrace to get the result of 372.  However, when 
+you use the picture of the sky in place of the gensky output, you are 
+leaving rtrace to find the itty bitty sun disk in the great big sky 
+with only 512 samples (the default value of -ad).  If you change the 
+rtrace parameters to -ad 16000 -as 800, you get the following result, 
+instead:
+
+echo "0 0 0 0 0 1" | rtrace -h -I+ -w -ab 1 -ad 16000 -as 800 
+sky_alter.oct
+
+3.682684e+02    3.682684e+02    3.827203e+02
+
+Which is obviously a lot closer.  Alternately, you can change your 
+gensky command by adding a -s option to exclude the direct solar, and 
+again your values will agree, this time closer to the 52 watts/m^2 you 
+get from integrating the sky without including the sun.
+
+>
+> For the room scene:
+>
+> oconv sky_orig.rad room.rad > scene_orig.oct
+> rpict -vp 1.5 2.9 1.5 -vd 0 -1 0 -vv 100 -vh 100 -ab 2 scene_orig.rad 
+> > scene_orig.pic
+>
+> oconv sky_alter.rad room.rad > scene_orig.oct
+> idem rpict...
+>
+> oconv room_greg.rad > scene_greg.oct
+> idem rpict...
+
+I realize now why the room_greg.rad gets roughly the same answer as the 
+original room where the sky is modeled correctly -- it's because of the 
+trick I suggested of reducing the resolution of the illum's modifier 
+with pfilt.  Since pfilt works in floating point, it correctly computes 
+the average over each area, including the sun's disk (no matter how 
+small), and thus your window illum source has a distribution 
+corresponding to sun streaming in.  There will likely be some artifacts 
+due to source sampling, which can be reduced by decreasing the value of 
+the -ds option, but it might be OK as it is.
+
+If it were my model, I'd still want to model the sun separately 
+somehow, which would probably mean using a glass material for the 
+window illum's alternate type (as in room.rad) and modeling the sky 
+more as you have done in sky_alter.rad.
+
+>
+> I hope I`m not forgetting anything, and that it`s clear. Thank you for 
+> your interest.
+>
+> Santiago.
+>
+>> -----Original Message-----
+>> From: Greg Ward [mailto:gward@lmi.net]
+>> Sent: Wednesday, June 18, 2003 1:49 AM
+>> To: radiance-general@radiance-online.org
+>> Cc: tiago@tkh.att.ne.jp
+>> Subject: Re: physically-based landscapes
+>>
+>>
+>> Hi Santiago,
+>>
+>> I could make some guesses as to what's going on with your model, but
+>> unless I see the actual files involved, I'm not going to be able to
+>> figure it out.  Can you put together a gzip'ped tar file and mail it 
+>> to
+>> my account directly <gward@lmi.net>.  I'll have a look.  Be sure to
+>> include the list of commands you've been using, what you expected, and
+>> what you got.
+>>
+>> Thanks,
+>> -Greg
+
+
+From radiance-general@radiance-online.org  Thu Jun 19 07:02:28 2003
+From: radiance-general@radiance-online.org (Santiago Torres)
+Date: Thu, 19 Jun 2003 15:02:28 +0900
+Subject: [Radiance-general] Re: physically-based landscapes
+References: <5B9A7122-A218-11D7-BBCE-00306540F848@lmi.net>
+Message-ID: <002e01c33628$5d702c10$8b00a8c0@storres>
+
+Thank you very much for your reply. It is perfectly clear now. I was not
+thinking that rtrace does a sampling calculation as well. As I mentioned, I
+plan to take measurings of the sun separately anyway, so I will include it
+in a different source (and not in the same picture as I had first thought) I
+hope to get some results I can share with the group.
+Thanks again and best regards,
+
+Santiago.
+
+
+----- Original Message -----
+From: "Greg Ward" <gward@lmi.net>
+To: "Santiago Torres" <tiago@tkh.att.ne.jp>
+Cc: <radiance-general@radiance-online.org>
+Sent: Thursday, June 19, 2003 2:39 PM
+Subject: Re: physically-based landscapes
+
+
+> Hi Santiago,
+>
+> Thanks for sending me your files.  It really does help to see the
+> actual problem being worked on.
+>
+> The answer to your different values turns out to be quite simple, and
+> it is related to the problem I mentioned with the sun being too small
+> to capture with the default indirect parameters.  See my inline
+> comments, below.
+>
+> -Greg
+>
+
+
+
+From radiance-general@radiance-online.org  Thu Jun 19 08:50:14 2003
+From: radiance-general@radiance-online.org (Andrew Bettison)
+Date: Thu, 19 Jun 2003 17:20:14 +0930
+Subject: [Radiance-general] Multi spectral rendering
+Message-ID: <3EF16B36.3080004@acres.com.au>
+
+Greg,
+
+In your paper to the 2002 Eutographics Workshop on Rendering, you 
+compare sRGB and Sharp RGB renderings against a multi-spectral rendering 
+at 69 evenly-spaced spectral samples from 380 to 720 nm.  I am curious 
+how you made that multi-spectral rendering.  Did you divide the 69 
+wavelengths into groups of three and run rpict(1) 23 times?  Or did you 
+run rpict(1) 69 times with proportional R, G, and B values?  Or did you 
+hack rpict(1) from a 3-band renderer to a 69-band one?
+
+In the first case, wouldn´t there have been issues with gradient 
+interpolation, which is calculated using the CIE definition of 
+brightness from R, G, and B?  Also adaptive shadow testing?  I am 
+currently wrestling with these issues as I have to perform 
+multi-spectral renderings of many more than 69 bands from 380 nm to 14 
+microns, so the CIE definition of brightness won't do.
+
+--
+Andrew Bettison
+Acacia Research Pty Ltd
+
+
+From radiance-general@radiance-online.org  Thu Jun 19 15:53:23 2003
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Thu, 19 Jun 2003 07:53:23 -0700
+Subject: [Radiance-general] Re: Multi spectral rendering
+In-Reply-To: <3EF16B36.3080004@acres.com.au>
+Message-ID: <C66A8EA5-A265-11D7-A929-00306540F848@lmi.net>
+
+Hi Andrew,
+
+Since we needed to make exact comparisons between rendered images by 
+pixel subtraction, I gave up on my efforts to run Radiance many times 
+for spectral sampling, and we used my coauthor's (Elena's) Monte Carlo 
+ray-tracer, instead.  If regenerating the exact samples isn't an issue 
+for you, you probably can run Radiance many times, however, and others 
+have done this.
+
+The best way to do it for non-human consumption is to defined many 
+materials files, one for every three samples, and render from these in 
+a for loop.  The only place RGB is assumed in the code is when it's 
+combining primaries to get brightness for a weight test or somesuch, 
+and it shouldn't affect the result much for adjacent samples, which 
+should be fairly similar.
+
+Good luck!
+-Greg
+
+> From: Andrew Bettison <andrewb@acres.com.au>
+> Date: Thu Jun 19, 2003  12:50:14  AM US/Pacific
+>
+> Greg,
+>
+> In your paper to the 2002 Eutographics Workshop on Rendering, you 
+> compare sRGB and Sharp RGB renderings against a multi-spectral 
+> rendering at 69 evenly-spaced spectral samples from 380 to 720 nm.  I 
+> am curious how you made that multi-spectral rendering.  Did you divide 
+> the 69 wavelengths into groups of three and run rpict(1) 23 times?  Or 
+> did you run rpict(1) 69 times with proportional R, G, and B values?  
+> Or did you hack rpict(1) from a 3-band renderer to a 69-band one?
+>
+> In the first case, wouldn´t there have been issues with gradient 
+> interpolation, which is calculated using the CIE definition of 
+> brightness from R, G, and B?  Also adaptive shadow testing?  I am 
+> currently wrestling with these issues as I have to perform 
+> multi-spectral renderings of many more than 69 bands from 380 nm to 14 
+> microns, so the CIE definition of brightness won't do.
+>
+> --
+> Andrew Bettison
+> Acacia Research Pty Ltd
+
+
+
+From radiance-general@radiance-online.org  Fri Jun 20 16:41:36 2003
+From: radiance-general@radiance-online.org (Marcus Jacobs)
+Date: Fri, 20 Jun 2003 15:41:36 +0000
+Subject: [Radiance-general] BWAVE.CAL
+Message-ID: <BAY2-F1336OISo1WYi30000a07b@hotmail.com>
+
+Dear Group
+
+Lately, I have been attempting to simulate the bumpiness of a carpet 
+texture. While seaching on the web, I ran across a site that listed a cal 
+file called bwave.cal with the following description:
+
+"this file creates the waves of the pinboard and carpet "
+
+Does anyone have a copy of this file. Also, does anyone have any cal files 
+that can simulate the subtle bumpiness of carpet. I may try experimenting 
+with weave .cal to see if I can achieve good results.
+
+Regards
+
+Marcus D. Jacobs
+
+_________________________________________________________________
+MSN 8 helps eliminate e-mail viruses. Get 2 months FREE*.  
+http://join.msn.com/?page=features/virus
+
+
+From radiance-general@radiance-online.org  Fri Jun 20 18:38:50 2003
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Fri, 20 Jun 2003 10:38:50 -0700
+Subject: [Radiance-general] Re: BWAVE.CAL
+In-Reply-To: <BAY2-F1336OISo1WYi30000a07b@hotmail.com>
+Message-ID: <0DA85C44-A346-11D7-BB8D-00306540F848@lmi.net>
+
+This file is part of the conference room model.  It consists of two 
+sine wave functions (horizontal and vertical) multiplied together with 
+some fractal noise thrown in.  If you have a scan of a carpet, you can 
+use it in a colorpict with tile_u and tile_v coordinates from 
+picture.cal.  I would apply some noise to the coordinate positions and 
+the rgb values to avoid a repetitive appearance.  See shake.cal in the 
+ray/obj/cabin directory as an example.
+
+-Greg
+
+{
+	this file creates the waves of the pinboard and carpet
+}
+bwave=1-.5*( fnoise3(Px*4,Py*4,Pz*4)/2 +1 ) * ( sin(Px*2*PI)/3 + 2/3 )*
+    ( sin(Py*2*PI)/3 +2/3 );
+
+
+> From: "Marcus Jacobs" <marcdevon@hotmail.com>
+>
+> Dear Group
+>
+> Lately, I have been attempting to simulate the bumpiness of a carpet 
+> texture. While seaching on the web, I ran across a site that listed a 
+> cal file called bwave.cal with the following description:
+>
+> "this file creates the waves of the pinboard and carpet "
+>
+> Does anyone have a copy of this file. Also, does anyone have any cal 
+> files that can simulate the subtle bumpiness of carpet. I may try 
+> experimenting with weave .cal to see if I can achieve good results.
+>
+> Regards
+>
+> Marcus D. Jacobs
+
+
+From radiance-general@radiance-online.org  Tue Jun 24 14:54:37 2003
+From: radiance-general@radiance-online.org (Mark Stock)
+Date: Tue, 24 Jun 2003 09:54:37 -0400 (EDT)
+Subject: [Radiance-general] Horizontal artifacts in large image
+In-Reply-To: <0DA85C44-A346-11D7-BB8D-00306540F848@lmi.net>
+Message-ID: <Pine.SOL.4.44.0306240942040.14039-100000@tetris.gpcc.itd.umich.edu>
+
+Fellow Radiance users,
+
+I recently completed a large image (1.4 GB .pic file, 16k
+by 24k pixels), and it appears like there are two obvious
+horizontal bands of incorrect values (one 30% from the top,
+the other ~80% from the top). I pfilt'd the image down to
+5% of it's original size to make the image below:
+
+http://mark.technolope.org/image/p21c_fish_take_3/redo_smooth_6/timg10_1_tw.jpg
+
+The commands that I ran were:
+
+rpict -x 16000 -y 24000 -vta -vp 0.2 0.2 -0.01 -vd 0.454 0.891 -0.08
+-vu 0 0 1 -vh 58.66667 -vv 88 -ab 1 -aa 0 -ad 16 -as 0 -dv -ds 0.1
+-dj 1.0 -t 600 -o img10_1.pic real.oct
+
+pfilt -1 -x /10 -y /10 -r 0.4 img10_1.pic > timg10_1_t.pic
+pfilt -1 -e +3 -x /2 -y /2 timg10_1_t.pic | ra_ppm | cjpeg -q 95 > timg10_1_tw.jpg
+
+Does anyone know where these artifacts originate, or how to
+prevent them from appearing? I'm running the same image at
+reduced resolution right now, but final print quality is
+not going to be as I'd hoped.
+
+Mark
+
+
+From radiance-general@radiance-online.org  Tue Jun 24 15:34:31 2003
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Tue, 24 Jun 2003 10:34:31 -0400 (EDT)
+Subject: [Radiance-general] Horizontal artifacts in large image
+In-Reply-To: <Pine.SOL.4.44.0306240942040.14039-100000@tetris.gpcc.itd.umich.edu>
+Message-ID: <Pine.BSF.4.44.0306241025090.64865-100000@emancholl.pair.com>
+
+Mark Stock wrote:
+
+> Fellow Radiance users,
+>
+> I recently completed a large image (1.4 GB .pic file, 16k
+> by 24k pixels), and it appears like there are two obvious
+> horizontal bands of incorrect values (one 30% from the top,
+> the other ~80% from the top). I pfilt'd the image down to
+> 5% of it's original size to make the image below:
+>
+> http://mark.technolope.org/image/p21c_fish_take_3/redo_smooth_6/timg10_1_tw.jpg
+
+Scary...
+
+
+> The commands that I ran were:
+>
+> rpict -x 16000 -y 24000 -vta -vp 0.2 0.2 -0.01 -vd 0.454 0.891 -0.08
+> -vu 0 0 1 -vh 58.66667 -vv 88 -ab 1 -aa 0 -ad 16 -as 0 -dv -ds 0.1
+> -dj 1.0 -t 600 -o img10_1.pic real.oct
+
+
+Looks like the simulation got killed and restarted at those points.
+And since you're not using an ambient file, that will necessarily
+produce discontinuities in the diffuse lighting before and after.
+
+You appear to have plenty of disk space, so I'd recommend to
+use an ambient file. You may want to play with the ambient
+resolution as well if you do this, to keep the size of that
+file under control.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+From radiance-general@radiance-online.org  Tue Jun 24 16:19:40 2003
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Tue, 24 Jun 2003 08:19:40 -0700
+Subject: [Radiance-general] Re: Horizontal artifacts in large image
+In-Reply-To: <Pine.SOL.4.44.0306240942040.14039-100000@tetris.gpcc.itd.umich.edu>
+Message-ID: <466D19DC-A657-11D7-A0B8-000A956D40C8@lmi.net>
+
+Hi Mark,
+
+Did you have to restart this rendering process?  The artifacts don't  
+_quite_ look like an ambient calculation restart.  I have a competing  
+theory, which is that a long integer is getting wrapped in the source  
+testing code.  This is really a bug, but I guess it hasn't shown up  
+before because no one has testing a light source 2^31 times in a single  
+run.  Actually, maybe they have, but just never noticed the problem.
+
+I'll work on a fix for this today, but obviously you're going to have  
+to find another way to repair your image to meet your deadline.  Sorry  
+about that.  I recommend using the -vl option to rpict and rerendering  
+a portion of your image to cover up the problem areas using pcompos.   
+Let me know if you need help on figuring these options out.
+
+-Greg
+
+> From: Mark Stock <mstock@umich.edu>
+>
+> Fellow Radiance users,
+>
+> I recently completed a large image (1.4 GB .pic file, 16k
+> by 24k pixels), and it appears like there are two obvious
+> horizontal bands of incorrect values (one 30% from the top,
+> the other ~80% from the top). I pfilt'd the image down to
+> 5% of it's original size to make the image below:
+>
+> http://mark.technolope.org/image/p21c_fish_take_3/redo_smooth_6/ 
+> timg10_1_tw.jpg
+>
+> The commands that I ran were:
+>
+> rpict -x 16000 -y 24000 -vta -vp 0.2 0.2 -0.01 -vd 0.454 0.891 -0.08
+> -vu 0 0 1 -vh 58.66667 -vv 88 -ab 1 -aa 0 -ad 16 -as 0 -dv -ds 0.1
+> -dj 1.0 -t 600 -o img10_1.pic real.oct
+>
+> pfilt -1 -x /10 -y /10 -r 0.4 img10_1.pic > timg10_1_t.pic
+> pfilt -1 -e +3 -x /2 -y /2 timg10_1_t.pic | ra_ppm | cjpeg -q 95 >  
+> timg10_1_tw.jpg
+>
+> Does anyone know where these artifacts originate, or how to
+> prevent them from appearing? I'm running the same image at
+> reduced resolution right now, but final print quality is
+> not going to be as I'd hoped.
+>
+> Mark
+
+
+From radiance-general@radiance-online.org  Wed Jun 25 11:29:06 2003
+From: radiance-general@radiance-online.org (Tim Hanson)
+Date: Wed, 25 Jun 2003 11:29:06 +0100
+Subject: [Radiance-general] rad to ies!
+Message-ID: <50756CCFB15F9146886FB2AA0B29F8FB0EC7A2@l-gnts05>
+
+This message is in MIME format. Since your mail reader does not understand
+this format, some or all of this message may not be legible.
+
+------=_NextPartTM-000-a1bee231-f653-4360-98ac-29a406d023e5
+Content-Type: multipart/alternative;
+	boundary="----_=_NextPart_001_01C33B04.9B4A9490"
+
+------_=_NextPart_001_01C33B04.9B4A9490
+Content-Type: text/plain;
+	charset="iso-8859-1"
+
+Has anyone (by any chance?) written a program to convert the accurate
+photometric data written by mkillum into an ies file which can then be used
+in other light programs?  (or is this unacceptable behaviour!).
+
+Thanks,
+
+Tim
+ArupLighting
+
+
+
+
+------_=_NextPart_001_01C33B04.9B4A9490
+Content-Type: text/html;
+	charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+<META HTTP-EQUIV=3D"Content-Type" CONTENT=3D"text/html; =
+charset=3Diso-8859-1">
+<META NAME=3D"Generator" CONTENT=3D"MS Exchange Server version =
+5.5.2653.12">
+<TITLE>rad to ies!</TITLE>
+</HEAD>
+<BODY>
+
+<P><FONT SIZE=3D2 FACE=3D"Arial">Has anyone (by any chance?) written a =
+program to convert the accurate photometric data written by mkillum =
+into an ies file which can then be used in other light programs?&nbsp; =
+(or is this unacceptable behaviour!).</FONT></P>
+
+<P><FONT SIZE=3D2 FACE=3D"Arial">Thanks,</FONT>
+</P>
+
+<P><FONT SIZE=3D2 FACE=3D"Arial">Tim</FONT>
+<BR><FONT SIZE=3D2 FACE=3D"Arial">ArupLighting</FONT>
+</P>
+<BR>
+<BR>
+
+</BODY>
+</HTML>
+------_=_NextPart_001_01C33B04.9B4A9490--
+
+------=_NextPartTM-000-a1bee231-f653-4360-98ac-29a406d023e5--
+
+
+From radiance-general@radiance-online.org  Wed Jun 25 22:38:29 2003
+From: radiance-general@radiance-online.org (Mark Stock)
+Date: Wed, 25 Jun 2003 17:38:29 -0400 (EDT)
+Subject: [Radiance-general] Re: Horizontal artifacts in large image
+In-Reply-To: <466D19DC-A657-11D7-A0B8-000A956D40C8@lmi.net>
+Message-ID: <Pine.SOL.4.44.0306251713550.28091-100000@rygar.gpcc.itd.umich.edu>
+
+The process ran straight through, with no pauses or restarts.
+
+Another process (another third of the final image), which did
+require a few restarts, is here:
+
+http://mark.technolope.org/image/p21c_fish_take_3/redo_smooth_6/timg10_2_tw.jpg
+
+This one contains the same horizontal bands, one at ~35% of the way
+down, but a pair at about 85%.
+
+But there's also a weird slightly-darker band 20% of the way down,
+and on the center vertical tube.
+
+I'm also noticing thin dark lines on some of the tubes. I marked
+them in the following image:
+
+http://mark.technolope.org/image/p21c_fish_take_3/redo_smooth_6/timg10_2_twm.jpg
+
+Sorry about the long URLs. I'd move it to a more root-ward directory,
+but stuff has been rendering constantly for 2+ weeks.
+
+----
+Georg writes:
+You appear to have plenty of disk space, so I'd recommend to
+use an ambient file. You may want to play with the ambient
+resolution as well if you do this, to keep the size of that
+file under control.
+----
+
+That's the way I would have done it in the first place, but
+once the scene and the ambient file got up to 1.3 GB in RAM
+(where I have only 1 GB), it started to thrash, and I'd only
+made it to the 4k x 2k version by then. Plus, there were
+still splotches from the not-completely-resolved ambient
+distribution. Ultimately, with -aa 0, I get a smoother final
+rendering, at the cost of a more speckled pre-filtered
+rendering.
+
+I'm trying a lower-resolution run right now. Thanks for
+the input.
+
+Mark
+
+
+On Tue, 24 Jun 2003, Greg Ward wrote:
+>
+> Did you have to restart this rendering process?  The artifacts don't
+> _quite_ look like an ambient calculation restart.  I have a competing
+> theory, which is that a long integer is getting wrapped in the source
+> testing code.  This is really a bug, but I guess it hasn't shown up
+> before because no one has testing a light source 2^31 times in a single
+> run.  Actually, maybe they have, but just never noticed the problem.
+>
+> I'll work on a fix for this today, but obviously you're going to have
+> to find another way to repair your image to meet your deadline.  Sorry
+> about that.  I recommend using the -vl option to rpict and rerendering
+> a portion of your image to cover up the problem areas using pcompos.
+> Let me know if you need help on figuring these options out.
+>
+> -Greg
+>
+> > From: Mark Stock <mstock@umich.edu>
+> >
+> > Fellow Radiance users,
+> >
+> > I recently completed a large image (1.4 GB .pic file, 16k
+> > by 24k pixels), and it appears like there are two obvious
+> > horizontal bands of incorrect values (one 30% from the top,
+> > the other ~80% from the top). I pfilt'd the image down to
+> > 5% of it's original size to make the image below:
+> >
+> > http://mark.technolope.org/image/p21c_fish_take_3/redo_smooth_6/
+> > timg10_1_tw.jpg
+> >
+> > The commands that I ran were:
+> >
+> > rpict -x 16000 -y 24000 -vta -vp 0.2 0.2 -0.01 -vd 0.454 0.891 -0.08
+> > -vu 0 0 1 -vh 58.66667 -vv 88 -ab 1 -aa 0 -ad 16 -as 0 -dv -ds 0.1
+> > -dj 1.0 -t 600 -o img10_1.pic real.oct
+> >
+> > pfilt -1 -x /10 -y /10 -r 0.4 img10_1.pic > timg10_1_t.pic
+> > pfilt -1 -e +3 -x /2 -y /2 timg10_1_t.pic | ra_ppm | cjpeg -q 95 >
+> > timg10_1_tw.jpg
+> >
+> > Does anyone know where these artifacts originate, or how to
+> > prevent them from appearing? I'm running the same image at
+> > reduced resolution right now, but final print quality is
+> > not going to be as I'd hoped.
+> >
+> > Mark
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+
+
+From radiance-general@radiance-online.org  Wed Jun 25 23:00:18 2003
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Wed, 25 Jun 2003 15:00:18 -0700
+Subject: [Radiance-general] Re: Horizontal artifacts in large image
+In-Reply-To: <Pine.SOL.4.44.0306251713550.28091-100000@rygar.gpcc.itd.umich.edu>
+Message-ID: <68DB15F1-A758-11D7-88EB-000A956D40C8@lmi.net>
+
+Hi Mark,
+
+Assuming it's the long integer wrapping as I suspect, you should  
+download top-of-trunk and recompile to see if this is fixed.  Go to  
+www.radiance-online.org and click on the "download Radiance" link under  
+software.  Then, grab the "current experimental/bug-fixed version"  
+called radiance-HEAD.tgz.  Rerun "rmake install" in src/common and  
+src/rt and that should update rpict, rtrace, and rview.
+
+-Greg
+
+> From: Mark Stock <mstock@umich.edu>
+>
+> The process ran straight through, with no pauses or restarts.
+>
+> Another process (another third of the final image), which did
+> require a few restarts, is here:
+>
+> http://mark.technolope.org/image/p21c_fish_take_3/redo_smooth_6/ 
+> timg10_2_tw.jpg
+>
+> This one contains the same horizontal bands, one at ~35% of the way
+> down, but a pair at about 85%.
+>
+> But there's also a weird slightly-darker band 20% of the way down,
+> and on the center vertical tube.
+>
+> I'm also noticing thin dark lines on some of the tubes. I marked
+> them in the following image:
+>
+> http://mark.technolope.org/image/p21c_fish_take_3/redo_smooth_6/ 
+> timg10_2_twm.jpg
+>
+> Sorry about the long URLs. I'd move it to a more root-ward directory,
+> but stuff has been rendering constantly for 2+ weeks.
+>
+
+
+From radiance-general@radiance-online.org  Sun Jun 29 03:54:54 2003
+From: radiance-general@radiance-online.org (Mark Stock)
+Date: Sat, 28 Jun 2003 22:54:54 -0400 (EDT)
+Subject: [Radiance-general] Re: Horizontal artifacts in large image
+In-Reply-To: <68DB15F1-A758-11D7-88EB-000A956D40C8@lmi.net>
+Message-ID: <Pine.SOL.4.44.0306282248080.19148-100000@timepilot.gpcc.itd.umich.edu>
+
+On Wed, 25 Jun 2003, Greg Ward wrote:
+>
+> Assuming it's the long integer wrapping as I suspect, you should
+> download top-of-trunk and recompile to see if this is fixed.  Go to
+> www.radiance-online.org and click on the "download Radiance" link under
+> software.  Then, grab the "current experimental/bug-fixed version"
+> called radiance-HEAD.tgz.  Rerun "rmake install" in src/common and
+> src/rt and that should update rpict, rtrace, and rview.
+
+Just got around to this today. in src/common I get:
+
+gcc -Dlinux -L/usr/X11R6/lib -I/usr/include/X11 -DNOSTEREO -DBIGMEM -DMC
+-O2 -DSPEED=200 -O3 -march=i686 -malign-double -mno-ieee-fp -ffast-math
+-fomit-frame-pointer -fstrict-aliasing   -c -o header.o header.c
+In file included from header.c:28:
+resolu.h:64: parse error before `*'
+resolu.h:66: parse error before `t'
+make: *** [header.o] Error 1
+
+Those lines are:
+extern int      dateval(time_t *t, char *s);
+and
+extern void     fputdate(time_t t, FILE *fp);
+
+
+And in src/rt:
+
+gcc -I../common -L../lib -O2 -DSPEED=200 -O3 -march=i686 -malign-double
+-mno-ieee-fp -ffast-math -fomit-frame-pointer -fstrict-aliasing -Dlinux
+-L/usr/X11R6/lib -I/usr/include/X11 -DNOSTEREO -DBIGMEM -DMC -DNICE=4 -c
+rtmain.c
+In file included from rtmain.c:17:
+../common/random.h:70: parse error before `int'
+make: *** [rtmain.o] Error 1
+
+This also reminds me: does anyone regularly use true random Monte-
+Carlo sampling with the -DMC compile flag? I have traditionally had
+to make changes in the common/random.h file to get that to build
+under current gcc versions---as I did when 3R5 came out.
+
+Mark
+
+
+From radiance-general@radiance-online.org  Sun Jun 29 10:26:01 2003
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Sun, 29 Jun 2003 05:26:01 -0400 (EDT)
+Subject: [Radiance-general] Re: Horizontal artifacts in large image
+In-Reply-To: <Pine.SOL.4.44.0306282248080.19148-100000@timepilot.gpcc.itd.umich.edu>
+Message-ID: <Pine.BSF.4.44.0306290512131.82215-100000@emancholl.pair.com>
+
+Mark Stock wrote:
+
+> Just got around to this today. in src/common I get:
+>
+> gcc -Dlinux -L/usr/X11R6/lib -I/usr/include/X11 -DNOSTEREO -DBIGMEM -DMC
+> -O2 -DSPEED=200 -O3 -march=i686 -malign-double -mno-ieee-fp -ffast-math
+> -fomit-frame-pointer -fstrict-aliasing   -c -o header.o header.c
+> In file included from header.c:28:
+> resolu.h:64: parse error before `*'
+> resolu.h:66: parse error before `t'
+> make: *** [header.o] Error 1
+>
+> Those lines are:
+> extern int      dateval(time_t *t, char *s);
+> and
+> extern void     fputdate(time_t t, FILE *fp);
+
+
+Two alternative solutions:
+
+- Change header.c so that the system headers get included before
+  resolu.h.
+
+- #include <time.h> at the top of resolu.h (and <string.h> as
+  well, while you're at it).
+
+
+Can't say anything about the random stuff.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+From radiance-general@radiance-online.org  Sun Jun 29 17:55:13 2003
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Sun, 29 Jun 2003 09:55:13 -0700
+Subject: [Radiance-general] Re: Horizontal artifacts in large image
+In-Reply-To: <Pine.SOL.4.44.0306282248080.19148-100000@timepilot.gpcc.itd.umich.edu>
+Message-ID: <73CF8A5A-AA52-11D7-A970-000A956D40C8@lmi.net>
+
+Hi Mark,
+
+> From: Mark Stock <mstock@umich.edu>
+>
+> Just got around to this today. in src/common I get:
+>
+> gcc -Dlinux -L/usr/X11R6/lib -I/usr/include/X11 -DNOSTEREO -DBIGMEM 
+> -DMC
+> -O2 -DSPEED=200 -O3 -march=i686 -malign-double -mno-ieee-fp -ffast-math
+> -fomit-frame-pointer -fstrict-aliasing   -c -o header.o header.c
+> In file included from header.c:28:
+> resolu.h:64: parse error before `*'
+> resolu.h:66: parse error before `t'
+> make: *** [header.o] Error 1
+>
+> Those lines are:
+> extern int      dateval(time_t *t, char *s);
+> and
+> extern void     fputdate(time_t t, FILE *fp);
+
+I decided against including resolu.h in header.c, and the latest source 
+check-ins reflect this already.  Download it again.
+
+> And in src/rt:
+>
+> gcc -I../common -L../lib -O2 -DSPEED=200 -O3 -march=i686 -malign-double
+> -mno-ieee-fp -ffast-math -fomit-frame-pointer -fstrict-aliasing -Dlinux
+> -L/usr/X11R6/lib -I/usr/include/X11 -DNOSTEREO -DBIGMEM -DMC -DNICE=4 
+> -c
+> rtmain.c
+> In file included from rtmain.c:17:
+> ../common/random.h:70: parse error before `int'
+> make: *** [rtmain.o] Error 1
+>
+> This also reminds me: does anyone regularly use true random Monte-
+> Carlo sampling with the -DMC compile flag? I have traditionally had
+> to make changes in the common/random.h file to get that to build
+> under current gcc versions---as I did when 3R5 came out.
+
+Thanks for pointing this out -- it should be fixed, now.
+
+-Greg
+
+P.S.  Radiance-dev is probably a better place for this discussion, if 
+you wish to share it any further.  I doubt there are many on this list 
+compiling from top-of-trunk.
+
+

@@ -1,0 +1,4179 @@
+From mkii at iis.u-tokyo.ac.jp  Wed Apr  1 11:27:29 2009
+From: mkii at iis.u-tokyo.ac.jp (Minki Sung)
+Date: Wed Apr  1 11:27:58 2009
+Subject: [Radiance-general] Comparison of values measured by sensors and
+	calculated with Radiance
+Message-ID: <3acd9e4a0904011127h26dba9c4r6b17c6cd95d4e36b@mail.gmail.com>
+
+Dear all,
+
+A bared cylinder lamp (with 60cm length and 3.2cm diameter) is installed on
+the wall and illuminance values were measured at some points and to some
+directions as shown in the linked image. Unfortunately, the illuminance
+values calculated with Radiance are different from measured values,
+especially when the sensor is near the lamp or  the incident angles are high
+(K~O).
+
+Link image <http://iga.iis.u-tokyo.ac.jp/tmp/test.gif>
+
+What can be supposed as the cause of the discrepancy?
+
+rtrace command was as follow.
+cat pts.pts | rtrace -I -oov -ar 128 -ad 512 -as 256 -ab 2 -ds 0.02 test.oct
+> test.dat
+
+and all the walls, floor and ceiling was covered with non-glossy black
+paper. (reflectance 0.05)
+
+
+Sung.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090402/bdfe0774/attachment.htm
+From gward at lmi.net  Wed Apr  1 11:35:14 2009
+From: gward at lmi.net (Greg Ward)
+Date: Wed Apr  1 11:35:16 2009
+Subject: [Radiance-general] Comparison of values measured by sensors and
+	calculated with Radiance
+In-Reply-To: <3acd9e4a0904011127h26dba9c4r6b17c6cd95d4e36b@mail.gmail.com>
+References: <3acd9e4a0904011127h26dba9c4r6b17c6cd95d4e36b@mail.gmail.com>
+Message-ID: <937118BE-1267-44D0-85BF-B84958EEF758@lmi.net>
+
+Hi Sung,
+
+Try adding the following parameters to your rtrace command:
+
+	-dj .7 -dt 0
+
+How sure are you of your surface reflectances?  Did you actually  
+measure the lamp output, or are you assuming the manufacturer's lumen  
+specification is correct?  How far off are your values?
+
+Since you notice the most errors near to the lamp and at low angles,  
+it's possible that the Fresnel effects are important.  The emission  
+of the fluorescent phosphor may be considered diffuse, but the actual  
+output of the lamp will be a function of angle due to Fresnel  
+reflection of the glass bulb.  You can account for this  
+(approximately) by applying the "winxmit.cal" function included with  
+Radiance, like so:
+
+void brightfunc Fresnel_effect
+2 winxmit winxmit.cal
+0
+0
+
+Fresnel_effect light lamp_light
+0
+0
+3 X X X
+
+lamp_light cylinder fluorescent_tube
+(etc...)
+
+I think you get the idea.
+
+-Greg
+
+> From: Minki Sung <mkii@iis.u-tokyo.ac.jp>
+> Date: April 1, 2009 11:27:29 AM PDT
+>
+> Dear all,
+>
+> A bared cylinder lamp (with 60cm length and 3.2cm diameter) is  
+> installed on the wall and illuminance values were measured at some  
+> points and to some directions as shown in the linked image.  
+> Unfortunately, the illuminance values calculated with Radiance are  
+> different from measured values, especially when the sensor is near  
+> the lamp or  the incident angles are high (K~O).
+>
+> Link image
+>
+> What can be supposed as the cause of the discrepancy?
+>
+> rtrace command was as follow.
+> cat pts.pts | rtrace -I -oov -ar 128 -ad 512 -as 256 -ab 2 -ds 0.02  
+> test.oct > test.dat
+>
+> and all the walls, floor and ceiling was covered with non-glossy  
+> black paper. (reflectance 0.05)
+>
+> Sung.
+
+From bernd at bzed.de  Wed Apr  1 12:43:45 2009
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Wed Apr  1 12:42:12 2009
+Subject: [Radiance-general] "Rendering with Radiance" still not available
+In-Reply-To: <5AA45A10-FB8C-4A90-B218-192423634004@gmail.com>
+References: <49D2DBCA.3040605@nus.edu.sg>
+	<5AA45A10-FB8C-4A90-B218-192423634004@gmail.com>
+Message-ID: <49D3C3F1.5060602@bzed.de>
+
+Chang Chew Wai wrote:
+> yes Lars,
+> 
+> I have ordered and they are still trying to find..
+> 
+> I am in for PDF format with small download price
+
+Either that or - what would be the better way in my opinion - move printing to a
+better working books on demand service. There're some (supposed to be) good ones
+in Germany - while they require a little yearly fee to get a ISBN number for you
+and keep the book online, they don't just drop the book from printing.
+
+-- 
+ Bernd Zeimetz                           Debian GNU/Linux Developer
+ GPG Fingerprint: 06C8 C9A2 EAAD E37E 5B2C BE93 067A AD04 C93B FF79
+
+From kzelenay at berkeley.edu  Wed Apr  1 16:29:36 2009
+From: kzelenay at berkeley.edu (Krystyna Zelenay)
+Date: Wed Apr  1 16:29:40 2009
+Subject: [Radiance-general] "Rendering with Radiance" still not available
+In-Reply-To: <49D3C3F1.5060602@bzed.de>
+References: <49D2DBCA.3040605@nus.edu.sg>
+	<5AA45A10-FB8C-4A90-B218-192423634004@gmail.com>
+	<49D3C3F1.5060602@bzed.de>
+Message-ID: <54062c4e0904011629l35940ec0s4a979f3fa6b2ae24@mail.gmail.com>
+
+Hi Lars,
+
+I ordered the book mid-December through BiggerBooks.com
+http://www.biggerbooks.com/bk_detail.aspx?referrer=bbcj&AID=9467039&PID=536211&SID=a127d3077473v29595007&ISBN=0974538108
+
+It took about a month, but eventually I got the book. At the time the book
+cost $60, it looks like they raised the price somewhat.
+
+Krystyna
+
+
+
+On Wed, Apr 1, 2009 at 12:43 PM, Bernd Zeimetz <bernd@bzed.de> wrote:
+
+> Chang Chew Wai wrote:
+> > yes Lars,
+> >
+> > I have ordered and they are still trying to find..
+> >
+> > I am in for PDF format with small download price
+>
+> Either that or - what would be the better way in my opinion - move printing
+> to a
+> better working books on demand service. There're some (supposed to be) good
+> ones
+> in Germany - while they require a little yearly fee to get a ISBN number
+> for you
+> and keep the book online, they don't just drop the book from printing.
+>
+> --
+>  Bernd Zeimetz                           Debian GNU/Linux Developer
+>  GPG Fingerprint: 06C8 C9A2 EAAD E37E 5B2C BE93 067A AD04 C93B FF79
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090401/b6718ca8/attachment.html
+From rfritz at u.washington.edu  Wed Apr  1 23:14:35 2009
+From: rfritz at u.washington.edu (R Fritz)
+Date: Wed Apr  1 23:14:40 2009
+Subject: [Radiance-general] "Rendering with Radiance" still not available
+In-Reply-To: <49D3C3F1.5060602@bzed.de>
+References: <49D2DBCA.3040605@nus.edu.sg>
+	<5AA45A10-FB8C-4A90-B218-192423634004@gmail.com>
+	<49D3C3F1.5060602@bzed.de>
+Message-ID: <13B984A5-EE75-4B13-BA29-5A0BD1E2CF02@u.washington.edu>
+
+BookSurge is supposed to be doing that, but...
+
+Randolph
+
+On Apr 1, 2009, at 12:43 PM, Bernd Zeimetz wrote:
+
+> Chang Chew Wai wrote:
+>> yes Lars,
+>>
+>> I have ordered and they are still trying to find..
+>>
+>> I am in for PDF format with small download price
+>
+> Either that or - what would be the better way in my opinion - move  
+> printing to a
+> better working books on demand service. There're some (supposed to  
+> be) good ones
+> in Germany - while they require a little yearly fee to get a ISBN  
+> number for you
+> and keep the book online, they don't just drop the book from printing.
+>
+> -- 
+> Bernd Zeimetz                           Debian GNU/Linux Developer
+> GPG Fingerprint: 06C8 C9A2 EAAD E37E 5B2C BE93 067A AD04 C93B FF79
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From mkii at iis.u-tokyo.ac.jp  Thu Apr  2 00:42:28 2009
+From: mkii at iis.u-tokyo.ac.jp (Minki Sung)
+Date: Thu Apr  2 00:42:33 2009
+Subject: [Radiance-general] Re: Comparison of values measured by sensors and
+	calculated with Radiance (Greg Ward)
+Message-ID: <3acd9e4a0904020042t16c2035bk3a223a8b6567adb3@mail.gmail.com>
+
+Dear Greg,
+
+Thank you for your advice and I just tried as you said but actually the
+results were not improved as following link.
+
+*http://iga.iis.u-tokyo.ac.jp/xe/?document_srl=346*
+
+That might be so because the lamp is actually UV lamp but as you know, there
+is almost no difference between flourescent and UV lamps besides with or
+without phosphor coating on the surface of lamp. Nevertheless,
+I thought the absence of phosphor coating could cause some differences on
+the diffuse of UV including the Fresnel effects. I'm finding some references
+on the diffuse of UV lamps.
+The reflectances were referred to a japanese paper which had done
+experiements with UV and the UV output of lamp was referred to the
+manufacturer's specification but the UV intensities at 1 m distance is
+almost the same.
+
+ Additionally, I'm checking the UV sensor but as it also follows cosine law
+as illuminance sensors do, there might be no problem with UV sensor.
+
+Sung
+
+Message: 4
+Date: Wed, 1 Apr 2009 11:35:14 -0700
+From: Greg Ward <gward@lmi.net>
+Subject: Re: [Radiance-general] Comparison of values measured by
+       sensors and     calculated with Radiance
+To: Radiance general discussion <radiance-general@radiance-online.org>
+Message-ID: <937118BE-1267-44D0-85BF-B84958EEF758@lmi.net>
+Content-Type: text/plain; charset=US-ASCII; delsp=yes; format=flowed
+
+Hi Sung,
+
+Try adding the following parameters to your rtrace command:
+
+       -dj .7 -dt 0
+
+How sure are you of your surface reflectances?  Did you actually
+measure the lamp output, or are you assuming the manufacturer's lumen
+specification is correct?  How far off are your values?
+
+Since you notice the most errors near to the lamp and at low angles,
+it's possible that the Fresnel effects are important.  The emission
+of the fluorescent phosphor may be considered diffuse, but the actual
+output of the lamp will be a function of angle due to Fresnel
+reflection of the glass bulb.  You can account for this
+(approximately) by applying the "winxmit.cal" function included with
+Radiance, like so:
+
+void brightfunc Fresnel_effect
+2 winxmit winxmit.cal
+0
+0
+
+Fresnel_effect light lamp_light
+0
+0
+3 X X X
+
+lamp_light cylinder fluorescent_tube
+(etc...)
+
+I think you get the idea.
+
+-Greg
+
+> From: Minki Sung <mkii@iis.u-tokyo.ac.jp>
+> Date: April 1, 2009 11:27:29 AM PDT
+>
+> Dear all,
+>
+> A bared cylinder lamp (with 60cm length and 3.2cm diameter) is
+> installed on the wall and illuminance values were measured at some
+> points and to some directions as shown in the linked image.
+> Unfortunately, the illuminance values calculated with Radiance are
+> different from measured values, especially when the sensor is near
+> the lamp or  the incident angles are high (K~O).
+>
+> Link image
+>
+> What can be supposed as the cause of the discrepancy?
+>
+> rtrace command was as follow.
+> cat pts.pts | rtrace -I -oov -ar 128 -ad 512 -as 256 -ab 2 -ds 0.02
+> test.oct > test.dat
+>
+> and all the walls, floor and ceiling was covered with non-glossy
+> black paper. (reflectance 0.05)
+>
+> Sung.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090402/d1591ede/attachment.htm
+From gward at lmi.net  Thu Apr  2 08:59:18 2009
+From: gward at lmi.net (Greg Ward)
+Date: Thu Apr  2 08:59:19 2009
+Subject: [Radiance-general] Re: Comparison of values measured by sensors
+	and calculated with Radiance (Greg Ward)
+In-Reply-To: <3acd9e4a0904020042t16c2035bk3a223a8b6567adb3@mail.gmail.com>
+References: <3acd9e4a0904020042t16c2035bk3a223a8b6567adb3@mail.gmail.com>
+Message-ID: <382F0401-1EAD-4D2F-BD31-FC2CF19FFF42@lmi.net>
+
+Dear Sung,
+
+It seems I misread your diagram the first time, so misinterpreted  
+your problem.  I'm thinking now that the issue may be the cosine  
+correction of your sensors rather than what is going on in Radiance.   
+Most lux sensors have a crude calibration with respect to incident  
+angle.  I recommend checking your sensors against one that is more  
+reliable, or at least verifying that they have the proper cosine  
+response by measuring a point source at varying incident angles.
+
+Best,
+-Greg
+
+> From: Minki Sung <mkii@iis.u-tokyo.ac.jp>
+> Date: April 2, 2009 12:42:28 AM PDT
+>
+> Dear Greg,
+>
+> Thank you for your advice and I just tried as you said but actually  
+> the results were not improved as following link.
+>
+> http://iga.iis.u-tokyo.ac.jp/xe/?document_srl=346
+>
+> That might be so because the lamp is actually UV lamp but as you  
+> know, there is almost no difference between flourescent and UV  
+> lamps besides with or without phosphor coating on the surface of  
+> lamp. Nevertheless, I thought the absence of phosphor coating could  
+> cause some differences on the diffuse of UV including the Fresnel  
+> effects. I'm finding some references on the diffuse of UV lamps.
+> The reflectances were referred to a japanese paper which had done  
+> experiements with UV and the UV output of lamp was referred to the  
+> manufacturer's specification but the UV intensities at 1 m distance  
+> is almost the same.
+>
+> Additionally, I'm checking the UV sensor but as it also follows  
+> cosine law as illuminance sensors do, there might be no problem  
+> with UV sensor.
+>
+> Sung
+
+From reinhart at gsd.harvard.edu  Thu Apr  2 11:00:29 2009
+From: reinhart at gsd.harvard.edu (Reinhart, Christoph)
+Date: Thu Apr  2 11:00:33 2009
+Subject: [Radiance-general] Daylight Boston - 'Daylight Simulations: From
+	formal validation to common user mistakes'
+Message-ID: <C5E1527F129BF545A250B5AD0B0C26EF034B4042@ENTWEXMB0000000.university.harvard.edu>
+
+Dear colleagues,
+
+ 
+
+My apologies for any cross-posting. This email is mainly directed
+towards those of you located in the larger Boston area. 
+
+ 
+
+In an effort to reach out to the local design community and to promote
+the use of daylight in buildings we will be offering a series of free
+one hour brown-bag presentations at the Harvard Design School starting
+on Monday, April 20, at noon in Stubbins, Gund Hall, 48 Quincy Street in
+Cambridge. In this initial presentation I will be discussing the results
+of two very recent studies: A validation of 3ds Max Design compared to
+indoor illuminance measurements as well as a study that investigated
+common simulation mistakes that daylight simulation novices make. The
+focus audience for this presentation are design practitioners interested
+in adding physically based daylight simulations to their design
+portfolio. Following the presentation you are very welcome to stay
+around for a bit and share some of your own simulation activities. 
+
+ 
+
+Please RVSP Brooke King at bking@gsd.harvard.edu should you intend to
+join us. There will be no lunch provided but you are welcome to bring
+your own. The conference room is located next to our cafeteria.
+
+ 
+
+I look forward to meeting some of you in a few weeks. Best regards,
+
+ 
+
+Christoph
+
+Christoph Reinhart, Dr. Ing. 
+
+Associate Professor of Architectural Technology
+
+Graduate School of Design - Harvard University
+
+Gund Hall 331b, 48 Quincy Street, Cambridge, MA 02138, USA
+
+t: 617 384 7269, f: 617 495 8916, reinhart@gsd.harvard.edu
+<mailto:reinhart@gsd.harvard.edu> 
+
+ 
+
+ 
+
+ 
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090402/888088e4/attachment-0001.html
+From kkyte at robsonwoese.com  Thu Apr  2 11:30:22 2009
+From: kkyte at robsonwoese.com (Kevin Kyte)
+Date: Thu Apr  2 11:30:26 2009
+Subject: [Radiance-general] "Rendering with Radiance" still not available
+In-Reply-To: <200904021801.n32I11uB066218@robsonwoese.com>
+References: <200904021801.n32I11uB066218@robsonwoese.com>
+Message-ID: <223151A8B431374CA2AB2EE28D59261A5BDCBBD78B@EXVMBX018-11.exch018.msoutlookonline.net>
+
+I'd like a copy of this creation too.
+
+Is it expected to be bought from amazon, or can I buy it from ecampus.
+
+Respectfully,
+kevin
+
+------------------------------
+
+Message: 3
+Date: Wed, 1 Apr 2009 23:14:35 -0700
+From: R Fritz <rfritz@u.washington.edu>
+Subject: Re: [Radiance-general] "Rendering with Radiance" still not
+        available
+To: Radiance general discussion <radiance-general@radiance-online.org>
+Message-ID: <13B984A5-EE75-4B13-BA29-5A0BD1E2CF02@u.washington.edu>
+Content-Type: text/plain; charset=US-ASCII; format=flowed; delsp=yes
+
+BookSurge is supposed to be doing that, but...
+
+Randolph
+
+On Apr 1, 2009, at 12:43 PM, Bernd Zeimetz wrote:
+
+> Chang Chew Wai wrote:
+>> yes Lars,
+>>
+>> I have ordered and they are still trying to find..
+>>
+>> I am in for PDF format with small download price
+>
+> Either that or - what would be the better way in my opinion - move
+> printing to a
+> better working books on demand service. There're some (supposed to
+> be) good ones
+> in Germany - while they require a little yearly fee to get a ISBN
+> number for you
+> and keep the book online, they don't just drop the book from printing.
+>
+> --
+> Bernd Zeimetz                           Debian GNU/Linux Developer
+> GPG Fingerprint: 06C8 C9A2 EAAD E37E 5B2C BE93 067A AD04 C93B FF79
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+
+
+
+"This message is for the designated recipient only and may contain privileged, proprietary, or otherwise private information. If you are not the intended recipient, you are hereby notified that any disclosure, copying, distribution, or the taking of any action in reliance on the contents of this information is strictly prohibited.  If you have received this transmission in error, please notify the sender immediately by e-mail and delete the original message."
+
+From mkii at iis.u-tokyo.ac.jp  Thu Apr  2 19:37:33 2009
+From: mkii at iis.u-tokyo.ac.jp (Minki Sung)
+Date: Thu Apr  2 19:37:38 2009
+Subject: [Radiance-general] Re: Comparison of values measured by sensors 
+	and calculated with Radiance (Greg Ward)
+Message-ID: <3acd9e4a0904021937y35d8392ao1413c2b59a21974a@mail.gmail.com>
+
+Dear Greg,
+
+I am so sorry not to have explained the model enough. I'll check my sensors
+at first and drop a line here if I could find what is problem. Thank you
+again for your kind reply.
+
+Best Regards,
+
+Sung
+
+
+Message: 5
+Date: Thu, 2 Apr 2009 08:59:18 -0700
+From: Greg Ward <gward@lmi.net>
+Subject: Re: [Radiance-general] Re: Comparison of values measured by
+       sensors and calculated with Radiance (Greg Ward)
+To: Radiance general discussion <radiance-general@radiance-online.org>
+Message-ID: <382F0401-1EAD-4D2F-BD31-FC2CF19FFF42@lmi.net>
+Content-Type: text/plain; charset=US-ASCII; delsp=yes; format=flowed
+Dear Sung,
+It seems I misread your diagram the first time, so misinterpreted
+your problem.  I'm thinking now that the issue may be the cosine
+correction of your sensors rather than what is going on in Radiance.
+Most lux sensors have a crude calibration with respect to incident
+angle.  I recommend checking your sensors against one that is more
+reliable, or at least verifying that they have the proper cosine
+response by measuring a point source at varying incident angles.
+
+Best,
+-Greg
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090403/ba4deb24/attachment.htm
+From gward at lmi.net  Thu Apr  2 19:47:00 2009
+From: gward at lmi.net (Greg Ward)
+Date: Thu Apr  2 19:47:02 2009
+Subject: [Radiance-general] Re: Comparison of values measured by sensors
+	and calculated with Radiance (Greg Ward)
+In-Reply-To: <3acd9e4a0904021937y35d8392ao1413c2b59a21974a@mail.gmail.com>
+References: <3acd9e4a0904021937y35d8392ao1413c2b59a21974a@mail.gmail.com>
+Message-ID: <45D591D5-B606-4AC3-82E9-9E3E6C522106@lmi.net>
+
+No problem.  It was really my fault for not looking at your nicely  
+prepared diagram more closely -- I somehow missed the numerical  
+table.  You explained your problem very well.
+
+-Greg
+
+> From: Minki Sung <mkii@iis.u-tokyo.ac.jp>
+> Date: April 2, 2009 7:37:33 PM PDT
+>
+> Dear Greg,
+>
+> I am so sorry not to have explained the model enough. I'll check my  
+> sensors at first and drop a line here if I could find what is  
+> problem. Thank you again for your kind reply.
+>
+> Best Regards,
+>
+> Sung
+
+From vincent0039 at gmail.com  Fri Apr  3 01:56:14 2009
+From: vincent0039 at gmail.com (vincent)
+Date: Fri Apr  3 01:56:16 2009
+Subject: [Radiance-general] solar radiation calculation
+Message-ID: <254e0dda0904030156i4118d617n745246c966d77902@mail.gmail.com>
+
+Does anybody know how can we use the Radiace calculate the direct solar
+radiation and diffuse solar radiation on the building's envelope?
+
+I can just use some basic function of Radiance such as the simple daylight
+factor and illluminance calculation. if i want to learn some advanceed
+function, where should i start? Would you give me some advices?
+
+Best Regards!
+
+Vincent
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090403/b02174a0/attachment.html
+From lars.grobe at nus.edu.sg  Fri Apr  3 06:40:10 2009
+From: lars.grobe at nus.edu.sg (Lars O. Grobe)
+Date: Fri Apr  3 06:38:08 2009
+Subject: [Radiance-general] solar radiation calculation
+In-Reply-To: <254e0dda0904030156i4118d617n745246c966d77902@mail.gmail.com>
+References: <254e0dda0904030156i4118d617n745246c966d77902@mail.gmail.com>
+Message-ID: <49D611BA.6070804@nus.edu.sg>
+
+Hi Vincent,
+
+if I would not know the difficulties to get a copy of it, I would ask
+you to first browse through the book "Rendering with Radiance". If you
+have access to it, this is the way to start. If not, I would advice you
+to go through through the documentation done by Axel Jacobs (he made up
+two great tutorials, if you cannot find the link I can look through my
+bookmarks), which is available as pdf. After reading a bit, the first
+thing you will understand is that actually the output you get from
+radiance IS radiance (or irradiance which is most probably what you
+need) as long as you do not convert it into photopic units. The easiest
+way to divide the irradiance into diffuse and directed I could think of
+would be to do a rendering with sun and sky and ambient calculation and
+then substract the resulting pixel values of a rendering of only the sun
+with ambient bounces = 0 (which is the direct component).
+
+CU Lars.
+
+From mkii at iis.u-tokyo.ac.jp  Sun Apr  5 04:46:34 2009
+From: mkii at iis.u-tokyo.ac.jp (Minki Sung)
+Date: Sun Apr  5 04:46:52 2009
+Subject: [Radiance-general] Re: Re: Comparison of values measured by sensors
+	and calculated with Radiance (Greg Ward) (Minki Sung)
+Message-ID: <3acd9e4a0904050446o3418968fr6ee649c8389ff474@mail.gmail.com>
+
+Dear Greg,
+
+I have done some additional measurements and the results show as follow.
+
+
+http://iga.iis.u-tokyo.ac.jp/tmp/test01.gif  Setup
+
+http://iga.iis.u-tokyo.ac.jp/tmp/test02.gif  Fluorescent lamp (Measurement)
+
+http://iga.iis.u-tokyo.ac.jp/tmp/test03.gif  Simulation
+
+http://iga.iis.u-tokyo.ac.jp/tmp/test04.gif  UV lamp (Measurement)
+
+
+
+The results indicate the UV lamp has different diffuse characteristics
+compared with common fluorescent lamps if the UVC sensor is cosine corrected
+well as written in the sensor. If there is no problem with UVC sensor, it
+might be not easy to model UV lamp with RADIANCE.
+
+
+
+
+
+Best Regards,
+
+
+
+Sung
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090405/2afbeeaf/attachment.htm
+From gward at lmi.net  Sun Apr  5 07:19:43 2009
+From: gward at lmi.net (Greg Ward)
+Date: Sun Apr  5 07:19:49 2009
+Subject: [Radiance-general] Re: Re: Comparison of values measured by
+	sensors and calculated with Radiance (Greg Ward) (Minki Sung)
+In-Reply-To: <3acd9e4a0904050446o3418968fr6ee649c8389ff474@mail.gmail.com>
+References: <3acd9e4a0904050446o3418968fr6ee649c8389ff474@mail.gmail.com>
+Message-ID: <DB77915B-7DFD-45CE-8B58-DBA5BDA757FB@lmi.net>
+
+Hi Sung,
+
+I'm not exactly sure what we are looking at with these plots, but  
+it's clear that you need to characterize the sensor response in order  
+to understand the situation.  Did  you perform the cosine sensitivity  
+experiment I suggested?  You could mask off a portion of the center  
+of a tube if you don't have a small UV source, and see how the sensor  
+responds as a function of incident angle at a fixed distance.
+
+-Greg
+
+> From: Minki Sung <mkii@iis.u-tokyo.ac.jp>
+> Date: April 5, 2009 7:46:34 AM EDT
+>
+> Dear Greg,
+>
+> I have done some additional measurements and the results show as  
+> follow.
+>
+> http://iga.iis.u-tokyo.ac.jp/tmp/test01.gif  Setup
+> http://iga.iis.u-tokyo.ac.jp/tmp/test02.gif  Fluorescent lamp  
+> (Measurement)
+> http://iga.iis.u-tokyo.ac.jp/tmp/test03.gif  Simulation
+> http://iga.iis.u-tokyo.ac.jp/tmp/test04.gif  UV lamp (Measurement)
+>
+> The results indicate the UV lamp has different diffuse  
+> characteristics compared with common fluorescent lamps if the UVC  
+> sensor is cosine corrected well as written in the sensor. If there  
+> is no problem with UVC sensor, it might be not easy to model UV  
+> lamp with RADIANCE.
+>
+> Best Regards,
+>
+> Sung
+
+From lars.grobe at nus.edu.sg  Sun Apr  5 07:34:56 2009
+From: lars.grobe at nus.edu.sg (Lars O. Grobe)
+Date: Sun Apr  5 07:32:45 2009
+Subject: [Radiance-general] Re: Re: Comparison of values measured
+	by	sensors and calculated with Radiance (Greg Ward) (Minki Sung)
+In-Reply-To: <DB77915B-7DFD-45CE-8B58-DBA5BDA757FB@lmi.net>
+References: <3acd9e4a0904050446o3418968fr6ee649c8389ff474@mail.gmail.com>
+	<DB77915B-7DFD-45CE-8B58-DBA5BDA757FB@lmi.net>
+Message-ID: <49D8C190.9040004@nus.edu.sg>
+
+Hi,
+
+I am rather curious about these reports, as we may have to set up some
+uv sensors for another application soon. What kind of "cosine-corrected
+sensor" do you use? I know that type of probe head which is connected to
+a fibre leading to the sensor. As far as I understood it, the cosine
+correction happens simply by using a diffusing piece of transmissive
+material, that scatters light entering from any direction. I have always
+been curious how these can achieve a real cosine correction, as the
+scattering material is always mounted behind a thin ring to hold it in
+place, thus never seeing full 180 degree. In the case of uv, the
+wavelength dependance of the scattering may also play a role. Have all
+components been tested for uv transmittance, or is it possible that any
+component is made for i.e. visible light only? Or are you using an
+entirely different set-up, e.g. not a probe connected to fibre but a
+specific uv sensor?
+
+CU Lars.
+
+From mkii at iis.u-tokyo.ac.jp  Mon Apr  6 05:40:35 2009
+From: mkii at iis.u-tokyo.ac.jp (Minki Sung)
+Date: Mon Apr  6 05:40:39 2009
+Subject: [Radiance-general] Re: Re: Re: Comparison of values measured by
+	sensors and calculated 
+	with Radiance (Greg Ward) (Minki Sung) (Greg Ward)
+Message-ID: <3acd9e4a0904060540o4a08df5w525b86437739d24d@mail.gmail.com>
+
+Yes, I checked cosine sensitivity but the results showed that UV sensor did
+not calibrated by cosine law. I have two UV sensors made by different maker,
+but both showed almost same responses to incident angle. I am going to ask
+the maker on this problem and I think the UV sensors might not cosine
+calibarated with UV.
+
+http://iga.iis.u-tokyo.ac.jp/tmp/test05.gif  Fraction of value in 0 degree
+http://iga.iis.u-tokyo.ac.jp/tmp/test06.gif  Fraction divided by cosine
+
+
+Dear Lars,
+I think UV sensors would be calibarated to reponse according to cosine
+law. It can be controlled with geometry of sensor body and diffuser plate
+attached on the receptor and I think it shoud be as shown in figure
+test06.gif (FL, illuminance sensors). I used UV sensor body sending electric
+signal to datalogger and the datalogger convert the signal to UV intensity
+according to calibration curve as usual photosensors.
+
+Sung
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090406/018b06a7/attachment.html
+From gward at lmi.net  Mon Apr  6 07:52:16 2009
+From: gward at lmi.net (Greg Ward)
+Date: Mon Apr  6 07:52:19 2009
+Subject: [Radiance-general] Re: Comparison of values measured by sensors and
+	calculated with Radiance
+In-Reply-To: <3acd9e4a0904060540o4a08df5w525b86437739d24d@mail.gmail.com>
+References: <3acd9e4a0904060540o4a08df5w525b86437739d24d@mail.gmail.com>
+Message-ID: <E7A00256-EF86-4669-8C26-5131B54D9086@lmi.net>
+
+Hi Sung,
+
+This then explains the discrepancies you were seeing with your  
+previous comparisons between simulations (Radiance) and measurements.
+
+You could use the new rsensor program to replicate your UV sensors  
+response to get a match that way if you cannot modify the sensor.
+
+-Greg
+
+> From: Minki Sung <mkii@iis.u-tokyo.ac.jp>
+> Date: April 6, 2009 8:40:35 AM EDT
+>
+> Yes, I checked cosine sensitivity but the results showed that UV  
+> sensor did not calibrated by cosine law. I have two UV sensors made  
+> by different maker, but both showed almost same responses to  
+> incident angle. I am going to ask the maker on this problem and I  
+> think the UV sensors might not cosine calibarated with UV.
+>
+> http://iga.iis.u-tokyo.ac.jp/tmp/test05.gif  Fraction of value in 0  
+> degree
+> http://iga.iis.u-tokyo.ac.jp/tmp/test06.gif  Fraction divided by  
+> cosine
+>
+
+From gbetti at fosterandpartners.com  Tue Apr  7 03:54:15 2009
+From: gbetti at fosterandpartners.com (Giovanni Betti)
+Date: Tue Apr  7 03:54:21 2009
+Subject: [Radiance-general] Radiance and irradiation
+Message-ID: <6F5225D6E15F954BB4E58EC25F6736C3017F6467@corp3005.CORPORATE.FOSTER.NETWORK>
+
+Hi All,
+
+I am a keen Radiance user since one year now but unfortunatly, not
+having access to a Linux machine, I am forced to stick to pc. This is
+under a number of aspect quite convenient because being an architect,
+all of the other software I use is pc-based and I am totally unnfamiliar
+with the linux os. I hope you can help me bearing in mind my type of use
+of the software.
+I have a couple of questions:
+
+I understand radiance calculates irradiance and then uses a standard
+conversion factor Kr=179 lumens/watt. Hence it should be possible to use
+it for solar irradiation calculation as well as for light analysis.
+My question is, how can I display directly watts/m2 instead of lux?
+
+As well, in order to perform irradiation analysis a sky generated
+following the perez-all weather model would be more accurate than just
+using the standardCIE skies supported by gensky. I understand there is
+an application called gendaylit that does exectly this. From where can I
+download a windows version? 
+
+Thanks for your help,
+
+Giovanni Betti
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090407/6506d038/attachment.htm
+From lars.grobe at nus.edu.sg  Tue Apr  7 04:11:29 2009
+From: lars.grobe at nus.edu.sg (Lars O. Grobe)
+Date: Tue Apr  7 04:11:34 2009
+Subject: [Radiance-general] Radiance and irradiation
+In-Reply-To: <6F5225D6E15F954BB4E58EC25F6736C3017F6467@corp3005.CORPORATE.FOSTER.NETWORK>
+References: <6F5225D6E15F954BB4E58EC25F6736C3017F6467@corp3005.CORPORATE.FOSTER.NETWORK>
+Message-ID: <49DB34E1.8010302@nus.edu.sg>
+
+Hi!
+
+> having access to a Linux machine, I am forced to stick to pc.
+
+I do not want to be picky, but you probably mean Windows, not PC here ;-)
+
+> I understand radiance calculates irradiance and then uses a standard 
+> conversion factor Kr=179 lumens/watt. Hence it should be possible to use 
+> it for solar irradiation calculation as well as for light analysis.
+> 
+> My question is, how can I display directly watts/m2 instead of lux?
+
+Depends on what you mean by display. The most useful way would be 
+falsecolor images. As falsecolor by default multiplies pixel values by 
+179 to get from radiometric to photometric units, you must tell it to 
+use a multiplier of 1 instead of 179. Than, you most probably have to 
+set the scale in a way that you see the irradiances in your image. One 
+example, using a scale of 0-5000 and the multiplier 1 (to avoid the 
+conversion to lx) would be like this:
+
+falsecolor -i input.hdr -m 1 -s 5000 -l "Watts/m2" > output.hdr
+
+> As well, in order to perform irradiation analysis a sky generated 
+> following the perez-all weather model would be more accurate than just 
+> using the standardCIE skies supported by gensky. I understand there is 
+> an application called gendaylit that does exectly this. From where can I 
+> download a windows version?
+
+Sorry but I have no idea wether you can do that.
+
+CU Lars.
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: lars_grobe.vcf
+Type: text/x-vcard
+Size: 299 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20090407/24d649e5/lars_grobe.vcf
+From gbetti at fosterandpartners.com  Tue Apr  7 04:44:18 2009
+From: gbetti at fosterandpartners.com (Giovanni Betti)
+Date: Tue Apr  7 04:44:24 2009
+Subject: [Radiance-general] Radiance and irradiation
+Message-ID: <6F5225D6E15F954BB4E58EC25F6736C3017F646B@corp3005.CORPORATE.FOSTER.NETWORK>
+
+Thanks for your quick reply Lars, of cousrse I meant Windows!!! ;)
+So here I am into the Command Prompt but if I specify what you suggested
+me pcomb fails and no output is created (more precisely: a 0 kb file is
+created as output). The error I receive is about bad picture size... Any
+clue about how I can fix that?
+Thanks!
+ 
+Giovanni 
+
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Lars
+O. Grobe
+Sent: 07 April 2009 12:11
+To: Radiance general discussion
+Subject: Re: [Radiance-general] Radiance and irradiation
+
+Hi!
+
+> having access to a Linux machine, I am forced to stick to pc.
+
+I do not want to be picky, but you probably mean Windows, not PC here
+;-)
+
+> I understand radiance calculates irradiance and then uses a standard 
+> conversion factor Kr=179 lumens/watt. Hence it should be possible to 
+> use it for solar irradiation calculation as well as for light
+analysis.
+> 
+> My question is, how can I display directly watts/m2 instead of lux?
+
+Depends on what you mean by display. The most useful way would be
+falsecolor images. As falsecolor by default multiplies pixel values by
+179 to get from radiometric to photometric units, you must tell it to
+use a multiplier of 1 instead of 179. Than, you most probably have to
+set the scale in a way that you see the irradiances in your image. One
+example, using a scale of 0-5000 and the multiplier 1 (to avoid the
+conversion to lx) would be like this:
+
+falsecolor -i input.hdr -m 1 -s 5000 -l "Watts/m2" > output.hdr
+
+> As well, in order to perform irradiation analysis a sky generated 
+> following the perez-all weather model would be more accurate than just
+
+> using the standardCIE skies supported by gensky. I understand there is
+
+> an application called gendaylit that does exectly this. From where can
+
+> I download a windows version?
+
+Sorry but I have no idea wether you can do that.
+
+CU Lars.
+
+From lars.grobe at nus.edu.sg  Tue Apr  7 04:54:00 2009
+From: lars.grobe at nus.edu.sg (Lars O. Grobe)
+Date: Tue Apr  7 04:54:05 2009
+Subject: [Radiance-general] Radiance and irradiation
+In-Reply-To: <6F5225D6E15F954BB4E58EC25F6736C3017F646B@corp3005.CORPORATE.FOSTER.NETWORK>
+References: <6F5225D6E15F954BB4E58EC25F6736C3017F646B@corp3005.CORPORATE.FOSTER.NETWORK>
+Message-ID: <49DB3ED8.9050901@nus.edu.sg>
+
+Hi!
+
+> So here I am into the Command Prompt but if I specify what you suggested
+> me pcomb fails and no output is created (more precisely: a 0 kb file is
+> created as output). The error I receive is about bad picture size... Any
+> clue about how I can fix that?
+
+The same command works here. Most probably something is wrong with your 
+Radiance installation, the most common origin of all trouble are PATH 
+and RAYPATH settings not pointing to the right directories. But here we 
+hit a point that I cannot really help you - I have zero experience with 
+Radiance on Windows, and usually it is guaranteed 100% more pain for 
+doing the same. Can you check your installation?
+
+CU Lars.
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: lars_grobe.vcf
+Type: text/x-vcard
+Size: 299 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20090407/5cd6970c/lars_grobe.vcf
+From gbetti at fosterandpartners.com  Tue Apr  7 06:01:41 2009
+From: gbetti at fosterandpartners.com (Giovanni Betti)
+Date: Tue Apr  7 06:01:48 2009
+Subject: [Radiance-general] Radiance and irradiation
+Message-ID: <6F5225D6E15F954BB4E58EC25F6736C3017F6474@corp3005.CORPORATE.FOSTER.NETWORK>
+
+ 
+Sounds quite different... I can't even find those files in my radiance
+installation!!
+Thanks anyway!
+Giovanni
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Lars
+O. Grobe
+Sent: 07 April 2009 12:54
+To: Radiance general discussion
+Subject: Re: [Radiance-general] Radiance and irradiation
+
+Hi!
+
+> So here I am into the Command Prompt but if I specify what you 
+> suggested me pcomb fails and no output is created (more precisely: a 0
+
+> kb file is created as output). The error I receive is about bad 
+> picture size... Any clue about how I can fix that?
+
+The same command works here. Most probably something is wrong with your
+Radiance installation, the most common origin of all trouble are PATH
+and RAYPATH settings not pointing to the right directories. But here we
+hit a point that I cannot really help you - I have zero experience with
+Radiance on Windows, and usually it is guaranteed 100% more pain for
+doing the same. Can you check your installation?
+
+CU Lars.
+
+From lars.grobe at nus.edu.sg  Tue Apr  7 07:32:22 2009
+From: lars.grobe at nus.edu.sg (Lars O. Grobe)
+Date: Tue Apr  7 07:30:09 2009
+Subject: [Radiance-general] Radiance and irradiation
+In-Reply-To: <6F5225D6E15F954BB4E58EC25F6736C3017F6474@corp3005.CORPORATE.FOSTER.NETWORK>
+References: <6F5225D6E15F954BB4E58EC25F6736C3017F6474@corp3005.CORPORATE.FOSTER.NETWORK>
+Message-ID: <49DB63F6.406@nus.edu.sg>
+
+Hi!
+> Sounds quite different... I can't even find those files in my radiance
+> installation!!
+These are not programs or files, RAYPATH and PATH are (required)
+environment variables ;-) Is your radiance-installation functional?
+Where did you get it from, by compiling it or bey downloading binaries?
+
+CU Lars.
+
+From Christopher.Rush at arup.com  Tue Apr  7 07:41:56 2009
+From: Christopher.Rush at arup.com (Christopher Rush)
+Date: Tue Apr  7 07:42:06 2009
+Subject: [Radiance-general] Radiance and irradiation
+In-Reply-To: <6F5225D6E15F954BB4E58EC25F6736C3017F6474@corp3005.CORPORATE.FOSTER.NETWORK>
+References: <6F5225D6E15F954BB4E58EC25F6736C3017F6474@corp3005.CORPORATE.FOSTER.NETWORK>
+Message-ID: <EB124710ADB8554C930FADF760BB2BE7025DD2F9@n-yexc01.global.arup.com>
+
+Giovanni, right-click on My Computer, select Properties, go to the
+Advanced tab, click the Environment Variables button near the bottom. In
+the upper window you should have a variable called PATH and a variable
+called RAYPATH. If you don't have them, or the values don't match the
+following, create  or edit them accordingly...
+
+PATH = .;C:\Program Files\MinGW-Radiance\bin;$PATH
+RAYPATH = .;C:\Program Files\MinGW-Radiance\lib
+
+At least that's how it's set up on mine using the MingW binaries from
+http://www.bozzograo.net/radiance/
+If your radiance bin or lib directories are located elsewhere on your C
+drive, change accordingly.
+
+
+
+-------------------------------------
+Giovanni Betti
+Sent: Tuesday, April 07, 2009 9:02 AM
+
+ 
+Sounds quite different... I can't even find those files in my radiance
+installation!!
+Thanks anyway!
+Giovanni
+
+
+-------------------------
+Lars O. Grobe
+Sent: 07 April 2009 12:54
+
+
+The same command works here. Most probably something is wrong with your
+Radiance installation, the most common origin of all trouble are PATH
+and RAYPATH settings not pointing to the right directories. But here we
+hit a point that I cannot really help you - I have zero experience with
+Radiance on Windows, and usually it is guaranteed 100% more pain for
+doing the same. Can you check your installation?
+
+CU Lars.
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+
+
+From erydjunaedy at gmail.com  Tue Apr  7 07:55:58 2009
+From: erydjunaedy at gmail.com (Ery Djunaedy)
+Date: Tue Apr  7 07:56:01 2009
+Subject: [Radiance-general] Re: [Bldg-sim] illuminance data in TMY2 file
+In-Reply-To: <C468F8F9013C3440B9DCC8273A8FE13F0DEB9653@mail-1a.nrel.gov>
+References: <a590350904061527v7bc912e8sc0b7334daeaaeeaa@mail.gmail.com>
+	<C468F8F9013C3440B9DCC8273A8FE13F0DEB9653@mail-1a.nrel.gov>
+Message-ID: <a590350904070755q3db0d12fx6801756b80594f47@mail.gmail.com>
+
+Scott,
+
+Thanks for the info. I know that the solution can be as simple as that.
+
+This data is of course important only for the (annual) daylighting
+calculation. Daysim is using this data. I suspect even EPlus or eQuest
+will use this data for daylight control.
+
+Thanks,
+
+Ery
+
+
+On Mon, Apr 6, 2009 at 5:10 PM, Horowitz, Scott <Scott.Horowitz@nrel.gov> wrote:
+> Hi Ery,
+>
+> I don't know if this was also a problem with TMY2 or if you meant TMY3,
+> but TMY3 files have the problem you observed. See the notice listed on
+> this website:
+>
+> http://rredc.nrel.gov/solar/old_data/nsrdb/1991-2005/tmy3/
+>
+> For what it's worth, certain simulation engines (like EnergyPlus) don't
+> use that data from the weather file.
+>
+> Hope that helps,
+>
+> Scott
+>
+> --
+> Scott Horowitz
+> National Renewable Energy Laboratory
+> 1617 Cole Blvd.
+> Golden, CO 80401
+> 303.384.7560
+>
+>
+>> -----Original Message-----
+>> From: bldg-sim-bounces@lists.onebuilding.org [mailto:bldg-sim-
+>> bounces@lists.onebuilding.org] On Behalf Of Ery Djunaedy
+>> Sent: Monday, April 06, 2009 4:27 PM
+>> To: bldg-sim@lists.onebuilding.org; radiance-general@radiance-
+>> online.org
+>> Subject: [Bldg-sim] illuminance data in TMY2 file
+>>
+>> All,
+>>
+>> Attached is the illuminance (global horizontal) for Boise, ID, from
+>> TMY2 data. Note the valley in the graph on the left bottom corner
+>> which is caused by the very low illuminance values for January (the
+>> values are in the hundreds, compared to tens of thousand in February).
+>> I know for a fact that in Boise January is not (much) darker than
+>> December or February.
+>>
+>> Furthermore, the corresponding radiation data do not have that dip in
+>> January. The illumination values are calculated based on the radiation
+>> data, right? So if there is nothing wrong in the radiation data, is
+>> this related to the model used in converting radiation data into
+>> illumination values?
+>>
+>> I also checked another site in Idaho, it has the same dark January.
+>>
+>> Any thoughts?
+>>
+>> Thanks,
+>>
+>> Ery
+>
+
+From MdelaFuente at wmtao.com  Tue Apr  7 08:24:47 2009
+From: MdelaFuente at wmtao.com (Mark de la Fuente)
+Date: Tue Apr  7 08:25:36 2009
+Subject: [Radiance-general] Radiance and irradiation
+In-Reply-To: <8202BD94.197@wmtao.com>
+References: <8202BD94.197@wmtao.com>
+Message-ID: <49DB29EF.B450.0049.0@wmtao.com>
+
+Giovanni,
+ 
+I have the windows version of radiance on my machine.  I don't think it comes with false color.  I believe this is because false color is a c-shell script and windows does not use C-shells, it uses the dos prompt instead.  If I were you, I would look into adding Cygwin to your windows computer and installing radiance within Cygwin.  Then you would have the full functionality of radiance on a windows machine.  (This is what I do and it works great)  (And is free)  You could also set up a dual boot on your machine and either boot radiance or boot linux (not a practical solution in my opinion) (also free).  Or you could use VMware and run both windows and linux simultaneously.  This is possibly the best option, but I've never tried it since I don't own a copy of VMware. (not free)
+ 
+As far as the Cygwin option goes, I have not been able to compile radiance on Cygwin myself and have relied on the link below.  I would love to know how it was done.  I have however, been able to compile radiance on Suse Linux...
+ 
+For Cygwin radiance see...  http://www.dream.unipa.it/dream/pub/dot/anselmo/radiance/03.php and follow the link (http://www.bozzograo.net/radiance/) to the updated binaries.  (Thanks again to Francesco Anselmo for those)
+ 
+For Cygwin go to www.cygwin.com 
+ 
+Good luck!
+ 
+Mark de la Fuente
+ 
+PS.. as a side note, I find the hdrview program (http://www.debevec.org/FiatLux/hdrview/) to be very useful as well.  It's too bad you can't print from there though.  Anyone know of a windows viewer that allows you to adjust the exposure of an image and also print?
+ 
+
+[{--Wm. Tao & Associates, Inc.--}] This message and content is privileged, intended only for recipients named and/or addressed.  If the receiver/reader is not a representative of the intended recipient, any review, forwarding, dissemination or copying of this message or its content, in part or in whole, is prohibited. If you have received this message in error, please notify the sender immediately by Reply email, and Delete the original message and attachments.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090407/289a5c2a/attachment.html
+From rpg at rumblestrip.org  Tue Apr  7 09:19:18 2009
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Tue Apr  7 09:19:21 2009
+Subject: [Radiance-general] Radiance and irradiation
+In-Reply-To: <49DB29EF.B450.0049.0@wmtao.com>
+References: <8202BD94.197@wmtao.com> <49DB29EF.B450.0049.0@wmtao.com>
+Message-ID: <49DB7D06.20903@rumblestrip.org>
+
+Mark de la Fuente wrote:
+
+> PS.. as a side note, I find the hdrview program 
+> (http://www.debevec.org/FiatLux/hdrview/) to be very useful as well.  
+> It's too bad you can't print from there though.  Anyone know of a 
+> windows viewer that allows you to adjust the exposure of an image and 
+> also print?
+
+The Radiance front end Rayfront has a Windows binary called "winimage" 
+that allows one to open a Radiance .pic -- excuse me, .hdr -- image and 
+do exposure adjustments, do the pcond -h tonemapping, and generate 
+falsecolor images which can be printed and saved in alternate formats. 
+It's part of the Rayfront program and AFAIK it's not available as a 
+standalone program. Details on Rayfront are located here:
+
+http://www.schorsch.com/rayfront/
+
+Schorsch? Any chance of spinning that off into a separate 
+purchase/download (or updating RF to work on newer versions of AutoCAD)?
+
+- Rob Guglielmetti
+
+From Christopher.Rush at arup.com  Tue Apr  7 10:35:38 2009
+From: Christopher.Rush at arup.com (Christopher Rush)
+Date: Tue Apr  7 10:35:44 2009
+Subject: [Radiance-general] Radiance and irradiation
+In-Reply-To: <49DB7D06.20903@rumblestrip.org>
+References: <8202BD94.197@wmtao.com> <49DB29EF.B450.0049.0@wmtao.com>
+	<49DB7D06.20903@rumblestrip.org>
+Message-ID: <EB124710ADB8554C930FADF760BB2BE7025DD2FB@n-yexc01.global.arup.com>
+
+I'm afraid to mention it, but I think the old "Desktop Radiance" package
+came with winimage. If required you could download that big package,
+take the winimage.exe from it, and delete the rest of the obsolete
+package.
+
+Maybe it's possible to package separately, not necessarily from
+Rayfront? Or maybe my memory is just mixed up.
+
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Rob
+Guglielmetti
+Sent: Tuesday, April 07, 2009 12:19 PM
+To: Radiance general discussion
+Subject: Re: [Radiance-general] Radiance and irradiation
+
+Mark de la Fuente wrote:
+
+> PS.. as a side note, I find the hdrview program
+> (http://www.debevec.org/FiatLux/hdrview/) to be very useful as well.  
+> It's too bad you can't print from there though.  Anyone know of a 
+> windows viewer that allows you to adjust the exposure of an image and 
+> also print?
+
+The Radiance front end Rayfront has a Windows binary called "winimage" 
+that allows one to open a Radiance .pic -- excuse me, .hdr -- image and
+do exposure adjustments, do the pcond -h tonemapping, and generate
+falsecolor images which can be printed and saved in alternate formats. 
+It's part of the Rayfront program and AFAIK it's not available as a
+standalone program. Details on Rayfront are located here:
+
+http://www.schorsch.com/rayfront/
+
+Schorsch? Any chance of spinning that off into a separate
+purchase/download (or updating RF to work on newer versions of AutoCAD)?
+
+- Rob Guglielmetti
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+
+
+From rpg at rumblestrip.org  Tue Apr  7 12:12:45 2009
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Tue Apr  7 12:12:51 2009
+Subject: [Radiance-general] Radiance and irradiation
+In-Reply-To: <EB124710ADB8554C930FADF760BB2BE7025DD2FB@n-yexc01.global.arup.com>
+References: <8202BD94.197@wmtao.com>
+	<49DB29EF.B450.0049.0@wmtao.com>	<49DB7D06.20903@rumblestrip.org>
+	<EB124710ADB8554C930FADF760BB2BE7025DD2FB@n-yexc01.global.arup.com>
+Message-ID: <49DBA5AD.4050502@rumblestrip.org>
+
+Christopher Rush wrote:
+> I'm afraid to mention it, but I think the old "Desktop Radiance" package
+> came with winimage. If required you could download that big package,
+> take the winimage.exe from it, and delete the rest of the obsolete
+> package.
+> 
+> Maybe it's possible to package separately, not necessarily from
+> Rayfront? Or maybe my memory is just mixed up.
+
+Oh, you're right Christopher! I think the one that shipped with Rayfront 
+may have been updated but in general it's the same application. So I 
+suppose one could install DR to get the winimage.exe.
+
+I guess my memory is starting to fade...
+
+- Rob
+
+From maricanis at gmail.com  Wed Apr  8 01:45:33 2009
+From: maricanis at gmail.com (Marija Velickovic)
+Date: Wed Apr  8 01:45:38 2009
+Subject: [Radiance-general] Radiance and irradiation
+In-Reply-To: <49DBA5AD.4050502@rumblestrip.org>
+References: <8202BD94.197@wmtao.com> <49DB29EF.B450.0049.0@wmtao.com>
+	<49DB7D06.20903@rumblestrip.org>
+	<EB124710ADB8554C930FADF760BB2BE7025DD2FB@n-yexc01.global.arup.com>
+	<49DBA5AD.4050502@rumblestrip.org>
+Message-ID: <124b40400904080145p19be4b82w173185f81bc2a7f3@mail.gmail.com>
+
+Hi,
+
+For Radiance images preview and analysis in Windows and Linux you can use
+free tool RadDisplay <http://deluminaelab.com/en/tools.html>
+It has graphical user interface, and you can make false color images with
+various palettes.
+You can also adjust image exposure, trace pixels, and preview either
+(ir)radiance or (il)luminace values.
+Current version can only save images in jpg format, but we are preparing new
+version that can also save in .pic/.hdr file format.
+
+For now it doesn't offer possibility to print images, but thank you for
+idea. We'll try to implement it in next version of the program.
+
+Hope it helps!
+
+Marija
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090408/411ba586/attachment.htm
+From vangelis54 at gmail.com  Thu Apr  9 10:24:46 2009
+From: vangelis54 at gmail.com (Evangelos Christakou)
+Date: Thu Apr  9 10:24:50 2009
+Subject: [Radiance-general] Re: Radiance-general Digest, Vol 62, Issue 9
+In-Reply-To: <49dcf499.16078e0a.1a50.ffffd8cfSMTPIN_ADDED@mx.google.com>
+References: <49dcf499.16078e0a.1a50.ffffd8cfSMTPIN_ADDED@mx.google.com>
+Message-ID: <dc928a050904091024n6508dcc0g827710624cb958d@mail.gmail.com>
+
+Hi Christopher,
+
+If you want to avoid an installation, I have zip (winimage.exe,
+falsecolor.exe and rview.exe) and uploaded to:
+
+http://www.archidigital.arq.br/radiance/files/Winimage_falsecolor_rview.zip
+
+Unzip them to /bin in RADIANCE folder.
+
+regards,
+
+vangelis
+
+
+
+
+>
+>
+> Oh, you're right Christopher! I think the one that shipped with Rayfront
+> may have been updated but in general it's the same application. So I
+> suppose one could install DR to get the winimage.exe.
+>
+> I guess my memory is starting to fade...
+>
+> - Rob
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090409/59f9a727/attachment.html
+From rjlowe at uncc.edu  Fri Apr 10 14:22:56 2009
+From: rjlowe at uncc.edu (Rhonda Lowe)
+Date: Fri Apr 10 14:23:33 2009
+Subject: [Radiance-general] Installing and using Evalglare
+Message-ID: <60a163e50904101422s2284ed27gc0e6719664732c5@mail.gmail.com>
+
+I have tried compiling evalglare on both cygwin and linux/ubuntu. Did anyone
+ever find a compilation tutuorial or instructions?
+
+
+-- 
+
+
+Rhonda Lowe
+
+Research
+DAYLIGHTING + ENERGY PERFORMANCE LABORATORY
+Center for Integrated Building Design Research
+School of Architecture  - University of North Carolina Charlotte
+O:704.687.3247 m: 704.231.0055
+email:RhondaJLowe@gmail.com <email%3ARhondaJLowe@gmail.com>
+www.soa.uncc.edu/daylighting
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090410/098e010f/attachment.htm
+From reinhart at gsd.harvard.edu  Mon Apr 13 05:59:16 2009
+From: reinhart at gsd.harvard.edu (Reinhart, Christoph)
+Date: Mon Apr 13 05:59:22 2009
+Subject: [Radiance-general] Daylighting Rules of Thumb
+Message-ID: <C5E1527F129BF545A250B5AD0B0C26EF03612264@ENTWEXMB0000000.university.harvard.edu>
+
+Dear all:
+
+ 
+
+I am following Rob's suggestion. My apologies for any cross-postings.
+
+ 
+
+Christoph
+
+ 
+
+From: Rob Guglielmetti [mailto:rpg@rumblestrip.org] 
+Sent: Sunday, April 12, 2009 11:11 AM
+To: Reinhart, Christoph
+Cc: bldg-sim@lists.onebuilding.org
+Subject: Re: [Bldg-sim] Daylighting Rules of Thumb
+
+ 
+
+Thanks Christoph,
+
+ 
+
+Nice work. While anything based on daylight factors is limiting, you
+have qualified that every step of the way. The nice thing about this is
+that you have created a process for really applying a daylight factor
+approach early on in the design process. You should cross-post this to
+the radiance list!
+
+ 
+
+Rob Guglielmetti 
+
+ 
+
+ 
+
+On Apr 9, 2009, at 7:02 AM, Reinhart, Christoph wrote:
+
+
+
+
+
+Dear colleagues:
+
+ 
+
+It might be a complete 'faux pas' to send a design sequence based on
+rules of thumb to a building simulationmailing list. But, I take the
+risk. We recently developed and validated a rules-of-thumb based design
+sequence for diffuse
+daylighting:http://www.gsd.harvard.edu/people/faculty/reinhart/documents
+/DiffuseDaylightingDesignSequenceTutorial.pdf. The series offers design
+advice for daylighting at the programming and massing stage and - being
+based on the daylight factor  - applies to climates with either mostly
+diffuse sky conditions or heavily obstructed sites. Alternatively, the
+design sequence can be used in combination with a direct shading study.
+The supporting research can be found
+athttp://www.gsd.harvard.edu/people/faculty/reinhart/documents/DiffuseDa
+ylightingDesignSequenceInLRT.pdf.  
+
+ 
+
+Christoph
+
+Christoph Reinhart, Dr. Ing.
+
+Associate Professor of Architectural Technology
+
+Graduate School of Design - Harvard University
+
+Gund Hall 331b, 48 Quincy Street, Cambridge, MA 02138, USA
+
+t: 617 384 7269, f: 617 495 8916, reinhart@gsd.harvard.edu
+<mailto:reinhart@gsd.harvard.edu> 
+
+Daylighting Design: Rules of Thumb
+<http://www.gsd.harvard.edu/people/faculty/reinhart/documents/DiffuseDay
+lightingDesignSequenceTutorial.pdf> , Simulation
+<http://www.daysim.com/> , Executive Education
+<http://execed.gsd.harvard.edu/cgi-bin/exec_ed/details.cgi?offering_id=1
+01683> 
+
+ 
+
+ 
+
+ 
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090413/3326e8df/attachment.html
+From vincent0039 at gmail.com  Mon Apr 13 18:17:46 2009
+From: vincent0039 at gmail.com (vincent)
+Date: Mon Apr 13 18:17:52 2009
+Subject: [Radiance-general] solar radiation calculation
+In-Reply-To: <49D611BA.6070804@nus.edu.sg>
+References: <254e0dda0904030156i4118d617n745246c966d77902@mail.gmail.com>
+	<49D611BA.6070804@nus.edu.sg>
+Message-ID: <254e0dda0904131817g389baa48u704d59c3a808ee4f@mail.gmail.com>
+
+CU Lars
+
+Thank you very much!
+
+would you tell me the link of the documentation done by Axel Jacobs? i donot
+find it!
+
+Best Regards!
+
+
+
+2009/4/3 Lars O. Grobe <lars.grobe@nus.edu.sg>
+
+> Hi Vincent,
+>
+> if I would not know the difficulties to get a copy of it, I would ask
+> you to first browse through the book "Rendering with Radiance". If you
+> have access to it, this is the way to start. If not, I would advice you
+> to go through through the documentation done by Axel Jacobs (he made up
+> two great tutorials, if you cannot find the link I can look through my
+> bookmarks), which is available as pdf. After reading a bit, the first
+> thing you will understand is that actually the output you get from
+> radiance IS radiance (or irradiance which is most probably what you
+> need) as long as you do not convert it into photopic units. The easiest
+> way to divide the irradiance into diffuse and directed I could think of
+> would be to do a rendering with sun and sky and ambient calculation and
+> then substract the resulting pixel values of a rendering of only the sun
+> with ambient bounces = 0 (which is the direct component).
+>
+> CU Lars.
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+
+
+-- 
+Regards!
+
+Tianyang
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090414/59271fac/attachment.htm
+From gward at lmi.net  Mon Apr 13 19:50:45 2009
+From: gward at lmi.net (Greg Ward)
+Date: Mon Apr 13 19:50:50 2009
+Subject: [Radiance-general] solar radiation calculation
+In-Reply-To: <254e0dda0904131817g389baa48u704d59c3a808ee4f@mail.gmail.com>
+References: <254e0dda0904030156i4118d617n745246c966d77902@mail.gmail.com>
+	<49D611BA.6070804@nus.edu.sg>
+	<254e0dda0904131817g389baa48u704d59c3a808ee4f@mail.gmail.com>
+Message-ID: <149877DD-0E84-497F-BA04-FB7E756D9E17@lmi.net>
+
+http://luminance.londonmet.ac.uk/learnix/docs.shtml
+
+> From: vincent <vincent0039@gmail.com>
+> Date: April 13, 2009 6:17:46 PM PDT
+>
+> Thank you very much!
+>
+> would you tell me the link of the documentation done by Axel  
+> Jacobs? i donot find it!
+>
+> Best Regards!
+
+From lars.grobe at nus.edu.sg  Thu Apr 16 01:46:53 2009
+From: lars.grobe at nus.edu.sg (Lars O. Grobe)
+Date: Thu Apr 16 01:47:49 2009
+Subject: [Radiance-general] sky models and color gradients
+Message-ID: <49E6F07D.9080903@nus.edu.sg>
+
+Hi,
+
+I remember that I once have seen a paper on modeling the color gradients 
+of the sky dome related to weather, time and location information, and 
+if I am not completely wrong, the authors had done that work using 
+Radiance. I am aware of several models for creating color gradients, but 
+I could not find anything that has been applied to Radiance. Of course I 
+am aware of Mark Stock's skycolor.cal, but that one takes known colors 
+as an input. Does anyone else have information on the topic, how to set 
+extend radiance brightness distribution by color models for the sky dome?
+
+Thanks!!! Lars.
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: lars_grobe.vcf
+Type: text/x-vcard
+Size: 299 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20090416/447adab0/lars_grobe.vcf
+From lars.grobe at nus.edu.sg  Thu Apr 16 02:27:39 2009
+From: lars.grobe at nus.edu.sg (Lars O. Grobe)
+Date: Thu Apr 16 02:34:22 2009
+Subject: [Radiance-general] sky models and color gradients
+In-Reply-To: <49E6F07D.9080903@nus.edu.sg>
+References: <49E6F07D.9080903@nus.edu.sg>
+Message-ID: <49E6FA0B.8090401@nus.edu.sg>
+
+Found it, it is linked here:
+
+http://www.cs.utah.edu/vissim/papers/sunsky/
+
+
+"A Practical Analytic Model for Daylight" by A. J. Preetham, Peter 
+Shirley, Brian Smits
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: lars_grobe.vcf
+Type: text/x-vcard
+Size: 299 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20090416/1a157999/lars_grobe.vcf
+From mstock at umich.edu  Thu Apr 16 06:25:37 2009
+From: mstock at umich.edu (Mark Stock)
+Date: Thu Apr 16 06:25:54 2009
+Subject: [Radiance-general] sky models and color gradients
+In-Reply-To: <49E6FA0B.8090401@nus.edu.sg>
+References: <49E6F07D.9080903@nus.edu.sg> <49E6FA0B.8090401@nus.edu.sg>
+Message-ID: <Pine.LNX.4.64.0904160911090.7941@zaxxon.gpcc.itd.umich.edu>
+
+I am interested in this, too. How best to make it work? Convert 
+the formulae in the paper to a .cal file (that modifies a mist 
+volume or a dome-like source?) Pre-render a sky dome? Modify the 
+Radiance source itself?
+
+Since it is unlikely that one of us has the extra classes to make 
+the authors' sample code work, I volunteer to share what I come 
+up with if I get done first.
+
+Mark
+
+On Thu, 16 Apr 2009, Lars O. Grobe wrote:
+
+> Found it, it is linked here:
+>
+> http://www.cs.utah.edu/vissim/papers/sunsky/
+>
+>
+> "A Practical Analytic Model for Daylight" by A. J. Preetham, Peter Shirley, 
+> Brian Smits
+>
+
+From reinhart at gsd.harvard.edu  Thu Apr 16 06:33:51 2009
+From: reinhart at gsd.harvard.edu (Reinhart, Christoph)
+Date: Thu Apr 16 06:34:08 2009
+Subject: [Radiance-general] sky models and color gradients
+In-Reply-To: <Pine.LNX.4.64.0904160911090.7941@zaxxon.gpcc.itd.umich.edu>
+References: <49E6F07D.9080903@nus.edu.sg> <49E6FA0B.8090401@nus.edu.sg>
+	<Pine.LNX.4.64.0904160911090.7941@zaxxon.gpcc.itd.umich.edu>
+Message-ID: <C5E1527F129BF545A250B5AD0B0C26EF036CD809@ENTWEXMB0000000.university.harvard.edu>
+
+I am very interested in a colored sky model as well Mark. Thank-you for
+offering to share! This work would be a perfect topic to present at the
+Radiance workshop in November. FYI, 3ds Max Design already has the Utah
+sky model implemented. It generates really impressive sunsets.
+
+Christoph
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Mark
+Stock
+Sent: Thursday, April 16, 2009 9:26 AM
+To: Radiance general discussion
+Subject: Re: [Radiance-general] sky models and color gradients
+
+I am interested in this, too. How best to make it work? Convert 
+the formulae in the paper to a .cal file (that modifies a mist 
+volume or a dome-like source?) Pre-render a sky dome? Modify the 
+Radiance source itself?
+
+Since it is unlikely that one of us has the extra classes to make 
+the authors' sample code work, I volunteer to share what I come 
+up with if I get done first.
+
+Mark
+
+On Thu, 16 Apr 2009, Lars O. Grobe wrote:
+
+> Found it, it is linked here:
+>
+> http://www.cs.utah.edu/vissim/papers/sunsky/
+>
+>
+> "A Practical Analytic Model for Daylight" by A. J. Preetham, Peter
+Shirley, 
+> Brian Smits
+>
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+From lars.grobe at nus.edu.sg  Thu Apr 16 06:47:49 2009
+From: lars.grobe at nus.edu.sg (Lars O. Grobe)
+Date: Thu Apr 16 07:00:11 2009
+Subject: [Radiance-general] sky models and color gradients
+In-Reply-To: <Pine.LNX.4.64.0904160911090.7941@zaxxon.gpcc.itd.umich.edu>
+References: <49E6F07D.9080903@nus.edu.sg> <49E6FA0B.8090401@nus.edu.sg>
+	<Pine.LNX.4.64.0904160911090.7941@zaxxon.gpcc.itd.umich.edu>
+Message-ID: <49E73705.6080607@nus.edu.sg>
+
+Hi!
+> I am interested in this, too. How best to make it work? Convert the
+> formulae in the paper to a .cal file (that modifies a mist volume or a
+> dome-like source?) Pre-render a sky dome? Modify the Radiance source
+> itself?
+I think that there are two ways. One is to generate a mapping on a
+source object, the other is "modeling the athmosphere". The second
+option is quite ambitious, and may depend e..g. on photon map, spectral
+rendering and other stuff (i.e. modifying mist parameters only exists in
+Radzilla, not in Radiance Classic now afaik). The first option seams to
+be more realistic with Radiance Classic - so the formulae would have to
+be translated into a colorfunc, and the near-distance atmospheric
+effects could be modeled using mist.
+
+CU Lars.
+
+From valeriadegiuli at gmail.com  Fri Apr 17 03:50:34 2009
+From: valeriadegiuli at gmail.com (Valeria De Giuli)
+Date: Fri Apr 17 03:50:39 2009
+Subject: [Radiance-general] window film
+Message-ID: <527f2f7a0904170350x6a3ba68q75d882c7c28b2e12@mail.gmail.com>
+
+Hi all,
+I have to simulate a double pane glazing with a window film. Does
+anyone know how can I do that?
+Thank you in advance,
+Valeria
+
+From jedev at visarc.com  Fri Apr 17 06:55:52 2009
+From: jedev at visarc.com (Jack de Valpine)
+Date: Fri Apr 17 06:55:57 2009
+Subject: [Radiance-general] window film
+In-Reply-To: <527f2f7a0904170350x6a3ba68q75d882c7c28b2e12@mail.gmail.com>
+References: <527f2f7a0904170350x6a3ba68q75d882c7c28b2e12@mail.gmail.com>
+Message-ID: <49E88A68.3060005@visarc.com>
+
+Hi Valeria,
+
+I suppose it depends a lot on what the film does and if data is 
+available. You might want to take a look at Optics 5 from LBL as a 
+starting point. It is possible if the data is in the database that you 
+could build up an insulating unit and export the relevant information to 
+Radiance. You could then look at using either the optics2rad or the 
+glaze script to generate a valid radiance material description.
+
+Regards,
+
+-Jack de Valpine
+
+Valeria De Giuli wrote:
+> Hi all,
+> I have to simulate a double pane glazing with a window film. Does
+> anyone know how can I do that?
+> Thank you in advance,
+> Valeria
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>   
+
+From deepak.gv at ufl.edu  Fri Apr 17 15:59:23 2009
+From: deepak.gv at ufl.edu (G V DEEPAK)
+Date: Fri Apr 17 15:59:29 2009
+Subject: [Radiance-general] December Illuminance values.
+Message-ID: <1350822117.325331240009163588.JavaMail.osg@osgjas04.cns.ufl.edu>
+
+
+Hello Everyone,
+
+I am involved in simulation on venetian blinds (using mkillum for 
+-ab 1). We are performing comparison for two sets of blinds, one 
+is the normal conventional horizontal blinds and the other one is 
+the split blinds in which the the blinds system is split into 
+three equal parts. when measuring illuminance values for year long 
+simulations . I observe that we get large errors in values in 
+December  varying from 10% to 60% ( difference in values between 
+conventional and split blinds though they are at the same angle 
+and same geometry) I observe these disturbances only in the month 
+of December and at the sensor point closest to the window. Is this 
+kind of error normal..?
+
+Thank you
+
+G V Deepak
+Gainesville, Florida
+
+
+From gward at lmi.net  Fri Apr 17 16:14:07 2009
+From: gward at lmi.net (Greg Ward)
+Date: Fri Apr 17 16:14:03 2009
+Subject: [Radiance-general] December Illuminance values.
+In-Reply-To: <1350822117.325331240009163588.JavaMail.osg@osgjas04.cns.ufl.edu>
+References: <1350822117.325331240009163588.JavaMail.osg@osgjas04.cns.ufl.edu>
+Message-ID: <E589CEE8-AEE5-4AC1-9209-2767CA15A964@lmi.net>
+
+This may be a sampling issue.  Look at a plan view of the workplane  
+at the problem times -- it may be that the sensor is seeing direct  
+sun in one case and not in the other.  Even the tiniest change in  
+geometry can result in a huge change in value if this is the case.
+
+-Greg
+
+> From: G V DEEPAK <deepak.gv@ufl.edu>
+> Date: April 17, 2009 3:59:23 PM PDT
+>
+> Hello Everyone,
+>
+> I am involved in simulation on venetian blinds (using mkillum for - 
+> ab 1). We are performing comparison for two sets of blinds, one is  
+> the normal conventional horizontal blinds and the other one is the  
+> split blinds in which the the blinds system is split into three  
+> equal parts. when measuring illuminance values for year long  
+> simulations . I observe that we get large errors in values in  
+> December  varying from 10% to 60% ( difference in values between  
+> conventional and split blinds though they are at the same angle and  
+> same geometry) I observe these disturbances only in the month of  
+> December and at the sensor point closest to the window. Is this  
+> kind of error normal..?
+>
+> Thank you
+>
+> G V Deepak
+> Gainesville, Florida
+
+From info at aisarquitectura.com  Mon Apr 20 04:04:46 2009
+From: info at aisarquitectura.com (Ignacio Munarriz)
+Date: Mon Apr 20 04:04:49 2009
+Subject: [Radiance-general] sky models and color gradients
+In-Reply-To: <C5E1527F129BF545A250B5AD0B0C26EF036CD809@ENTWEXMB0000000.university.harvard.edu>
+References: <49E6F07D.9080903@nus.edu.sg>
+	<49E6FA0B.8090401@nus.edu.sg>	<Pine.LNX.4.64.0904160911090.7941@zaxxon.gpcc.itd.umich.edu>
+	<C5E1527F129BF545A250B5AD0B0C26EF036CD809@ENTWEXMB0000000.university.harvard.edu>
+Message-ID: <49EC56CE.7080604@aisarquitectura.com>
+
+I converted that model to a radiance dome, i usually work with radiance 
+with aesthetical purposes so i'm not sure it's phisically accurate, it 
+misses the atmosferic effects because, as Lars said, i think it's 
+necesary to modify radiance code. I did it as part of a 3dsmax exporter 
+to rad i'm working with.
+I got the main sources some time ago from a web page of the University 
+of Girona in Spain (sir project), i think they created the sources based 
+on some code related to the paper, i've returned to search for the 
+project again but i haven't found it on the internet.
+
+It's a windows .exe file, the program creates three data files with 
+radiance colordata and outputs a radfile with the definitions of the sun 
+and the sky and a white box to avoid radiance no objects error, it uses 
+a calc file ssky.cal to map the data to the dome, the parameters are
+
+                 lat Latitude (0-360)
+                 long Longitude (-90,90) south to north
+                 sm  Standard Meridian
+                 jd  Julian Day (1-365)
+                 tod Time Of Day (0.0,23.99) 14.25 = 2:15PM
+                 turb  Turbidity (1.0,30+) 2-6 are most useful for clear 
+days.
+
+gesky3 lat long sm jd tod turb (gesky 43 3 3 180 10 6 >ssky.rad)
+
+you can download: www.aisarquitectura.com/archivos/ssky.zip
+
+When i got it there were some code missing and i could not compile it as 
+it was so i modified it, but not to distribute because i don't know the 
+protocols to add new code (comments, licenses ...), so i can send the 
+source code to anyone who is interested in cleanning it or somebody 
+could try to help me in make it better
+
+Ignacio Munarriz
+
+
+
+Reinhart, Christoph escribi?:
+> I am very interested in a colored sky model as well Mark. Thank-you for
+> offering to share! This work would be a perfect topic to present at the
+> Radiance workshop in November. FYI, 3ds Max Design already has the Utah
+> sky model implemented. It generates really impressive sunsets.
+>
+> Christoph
+>
+> -----Original Message-----
+> From: radiance-general-bounces@radiance-online.org
+> [mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Mark
+> Stock
+> Sent: Thursday, April 16, 2009 9:26 AM
+> To: Radiance general discussion
+> Subject: Re: [Radiance-general] sky models and color gradients
+>
+> I am interested in this, too. How best to make it work? Convert 
+> the formulae in the paper to a .cal file (that modifies a mist 
+> volume or a dome-like source?) Pre-render a sky dome? Modify the 
+> Radiance source itself?
+>
+> Since it is unlikely that one of us has the extra classes to make 
+> the authors' sample code work, I volunteer to share what I come 
+> up with if I get done first.
+>
+> Mark
+>
+> On Thu, 16 Apr 2009, Lars O. Grobe wrote:
+>
+>   
+>> Found it, it is linked here:
+>>
+>> http://www.cs.utah.edu/vissim/papers/sunsky/
+>>
+>>
+>> "A Practical Analytic Model for Daylight" by A. J. Preetham, Peter
+>>     
+> Shirley, 
+>   
+>> Brian Smits
+>>
+>>     
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>   
+
+
+From valeriadegiuli at gmail.com  Mon Apr 20 05:20:53 2009
+From: valeriadegiuli at gmail.com (Valeria De Giuli)
+Date: Mon Apr 20 05:20:57 2009
+Subject: [Radiance-general] window film
+In-Reply-To: <49E88A68.3060005@visarc.com>
+References: <527f2f7a0904170350x6a3ba68q75d882c7c28b2e12@mail.gmail.com>
+	<49E88A68.3060005@visarc.com>
+Message-ID: <527f2f7a0904200520k7779de0co8c02d8f87360847@mail.gmail.com>
+
+Thank you Jack for your help,
+Valeria
+
+2009/4/17 Jack de Valpine <jedev@visarc.com>:
+> Hi Valeria,
+>
+> I suppose it depends a lot on what the film does and if data is available.
+> You might want to take a look at Optics 5 from LBL as a starting point. It
+> is possible if the data is in the database that you could build up an
+> insulating unit and export the relevant information to Radiance. You could
+> then look at using either the optics2rad or the glaze script to generate a
+> valid radiance material description.
+>
+> Regards,
+>
+> -Jack de Valpine
+>
+> Valeria De Giuli wrote:
+>>
+>> Hi all,
+>> I have to simulate a double pane glazing with a window film. Does
+>> anyone know how can I do that?
+>> Thank you in advance,
+>> Valeria
+>>
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general@radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+From deepak.gv at ufl.edu  Wed Apr 22 18:42:37 2009
+From: deepak.gv at ufl.edu (G V DEEPAK)
+Date: Wed Apr 22 18:43:23 2009
+Subject: [Radiance-general] HIgh illuminance values.
+Message-ID: <1486880850.446581240450957665.JavaMail.osg@osgjas04.cns.ufl.edu>
+
+Hello Everyone,
+
+I am performing simulations of Venetian blinds, for blind angles 
+from  0 to 45.
+
+The illuminance values for the blind angles of 0 degrees and 45 
+degrees seem to be fine.
+However,  I am getting very high illuminance values for the 15 
+degree and 30 degree blind angles for the sensor point which is 
+closest to the window .
+The values are ranging from 8000 lux to 20,000 lux. which I guess 
+are totally unreasonable results when we have blinds placed in a 
+room.
+
+These values are higher for the blind angles of 15 degrees and 30 
+degrees than for the completely open blinds (zero blind angle 
+gives us illuminance of 2500 lx).
+
+
+Any idea why we are getting these high illuminance values for 15 
+and 30 degree blind angles?
+
+Thank you.
+
+G V DEEPAK
+Graduate Research Assistant
+M.E. Rinker, Sr. School of Building Construction.
+University Of Florida.
+
+
+From rfritz at u.washington.edu  Wed Apr 22 19:15:23 2009
+From: rfritz at u.washington.edu (R Fritz)
+Date: Wed Apr 22 19:15:24 2009
+Subject: [Radiance-general] HIgh illuminance values.
+In-Reply-To: <1486880850.446581240450957665.JavaMail.osg@osgjas04.cns.ufl.edu>
+References: <1486880850.446581240450957665.JavaMail.osg@osgjas04.cns.ufl.edu>
+Message-ID: <153A6BA8-9D08-4DE9-9D91-45F69635B5F0@u.washington.edu>
+
+Could there be direct sun slipping through?
+
+Randolph
+
+On Apr 22, 2009, at 6:42 PM, G V DEEPAK wrote:
+
+> Hello Everyone,
+>
+> I am performing simulations of Venetian blinds, for blind angles  
+> from  0 to 45.
+>
+> The illuminance values for the blind angles of 0 degrees and 45  
+> degrees seem to be fine.
+> However,  I am getting very high illuminance values for the 15  
+> degree and 30 degree blind angles for the sensor point which is  
+> closest to the window .
+> The values are ranging from 8000 lux to 20,000 lux. which I guess  
+> are totally unreasonable results when we have blinds placed in a room.
+>
+> These values are higher for the blind angles of 15 degrees and 30  
+> degrees than for the completely open blinds (zero blind angle gives  
+> us illuminance of 2500 lx).
+>
+>
+> Any idea why we are getting these high illuminance values for 15 and  
+> 30 degree blind angles?
+>
+> Thank you.
+>
+> G V DEEPAK
+> Graduate Research Assistant
+> M.E. Rinker, Sr. School of Building Construction.
+> University Of Florida.
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From rpg at rumblestrip.org  Wed Apr 22 19:15:37 2009
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Wed Apr 22 19:15:39 2009
+Subject: [Radiance-general] HIgh illuminance values.
+In-Reply-To: <1486880850.446581240450957665.JavaMail.osg@osgjas04.cns.ufl.edu>
+References: <1486880850.446581240450957665.JavaMail.osg@osgjas04.cns.ufl.edu>
+Message-ID: <8F7CC6D7-014A-4E1F-95F8-CA383D500781@rumblestrip.org>
+
+On Apr 22, 2009, at 7:42 PM, G V DEEPAK wrote:
+> The illuminance values for the blind angles of 0 degrees and 45  
+> degrees seem to be fine.
+> However,  I am getting very high illuminance values for the 15  
+> degree and 30 degree blind angles for the sensor point which is  
+> closest to the window .
+> The values are ranging from 8000 lux to 20,000 lux. which I guess  
+> are totally unreasonable results when we have blinds placed in a room.
+>
+> These values are higher for the blind angles of 15 degrees and 30  
+> degrees than for the completely open blinds (zero blind angle gives  
+> us illuminance of 2500 lx).
+>
+> Any idea why we are getting these high illuminance values for 15 and  
+> 30 degree blind angles?
+
+Is this for a single time of day/sun angle? My guess is that the  
+steeper slat angles are letting some direct sun to strike your sensor  
+points close to the window. Check the slat spacing, and the blind  
+section overall.
+
+- Rob Guglielmetti
+
+From dosto.walla at gmail.com  Thu Apr 23 07:47:52 2009
+From: dosto.walla at gmail.com (ami guru)
+Date: Thu Apr 23 07:48:17 2009
+Subject: [Radiance-general] fatal XIO - newbie
+Message-ID: <ae8c0edd0904230747x59b20473m567cc30a913dd4b6@mail.gmail.com>
+
+Hello forum,
+
+I am quite a new user to  that ray tracer. Just got a hold of the book and
+installed the ray tracer in my Linux system.
+
+Unfortunately i am getting the following error when i run one of the most
+primitive commands:
+
+
+****************************
+sajjad@sajjad:~/Radiance/chapt1$ rview -vp 2.25 .375 1 -vd -.25 .125 -.125
+-av .5 .5 .5 test.oct
+XIO:  fatal IO error 11 (Resource temporarily unavailable) on X server
+":0.0"
+      after 24518 requests (24518 known processed) with 0 events remaining.
+sajjad@sajjad:~/Radiance/chapt1$ rview -vp 2.25 .375 1 -vd -.25 .125 -.125
+-av .5 .5 .5 test.oct
+XIO:  fatal IO error 11 (Resource temporarily unavailable) on X server
+":0.0"
+      after 24515 requests (24515 known processed) with 0 events remaining.
+sajjad@sajjad:~/Radiance/chapt1$
+
+
+
+**************************
+
+The scene is rendered though in the window , but after window resize event
+it does not and the error pops up in the command line
+
+
+Any idea why and how to get around that error?
+
+
+Regards
+Sajjad
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090423/db38b1d1/attachment.html
+From a.huelsmann at andres-lichtplanung.de  Thu Apr 23 08:13:53 2009
+From: a.huelsmann at andres-lichtplanung.de (Arne Huelsmann)
+Date: Thu Apr 23 08:13:59 2009
+Subject: [Radiance-general] rhino2rad - Rhinoceros to Radiance
+Message-ID: <8EDE692B-C91A-4FEE-9D49-B217DB2E1851@andres-lichtplanung.de>
+
+
+Hello Dave,
+
+We tried out your 'rhino2rad' script...
+
+Did you make it work? It does not really work on our side.
+
+Both a folder and a file have been created.
+But the folder is empty and the file just has a short header with  
+three lines:
+#rhino2rad;  ;#Materials:;  ;Geometry:
+
+Is there something wrong with our system or do we have a wrong rhino  
+version (engl. 4.0 evaluation)?
+
+Thank you for a short answer...
+
+Arne
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090423/8c6cacb8/attachment-0001.htm
+From reinhart at gsd.harvard.edu  Thu Apr 23 14:35:36 2009
+From: reinhart at gsd.harvard.edu (Reinhart, Christoph)
+Date: Thu Apr 23 14:36:18 2009
+Subject: [Radiance-general] rhino2rad - Rhinoceros to Radiance
+In-Reply-To: <8EDE692B-C91A-4FEE-9D49-B217DB2E1851@andres-lichtplanung.de>
+References: <8EDE692B-C91A-4FEE-9D49-B217DB2E1851@andres-lichtplanung.de>
+Message-ID: <C5E1527F129BF545A250B5AD0B0C26EF03826775@ENTWEXMB0000000.university.harvard.edu>
+
+Dear Dave,
+
+ 
+
+I second Arne's request. I am very interested in a working export form
+Rhino to Radiance but we did not get your script to work either. 
+
+ 
+
+Christoph
+
+Christoph Reinhart, Dr. Ing. 
+
+Associate Professor of Architectural Technology
+
+Graduate School of Design - Harvard University
+
+Gund Hall 331b, 48 Quincy Street, Cambridge, MA 02138, USA
+
+t: 617 384 7269, f: 617 495 8916, reinhart@gsd.harvard.edu
+<mailto:reinhart@gsd.harvard.edu> 
+
+Daylighting Design: Rules of Thumb
+<http://www.gsd.harvard.edu/people/faculty/reinhart/documents/DiffuseDay
+lightingDesignSequenceTutorial.pdf> , Simulation
+<http://www.daysim.com/> , Executive Education
+<http://execed.gsd.harvard.edu/cgi-bin/exec_ed/details.cgi?offering_id=1
+01683> 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Arne
+Huelsmann
+Sent: Thursday, April 23, 2009 11:14 AM
+To: radiance-general@radiance-online.org
+Subject: [Radiance-general] rhino2rad - Rhinoceros to Radiance
+
+ 
+
+ 
+
+Hello Dave,
+
+We tried out your 'rhino2rad' script...
+
+Did you make it work? It does not really work on our side.
+
+Both a folder and a file have been created.
+But the folder is empty and the file just has a short header with three
+lines:
+#rhino2rad;  ;#Materials:;  ;Geometry:
+
+Is there something wrong with our system or do we have a wrong rhino
+version (engl. 4.0 evaluation)?
+
+Thank you for a short answer...
+
+Arne
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090423/68ad7115/attachment.html
+From dbs176 at gmail.com  Thu Apr 23 20:05:01 2009
+From: dbs176 at gmail.com (David Smith)
+Date: Thu Apr 23 20:05:05 2009
+Subject: [Radiance-general] Re: rhino2rad - Rhinoceros to Radiance
+Message-ID: <694e132c0904232005w2ca2dce9kdbc3dfc74e7ca759@mail.gmail.com>
+
+Arne and Christoph,
+
+I didn't expect something I pretty much threw together to get at all
+popular, rather a good-enough tool when the circumstances came about.
+
+I'll take a more careful eye to it this weekend, especially with respect to
+reliability.
+
+Thank you for the feedback, I do appreciate it. Always feel free to contact
+me off-list about your issues with it.
+
+--Dave
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090423/ccd0a7e0/attachment.htm
+From gward at lmi.net  Thu Apr 23 22:33:58 2009
+From: gward at lmi.net (Greg Ward)
+Date: Thu Apr 23 22:33:52 2009
+Subject: [Radiance-general] fatal XIO - newbie
+In-Reply-To: <ae8c0edd0904230747x59b20473m567cc30a913dd4b6@mail.gmail.com>
+References: <ae8c0edd0904230747x59b20473m567cc30a913dd4b6@mail.gmail.com>
+Message-ID: <93A2BAAE-B4B7-4C0E-9C0B-48315689F7E7@lmi.net>
+
+I've never run across this error before.  It sounds like a  
+communication problem between rvu and the X11 server, or an  
+unsupported request.  Has anyone else seen this?  Does it happen  
+every time you resize the window?
+
+-Greg
+
+> From: ami guru <dosto.walla@gmail.com>
+> Date: April 23, 2009 7:47:52 AM PDT
+>
+> Hello forum,
+>
+> I am quite a new user to  that ray tracer. Just got a hold of the  
+> book and installed the ray tracer in my Linux system.
+>
+> Unfortunately i am getting the following error when i run one of  
+> the most primitive commands:
+>
+>
+> ****************************
+> sajjad@sajjad:~/Radiance/chapt1$ rview -vp 2.25 .375 1 -vd -.25 . 
+> 125 -.125 -av .5 .5 .5 test.oct
+> XIO:  fatal IO error 11 (Resource temporarily unavailable) on X  
+> server ":0.0"
+>       after 24518 requests (24518 known processed) with 0 events  
+> remaining.
+> sajjad@sajjad:~/Radiance/chapt1$ rview -vp 2.25 .375 1 -vd -.25 . 
+> 125 -.125 -av .5 .5 .5 test.oct
+> XIO:  fatal IO error 11 (Resource temporarily unavailable) on X  
+> server ":0.0"
+>       after 24515 requests (24515 known processed) with 0 events  
+> remaining.
+> sajjad@sajjad:~/Radiance/chapt1$
+>
+>
+> **************************
+>
+> The scene is rendered though in the window , but after window  
+> resize event it does not and the error pops up in the command line
+>
+>
+> Any idea why and how to get around that error?
+>
+>
+> Regards
+> Sajjad
+
+From deepak.gv at ufl.edu  Fri Apr 24 05:32:38 2009
+From: deepak.gv at ufl.edu (G V DEEPAK)
+Date: Fri Apr 24 05:32:44 2009
+Subject: [Radiance-general] HIgh illuminance values.
+Message-ID: <137003453.521191240576358362.JavaMail.osg@osgjas04.cns.ufl.edu>
+
+Thanks Mr Gulielmetti,
+
+Yes its for single time and sun angle , we were trying sample 
+simulations for 10, 11 am and 12 noon. I am getting these weird 
+results. I have checked the geometry a number of times as well as 
+all the parameters, these results seem very strange. any 
+particular reason..?
+
+Thank you
+
+On Wed Apr 22 22:15:37 EDT 2009, Rob Guglielmetti 
+<rpg@rumblestrip.org> wrote:
+
+> On Apr 22, 2009, at 7:42 PM, G V DEEPAK wrote:
+>> The illuminance values for the blind angles of 0 degrees and 45  
+>> degrees seem to be fine.
+>> However,  I am getting very high illuminance values for the 15  
+>> degree and 30 degree blind angles for the sensor point which is  
+>> closest to the window .
+>> The values are ranging from 8000 lux to 20,000 lux. which I 
+>> guess  are totally unreasonable results when we have blinds 
+>> placed in a room.
+>> 
+>> These values are higher for the blind angles of 15 degrees and 
+>> 30  degrees than for the completely open blinds (zero blind 
+>> angle gives  us illuminance of 2500 lx).
+>> 
+>> Any idea why we are getting these high illuminance values for 15 
+>> and  30 degree blind angles?
+> 
+> Is this for a single time of day/sun angle? My guess is that the  
+> steeper slat angles are letting some direct sun to strike your 
+> sensor  points close to the window. Check the slat spacing, and 
+> the blind  section overall.
+> 
+> - Rob Guglielmetti
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+> 
+
+
+
+G V DEEPAK
+Graduate Research Assistant
+M.E. Rinker, Sr. School of Building Construction.
+University Of Florida.
+
+
+From G.Harding1 at Bradford.ac.uk  Fri Apr 24 07:42:58 2009
+From: G.Harding1 at Bradford.ac.uk (G HARDING)
+Date: Fri Apr 24 07:43:12 2009
+Subject: [Radiance-general] Rendering with many spectral bands and RGB
+	weighting
+Message-ID: <73D529D687144D77B030A34DCC1366E6@UNIVERSI047A23>
+
+Hi,
+
+ 
+
+Hopefully someone who has done this already can help out here..
+
+We have been using a spectral rendering technique with radiance by splitting
+our material and light source data into 27 files (81 bands) and combining
+the output of the 27 rpict processes.
+
+The assumption here is that radiance has no calculations that differ across
+the 3 "RGB" values in the material and light source files.
+
+Having searched the archives, I have found a few seemingly conflicting
+pieces of information:
+
+ 
+
+In one correspondence (from Greg Ward) it is stated that "Radiance does not
+have any wavelength specific calculations".
+
+ 
+
+However, Arne Dure has pointed us towards the source code in color.h:
+
+#define bright(col) (CIE_rf*(col)[RED]+CIE_gf*(col)[GRN]+CIE_bf*(col)[BLU])
+
+>>     /* As of 9-94, CIE_rf=.265074126, CIE_gf=.670114631 and
+
+>>        CIE_bf=.064811243 */
+
+ 
+
+Is this calculation what Greg refers to in his reply here?:
+
+ 
+
+http://www.radiance-online.org/pipermail/radiance-general/2003-June/000869.h
+tml
+
+ 
+
+"The only place RGB is assumed in the code is when it's 
+combining primaries to get brightness for a weight test or somesuch, 
+and it shouldn't affect the result much for adjacent samples, which 
+should be fairly similar."
+
+ 
+
+ 
+
+I'm not really sure what this 'weight test' is or if we should be worrying
+about this. Am I correct in thinking that although this calculation may not
+greatly effect the result, for maximum accuracy when spectral rendering we
+should render only one waveband at a time (R=B=G) and do it 81 rather than
+27 times?
+
+ 
+
+ 
+
+Many thanks,
+
+ 
+
+Glen Harding.
+
+ 
+
+Glen Harding
+
+Bradford School of Optometry and Vision Sciences
+
+University of Bradford 
+
+BD7 1DP
+
+Tel: 07969 797391          
+
+ 
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090424/f16fc311/attachment-0001.html
+From gward at lmi.net  Fri Apr 24 07:51:32 2009
+From: gward at lmi.net (Greg Ward)
+Date: Fri Apr 24 07:51:26 2009
+Subject: [Radiance-general] HIgh illuminance values.
+In-Reply-To: <137003453.521191240576358362.JavaMail.osg@osgjas04.cns.ufl.edu>
+References: <137003453.521191240576358362.JavaMail.osg@osgjas04.cns.ufl.edu>
+Message-ID: <301480FE-501E-4292-AFFC-D983099C3192@lmi.net>
+
+I believe I've suggested this before, but did you try visualizing  
+your space at these times?  A fisheye view from the perspective of  
+your sensor will usually tell you where the light is originating.
+
+-Greg
+
+> From: G V DEEPAK <deepak.gv@ufl.edu>
+> Date: April 24, 2009 5:32:38 AM PDT
+>
+> Thanks Mr Gulielmetti,
+>
+> Yes its for single time and sun angle , we were trying sample  
+> simulations for 10, 11 am and 12 noon. I am getting these weird  
+> results. I have checked the geometry a number of times as well as  
+> all the parameters, these results seem very strange. any particular  
+> reason..?
+>
+> Thank you
+>
+> On Wed Apr 22 22:15:37 EDT 2009, Rob Guglielmetti  
+> <rpg@rumblestrip.org> wrote:
+>
+>> On Apr 22, 2009, at 7:42 PM, G V DEEPAK wrote:
+>>> The illuminance values for the blind angles of 0 degrees and 45   
+>>> degrees seem to be fine.
+>>> However,  I am getting very high illuminance values for the 15   
+>>> degree and 30 degree blind angles for the sensor point which is   
+>>> closest to the window .
+>>> The values are ranging from 8000 lux to 20,000 lux. which I  
+>>> guess  are totally unreasonable results when we have blinds  
+>>> placed in a room.
+>>> These values are higher for the blind angles of 15 degrees and  
+>>> 30  degrees than for the completely open blinds (zero blind angle  
+>>> gives  us illuminance of 2500 lx).
+>>> Any idea why we are getting these high illuminance values for 15  
+>>> and  30 degree blind angles?
+>> Is this for a single time of day/sun angle? My guess is that the   
+>> steeper slat angles are letting some direct sun to strike your  
+>> sensor  points close to the window. Check the slat spacing, and  
+>> the blind  section overall.
+>> - Rob Guglielmetti
+
+From gward at lmi.net  Fri Apr 24 07:55:58 2009
+From: gward at lmi.net (Greg Ward)
+Date: Fri Apr 24 07:55:49 2009
+Subject: [Radiance-general] Rendering with many spectral bands and RGB
+	weighting
+In-Reply-To: <73D529D687144D77B030A34DCC1366E6@UNIVERSI047A23>
+References: <73D529D687144D77B030A34DCC1366E6@UNIVERSI047A23>
+Message-ID: <A013BC3A-84A9-4232-803A-59A623ADE9D2@lmi.net>
+
+Hi Glen,
+
+You should be fine with your 27 runs.  It's best if you interleave  
+your wavelengths so that RGB still roughly corresponds to reds,  
+greens, and blues, but it isn't completely critical.  The bright()  
+macro is only used for determining ray weights and the like, so  
+should have only a modest effect on the result.  Running individual  
+wavelength calculations will not help at all.
+
+-Greg
+
+> From: "G HARDING" <G.Harding1@Bradford.ac.uk>
+> Date: April 24, 2009 7:42:58 AM PDT
+
+> Hi,
+> Hopefully someone who has done this already can help out here?.
+>
+> We have been using a spectral rendering technique with radiance by  
+> splitting our material and light source data into 27 files (81  
+> bands) and combining the output of the 27 rpict processes.
+>
+> The assumption here is that radiance has no calculations that  
+> differ across the 3 ?RGB? values in the material and light source  
+> files.
+>
+> Having searched the archives, I have found a few seemingly  
+> conflicting pieces of information:
+>
+>
+>
+> In one correspondence (from Greg Ward) it is stated that ?Radiance  
+> does not have any wavelength specific calculations?.
+>
+> However, Arne Dure has pointed us towards the source code in color.h:
+>
+> #define bright(col) (CIE_rf*(col)[RED]+CIE_gf*(col)[GRN]+CIE_bf* 
+> (col)[BLU])
+>
+> >>     /* As of 9-94, CIE_rf=.265074126, CIE_gf=.670114631 and
+>
+> >>        CIE_bf=.064811243 */
+>
+> Is this calculation what Greg refers to in his reply here?:
+>
+> http://www.radiance-online.org/pipermail/radiance-general/2003-June/ 
+> 000869.html
+>
+> ?The only place RGB is assumed in the code is when it's combining  
+> primaries to get brightness for a weight test or somesuch, and it  
+> shouldn't affect the result much for adjacent samples, which should  
+> be fairly similar.?
+> I?m not really sure what this ?weight test? is or if we should be  
+> worrying about this. Am I correct in thinking that although this  
+> calculation may not greatly effect the result, for maximum accuracy  
+> when spectral rendering we should render only one waveband at a  
+> time (R=B=G) and do it 81 rather than 27 times?
+>
+>
+>
+> Many thanks,
+>
+> Glen Harding.
+
+From G.Harding1 at Bradford.ac.uk  Fri Apr 24 08:14:53 2009
+From: G.Harding1 at Bradford.ac.uk (G HARDING)
+Date: Fri Apr 24 08:15:02 2009
+Subject: [Radiance-general] Rendering with many spectral bands and RGB
+Message-ID: <6C97265D90C345E2B76B4823125BF3AA@UNIVERSI047A23>
+
+Thanks Greg.
+The interleaving sounds like a good idea.
+ 
+Cheers,
+
+
+Glen.
+ 
+ 
+ 
+Hi Glen,
+ 
+You should be fine with your 27 runs.  It's best if you interleave  
+your wavelengths so that RGB still roughly corresponds to reds,  
+greens, and blues, but it isn't completely critical.  The bright()  
+macro is only used for determining ray weights and the like, so  
+should have only a modest effect on the result.  Running individual  
+wavelength calculations will not help at all.
+ 
+-Greg
+ 
+> From: "G HARDING" <G.Harding1 at Bradford.ac.uk
+<http://www.radiance-online.org/mailman/listinfo/radiance-general> >
+> Date: April 24, 2009 7:42:58 AM PDT
+ 
+> Hi,
+> Hopefully someone who has done this already can help out here..
+> 
+> We have been using a spectral rendering technique with radiance by  
+> splitting our material and light source data into 27 files (81  
+> bands) and combining the output of the 27 rpict processes.
+> 
+> The assumption here is that radiance has no calculations that  
+> differ across the 3 "RGB" values in the material and light source  
+> files.
+> 
+> Having searched the archives, I have found a few seemingly  
+> conflicting pieces of information:
+> 
+> 
+> 
+> In one correspondence (from Greg Ward) it is stated that "Radiance  
+> does not have any wavelength specific calculations".
+> 
+> However, Arne Dure has pointed us towards the source code in color.h:
+> 
+> #define bright(col) (CIE_rf*(col)[RED]+CIE_gf*(col)[GRN]+CIE_bf* 
+> (col)[BLU])
+> 
+> >>     /* As of 9-94, CIE_rf=.265074126, CIE_gf=.670114631 and
+> 
+> >>        CIE_bf=.064811243 */
+> 
+> Is this calculation what Greg refers to in his reply here?:
+> 
+> http://www.radiance-online.org/pipermail/radiance-general/2003-June/ 
+> 000869.html
+> 
+> "The only place RGB is assumed in the code is when it's combining  
+> primaries to get brightness for a weight test or somesuch, and it  
+> shouldn't affect the result much for adjacent samples, which should  
+> be fairly similar."
+> I'm not really sure what this 'weight test' is or if we should be  
+> worrying about this. Am I correct in thinking that although this  
+> calculation may not greatly effect the result, for maximum accuracy  
+> when spectral rendering we should render only one waveband at a  
+> time (R=B=G) and do it 81 rather than 27 times?
+> 
+> 
+> 
+> Many thanks,
+> 
+> Glen Harding.
+ 
+
+ 
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090424/fd609325/attachment.htm
+From rpg at rumblestrip.org  Fri Apr 24 09:38:15 2009
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Fri Apr 24 09:38:19 2009
+Subject: [Radiance-general] fatal XIO - newbie
+In-Reply-To: <93A2BAAE-B4B7-4C0E-9C0B-48315689F7E7@lmi.net>
+References: <ae8c0edd0904230747x59b20473m567cc30a913dd4b6@mail.gmail.com>
+	<93A2BAAE-B4B7-4C0E-9C0B-48315689F7E7@lmi.net>
+Message-ID: <49F1EAF7.7030000@rumblestrip.org>
+
+Greg Ward wrote:
+> I've never run across this error before.  It sounds like a communication 
+> problem between rvu and the X11 server, or an unsupported request.  Has 
+> anyone else seen this? 
+
+Definitely no, I've never seen this before. If I'm gonna get an error 
+from the X11 server, I don't get an rvu window at all.
+
+From tbleicher at arcor.de  Fri Apr 24 13:29:16 2009
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Fri Apr 24 13:29:21 2009
+Subject: [Radiance-general] fatal XIO - newbie
+In-Reply-To: <ae8c0edd0904230747x59b20473m567cc30a913dd4b6@mail.gmail.com>
+References: <ae8c0edd0904230747x59b20473m567cc30a913dd4b6@mail.gmail.com>
+Message-ID: <89355c0f0904241329n36da68c2w7d8c699679fbe4da@mail.gmail.com>
+
+Hi ami.
+
+On Thu, Apr 23, 2009 at 3:47 PM, ami guru <dosto.walla@gmail.com> wrote:
+
+> Hello forum,
+>
+> I am quite a new user to  that ray tracer. Just got a hold of the book and
+> installed the ray tracer in my Linux system.
+>
+> Unfortunately i am getting the following error when i run one of the most
+> primitive commands:
+>
+>
+> ****************************
+> sajjad@sajjad:~/Radiance/chapt1$ rview -vp 2.25 .375 1 -vd -.25 .125 -.125
+> -av .5 .5 .5 test.oct
+> XIO:  fatal IO error 11 (Resource temporarily unavailable) on X server
+> ":0.0"
+>       after 24518 requests (24518 known processed) with 0 events remaining.
+
+
+A bit of googling showed that this is not an error that's unique to
+rview/rvu (or Radiance in general).
+
+I would think it's a problem with the graphics card driver (ATI was mostly
+reported). You could try
+to disable the 3D acceleration (won't affect rview/rvu, but other things
+like blender) or use a standard
+driver and see if that helps when you run rvu. If that's your problem
+upgrade/downgrade to a different
+driver version or replace the graphics card with another type/chip.
+
+Regards,
+Thomas
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090424/59af9a43/attachment.html
+From dosto.walla at gmail.com  Fri Apr 24 17:39:09 2009
+From: dosto.walla at gmail.com (ami guru)
+Date: Fri Apr 24 17:39:11 2009
+Subject: Fwd: [Radiance-general] fatal XIO - newbie
+In-Reply-To: <89355c0f0904241329n36da68c2w7d8c699679fbe4da@mail.gmail.com>
+References: <ae8c0edd0904230747x59b20473m567cc30a913dd4b6@mail.gmail.com>
+	<89355c0f0904241329n36da68c2w7d8c699679fbe4da@mail.gmail.com>
+Message-ID: <ae8c0edd0904241739h1f9ba773ue88859e389833606@mail.gmail.com>
+
+Hello forum,
+
+Thanks for the feedback on the issue.
+
+If that is the problem of the graphics card then i think i am not on the
+positive side.
+
+I have ATI X1600 built-in my system
+
+
+Sajjad
+
+---------- Forwarded message ----------
+From: Thomas Bleicher <tbleicher@arcor.de>
+Date: Fri, Apr 24, 2009 at 10:29 PM
+Subject: Re: [Radiance-general] fatal XIO - newbie
+To: Radiance general discussion <radiance-general@radiance-online.org>
+
+
+
+Hi ami.
+
+On Thu, Apr 23, 2009 at 3:47 PM, ami guru <dosto.walla@gmail.com> wrote:
+
+> Hello forum,
+>
+> I am quite a new user to  that ray tracer. Just got a hold of the book and
+> installed the ray tracer in my Linux system.
+>
+> Unfortunately i am getting the following error when i run one of the most
+> primitive commands:
+>
+>
+> ****************************
+> sajjad@sajjad:~/Radiance/chapt1$ rview -vp 2.25 .375 1 -vd -.25 .125 -.125
+> -av .5 .5 .5 test.oct
+> XIO:  fatal IO error 11 (Resource temporarily unavailable) on X server
+> ":0.0"
+>       after 24518 requests (24518 known processed) with 0 events remaining.
+
+
+A bit of googling showed that this is not an error that's unique to
+rview/rvu (or Radiance in general).
+
+I would think it's a problem with the graphics card driver (ATI was mostly
+reported). You could try
+to disable the 3D acceleration (won't affect rview/rvu, but other things
+like blender) or use a standard
+driver and see if that helps when you run rvu. If that's your problem
+upgrade/downgrade to a different
+driver version or replace the graphics card with another type/chip.
+
+Regards,
+Thomas
+
+
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090425/d682d3c8/attachment.htm
+From jacobs.axel at gmail.com  Fri Apr 24 23:46:03 2009
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Fri Apr 24 23:38:33 2009
+Subject: [Radiance-general] fatal XIO - newbie 
+In-Reply-To: <49e38c23.20018e0a.2a5e.68beSMTPIN_ADDED@mx.google.com>
+References: <49e38c23.20018e0a.2a5e.68beSMTPIN_ADDED@mx.google.com>
+Message-ID: <49F2B1AB.2050001@gmail.com>
+
+The free ATI drivers in X.org are actually fairly mature and stable. I 
+personally would not ever go for nVidia.
+
+If you are using a distro which default-enables Compiz desktop effects, 
+such as Ubuntu, try disabling them:
+
+System > Preferences > Appearance > Visual Effects
+
+Ubuntu defaults to a setting which give you semi-tranparent windows, 
+smooth animations when launching apps or switching desktop. It's called 
+'Normal' in the control panel, When set to 'Extra', all the whizz-bang 
+is enabled, leaving OSX and Windows 7 in the dust.
+
+Try setting it to 'None', and see if your problem goes away. I had a 
+similar problem on an Ubuntu box with nVidia card some time ago. rvu 
+would launch, but then get stuck for up to 30 seconds. The fix described 
+aboved sorted the problem.
+
+Axel
+
+From mr.ren.wei at gmail.com  Sat Apr 25 03:07:58 2009
+From: mr.ren.wei at gmail.com (ren wei)
+Date: Sat Apr 25 03:08:02 2009
+Subject: [Radiance-general] rview window pop out black and exit
+Message-ID: <5753fb700904250307y6e39d114w92ea5724d850e8ac@mail.gmail.com>
+
+Hi,
+    I am working on a school project on glare evaluation on irregular glass
+surface. I am newbie in radiance.
+when I tried the tutorial on scene0, first the render window pops up black
+then exit automatically with "rview: cannot open command line window". X11
+setting is correct since xclock can run successfully.
+
+    I really don't how to proceed. any help is much appreciated.
+
+
+Ren Wei
+Regards
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090425/4771df04/attachment.html
+From gward at lmi.net  Sat Apr 25 09:24:12 2009
+From: gward at lmi.net (Greg Ward)
+Date: Sat Apr 25 09:24:06 2009
+Subject: [Radiance-general] rview window pop out black and exit
+In-Reply-To: <5753fb700904250307y6e39d114w92ea5724d850e8ac@mail.gmail.com>
+References: <5753fb700904250307y6e39d114w92ea5724d850e8ac@mail.gmail.com>
+Message-ID: <A7DCD9A8-AE5B-4698-B2F2-EC9161C46ED6@lmi.net>
+
+The name "rview" got taken over by a version of "vi", so the program  
+was renamed to "rvu".
+
+This is one for the FAQ, if we had such a thing...
+
+-Greg
+
+> From: ren wei <mr.ren.wei@gmail.com>
+> Date: April 25, 2009 3:07:58 AM PDT
+>
+> Hi,
+>
+>     I am working on a school project on glare evaluation on  
+> irregular glass surface. I am newbie in radiance.
+> when I tried the tutorial on scene0, first the render window pops  
+> up black then exit automatically with "rview: cannot open command  
+> line window". X11 setting is correct since xclock can run  
+> successfully.
+>
+>     I really don't how to proceed. any help is much appreciated.
+>
+>
+> Ren Wei
+> Regards
+>
+
+From mr.ren.wei at gmail.com  Sat Apr 25 10:29:22 2009
+From: mr.ren.wei at gmail.com (ren wei)
+Date: Sat Apr 25 10:29:27 2009
+Subject: [Radiance-general] rview window pop out black and exit
+In-Reply-To: <A7DCD9A8-AE5B-4698-B2F2-EC9161C46ED6@lmi.net>
+References: <5753fb700904250307y6e39d114w92ea5724d850e8ac@mail.gmail.com>
+	<A7DCD9A8-AE5B-4698-B2F2-EC9161C46ED6@lmi.net>
+Message-ID: <5753fb700904251029y332f636cx57b45be92f7ed2ec@mail.gmail.com>
+
+Thanks for your reply. I switch to rvu followed with original option. but it
+hangs forever in xterm without any window shown. something wrong with my X
+server?
+Ren Wei
+Regards
+
+On Sun, Apr 26, 2009 at 12:24 AM, Greg Ward <gward@lmi.net> wrote:
+
+> The name "rview" got taken over by a version of "vi", so the program was
+> renamed to "rvu".
+>
+> This is one for the FAQ, if we had such a thing...
+>
+> -Greg
+>
+>  From: ren wei <mr.ren.wei@gmail.com>
+>> Date: April 25, 2009 3:07:58 AM PDT
+>>
+>>
+>> Hi,
+>>
+>>    I am working on a school project on glare evaluation on irregular glass
+>> surface. I am newbie in radiance.
+>> when I tried the tutorial on scene0, first the render window pops up black
+>> then exit automatically with "rview: cannot open command line window". X11
+>> setting is correct since xclock can run successfully.
+>>
+>>    I really don't how to proceed. any help is much appreciated.
+>>
+>>
+>> Ren Wei
+>> Regards
+>>
+>>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090426/4614a6ef/attachment-0001.htm
+From jelleferinga at gmail.com  Sat Apr 25 10:41:57 2009
+From: jelleferinga at gmail.com (jelle feringa)
+Date: Sat Apr 25 10:42:00 2009
+Subject: [Radiance-general] VIPS image processing lib
+Message-ID: <37fac3b90904251041h26923a5awa5dff54f4d609c19@mail.gmail.com>
+
+Hi,
+
+Something worth sharing is that recently I've been working with VIPS (
+http://www.vips.ecs.soton.ac.uk/index.php?title=VIPS ) which is an
+*excellent* library for processing images ( I'm using the python
+bindings, if your on osx, use the tarballs rather than installing it
+via macports, this is an outdated release lacking radiance HDR support
+). Some of the interesting features of VIPS are that concurrency comes
+free, it reads / writes radiance HDR files natively, and operates
+tile-based, such that unreasonably large image are processed
+efficiently. Given the complete API, its an incredibly effective way
+of processing HDR data.
+
+Cheers,
+
+-jelle
+
+From gward at lmi.net  Sat Apr 25 10:48:27 2009
+From: gward at lmi.net (Greg Ward)
+Date: Sat Apr 25 10:48:25 2009
+Subject: [Radiance-general] rview window pop out black and exit
+In-Reply-To: <5753fb700904251029y332f636cx57b45be92f7ed2ec@mail.gmail.com>
+References: <5753fb700904250307y6e39d114w92ea5724d850e8ac@mail.gmail.com>
+	<A7DCD9A8-AE5B-4698-B2F2-EC9161C46ED6@lmi.net>
+	<5753fb700904251029y332f636cx57b45be92f7ed2ec@mail.gmail.com>
+Message-ID: <6B61E924-2663-409D-B49C-D91F5724B521@lmi.net>
+
+It's rather difficult to diagnose a problem when the only symptom is  
+"nothing happens."  What is the command line that hangs?  What do you  
+get when you type "echo $DISPLAY" ?
+
+-Greg
+
+> From: ren wei <mr.ren.wei@gmail.com>
+> Date: April 25, 2009 10:29:22 AM PDT
+>
+> Thanks for your reply. I switch to rvu followed with original  
+> option. but it hangs forever in xterm without any window shown.  
+> something wrong with my X server?
+>
+> Ren Wei
+> Regards
+
+From mr.ren.wei at gmail.com  Sat Apr 25 11:00:50 2009
+From: mr.ren.wei at gmail.com (ren wei)
+Date: Sat Apr 25 11:00:52 2009
+Subject: [Radiance-general] rview window pop out black and exit
+In-Reply-To: <6B61E924-2663-409D-B49C-D91F5724B521@lmi.net>
+References: <5753fb700904250307y6e39d114w92ea5724d850e8ac@mail.gmail.com>
+	<A7DCD9A8-AE5B-4698-B2F2-EC9161C46ED6@lmi.net>
+	<5753fb700904251029y332f636cx57b45be92f7ed2ec@mail.gmail.com>
+	<6B61E924-2663-409D-B49C-D91F5724B521@lmi.net>
+Message-ID: <5753fb700904251100o486d355bs9e707ba9e50954a6@mail.gmail.com>
+
+sorry about non technical terms. $DISPLAY shows 127.0.0.1:0.0. I tried
+xclock it works. then I type in
+rvu -vp 2.25 .375 1 -vd -.25 .125 -.125 -av .5 .5 .5 test.oct
+
+it hangs there. I can see rvu in process manager but cpu usage is zero. I
+read command manual. should i add -o output device option?
+
+Thanks a lot
+
+Ren Wei
+Regards
+
+On Sun, Apr 26, 2009 at 1:48 AM, Greg Ward <gward@lmi.net> wrote:
+
+> It's rather difficult to diagnose a problem when the only symptom is
+> "nothing happens."  What is the command line that hangs?  What do you get
+> when you type "echo $DISPLAY" ?
+>
+> -Greg
+>
+>  From: ren wei <mr.ren.wei@gmail.com>
+>> Date: April 25, 2009 10:29:22 AM PDT
+>>
+>> Thanks for your reply. I switch to rvu followed with original option. but
+>> it hangs forever in xterm without any window shown. something wrong with my
+>> X server?
+>>
+>> Ren Wei
+>> Regards
+>>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090426/c3314329/attachment.html
+From gward at lmi.net  Sat Apr 25 11:18:54 2009
+From: gward at lmi.net (Greg Ward)
+Date: Sat Apr 25 11:18:45 2009
+Subject: [Radiance-general] rview window pop out black and exit
+In-Reply-To: <5753fb700904251100o486d355bs9e707ba9e50954a6@mail.gmail.com>
+References: <5753fb700904250307y6e39d114w92ea5724d850e8ac@mail.gmail.com>
+	<A7DCD9A8-AE5B-4698-B2F2-EC9161C46ED6@lmi.net>
+	<5753fb700904251029y332f636cx57b45be92f7ed2ec@mail.gmail.com>
+	<6B61E924-2663-409D-B49C-D91F5724B521@lmi.net>
+	<5753fb700904251100o486d355bs9e707ba9e50954a6@mail.gmail.com>
+Message-ID: <8B1F88C6-3F56-4268-B7A2-F1E7C78F647A@lmi.net>
+
+Hi Ren,
+
+I see nothing wrong with your command that I can see.  I would  
+suspect something with your scene file, except if oconv ran OK then  
+your scene must be alright.  It does seem likely that something is  
+wrong with the X11 connection, but it's impossible to debug from here  
+with no error messages or symptoms.  You can kill rvu with ^\ to get  
+it to dump a core file (if enabled) and find out where it's stuck  
+that way, but you have to know something about programming and your  
+system configuration.  I know the former but not the latter, and I  
+don't have access to your machine.  This is not a common problem.   
+It's the first I've heard of it.
+
+Anyone else have suggestions?
+
+-Greg
+
+> From: ren wei <mr.ren.wei@gmail.com>
+> Date: April 25, 2009 11:00:50 AM PDT
+>
+> sorry about non technical terms. $DISPLAY shows 127.0.0.1:0.0. I  
+> tried xclock it works. then I type in
+>
+> rvu -vp 2.25 .375 1 -vd -.25 .125 -.125 -av .5 .5 .5 test.oct
+>
+> it hangs there. I can see rvu in process manager but cpu usage is  
+> zero. I read command manual. should i add -o output device option?
+>
+> Thanks a lot
+>
+> Ren Wei
+> Regards
+>
+> On Sun, Apr 26, 2009 at 1:48 AM, Greg Ward <gward@lmi.net> wrote:
+> It's rather difficult to diagnose a problem when the only symptom  
+> is "nothing happens."  What is the command line that hangs?  What  
+> do you get when you type "echo $DISPLAY" ?
+>
+> -Greg
+
+From mr.ren.wei at gmail.com  Sat Apr 25 11:41:51 2009
+From: mr.ren.wei at gmail.com (ren wei)
+Date: Sat Apr 25 11:41:54 2009
+Subject: [Radiance-general] rview window pop out black and exit
+In-Reply-To: <8B1F88C6-3F56-4268-B7A2-F1E7C78F647A@lmi.net>
+References: <5753fb700904250307y6e39d114w92ea5724d850e8ac@mail.gmail.com>
+	<A7DCD9A8-AE5B-4698-B2F2-EC9161C46ED6@lmi.net>
+	<5753fb700904251029y332f636cx57b45be92f7ed2ec@mail.gmail.com>
+	<6B61E924-2663-409D-B49C-D91F5724B521@lmi.net>
+	<5753fb700904251100o486d355bs9e707ba9e50954a6@mail.gmail.com>
+	<8B1F88C6-3F56-4268-B7A2-F1E7C78F647A@lmi.net>
+Message-ID: <5753fb700904251141n6247bcbdmff3317ba749e2506@mail.gmail.com>
+
+Hi Greg,
+    now the problem is back to rvu: cannot open command line window. same
+symptone as rview
+
+Many thanks
+
+Ren Wei
+Regards
+
+
+
+On Sun, Apr 26, 2009 at 2:18 AM, Greg Ward <gward@lmi.net> wrote:
+
+> Hi Ren,
+>
+> I see nothing wrong with your command that I can see.  I would suspect
+> something with your scene file, except if oconv ran OK then your scene must
+> be alright.  It does seem likely that something is wrong with the X11
+> connection, but it's impossible to debug from here with no error messages or
+> symptoms.  You can kill rvu with ^\ to get it to dump a core file (if
+> enabled) and find out where it's stuck that way, but you have to know
+> something about programming and your system configuration.  I know the
+> former but not the latter, and I don't have access to your machine.  This is
+> not a common problem.  It's the first I've heard of it.
+>
+> Anyone else have suggestions?
+>
+> -Greg
+>
+>  From: ren wei <mr.ren.wei@gmail.com>
+>> Date: April 25, 2009 11:00:50 AM PDT
+>>
+>> sorry about non technical terms. $DISPLAY shows 127.0.0.1:0.0. I tried
+>> xclock it works. then I type in
+>>
+>> rvu -vp 2.25 .375 1 -vd -.25 .125 -.125 -av .5 .5 .5 test.oct
+>>
+>> it hangs there. I can see rvu in process manager but cpu usage is zero. I
+>> read command manual. should i add -o output device option?
+>>
+>> Thanks a lot
+>>
+>> Ren Wei
+>> Regards
+>>
+>> On Sun, Apr 26, 2009 at 1:48 AM, Greg Ward <gward@lmi.net> wrote:
+>> It's rather difficult to diagnose a problem when the only symptom is
+>> "nothing happens."  What is the command line that hangs?  What do you get
+>> when you type "echo $DISPLAY" ?
+>>
+>> -Greg
+>>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090426/fbed792d/attachment.htm
+From gward at lmi.net  Sat Apr 25 15:08:42 2009
+From: gward at lmi.net (Greg Ward)
+Date: Sat Apr 25 15:08:36 2009
+Subject: [Radiance-general] rview window pop out black and exit
+In-Reply-To: <5753fb700904251141n6247bcbdmff3317ba749e2506@mail.gmail.com>
+References: <5753fb700904250307y6e39d114w92ea5724d850e8ac@mail.gmail.com>
+	<A7DCD9A8-AE5B-4698-B2F2-EC9161C46ED6@lmi.net>
+	<5753fb700904251029y332f636cx57b45be92f7ed2ec@mail.gmail.com>
+	<6B61E924-2663-409D-B49C-D91F5724B521@lmi.net>
+	<5753fb700904251100o486d355bs9e707ba9e50954a6@mail.gmail.com>
+	<8B1F88C6-3F56-4268-B7A2-F1E7C78F647A@lmi.net>
+	<5753fb700904251141n6247bcbdmff3317ba749e2506@mail.gmail.com>
+Message-ID: <3A8DFA84-5E4A-4B43-B6F0-F4FA83B15781@lmi.net>
+
+Sounds like an incompatibility with the X11 server.  This is the  
+second such report we've seen this week, though the symptoms are  
+different.  Check the thread entitled "fatal XIO - newbie" to see if  
+there are any useful hints there.  Otherwise, we'll just have to wait  
+to hear from others with more experience about similar problems.   
+What is your exact system configuration?  It could be something as  
+simple as missing fonts.
+
+-Greg
+
+> From: ren wei <mr.ren.wei@gmail.com>
+> Date: April 25, 2009 11:41:51 AM PDT
+>
+> Hi Greg,
+>
+>     now the problem is back to rvu: cannot open command line  
+> window. same symptone as rview
+>
+> Many thanks
+>
+> Ren Wei
+> Regards
+
+From lars.grobe at nus.edu.sg  Sat Apr 25 20:41:54 2009
+From: lars.grobe at nus.edu.sg (Lars O. Grobe)
+Date: Sat Apr 25 20:39:13 2009
+Subject: [Radiance-general] rview window pop out black and exit
+In-Reply-To: <3A8DFA84-5E4A-4B43-B6F0-F4FA83B15781@lmi.net>
+References: <5753fb700904250307y6e39d114w92ea5724d850e8ac@mail.gmail.com>	<A7DCD9A8-AE5B-4698-B2F2-EC9161C46ED6@lmi.net>	<5753fb700904251029y332f636cx57b45be92f7ed2ec@mail.gmail.com>	<6B61E924-2663-409D-B49C-D91F5724B521@lmi.net>	<5753fb700904251100o486d355bs9e707ba9e50954a6@mail.gmail.com>	<8B1F88C6-3F56-4268-B7A2-F1E7C78F647A@lmi.net>	<5753fb700904251141n6247bcbdmff3317ba749e2506@mail.gmail.com>
+	<3A8DFA84-5E4A-4B43-B6F0-F4FA83B15781@lmi.net>
+Message-ID: <49F3D802.6000909@nus.edu.sg>
+
+
+>   Otherwise, we'll just have to wait to hear from others with more
+> experience about similar problems.  What is your exact system
+> configuration?  It could be something as simple as missing fonts.
+>
+Are these problems appearing with downloaded binaries, with binaries
+from a Linux distribution, or did you compile yourself?
+
+Lars.
+
+From mr.ren.wei at gmail.com  Sat Apr 25 23:19:33 2009
+From: mr.ren.wei at gmail.com (ren wei)
+Date: Sat Apr 25 23:19:35 2009
+Subject: [Radiance-general] rview window pop out black and exit
+In-Reply-To: <3A8DFA84-5E4A-4B43-B6F0-F4FA83B15781@lmi.net>
+References: <5753fb700904250307y6e39d114w92ea5724d850e8ac@mail.gmail.com>
+	<A7DCD9A8-AE5B-4698-B2F2-EC9161C46ED6@lmi.net>
+	<5753fb700904251029y332f636cx57b45be92f7ed2ec@mail.gmail.com>
+	<6B61E924-2663-409D-B49C-D91F5724B521@lmi.net>
+	<5753fb700904251100o486d355bs9e707ba9e50954a6@mail.gmail.com>
+	<8B1F88C6-3F56-4268-B7A2-F1E7C78F647A@lmi.net>
+	<5753fb700904251141n6247bcbdmff3317ba749e2506@mail.gmail.com>
+	<3A8DFA84-5E4A-4B43-B6F0-F4FA83B15781@lmi.net>
+Message-ID: <5753fb700904252319x230507d1t4b287dc11623f704@mail.gmail.com>
+
+Hi Greg,
+    it is indeed due to missing fonts. I install all the component under X11
+package. it works fine so I can start exploring Radiance!
+
+Ren Wei
+Regards
+
+On Sun, Apr 26, 2009 at 6:08 AM, Greg Ward <gward@lmi.net> wrote:
+
+> Sounds like an incompatibility with the X11 server.  This is the second
+> such report we've seen this week, though the symptoms are different.  Check
+> the thread entitled "fatal XIO - newbie" to see if there are any useful
+> hints there.  Otherwise, we'll just have to wait to hear from others with
+> more experience about similar problems.  What is your exact system
+> configuration?  It could be something as simple as missing fonts.
+>
+> -Greg
+>
+>  From: ren wei <mr.ren.wei@gmail.com>
+>> Date: April 25, 2009 11:41:51 AM PDT
+>>
+>> Hi Greg,
+>>
+>>    now the problem is back to rvu: cannot open command line window. same
+>> symptone as rview
+>>
+>> Many thanks
+>>
+>> Ren Wei
+>> Regards
+>>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090426/ee860af6/attachment.html
+From grobe at gmx.net  Mon Apr 27 22:46:55 2009
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Mon Apr 27 22:47:05 2009
+Subject: [Radiance-general] rview window pop out black and exit
+In-Reply-To: <5753fb700904252319x230507d1t4b287dc11623f704@mail.gmail.com>
+References: <5753fb700904250307y6e39d114w92ea5724d850e8ac@mail.gmail.com>	<A7DCD9A8-AE5B-4698-B2F2-EC9161C46ED6@lmi.net>	<5753fb700904251029y332f636cx57b45be92f7ed2ec@mail.gmail.com>	<6B61E924-2663-409D-B49C-D91F5724B521@lmi.net>	<5753fb700904251100o486d355bs9e707ba9e50954a6@mail.gmail.com>	<8B1F88C6-3F56-4268-B7A2-F1E7C78F647A@lmi.net>	<5753fb700904251141n6247bcbdmff3317ba749e2506@mail.gmail.com>	<3A8DFA84-5E4A-4B43-B6F0-F4FA83B15781@lmi.net>
+	<5753fb700904252319x230507d1t4b287dc11623f704@mail.gmail.com>
+Message-ID: <49F6984F.6020303@gmx.net>
+
+>  it is indeed due to missing fonts. I install all the component under
+>  X11 package. it works fine so I can start exploring Radiance!
+
+
+Hi,
+
+can you still tell us what release you are working with? If you 
+installed a binary release from a Linux distribution, and required fonts 
+were not automatically installed, it should be reported as a dependency 
+error to the package maintainer.
+
+CU Lars.
+
+
+From mr.ren.wei at gmail.com  Mon Apr 27 23:13:00 2009
+From: mr.ren.wei at gmail.com (ren wei)
+Date: Mon Apr 27 23:13:02 2009
+Subject: [Radiance-general] rview window pop out black and exit
+In-Reply-To: <49F6984F.6020303@gmx.net>
+References: <5753fb700904250307y6e39d114w92ea5724d850e8ac@mail.gmail.com>
+	<A7DCD9A8-AE5B-4698-B2F2-EC9161C46ED6@lmi.net>
+	<5753fb700904251029y332f636cx57b45be92f7ed2ec@mail.gmail.com>
+	<6B61E924-2663-409D-B49C-D91F5724B521@lmi.net>
+	<5753fb700904251100o486d355bs9e707ba9e50954a6@mail.gmail.com>
+	<8B1F88C6-3F56-4268-B7A2-F1E7C78F647A@lmi.net>
+	<5753fb700904251141n6247bcbdmff3317ba749e2506@mail.gmail.com>
+	<3A8DFA84-5E4A-4B43-B6F0-F4FA83B15781@lmi.net>
+	<5753fb700904252319x230507d1t4b287dc11623f704@mail.gmail.com>
+	<49F6984F.6020303@gmx.net>
+Message-ID: <5753fb700904272313ub0ad0b4wfa929790f532c3a6@mail.gmail.com>
+
+Hi Lars,
+       I am using binary release 3R9 for windows. I am using cygwin
+
+Ren Wei
+Regards
+
+On Tue, Apr 28, 2009 at 1:46 PM, Lars O. Grobe <grobe@gmx.net> wrote:
+
+>  it is indeed due to missing fonts. I install all the component under
+>>  X11 package. it works fine so I can start exploring Radiance!
+>>
+>
+>
+> Hi,
+>
+> can you still tell us what release you are working with? If you installed a
+> binary release from a Linux distribution, and required fonts were not
+> automatically installed, it should be reported as a dependency error to the
+> package maintainer.
+>
+> CU Lars.
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090428/be93bce6/attachment.htm
+From chris at coolshadow.com  Tue Apr 28 12:50:00 2009
+From: chris at coolshadow.com (Chris Humann)
+Date: Tue Apr 28 12:50:04 2009
+Subject: [Radiance-general] Re: Radmap irradiance shifts
+In-Reply-To: <49F6984F.6020303@gmx.net>
+References: <5753fb700904250307y6e39d114w92ea5724d850e8ac@mail.gmail.com>	<A7DCD9A8-AE5B-4698-B2F2-EC9161C46ED6@lmi.net>	<5753fb700904251029y332f636cx57b45be92f7ed2ec@mail.gmail.com>	<6B61E924-2663-409D-B49C-D91F5724B521@lmi.net>	<5753fb700904251100o486d355bs9e707ba9e50954a6@mail.gmail.com>	<8B1F88C6-3F56-4268-B7A2-F1E7C78F647A@lmi.net>	<5753fb700904251141n6247bcbdmff3317ba749e2506@mail.gmail.com>	<3A8DFA84-5E4A-4B43-B6F0-F4FA83B15781@lmi.net>
+	<5753fb700904252319x230507d1t4b287dc11623f704@mail.gmail.com>
+	<49F6984F.6020303@gmx.net>
+Message-ID: <D4AF7CCD-48B2-43FF-9F5D-B0C770EE3C23@coolshadow.com>
+
+Hello All,
+
+Was wondering if others have noticed horizontal bands of lower  
+irradiance values across the top 1/3 of the images produced from  
+Radmap?  These shifts look like strong shadow lines but don't relate  
+to any occluding geometry in the scene.  We seem to get these  
+artifacts when using exterior views looking down onto the scene and  
+using any number of weather files.
+
+Thanks,
+Chris H
+
+Christian Humann ~ Associate
+LOISOS + UBBELOHDE
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+1917 Clement Avenue  Building 10A
+Alameda, CA  94501 USA
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+510 521 3800 VOICE
+510 521 3820 FAX
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+www.coolshadow.com
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090428/105f2876/attachment.html
+From rpg at rumblestrip.org  Tue Apr 28 17:44:22 2009
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Tue Apr 28 17:44:26 2009
+Subject: [Radiance-general] Re: Radmap irradiance shifts
+In-Reply-To: <D4AF7CCD-48B2-43FF-9F5D-B0C770EE3C23@coolshadow.com>
+References: <5753fb700904250307y6e39d114w92ea5724d850e8ac@mail.gmail.com>	<A7DCD9A8-AE5B-4698-B2F2-EC9161C46ED6@lmi.net>	<5753fb700904251029y332f636cx57b45be92f7ed2ec@mail.gmail.com>	<6B61E924-2663-409D-B49C-D91F5724B521@lmi.net>	<5753fb700904251100o486d355bs9e707ba9e50954a6@mail.gmail.com>	<8B1F88C6-3F56-4268-B7A2-F1E7C78F647A@lmi.net>	<5753fb700904251141n6247bcbdmff3317ba749e2506@mail.gmail.com>	<3A8DFA84-5E4A-4B43-B6F0-F4FA83B15781@lmi.net>
+	<5753fb700904252319x230507d1t4b287dc11623f704@mail.gmail.com>
+	<49F6984F.6020303@gmx.net>
+	<D4AF7CCD-48B2-43FF-9F5D-B0C770EE3C23@coolshadow.com>
+Message-ID: <67A0DC02-C489-44CE-A5AF-981E12B3035D@rumblestrip.org>
+
+
+On Apr 28, 2009, at 1:50 PM, Chris Humann wrote:
+
+> Hello All,
+>
+> Was wondering if others have noticed horizontal bands of lower  
+> irradiance values across the top 1/3 of the images produced from  
+> Radmap?  These shifts look like strong shadow lines but don't relate  
+> to any occluding geometry in the scene.  We seem to get these  
+> artifacts when using exterior views looking down onto the scene and  
+> using any number of weather files.
+
+Hi Chris,
+
+I can't say I've seen these before. It's also been a while since I've  
+used radmap...
+
+From Christopher.Rush at arup.com  Wed Apr 29 06:33:35 2009
+From: Christopher.Rush at arup.com (Christopher Rush)
+Date: Wed Apr 29 06:34:25 2009
+Subject: [Radiance-general] Re: Radmap irradiance shifts
+In-Reply-To: <D4AF7CCD-48B2-43FF-9F5D-B0C770EE3C23@coolshadow.com>
+References: <5753fb700904250307y6e39d114w92ea5724d850e8ac@mail.gmail.com>	<A7DCD9A8-AE5B-4698-B2F2-EC9161C46ED6@lmi.net>	<5753fb700904251029y332f636cx57b45be92f7ed2ec@mail.gmail.com>	<6B61E924-2663-409D-B49C-D91F5724B521@lmi.net>	<5753fb700904251100o486d355bs9e707ba9e50954a6@mail.gmail.com>	<8B1F88C6-3F56-4268-B7A2-F1E7C78F647A@lmi.net>	<5753fb700904251141n6247bcbdmff3317ba749e2506@mail.gmail.com>	<3A8DFA84-5E4A-4B43-B6F0-F4FA83B15781@lmi.net><5753fb700904252319x230507d1t4b287dc11623f704@mail.gmail.com><49F6984F.6020303@gmx.net>
+	<D4AF7CCD-48B2-43FF-9F5D-B0C770EE3C23@coolshadow.com>
+Message-ID: <EB124710ADB8554C930FADF760BB2BE705206736@n-yexc01.global.arup.com>
+
+I have noticed that, actually I've noticed it with a custom script that
+sums up CIE sunny skies, in a cumulative file, then renders irradiance
+for a scene looking at direct only sun (ab 0). In my case I was looking
+at an exterior aerial veiw of one building facade sited amongst other
+buildings. The odd irradiance seems to occur on one of the neighboring
+buildings that extends higher than all the others.
+ 
+-Chris
+
+________________________________
+
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Chris
+Humann
+Sent: Tuesday, April 28, 2009 3:50 PM
+To: Radiance general discussion
+Subject: [Radiance-general] Re: Radmap irradiance shifts
+
+
+Hello All, 
+
+Was wondering if others have noticed horizontal bands of lower
+irradiance values across the top 1/3 of the images produced from Radmap?
+These shifts look like strong shadow lines but don't relate to any
+occluding geometry in the scene.  We seem to get these artifacts when
+using exterior views looking down onto the scene and using any number of
+weather files.
+
+Thanks,
+Chris H
+
+Christian Humann ~ Associate
+LOISOS + UBBELOHDE
+- - - - - - - - - - - - - - - - - - - - - - - - - - - 
+1917 Clement Avenue  Building 10A
+Alameda, CA  94501 USA
+- - - - - - - - - - - - - - - - - - - - - - - - - - - 
+510 521 3800 VOICE
+510 521 3820 FAX
+- - - - - - - - - - - - - - - - - - - - - - - - - - - 
+www.coolshadow.com <http://www.coolshadow.com/> 
+
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090429/accfe4b3/attachment.htm
+From marina.aviles at gmail.com  Wed Apr 29 06:49:25 2009
+From: marina.aviles at gmail.com (marina aviles olmos)
+Date: Wed Apr 29 06:50:08 2009
+Subject: [Radiance-general] Description of complex glass systems (geometry +
+	material)
+Message-ID: <49F85AE5.5030606@gmail.com>
+
+
+Hi everybody,
+
+I have two questions about the description of a glass facade with a
+complex glass system: one about the geometry and one concerning the
+material.
+
+1-. With the objective in daylight calculations and daylight efficiency
+of materials I try to simulate, so accurate as possible, a doble glazing
+facade with the next composition:
+
+9mm laminated glass with spectrally selective interlayer -- 16mm air --
+4mm float glass 
+
+All the papers I've read describe the glass geometry as polygon as follows:
+
+mod polygon id
+0
+0
+3n    x1    y1    z1
+    x2    y2    z2
+    ...
+    xn    yn    zn
+
+ In my case, with such a glass system, would be this geometry
+description of the glass right and accurate? or should I define the
+radiance geometry like the contructed geometry?
+
+
+2-. The second question is about the material description.
+I have measured the transmittance of this doble glazing material sample
+with a Spectrometer and an accessory for external measurements and
+computed its transmissivity.
+The complete definition of the material that I get is as follows:
+
+mod glass id
+0
+0
+3 rtn gtn btn
+
+
+On the other hand I have exported in Radiance format from the software
+Optics5 a similar glass, also with sun protection interlayer, and the
+material description is much complexer. It is as follows:
+
+void  glass       sunstop-t-silver-20_glass
+0
+0
+3     0,205     0,222     0,239
+
+void  BRTDfunc    sunstop-t-silver-20_front
+10
+      0,325     0,281     0,197
+      0,188     0,203     0,219
+      0 0 0
+      .
+0
+9 0 0 0 0 0 0 0 0 0
+
+void  BRTDfunc    sunstop-t-silver-20_back
+10
+      0,259     0,289     0,307
+      0,188     0,203     0,219
+      0 0 0
+      .
+0
+9 0 0 0 0 0 0 0 0 0
+
+
+My question is if the description I did is complete and will give an
+accurate calculation.
+In case it is not, how can I get the hole description with the BRTD
+information if I just have the glass sample and the Spektrometer to
+start and this glass is not in the IGDB?
+
+Thank you,
+
+
+Marina
+
+-- 
+Dipl. -Ing. (-Arch) Marina Aviles Olmos 
+Institute for Lightweight Structures and Conceptual Design (ILEK)                                             
+University of Stuttgart
+Germany
+
+marina.aviles@gmail.com (Radiance Mailing List)
+marina.aviles@ilek.uni-stuttgart.de
+
+www.uni-stuttgart.de/ilek
+
+
+From jedev at visarc.com  Wed Apr 29 07:54:32 2009
+From: jedev at visarc.com (Jack de Valpine)
+Date: Wed Apr 29 07:54:35 2009
+Subject: [Radiance-general] Description of complex glass systems (geometry
+	+	material)
+In-Reply-To: <49F85AE5.5030606@gmail.com>
+References: <49F85AE5.5030606@gmail.com>
+Message-ID: <49F86A28.9080509@visarc.com>
+
+Hi Marina,
+
+Yes you want to describe the glass geometry, that is one polygon 
+representing the multiple layers of the physical makeup. The material is 
+what should represent the behavior. If you take the output from Optics 
+and run it through optics2rad you will get a single BRTDfunc material 
+description. One thing to be careful of is that this is dependent on the 
+correct orientation (normal) of the glass geometry. I believe that the 
+normal is supposed to be pointing "into" the interior of the building. 
+One way to check normal orientation in radiance is to assign 
+(temporaryily) a "glow" material to the glass geometry and view it. The 
+sides that are "black" are the back sides of the geometry, the sides 
+that are not black are the positive normal side.
+
+Regards,
+
+-Jack de Valpine
+
+marina aviles olmos wrote:
+> Hi everybody,
+>
+> I have two questions about the description of a glass facade with a
+> complex glass system: one about the geometry and one concerning the
+> material.
+>
+> 1-. With the objective in daylight calculations and daylight efficiency
+> of materials I try to simulate, so accurate as possible, a doble glazing
+> facade with the next composition:
+>
+> 9mm laminated glass with spectrally selective interlayer -- 16mm air --
+> 4mm float glass 
+>
+> All the papers I've read describe the glass geometry as polygon as follows:
+>
+> mod polygon id
+> 0
+> 0
+> 3n    x1    y1    z1
+>     x2    y2    z2
+>     ...
+>     xn    yn    zn
+>
+>  In my case, with such a glass system, would be this geometry
+> description of the glass right and accurate? or should I define the
+> radiance geometry like the contructed geometry?
+>
+>
+> 2-. The second question is about the material description.
+> I have measured the transmittance of this doble glazing material sample
+> with a Spectrometer and an accessory for external measurements and
+> computed its transmissivity.
+> The complete definition of the material that I get is as follows:
+>
+> mod glass id
+> 0
+> 0
+> 3 rtn gtn btn
+>
+>
+> On the other hand I have exported in Radiance format from the software
+> Optics5 a similar glass, also with sun protection interlayer, and the
+> material description is much complexer. It is as follows:
+>
+> void  glass       sunstop-t-silver-20_glass
+> 0
+> 0
+> 3     0,205     0,222     0,239
+>
+> void  BRTDfunc    sunstop-t-silver-20_front
+> 10
+>       0,325     0,281     0,197
+>       0,188     0,203     0,219
+>       0 0 0
+>       .
+> 0
+> 9 0 0 0 0 0 0 0 0 0
+>
+> void  BRTDfunc    sunstop-t-silver-20_back
+> 10
+>       0,259     0,289     0,307
+>       0,188     0,203     0,219
+>       0 0 0
+>       .
+> 0
+> 9 0 0 0 0 0 0 0 0 0
+>
+>
+> My question is if the description I did is complete and will give an
+> accurate calculation.
+> In case it is not, how can I get the hole description with the BRTD
+> information if I just have the glass sample and the Spektrometer to
+> start and this glass is not in the IGDB?
+>
+> Thank you,
+>
+>
+> Marina
+>
+>   
+
+-- 
+# Jack de Valpine
+# president
+#
+# visarc incorporated
+# http://www.visarc.com
+#
+# channeling technology for superior design and construction
+
+
+From maricanis at gmail.com  Wed Apr 29 07:56:49 2009
+From: maricanis at gmail.com (Marija Velickovic)
+Date: Wed Apr 29 07:56:57 2009
+Subject: [Radiance-general] Description of complex glass systems (geometry + 
+	material)
+In-Reply-To: <124b40400904290716v13f3b8ecw881138a58723fc27@mail.gmail.com>
+References: <49F85AE5.5030606@gmail.com>
+	<124b40400904290716v13f3b8ecw881138a58723fc27@mail.gmail.com>
+Message-ID: <124b40400904290756o3cb46efh272cf6e931d30690@mail.gmail.com>
+
+Hi Marina,
+
+1.glazing geometry
+
+Always define glazing object as a polygon, no matter how many layers of
+glass it contains in real world.
+Double clear, laminated and other glazings differ only in BRTDfunc (light
+transmittance and reflectance distribution function), while real glazing
+width is not important here.
+
+Note that polygon face should be oriented  towards building interior.
+
+##########
+2.glazing material
+Since BRTD function for double glazing is different then for single glazing,
+I don't suggest  using of simple glass material.
+Procedure we use is next:
+*Measure each glass layer transmittance and reflectance data. If you can
+measure their r,g,b components it is good, if not use the same value for all
+3 components.
+or
+*Export from IGDB (using Optics5 I suppose), each layer separately. And
+write down transmittances/reflectances you have in BRTD functions.
+Note that in Optics5 front side of the glazing is towards outside, so their
+front and Radiance "front" are different.
+
+So you should have next parameters for double glazing parameters after
+measures or after export:
+rf1 - interior pane front reflectance (towards the room)
+rb1 - interior pane back reflectance (towards the exterior pane)
+rf2 - exterior pane front reflectance (towards the interior pane)
+rb2 - exterior pane back reflectance (towards the exterior)
+t1 - interior pane transmittance
+t2- exterior pane transmittance
+r,g,b - red, green and blue color components
+*For clear glass layers front and back reflectance are always the same
+*
+void BRTDfunc double_glazing
+10
+if(Rdot,cr(fr(rf1_r),ft(t1_r),fr(rf2_r)),cr(fr(rb2_r),ft(t2_r),fr(rb1_r)))
+if(Rdot,cr(fr(rf1_g),ft(t1_g),fr(rf2_g)),cr(fr(rb2_g),ft(t2_g),fr(rb1_g)))
+if(Rdot,cr(fr(rf1_b),ft(t1_b),fr(rf2_b)),cr(fr(rb2_b),ft(t2_b),fr(rb1_b)))
+ft(t1_r)*ft(t2_r)
+ft(t1_g)*ft(t2_g)
+ft(t1_b)*ft(t2_b)
+        0 0 0
+        glaze2.cal
+0
+9
+        0 0 0
+        0 0 0
+        0 0 0
+*
+
+In glazing definition function
+if(Rdot,cr(fr(rf1_r),ft(t1_r),fr(rf2_r)),cr(fr(rb2_r),ft(t2_r),fr(rb1_r)))
+means:
+-if light is incident to the front side of the glazing then reflectance is
+cr(fr(rf1_r),ft(t1_r),fr(rf2_r))
+-else (light is incident to the back side) reflectance is
+cr(fr(rb2_r),ft(t2_r),fr(rb1_r))
+
+Functions for double glazing reflectance and transmittance are defined
+in *glaze2.cal
+*script which is provided with Radiance:
+-cr(refl1, trans,refl2) - is reflectance distribution for double glazing as
+function of light incident angle.  refl1 is reflectance of first glazing
+pane, refl2 of the second one, and tran1 is transmittance of the first
+glazing pane
+-ft(t) - transmittance distribution for single glazing as function of light
+incident angle. For double glazing total transmittance is ft(t1)*ft(t2)
+
+Hope this helps,
+Marija
+De Luminae <http://www.deluminaelab.com>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090429/7a6d1f1d/attachment.html
+From andrew.mcneil at arup.com  Wed Apr 29 10:36:07 2009
+From: andrew.mcneil at arup.com (Andrew McNeil)
+Date: Wed Apr 29 10:37:40 2009
+Subject: [Radiance-general] Re: Radmap irradiance shifts
+In-Reply-To: <EB124710ADB8554C930FADF760BB2BE705206736@n-yexc01.global.arup.com>
+Message-ID: <C61DDE17.A374%andrew.mcneil@arup.com>
+
+I?m going out on a limb here but I?d suggest looking at ?dt and ?dc
+parameters.
+
+It could be that direct source testing stops earlier than you?d like for
+unobstructed surfaces.  I expect that a scene with ~4000 suns should have
+higher parameters for direct sampling anyway.
+
+
+
+
+On 4/29/09 6:33 AM, "Christopher Rush" <Christopher.Rush@arup.com> wrote:
+
+> I have noticed that, actually I've noticed it with a custom script that sums
+> up CIE sunny skies, in a cumulative file, then renders irradiance for a scene
+> looking at direct only sun (ab 0). In my case I was looking at an exterior
+> aerial veiw of one building facade sited amongst other buildings. The odd
+> irradiance seems to occur on one of the neighboring buildings that extends
+> higher than all the others.
+>  
+> -Chris
+> 
+> 
+> From: radiance-general-bounces@radiance-online.org
+> [mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Chris
+> Humann
+> Sent: Tuesday, April 28, 2009 3:50 PM
+> To: Radiance general discussion
+> Subject: [Radiance-general] Re: Radmap irradiance shifts
+> 
+> Hello All, 
+> 
+> Was wondering if others have noticed horizontal bands of lower irradiance
+> values across the top 1/3 of the images produced from Radmap?  These shifts
+> look like strong shadow lines but don't relate to any occluding geometry in
+> the scene.  We seem to get these artifacts when using exterior views looking
+> down onto the scene and using any number of weather files.
+> 
+> Thanks,
+> Chris H
+> 
+> Christian Humann ~ Associate
+> LOISOS + UBBELOHDE
+> - - - - - - - - - - - - - - - - - - - - - - - - - - -
+> 1917 Clement Avenue  Building 10A
+> Alameda, CA  94501 USA
+> - - - - - - - - - - - - - - - - - - - - - - - - - - -
+> 510 521 3800 VOICE
+> 510 521 3820 FAX
+> - - - - - - - - - - - - - - - - - - - - - - - - - - -
+> www.coolshadow.com <http://www.coolshadow.com/>
+> 
+> 
+> ____________________________________________________________
+> Electronic mail messages entering and leaving Arup  business
+> systems are scanned for acceptability of content and viruses
+> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090429/5279e85b/attachment.htm
+From Christopher.Rush at arup.com  Wed Apr 29 11:06:21 2009
+From: Christopher.Rush at arup.com (Christopher Rush)
+Date: Wed Apr 29 11:06:35 2009
+Subject: [Radiance-general] Re: Radmap irradiance shifts
+In-Reply-To: <C61DDE17.A374%andrew.mcneil@arup.com>
+References: <EB124710ADB8554C930FADF760BB2BE705206736@n-yexc01.global.arup.com>
+	<C61DDE17.A374%andrew.mcneil@arup.com>
+Message-ID: <EB124710ADB8554C930FADF760BB2BE705206932@n-yexc01.global.arup.com>
+
+This seems to make some sense. Anyone have a guess of whether it would
+be more productive to set -dt 0 or -dc 1 in order to ensure no sources
+are missed? In the man page those two settings seem to lead to avoidance
+of estimations in the direct calculation.
+ 
+-Chris
+
+
+
+
+On Behalf Of Andrew McNeil
+Sent: Wednesday, April 29, 2009 1:36 PM
+
+I'm going out on a limb here but I'd suggest looking at -dt and -dc
+parameters.
+
+It could be that direct source testing stops earlier than you'd like for
+unobstructed surfaces.  I expect that a scene with ~4000 suns should
+have higher parameters for direct sampling anyway.  
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+
+
+From rpg at rumblestrip.org  Wed Apr 29 14:25:28 2009
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Wed Apr 29 14:25:30 2009
+Subject: [Radiance-general] Re: Radmap irradiance shifts
+In-Reply-To: <EB124710ADB8554C930FADF760BB2BE705206932@n-yexc01.global.arup.com>
+References: <EB124710ADB8554C930FADF760BB2BE705206736@n-yexc01.global.arup.com>	<C61DDE17.A374%andrew.mcneil@arup.com>
+	<EB124710ADB8554C930FADF760BB2BE705206932@n-yexc01.global.arup.com>
+Message-ID: <49F8C5C8.7090002@rumblestrip.org>
+
+Christopher Rush wrote:
+> This seems to make some sense. Anyone have a guess of whether it would
+> be more productive to set -dt 0 or -dc 1 in order to ensure no sources
+> are missed? In the man page those two settings seem to lead to avoidance
+> of estimations in the direct calculation.
+
+Actually Francesco has always advised that -dt be set to 0 when using 
+radmap skies because missing an entire sun could introduce a pretty 
+large error. Maybe this is why I've never seen these artifacts before. 
+Francesco?
+
+- Rob G.
+
+From chris at coolshadow.com  Wed Apr 29 15:50:31 2009
+From: chris at coolshadow.com (Chris Humann)
+Date: Wed Apr 29 15:50:37 2009
+Subject: [Radiance-general] Re: Radmap irradiance shifts
+In-Reply-To: <C61DDE17.A374%andrew.mcneil@arup.com>
+References: <C61DDE17.A374%andrew.mcneil@arup.com>
+Message-ID: <32E8A907-6D12-4346-88AD-A8D3915493CE@coolshadow.com>
+
+Thank you all.   Paying closer attention to the -dt and -dc parameters  
+makes a lot of sense.  Sure enough, setting -dt 0 and -dc 1 improves  
+the results and  fixes the artifact problem.
+
+Regards,
+Chris
+Christian Humann ~ Associate
+LOISOS + UBBELOHDE
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+1917 Clement Avenue  Building 10A
+Alameda, CA  94501 USA
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+510 521 3800 VOICE
+510 521 3820 FAX
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+www.coolshadow.com
+
+
+
+On Apr 29, 2009, at 10:36 AM, Andrew McNeil wrote:
+
+> I?m going out on a limb here but I?d suggest looking at ?dt and ?dc  
+> parameters.
+>
+> It could be that direct source testing stops earlier than you?d like  
+> for unobstructed surfaces.  I expect that a scene with ~4000 suns  
+> should have higher parameters for direct sampling anyway.
+>
+>
+>
+>
+> On 4/29/09 6:33 AM, "Christopher Rush" <Christopher.Rush@arup.com>  
+> wrote:
+>
+>> I have noticed that, actually I've noticed it with a custom script  
+>> that sums up CIE sunny skies, in a cumulative file, then renders  
+>> irradiance for a scene looking at direct only sun (ab 0). In my  
+>> case I was looking at an exterior aerial veiw of one building  
+>> facade sited amongst other buildings. The odd irradiance seems to  
+>> occur on one of the neighboring buildings that extends higher than  
+>> all the others.
+>>
+>> -Chris
+>>
+>> From: radiance-general-bounces@radiance-online.org [mailto:radiance-general-bounces@radiance-online.org 
+>> ] On Behalf Of Chris Humann
+>> Sent: Tuesday, April 28, 2009 3:50 PM
+>> To: Radiance general discussion
+>> Subject: [Radiance-general] Re: Radmap irradiance shifts
+>>
+>> Hello All,
+>>
+>> Was wondering if others have noticed horizontal bands of lower  
+>> irradiance values across the top 1/3 of the images produced from  
+>> Radmap?  These shifts look like strong shadow lines but don't  
+>> relate to any occluding geometry in the scene.  We seem to get  
+>> these artifacts when using exterior views looking down onto the  
+>> scene and using any number of weather files.
+>>
+>> Thanks,
+>> Chris H
+>>
+>> Christian Humann ~ Associate
+>> LOISOS + UBBELOHDE
+>> - - - - - - - - - - - - - - - - - - - - - - - - - - -
+>> 1917 Clement Avenue  Building 10A
+>> Alameda, CA  94501 USA
+>> - - - - - - - - - - - - - - - - - - - - - - - - - - -
+>> 510 521 3800 VOICE
+>> 510 521 3820 FAX
+>> - - - - - - - - - - - - - - - - - - - - - - - - - - -
+>> www.coolshadow.com <http://www.coolshadow.com/>
+>>
+>>
+>> ____________________________________________________________
+>> Electronic mail messages entering and leaving Arup  business
+>> systems are scanned for acceptability of content and viruses
+>>
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general@radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20090429/f4673d85/attachment.html
+From rfritz at u.washington.edu  Wed Apr 29 16:41:51 2009
+From: rfritz at u.washington.edu (R Fritz)
+Date: Wed Apr 29 16:41:52 2009
+Subject: [Radiance-general] Bit-rot on RadSite
+Message-ID: <66438CCF-E246-460B-87F4-A8B4EF46B18C@u.washington.edu>
+
+I just had occasion to download the original Radiance SIGGRAPH paper  
+from RadSite.  Distressingly, it turns out that some of the files are  
+either damaged or in now-unreadable formats.  I cannot untar the  
+PostScript version of the paper at <http://radsite.lbl.gov/radiance/papers/sg94.1/paper.tar.Z 
+ >--I'm not sure if this is a format problem or a damaged file.  And,  
+it turns out, figure 12, <http://radsite.lbl.gov/radiance/papers/sg94.1/fig12.gif 
+ > has also become unreadable.
+
+Anyone know who maintains the site at this time?  I have copied the  
+webmaster link on this e-mail, as well, but I wonder if anyone is  
+actually reading that mailbox.
+
+Randolph
+
+
+From gward at lmi.net  Wed Apr 29 16:57:00 2009
+From: gward at lmi.net (Greg Ward)
+Date: Wed Apr 29 16:57:07 2009
+Subject: [Radiance-general] Bit-rot on RadSite
+In-Reply-To: <66438CCF-E246-460B-87F4-A8B4EF46B18C@u.washington.edu>
+References: <66438CCF-E246-460B-87F4-A8B4EF46B18C@u.washington.edu>
+Message-ID: <974B9E07-1175-4DA1-BB98-AC2B866B8FC3@lmi.net>
+
+Hi Randolph,
+
+I just got your earlier e-mail, which you sent to my greg@anyhere.com  
+account.  I'm not checking that account regularly, as the server  
+seems to have been claimed by a spambot and 99% of the e-mails on  
+there are now viagra offers.
+
+The paper is fortunately archived on the RwR CD-ROM, and I'm  
+converting it to PDF for the website.  I'll let you know when it's  
+ready.
+
+Cheers,
+-Greg
+
+> From: R Fritz <rfritz@u.washington.edu>
+> Date: April 29, 2009 4:41:51 PM PDT
+>
+> I just had occasion to download the original Radiance SIGGRAPH  
+> paper from RadSite.  Distressingly, it turns out that some of the  
+> files are either damaged or in now-unreadable formats.  I cannot  
+> untar the PostScript version of the paper at <http:// 
+> radsite.lbl.gov/radiance/papers/sg94.1/paper.tar.Z>--I'm not sure  
+> if this is a format problem or a damaged file.  And, it turns out,  
+> figure 12, <http://radsite.lbl.gov/radiance/papers/sg94.1/ 
+> fig12.gif> has also become unreadable.
+>
+> Anyone know who maintains the site at this time?  I have copied the  
+> webmaster link on this e-mail, as well, but I wonder if anyone is  
+> actually reading that mailbox.
+>
+> Randolph
+
+From gward at lmi.net  Wed Apr 29 17:35:33 2009
+From: gward at lmi.net (Greg Ward)
+Date: Wed Apr 29 17:35:35 2009
+Subject: [Radiance-general] Bit-rot on RadSite
+In-Reply-To: <66438CCF-E246-460B-87F4-A8B4EF46B18C@u.washington.edu>
+References: <66438CCF-E246-460B-87F4-A8B4EF46B18C@u.washington.edu>
+Message-ID: <75884CD3-0CB4-4F2D-834E-DA4C54EFB264@lmi.net>
+
+OK -- took some work, but the whole thing squeezed down to a 1 MByte  
+PDF, which is now linked in at:
+
+	http://radsite.lbl.gov/radiance/papers/sg94.1/paper.html
+
+(You may need to reload the page to clear your cache.)
+
+The figures are still out of order, but I can't be bothered to fix that.
+
+Cheers,
+-Greg
+
+> From: Greg Ward <gward@lmi.net>
+> Date: April 29, 2009 4:57:00 PM PDT
+>
+> Hi Randolph,
+>
+> I just got your earlier e-mail, which you sent to my  
+> greg@anyhere.com account.  I'm not checking that account regularly,  
+> as the server seems to have been claimed by a spambot and 99% of  
+> the e-mails on there are now viagra offers.
+>
+> The paper is fortunately archived on the RwR CD-ROM, and I'm  
+> converting it to PDF for the website.  I'll let you know when it's  
+> ready.
+>
+> Cheers,
+> -Greg
+>
+>> From: R Fritz <rfritz@u.washington.edu>
+>> Date: April 29, 2009 4:41:51 PM PDT
+>>
+>> I just had occasion to download the original Radiance SIGGRAPH  
+>> paper from RadSite.  Distressingly, it turns out that some of the  
+>> files are either damaged or in now-unreadable formats.  I cannot  
+>> untar the PostScript version of the paper at <http:// 
+>> radsite.lbl.gov/radiance/papers/sg94.1/paper.tar.Z>--I'm not sure  
+>> if this is a format problem or a damaged file.  And, it turns out,  
+>> figure 12, <http://radsite.lbl.gov/radiance/papers/sg94.1/ 
+>> fig12.gif> has also become unreadable.
+>>
+>> Anyone know who maintains the site at this time?  I have copied  
+>> the webmaster link on this e-mail, as well, but I wonder if anyone  
+>> is actually reading that mailbox.
+>>
+>> Randolph
+
+From rfritz at u.washington.edu  Wed Apr 29 17:44:43 2009
+From: rfritz at u.washington.edu (R Fritz)
+Date: Wed Apr 29 17:45:14 2009
+Subject: [Radiance-general] Bit-rot on RadSite
+In-Reply-To: <75884CD3-0CB4-4F2D-834E-DA4C54EFB264@lmi.net>
+References: <66438CCF-E246-460B-87F4-A8B4EF46B18C@u.washington.edu>
+	<75884CD3-0CB4-4F2D-834E-DA4C54EFB264@lmi.net>
+Message-ID: <63AA722E-5CD8-4421-A1E0-C815C683B2C0@u.washington.edu>
+
+Wow.  Thanks, Greg.
+
+Randolph
+
+On Apr 29, 2009, at 5:35 PM, Greg Ward wrote:
+
+> OK -- took some work, but the whole thing squeezed down to a 1 MByte  
+> PDF, which is now linked in at:
+>
+> 	http://radsite.lbl.gov/radiance/papers/sg94.1/paper.html
+>
+> (You may need to reload the page to clear your cache.)
+>
+> The figures are still out of order, but I can't be bothered to fix  
+> that.
+>
+> Cheers,
+> -Greg
+>
+>> From: Greg Ward <gward@lmi.net>
+>> Date: April 29, 2009 4:57:00 PM PDT
+>>
+>> Hi Randolph,
+>>
+>> I just got your earlier e-mail, which you sent to my  
+>> greg@anyhere.com account.  I'm not checking that account regularly,  
+>> as the server seems to have been claimed by a spambot and 99% of  
+>> the e-mails on there are now viagra offers.
+>>
+>> The paper is fortunately archived on the RwR CD-ROM, and I'm  
+>> converting it to PDF for the website.  I'll let you know when it's  
+>> ready.
+>>
+>> Cheers,
+>> -Greg
+>>
+>>> From: R Fritz <rfritz@u.washington.edu>
+>>> Date: April 29, 2009 4:41:51 PM PDT
+>>>
+>>> I just had occasion to download the original Radiance SIGGRAPH  
+>>> paper from RadSite.  Distressingly, it turns out that some of the  
+>>> files are either damaged or in now-unreadable formats.  I cannot  
+>>> untar the PostScript version of the paper at <http://radsite.lbl.gov/radiance/papers/sg94.1/paper.tar.Z 
+>>> >--I'm not sure if this is a format problem or a damaged file.   
+>>> And, it turns out, figure 12, <http://radsite.lbl.gov/radiance/papers/sg94.1/fig12.gif 
+>>> > has also become unreadable.
+>>>
+>>> Anyone know who maintains the site at this time?  I have copied  
+>>> the webmaster link on this e-mail, as well, but I wonder if anyone  
+>>> is actually reading that mailbox.
+>>>
+>>> Randolph
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+

@@ -1,0 +1,3430 @@
+From mstock at umich.edu  Tue Sep  2 09:48:06 2008
+From: mstock at umich.edu (Mark Stock)
+Date: Tue Sep  2 09:48:13 2008
+Subject: [Radiance-general] Re: rpict memory usage keeps increasing with -aa
+	0
+In-Reply-To: <Pine.LNX.4.64.0809010025380.11715@joust.gpcc.itd.umich.edu>
+References: <Pine.LNX.4.64.0809010025380.11715@joust.gpcc.itd.umich.edu>
+Message-ID: <Pine.LNX.4.64.0809021240150.7440@rygar.gpcc.itd.umich.edu>
+
+I think I can answer my own question. As the rendering 
+progressed, the memory growth slowed, and it finally ended at 
+6.4GB. A higher-resolution rendering is showing the same fast 
+initial growth, and slow later growth, also ending near 6.4 GB
+
+I suspect Radiance loads each of the 407 individual geometry 
+chunks (octree instances?) when it is first needed. It took until 
+near the end of the render to load in the last one.
+
+Now I ask: will Radiance ever drop a chunk? If I want 24m instead 
+of 12m cylinders, I'd need ~13GB. I can only presume that 
+Radiance doesn't know this, and will continue to ask for more 
+memory, with the OS obliging with excessive page swapping.
+
+My options for larger scenes seem limited:
+1) analyze the geometry and reduce surface overlap, or
+2) buy a server with 16 GB RAM.
+
+Mark
+
+On Mon, 1 Sep 2008, Mark Stock wrote:
+
+> Radiance whizzes,
+>
+> I've upgraded to 8 GB of RAM, so, naturally, I found a scene that needs all 
+> that space. The rpict is eats up 4.6 GB initially, but even with "-aa 0" 
+> (turns off ambient caching, right?) I am still seeing my VIRT and RES memory 
+> sizes growing. They are at 5.3 GB after only 10 minutes of rendering. I am 
+> worried that I will not be able to render high-resolution images of this 
+> scene now. How can I prevent this?
+>
+> FYI: the scene is composed of a sky and 407 "instance"s of 
+> separately-compiled octrees, each with 20k-100k primitives.
+>
+> Mark
+>
+
+From gregoryjward at gmail.com  Tue Sep  2 10:34:08 2008
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue Sep  2 10:39:57 2008
+Subject: [Radiance-general] Re: rpict memory usage keeps increasing with
+	-aa 0
+In-Reply-To: <Pine.LNX.4.64.0809021240150.7440@rygar.gpcc.itd.umich.edu>
+References: <Pine.LNX.4.64.0809010025380.11715@joust.gpcc.itd.umich.edu>
+	<Pine.LNX.4.64.0809021240150.7440@rygar.gpcc.itd.umich.edu>
+Message-ID: <C82DEF4A-F814-48E0-B11D-4C2D2DBC94AA@lmi.net>
+
+Hi Mark,
+
+You are correct in your deduction that Radiance loads chunks (octrees  
+in this case) as they are first required during rendering, unless you  
+are using the -PP option, which causes the whole scene and all  
+references to be preloaded to maximize memory sharing.
+
+Radiance doesn't do any LRU ejection of memory once it's been  
+loaded.  However, virtual memory will swap out pages that are not  
+accessed and this should in general be just as good.  You only need  
+to make sure you have enough free disk space to accommodate your VM  
+system.
+
+I hope this helps.
+-Greg
+
+> From: Mark Stock <mstock@umich.edu>
+> Date: September 2, 2008 10:48:06 AM MDT
+>
+> I think I can answer my own question. As the rendering progressed,  
+> the memory growth slowed, and it finally ended at 6.4GB. A higher- 
+> resolution rendering is showing the same fast initial growth, and  
+> slow later growth, also ending near 6.4 GB
+>
+> I suspect Radiance loads each of the 407 individual geometry chunks  
+> (octree instances?) when it is first needed. It took until near the  
+> end of the render to load in the last one.
+>
+> Now I ask: will Radiance ever drop a chunk? If I want 24m instead  
+> of 12m cylinders, I'd need ~13GB. I can only presume that Radiance  
+> doesn't know this, and will continue to ask for more memory, with  
+> the OS obliging with excessive page swapping.
+>
+> My options for larger scenes seem limited:
+> 1) analyze the geometry and reduce surface overlap, or
+> 2) buy a server with 16 GB RAM.
+>
+> Mark
+>
+> On Mon, 1 Sep 2008, Mark Stock wrote:
+>
+>> Radiance whizzes,
+>>
+>> I've upgraded to 8 GB of RAM, so, naturally, I found a scene that  
+>> needs all that space. The rpict is eats up 4.6 GB initially, but  
+>> even with "-aa 0" (turns off ambient caching, right?) I am still  
+>> seeing my VIRT and RES memory sizes growing. They are at 5.3 GB  
+>> after only 10 minutes of rendering. I am worried that I will not  
+>> be able to render high-resolution images of this scene now. How  
+>> can I prevent this?
+>>
+>> FYI: the scene is composed of a sky and 407 "instance"s of  
+>> separately-compiled octrees, each with 20k-100k primitives.
+>>
+>> Mark
+
+From gregoryjward at gmail.com  Wed Sep  3 13:16:16 2008
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed Sep  3 13:16:27 2008
+Subject: [Radiance-general] Radiance -av setting
+In-Reply-To: <F65C1ECF836F09418EBE88D3E33A8D2D014FE1C4@eurxmb06.global.arup.com>
+References: <F65C1ECF836F09418EBE88D3E33A8D2D014FE1C4@eurxmb06.global.arup.com>
+Message-ID: <8CDC0647-D85B-46EB-829B-1BCE8B16BE6B@lmi.net>
+
+Hi Erik,
+
+I think the difference is due to the fact that points closer to the  
+window see more of the sky directly, whose value is unaffected by the  
+-av setting.  Towards the back of the room, more rays encounter  
+opaque surfaces, where -av does matter.
+
+-Greg
+
+> From: "Erik Moore" <Erik.Moore@arup.com>
+> Date: August 30, 2008 3:53:39 AM PDT
+> Dear all, I?m playing with the settings in Radiance. I?ve noted  
+> something that I don?t get. Attached are two draphs of DF in a room  
+> for various numbers of ambient bounces (1-4). The top chart  
+> (ahigh1-4.opt) is without an ambient value turned on while the  
+> bottom chart (bhigh1-4.opt) is with an ambient value of 0.28 applied.
+>
+> Why does the illuminance calculated invert at the back of the room 
+> ( -ab 1 is  the highest) when we give an ambient value? Surly all  
+> values should be altered by the same amount?
+>
+> I have also run the calculation for no ambient bounces and without  
+> a sky description. In this case a flat graph is created (i.e. all  
+> points see exactly the same illuminance). This is what I would have  
+> expected to see?.all points raised by a factor related to the ?av  
+> setting.
+>
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+From gregoryjward at gmail.com  Thu Sep  4 11:41:46 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu Sep  4 11:41:54 2008
+Subject: [Radiance-general] Workshop registration is open
+Message-ID: <26A1D939-127B-47B3-8C70-B04691EEB9DD@gmail.com>
+
+Rapha?l has just opened the 2008 Radiance Workshop for registration.   
+The URL is:
+
+	http://home.hefr.ch/compag/rw2008/
+
+We still have room for one or two additional presentations, if  
+someone cares to submit an abstract.  Tentative titles are posted for  
+speakers, with more details to follow.
+
+Hope you can make it!
+
+-Greg
+From bernd at bzed.de  Fri Sep  5 02:57:35 2008
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Fri Sep  5 02:57:47 2008
+Subject: [Radiance-general] Workshop registration is open
+In-Reply-To: <26A1D939-127B-47B3-8C70-B04691EEB9DD@gmail.com>
+References: <26A1D939-127B-47B3-8C70-B04691EEB9DD@gmail.com>
+Message-ID: <48C1028F.3060505@bzed.de>
+
+Hi,
+
+> We still have room for one or two additional presentations, if someone
+> cares to submit an abstract.  Tentative titles are posted for speakers,
+> with more details to follow.
+
+would anybody interested in a workshop or talk about installing Radiance
+on Debian, or deploying Debian together with radiance using FAI (the
+fully automatic installer) or similar things?
+
+Cheers,
+
+Bernd
+
+-- 
+ Bernd Zeimetz                           Debian GNU/Linux Developer
+ GPG Fingerprint: 06C8 C9A2 EAAD E37E 5B2C BE93 067A AD04 C93B FF79
+
+From radiance at ndoylend.fastmail.fm  Fri Sep  5 05:00:39 2008
+From: radiance at ndoylend.fastmail.fm (Nick Doylend)
+Date: Fri Sep  5 05:00:44 2008
+Subject: [Radiance-general] rif settings: quality variability detail
+Message-ID: <1220616039.10249.1272338249@webmail.messagingengine.com>
+
+Quick question:  Can anyone tell me how the rad program interprets the
+HIGH/MEDIUM/LOW settings in the .rif file?  Does each setting have a
+corresponding pre-determined list of rpict parameters, or does it take
+scene geometry etc. and determine appropriate parameters each time?
+
+Thanks,
+
+Nick
+
+From jedev at visarc.com  Fri Sep  5 05:56:04 2008
+From: jedev at visarc.com (Jack de Valpine)
+Date: Fri Sep  5 05:56:14 2008
+Subject: [Radiance-general] rif settings: quality variability detail
+In-Reply-To: <1220616039.10249.1272338249@webmail.messagingengine.com>
+References: <1220616039.10249.1272338249@webmail.messagingengine.com>
+Message-ID: <48C12C64.2080604@visarc.com>
+
+Skipped content of type multipart/alternative-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: jedev.vcf
+Type: text/x-vcard
+Size: 263 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20080905/c6d58d45/jedev.vcf
+From radiance at ndoylend.fastmail.fm  Fri Sep  5 08:04:48 2008
+From: radiance at ndoylend.fastmail.fm (Nick Doylend)
+Date: Fri Sep  5 08:19:59 2008
+Subject: [Radiance-general] rif settings: quality variability detail
+In-Reply-To: <48C12C64.2080604@visarc.com>
+References: <1220616039.10249.1272338249@webmail.messagingengine.com>
+	<48C12C64.2080604@visarc.com>
+Message-ID: <1220627088.23773.1272371809@webmail.messagingengine.com>
+
+Thanks, I didn't know about the -n option.  The man file gives a useful
+overview but doesn't go into the details of the choices made.  Other
+than -aa and -ar, are there any more parameters relating to scene
+geometry?  I guess I'll fiddle around with different .rif file options
+and scene dimensions, but I just wonder if there is a document somewhere
+explaining in detail.
+
+Nick
+
+On Fri, 05 Sep 2008 08:56:04 -0400, "Jack de Valpine" <jedev@visarc.com>
+said:
+> Hi Nick,
+> 
+> Working from memory here, I believe that some settings are
+> pre-determined (such as increments of -ab over the range) while others
+> are derived based on the scene size (settings relative to the ZONE
+> parameter of the rif file). If you take a look at the man page for "rad"
+> you can get some further explanation for the various parameters. In
+> addition there is a way to run the rad command to get the output of what
+> it "would" do when actually run:
+> 
+>     rad -n <rif file>
+> 
+> This is helpful for looking at the actually parameters that it chooses
+> to run. You can vary the settings this way and see what happens without
+> the expense of running the actual simulation.
+> 
+> -Jack
+> 
+> Nick Doylend wrote:
+> > Quick question:  Can anyone tell me how the rad program interprets the
+> > HIGH/MEDIUM/LOW settings in the .rif file?  Does each setting have a
+> > corresponding pre-determined list of rpict parameters, or does it take
+> > scene geometry etc. and determine appropriate parameters each time?
+> >
+> > Thanks,
+> >
+> > Nick
+> >
+> > _______________________________________________
+> > Radiance-general mailing list
+> > Radiance-general@radiance-online.org
+> > http://www.radiance-online.org/mailman/listinfo/radiance-general
+> >
+> >   
+> 
+> -- 
+> # Jack de Valpine
+> # president
+> #
+> # visarc incorporated
+> # http://www.visarc.com
+> #
+> # channeling technology for superior design and construction
+> 
+
+From rpg at rumblestrip.org  Fri Sep  5 08:30:00 2008
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Fri Sep  5 08:30:47 2008
+Subject: [Radiance-general] rif settings: quality variability detail
+In-Reply-To: <48C12C64.2080604@visarc.com>
+References: <1220616039.10249.1272338249@webmail.messagingengine.com>
+	<48C12C64.2080604@visarc.com>
+Message-ID: <48C15078.9040603@rumblestrip.org>
+
+Jack de Valpine wrote:
+>
+>     rad -n <rif file>
+>
+> This is helpful for looking at the actually parameters that it chooses
+> to run. You can vary the settings this way and see what happens
+> without the expense of running the actual simulation.
+
+Jack's right, this is a great way to play "what if" with the rif file
+parameters. Here is a link to a paper Greg wrote on rad that is
+extremely informative about the way rad (and by extension, all of the
+rendering and calculation pieces of Radiance) works:
+
+http://www.radiance-online.org/radiance-workshop2/cd/Ward/egwr95.pdf
+
+And from this paper, regarding the routines rad employs to make these
+decisions about rendering parameters, we have this gem:
+
+"There is very little point in describing these routines in any detail,
+but pseudocode
+for the medium quality procedure is included in the Appendix for those
+who are
+curious. What is significant is that these three short routines embody
+much of the
+author$B!G(Bs knowledge about Radiance rendering and what works best in a given
+situation. As awkward as they may look, they are a form of expert knowledge,
+and it would have been impossible to write them without years of experience
+using this software. Initially, it seemed that coding this knowledge
+would be
+impossible, but it turned out instead to be cathartic." (Ward)
+
+A paraphrased version of this paragraph has remained in my head since
+the first time I read it (indeed, I searched the pdf for the word
+"cathartic" to find the paragraph), because to me it encapsulates the
+entire crux of the problem of Radiance mastery.
+
+- Rob Guglielmetti
+www.rumblestrip.org
+
+
+From Christopher.Rush at arup.com  Fri Sep  5 08:44:36 2008
+From: Christopher.Rush at arup.com (Christopher Rush)
+Date: Fri Sep  5 08:45:09 2008
+Subject: [Radiance-general] rif settings: quality variability detail
+In-Reply-To: <48C15078.9040603@rumblestrip.org>
+References: <1220616039.10249.1272338249@webmail.messagingengine.com><48C12C64.2080604@visarc.com>
+	<48C15078.9040603@rumblestrip.org>
+Message-ID: <EB124710ADB8554C930FADF760BB2BE7025DD0D7@n-yexc01.global.arup.com>
+
+There an overview table on pages 517 and 558 of Rendering with Radiance
+for direct and ambient settings. I'm not sure if some of the other
+settings are outlined in a similar manner in other portions of the book.
+
+I suspect that the actual values given in those tables may be simplified
+or have been updated since then. For example I thought that setting
+Quality=High and Variability=High will give an -ad parameter above 1024.
+
+> Quick question:  Can anyone tell me how the rad program interprets the
+> HIGH/MEDIUM/LOW settings in the .rif file?  Does each setting have a
+> corresponding pre-determined list of rpict parameters, or does it take
+> scene geometry etc. and determine appropriate parameters each time?
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+
+
+From jedev at visarc.com  Fri Sep  5 09:00:42 2008
+From: jedev at visarc.com (Jack de Valpine)
+Date: Fri Sep  5 09:01:08 2008
+Subject: [Radiance-general] rif settings: quality variability detail
+In-Reply-To: <EB124710ADB8554C930FADF760BB2BE7025DD0D7@n-yexc01.global.arup.com>
+References: <1220616039.10249.1272338249@webmail.messagingengine.com><48C12C64.2080604@visarc.com>	<48C15078.9040603@rumblestrip.org>
+	<EB124710ADB8554C930FADF760BB2BE7025DD0D7@n-yexc01.global.arup.com>
+Message-ID: <48C157AA.8050807@visarc.com>
+
+Skipped content of type multipart/alternative-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: jedev.vcf
+Type: text/x-vcard
+Size: 251 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20080905/146e7baa/jedev-0001.vcf
+From radiance at ndoylend.fastmail.fm  Fri Sep  5 09:01:01 2008
+From: radiance at ndoylend.fastmail.fm (Nick Doylend)
+Date: Fri Sep  5 09:01:13 2008
+Subject: [Radiance-general] irradiance vs. radiance / luminance vs.
+	illuminance
+Message-ID: <1220630461.4902.1272373303@webmail.messagingengine.com>
+
+Hi again,
+
+I've been puzzling over an extremely bright ground plane in one of my
+images.  I think I've tracked it down the the use of rpict's -i switch
+for calculating irradiance rather than radiance.  Can anyone help
+clarify whether I'm on the right track?
+
+If I want a luminance image, i.e. with levels corresponding to what one
+might actually see (and can compare cd/m2 values at different points) I
+omit the -i switch (and calculate radiance).  If I include the -i switch
+(and calculate irradiance), then I obtain illuminance (lm/m2 levels). 
+In both cases the radiometric units and turned into photometric units
+(using Radiance's 179lm/W conversion factor) by the image viewer
+software (I'm using the Ecotect RadianceIV viewer).
+
+Radiance is W/m2.sr while irradiance is W/m2.  Luminance is lm/m2.sr
+(cd/m2) while illuminance is lm/m2 (lux).  I think this means radiance
+and luminance are properties of a (solid angle) source while irradiance
+and luminance are properties of a (flat) surface?
+
+So my extremely bright ground plane is actually showing its lux level
+(the amount of light falling on it, rather than the amount of light it's
+reflecting).  If I want to illustrate the relative brightness of
+different surfaces I guess I need to go back and calculate luminance
+rather than illuminance.
+
+I did notice that if I clicked on the bit of 'ground' beyond the ground
+plane I get a much smaller value (in fact the same as the value in the
+luminance image - because I'm clicking on the ground as defined in the
+sky file - a glow source).  Why is this?  Does the concept of
+illuminance on a direct light source not make sense?
+
+Sorry for the long winded email equivalent of thinking out loud, and I
+appreciate that my understanding of photometry is pretty sketchy.
+
+Nick
+
+From jedev at visarc.com  Fri Sep  5 09:12:33 2008
+From: jedev at visarc.com (Jack de Valpine)
+Date: Fri Sep  5 09:12:40 2008
+Subject: [Radiance-general] irradiance vs. radiance / luminance
+	vs.	illuminance
+In-Reply-To: <1220630461.4902.1272373303@webmail.messagingengine.com>
+References: <1220630461.4902.1272373303@webmail.messagingengine.com>
+Message-ID: <48C15A71.7080808@visarc.com>
+
+Hi Nick,
+
+In order to provide help on this one, it would be good to provide
+information on the parameters being used as a starting point. So output
+from rad -n <rif file> would be good. Another thing that might be
+helpful is to get the material definition for the ground plane object.
+
+-Jack
+
+Nick Doylend wrote:
+> Hi again,
+>
+> I've been puzzling over an extremely bright ground plane in one of my
+> images.  I think I've tracked it down the the use of rpict's -i switch
+> for calculating irradiance rather than radiance.  Can anyone help
+> clarify whether I'm on the right track?
+>
+> If I want a luminance image, i.e. with levels corresponding to what one
+> might actually see (and can compare cd/m2 values at different points) I
+> omit the -i switch (and calculate radiance).  If I include the -i switch
+> (and calculate irradiance), then I obtain illuminance (lm/m2 levels). 
+> In both cases the radiometric units and turned into photometric units
+> (using Radiance's 179lm/W conversion factor) by the image viewer
+> software (I'm using the Ecotect RadianceIV viewer).
+>
+> Radiance is W/m2.sr while irradiance is W/m2.  Luminance is lm/m2.sr
+> (cd/m2) while illuminance is lm/m2 (lux).  I think this means radiance
+> and luminance are properties of a (solid angle) source while irradiance
+> and luminance are properties of a (flat) surface?
+>
+> So my extremely bright ground plane is actually showing its lux level
+> (the amount of light falling on it, rather than the amount of light it's
+> reflecting).  If I want to illustrate the relative brightness of
+> different surfaces I guess I need to go back and calculate luminance
+> rather than illuminance.
+>
+> I did notice that if I clicked on the bit of 'ground' beyond the ground
+> plane I get a much smaller value (in fact the same as the value in the
+> luminance image - because I'm clicking on the ground as defined in the
+> sky file - a glow source).  Why is this?  Does the concept of
+> illuminance on a direct light source not make sense?
+>
+> Sorry for the long winded email equivalent of thinking out loud, and I
+> appreciate that my understanding of photometry is pretty sketchy.
+>
+> Nick
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>   
+
+-- 
+# Jack de Valpine
+# president
+#
+# visarc incorporated
+# http://www.visarc.com
+#
+# channeling technology for superior design and construction
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: jedev.vcf
+Type: text/x-vcard
+Size: 263 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20080905/f1c459ce/jedev.vcf
+From radiance at ndoylend.fastmail.fm  Fri Sep  5 09:11:06 2008
+From: radiance at ndoylend.fastmail.fm (Nick Doylend)
+Date: Fri Sep  5 09:15:34 2008
+Subject: [Radiance-general] rif settings: quality variability detail
+In-Reply-To: <EB124710ADB8554C930FADF760BB2BE7025DD0D7@n-yexc01.global.arup.com>
+References: <1220616039.10249.1272338249@webmail.messagingengine.com><48C12C64.2080604@visarc.com>
+	<48C15078.9040603@rumblestrip.org>
+	<EB124710ADB8554C930FADF760BB2BE7025DD0D7@n-yexc01.global.arup.com>
+Message-ID: <1220631066.7497.1272384899@webmail.messagingengine.com>
+
+Thanks, that's just what I was looking for!  The values for medium
+quality given in the book appear different from those in Greg's paper
+(based on a cursory glance through the appendix).  Can anyone confirm
+the current values, otherwise I guess I can just play rad -n when I get
+time.
+
+Cheers,
+
+Nick
+
+
+On Fri, 5 Sep 2008 11:44:36 -0400, "Christopher Rush"
+<Christopher.Rush@arup.com> said:
+> There an overview table on pages 517 and 558 of Rendering with Radiance
+> for direct and ambient settings. I'm not sure if some of the other
+> settings are outlined in a similar manner in other portions of the book.
+> 
+> I suspect that the actual values given in those tables may be simplified
+> or have been updated since then. For example I thought that setting
+> Quality=High and Variability=High will give an -ad parameter above 1024.
+> 
+> > Quick question:  Can anyone tell me how the rad program interprets the
+> > HIGH/MEDIUM/LOW settings in the .rif file?  Does each setting have a
+> > corresponding pre-determined list of rpict parameters, or does it take
+> > scene geometry etc. and determine appropriate parameters each time?
+> ____________________________________________________________
+> Electronic mail messages entering and leaving Arup  business
+> systems are scanned for acceptability of content and viruses
+> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+From gregoryjward at gmail.com  Fri Sep  5 10:09:42 2008
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri Sep  5 10:09:48 2008
+Subject: [Radiance-general] rif settings: quality variability detail
+In-Reply-To: <1220631066.7497.1272384899@webmail.messagingengine.com>
+References: <1220616039.10249.1272338249@webmail.messagingengine.com><48C12C64.2080604@visarc.com>
+	<48C15078.9040603@rumblestrip.org>
+	<EB124710ADB8554C930FADF760BB2BE7025DD0D7@n-yexc01.global.arup.com>
+	<1220631066.7497.1272384899@webmail.messagingengine.com>
+Message-ID: <3117230F-A2D8-4597-AA52-9E09FC832453@lmi.net>
+
+If you're really curious how these options are set, there's always  
+the source code to look at:
+
+	http://www.radiance-online.org/cgi-bin/viewcvs.cgi/ray/src/util/rad.c
+
+There was an upgrade to the general rendering quality back in 2003:
+
+	http://www.radiance-online.org/cgi-bin/viewcvs.cgi/ray/src/util/ 
+rad.c.diff?r1=2.71&r2=2.72
+
+Playing with the -n option is probably the best way to see what  
+happens if you don't care for C code.
+
+-Greg
+
+From gregoryjward at gmail.com  Fri Sep  5 10:13:45 2008
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri Sep  5 10:13:51 2008
+Subject: [Radiance-general] irradiance vs. radiance / luminance vs.
+	illuminance
+In-Reply-To: <1220630461.4902.1272373303@webmail.messagingengine.com>
+References: <1220630461.4902.1272373303@webmail.messagingengine.com>
+Message-ID: <ED238147-F7A4-473D-B806-2860256D9A7B@lmi.net>
+
+Hi Nick,
+
+You generally seem to know what's going on, so let me just verify and  
+clarify a few points:
+
+> If I want a luminance image, i.e. with levels corresponding to what  
+> one
+> might actually see (and can compare cd/m2 values at different  
+> points) I
+> omit the -i switch (and calculate radiance).  If I include the -i  
+> switch
+> (and calculate irradiance), then I obtain illuminance (lm/m2 levels).
+> In both cases the radiometric units and turned into photometric units
+> (using Radiance's 179lm/W conversion factor) by the image viewer
+> software (I'm using the Ecotect RadianceIV viewer).
+>
+> Radiance is W/m2.sr while irradiance is W/m2.  Luminance is lm/m2.sr
+> (cd/m2) while illuminance is lm/m2 (lux).  I think this means radiance
+> and luminance are properties of a (solid angle) source while  
+> irradiance
+> and luminance are properties of a (flat) surface?
+
+That is correct.  Bear in mind that certain surfaces do not report  
+irradiance, such as glass, which you see through as usual with the -i  
+option.
+
+> So my extremely bright ground plane is actually showing its lux level
+> (the amount of light falling on it, rather than the amount of light  
+> it's
+> reflecting).  If I want to illustrate the relative brightness of
+> different surfaces I guess I need to go back and calculate luminance
+> rather than illuminance.
+
+Right.
+
+> I did notice that if I clicked on the bit of 'ground' beyond the  
+> ground
+> plane I get a much smaller value (in fact the same as the value in the
+> luminance image - because I'm clicking on the ground as defined in the
+> sky file - a glow source).  Why is this?  Does the concept of
+> illuminance on a direct light source not make sense?
+
+Right again -- sources don't report light landing on them  
+(irradiance), since they are considered to be emitters, and thus  
+aren't affected by the -i option.
+
+-Greg
+
+From solomoncw76 at gmail.com  Fri Sep  5 19:27:46 2008
+From: solomoncw76 at gmail.com (chang cw)
+Date: Fri Sep  5 19:27:50 2008
+Subject: [Radiance-general] Pvalue for converting to luminance
+Message-ID: <da2acf910809051927l37900acl208a1b111caeac93@mail.gmail.com>
+
+Hi all,
+
+I tried to apply the factor of 179 to the scaled brightness from
+pvalue. However, it seems that the value is still slightly off from
+the actual one read from psfview.
+
+The value from pfsview is 2.579e+4
+
+while from pvalue is 2.803e+4
+
+i used pvalue -b -o sample.hdr
+
+Is there an exact value for the scale ?
+
+
+Thanks
+Cw
+
+From gregoryjward at gmail.com  Fri Sep  5 19:36:01 2008
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri Sep  5 19:36:03 2008
+Subject: [Radiance-general] Pvalue for converting to luminance
+In-Reply-To: <da2acf910809051927l37900acl208a1b111caeac93@mail.gmail.com>
+References: <da2acf910809051927l37900acl208a1b111caeac93@mail.gmail.com>
+Message-ID: <E954AF0A-D435-403C-8DFC-ADE1DFC13967@lmi.net>
+
+Hi Cw,
+
+I'm not sure how pfsview converts colors to luminance values, but it  
+may apply a different set of coefficients from those used in Radiance  
+(and pvalue).  This could explain the discrepancy.  The best way to  
+check is to compare values for a gray pixel, which should be the same  
+regardless of the color -> luminance conversion.
+
+Also, are you 100% sure you are checking the exact same pixel(s)?
+
+-Greg
+
+> From: "chang cw" <solomoncw76@gmail.com>
+> Date: September 5, 2008 7:27:46 PM PDT
+>
+> Hi all,
+>
+> I tried to apply the factor of 179 to the scaled brightness from
+> pvalue. However, it seems that the value is still slightly off from
+> the actual one read from psfview.
+>
+> The value from pfsview is 2.579e+4
+>
+> while from pvalue is 2.803e+4
+>
+> i used pvalue -b -o sample.hdr
+>
+> Is there an exact value for the scale ?
+>
+>
+> Thanks
+> Cw
+
+From solomoncw76 at gmail.com  Fri Sep  5 19:39:49 2008
+From: solomoncw76 at gmail.com (chang cw)
+Date: Fri Sep  5 19:39:53 2008
+Subject: [Radiance-general] Pvalue for converting to luminance
+In-Reply-To: <E954AF0A-D435-403C-8DFC-ADE1DFC13967@lmi.net>
+References: <da2acf910809051927l37900acl208a1b111caeac93@mail.gmail.com>
+	<E954AF0A-D435-403C-8DFC-ADE1DFC13967@lmi.net>
+Message-ID: <da2acf910809051939q233b7b9eq7f0843cfb2a022e5@mail.gmail.com>
+
+Hi Greg,
+Thanks for replying so fast.
+So i assume that the value read off from ximage is the same at that
+from pvalue ?
+
+Using -b -o option  and a factor of 179 ?
+Sorry but i could get not the radiance source compiled for ximage ;(
+
+Thanks
+Chew Wai
+
+On Sat, Sep 6, 2008 at 10:36 AM, Greg Ward <gregoryjward@gmail.com> wrote:
+> Hi Cw,
+>
+> I'm not sure how pfsview converts colors to luminance values, but it may
+> apply a different set of coefficients from those used in Radiance (and
+> pvalue).  This could explain the discrepancy.  The best way to check is to
+> compare values for a gray pixel, which should be the same regardless of the
+> color -> luminance conversion.
+>
+> Also, are you 100% sure you are checking the exact same pixel(s)?
+>
+> -Greg
+>
+>> From: "chang cw" <solomoncw76@gmail.com>
+>> Date: September 5, 2008 7:27:46 PM PDT
+>>
+>> Hi all,
+>>
+>> I tried to apply the factor of 179 to the scaled brightness from
+>> pvalue. However, it seems that the value is still slightly off from
+>> the actual one read from psfview.
+>>
+>> The value from pfsview is 2.579e+4
+>>
+>> while from pvalue is 2.803e+4
+>>
+>> i used pvalue -b -o sample.hdr
+>>
+>> Is there an exact value for the scale ?
+>>
+>>
+>> Thanks
+>> Cw
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+From gregoryjward at gmail.com  Fri Sep  5 21:15:01 2008
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri Sep  5 21:15:08 2008
+Subject: [Radiance-general] Pvalue for converting to luminance
+In-Reply-To: <da2acf910809051939q233b7b9eq7f0843cfb2a022e5@mail.gmail.com>
+References: <da2acf910809051927l37900acl208a1b111caeac93@mail.gmail.com>
+	<E954AF0A-D435-403C-8DFC-ADE1DFC13967@lmi.net>
+	<da2acf910809051939q233b7b9eq7f0843cfb2a022e5@mail.gmail.com>
+Message-ID: <FBD21558-20C3-472F-8AE9-2A8F6BEB4470@lmi.net>
+
+Hi Chew,
+
+Yes, pvalue -o -b * 179 and the ximage 'l' command should report the  
+same values for the same pixels, though it's a bit difficult to know  
+if you are in fact checking the same pixels -- the ximage 'p' command  
+can help with that.
+
+I guess this is moot since you couldn't compile ximage.  I believe  
+Ecotect offers a Windows-ready substitute free of charge.
+
+Best,
+-Greg
+
+> From: "chang cw" <solomoncw76@gmail.com>
+> Date: September 5, 2008 7:39:49 PM PDT
+>
+> Hi Greg,
+> Thanks for replying so fast.
+> So i assume that the value read off from ximage is the same at that
+> from pvalue ?
+>
+> Using -b -o option  and a factor of 179 ?
+> Sorry but i could get not the radiance source compiled for ximage ;(
+>
+> Thanks
+> Chew Wai
+
+From mstock at umich.edu  Fri Sep  5 22:43:51 2008
+From: mstock at umich.edu (Mark Stock)
+Date: Fri Sep  5 22:43:54 2008
+Subject: [Radiance-general] Workshop registration is open
+In-Reply-To: <26A1D939-127B-47B3-8C70-B04691EEB9DD@gmail.com>
+References: <26A1D939-127B-47B3-8C70-B04691EEB9DD@gmail.com>
+Message-ID: <Pine.LNX.4.64.0809052310500.16585@zaxxon.gpcc.itd.umich.edu>
+
+Greg,
+
+I just got the go-ahead from my wife to come to the Radiance 
+Workshop this year, and I hope there's space to present. If there 
+is, I'd like to present:
+
+Imaging Fluid Dynamics for Art
+
+In this talk, I will present methods that I have used for nearly 
+10 years of modeling, rendering, and display of digital artwork. 
+This includes creating and converting data from computational 
+fluid dynamics research, handling large models, rendering 
+large single frames, and experimental display techniques.
+
+Mark
+
+On Thu, 4 Sep 2008, Gregory J. Ward wrote:
+
+> Raphaλl has just opened the 2008 Radiance Workshop for 
+> registration.  The URL is:
+>
+> 	http://home.hefr.ch/compag/rw2008/
+>
+> We still have room for one or two additional presentations, if 
+> someone cares to submit an abstract.  Tentative titles are 
+> posted for speakers, with more details to follow.
+>
+> Hope you can make it!
+>
+> -Greg
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+From solomoncw76 at gmail.com  Fri Sep  5 23:00:40 2008
+From: solomoncw76 at gmail.com (chang cw)
+Date: Fri Sep  5 23:00:54 2008
+Subject: [Radiance-general] Pvalue for converting to luminance
+In-Reply-To: <FBD21558-20C3-472F-8AE9-2A8F6BEB4470@lmi.net>
+References: <da2acf910809051927l37900acl208a1b111caeac93@mail.gmail.com>
+	<E954AF0A-D435-403C-8DFC-ADE1DFC13967@lmi.net>
+	<da2acf910809051939q233b7b9eq7f0843cfb2a022e5@mail.gmail.com>
+	<FBD21558-20C3-472F-8AE9-2A8F6BEB4470@lmi.net>
+Message-ID: <da2acf910809052300w154fc9fci83dd6cd888c5a539@mail.gmail.com>
+
+HI greg,
+
+Thanks, i believe for RGB, the conversion to radiance units is the same factor ?
+
+I think as compared to PFSview, the pixels for Pvalues are shifted -1
+-1 for x and y.
+
+Thanks
+
+Cw
+
+On Sat, Sep 6, 2008 at 12:15 PM, Greg Ward <gregoryjward@gmail.com> wrote:
+> Hi Chew,
+>
+> Yes, pvalue -o -b * 179 and the ximage 'l' command should report the same
+> values for the same pixels, though it's a bit difficult to know if you are
+> in fact checking the same pixels -- the ximage 'p' command can help with
+> that.
+>
+> I guess this is moot since you couldn't compile ximage.  I believe Ecotect
+> offers a Windows-ready substitute free of charge.
+>
+> Best,
+> -Greg
+>
+>> From: "chang cw" <solomoncw76@gmail.com>
+>> Date: September 5, 2008 7:39:49 PM PDT
+>>
+>> Hi Greg,
+>> Thanks for replying so fast.
+>> So i assume that the value read off from ximage is the same at that
+>> from pvalue ?
+>>
+>> Using -b -o option  and a factor of 179 ?
+>> Sorry but i could get not the radiance source compiled for ximage ;(
+>>
+>> Thanks
+>> Chew Wai
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+From grobe at gmx.net  Sat Sep  6 04:38:03 2008
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Sat Sep  6 04:38:15 2008
+Subject: [Radiance-general] Pvalue for converting to luminance
+In-Reply-To: <da2acf910809051927l37900acl208a1b111caeac93@mail.gmail.com>
+References: <da2acf910809051927l37900acl208a1b111caeac93@mail.gmail.com>
+Message-ID: <48C26B9B.3080109@gmx.net>
+
+> I tried to apply the factor of 179 to the scaled brightness from
+> pvalue. However, it seems that the value is still slightly off from
+> the actual one read from psfview.
+
+Hi,
+
+from the manpage of pfsinrgbe[1]:
+
+--
+"IMPORTANT NOTE
+
+There is an incompatibility between viewers of RGBE format in terms of
+absolute luminance values. The ximage viewer from Radiance package
+expects radiance values in RGBE files and uses the WHITE_EFFICACY
+constant equal to 179.0f to convert from radiance to luminance. This in
+practice means that the values displayed with pfsview maybe higher than
+expected. To compensate for this incompatibility we suggest to use
+pfsabsolute command:
+
+pfsinrgbe measured_luminance.hdr | pfsabsolute 1 179 | pfsview
+
+This is not necessary when RGBE files are saved using pfsoutrgbe,
+Radiance package, mkhdr or Photospheare. This is also not relevant when
+only relative absolute values are considered."
+--
+
+Can you please try the work-around and tell us if you get the expected
+results than?
+
+CU Lars.
+
+[1] http://www.mpi-inf.mpg.de/resources/pfstools/man1/pfsinrgbe.1.html
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: smime.p7s
+Type: application/x-pkcs7-signature
+Size: 3617 bytes
+Desc: S/MIME Cryptographic Signature
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20080906/49636260/smime-0001.bin
+From grobe at gmx.net  Sat Sep  6 04:42:37 2008
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Sat Sep  6 04:42:48 2008
+Subject: [Radiance-general] Pvalue for converting to luminance
+In-Reply-To: <48C26B9B.3080109@gmx.net>
+References: <da2acf910809051927l37900acl208a1b111caeac93@mail.gmail.com>
+	<48C26B9B.3080109@gmx.net>
+Message-ID: <48C26CAD.3070203@gmx.net>
+
+Sorry.. you use this on hdr images generated by radiance, assembled from
+fotographs, or..?
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: smime.p7s
+Type: application/x-pkcs7-signature
+Size: 3617 bytes
+Desc: S/MIME Cryptographic Signature
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20080906/342037f1/smime.bin
+From solomoncw76 at gmail.com  Sat Sep  6 05:40:40 2008
+From: solomoncw76 at gmail.com (C W Chang)
+Date: Sat Sep  6 05:40:48 2008
+Subject: [Radiance-general] Pvalue for converting to luminance
+Message-ID: <48c27a4b.0c486e0a.75db.7cbb@mx.google.com>
+
+Hi I use it on photos and generated using psftool
+
+Actually want to find out if there are any tools that can read out the values using psftool into text mode
+
+
+Tks
+cw
+
+-----Original Message-----
+From: Lars O. Grobe <grobe@gmx.net>
+Sent: Saturday, 6 September, 2008 19:42
+To: Radiance general discussion <radiance-general@radiance-online.org>
+Subject: Re: [Radiance-general] Pvalue for converting to luminance
+
+Sorry.. you use this on hdr images generated by radiance, assembled from
+fotographs, or..?
+
+
+From grobe at gmx.net  Sat Sep  6 14:53:03 2008
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Sat Sep  6 14:53:15 2008
+Subject: [Radiance-general] Pvalue for converting to luminance
+In-Reply-To: <48c27a4b.0c486e0a.75db.7cbb@mx.google.com>
+References: <48c27a4b.0c486e0a.75db.7cbb@mx.google.com>
+Message-ID: <48C2FBBF.9030600@gmx.net>
+
+> Actually want to find out if there are any tools that can read out the values using psftool into text mode
+
+I think the authors did not implement this simply because it already
+exists - pvalue has been around for a while. So you could write your own
+pvalue tool, in something like the pfsout-tools, but with a text format
+target. Another simple way would be to combine pfsabsolute and
+pfsoutppm, to create an ascii-text coded grey-scale image with linear
+mapping, and read out the values than. But the accuracy would be very
+bad (8bit).
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: smime.p7s
+Type: application/x-pkcs7-signature
+Size: 3617 bytes
+Desc: S/MIME Cryptographic Signature
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20080907/73ffd7a5/smime.bin
+From solomoncw76 at gmail.com  Sat Sep  6 16:57:58 2008
+From: solomoncw76 at gmail.com (chang cw)
+Date: Sat Sep  6 16:58:02 2008
+Subject: [Radiance-general] Pvalue for converting to luminance
+In-Reply-To: <48C2FBBF.9030600@gmx.net>
+References: <48c27a4b.0c486e0a.75db.7cbb@mx.google.com>
+	<48C2FBBF.9030600@gmx.net>
+Message-ID: <da2acf910809061657q72cfba00hecbe8eb1e06d2b8b@mail.gmail.com>
+
+Hi Lars
+
+Greetings from Singapore :).
+
+Thanks for the suggestion. i think will stick with pvalue then.
+
+So when is the next time you dropping by Singapore?
+
+
+Best Regards,
+cw
+
+2008/9/7 Lars O. Grobe <grobe@gmx.net>:
+>> Actually want to find out if there are any tools that can read out the values using psftool into text mode
+>
+> I think the authors did not implement this simply because it already
+> exists - pvalue has been around for a while. So you could write your own
+> pvalue tool, in something like the pfsout-tools, but with a text format
+> target. Another simple way would be to combine pfsabsolute and
+> pfsoutppm, to create an ascii-text coded grey-scale image with linear
+> mapping, and read out the values than. But the accuracy would be very
+> bad (8bit).
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+From radiance at ndoylend.fastmail.fm  Mon Sep  8 03:52:16 2008
+From: radiance at ndoylend.fastmail.fm (Nick Doylend)
+Date: Mon Sep  8 03:55:42 2008
+Subject: [Radiance-general] irradiance vs. radiance / luminance vs. 
+	illuminance
+In-Reply-To: <48C15A71.7080808@visarc.com>
+References: <1220630461.4902.1272373303@webmail.messagingengine.com>
+	<48C15A71.7080808@visarc.com>
+Message-ID: <1220871136.2558.1272751313@webmail.messagingengine.com>
+
+Problem solved, I think.  The confusion arose from me jumping to
+conclusions based my comparison of luminance/illuminance images.  I saw
+the bright floor plane outside and assumed it was a mistake.  It
+actually turned out that the reflectance of the local ground plane was
+set to 0.25 while gensky defaults to 0.2.
+
+Perhaps 0.25 is a bit too high for asphalt but reasonable for concrete? 
+BRE [1] list a table of surface reflectances with asphalt = 0.07 and
+concrete = 0.2 ~ 0.3.  Anyone know of a more detailed reference for
+surface reflectances?
+
+Nick
+
+[1] BRE Report 380 2000 - Environmental site layout planning: solar
+access, microclimate and passive cooling in urban areas
+
+On Fri, 05 Sep 2008 12:12:33 -0400, "Jack de Valpine" <jedev@visarc.com>
+said:
+> Hi Nick,
+> 
+> In order to provide help on this one, it would be good to provide
+> information on the parameters being used as a starting point. So output
+> from rad -n <rif file> would be good. Another thing that might be
+> helpful is to get the material definition for the ground plane object.
+> 
+> -Jack
+> 
+> Nick Doylend wrote:
+> > Hi again,
+> >
+> > I've been puzzling over an extremely bright ground plane in one of my
+> > images.  I think I've tracked it down the the use of rpict's -i switch
+> > for calculating irradiance rather than radiance.  Can anyone help
+> > clarify whether I'm on the right track?
+> >
+> > If I want a luminance image, i.e. with levels corresponding to what one
+> > might actually see (and can compare cd/m2 values at different points) I
+> > omit the -i switch (and calculate radiance).  If I include the -i switch
+> > (and calculate irradiance), then I obtain illuminance (lm/m2 levels). 
+> > In both cases the radiometric units and turned into photometric units
+> > (using Radiance's 179lm/W conversion factor) by the image viewer
+> > software (I'm using the Ecotect RadianceIV viewer).
+> >
+> > Radiance is W/m2.sr while irradiance is W/m2.  Luminance is lm/m2.sr
+> > (cd/m2) while illuminance is lm/m2 (lux).  I think this means radiance
+> > and luminance are properties of a (solid angle) source while irradiance
+> > and luminance are properties of a (flat) surface?
+> >
+> > So my extremely bright ground plane is actually showing its lux level
+> > (the amount of light falling on it, rather than the amount of light it's
+> > reflecting).  If I want to illustrate the relative brightness of
+> > different surfaces I guess I need to go back and calculate luminance
+> > rather than illuminance.
+> >
+> > I did notice that if I clicked on the bit of 'ground' beyond the ground
+> > plane I get a much smaller value (in fact the same as the value in the
+> > luminance image - because I'm clicking on the ground as defined in the
+> > sky file - a glow source).  Why is this?  Does the concept of
+> > illuminance on a direct light source not make sense?
+> >
+> > Sorry for the long winded email equivalent of thinking out loud, and I
+> > appreciate that my understanding of photometry is pretty sketchy.
+> >
+> > Nick
+> >
+> > _______________________________________________
+> > Radiance-general mailing list
+> > Radiance-general@radiance-online.org
+> > http://www.radiance-online.org/mailman/listinfo/radiance-general
+> >
+> >   
+> 
+> -- 
+> # Jack de Valpine
+> # president
+> #
+> # visarc incorporated
+> # http://www.visarc.com
+> #
+> # channeling technology for superior design and construction
+> 
+
+From grobe at gmx.net  Mon Sep  8 04:16:03 2008
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Mon Sep  8 04:16:11 2008
+Subject: [Radiance-general] irradiance vs. radiance / luminance vs.
+	illuminance
+In-Reply-To: <1220871136.2558.1272751313@webmail.messagingengine.com>
+References: <1220630461.4902.1272373303@webmail.messagingengine.com>	<48C15A71.7080808@visarc.com>
+	<1220871136.2558.1272751313@webmail.messagingengine.com>
+Message-ID: <48C50973.1080804@gmx.net>
+
+>
+> Perhaps 0.25 is a bit too high for asphalt but reasonable for concrete? 
+> BRE [1] list a table of surface reflectances with asphalt = 0.07 and concrete = 0.2 ~ 0.3.  Anyone know of a more detailed reference for surface reflectances?
+>   
+I think in this case, taking a grey chart, going out and finding the
+value by comparision would work well. The problem is that there are so
+many different types of concrete (granularity, additions, surface
+finishing) plus outside factors (wet / dry etc) that you cannot get one
+color / reflectance for the material.
+
+BTW if I look at the road in front of the office I am working in right
+now, I also wonder if the reflectance of the real-world asfalt is not
+much higher. The 0.07 may be "pure" asfalt (so almost black as bitumen)
+while the road surface here contains sand and stones to make it rough
+and dureable. So if you walk around with your grey chart, just make one
+more comparision ;-)
+
+One problem with outdoors surfaces is that the values measured in lab
+can be far apart from real world. Erosion, dust, humidity, vegetation...
+many factors affect what we see outside, besides the pure "material". So
+I guess in a proper simulation, one should always try to check these
+reflectances, at least if they have big influence on the result.
+
+CU Lars.
+
+From maricanis at gmail.com  Mon Sep  8 05:17:02 2008
+From: maricanis at gmail.com (Marija Velickovic)
+Date: Mon Sep  8 05:17:07 2008
+Subject: [Radiance-general] irradiance vs. radiance / luminance vs.
+	illuminance
+In-Reply-To: <ED238147-F7A4-473D-B806-2860256D9A7B@lmi.net>
+References: <1220630461.4902.1272373303@webmail.messagingengine.com>
+	<ED238147-F7A4-473D-B806-2860256D9A7B@lmi.net>
+Message-ID: <124b40400809080517m63a2380bv9919336ea45691df@mail.gmail.com>
+
+Hi all,
+
+A question related to Greg previous mail:
+
+On Fri, Sep 5, 2008 at 7:13 PM, Greg Ward <gregoryjward@gmail.com> wrote:
+
+> Radiance is W/m2.sr while irradiance is W/m2.  Luminance is lm/m2.sr
+>> (cd/m2) while illuminance is lm/m2 (lux).  I think this means radiance
+>> and luminance are properties of a (solid angle) source while irradiance
+>> and luminance are properties of a (flat) surface?
+>>
+>
+> That is correct.  Bear in mind that certain surfaces do not report
+> irradiance, such as glass, which you see through as usual with the -i
+> option.
+
+
+and
+
+
+> Right again -- sources don't report light landing on them (irradiance),
+> since they are considered to be emitters, and thus aren't affected by the -i
+> option.
+>
+>
+So if I understand well, when we calculate irradiance image (rpict -i
+option) depending of surface materials, for various objects different values
+are reported :
+*light sources (light,glow) - radiance
+*glass - radiance?
+*trans - ?
+*illum - radiance?
+*other materials - irradiance
+
+Please fill the blanks :)
+
+Thanks,
+Marija
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20080908/fae87a2f/attachment.htm
+From gregoryjward at gmail.com  Mon Sep  8 10:08:47 2008
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon Sep  8 15:09:21 2008
+Subject: [Radiance-general] irradiance vs. radiance / luminance vs.
+	illuminance
+In-Reply-To: <124b40400809080517m63a2380bv9919336ea45691df@mail.gmail.com>
+References: <1220630461.4902.1272373303@webmail.messagingengine.com>
+	<ED238147-F7A4-473D-B806-2860256D9A7B@lmi.net>
+	<124b40400809080517m63a2380bv9919336ea45691df@mail.gmail.com>
+Message-ID: <8DA1BD2B-A662-46EB-9269-FE6F9DD60E9D@lmi.net>
+
+Hi Marija,
+
+The complete list of materials that are completelly ignored when -i  
+is set:
+
+trans
+trans2
+dielectric
+interface
+mist
+glass
+
+Surfaces made of these materials pass as if they aren't there.  Light  
+sources, illum's, etc. yield radiance rather than irradiance.  This  
+includes surfaces modified by the following materials:
+
+light
+illum
+glow
+spotlight
+
+I hope this clarifies matters.
+-Greg
+
+> From: "Marija Velickovic" <maricanis@gmail.com>
+> Date: September 8, 2008 5:17:02 AM PDT
+>
+> Hi all,
+>
+> A question related to Greg previous mail:
+>
+> On Fri, Sep 5, 2008 at 7:13 PM, Greg Ward <gregoryjward@gmail.com>  
+> wrote:
+> Radiance is W/m2.sr while irradiance is W/m2.  Luminance is lm/m2.sr
+> (cd/m2) while illuminance is lm/m2 (lux).  I think this means radiance
+> and luminance are properties of a (solid angle) source while  
+> irradiance
+> and luminance are properties of a (flat) surface?
+>
+> That is correct.  Bear in mind that certain surfaces do not report  
+> irradiance, such as glass, which you see through as usual with the - 
+> i option.
+>
+> and
+>
+> Right again -- sources don't report light landing on them  
+> (irradiance), since they are considered to be emitters, and thus  
+> aren't affected by the -i option.
+>
+>
+> So if I understand well, when we calculate irradiance image (rpict - 
+> i option) depending of surface materials, for various objects  
+> different values are reported :
+> *light sources (light,glow) - radiance
+> *glass - radiance?
+> *trans - ?
+> *illum - radiance?
+> *other materials - irradiance
+>
+> Please fill the blanks :)
+>
+> Thanks,
+> Marija
+
+From maricanis at gmail.com  Tue Sep  9 01:42:45 2008
+From: maricanis at gmail.com (Marija Velickovic)
+Date: Tue Sep  9 01:42:49 2008
+Subject: [Radiance-general] irradiance vs. radiance / luminance vs.
+	illuminance
+In-Reply-To: <8DA1BD2B-A662-46EB-9269-FE6F9DD60E9D@lmi.net>
+References: <1220630461.4902.1272373303@webmail.messagingengine.com>
+	<ED238147-F7A4-473D-B806-2860256D9A7B@lmi.net>
+	<124b40400809080517m63a2380bv9919336ea45691df@mail.gmail.com>
+	<8DA1BD2B-A662-46EB-9269-FE6F9DD60E9D@lmi.net>
+Message-ID: <124b40400809090142j12ec9053tf835014451a0b847@mail.gmail.com>
+
+Hi Greg,
+
+ Greg Ward wrote:
+
+> The complete list of materials that are completelly ignored when -i is set:
+>
+> trans
+> trans2
+> dielectric
+> interface
+> mist
+> glass
+>
+> Surfaces made of these materials pass as if they aren't there.
+
+
+What does this exactly mean when values on the image are traced in ximage?
+For example if I have a window made of some glass material or some curtain
+on it made of trans material. On irradiance image when I try to trace value
+of some pixel on the window surface, what do I get? Is it irradiance of the
+objects behind the window (outside ground, buildings etc)? Does
+window/curtain transmittance has an influence on reported value?
+
+What happens for surfaces made of transparent BRTfunc materials (like double
+glazing)? Are they ignored too, or their irradiance value is reported?
+
+Thanks again,
+Marija
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20080909/871a5230/attachment.html
+From gregoryjward at gmail.com  Tue Sep  9 08:24:31 2008
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue Sep  9 08:24:38 2008
+Subject: [Radiance-general] irradiance vs. radiance / luminance vs.
+	illuminance
+In-Reply-To: <124b40400809090142j12ec9053tf835014451a0b847@mail.gmail.com>
+References: <1220630461.4902.1272373303@webmail.messagingengine.com>
+	<ED238147-F7A4-473D-B806-2860256D9A7B@lmi.net>
+	<124b40400809080517m63a2380bv9919336ea45691df@mail.gmail.com>
+	<8DA1BD2B-A662-46EB-9269-FE6F9DD60E9D@lmi.net>
+	<124b40400809090142j12ec9053tf835014451a0b847@mail.gmail.com>
+Message-ID: <BD18B196-7074-42B0-A7A8-CD7EF8C58CBC@lmi.net>
+
+Hi Marija,
+
+>> Surfaces made of these materials pass as if they aren't there.
+>
+> What does this exactly mean when values on the image are traced in  
+> ximage?
+> For example if I have a window made of some glass material or some  
+> curtain on it made of trans material. On irradiance image when I  
+> try to trace value of some pixel on the window surface, what do I  
+> get? Is it irradiance of the objects behind the window (outside  
+> ground, buildings etc)? Does window/curtain transmittance has an  
+> influence on reported value?
+
+If you query a pixel on a window, the window acts as if it's not  
+there, so it's transmittance has no effect.
+
+> What happens for surfaces made of transparent BRTfunc materials  
+> (like double glazing)? Are they ignored too, or their irradiance  
+> value is reported?
+
+The BRTDfunc isn't one of the materials on the list, so it shows up  
+with an irradiance value like other materials.  I'm sorry if this is  
+confusing, but you can usually tell simply by looking at the image  
+which materials are transparent and which aren't.  If you want all  
+materials to be treated the same and irradiance to be computed for  
+everything, you can use the following in place of the rpict -i option:
+
+vwrays [view options] -ff -x xres -y yres -pa 0 | rtrace -h -ff -opN  
+octree | rtrace -ffc -I -x xres -y yres > irrad.pic
+
+The first trace comes up with the intersection points and surface  
+normals for the second trace, which computes irradiance at those  
+points.  You need to be sure that your view has no distant light  
+sources in it, since those don't have intersection points or surface  
+normals.
+
+-Greg
+
+From rpg at rumblestrip.org  Tue Sep  9 08:29:43 2008
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Tue Sep  9 08:29:46 2008
+Subject: [Radiance-general] irradiance vs. radiance / luminance
+	vs.	illuminance
+In-Reply-To: <124b40400809090142j12ec9053tf835014451a0b847@mail.gmail.com>
+References: <1220630461.4902.1272373303@webmail.messagingengine.com>	<ED238147-F7A4-473D-B806-2860256D9A7B@lmi.net>	<124b40400809080517m63a2380bv9919336ea45691df@mail.gmail.com>	<8DA1BD2B-A662-46EB-9269-FE6F9DD60E9D@lmi.net>
+	<124b40400809090142j12ec9053tf835014451a0b847@mail.gmail.com>
+Message-ID: <48C69667.3010906@rumblestrip.org>
+
+Marija Velickovic wrote:
+>
+> What does this exactly mean when values on the image are traced in ximage?
+> For example if I have a window made of some glass material or some 
+> curtain on it made of trans material. On irradiance image when I try 
+> to trace value of some pixel on the window surface, what do I get? Is 
+> it irradiance of the objects behind the window (outside ground, 
+> buildings etc)?
+
+Yes.
+
+> Does window/curtain transmittance has an influence on reported value?
+
+Depends.  To be clear (pun!), let's say you have a view from the outside 
+of the building looking in, and you trace a pixel that shows floor 
+behind the curtain wall.  In this case, the irradiance value returned is 
+the irradiance on the floor, and it is of course modified (reduced) by 
+the reflectance and absorptance of the glass.  Now, let's say you have a 
+view from inside a building, and you trace a pixel on the ground 
+outside.  In this case, the irradiance is not influenced at all by the 
+glass, even though you are tracing a ray through the glass. 
+
+> What happens for surfaces made of transparent BRTfunc materials (like 
+> double glazing)? Are they ignored too, or their irradiance value is 
+> reported?
+That's one for Greg...
+
+From gregoryjward at gmail.com  Tue Sep  9 08:31:50 2008
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue Sep  9 08:32:15 2008
+Subject: [Radiance-general] irradiance vs. radiance / luminance vs.
+	illuminance
+In-Reply-To: <BD18B196-7074-42B0-A7A8-CD7EF8C58CBC@lmi.net>
+References: <1220630461.4902.1272373303@webmail.messagingengine.com>
+	<ED238147-F7A4-473D-B806-2860256D9A7B@lmi.net>
+	<124b40400809080517m63a2380bv9919336ea45691df@mail.gmail.com>
+	<8DA1BD2B-A662-46EB-9269-FE6F9DD60E9D@lmi.net>
+	<124b40400809090142j12ec9053tf835014451a0b847@mail.gmail.com>
+	<BD18B196-7074-42B0-A7A8-CD7EF8C58CBC@lmi.net>
+Message-ID: <9E8F8F41-818D-43AD-B4F9-9E1772989832@lmi.net>
+
+> vwrays [view options] -ff -x xres -y yres -pa 0 | rtrace -h -ff - 
+> opN octree | rtrace -ffc -I -x xres -y yres > irrad.pic
+
+Obviously, I forgot the octree on the second rtrace command.  Also,  
+you need to specify the appropriate x and y resolutions for square  
+pixels, or use the more complicated procedure with the vwrays -d  
+option specified on the man page:
+
+	http://radsite.lbl.gov/radiance/man_html/vwrays.1.html
+
+-Greg
+
+From cbm at cvmt.aau.dk  Wed Sep 10 00:11:13 2008
+From: cbm at cvmt.aau.dk (Claus B. Madsen)
+Date: Wed Sep 10 00:12:18 2008
+Subject: [Radiance-general] What is a typical Sun radiance?
+Message-ID: <48C77311.2050001@cvmt.aau.dk>
+
+
+
+Dear List,
+
+
+what would be sort of "ball park" figures for the radiance of the Sun 
+and of a clear blue sky?
+
+I have found sources that indicate the irradiance from the Sun to be on 
+the order of 1400 W/m^2, across all wavelengths, with probably around 
+half being within the visible spectrum.
+
+I am primarily interested in the visible spectrum, and would like to 
+know the RGB radiances of the Sun, say at noon at the Equator.
+
+I have contemplated stealing this information from the output of gensky, 
+but if someone has this information (or a link) please let me know
+
+Best,
+Claus
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: cbm.vcf
+Type: text/x-vcard
+Size: 381 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20080910/20614b45/cbm.vcf
+From jm at dmu.ac.uk  Wed Sep 10 09:24:22 2008
+From: jm at dmu.ac.uk (John Mardaljevic)
+Date: Wed Sep 10 09:24:34 2008
+Subject: [Radiance-general] What is a typical Sun radiance?
+Message-ID: <DCAB995B-8B2D-4495-975A-D91FB4F46232@dmu.ac.uk>
+
+Claus,
+Here's a handy list of typical luminance values courtesy of 'schorsch':
+http://www.schorsch.com/kbase/glossary/luminance.html
+-John
+-----------------------------------------------
+Dr. John Mardaljevic
+Senior Research Fellow
+Institute of Energy and Sustainable Development
+De Montfort University
+The Gateway
+Leicester
+LE1 9BH, UK
++44 (0) 116 257 7972
++44 (0) 116 257 7981 (fax)
+
+jm@dmu.ac.uk
+http://www.iesd.dmu.ac.uk/~jm
+
+
+
+From tbleicher at arcor.de  Wed Sep 10 16:09:09 2008
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Wed Sep 10 16:10:11 2008
+Subject: [Radiance-general] What is a typical Sun radiance?
+In-Reply-To: <48C77311.2050001@cvmt.aau.dk>
+References: <48C77311.2050001@cvmt.aau.dk>
+Message-ID: <DAA64452-1493-4F4B-827B-46B0A46ED7BF@arcor.de>
+
+
+On 10 Sep 2008, at 08:11, Claus B. Madsen wrote:
+>
+> what would be sort of "ball park" figures for the radiance of the  
+> Sun and of a clear blue sky?
+
+You can download weather data files that contain information like  
+direct normal,
+diffuse and global horizontal radiation in Wh/m^2 here:
+
+http://apps1.eere.energy.gov/buildings/energyplus/cfm/weather_data.cfm
+
+This data is for the EnergyPlus program. You can download the 'stat'  
+files
+which are readable text files with average values for wetware  
+('brain') processing.
+
+There is also the Satel-Light website but I don't think it covers  
+areas outside of Europe:
+
+http://www.satel-light.com/core.htm
+
+
+Regards,
+Thomas
+
+
+From tbleicher at arcor.de  Thu Sep 11 13:57:14 2008
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Thu Sep 11 13:57:33 2008
+Subject: [Radiance-general] Daylighting Designer/Engineer Wanted
+In-Reply-To: <481F278D.375D.00CB.0@archenergy.com>
+References: <481F278D.375D.00CB.0@archenergy.com>
+Message-ID: <8C3141C6-7DB1-4870-A22A-5AEBB4CBB788@arcor.de>
+
+Hello Zack.
+
+I assume the position you advertised in May (see below) is already  
+filled.
+I just have been 'made redundant' as they say in my new job and l am  
+thinking
+about getting deeper into daylight again.
+
+Please let me know if you're still looking for candidates.
+
+Regards,
+Thomas
+
+
+On 5 May 2008, at 22:28, Zack Rogers wrote:
+
+> Dear Colleagues,
+> Architectural Energy Corporation is looking to add another  
+> daylighting designer / engineer to our staff.  Understanding of  
+> lighting engineering and Radiance knowledge/experience are key  
+> skills, hence the post here.  See the ad below.
+>
+>
+> Daylighting Engineer / Designer
+>
+> Architectural Energy Corporation, a national building energy  
+> research and consulting firm, seeks full-time engineer in the  
+> Daylighting Analysis Group.
+>
+> Required: solid understanding of lighting engineering concepts;  
+> lighting analysis software expertise (preferably Radiance); good  
+> communication and writing skills.
+>
+> Preferred: Architectural engineering degree (or similar degree /  
+> background); programming, daylighting, sustainable design and  
+> Radiance experience.
+>
+> For more information see www.archenergy.com.
+>
+> Resume / salary requirements to: zrogers@archenergy.com or fax to  
+> Zack / 303-444-4304
+>
+> The position is available in the Boulder, Colorado office (less  
+> experienced applicants) or the San Francisco, California office  
+> (more experienced applicants).
+>
+>
+> Zack Rogers, P.E., IESNA, LEED AP
+> Daylighting Analysis Group Leader
+> Architectural Energy Corporation
+> 2540 Frontier Avenue, Suite 201
+> Boulder, CO 80301 USA
+>
+> tel (303)444-4149 ext. 435
+> fax (303)444-4304
+> http://www.archenergy.com
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20080911/11d09358/attachment.html
+From tbleicher at arcor.de  Thu Sep 11 15:11:32 2008
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Thu Sep 11 15:11:45 2008
+Subject: [Radiance-general] Daylighting Designer/Engineer Wanted
+In-Reply-To: <8C3141C6-7DB1-4870-A22A-5AEBB4CBB788@arcor.de>
+References: <481F278D.375D.00CB.0@archenergy.com>
+	<8C3141C6-7DB1-4870-A22A-5AEBB4CBB788@arcor.de>
+Message-ID: <1B7D1251-C8D3-424B-BEA5-8C6DA422598D@arcor.de>
+
+
+<div id='embarrassment'>
+
+This last messages was obviously not for the general public.
+
+I promise I'll dedicate some of my free time - which I'll have plenty of
+in the near future - to the study of the secrets of my e-mail client.
+
+... and Radiance, of course.
+
+
+</div>
+
+;) Thomas
+
+From iversen.anne at gmail.com  Wed Sep 17 06:37:58 2008
+From: iversen.anne at gmail.com (Anne Iversen)
+Date: Wed Sep 17 06:38:08 2008
+Subject: [Radiance-general] Direct, diffuse and reflected light
+Message-ID: <fdd7db810809170637x3d3a1e1u244d329e02fa2722@mail.gmail.com>
+
+I have been working through the tutorials of A. Jacobs and some of the
+tutorials in Rendering with Radiance, but I have not come across a text
+describing how to obtain the different contributions to the total
+illuminance on a surface. I would like to hear how I can obtain the direct,
+diffuse and reflected component of the illuminance? Do I have to find the
+parameters in the source code, or is there someone who has made it easy for
+me and created a command for this (my fingers are crossed)?
+
+
+
+In advance ? I would like to say thank you for any respond to this query?
+
+
+
+Br
+
+Anne Iversen
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20080917/65298640/attachment.html
+From antonutto at yahoo.it  Wed Sep 17 12:01:27 2008
+From: antonutto at yahoo.it (giulio)
+Date: Wed Sep 17 12:01:44 2008
+Subject: [Radiance-general] Direct, diffuse and reflected light
+In-Reply-To: <fdd7db810809170637x3d3a1e1u244d329e02fa2722@mail.gmail.com>
+References: <fdd7db810809170637x3d3a1e1u244d329e02fa2722@mail.gmail.com>
+Message-ID: <435C1D49-B8E6-4FD8-A929-B30599BB68AB@yahoo.it>
+
+I would simply do so:
+A)   -ab 0 and sun -> direct from sun only
+B)   -ab 1 and no sun-> direct from sky only
+
+
+C)   -ab n>1 and no sky -> subtract case A, is reflected after  
+sunlight only
+D)   -ab n>1 and no sun -> subtract case B, is reflected after sky only
+
+
+performing the difference of the various analyses you can get the  
+various values.
+
+alternatively you can use rtcontrib and get the contribution of  
+illuminance coming from a particular surface modifier...
+sunlight
+skylight
+walls
+....
+It is not that difficult.
+
+Also try to see if there is something about this here:
+http://web.mac.com/geotrupes/iWeb/Site/Tutorials.html
+I think there should be a mini tutorial with some tricks...
+hope it helps
+
+ciao
+G.
+
+
+On 17 Sep 2008, at 14:37, Anne Iversen wrote:
+
+>
+> I have been working through the tutorials of A. Jacobs and some of  
+> the tutorials in Rendering with Radiance, but I have not come  
+> across a text describing how to obtain the different contributions  
+> to the total illuminance on a surface. I would like to hear how I  
+> can obtain the direct, diffuse and reflected component of the  
+> illuminance? Do I have to find the parameters in the source code,  
+> or is there someone who has made it easy for me and created a  
+> command for this (my fingers are crossed)?
+>
+> In advance ? I would like to say thank you for any respond to this  
+> query?
+>
+> Br
+> Anne Iversen
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20080917/de6f7fc9/attachment.html
+From dbs176 at gmail.com  Wed Sep 17 15:10:32 2008
+From: dbs176 at gmail.com (David Smith)
+Date: Wed Sep 17 15:16:34 2008
+Subject: [Radiance-general] Custom false color palette
+Message-ID: <694e132c0809171510m1100bb36g26a5060c72c987ef@mail.gmail.com>
+
+I'm trying to make a false color / pseudo color image that matches the
+color palette from a non-lighting program. It would work great with
+four nested IF statements, but falsecolor -r/g/b doesn't seem to want
+to take them. Has anybody come up with a workaround for this or am I
+better off editing the falsecolor script?
+
+Perhaps there is a way to use higher order functions?
+
+Here's an image of the scale and a close numerical pseudocolor
+traversal: http://tinyurl.com/4e2x7m
+
+This would be the if statement for the falsecolor -r argument:
+if(v-5/7,1,if(v-4/7,7v-4,if(v-2/7,0,if(v-1/7,2-7v,7v))))
+
+--Dave
+
+From maricanis at gmail.com  Thu Sep 18 01:43:58 2008
+From: maricanis at gmail.com (Marija Velickovic)
+Date: Thu Sep 18 01:44:06 2008
+Subject: [Radiance-general] Custom false color palette
+In-Reply-To: <694e132c0809171510m1100bb36g26a5060c72c987ef@mail.gmail.com>
+References: <694e132c0809171510m1100bb36g26a5060c72c987ef@mail.gmail.com>
+Message-ID: <124b40400809180143s37058a35u28261425c169a836@mail.gmail.com>
+
+Hi Dave,
+
+Maybe not direct answer to your question. In RadDisplay tool
+http://deluminaelab.com/en/raddisplay_details.html you can define
+custom palette for radiance images.
+
+Palette is not defined with the functions (we didn't implement that
+feature yet), but you can select individual palette colors or define
+start and end color and program will generate the palette. You can
+also define palette maximum and minimum value, which can also be very
+helpful in some cases.
+
+If you must follow the formula then it is better to work with
+falsecolor program.
+
+Marija
+
+On Thu, Sep 18, 2008 at 12:10 AM, David Smith <dbs176@gmail.com> wrote:
+> I'm trying to make a false color / pseudo color image that matches the
+> color palette from a non-lighting program. It would work great with
+> four nested IF statements, but falsecolor -r/g/b doesn't seem to want
+> to take them. Has anybody come up with a workaround for this or am I
+> better off editing the falsecolor script?
+>
+> Perhaps there is a way to use higher order functions?
+>
+> Here's an image of the scale and a close numerical pseudocolor
+> traversal: http://tinyurl.com/4e2x7m
+>
+> This would be the if statement for the falsecolor -r argument:
+> if(v-5/7,1,if(v-4/7,7v-4,if(v-2/7,0,if(v-1/7,2-7v,7v))))
+>
+> --Dave
+
+From radiance at ndoylend.fastmail.fm  Thu Sep 18 04:19:16 2008
+From: radiance at ndoylend.fastmail.fm (Nick Doylend)
+Date: Thu Sep 18 04:19:24 2008
+Subject: [Radiance-general] radmap (on windows)
+Message-ID: <1221736756.3461.1274650811@webmail.messagingengine.com>
+
+Hi,
+
+I've just started to look at using radmap, but am having some teething
+problems.  It seems to generate a load of sky images but fails at the
+next stage, creating cumulative sky files of zero size.
+
+I've attached the (shortened) command output below.  Any ideas what I'm
+doing wrong?  (I'm using the latest Windows binaries and am pretty sure
+environment variables are set correctly and I can render the scene file
+normally)  I will try running on Linux this afternoon, but it would be
+more convenient to be able to use it in Windows.
+
+Thanks for your help,
+
+Nick
+
+
+D:\Radiance\test_radmap>radmap -s 8 -a 37.48 -o 126.55 -m 135  -n 1 -w
+KOR_Incho
+n_IWEC.epw --no-albedo --viewfile test.vf --radfile test.rad  -x 512 -y
+512 --sk
+y-resolution 256 --max-kWh 500 --max-MJ 150  --cumulative-sky
+[('-s', '8'), ('-a', '37.48'), ('-o', '126.55'), ('-m', '135'), ('-n',
+'1'), ('-
+w', 'KOR_Inchon_IWEC.epw'), ('--no-albedo', ''), ('--viewfile',
+'test.vf'), ('--
+radfile', 'test.rad'), ('-x', '512'), ('-y', '512'),
+('--sky-resolution', '256')
+, ('--max-kWh', '500'), ('--max-MJ', '150'), ('--cumulative-sky', '')]
+[]
+
+[radmap] v. 0.3 / 2007-02-25
+---------------------------------------------
+Radiance based irradiation map production
+---------------------------------------------
+by Francesco Anselmo <anselmo@dream.unipa.it>
+D.R.E.Am.
+Dipartimento di Ricerche
+Energetiche ed Ambientali - Palermo - Italy
+
+This work has been initially financially
+supported by the European Social Fund
+ITALIAN NATIONAL OPERATIVE PROGRAM 2000/2006
+Ricerca Scientifica, Sviluppo Tecnologico,
+Alta Formazione
+Misura III.4.
+Formazione Superiore e Universitaria
+
+[('-s', '8'), ('-a', '37.48'), ('-o', '126.55'), ('-m', '135'), ('-n',
+'1'), ('-
+w', 'KOR_Inchon_IWEC.epw'), ('--no-albedo', ''), ('--viewfile',
+'test.vf'), ('--
+radfile', 'test.rad'), ('-x', '512'), ('-y', '512'),
+('--sky-resolution', '256')
+, ('--max-kWh', '500'), ('--max-MJ', '150'), ('--cumulative-sky', '')]
+Location latitude: 37.48
+Location longitude: 126.55
+Location meridian 135.0
+Number of samples per hour: 1
+No albedo component will be taken into account
+View file to be used: test.vf
+.rad file to be used: test.rad
+Output image x resolution: 512
+Output image y resolution: 512
+Sky image resolution:  256
+max in kWh scale: 500
+max in MJ scale: 150
+Algorithm: cumulative sky
+Loading EPW weather data from file KOR_Inchon_IWEC.epw
+Using EPW weather data ...
+1996/1/1 .......cCCCCCCCCI.......
+(snip)
+1994/12/31 .......cCCCCCCCCC.......
+
+Total number of daylight weather samples :: 4397
+Composing the cumulative sky picture ...
+Combining skies from 7 to 80 :: 0
+(snip)
+Combining skies from 8726 to 8760 :: 137
+group n. 0
+test_32_0000000000_u.pic: bad picture size
+group n. 1
+tmp_irrmap_u.pic: bad picture size
+Traceback (most recent call last):
+  File "radmap.py", line 2439, in ?
+  File "radmap.py", line 2386, in main
+  File "radmap.py", line 616, in composeSkies
+OSError: [Errno 17] File exists
+
+From radiance at ndoylend.fastmail.fm  Thu Sep 18 05:18:20 2008
+From: radiance at ndoylend.fastmail.fm (Nick Doylend)
+Date: Thu Sep 18 05:18:27 2008
+Subject: [Radiance-general] compiling radiance
+Message-ID: <1221740300.11052.1274657781@webmail.messagingengine.com>
+
+Hi, I get the following error while compiling the latest Radiance on
+Ubuntu 7.10
+
+cd tiff ; ./configure -C -quiet -with-CC=gcc \
+                "--libdir=`pwd`/../../lib"
+                "--includedir=`pwd`/../../common" \
+                --enable-static --disable-shared --disable-cxx \
+                --enable-logluv --disable-jpeg \
+                --disable-zlib --disable-pixarlog \
+                "-with-ENVOPTS=-O2" ; \
+        cd port ; make all ; \
+        cd ../libtiff ; make install
+appending configuration tag "CXX" to libtool
+appending configuration tag "F77" to libtool
+updating cache config.cache
+config.status: error: cannot find input file: contrib/Makefile.in
+make[1]: Entering directory
+`/home/ndoylend/Radiance/ray/src/px/tiff/port'
+make[1]: *** No rule to make target `all'.
+make[1]: Leaving directory
+`/home/ndoylend/Radiance/ray/src/px/tiff/port'
+make[1]: Entering directory
+`/home/ndoylend/Radiance/ray/src/px/tiff/libtiff'
+make[1]: *** No rule to make target `install'.
+make[1]: Leaving directory
+`/home/ndoylend/Radiance/ray/src/px/tiff/libtiff'
+make: *** [../lib/libtiff.a] Error 2
+
+Any idea what's wrong?  It looks like I'm missing a lot of the image
+processing commands as a result.
+
+Thanks,
+
+Nick
+
+From radiance at rendigo.com  Thu Sep 18 05:48:57 2008
+From: radiance at rendigo.com (Erwin Zierler)
+Date: Thu Sep 18 05:49:10 2008
+Subject: [Radiance-general] compiling radiance
+Message-ID: <00037FBF.48D26A59@192.168.0.81>
+
+Hi Nick,
+
+I have not compiled Radiance in a while but if I remember right this kind of errors you see when you don't have the TIFF libraries installed. Just download rad3R8supp.tar.bz2 or whatever is the current version, unpack it in the buld directory (ray) and recompile. This should hopefully be sufficient to cure the problem.
+
+Regards,
+ Erwin
+ 
+
+
+-------- Original Message --------
+Subject: [Radiance-general] compiling radiance (18-Sep-2008 14:18)
+From:    Nick Doylend <radiance@ndoylend.fastmail.fm>
+To:      radiance@rendigo.com
+
+> Hi, I get the following error while compiling the latest Radiance on
+> Ubuntu 7.10
+> 
+> cd tiff ; ./configure -C -quiet -with-CC=gcc $B!@(B
+>                 "--libdir=`pwd`/../../lib"
+>                 "--includedir=`pwd`/../../common" $B!@(B
+>                 --enable-static --disable-shared --disable-cxx $B!@(B
+>                 --enable-logluv --disable-jpeg $B!@(B
+>                 --disable-zlib --disable-pixarlog $B!@(B
+>                 "-with-ENVOPTS=-O2" ; $B!@(B
+>         cd port ; make all ; $B!@(B
+>         cd ../libtiff ; make install
+> appending configuration tag "CXX" to libtool
+> appending configuration tag "F77" to libtool
+> updating cache config.cache
+> config.status: error: cannot find input file: contrib/Makefile.in
+> make[1]: Entering directory
+> `/home/ndoylend/Radiance/ray/src/px/tiff/port'
+> make[1]: *** No rule to make target `all'.
+> make[1]: Leaving directory
+> `/home/ndoylend/Radiance/ray/src/px/tiff/port'
+> make[1]: Entering directory
+> `/home/ndoylend/Radiance/ray/src/px/tiff/libtiff'
+> make[1]: *** No rule to make target `install'.
+> make[1]: Leaving directory
+> `/home/ndoylend/Radiance/ray/src/px/tiff/libtiff'
+> make: *** [../lib/libtiff.a] Error 2
+> 
+> Any idea what's wrong?  It looks like I'm missing a lot of the image
+> processing commands as a result.
+> 
+> Thanks,
+> 
+> Nick
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+
+From bernd at bzed.de  Thu Sep 18 05:52:21 2008
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Thu Sep 18 05:52:32 2008
+Subject: [Radiance-general] compiling radiance
+In-Reply-To: <1221740300.11052.1274657781@webmail.messagingengine.com>
+References: <1221740300.11052.1274657781@webmail.messagingengine.com>
+Message-ID: <48D24F05.4090102@bzed.de>
+
+Nick Doylend wrote:
+> Hi, I get the following error while compiling the latest Radiance on
+> Ubuntu 7.10
+
+You could just make a backport of the radiance packages from Debian's
+Lenny/testing or Hardy (or upgrade to Hardy):
+
+
+(not tested, but I hope it works:)
+
+############################
+sudo apt-get install devscripts fakeroot build-essential
+sudo apt-get install debhelper libtiff4-dev libx11-dev libglu1-mesa-dev \
+                          libxext-dev quilt tcsh docbook-to-man ed tk8.4
+
+dget -x \
+http://ftp.debian.org/debian/pool/main/r/radiance/radiance_3R9+20080530-4.dsc
+
+cd radiance-3R9+20080530
+dpkg-buildpackage -uc -us -rfakeroot
+cd ..
+sudo dpkg -i radiance*.deb
+#############################
+
+
+Cheers,
+
+Bernd
+
+-- 
+ Bernd Zeimetz                           Debian GNU/Linux Developer
+ GPG Fingerprint: 06C8 C9A2 EAAD E37E 5B2C BE93 067A AD04 C93B FF79
+
+From gregoryjward at gmail.com  Thu Sep 18 06:45:39 2008
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu Sep 18 06:45:58 2008
+Subject: [Radiance-general] compiling radiance
+In-Reply-To: <1221740300.11052.1274657781@webmail.messagingengine.com>
+References: <1221740300.11052.1274657781@webmail.messagingengine.com>
+Message-ID: <338A4C05-3A02-490E-AEBD-D21D90519876@lmi.net>
+
+Hi Nick,
+
+The libtiff distribution I currently have in Radiance seems to have a  
+broken build system, and is failing on a lot of platforms.  I think I  
+just need to remove it, and clear the related dependencies from px/ 
+Rmakefile.  I'm pretty sure libtiff is included in most modern OS's,  
+though I could use some verification on that point.  I'm copying this  
+discussion to the dev list, and we'll sort it out there.
+
+Meanwhile, you should be able to get the px tools to compile by  
+substituting the attached px/Rmakefile and running "rmake install" in  
+the px directory.
+
+Best,
+-Greg
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: Rmakefile
+Type: application/octet-stream
+Size: 5348 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20080918/1f6dec8c/Rmakefile.obj
+-------------- next part --------------
+
+> From: "Nick Doylend" <radiance@ndoylend.fastmail.fm>
+> Date: September 18, 2008 5:18:20 AM PDT
+>
+> Hi, I get the following error while compiling the latest Radiance on
+> Ubuntu 7.10
+>
+> cd tiff ; ./configure -C -quiet -with-CC=gcc \
+>                 "--libdir=`pwd`/../../lib"
+>                 "--includedir=`pwd`/../../common" \
+>                 --enable-static --disable-shared --disable-cxx \
+>                 --enable-logluv --disable-jpeg \
+>                 --disable-zlib --disable-pixarlog \
+>                 "-with-ENVOPTS=-O2" ; \
+>         cd port ; make all ; \
+>         cd ../libtiff ; make install
+> appending configuration tag "CXX" to libtool
+> appending configuration tag "F77" to libtool
+> updating cache config.cache
+> config.status: error: cannot find input file: contrib/Makefile.in
+> make[1]: Entering directory
+> `/home/ndoylend/Radiance/ray/src/px/tiff/port'
+> make[1]: *** No rule to make target `all'.
+> make[1]: Leaving directory
+> `/home/ndoylend/Radiance/ray/src/px/tiff/port'
+> make[1]: Entering directory
+> `/home/ndoylend/Radiance/ray/src/px/tiff/libtiff'
+> make[1]: *** No rule to make target `install'.
+> make[1]: Leaving directory
+> `/home/ndoylend/Radiance/ray/src/px/tiff/libtiff'
+> make: *** [../lib/libtiff.a] Error 2
+>
+> Any idea what's wrong?  It looks like I'm missing a lot of the image
+> processing commands as a result.
+>
+> Thanks,
+>
+> Nick
+From gregoryjward at gmail.com  Thu Sep 18 06:53:14 2008
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu Sep 18 06:53:28 2008
+Subject: [Radiance-general] Re: Custom false color palette
+In-Reply-To: <694e132c0809171510m1100bb36g26a5060c72c987ef@mail.gmail.com>
+References: <694e132c0809171510m1100bb36g26a5060c72c987ef@mail.gmail.com>
+Message-ID: <1C1C9E53-00C6-401D-B7C1-7F909811F7C4@lmi.net>
+
+Hi Dave,
+
+Your formula should be fine, you just need to remember there's no  
+implied multiplication.  Instead of:
+
+	if(v-5/7,1,if(v-4/7,7v-4,if(v-2/7,0,if(v-1/7,2-7v,7v))))
+
+use:
+
+	falsecolor -r "if(v-5/7,1,if(v-4/7,7*v-4,if(v-2/7,0,if(v-1/7,2-7*v, 
+7*v))))" ...
+
+Hope this helps.
+-Greg
+
+> From: "David Smith" <dbs176@gmail.com>
+> Date: September 17, 2008 3:10:32 PM PDT
+>
+> I'm trying to make a false color / pseudo color image that matches the
+> color palette from a non-lighting program. It would work great with
+> four nested IF statements, but falsecolor -r/g/b doesn't seem to want
+> to take them. Has anybody come up with a workaround for this or am I
+> better off editing the falsecolor script?
+>
+> Perhaps there is a way to use higher order functions?
+>
+> Here's an image of the scale and a close numerical pseudocolor
+> traversal: http://tinyurl.com/4e2x7m
+>
+> This would be the if statement for the falsecolor -r argument:
+> if(v-5/7,1,if(v-4/7,7v-4,if(v-2/7,0,if(v-1/7,2-7v,7v))))
+>
+> --Dave
+
+From dbs176 at gmail.com  Thu Sep 18 08:12:17 2008
+From: dbs176 at gmail.com (David Smith)
+Date: Thu Sep 18 08:12:22 2008
+Subject: [Radiance-general] Custom false color palette
+Message-ID: <694e132c0809180812o5aae5f6eua15f6c7c0e662f08@mail.gmail.com>
+
+Aha, that was it, Greg. Thank you very much, it was a long day.
+
+I still prefer the thermal- and very-technical-looking 3.8+ scale, but
+for anybody interested, here are the falsecolor switches for the scale
+I was talking about starting at black:
+
+-r 'if(v-5/7,1,if(v-4/7,7*v-4,if(v-2/7,0,if(v-1/7,2-7*v,7*v))))'
+-g 'if(v-6/7,7*v-6,if(v-5/7,6-7*v,if(v-3/7,1,if(v-2/7,7*v-2,0))))'
+-b 'if(v-6/7,7*v-6,if(v-4/7,0,if(v-3/7,4-7*v,if(v-1/7,1,7*v))))'
+
+...and starting at a 1/3 gray:
+
+-r 'if(v-5/7,1,if(v-4/7,7*v-4,if(v-2/7,0,if(v-1/7,2-7*v,7*v+1/3))))'
+-g 'if(v-6/7,7*v-6,if(v-5/7,6-7*v,if(v-3/7,1,if(v-2/7,7*v-2,if(v-1/7,0,1/3-7*v*1/3)))))'
+-b 'if(v-6/7,7*v-6,if(v-4/7,0,if(v-3/7,4-7*v,if(v-1/7,1,7*v+1/3))))'
+
+(Watch out for the line breaks.)
+
+--Dave
+
+From dbs176 at gmail.com  Thu Sep 18 08:29:47 2008
+From: dbs176 at gmail.com (David Smith)
+Date: Thu Sep 18 08:29:52 2008
+Subject: [Radiance-general] Custom false color palette
+Message-ID: <694e132c0809180829r688c4cau6768d05fb1e61ff1@mail.gmail.com>
+
+Whoops, the initial slope was incorrect for the red and blue on the
+gray version:
+
+-r 'if(v-5/7,1,if(v-4/7,7*v-4,if(v-2/7,0,if(v-1/7,2-7*v,7*v*2/3+1/3))))'
+-g 'if(v-6/7,7*v-6,if(v-5/7,6-7*v,if(v-3/7,1,if(v-2/7,7*v-2,if(v-1/7,0,1/3-7*v*1/3)))))'
+-b 'if(v-6/7,7*v-6,if(v-4/7,0,if(v-3/7,4-7*v,if(v-1/7,1,7*v*2/3+1/3))))'
+
+That should do it. Mea culpa.
+
+--Dave
+
+From webmaster at audice.com  Thu Sep 18 13:37:50 2008
+From: webmaster at audice.com (Ilya A. Zimnovich)
+Date: Thu Sep 18 13:38:11 2008
+Subject: [Radiance-general] Custom false color palette
+In-Reply-To: <694e132c0809171510m1100bb36g26a5060c72c987ef@mail.gmail.com>
+References: <694e132c0809171510m1100bb36g26a5060c72c987ef@mail.gmail.com>
+Message-ID: <48D2BC1E.7090005@audice.com>
+
+Hello Dave,
+
+I'm not sure this will help you, but in our "posterize" script which may
+be downloaded from here:
+http://www.bakharev.org/index.php?option=com_content&task=view&id=33&lang=english
+
+we used this CAL-code:
+=================================
+    min : $min ;
+    max : $max ;
+    step : $step ;
+    scale : $max-$min ;
+
+    clip(x) : if(x-1,1,if(x,x,0));
+
+    render(x) = floor((x-min)/step)*step/scale;
+    {render(x) = (x-min)/scale;}
+
+
+    interp_arr10(x, arr) = ( (x-floor(x)) *
+arr(ceil(x)+1)-arr(floor(x)+1)) / 1 ) + arr(floor(x)+1);
+    interp_arr(x, arr) = interp_arr10(x*10, arr);
+
+    def_red(x) = interp_arr(x, def_red_arr);
+    def_grn(x) = interp_arr(x, def_grn_arr);
+    def_blu(x) = interp_arr(x, def_blu_arr);
+
+    def_red_arr(i) : select(i,
+.03,.17,.31,.45,.57,.67,.76,.84,.90,.97,.99 );
+    def_grn_arr(i) : select(i,
+.10,.21,.32,.43,.53,.60,.69,.78,.87,.96,.99 );
+    def_blu_arr(i) : select(i,
+.27,.34,.41,.47,.53,.58,.64,.74,.85,.95,.96 );
+
+    in = 1;
+
+    ro = if(in, def_red(clip(render(v))), rorig);
+    go = if(in, def_grn(clip(render(v))), gorig);
+    bo = if(in, def_blu(clip(render(v))), borig);
+=================================
+
+Where you can implement your own palette by changing these lines:
+...select(i, .03,.17,.31,.45,.57,.67,.76,.84,.90,.97,.99 );
+...select(i, .10,.21,.32,.43,.53,.60,.69,.78,.87,.96,.99 );
+...select(i, .27,.34,.41,.47,.53,.58,.64,.74,.85,.95,.96 );
+
+Best Regards,
+Ilya A. Zimnovich
+
+
+David Smith wrote:
+> I'm trying to make a false color / pseudo color image that matches the
+> color palette from a non-lighting program. It would work great with
+> four nested IF statements, but falsecolor -r/g/b doesn't seem to want
+> to take them. Has anybody come up with a workaround for this or am I
+> better off editing the falsecolor script?
+> 
+> Perhaps there is a way to use higher order functions?
+> 
+> Here's an image of the scale and a close numerical pseudocolor
+> traversal: http://tinyurl.com/4e2x7m
+> 
+> This would be the if statement for the falsecolor -r argument:
+> if(v-5/7,1,if(v-4/7,7v-4,if(v-2/7,0,if(v-1/7,2-7v,7v))))
+> 
+> --Dave
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+
+
+From radiance at ndoylend.fastmail.fm  Sat Sep 20 14:58:22 2008
+From: radiance at ndoylend.fastmail.fm (Nick Doylend)
+Date: Sat Sep 20 14:58:30 2008
+Subject: [Radiance-general] Insane Daylight Factor Rendering
+Message-ID: <1221947902.9573.1275064747@webmail.messagingengine.com>
+
+I've been scratching my head for a while over this one (I'm sure it's
+something stupid I've done).  But I'm exporting from Ecotect using a
+100lux overcast sky, rendering with the -i option to get a daylight
+factor image.  I've narrowed it down to something that looks like
+self-luminous ceiling soffits (I've rendered the scene with all the
+other objects apart from the floor slabs and it's fine) - tracing the
+illuminance value on the roof gives 100Lux as expected, but the floor
+slabs are ablaze with light (>1kLux).  The image
+(http://ndoylend.fastmail.fm/temp/test0_c5.jpg) looks pretty cool, but
+it's absolutely useless.
+
+Can anyone shed some light (sorry) on this one?
+
+Nick
+
+
+From tbleicher at arcor.de  Sun Sep 21 00:13:42 2008
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Sun Sep 21 00:13:58 2008
+Subject: [Radiance-general] Insane Daylight Factor Rendering
+In-Reply-To: <1221947902.9573.1275064747@webmail.messagingengine.com>
+References: <1221947902.9573.1275064747@webmail.messagingengine.com>
+Message-ID: <7E2EF50A-57C7-44A0-AC15-37BEBB6135E5@arcor.de>
+
+
+On 20 Sep 2008, at 22:58, Nick Doylend wrote:
+
+> The image
+> (http://ndoylend.fastmail.fm/temp/test0_c5.jpg) looks pretty cool, but
+> it's absolutely useless.
+
+Cool indeed! I vote for it for the Radiance Gallery!
+
+> Can anyone shed some light (sorry) on this one?
+
+Looks like your ceilings and floors are emitting light onto the next  
+plane below.
+Check the material definition of the ceiling material. This looks  
+like a glow
+(for example from the sky definition) or illum because it seems to  
+emit only in one
+direction (the face's front which is pointing down here).
+
+What material or material name did you assign to the ceiling? Did you  
+modify the
+Ecotect scene manually?
+
+Regards,
+Thomas
+
+
+From tbleicher at arcor.de  Sun Sep 21 01:21:32 2008
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Sun Sep 21 01:21:48 2008
+Subject: [Radiance-general] Insane Daylight Factor Rendering
+In-Reply-To: <1221947902.9573.1275064747@webmail.messagingengine.com>
+References: <1221947902.9573.1275064747@webmail.messagingengine.com>
+Message-ID: <D10E3478-B80B-4016-BBBC-3B449F93C91F@arcor.de>
+
+
+On 20 Sep 2008, at 22:58, Nick Doylend wrote:
+
+> Can anyone shed some light (sorry) on this one?
+
+Here's another one:
+
+What's your -av  setting? You have  a very dark sky and a typical -av  
+value
+would increase your lighting levels quite significantly in this  
+situation. At
+the edges of the floors/ceilings this would be less noticeable  
+because there
+is some sky or ground glow in direct view. In the centre of the  
+planes the -av
+setting would brighten up the material when the number of ambient  
+bounces
+is exceeded.
+
+It might just be an insane idea I head over my breakfast coffee.
+
+Thomas
+
+
+
+From radiance at ndoylend.fastmail.fm  Sun Sep 21 15:29:49 2008
+From: radiance at ndoylend.fastmail.fm (Nick Doylend)
+Date: Sun Sep 21 15:30:24 2008
+Subject: [Radiance-general] Insane Daylight Factor Rendering
+Message-ID: <1222036189.22442.1275174617@webmail.messagingengine.com>
+
+I think that was it, it must have been good coffee.  I found Rad was
+setting an ambient value of 10.  I added -av 0.01 0.01 0.01 to the .rif
+file's render option and got images that weren't so groovy looking but
+did give a better indication of something like a reasonable daylight
+factor. (http://ndoylend.fastmail.fm/temp/test02_c5.jpg)
+
+This is with an indirect setting of 2.  I suppose I should reduce the
+ambient value to zero and increase the indirect to get a more realistic
+DF, but is it worth it (these are for visualisation only)?
+
+Thanks for the suggestion,
+
+Nick
+
+-----Original Message----- 
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of
+Thomas Bleicher 
+Sent: 21 September 2008 09:22 
+To: Radiance general discussion 
+Subject: Re: [Radiance-general] Insane Daylight Factor Rendering
+
+
+On 20 Sep 2008, at 22:58, Nick Doylend wrote:
+
+> Can anyone shed some light (sorry) on this one?
+
+Here's another one:
+
+What's your -av  setting? You have  a very dark sky and a typical -av
+value would increase your lighting levels quite significantly in this
+situation. At the edges of the floors/ceilings this would be less
+noticeable because there is some sky or ground glow in direct view. In
+the centre of the planes the -av setting would brighten up the material
+when the number of ambient bounces is exceeded.
+
+It might just be an insane idea I head over my breakfast coffee.
+
+Thomas
+
+
+
+_______________________________________________
+Radiance-general mailing list Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+From radiance at ndoylend.fastmail.fm  Sun Sep 21 15:47:27 2008
+From: radiance at ndoylend.fastmail.fm (Nick Doylend)
+Date: Sun Sep 21 15:47:34 2008
+Subject: [Radiance-general] radmap (on windows)
+In-Reply-To: <0D9B8587-44C2-4E8A-8730-C3B1CA570982@gmail.com>
+References: <0D9B8587-44C2-4E8A-8730-C3B1CA570982@gmail.com>
+Message-ID: <1222037247.23638.1275174983@webmail.messagingengine.com>
+
+I just gave up trying to get it to run on Windows, even running without
+any temporary files left hanging around it still generated a bunch of
+zero length composite sky files and failed.
+
+I had more luck running under Linux, and it seemed to do its thing much
+faster.  However, I'm not sure how to interpret the results!  To test I
+created a flat ground plane and looked at the cumulative map - the
+results were about 822kWh/m2.yr when I traced points on the original kWh
+image and approximately the same in the false coloured kWh image.  If I
+looked at the source EPW data I found a cumulative global horizontal
+radiation to be more like in the region of  1200kWh/m2.yr.  Shouldn't
+they be the same (assuming I set lat/lon/mer correctly)?
+
+The MJ scaled image didn't make much sense - I thought that 1kWh is
+3.6MJ, but I get a much lower result when I look at MJ than kWh.
+
+Are there any papers describing the program in more detail (I've looked
+only briefly at the man page and a .pdf presentation so I'm probably
+missing something)?
+
+Thanks,
+
+Nick
+
+On Thu, 18 Sep 2008 15:02:13 +0200, "Jelle Feringa"
+<jelleferinga@gmail.com> said:
+> Nick,
+>
+> Looks like radmap is seeing that you already ran a simulation, and is
+> not willing to overwrite the generated file ( even though perhaps your
+> run was unsuccesful )
+>
+> -jelle
+
+From nicolas.roy at VELUX.com  Mon Sep 22 07:04:05 2008
+From: nicolas.roy at VELUX.com (Nicolas Roy)
+Date: Mon Sep 22 07:04:20 2008
+Subject: [Radiance-general] DAYSIM vs. Radiance illuminance values
+Message-ID: <OF69E5AD77.A3B2DA4B-ONC12574CC.004AD3ED-C12574CC.004D478B@velux.com>
+
+Hi,
+
+I'm making a short comparison between illuminance values obtained in 
+DAYSIM and Radiance for a specific day/time, and the results I obtain show 
+a  ratherbig difference with Radiance having values twice as high.
+
+I compare the values in the annual illuminance profil (.ill) generated by 
+DAYSIM, with values I obtained in Radiance for the same day/time. I 
+defined the Radiance sky description using the "direct normal irradiance" 
+and the "diffuse horizontal irradiance" values from the climate data used 
+in DAYSIM. 
+
+What can be the source of such large differences?
+
+
+I use the following in Radiance:
+
+##sky
+
+gensky 6 21 12.5 -a 52.47 -o -15.4 -m -15 -r 35 -B 363 > sky001.rad
+
+
+##out.rad
+
+skyfunc glow sky_glow
+0
+0
+4                0.9                0.9               1.15  0
+
+sky_glow source sky
+0
+0
+4                  0                  0                  1 180
+
+#a green ground
+skyfunc glow ground_glow
+0
+0
+4                0.2                    0.2               0.2     0
+
+ground_glow source ground
+0
+0
+4                  0                  0                 -1 180
+
+##rtrace rcalc run
+
+oconv sky001.rad out.rad material.rad geometry.rad > 001.oct
+rtrace -w -h -I+ @options.opt 001.oct < sensors.inp | rcalc -e 
+'$1=($1*0.265+$2*0.670+$3*0.065)*179' > 001.ill
+
+
+
+-Nicolas
+
+nicolas.roy@velux.com
+
+
+
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20080922/e74dee13/attachment.htm
+From tbleicher at arcor.de  Mon Sep 22 07:02:13 2008
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Mon Sep 22 07:07:19 2008
+Subject: [Radiance-general] Insane Daylight Factor Rendering
+In-Reply-To: <1222036189.22442.1275174617@webmail.messagingengine.com>
+References: <1222036189.22442.1275174617@webmail.messagingengine.com>
+Message-ID: <F338C5E6-1FE8-4FC9-AD06-B13D52235025@arcor.de>
+
+
+On 21 Sep 2008, at 23:29, Nick Doylend wrote:
+
+> This is with an indirect setting of 2.  I suppose I should reduce the
+> ambient value to zero and increase the indirect to get a more  
+> realistic
+> DF, but is it worth it (these are for visualisation only)?
+
+You can increase the -ab to 3 or 4. Beyond that I don't think it would
+make a visible difference.
+
+Keep a small value for your '-av' setting. This will also smooth out the
+image a bit and if you're not after accuracy you don't have to worry if
+the DF gets a bit of a lift.
+
+PS: You're right, the first image looks much cooler!
+
+Thomas
+
+
+From jan.wienold at ise.fraunhofer.de  Mon Sep 22 07:40:48 2008
+From: jan.wienold at ise.fraunhofer.de (Jan Wienold)
+Date: Mon Sep 22 07:47:23 2008
+Subject: [Radiance-general] DAYSIM vs. Radiance illuminance values
+In-Reply-To: <OF69E5AD77.A3B2DA4B-ONC12574CC.004AD3ED-C12574CC.004D478B@velux.com>
+References: <OF69E5AD77.A3B2DA4B-ONC12574CC.004AD3ED-C12574CC.004D478B@velux.com>
+Message-ID: <48D7AE70.3060905@ise.fraunhofer.de>
+
+Hi Nicolas,
+
+Daysim is using the Perez Sky model, so I would use gendaylit instead of
+gensky for a comparision.
+Secondly, I assume, that you have to use the -R instead of the -r
+Option, since you are dealing with irradiance rather than radiance. This
+is causing the big difference, I assume.
+But  be careful: -R is expecting horizontal direct irradiation, not
+direct normal irradiance!
+
+Jan
+
+Nicolas Roy wrote:
+>
+> Hi,
+>
+> I'm making a short comparison between illuminance values obtained in
+> DAYSIM and Radiance for a specific day/time, and the results I obtain
+> show a  ratherbig difference with Radiance having values twice as high.
+>
+> I compare the values in the annual illuminance profil (.ill) generated
+> by DAYSIM, with values I obtained in Radiance for the same day/time. I
+> defined the Radiance sky description using the "direct normal
+> irradiance" and the "diffuse horizontal irradiance" values from the
+> climate data used in DAYSIM.
+>
+> What can be the source of such large differences?
+>
+>
+> I use the following in Radiance:
+>
+> /##sky/
+>
+> /gensky 6 21 12.5 -a 52.47 -o -15.4 -m -15 -r 35 -B 363 > sky001.rad/
+>
+>
+> /##out.rad/
+>
+> /skyfunc glow sky_glow/
+> /0/
+> /0/
+> /4                0.9                0.9               1.15          
+>        0/
+>
+> /sky_glow source sky/
+> /0/
+> /0/
+> /4                  0                  0                  1          
+>      180/
+>
+> /#a green ground/
+> /skyfunc glow ground_glow/
+> /0/
+> /0/
+> /4                0.2                        0.2               0.2    
+>              0/
+>
+> /ground_glow source ground/
+> /0/
+> /0/
+> /4                  0                  0                 -1          
+>      180/
+>
+> /##rtrace rcalc run/
+>
+> /oconv sky001.rad out.rad material.rad geometry.rad > 001.oct/
+> /rtrace -w -h -I+ @options.opt 001.oct < sensors.inp | rcalc -e
+> '$1=($1*0.265+$2*0.670+$3*0.065)*179' > 001.ill/
+>
+>
+>
+> -Nicolas
+>
+> nicolas.roy@velux.com
+>
+>
+>
+>
+>
+> ------------------------------------------------------------------------
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>   
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20080922/5243b335/attachment.html
+From danf at eb7.co.uk  Tue Sep 23 09:37:44 2008
+From: danf at eb7.co.uk (Dan Fitzpatrick)
+Date: Tue Sep 23 09:37:58 2008
+Subject: [Radiance-general] Contour Polylines
+Message-ID: <28209666.64011222187864645.JavaMail.servlet@kundenserver>
+
+Hi All
+
+I'm trying to translate an rtrace produced series of values into a physical contour.  Basically I would like to bring my DF contour of 2% into my CAD model so that I can physically show the contour in a 3D model.  Can anyone give me any pointers please?
+
+Dan
+
+From tbleicher at arcor.de  Tue Sep 23 10:28:33 2008
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Tue Sep 23 10:28:43 2008
+Subject: [Radiance-general] Contour Polylines
+In-Reply-To: <28209666.64011222187864645.JavaMail.servlet@kundenserver>
+References: <28209666.64011222187864645.JavaMail.servlet@kundenserver>
+Message-ID: <78CC5B00-4C2A-4DD4-B13D-E2128D4D879B@arcor.de>
+
+Hi Dan.
+
+On 23 Sep 2008, at 17:37, Dan Fitzpatrick wrote:
+
+> Hi All
+>
+> I'm trying to translate an rtrace produced series of values into a  
+> physical contour.  Basically I would like to bring my DF contour of  
+> 2% into my CAD model so that I can physically show the contour in a  
+> 3D model.  Can anyone give me any pointers please?
+
+If you're familiar with gnuplot you should be able to import the rtrace
+values as point cloud, create contours and export as dxf. There are
+other data visualizers around like MayaVi or OpenDX that allow you
+to import points and export lines in DXF. It depends on the time you
+want to spend to learn one of these tools.
+
+And then you've always the option to interpolate the values to find
+the locations of points on the 2% line and draw the line by hand.
+
+Thomas
+
+
+From reinhart at gsd.harvard.edu  Tue Sep 23 18:14:51 2008
+From: reinhart at gsd.harvard.edu (Reinhart, Christoph)
+Date: Tue Sep 23 18:15:02 2008
+Subject: [Radiance-general] DAYSIM vs. Radiance illuminance values
+In-Reply-To: <OF69E5AD77.A3B2DA4B-ONC12574CC.004AD3ED-C12574CC.004D478B@velux.com>
+References: <OF69E5AD77.A3B2DA4B-ONC12574CC.004AD3ED-C12574CC.004D478B@velux.com>
+Message-ID: <C5E1527F129BF545A250B5AD0B0C26EF01B555CB@ENTWEXMB0000000.university.harvard.edu>
+
+Dear Nicolas:
+
+ 
+
+I agree with Jan that using gensky and comparing the results with Daysim
+is a bit meaningless. As far as accurate Daysim accuracy compared to
+Radiance classic is concerned, we had an email trail on this  last week
+in the Daysim discussion forum
+(http://groups.google.com/group/daysim/browse_thread/thread/3029e67b22c2
+2a830) . 
+
+ 
+
+Best regards,
+
+ 
+
+Christoph
+
+ 
+
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of
+Nicolas Roy
+Sent: Monday, September 22, 2008 10:04 AM
+To: Radiance general discussion
+Subject: [Radiance-general] DAYSIM vs. Radiance illuminance values
+
+ 
+
+
+Hi, 
+
+I'm making a short comparison between illuminance values obtained in
+DAYSIM and Radiance for a specific day/time, and the results I obtain
+show a  ratherbig difference with Radiance having values twice as high. 
+
+I compare the values in the annual illuminance profil (.ill) generated
+by DAYSIM, with values I obtained in Radiance for the same day/time. I
+defined the Radiance sky description using the "direct normal
+irradiance" and the "diffuse horizontal irradiance" values from the
+climate data used in DAYSIM. 
+
+What can be the source of such large differences? 
+
+
+I use the following in Radiance: 
+
+##sky 
+
+gensky 6 21 12.5 -a 52.47 -o -15.4 -m -15 -r 35 -B 363 > sky001.rad 
+
+
+##out.rad 
+
+skyfunc glow sky_glow 
+0 
+0 
+4                0.9                0.9               1.15
+0 
+
+sky_glow source sky 
+0 
+0 
+4                  0                  0                  1
+180 
+
+#a green ground 
+skyfunc glow ground_glow 
+0 
+0 
+4                0.2                        0.2               0.2
+0 
+
+ground_glow source ground 
+0 
+0 
+4                  0                  0                 -1
+180 
+
+##rtrace rcalc run 
+
+oconv sky001.rad out.rad material.rad geometry.rad > 001.oct 
+rtrace -w -h -I+ @options.opt 001.oct < sensors.inp | rcalc -e
+'$1=($1*0.265+$2*0.670+$3*0.065)*179' > 001.ill
+
+
+
+-Nicolas 
+
+nicolas.roy@velux.com 
+
+
+
+
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20080923/813593ba/attachment.htm
+From nicolas.roy at VELUX.com  Wed Sep 24 01:42:44 2008
+From: nicolas.roy at VELUX.com (Nicolas Roy)
+Date: Wed Sep 24 01:42:57 2008
+Subject: [Radiance-general] DAYSIM vs. Radiance illuminance values
+In-Reply-To: <48D7AE70.3060905@ise.fraunhofer.de>
+Message-ID: <OFA4DF0540.C3710C87-ONC12574CE.002AE0C5-C12574CE.002FDBB5@velux.com>
+
+Hi Jan,
+
+Thanks for the input. I've used gendaylit and performed the calculations 
+again, results now show an average difference of 3-4%. I'm glad I could 
+find an update for gendaylit that supports Cygwin on the Fraunhofer site.  
+
+
+-Nicolas
+
+
+
+
+
+
+
+
+Jan Wienold <jan.wienold@ise.fraunhofer.de> 
+Sent by: radiance-general-bounces@radiance-online.org
+22-09-2008 16:40
+Please respond to
+Radiance general discussion <radiance-general@radiance-online.org>
+
+To
+Radiance general discussion <radiance-general@radiance-online.org>
+cc
+
+Subject
+Re: [Radiance-general] DAYSIM vs. Radiance illuminance values
+
+
+
+
+
+
+Hi Nicolas,
+
+Daysim is using the Perez Sky model, so I would use gendaylit instead of 
+gensky for a comparision. 
+Secondly, I assume, that you have to use the -R instead of the -r Option, 
+since you are dealing with irradiance rather than radiance. This is 
+causing the big difference, I assume.
+But  be careful: -R is expecting horizontal direct irradiation, not direct 
+normal irradiance!
+
+Jan
+
+Nicolas Roy wrote: 
+
+Hi, 
+
+I'm making a short comparison between illuminance values obtained in 
+DAYSIM and Radiance for a specific day/time, and the results I obtain show 
+a  ratherbig difference with Radiance having values twice as high. 
+
+I compare the values in the annual illuminance profil (.ill) generated by 
+DAYSIM, with values I obtained in Radiance for the same day/time. I 
+defined the Radiance sky description using the "direct normal irradiance" 
+and the "diffuse horizontal irradiance" values from the climate data used 
+in DAYSIM. 
+
+What can be the source of such large differences? 
+
+
+I use the following in Radiance: 
+
+##sky 
+
+gensky 6 21 12.5 -a 52.47 -o -15.4 -m -15 -r 35 -B 363 > sky001.rad 
+
+
+##out.rad 
+
+skyfunc glow sky_glow 
+0 
+0 
+4                0.9                0.9               1.15  0 
+
+sky_glow source sky 
+0 
+0 
+4                  0                  0                  1 180 
+
+#a green ground 
+skyfunc glow ground_glow 
+0 
+0 
+4                0.2                        0.2               0.2  0 
+
+ground_glow source ground 
+0 
+0 
+4                  0                  0                 -1 180 
+
+##rtrace rcalc run 
+
+oconv sky001.rad out.rad material.rad geometry.rad > 001.oct 
+rtrace -w -h -I+ @options.opt 001.oct < sensors.inp | rcalc -e 
+'$1=($1*0.265+$2*0.670+$3*0.065)*179' > 001.ill
+
+
+
+-Nicolas 
+
+
+
+
+
+
+
+
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+ 
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20080924/45cc6eb3/attachment.html
+From radiance at ndoylend.fastmail.fm  Wed Sep 24 04:21:25 2008
+From: radiance at ndoylend.fastmail.fm (Nick Doylend)
+Date: Wed Sep 24 04:26:42 2008
+Subject: [Radiance-general] gendaylit
+Message-ID: <1222255285.30041.1275691935@webmail.messagingengine.com>
+
+
+I'm sure I had it working on Windows once but I now can't get it to pick
+up the coeff_perez.dat file - it's in my radiance/lib folder, correctly
+specified in my RADPATH variable.  Should it be somewhere else?
+
+Compiling on Ubuntu 7.10 seems to work, albeit with the following
+warning:
+
+gcc  -c fropen.c
+fropen.c: In function $B!F(Bfropen$B!G(B:
+fropen.c:45: warning: incompatible implicit declaration of built-in
+function $B!F(Bstrcpy$B!G(B
+
+Should I worry about this?
+
+Finally, which output option should I use if I want similar output to
+gensky, W/m2.sr (solar), W/m2.sr (visible), or lm/m2.sr.  I'm guessing
+the former?
+
+Nick
+
+From maricanis at gmail.com  Wed Sep 24 06:30:05 2008
+From: maricanis at gmail.com (Marija Velickovic)
+Date: Wed Sep 24 06:30:38 2008
+Subject: [Radiance-general] gendaylit
+In-Reply-To: <1222255285.30041.1275691935@webmail.messagingengine.com>
+References: <1222255285.30041.1275691935@webmail.messagingengine.com>
+Message-ID: <124b40400809240630n34e0a864k5fbf4d2b5f457261@mail.gmail.com>
+
+Hi Nick,
+
+Use default value - 0, since Radiance output is in radiance values for
+visible part of light.
+
+Note:
+- if you are using irradiance values from EPW files use  -W dir_norm
+diff_horiz
+- if you are using irradiance values from Stal-light files (for Europe) use
+-G dir_horiz dif_horiz
+
+Don't worry for fropen error on Ubuntu
+
+Marija
+
+2008/9/24 Nick Doylend <radiance@ndoylend.fastmail.fm>
+
+>
+> I'm sure I had it working on Windows once but I now can't get it to pick
+> up the coeff_perez.dat file - it's in my radiance/lib folder, correctly
+> specified in my RADPATH variable.  Should it be somewhere else?
+>
+> Compiling on Ubuntu 7.10 seems to work, albeit with the following
+> warning:
+>
+> gcc  -c fropen.c
+> fropen.c: In function 'fropen':
+> fropen.c:45: warning: incompatible implicit declaration of built-in
+> function 'strcpy'
+>
+> Should I worry about this?
+>
+> Finally, which output option should I use if I want similar output to
+> gensky, W/m2.sr (solar), W/m2.sr (visible), or lm/m2.sr.  I'm guessing
+> the former?
+>
+> Nick
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20080924/49942bb4/attachment.htm
+From tarik.rahman at ed.ac.uk  Thu Sep 25 03:59:23 2008
+From: tarik.rahman at ed.ac.uk (tarik.rahman@ed.ac.uk)
+Date: Thu Sep 25 03:59:31 2008
+Subject: [Radiance-general] Generating view file from camera calibration
+Message-ID: <20080925115923.rr09dklcg044k8k4@www.sms.ed.ac.uk>
+
+
+Hi
+
+I was wondering if someone knows how to generate a view file in  
+Radiance, given real life
+camera calibration parameters. I've created a scene and view file in  
+Radiance and I'm now trying to create the exact geometric model in  
+real life.
+
+I have the focal length and image resolution, so can compute the -vh  
+and -vv angle values but the main problem is trying to compute the -vp  
+and -vd parameters.
+
+I have the 3x3 Rotation matrix and 3x1 Translation vector from using  
+the Bouget Camera Calibration Toolbox in Matlab. The axes are the same  
+as for my Radiance scene but I need to translate the camera reference  
+frame origin to the geometric world scene origin.
+
+Also I'd like to know how to do the Rotation as well for other images  
+I have whereby after calibration,  the axes may not be aligned.
+I've been looking in a few books but find some things ambiguous and  
+getting a bit confused, so just wondering if somebody has a quick  
+solution.
+
+I've considered 'cheating' by re-writing the geometry in the .rad file  
+so that the camera reference frame origin is at the geometric world  
+origin, but I'd prefer not to do this.
+
+Any help is greatly appreciated
+
+Thanks
+
+Tarik
+
+-- 
+The University of Edinburgh is a charitable body, registered in
+Scotland, with registration number SC005336.
+
+
+
+From Raphael.Compagnon at hefr.ch  Thu Sep 25 06:00:06 2008
+From: Raphael.Compagnon at hefr.ch (=?iso-8859-1?Q?Compagnon_Rapha=EBl?=)
+Date: Thu Sep 25 06:00:21 2008
+Subject: [Radiance-general] Reminder: Radiance workshop registrations
+Message-ID: <70DD3A1408BDA8498790E8D553B7D253A9C0FB2B01@HEFRMAIL.sofr.hefr.lan>
+
+Dear Radiance users,
+
+As you probably know, registrations are now open for the next Radiance workshop which will take place in Fribourg (Switzerland) from 30 to 31 October 2008 (see home.hefr.ch/compag/rw2008/<http://home.hefr.ch/compag/rw2008/> ).  We expect to receive your registration before the end of September.
+More important: the hotel reservation should be made through the Fribourg Tourism office using the dedicated form not later than Friday 26th September. This is due to the fact that the rooms we have pre-booked for the workshop cannot be held longer since there is another big congress in need of room space that may require them...
+
+Raphael Compagnon & Greg Ward
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20080925/03104853/attachment.html
+From cbm at cvmt.aau.dk  Fri Sep 26 01:06:33 2008
+From: cbm at cvmt.aau.dk (Claus B. Madsen)
+Date: Fri Sep 26 01:16:45 2008
+Subject: [Radiance-general] Generating view file from camera calibration
+In-Reply-To: <20080925115923.rr09dklcg044k8k4@www.sms.ed.ac.uk>
+References: <20080925115923.rr09dklcg044k8k4@www.sms.ed.ac.uk>
+Message-ID: <48DC9809.4010606@cvmt.aau.dk>
+
+
+Hi Tarik,
+
+I should be able to help you. From what you are writing I have been 
+through many of the same things. I have used the Bouget calibration 
+toolbox some years ago, so I have forgotten the details. I am presently 
+using my own matlab based calibration tool, but the process of making a 
+link to Radiance should be the same.
+
+What I have done is to make a simple Matlab script which auto-generates 
+a Radiance view file (.vp). Here is an example of the output from my 
+script for a given image where I have calibrated the camera to a 
+checker-board in the image:
+
+rview -vtv -vp -2.555731 -1.572937 1.778183 -vd 0.807129 0.430026 
+-0.404500 -vu 0.359249 0.185955 0.914527 -vh 45.809853 -vv 31.486144
+
+As stated: I have forgotten Bouget calibration details, but if you have 
+the 3x3 rotation and the 3x1 translation you are all set to go. In what 
+I am writing I am assuming that the rotation and translation information 
+constitutes transformation from world to camera (not vice versa).
+
+I my code I have the world to camera transformation as a 4x4 matrix, 
+where the upper left 3x3 is the rotation, and the upper three elements 
+of the left-most column is the translation vector (standard 
+transformation matrix in homogenuous coordinates).
+
+Here is my Matlab code that autogenerates the .vp file:
+
+--------------------------------------------------------------------------------------
+
+%world2cam is a 4x4 transformation from world to camera coordinates
+%
+%focallength_in_pixels is the estimated camera focal length measured in 
+pixels (it may be a negative number
+%in the Bouget toolbox ... in that case multiply by -1 in the 
+expressions below)
+
+%inverse to get camera to world transformation
+cam2world = inv(world2cam);
+
+%save camera parameters in a format directly applicable
+%for RADIANCE rendering engine
+camfilename = strcat(path,'CAMERA.vp');
+fid = fopen(camfilename, 'w');
+fprintf(fid, 'rview -vtv ');
+fprintf(fid, '-vp %.6f %.6f %.6f ', cam2world(1:3,4));
+fprintf(fid, '-vd %.6f %.6f %.6f ', -world2cam(3,1:3));
+fprintf(fid, '-vu %.6f %.6f %.6f ', world2cam(2,1:3));
+fprintf(fid, '-vh %.6f ', rad2deg(2*atan2(0.5*xres, 
+focallength_in_pixels)));
+fprintf(fid, '-vv %.6f\n', rad2deg(2*atan2(0.5*yres, 
+focallength_in_pixels)));
+fclose(fid);
+
+
+------------------------------------------------------------------------------------------------------
+
+The part in your mail that concerns multiple images and axes that are 
+not aligned I do not understand so I can't assist on that.
+
+Sincerely,
+Claus
+
+
+P.S. I have the same exporting facility generating a MAXscript that will 
+set up a matched camera in 3D studio max, but max has built-in camera 
+matching.
+
+
+
+tarik.rahman@ed.ac.uk wrote:
+>
+> Hi
+>
+> I was wondering if someone knows how to generate a view file in 
+> Radiance, given real life
+> camera calibration parameters. I've created a scene and view file in 
+> Radiance and I'm now trying to create the exact geometric model in 
+> real life.
+>
+> I have the focal length and image resolution, so can compute the -vh 
+> and -vv angle values but the main problem is trying to compute the -vp 
+> and -vd parameters.
+>
+> I have the 3x3 Rotation matrix and 3x1 Translation vector from using 
+> the Bouget Camera Calibration Toolbox in Matlab. The axes are the same 
+> as for my Radiance scene but I need to translate the camera reference 
+> frame origin to the geometric world scene origin.
+>
+> Also I'd like to know how to do the Rotation as well for other images 
+> I have whereby after calibration,  the axes may not be aligned.
+> I've been looking in a few books but find some things ambiguous and 
+> getting a bit confused, so just wondering if somebody has a quick 
+> solution.
+>
+> I've considered 'cheating' by re-writing the geometry in the .rad file 
+> so that the camera reference frame origin is at the geometric world 
+> origin, but I'd prefer not to do this.
+>
+> Any help is greatly appreciated
+>
+> Thanks
+>
+> Tarik
+>
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: cbm.vcf
+Type: text/x-vcard
+Size: 381 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20080926/1f75dae3/cbm.vcf
+From tbleicher at arcor.de  Fri Sep 26 03:05:42 2008
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Fri Sep 26 03:05:57 2008
+Subject: [Radiance-general] Generating view file from camera calibration
+In-Reply-To: <20080925115923.rr09dklcg044k8k4@www.sms.ed.ac.uk>
+References: <20080925115923.rr09dklcg044k8k4@www.sms.ed.ac.uk>
+Message-ID: <16AF32BA-A19E-4933-A440-77C47EAF94F8@arcor.de>
+
+
+On 25 Sep 2008, at 11:59, tarik.rahman@ed.ac.uk wrote:
+
+> Hi
+>
+> I was wondering if someone knows how to generate a view file in  
+> Radiance, given real life
+> camera calibration parameters. I've created a scene and view file  
+> in Radiance and I'm now trying to create the exact geometric model  
+> in real life.
+
+If you have a nice perspective image you could try the 'match photo'  
+feature in SketchUp:
+
+http://www.youtube.com/watch?v=fhzpqf7fywM&feature=related
+
+Only works for smaller values of 'exact', though.
+
+Thomas
+
+
+From grobe at gmx.net  Sat Sep 27 11:30:10 2008
+From: grobe at gmx.net (Lars Grobe)
+Date: Sat Sep 27 11:30:23 2008
+Subject: [Radiance-general] Generating view file from camera calibration
+In-Reply-To: <20080925115923.rr09dklcg044k8k4@www.sms.ed.ac.uk>
+References: <20080925115923.rr09dklcg044k8k4@www.sms.ed.ac.uk>
+Message-ID: <20080927183010.147540@gmx.net>
+
+> I've considered 'cheating' by re-writing the geometry in the .rad file  
+> so that the camera reference frame origin is at the geometric world  
+> origin, but I'd prefer not to do this.
+
+Just in case that you do this - do not rewrite the geometry but use an xform-statement to transform the scene. Still this is not really useful for animations, and I guess there have been enough hints for generating the view points now - so this is just for completeness ;-)
+
+Have a nice week-end!
+
+Lars.
+
+From tarik.rahman at ed.ac.uk  Sun Sep 28 15:24:36 2008
+From: tarik.rahman at ed.ac.uk (tarik.rahman@ed.ac.uk)
+Date: Sun Sep 28 15:24:50 2008
+Subject: [Radiance-general] Re: Generating a view file from camera
+	calibration
+Message-ID: <20080928232436.kqooahka8sowcck0@www.sms.ed.ac.uk>
+
+Hi there
+
+Just want to say thanks for all the help given with my question about  
+generating a view file from camera calibration. Claus thanks for your  
+very helpful email and that script code, I now understand the whole  
+process more clearly and it works a treat so please ignore that email  
+I sent you!
+
+Once again, your help is much appreciated
+
+Tarik
+
+-- 
+The University of Edinburgh is a charitable body, registered in
+Scotland, with registration number SC005336.
+
+
+
+
+From nofunciona_g at yahoo.gr  Mon Sep 29 15:47:43 2008
+From: nofunciona_g at yahoo.gr (George Makrythanasis)
+Date: Mon Sep 29 15:47:51 2008
+Subject: [Radiance-general] Photon Map: Mac Installation
+Message-ID: <AA3058AA-02B8-449B-AF1B-87361BB07440@yahoo.gr>
+
+Hi,
+
+I would like to ask if anybody managed to run photon mapping in Mac.  
+The only info I found in the forum was from Giulio Antonutto advising  
+to download the following:
+
+radiance 3.5 binaries and pmap 3.28. The link to download the archives  
+is not online anymore so I would like to know if there is any way to  
+install pmap using the latest radiance binaries in a Mac.
+
+Cheers,
+
+George
+__________________________________________________
+Χρησιμοποιείτε Yahoo!;
+Βαρεθήκατε τα ενοχλητικά μηνύματα (spam);   Το Yahoo! Mail διαθέτει την καλύτερη δυνατή προστασία κατά των ενοχλητικών μηνυμάτων  
+http://mail.yahoo.gr 
+
+From jan.wienold at ise.fraunhofer.de  Mon Sep 29 23:34:13 2008
+From: jan.wienold at ise.fraunhofer.de (Jan Wienold)
+Date: Mon Sep 29 23:34:25 2008
+Subject: [Radiance-general] Photon Map: Mac Installation
+In-Reply-To: <AA3058AA-02B8-449B-AF1B-87361BB07440@yahoo.gr>
+References: <AA3058AA-02B8-449B-AF1B-87361BB07440@yahoo.gr>
+Message-ID: <48E1C865.5020002@ise.fraunhofer.de>
+
+Hi George,
+
+the source code of photon mapping can be downloaded here:
+
+http://www.ise.fhg.de/radiance
+
+Note: This version of pmap (4.3.1) is only compatible with the RADIANCE
+3.7P2 version, which can be downloaded at the same site.
+But we have no experience compiling it on a Mac.
+
+Good luck!
+
+Jan
+
+
+
+George Makrythanasis wrote:
+> Hi,
+>
+> I would like to ask if anybody managed to run photon mapping in Mac.
+> The only info I found in the forum was from Giulio Antonutto advising
+> to download the following:
+>
+> radiance 3.5 binaries and pmap 3.28. The link to download the archives
+> is not online anymore so I would like to know if there is any way to
+> install pmap using the latest radiance binaries in a Mac.
+>
+> Cheers,
+>
+> George
+> __________________________________________________
+> ?????????????? Yahoo!;
+> ?????????? ?? ?????????? ???????? (spam);   ?? Yahoo! Mail ????????
+> ??? ???????? ?????? ????????? ???? ??? ??????????? ?????????
+> http://mail.yahoo.gr
+> ------------------------------------------------------------------------
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>   
+
+
+-- 
+Dipl.-Ing. Jan Wienold
+Project Manager
+Fraunhofer-Institut f?r Solare Energiesysteme
+Thermal Systems and Buildings, Lighting and Daylighting
+Heidenhofstr. 2, 79110 Freiburg, Germany
+Phone: +49(0)761 4588 5133 Fax:+49(0)761 4588 9133
+jan.wienold@ise.fraunhofer.de
+http://www.ise.fraunhofer.de
+
+In office: 
+Mo,Tue: 8:30-18:00
+We,Thu: 8:30-16:00
+Fr:  8:30-15:30
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20080930/e079ceb3/attachment.html
+From antonutto at yahoo.it  Tue Sep 30 13:37:57 2008
+From: antonutto at yahoo.it (giulio)
+Date: Tue Sep 30 13:40:25 2008
+Subject: [Radiance-general] Photon Map: Mac Installation
+In-Reply-To: <AA3058AA-02B8-449B-AF1B-87361BB07440@yahoo.gr>
+References: <AA3058AA-02B8-449B-AF1B-87361BB07440@yahoo.gr>
+Message-ID: <D3647FB3-BD3F-4CA4-B96E-265F913054DB@yahoo.it>
+
+I guess it is possible and actually another option is to use radzilla...
+I have used pmap a while ago (2006) with both radiance and radzilla.
+radzilla had the big advantage of having just one command for the  
+whole process.
+ciao
+G.
+
+
+
+On 29 Sep 2008, at 23:47, George Makrythanasis wrote:
+
+> Hi,
+>
+> I would like to ask if anybody managed to run photon mapping in  
+> Mac. The only info I found in the forum was from Giulio Antonutto  
+> advising to download the following:
+>
+> radiance 3.5 binaries and pmap 3.28. The link to download the  
+> archives is not online anymore so I would like to know if there is  
+> any way to install pmap using the latest radiance binaries in a Mac.
+>
+> Cheers,
+>
+> George
+> __________________________________________________
+> ?????????????? Yahoo!;
+> ?????????? ?? ?????????? ???????? (spam);   ?? Yahoo! Mail ????????  
+> ??? ???????? ?????? ????????? ???? ??? ??????????? ????????? http:// 
+> mail.yahoo.gr
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+Chiacchiera con i tuoi amici in tempo reale! 
+ http://it.yahoo.com/mail_it/foot/*http://it.messenger.yahoo.com 
+
+
+From nofunciona_g at yahoo.gr  Tue Sep 30 17:32:28 2008
+From: nofunciona_g at yahoo.gr (George Makrythanasis)
+Date: Tue Sep 30 17:32:36 2008
+Subject: [Radiance-general] Photon Map: Mac Installation
+Message-ID: <D083A624-D1E3-49CC-B6F0-9884B2DF5EB3@yahoo.gr>
+
+Giulio,
+
+Thanks a lot for the binaries. Seems that works fine.
+
+Regards,
+
+George
+__________________________________________________
+Χρησιμοποιείτε Yahoo!;
+Βαρεθήκατε τα ενοχλητικά μηνύματα (spam);   Το Yahoo! Mail διαθέτει την καλύτερη δυνατή προστασία κατά των ενοχλητικών μηνυμάτων  
+http://mail.yahoo.gr 
+

@@ -1,0 +1,626 @@
+From radiance-general@radiance-online.org  Sat Feb  1 16:49:08 2003
+From: radiance-general@radiance-online.org (George Pantazopoulos)
+Date: Sat, 01 Feb 2003 11:49:08 -0500
+Subject: [Radiance-general] Radiance, POV-Ray and parallel global illumination?
+Message-ID: <5.1.1.6.0.20030201113557.02aca540@mail.attbi.com>
+
+Hello all,
+	
+	I am a programmer working with the POV-Ray raytracer. As you may know, for 
+global illumination, POV-Ray uses a version of the irradiance caching 
+algorithm from Mr. Ward's paper "A Ray Tracing Solution for Diffuse 
+Interreflection" (Ward, Rubenstein, and Clear). Presumably Radiance uses a 
+similar, but more advanced version of the same algorithm for its global 
+illumination simulation.
+
+	I'm trying to get parallel rendering working, but there is a problem. If 
+the image is divided into tiles, and rendered with POV-Ray and global 
+illumination, each finished tile has a different basic brightness level. 
+And when the final image is reassembled from the tiles, the effect is like 
+a checkerboard or patchwork. In short, it ruins the final image. Apparently 
+each render slave *needs* to have the entire scene octree available to it, 
+somehow. There has been an effort to share the octree data with the other 
+slaves as soon as it is generated, however this is only partially 
+successful and does not always suppress the artifacts I mentioned. (Here is 
+a link to the pvmegapov page http://www.wozzeck.net/images/pmp/ )
+
+	I'm wondering if Radiance handles this problem in a fundamentally 
+different way, which I could learn from. Some basic parallel Radiance info 
+I read did not mention this problem at all, so hopefully you guys already 
+have a solution. Any suggestions would be most appreciated!
+
+
+Thanks,
+George Pantazopoulos
+
+
+
+From radiance-general@radiance-online.org  Sun Feb  2 01:29:07 2003
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Sat, 1 Feb 2003 20:29:07 -0500 (EST)
+Subject: [Radiance-general] Radiance, POV-Ray and parallel global
+ illumination?
+In-Reply-To: <5.1.1.6.0.20030201113557.02aca540@mail.attbi.com>
+Message-ID: <Pine.BSF.4.44.0302012016340.21727-100000@emancholl.pair.com>
+
+George Pantazopoulos wrote:
+
+> I'm trying to get parallel rendering working, but there is a problem. If
+> the image is divided into tiles, and rendered with POV-Ray and global
+> illumination, each finished tile has a different basic brightness level.
+> And when the final image is reassembled from the tiles, the effect is like
+> a checkerboard or patchwork. In short, it ruins the final image. Apparently
+> each render slave *needs* to have the entire scene octree available to it,
+> somehow. There has been an effort to share the octree data with the other
+> slaves as soon as it is generated, however this is only partially
+> successful and does not always suppress the artifacts I mentioned. (Here is
+> a link to the pvmegapov page http://www.wozzeck.net/images/pmp/ )
+
+Hi George,
+
+just to eliminate any potential confusions about the terminology:
+What POV calls "scene octree" is normally called "ambient data" in
+Radiance-speak. But we're still talking about the same thing.
+
+Your analsysis is correct: You need to share this data between the
+different processes in relatively short intervals, or they will
+get out of sync, producing the observed tile patterns. Radiance does
+the sharing through a file (we're currently discussing alternatives
+in the radiance-dev list). Each process synchronizes with this file
+when its stdio output buffer is full, on my box that means after it
+has created approximately 100 new values.
+
+
+> I'm wondering if Radiance handles this problem in a fundamentally
+> different way, which I could learn from.
+
+As far as I understand what POV does, the main difference seems to
+be in the syncing frequency. I see that you have difficulties
+increasing that. To improve the quality of the ambient data, it is
+common practise with Radiance to "seed" the ambient file with a very
+small rendering that is then discarded. Maybe it would help too in
+your case, if you let your slaves render and discard one patch each
+at first (evenly distributed across the picture), and then to start
+the "real" rendering with the ambient data collected that way
+already available. In most cases, earlier patches will show bigger
+discrepancies than later ones.
+
+Btw., if you really still have tiles in your PvMegaPOV example
+picture, the woodgrain pattern hides them very effectively... ;)
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-general@radiance-online.org  Sun Feb  9 17:20:18 2003
+From: radiance-general@radiance-online.org (Thomas Seebohm)
+Date: Sun, 09 Feb 2003 12:20:18 -0500
+Subject: [Radiance-general] multi-processing on SGI Onyx: avlemi bug
+References: <20030131110002.22226.42277.Mailman@darkside-animation.com>
+Message-ID: <3E468DD2.CC87A592@fes.uwaterloo.ca>
+
+We have run Radiance/rpiece again, making sure that we are, in fact, running
+the version incorporating Greg's suggested correction in ambient.c but ended
+up with the same error:
+
+"rpict inconsistency
+address not found in avlemi
+rpiece error reading from rpict"
+
+Thomas
+--
+
+>
+> Message: 1
+> Date: Thu, 30 Jan 2003 07:16:41 -0800
+> From: Greg Ward <gward@lmi.net>
+> To: radiance-general@radiance-online.org
+> Subject: [Radiance-general] Re:  multi-processing on SGI Onyx
+> Reply-To: radiance-general@radiance-online.org
+>
+> The magic word to change is in src/rt/ambient.c, in the function
+> aposcmp(avp1, avp2), which should be corrected to read:
+>
+> /* GW NOTE 2002/10/3:
+>   * I used to compare AMBVAL pointers, but found that this was the
+>   * cause of a serious consistency error with gcc, since the optimizer
+>   * uses some dangerous trick in pointer subtraction that
+>   * assumes pointers differ by exact struct size increments.
+>   */
+> static int
+> aposcmp(avp1, avp2)                     /* compare ambient value
+> positions */
+> char    **avp1, **avp2;
+> {
+>          return(*avp1 - *avp2);
+> }
+>
+> ----------
+> On another note, I have been following with interest the discussion on
+> parallel rendering solutions and alternatives to a working NFS lock
+> manager.  I haven't responded because I haven't had anything
+> intelligent to add...  It's sounding like the consensus is headed the
+> direction of a socket-based client/server solution.  A dreadful pain to
+> implement from all I've seen, but perhaps it's best in the long run.
+>
+> -Greg
+>
+
+
+From radiance-general@radiance-online.org  Mon Feb 10 07:32:30 2003
+From: radiance-general@radiance-online.org (Carsten Bauer)
+Date: Mon, 10 Feb 2003 08:32:30 +0100
+Subject: [Radiance-general] multi-processing on SGI Onyx: avlemi bug
+References: <20030131110002.22226.42277.Mailman@darkside-animation.com> <3E468DD2.CC87A592@fes.uwaterloo.ca>
+Message-ID: <3E47558E.AB122400@t-online.de>
+
+Hi Thomas,
+
+a tip from me (I should apologize to Greg for this :-) ) --
+
+do it quick and dirty !
+either compile with -Dtracktime=0 or sneak into ambient.c and look for
+the calls to the sortambvals() routine. There are only two of them,
+disabling them solves all your problems.
+
+-Carsten
+
+From radiance-general@radiance-online.org  Tue Feb 11 02:21:26 2003
+From: radiance-general@radiance-online.org (Marcus Jacobs)
+Date: Tue, 11 Feb 2003 02:21:26 +0000
+Subject: [Radiance-general] Porting to Windows
+Message-ID: <BAY2-F17T0D7GHzbwaV000201de@hotmail.com>
+
+Hello
+
+I am currently making an attempt to port Radiance 3.4 into Windows 2000. I 
+have a question concerning the aux.h header file. As some of you already 
+know, the header file aux.h is reserved exclusively for Windows. I was able 
+to get the file onto my hard drive by renaming it aux2.h. What I am curious 
+is to know which files (*.c) are associated with this header file. I did a 
+text search for "aux.h" to see if it was listed as an <include> directive in 
+any files but nothing turned up. I know this file is used somewhere and 
+somehow but I don't know where. Please help.
+
+Marcus Jacobs
+
+
+
+
+
+_________________________________________________________________
+MSN 8 helps eliminate e-mail viruses. Get 2 months FREE*.  
+http://join.msn.com/?page=features/virus
+
+
+From radiance-general@radiance-online.org  Tue Feb 11 07:47:31 2003
+From: radiance-general@radiance-online.org (gurneet)
+Date: Tue, 11 Feb 2003 13:17:31 +0530
+Subject: [Radiance-general] animation format
+References: <8DEBFCCF-022F-11D7-BFED-00306540F848@lmi.net>
+Message-ID: <002701c2d1a1$dc7a7d30$190310ac@fundoo>
+
+hi Greg,
+thanx for the previous mail abt generating the frmaes for animation.i have
+generated the frames , could u please guide me how to convert them into mpeg
+format or any other video format . is there any software available in linux
+that does this .
+Also , i want to simulate a fish eye lens , i want to place the camera with
+fish eye lens on the ceiling so that i can get the view of the whole room
+which later i want to do some image processing on it .
+so if u could send me the details abt fish eye lens , it would be of great
+help
+thanking u
+gurneet
+----- Original Message -----
+From: "Greg Ward" <gward@lmi.net>
+To: <radiance-general@radiance-online.org>
+Sent: Wednesday, November 27, 2002 11:12 PM
+Subject: [Radiance-general] Re: Rendering Panoramas
+
+
+> Hi Lars,
+>
+> Rob has some good tips about using rad to generate rendering options
+> using the OPTFILE setting, and I use this feature a lot, myself.  There
+> are many ways to run the rad command, and the man page is the best
+> place to look for understanding these.  In its most basic form, it acts
+> like a simple makefile to build an octree, optionally running mkillum,
+> and maintain a set of rendered and filtered pictures.
+>
+> However, if you're doing a set of runs over different lighting
+> configurations, scene alternatives, etc., you often need a lot more
+> than rad can offer in terms of scene building.  I sometimes use a
+> makefile to maintain the various octrees I use based on scene input,
+> then employ a rad input file that specifies only the OCTREE setting --
+> no explicit scene files.  This can also be specified on the rad command
+> line, so a single rad input file can suffice for many scene
+> alternatives.
+>
+> For generating animations, the ranimate program does a reasonable job,
+> though it really needs updating for running animations over a network
+> now that rsh no longer exists....
+>
+> With regard to fisheye projections, the -vta option can go up to a 360
+> degree field of view, where you get a circular image whose
+> circumference is essentially a single value corresponding to the
+> direction opposite the -vd parameter.  I don't know anything about
+> ptviewer, or the kinds of projections it uses.  You may need to write a
+> script and pass it to rtrace with the -fac (and -x & -y) options to
+> take ray origin and direction on the input and produce a color picture
+> on the output.  Using this method, you can get any projection onto a
+> rectangular image that you can describe mathematically.
+>
+> -Greg
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+
+
+From radiance-general@radiance-online.org  Tue Feb 11 10:48:25 2003
+From: radiance-general@radiance-online.org (Lars O. Grobe)
+Date: Tue, 11 Feb 2003 11:48:25 +0100
+Subject: [Radiance-general] Porting to Windows
+In-Reply-To: <BAY2-F17T0D7GHzbwaV000201de@hotmail.com>
+References: <BAY2-F17T0D7GHzbwaV000201de@hotmail.com>
+Message-ID: <200302111048.h1BAmK6E016764@mailserver1.hrz.tu-darmstadt.de>
+
+Hi!
+
+> I am currently making an attempt to port Radiance 3.4 into Windows 2000.
+
+But you are aware of a project called Desktop Radiance? http://radsite.lbl.gov
+
+CU, Lars.
+
+From radiance-general@radiance-online.org  Tue Feb 11 11:11:00 2003
+From: radiance-general@radiance-online.org (Lars O. Grobe)
+Date: Tue, 11 Feb 2003 12:11:00 +0100
+Subject: [Radiance-general] animation format
+In-Reply-To: <002701c2d1a1$dc7a7d30$190310ac@fundoo>
+References: <8DEBFCCF-022F-11D7-BFED-00306540F848@lmi.net> <002701c2d1a1$dc7a7d30$190310ac@fundoo>
+Message-ID: <200302111110.h1BBAs6E018810@mailserver1.hrz.tu-darmstadt.de>
+
+Hi!
+
+> thanx for the previous mail abt generating the frmaes for animation.i have
+> generated the frames , could u please guide me how to convert them into
+> mpeg format or any other video format . is there any software available in
+> linux that does this .
+
+There are quite a lot of encoders. Imagemagick can do it as well as convert 
+between image formats (it even reads radiance pictures). A very powerful tool 
+to encode or convert video is ffmpeg, it has support for a lot of file 
+formats (e.g. avi, mpg, mpg4, and images) and really lots of codecs (e.g. 
+mpg, mpg4 / "divx", ...). You should really take a look at this!
+
+> Also , i want to simulate a fish eye lens , i want to place the camera with
+> fish eye lens on the ceiling so that i can get the view of the whole room
+> which later i want to do some image processing on it .
+> so if u could send me the details abt fish eye lens , it would be of great
+> help
+
+That's how I used the projection:
+
+rpict -vta -vh 360 -vv 360 -vp 0 0 1.6 -vd 1 0 0 octree.oct > image.unf
+
+The result will be not a fisheye, but a view to every angle, 360 degrees 
+vertically as well as horizontally. So you might try:
+
+rpict -vta -vh 360 -vv 180 -vp 0 0 3 -vd 1 0 0 octree.oct > image.unf
+(angular fisheye)
+
+rpict -vth -vh 180 -vv 180 -vp 0 0 3 -vd 1 0 0 octree.oct > image.unf
+(hemispherical fisheye)
+
+But, I think you should simply try what you need, using the different 
+projections (that's how I do this ;-) And use man rpict - there is a lot of 
+info...
+
+CU, Lars.
+
+From radiance-general@radiance-online.org  Tue Feb 11 12:14:41 2003
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Tue, 11 Feb 2003 07:14:41 -0500 (EST)
+Subject: [Radiance-general] Porting to Windows
+In-Reply-To: <BAY2-F17T0D7GHzbwaV000201de@hotmail.com>
+Message-ID: <Pine.BSF.4.44.0302110623390.910-100000@emancholl.pair.com>
+
+Marcus Jacobs wrote:
+
+> Hello
+>
+> I am currently making an attempt to port Radiance 3.4 into Windows 2000. I
+> have a question concerning the aux.h header file. As some of you already
+> know, the header file aux.h is reserved exclusively for Windows. I was able
+> to get the file onto my hard drive by renaming it aux2.h. What I am curious
+> is to know which files (*.c) are associated with this header file. I did a
+> text search for "aux.h" to see if it was listed as an <include> directive in
+> any files but nothing turned up. I know this file is used somewhere and
+> somehow but I don't know where. Please help.
+
+
+You know that there is a radiance-dev mailing list on the same
+site here? That's where we're discussing non-user topics, and the
+issues involved with the imminent porting of 3.4 to Windows are
+an important topic of those discussions.  If you haven't
+subscribed there yet, I's suggest you do so and also consult the
+recent archives, so you can avoid doing any duplicate work, or
+going off on a tangent that conflicts with other plans.
+
+Please note specifically, that the most recent version of 3.4
+will be made available on public CVS soon. It has also seen a
+number of changes since the version that you're probably working
+with. Specifically, Greg has started with the ANSIfication of the
+code, which will make porting much easier. You might want to wait
+with any of your changes until you can apply them to the cutting
+edge, so that they can be merged back into the official code base
+with less effort.
+
+It currently looks like I might become responsible for
+coordinating the Windows porting efforts, but I'm sure nobody
+will object to other people doing at least part of the work.
+I also hope that LBNL will allow me to use code from the Windows
+version 3.2 as included in Desktop Radiance and Rayfront (the
+latter with some improvements of my own).  We won't be able to
+just copy those sources, as they are based on a Radiance version
+that was forked off the main code base earlier on, but there are
+some parts that might reduce the amount of work we'll have to do.
+
+As to the actual question, the header file aux.h seems to be a
+part of the OpenGL/X11 API, and is sometimes named glaux.h.
+I don't see it actually in use anywhere, so you're probably save
+to just leave it away.
+
+
+-schorsch
+
+PS:
+Crossposting to radiance-dev, please reply there.
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+From radiance-general@radiance-online.org  Tue Feb 11 16:47:47 2003
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Tue, 11 Feb 2003 08:47:47 -0800
+Subject: [Radiance-general] Re: Porting to Windows
+In-Reply-To: <20030211110002.13770.83051.Mailman@darkside-animation.com>
+Message-ID: <8D018A52-3DE0-11D7-AFB5-00306540F848@lmi.net>
+
+Hi Marcus,
+
+I would strongly recommend that you wait for the 3.5 release due out 
+the end of this month before doing any more work on this port.  We plan 
+to get a coordinated effort going on unifying the Radiance code for 
+Unix and Windows, and will be asking others to help us at that time.
+
+Having said that, you can safely ignore the "aux.h" file in src/common 
+-- this must have come from some OpenGL toolkit that may have been used 
+or needed at one time, but now is just flotsam in the code tree.  In 
+fact, I eliminated this file since the 3.4 release, and it won't be 
+found in future releases.
+
+> I am currently making an attempt to port Radiance 3.4 into Windows 
+> 2000. I
+> have a question concerning the aux.h header file. As some of you 
+> already
+> know, the header file aux.h is reserved exclusively for Windows. I was 
+> able
+> to get the file onto my hard drive by renaming it aux2.h. What I am 
+> curious
+> is to know which files (*.c) are associated with this header file. I 
+> did a
+> text search for "aux.h" to see if it was listed as an <include> 
+> directive in
+> any files but nothing turned up. I know this file is used somewhere and
+> somehow but I don't know where. Please help.
+>
+> Marcus Jacobs
+
+
+From radiance-general@radiance-online.org  Tue Feb 11 16:51:49 2003
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Tue, 11 Feb 2003 08:51:49 -0800
+Subject: [Radiance-general] Re: animation format
+In-Reply-To: <20030211110002.13770.83051.Mailman@darkside-animation.com>
+Message-ID: <1D556A50-3DE1-11D7-AFB5-00306540F848@lmi.net>
+
+Hi Gurneet,
+
+I can't answer your first question as I know nothing about available 
+tools for movie conversion under Linux, but I'm sure there's something, 
+somewhere.  On a Mac, you would need the "professional" version of 
+QuickTime to do this, I think.
+
+Regarding a fish-eye lens, there are two types built into rpict -- 
+hemispherical and angular fisheye projections.  These are explained 
+(along with everything else) in the rpict man page.  If you have 
+trouble looking at this from the distribution, try the website:
+
+	http://radsite.lbl.gov/radiance/man_html/whatis.html
+
+Note however that some of these will be out of date, since the website 
+has not been synchronized with the release in many a moon.
+
+> thanx for the previous mail abt generating the frmaes for animation.i 
+> have
+> generated the frames , could u please guide me how to convert them 
+> into mpeg
+> format or any other video format . is there any software available in 
+> linux
+> that does this .
+> Also , i want to simulate a fish eye lens , i want to place the camera 
+> with
+> fish eye lens on the ceiling so that i can get the view of the whole 
+> room
+> which later i want to do some image processing on it .
+> so if u could send me the details abt fish eye lens , it would be of 
+> great
+> help
+> thanking u
+> gurneet
+
+
+From radiance-general@radiance-online.org  Tue Feb 11 17:13:01 2003
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Tue, 11 Feb 2003 09:13:01 -0800
+Subject: [Radiance-general] Re: multi-processing on SGI Onyx: avlemi bug
+In-Reply-To: <20030210110002.11226.28518.Mailman@darkside-animation.com>
+Message-ID: <1303FEDF-3DE4-11D7-AFB5-00306540F848@lmi.net>
+
+I am working with Thomas to verify that the avlmemi bug still exists 
+after the last fix.  If we can't figure out a workaround, I'm going to 
+permanently disable this code.  It's been a headache long enough, and 
+was never really essential, anyway....
+
+> We have run Radiance/rpiece again, making sure that we are, in fact, 
+> running
+> the version incorporating Greg's suggested correction in ambient.c but 
+> ended
+> up with the same error:
+>
+> "rpict inconsistency
+> address not found in avlemi
+> rpiece error reading from rpict"
+>
+> Thomas (Seebohm)
+
+
+From radiance-general@radiance-online.org  Sat Feb 22 23:18:11 2003
+From: radiance-general@radiance-online.org (msnyder)
+Date: Sat, 22 Feb 2003 17:18:11 -0600
+Subject: [Radiance-general] need help with radiance
+Message-ID: <3E580816@webmail.ku.edu>
+
+My name is Michael snyder from the University of Kansas and I am currently 
+teaching myself radiance in order to use it with my senior design lighting 
+class.  I have an error come up when running rview that reads
+
+cannot find function file "rayinit.cal"
+
+If anyone can help me with this problem I would be extremely grateful.  Thank 
+you.
+
+Michael Snyder
+
+
+
+From radiance-general@radiance-online.org  Mon Feb 24 09:57:29 2003
+From: radiance-general@radiance-online.org (Lars O. Grobe)
+Date: Mon, 24 Feb 2003 10:57:29 +0100
+Subject: [Radiance-general] need help with radiance
+In-Reply-To: <3E580816@webmail.ku.edu>
+References: <3E580816@webmail.ku.edu>
+Message-ID: <200302240957.h1O9vNts029443@mailserver1.hrz.tu-darmstadt.de>
+
+> cannot find function file "rayinit.cal"
+
+Hi Michael!
+
+Did you check if the rayinit.cal is in your RAYPATH?
+
+CU, Lars.
+
+From radiance-general@radiance-online.org  Mon Feb 24 17:44:33 2003
+From: radiance-general@radiance-online.org (radiance-general@radiance-online.org)
+Date: Mon, 24 Feb 2003 11:44:33 -0600
+Subject: [Radiance-general] Radiance and VR
+Message-ID: <A229396A-481F-11D7-9AF6-00306541C77E@servidor.unam.mx>
+
+Hi,
+I am working on reconstruction of mesoamerican architecture and using 
+Radiance because of its excellent results to simulate natural 
+illumination. I would like to use this calculation for realtime 
+walkthrough.
+Is there somebody working on this kind of problem?
+
+Genevieve Lucet
+------------------------------------------------------------
+Universidad Nacional Autonoma de Mexico
+
+tel: 56 22 85 20
+
+
+From radiance-general@radiance-online.org  Mon Feb 24 19:15:16 2003
+From: radiance-general@radiance-online.org (Lars O. Grobe)
+Date: Mon, 24 Feb 2003 20:15:16 +0100
+Subject: [Radiance-general] Radiance and VR
+In-Reply-To: <A229396A-481F-11D7-9AF6-00306541C77E@servidor.unam.mx>
+References: <A229396A-481F-11D7-9AF6-00306541C77E@servidor.unam.mx>
+Message-ID: <200302241915.h1OJFDAr007201@mailserver1.hrz.tu-darmstadt.de>
+
+Hi!
+
+Did you take a look at the rholo utilities? They are like 
+realtime-raytracing...
+If you need something like a vrml-export of rendered scenes, this is afaik 
+impossible with raytracing.
+
+CU, Lars.
+
+From radiance-general@radiance-online.org  Mon Feb 24 19:30:15 2003
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Mon, 24 Feb 2003 14:30:15 -0500 (EST)
+Subject: [Radiance-general] Radiance and VR
+In-Reply-To: <A229396A-481F-11D7-9AF6-00306541C77E@servidor.unam.mx>
+Message-ID: <Pine.BSF.4.44.0302241426130.35043-100000@emancholl.pair.com>
+
+lucet@servidor.unam.mx wrote:
+
+> Hi,
+> I am working on reconstruction of mesoamerican architecture and using
+> Radiance because of its excellent results to simulate natural
+> illumination. I would like to use this calculation for realtime
+> walkthrough.
+> Is there somebody working on this kind of problem?
+
+
+I'm not sure how refined the implementation already is for mortal
+users, but the principle of how to do this is presented here:
+
+http://www.radiance-online.org/radiance-workshop1/cd/Spanlang/index.html
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-general@radiance-online.org  Tue Feb 25 09:34:35 2003
+From: radiance-general@radiance-online.org (Lars O. Grobe)
+Date: Tue, 25 Feb 2003 10:34:35 +0100
+Subject: [Radiance-general] Solaris Compiles again...
+Message-ID: <200302250934.h1P9YbjD002019@mailserver1.hrz.tu-darmstadt.de>
+
+Hi!
+
+Does anybody have a license of Sun Forte C allowing him to build some 
+Radiance binaries for Ultrasparc II / III?
+
+I have LOTS of trouble here to compile radiance on Solaris at all (the old 
+sys_nerr, sys_errlist thing, I had to change my include files, changing only 
+radiance's error.c didn't help), and the binaries produced by gcc 3.2.2 
+(32bit, I didn't get it to compile radiance as 64 bit app, and I also don't 
+know if this would improve things) are not really performant. I tried the 
+"radiance-benchmerk2" by Paul Bourke, and got results for my Ultrasparc III 
+CPUs equal to P4s at the same frequencies. I hope that Sun's native compilers 
+would help here a lot.
+
+Is it worth tryiing to use Sun's optimized math libraries with radiance?
+
+CU, Lars.
+

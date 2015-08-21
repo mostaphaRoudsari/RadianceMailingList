@@ -1,0 +1,4228 @@
+From chriskl at familyhealth.com.au  Wed Feb  2 14:13:27 2005
+From: chriskl at familyhealth.com.au (Christopher Kings-Lynne)
+Date: Wed Feb  2 14:15:25 2005
+Subject: [Radiance-general] Deterministic calculations with Radiance
+Message-ID: <4200D1F7.1050301@familyhealth.com.au>
+
+Hi,
+
+I'm thinking about setting up automated regression testing for my 
+Radiance application.
+
+Now, the problem is for these I wish to make Radiance run 
+deterministically, so that I can run diffs of output against known good 
+output, etc.
+
+Is there a way of doing this?  Do I need to set a bunch of jitter 
+arguments to 0?
+
+Cheers,
+
+Chris
+
+From raphael.compagnon at eif.ch  Wed Feb  2 15:05:10 2005
+From: raphael.compagnon at eif.ch (=?iso-8859-1?Q?Compagnon_Rapha=EBl?=)
+Date: Wed Feb  2 15:05:35 2005
+Subject: [Radiance-general] Deterministic calculations with Radiance
+Message-ID: <235d328ac1.28ac1235d3@eif.ch>
+
+I think these two rpict parameters have to be specified for this task:
+
+-ps 0 -pj 0
+
+----- Original Message -----
+From: Christopher Kings-Lynne <chriskl@familyhealth.com.au>
+Date: Wednesday, February 2, 2005 2:13 pm
+Subject: [Radiance-general] Deterministic calculations with Radiance
+
+> Hi,
+> 
+> I'm thinking about setting up automated regression testing for my 
+> Radiance application.
+> 
+> Now, the problem is for these I wish to make Radiance run 
+> deterministically, so that I can run diffs of output against known 
+> good 
+> output, etc.
+> 
+> Is there a way of doing this?  Do I need to set a bunch of jitter 
+> arguments to 0?
+> 
+> Cheers,
+> 
+> Chris
+
+
+
+From gregoryjward at gmail.com  Wed Feb  2 15:21:18 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed Feb  2 15:22:19 2005
+Subject: [Radiance-general] Deterministic calculations with Radiance
+In-Reply-To: <4200D1F7.1050301@familyhealth.com.au>
+References: <4200D1F7.1050301@familyhealth.com.au>
+Message-ID: <ef648a50e16632814f6691b27e17771b@gmail.com>
+
+Hi Chris,
+
+If you turn off all stochastic processes in Radiance, you get the worst 
+imaginable results.  I don't think there's any way to get repeatable 
+output from Radiance that isn't terrible.  To see what I'm talking 
+about, try compiling with the -DNORANDOM flag.  Even with this flag 
+set, the results will be hypersensitive to small changes in 
+illumination values, etc., as the decision on whether to trace 
+particular rays may be go above or below the threshold.  The only way 
+to avoid this is to set -lw 0 and rely on the -lr parameter to end 
+recursion.
+
+The ideal approach would be to use a pseudo-random number generator 
+that is repeatable.  In principle, Radiance does this, but due to 
+differences between machines and implementations, in practice it does 
+not work out that way.
+
+-Greg
+
+> From: Christopher Kings-Lynne <chriskl@familyhealth.com.au>
+> Date: February 2, 2005 5:13:27 AM PST
+>
+> Hi,
+>
+> I'm thinking about setting up automated regression testing for my 
+> Radiance application.
+>
+> Now, the problem is for these I wish to make Radiance run 
+> deterministically, so that I can run diffs of output against known 
+> good output, etc.
+>
+> Is there a way of doing this?  Do I need to set a bunch of jitter 
+> arguments to 0?
+>
+> Cheers,
+>
+> Chris
+
+
+From grobe at gmx.net  Wed Feb  2 16:40:05 2005
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Wed Feb  2 16:40:35 2005
+Subject: [Radiance-general] sharing indirect values for parallel processing?
+Message-ID: <B5C4B063-7530-11D9-8104-000A959DDB22@gmx.net>
+
+Hi!
+
+I am going to start some large renderings during the next weeks, and I 
+would like to have a little park of rendering machines available by the 
+time. Now, parallel processing has been a topic here for some time, and 
+I am wondering about the changes in the recent developments.
+
+I know there is the new -N switch of rad, which will distribute 
+renderings to multiple processes, right? So this seams to be the 
+frontend to use, maybe better than starting all the rpict & Co.s 
+manually. What I would really like to know what file sharing mechanism 
+should I use for indirect values? It used to be nfs, and the 
+documentation in the radiance distribution still reflects how to use 
+nfs and lcking to share data between processes. Would the same be 
+possible e.g. with samba? I am asking because I have a working samba 3 
+server available, offering enough space and lots of bandwidth. If samba 
+is not supported, I could still install a nfs server, however, I 
+remember some trouble with different nfs-locking mechanisms and the 
+os-dependance of nfs implementations (we use OS X, Linux and Solaris 
+here...;-).
+
+So if there is any news about this topic, maybe some reports from 
+people who use radiance in parallel environments, it would be of great 
+help.
+
+TIA+CU, Lars.
+
+
+From grobe at gmx.net  Wed Feb  2 17:40:41 2005
+From: grobe at gmx.net (Lars Grobe)
+Date: Wed Feb  2 17:41:10 2005
+Subject: [Radiance-general] IBM PowerPC C-Compiler?
+Message-ID: <29169.1107362441@www6.gmx.net>
+
+Hi,
+
+is there anyone out there having access to the IBM PowerPC-Compilers? They
+seam to be rather nice, and it would be great to create some binaries with
+those. Maybe we should start a collection among OS-X radiance users and buy
+a license for radiance-online.org, so that we get optimized builds... ?
+
+CU Lars.
+
+From randolph at panix.com  Wed Feb  2 18:16:58 2005
+From: randolph at panix.com (Randolph Fritz)
+Date: Wed Feb  2 18:17:24 2005
+Subject: [Radiance-general] Deterministic calculations with Radiance
+In-Reply-To: <ef648a50e16632814f6691b27e17771b@gmail.com>
+References: <4200D1F7.1050301@familyhealth.com.au>
+	<ef648a50e16632814f6691b27e17771b@gmail.com>
+Message-ID: <20050202171657.GB1492@panix.com>
+
+On Wed, Feb 02, 2005 at 06:21:18AM -0800, Gregory J. Ward wrote:
+> 
+> The ideal approach would be to use a pseudo-random number generator 
+> that is repeatable.  In principle, Radiance does this, but due to 
+> differences between machines and implementations, in practice it does 
+> not work out that way.
+> 
+
+Why not incorporate some random number generators with Radiance,
+instead of relying on whatever the system happens to provide?
+
+Randolph
+
+
+From gregoryjward at gmail.com  Thu Feb  3 06:44:36 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu Feb  3 07:02:47 2005
+Subject: [Radiance-general] sharing indirect values for parallel
+	processing?
+In-Reply-To: <B5C4B063-7530-11D9-8104-000A959DDB22@gmx.net>
+References: <B5C4B063-7530-11D9-8104-000A959DDB22@gmx.net>
+Message-ID: <68bb737584aec2065da1f49db1b02eeb@gmail.com>
+
+Hi Lars,
+
+Over a year ago, there was quite a bit of talk on the dev list about 
+supporting ambient value sharing through Samba or coming up with some 
+workaround for busted NFS lock managers, but nothing was ever done 
+about it.  People on this list can tell you better than I what versions 
+of Linux or NFS you need to look out for.  In general, I think OS X and 
+FreeBSD are solid with respect to NFS file locking.  Solaris might be 
+good as well.
+
+-Greg
+
+> From: "Lars O. Grobe" <grobe@gmx.net>
+> Date: February 2, 2005 7:40:05 AM PST
+>
+> I am going to start some large renderings during the next weeks, and I 
+> would like to have a little park of rendering machines available by 
+> the time. Now, parallel processing has been a topic here for some 
+> time, and I am wondering about the changes in the recent developments.
+>
+> I know there is the new -N switch of rad, which will distribute 
+> renderings to multiple processes, right? So this seams to be the 
+> frontend to use, maybe better than starting all the rpict & Co.s 
+> manually. What I would really like to know what file sharing mechanism 
+> should I use for indirect values? It used to be nfs, and the 
+> documentation in the radiance distribution still reflects how to use 
+> nfs and lcking to share data between processes. Would the same be 
+> possible e.g. with samba? I am asking because I have a working samba 3 
+> server available, offering enough space and lots of bandwidth. If 
+> samba is not supported, I could still install a nfs server, however, I 
+> remember some trouble with different nfs-locking mechanisms and the 
+> os-dependance of nfs implementations (we use OS X, Linux and Solaris 
+> here...;-).
+>
+> So if there is any news about this topic, maybe some reports from 
+> people who use radiance in parallel environments, it would be of great 
+> help.
+>
+> TIA+CU, Lars.
+
+
+From gregoryjward at gmail.com  Thu Feb  3 06:40:40 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu Feb  3 07:02:51 2005
+Subject: [Radiance-general] Deterministic calculations with Radiance
+In-Reply-To: <20050202171657.GB1492@panix.com>
+References: <4200D1F7.1050301@familyhealth.com.au>
+	<ef648a50e16632814f6691b27e17771b@gmail.com>
+	<20050202171657.GB1492@panix.com>
+Message-ID: <50126ea9b69a791e789d7f218f8f0457@gmail.com>
+
+I didn't really explain this right.  The problem is not just different 
+implementations -- but what I said earlier about thresholded values 
+causing the random number sequence to get off track.  There's no easy 
+fix for this, and trying to reproduce exact pixel values will always be 
+a problem with any Monte Carlo renderer.  If you don't believe me, try 
+it yourself.
+
+-G
+
+> From: Randolph Fritz <randolph@panix.com>
+> Date: February 2, 2005 9:16:58 AM PST
+>
+> On Wed, Feb 02, 2005 at 06:21:18AM -0800, Gregory J. Ward wrote:
+>>
+>> The ideal approach would be to use a pseudo-random number generator
+>> that is repeatable.  In principle, Radiance does this, but due to
+>> differences between machines and implementations, in practice it does
+>> not work out that way.
+>>
+>
+> Why not incorporate some random number generators with Radiance,
+> instead of relying on whatever the system happens to provide?
+>
+> Randolph
+
+
+From chriskl at familyhealth.com.au  Thu Feb  3 10:44:15 2005
+From: chriskl at familyhealth.com.au (Christopher Kings-Lynne)
+Date: Thu Feb  3 10:46:01 2005
+Subject: [Radiance-general] sharing indirect values for
+	parallel	processing?
+In-Reply-To: <68bb737584aec2065da1f49db1b02eeb@gmail.com>
+References: <B5C4B063-7530-11D9-8104-000A959DDB22@gmx.net>
+	<68bb737584aec2065da1f49db1b02eeb@gmail.com>
+Message-ID: <4201F26F.9030809@familyhealth.com.au>
+
+> Over a year ago, there was quite a bit of talk on the dev list about 
+> supporting ambient value sharing through Samba or coming up with some 
+> workaround for busted NFS lock managers, but nothing was ever done about 
+> it.  People on this list can tell you better than I what versions of 
+> Linux or NFS you need to look out for.  In general, I think OS X and 
+> FreeBSD are solid with respect to NFS file locking.  Solaris might be 
+> good as well.
+
+Have you seen memcached?
+
+http://www.danga.com/memcached/
+
+Chris
+
+From chriskl at familyhealth.com.au  Thu Feb  3 11:20:25 2005
+From: chriskl at familyhealth.com.au (Christopher Kings-Lynne)
+Date: Thu Feb  3 11:21:58 2005
+Subject: [Radiance-general] Deterministic calculations with Radiance
+In-Reply-To: <50126ea9b69a791e789d7f218f8f0457@gmail.com>
+References: <4200D1F7.1050301@familyhealth.com.au>	<ef648a50e16632814f6691b27e17771b@gmail.com>	<20050202171657.GB1492@panix.com>
+	<50126ea9b69a791e789d7f218f8f0457@gmail.com>
+Message-ID: <4201FAE9.5000908@familyhealth.com.au>
+
+Hmmm, I guess I still don't quite get it...
+
+You are using many calls to random() or something.  If you srandom a 
+certain seed, why is it not possible to get the same output every time?
+
+Sorry...
+
+Chris
+
+
+Gregory J. Ward wrote:
+> I didn't really explain this right.  The problem is not just different 
+> implementations -- but what I said earlier about thresholded values 
+> causing the random number sequence to get off track.  There's no easy 
+> fix for this, and trying to reproduce exact pixel values will always be 
+> a problem with any Monte Carlo renderer.  If you don't believe me, try 
+> it yourself.
+> 
+> -G
+> 
+>> From: Randolph Fritz <randolph@panix.com>
+>> Date: February 2, 2005 9:16:58 AM PST
+>>
+>> On Wed, Feb 02, 2005 at 06:21:18AM -0800, Gregory J. Ward wrote:
+>>
+>>>
+>>> The ideal approach would be to use a pseudo-random number generator
+>>> that is repeatable.  In principle, Radiance does this, but due to
+>>> differences between machines and implementations, in practice it does
+>>> not work out that way.
+>>>
+>>
+>> Why not incorporate some random number generators with Radiance,
+>> instead of relying on whatever the system happens to provide?
+>>
+>> Randolph
+> 
+> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+From chriskl at familyhealth.com.au  Thu Feb  3 12:10:37 2005
+From: chriskl at familyhealth.com.au (Christopher Kings-Lynne)
+Date: Thu Feb  3 12:12:10 2005
+Subject: [Radiance-general] falsecolor and specific isocontours
+Message-ID: <420206AD.7000500@familyhealth.com.au>
+
+Hi,
+
+Is there any way to tell falsecolor to draw contours at specific 
+isolevels, instead of its automatic method?
+
+ie. If I just wanted a contour at level 16.5 and that's all...
+
+Thanks,
+
+Chris
+
+From schorsch at schorsch.com  Thu Feb  3 14:34:49 2005
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Thu Feb  3 14:35:22 2005
+Subject: [Radiance-general] sharing indirect values for parallel
+	processing?
+In-Reply-To: <4201F26F.9030809@familyhealth.com.au>
+References: <B5C4B063-7530-11D9-8104-000A959DDB22@gmx.net>
+	<68bb737584aec2065da1f49db1b02eeb@gmail.com>
+	<4201F26F.9030809@familyhealth.com.au>
+Message-ID: <Pine.BSF.4.58.0502030812560.40694@emancholl.pair.com>
+
+Christopher Kings-Lynne wrote:
+
+> > Over a year ago, there was quite a bit of talk on the dev list about
+> > supporting ambient value sharing through Samba or coming up with some
+> > workaround for busted NFS lock managers, but nothing was ever done about
+> > it.  People on this list can tell you better than I what versions of
+> > Linux or NFS you need to look out for.  In general, I think OS X and
+> > FreeBSD are solid with respect to NFS file locking.  Solaris might be
+> > good as well.
+>
+> Have you seen memcached?
+>
+> http://www.danga.com/memcached/
+
+That's interesting as a concept, but doesn't really solve our
+problem. Memcached accelerates in-memory caching of data.
+Radiance needs to coordinate access to a file on disk, where
+performance is important, but not as critical as resolving access
+conflicts.
+
+The most straightforward solution to our problem would probably
+be to use lock files, as Greg suggested in earlier discussions.
+Unfortunately nobody has found the time yet to actually implement
+that. If anyone wants to volunteer, please move the discussion of
+your proposal to the dev-list.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From gregoryjward at gmail.com  Thu Feb  3 15:41:11 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu Feb  3 15:46:52 2005
+Subject: [Radiance-general] falsecolor and specific isocontours
+In-Reply-To: <420206AD.7000500@familyhealth.com.au>
+References: <420206AD.7000500@familyhealth.com.au>
+Message-ID: <75714b3918bae0ee21f504fe17f0d4ef@gmail.com>
+
+Hi Chris,
+
+No, falsecolor doesn't offer such an option.  However, you can do it 
+yourself with pcomb:
+
+	pcomb -e 'incontr=eq(we*li(1),16.5,0.25)' \
+		-e 'ro=if(incontr,0,ri(1)' \
+		-e 'go=if(incontr,1,gi(1)' \
+		-e 'bo=if(incontr,0,bi(1)' \
+		-e 'and(a,b):if(a,b,a)' \
+		-e 'eq(a,b,eps):and(a-b+eps,b-a+eps)' \
+		-o input.pic > contoured.pic
+
+This assumes you meant 16.5 lux or nits (depending on whether 
+"input.pic" was rendered with the -i option or not).  If you meant 16.5 
+watts/sr/m^2, then take out the "we*" in the first expression.  I also 
+used an epsilon of 0.25 about 16.5, so anything between 16.25 and 16.75 
+will be colored green.  If you want some other range, you can adjust 
+this.  If you want a perfectly sharp line, then you'll need to use the 
+more sophisticated pcomb script within falsecolor, which I won't 
+reproduce here.  Other options, such as placing a contour over a 
+tone-mapped (pcond output) image are easily accommodated by altering 
+the command above.
+
+-Greg
+
+> From: Christopher Kings-Lynne <chriskl@familyhealth.com.au>
+> Date: February 3, 2005 3:10:37 AM PST
+>
+> Hi,
+>
+> Is there any way to tell falsecolor to draw contours at specific 
+> isolevels, instead of its automatic method?
+>
+> ie. If I just wanted a contour at level 16.5 and that's all...
+>
+> Thanks,
+>
+> Chris
+
+
+From gregoryjward at gmail.com  Thu Feb  3 15:53:14 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu Feb  3 15:53:58 2005
+Subject: [Radiance-general] Deterministic calculations with Radiance
+In-Reply-To: <4201FAE9.5000908@familyhealth.com.au>
+References: <4200D1F7.1050301@familyhealth.com.au>	<ef648a50e16632814f6691b27e17771b@gmail.com>	<20050202171657.GB1492@panix.com>
+	<50126ea9b69a791e789d7f218f8f0457@gmail.com>
+	<4201FAE9.5000908@familyhealth.com.au>
+Message-ID: <c7aa57658f8552659e5a2f86f2507db6@gmail.com>
+
+Say you are tracing your 10,000,000 rays to generate a test image that 
+you hope to compare to the official result for Radiance 3.6.1.  
+Somewhere in the middle of your image (more likely the beginning), you 
+hit some surface deep in the ray tree after 4 or 5 reflections, and 
+Radiance makes the following test:
+
+	if (r->rweight < minweight)
+		return(0);			/* don't trace this ray */
+
+where minweight is set by the -lw option to rpict.  Well, it just so 
+happens that r->rweight is almost exactly equal to minweight at this 
+point in the calculation.  On one machine, the statement will evaluate 
+to true, and on another machine architecture, it evaluates to false.  
+Big deal.  You've just altered the result by maybe 1e-3, which is 
+within the tolerance of your image comparison metric.
+
+However, since you've decided not to trace that ray and all the rays 
+that spawn from it, let's say that's 12 calls to random() that you 
+won't be making during this rendering.  (It doesn't matter how many 
+calls it is you miss -- one is enough.)  All your subsequent calls to 
+random() will therefore be completely different from what they were on 
+that other machine, even using the exact same implementation of 
+random().
+
+How likely is the above scenario?  Nearly 100%, because in 10,000,000 
+rays you are bound to find some threshold test somewhere in the code 
+that can go one way or another.  Setting -lw 0 is only a partial 
+solution, because there are other floating point tests and thresholds 
+that can't be altered or avoided within the code.  Welcome to the 
+vaguaries of floating-point calculations.
+
+-Greg
+
+> From: Christopher Kings-Lynne <chriskl@familyhealth.com.au>
+> Date: February 3, 2005 2:20:25 AM PST
+>
+> Hmmm, I guess I still don't quite get it...
+>
+> You are using many calls to random() or something.  If you srandom a 
+> certain seed, why is it not possible to get the same output every 
+> time?
+>
+> Sorry...
+>
+> Chris
+
+
+From chriskl at familyhealth.com.au  Thu Feb  3 16:51:36 2005
+From: chriskl at familyhealth.com.au (Christopher Kings-Lynne)
+Date: Thu Feb  3 16:53:28 2005
+Subject: [Radiance-general] Deterministic calculations with Radiance
+In-Reply-To: <c7aa57658f8552659e5a2f86f2507db6@gmail.com>
+References: <4200D1F7.1050301@familyhealth.com.au>	<ef648a50e16632814f6691b27e17771b@gmail.com>	<20050202171657.GB1492@panix.com>	<50126ea9b69a791e789d7f218f8f0457@gmail.com>	<4201FAE9.5000908@familyhealth.com.au>
+	<c7aa57658f8552659e5a2f86f2507db6@gmail.com>
+Message-ID: <42024888.7060008@familyhealth.com.au>
+
+> Say you are tracing your 10,000,000 rays to generate a test image that 
+> you hope to compare to the official result for Radiance 3.6.1.  
+
+Ah, what I meant is comparing ourselves to ourselves, on the same PC...
+
+Would that be doable?
+
+Chris
+
+From tarik.rahman at ed.ac.uk  Thu Feb  3 17:13:28 2005
+From: tarik.rahman at ed.ac.uk (Tarik Rahman)
+Date: Thu Feb  3 17:13:58 2005
+Subject: [Radiance-general] Deterministic calculations with Radiance
+In-Reply-To: <ef648a50e16632814f6691b27e17771b@gmail.com>
+References: <4200D1F7.1050301@familyhealth.com.au>
+	<ef648a50e16632814f6691b27e17771b@gmail.com>
+Message-ID: <1107447208.42024da8ecee9@sms.ed.ac.uk>
+
+Hi there
+I'm trying this line from a previous thread for info about rays in an image
+ximage someRendering.pic rtrace -ab 5 -oodLpnsm -h -x 1 -i   someOct.oct
+
+I get the image displayed but these lines appear
+./ximage: rtrace : bad picture format
+./ximage: -ab : cannot open picture file
+./ximage: 5 : cannot open picture file
+./ximage: -oodLpnsm : cannot open picture file
+./ximage: -h : cannot open picture file
+./ximage: -x : cannot open picture file
+./ximage: 1 : cannot open picture file
+./ximage: -i : cannot open picture file
+./ximage: testroom.oct : bad picture format
+
+left clicking and dragging on the image makes a rectangle selection but nothing
+happens
+right clicking I get just the origin and direction outputted
+
+I know I must be doing something simple, wrong
+
+Thanks for any help
+
+Tarik
+
+--
+Tarik Rahman
+PhD student, Institute of Perception, Action and Behaviour
+School of Informatics
+University of Edinburgh
+
+From Andrew.McNeil at arup.com  Thu Feb  3 17:23:45 2005
+From: Andrew.McNeil at arup.com (Andrew McNeil)
+Date: Thu Feb  3 17:25:02 2005
+Subject: [Radiance-general] Deterministic calculations with Radiance
+Message-ID: <3C407645924C1D4ABE665B0B82938DA903444156@n-ynts07.global.arup.com>
+
+Looks like you're missing the pipe symbol.
+
+Try:
+ximage someRendering.pic | rtrace -ab 5 -oodLpnsm -h -x 1 -i   someOct.oct 
+
+The "|" is typed by pressing shift and backshash on a US keyboard.  If you
+are unfamiliar with pipes check out these links for an explanation:
+http://www.december.com/unix/tutor/pipesfilters.html
+http://unix.t-a-y-l-o-r.com/USpipes.html
+
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Tarik
+Rahman
+Sent: Thursday, February 03, 2005 11:13 AM
+To: Radiance general discussion
+Subject: Re: [Radiance-general] Deterministic calculations with Radiance
+
+Hi there
+I'm trying this line from a previous thread for info about rays in an image
+ximage someRendering.pic rtrace -ab 5 -oodLpnsm -h -x 1 -i   someOct.oct
+
+I get the image displayed but these lines appear
+./ximage: rtrace : bad picture format
+./ximage: -ab : cannot open picture file
+./ximage: 5 : cannot open picture file
+./ximage: -oodLpnsm : cannot open picture file
+./ximage: -h : cannot open picture file
+./ximage: -x : cannot open picture file
+./ximage: 1 : cannot open picture file
+./ximage: -i : cannot open picture file
+./ximage: testroom.oct : bad picture format
+
+left clicking and dragging on the image makes a rectangle selection but
+nothing happens right clicking I get just the origin and direction outputted
+
+I know I must be doing something simple, wrong
+
+Thanks for any help
+
+Tarik
+
+--
+Tarik Rahman
+PhD student, Institute of Perception, Action and Behaviour School of
+Informatics University of Edinburgh
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+___________________________________________________________________
+Electronic mail messages entering and leaving Arup business
+systems are scanned for acceptability of content and viruses.
+
+From rpg at rumblestrip.org  Thu Feb  3 18:11:13 2005
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Thu Feb  3 18:12:15 2005
+Subject: [Radiance-general] falsecolor and specific isocontours
+In-Reply-To: <75714b3918bae0ee21f504fe17f0d4ef@gmail.com>
+References: <420206AD.7000500@familyhealth.com.au>
+	<75714b3918bae0ee21f504fe17f0d4ef@gmail.com>
+Message-ID: <48956.209.212.87.250.1107450673.squirrel@209.212.87.250>
+
+
+> Hi Chris,
+>
+> No, falsecolor doesn't offer such an option.  However, you can do it
+> yourself with pcomb:
+>
+> 	pcomb -e 'incontr=eq(we*li(1),16.5,0.25)' \
+> 		-e 'ro=if(incontr,0,ri(1)' \
+> 		-e 'go=if(incontr,1,gi(1)' \
+> 		-e 'bo=if(incontr,0,bi(1)' \
+> 		-e 'and(a,b):if(a,b,a)' \
+> 		-e 'eq(a,b,eps):and(a-b+eps,b-a+eps)' \
+> 		-o input.pic > contoured.pic
+>
+
+Hey, this is cool Greg.  I figured this was possible with pcomb, but not
+really having any handle on the functional language I never knew how to go
+about it.  I tried your tip here, putting the whole thing into a shell
+script, but I get an error: "we: undefined variable".  Is there something
+wrong with my environment (aside from going into New York City on a
+perpetually late, crowded train every day, I mean)?
+
+P.S. There are closing parens missing from lines 2,3,and 4.
+
+- Rob Guglielmetti
+www.rumblestrip.org
+
+From gvn at retena.com  Thu Feb  3 19:53:30 2005
+From: gvn at retena.com (=?iso-8859-1?Q?Ignacio_Mun=E1rriz?=)
+Date: Thu Feb  3 20:03:13 2005
+Subject: [Radiance-general] falsecolor and specific isocontours
+References: <420206AD.7000500@familyhealth.com.au><75714b3918bae0ee21f504fe17f0d4ef@gmail.com>
+	<48956.209.212.87.250.1107450673.squirrel@209.212.87.250>
+Message-ID: <005e01c50a21$a76ca180$53000080@pnac>
+
+Rob, it is a problem of caps, it?s WE not we
+
+
+----- Original Message -----
+From: "Rob Guglielmetti" <rpg@rumblestrip.org>
+To: "Radiance general discussion" <radiance-general@radiance-online.org>
+Sent: Thursday, February 03, 2005 6:11 PM
+Subject: Re: [Radiance-general] falsecolor and specific isocontours
+
+
+>
+> > Hi Chris,
+> >
+> > No, falsecolor doesn't offer such an option.  However, you can do it
+> > yourself with pcomb:
+> >
+> > pcomb -e 'incontr=eq(we*li(1),16.5,0.25)' \
+> > -e 'ro=if(incontr,0,ri(1)' \
+> > -e 'go=if(incontr,1,gi(1)' \
+> > -e 'bo=if(incontr,0,bi(1)' \
+> > -e 'and(a,b):if(a,b,a)' \
+> > -e 'eq(a,b,eps):and(a-b+eps,b-a+eps)' \
+> > -o input.pic > contoured.pic
+> >
+>
+> Hey, this is cool Greg.  I figured this was possible with pcomb, but not
+> really having any handle on the functional language I never knew how to go
+> about it.  I tried your tip here, putting the whole thing into a shell
+> script, but I get an error: "we: undefined variable".  Is there something
+> wrong with my environment (aside from going into New York City on a
+> perpetually late, crowded train every day, I mean)?
+>
+> P.S. There are closing parens missing from lines 2,3,and 4.
+>
+> - Rob Guglielmetti
+> www.rumblestrip.org
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+
+From rpg at rumblestrip.org  Thu Feb  3 20:42:59 2005
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Thu Feb  3 20:44:14 2005
+Subject: [Radiance-general] falsecolor and specific isocontours
+In-Reply-To: <005e01c50a21$a76ca180$53000080@pnac>
+References: <420206AD.7000500@familyhealth.com.au><75714b3918bae0ee21f504fe17f0d4ef@gmail.com>
+	<48956.209.212.87.250.1107450673.squirrel@209.212.87.250>
+	<005e01c50a21$a76ca180$53000080@pnac>
+Message-ID: <52815.209.212.87.250.1107459779.squirrel@209.212.87.250>
+
+
+> Rob, it is a problem of caps, it?s WE not we
+
+Thanks Ignacio!  That did the trick.  Now then: where is the best place to
+look for info on this functional language?
+
+- Rob Guglielmetti
+www.rumblestrip.org
+
+From kthibault at biomechanicsinc.com  Thu Feb  3 20:56:55 2005
+From: kthibault at biomechanicsinc.com (Kirk Thibault)
+Date: Thu Feb  3 20:57:28 2005
+Subject: [Radiance-general] falsecolor and specific isocontours
+In-Reply-To: <52815.209.212.87.250.1107459779.squirrel@209.212.87.250>
+References: <420206AD.7000500@familyhealth.com.au><75714b3918bae0ee21f504fe17f0d4ef@gmail.com>
+	<48956.209.212.87.250.1107450673.squirrel@209.212.87.250>
+	<005e01c50a21$a76ca180$53000080@pnac>
+	<52815.209.212.87.250.1107459779.squirrel@209.212.87.250>
+Message-ID: <db55fc56483d23c38965ac04167ad43b@biomechanicsinc.com>
+
+Rob- here's one place...
+
+On the Radiance site - go to Documents and hit the "File Formats" PDF 
+link (filefmts.pdf).
+
+kirk
+
+On Feb 3, 2005, at 2:42 PM, Rob Guglielmetti wrote:
+
+>
+>> Rob, it is a problem of caps, it?s WE not we
+>
+> Thanks Ignacio!  That did the trick.  Now then: where is the best 
+> place to
+> look for info on this functional language?
+>
+> - Rob Guglielmetti
+> www.rumblestrip.org
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From jedev at visarc.com  Thu Feb  3 21:01:07 2005
+From: jedev at visarc.com (Jack de Valpine)
+Date: Thu Feb  3 21:01:45 2005
+Subject: [Radiance-general] falsecolor and specific isocontours
+In-Reply-To: <52815.209.212.87.250.1107459779.squirrel@209.212.87.250>
+References: <420206AD.7000500@familyhealth.com.au><75714b3918bae0ee21f504fe17f0d4ef@gmail.com>	<48956.209.212.87.250.1107450673.squirrel@209.212.87.250>	<005e01c50a21$a76ca180$53000080@pnac>
+	<52815.209.212.87.250.1107459779.squirrel@209.212.87.250>
+Message-ID: <42028303.2060606@visarc.com>
+
+Hey Rob,
+
+I think learning the functional language is kind of a zen thing. The 
+best way to learn is to look at some of the simpler cals to see how 
+things are done. There are also some examples in RwR and rayinit.cal is 
+the source of many useful things. And also in this case the man page for 
+pcomb also has some variables that are specific to that tool (li, lo...)
+
+-Jack
+
+Rob Guglielmetti wrote:
+
+>>Rob, it is a problem of caps, it?s WE not we
+>>    
+>>
+>
+>Thanks Ignacio!  That did the trick.  Now then: where is the best place to
+>look for info on this functional language?
+>
+>- Rob Guglielmetti
+>www.rumblestrip.org
+>
+>_______________________________________________
+>Radiance-general mailing list
+>Radiance-general@radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>  
+>
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20050203/85818bae/attachment.html
+From jelle.feringa at ezct.net  Thu Feb  3 21:05:23 2005
+From: jelle.feringa at ezct.net (Jelle Feringa // EZCT / Paris)
+Date: Thu Feb  3 21:05:27 2005
+Subject: [Radiance-general] functional language
+Message-ID: <20050203200457.7B5BC1C000AB@mwinf1109.wanadoo.fr>
+
+>Thanks Ignacio!  That did the trick.  Now then: where is the best place to
+>look for info on this functional language?
+
+Rob,
+
+Good idea, the functional language is still something of a mistery, also
+coverage of it in 'rendering with radiance' isn't over elaborate. Even
+though you would have some notion on how it operates, some examples would
+give quite some insight in the matter. How about a .cal repository, linked
+from the Radiance Wiki, explaining would they actually do? That could give
+some insight into the bowels of Radiance?
+
+Cheers,
+
+Jelle.
+
+//Cool to see xshowtrace & related issues coming by this list again, its
+really a insightful!
+
+
+
+From rpg at rumblestrip.org  Thu Feb  3 21:10:30 2005
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Thu Feb  3 21:10:50 2005
+Subject: [Radiance-general] falsecolor and specific isocontours
+In-Reply-To: <42028303.2060606@visarc.com>
+References: <420206AD.7000500@familyhealth.com.au><75714b3918bae0ee21f504fe17f0d4ef@gmail.com>	<48956.209.212.87.250.1107450673.squirrel@209.212.87.250>	<005e01c50a21$a76ca180$53000080@pnac>
+	<52815.209.212.87.250.1107459779.squirrel@209.212.87.250>
+	<42028303.2060606@visarc.com>
+Message-ID: <53360.209.212.87.250.1107461430.squirrel@209.212.87.250>
+
+
+> Hey Rob,
+>
+> I think learning the functional language is kind of a zen thing. The
+> best way to learn is to look at some of the simpler cals to see how
+> things are done. There are also some examples in RwR and rayinit.cal is
+> the source of many useful things. And also in this case the man page for
+> pcomb also has some variables that are specific to that tool (li, lo...)
+
+Thanks Jack, and thanks Kirk, that filefmts.pdf has a boatload of info
+about this stuff.  Carsten Bauer actually tried to beat this stuff into my
+head a couple months ago, and there was a glimmer of understanding, but
+then I got distracted, and now I am back to square one on this. *sigh*  So
+much to learn.
+
+Jack, I presume you used pcomb to do that shading impact study that you
+presented when we were in Berkeley?
+
+- Rob Guglielmetti
+www.rumblestrip.org
+
+From rpg at rumblestrip.org  Thu Feb  3 21:23:04 2005
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Thu Feb  3 21:23:25 2005
+Subject: [Radiance-general] functional language
+In-Reply-To: <20050203200457.7B5BC1C000AB@mwinf1109.wanadoo.fr>
+References: <20050203200457.7B5BC1C000AB@mwinf1109.wanadoo.fr>
+Message-ID: <53664.209.212.87.250.1107462184.squirrel@209.212.87.250>
+
+
+> Good idea, the functional language is still something of a mistery, also
+> coverage of it in 'rendering with radiance' isn't over elaborate. Even
+> though you would have some notion on how it operates, some examples would
+> give quite some insight in the matter. How about a .cal repository, linked
+> from the Radiance Wiki, explaining would they actually do? That could give
+> some insight into the bowels of Radiance?
+
+Definitely check out that filefmts.pdf, and the .cal files that come with
+Radiance.  And Jack's right, some of the esamples on the pcomb manpage are
+somewhat enlightening as to hoe this all works.  But yeah, zen is
+required.  I'm not there yet.
+
+Also, the function that started this conversation, WE, is not listed in
+filefmts.pdf, nor do I see it in rayinit.cal.  Where the heck is it?
+
+- Rob Guglielmetti
+www.rumblestrip.org
+
+From jedev at visarc.com  Thu Feb  3 21:26:01 2005
+From: jedev at visarc.com (Jack de Valpine)
+Date: Thu Feb  3 21:26:36 2005
+Subject: [Radiance-general] falsecolor and specific isocontours
+In-Reply-To: <53360.209.212.87.250.1107461430.squirrel@209.212.87.250>
+References: <420206AD.7000500@familyhealth.com.au><75714b3918bae0ee21f504fe17f0d4ef@gmail.com>	<48956.209.212.87.250.1107450673.squirrel@209.212.87.250>	<005e01c50a21$a76ca180$53000080@pnac>	<52815.209.212.87.250.1107459779.squirrel@209.212.87.250>	<42028303.2060606@visarc.com>
+	<53360.209.212.87.250.1107461430.squirrel@209.212.87.250>
+Message-ID: <420288D9.1080305@visarc.com>
+
+Hey,
+
+I'll also say thanks to Kirk as well! I feel like a dummy, I had never 
+seen filefmts.pdf before! Ah, so much to learn...
+
+-Jack
+
+Rob Guglielmetti wrote:
+
+>>Hey Rob,
+>>
+>>I think learning the functional language is kind of a zen thing. The
+>>best way to learn is to look at some of the simpler cals to see how
+>>things are done. There are also some examples in RwR and rayinit.cal is
+>>the source of many useful things. And also in this case the man page for
+>>pcomb also has some variables that are specific to that tool (li, lo...)
+>>    
+>>
+>
+>Thanks Jack, and thanks Kirk, that filefmts.pdf has a boatload of info
+>about this stuff.  Carsten Bauer actually tried to beat this stuff into my
+>head a couple months ago, and there was a glimmer of understanding, but
+>then I got distracted, and now I am back to square one on this. *sigh*  So
+>much to learn.
+>
+>Jack, I presume you used pcomb to do that shading impact study that you
+>presented when we were in Berkeley?
+>
+>- Rob Guglielmetti
+>www.rumblestrip.org
+>
+>_______________________________________________
+>Radiance-general mailing list
+>Radiance-general@radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>  
+>
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20050203/fb252ae4/attachment.htm
+From jedev at visarc.com  Thu Feb  3 21:26:16 2005
+From: jedev at visarc.com (Jack de Valpine)
+Date: Thu Feb  3 21:26:51 2005
+Subject: [Radiance-general] falsecolor and specific isocontours
+In-Reply-To: <53360.209.212.87.250.1107461430.squirrel@209.212.87.250>
+References: <420206AD.7000500@familyhealth.com.au><75714b3918bae0ee21f504fe17f0d4ef@gmail.com>	<48956.209.212.87.250.1107450673.squirrel@209.212.87.250>	<005e01c50a21$a76ca180$53000080@pnac>	<52815.209.212.87.250.1107459779.squirrel@209.212.87.250>	<42028303.2060606@visarc.com>
+	<53360.209.212.87.250.1107461430.squirrel@209.212.87.250>
+Message-ID: <420288E8.7040900@visarc.com>
+
+Hey,
+
+I'll also say thanks to Kirk as well! I feel like a dummy, I had never 
+seen filefmts.pdf before! Ah, so much to learn...
+
+-Jack
+
+Rob Guglielmetti wrote:
+
+>>Hey Rob,
+>>
+>>I think learning the functional language is kind of a zen thing. The
+>>best way to learn is to look at some of the simpler cals to see how
+>>things are done. There are also some examples in RwR and rayinit.cal is
+>>the source of many useful things. And also in this case the man page for
+>>pcomb also has some variables that are specific to that tool (li, lo...)
+>>    
+>>
+>
+>Thanks Jack, and thanks Kirk, that filefmts.pdf has a boatload of info
+>about this stuff.  Carsten Bauer actually tried to beat this stuff into my
+>head a couple months ago, and there was a glimmer of understanding, but
+>then I got distracted, and now I am back to square one on this. *sigh*  So
+>much to learn.
+>
+>Jack, I presume you used pcomb to do that shading impact study that you
+>presented when we were in Berkeley?
+>
+>- Rob Guglielmetti
+>www.rumblestrip.org
+>
+>_______________________________________________
+>Radiance-general mailing list
+>Radiance-general@radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>  
+>
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20050203/aca13843/attachment.html
+From jedev at visarc.com  Thu Feb  3 21:28:24 2005
+From: jedev at visarc.com (Jack de Valpine)
+Date: Thu Feb  3 21:28:59 2005
+Subject: [Radiance-general] functional language
+In-Reply-To: <53664.209.212.87.250.1107462184.squirrel@209.212.87.250>
+References: <20050203200457.7B5BC1C000AB@mwinf1109.wanadoo.fr>
+	<53664.209.212.87.250.1107462184.squirrel@209.212.87.250>
+Message-ID: <42028968.2070804@visarc.com>
+
+Hi Rob,
+
+WE - White Efficacy, it is in the man page for pcomb. There are a lot of 
+variables floating around in the man page so it is a bit hard to find on 
+the first read or 10.
+
+-Jack
+
+Rob Guglielmetti wrote:
+
+>>Good idea, the functional language is still something of a mistery, also
+>>coverage of it in 'rendering with radiance' isn't over elaborate. Even
+>>though you would have some notion on how it operates, some examples would
+>>give quite some insight in the matter. How about a .cal repository, linked
+>>from the Radiance Wiki, explaining would they actually do? That could give
+>>some insight into the bowels of Radiance?
+>>    
+>>
+>
+>Definitely check out that filefmts.pdf, and the .cal files that come with
+>Radiance.  And Jack's right, some of the esamples on the pcomb manpage are
+>somewhat enlightening as to hoe this all works.  But yeah, zen is
+>required.  I'm not there yet.
+>
+>Also, the function that started this conversation, WE, is not listed in
+>filefmts.pdf, nor do I see it in rayinit.cal.  Where the heck is it?
+>
+>- Rob Guglielmetti
+>www.rumblestrip.org
+>
+>_______________________________________________
+>Radiance-general mailing list
+>Radiance-general@radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>  
+>
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20050203/3eda192f/attachment-0001.htm
+From rpg at rumblestrip.org  Thu Feb  3 21:32:16 2005
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Thu Feb  3 21:32:35 2005
+Subject: [Radiance-general] falsecolor and specific isocontours
+In-Reply-To: <420288E8.7040900@visarc.com>
+References: <420206AD.7000500@familyhealth.com.au><75714b3918bae0ee21f504fe17f0d4ef@gmail.com>	<48956.209.212.87.250.1107450673.squirrel@209.212.87.250>	<005e01c50a21$a76ca180$53000080@pnac>	<52815.209.212.87.250.1107459779.squirrel@209.212.87.250>	<42028303.2060606@visarc.com>
+	<53360.209.212.87.250.1107461430.squirrel@209.212.87.250>
+	<420288E8.7040900@visarc.com>
+Message-ID: <53814.209.212.87.250.1107462736.squirrel@209.212.87.250>
+
+
+> Hey,
+>
+> I'll also say thanks to Kirk as well! I feel like a dummy, I had never
+> seen filefmts.pdf before! Ah, so much to learn...
+
+It has been said that everything in Radiance has been documented --
+somewhere.  The trick is finding it all.  Or something like that.  I can't
+remember if it was Schorsch or Greg who said this, nor can I remember
+where I read it, but I *do* remember reading it.
+
+- Rob Guglielmetti
+www.rumblestrip.org
+
+From rpg at rumblestrip.org  Thu Feb  3 21:34:27 2005
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Thu Feb  3 21:34:46 2005
+Subject: [Radiance-general] functional language
+In-Reply-To: <42028968.2070804@visarc.com>
+References: <20050203200457.7B5BC1C000AB@mwinf1109.wanadoo.fr>
+	<53664.209.212.87.250.1107462184.squirrel@209.212.87.250>
+	<42028968.2070804@visarc.com>
+Message-ID: <53886.209.212.87.250.1107462867.squirrel@209.212.87.250>
+
+
+> Hi Rob,
+>
+> WE - White Efficacy, it is in the man page for pcomb. There are a lot of
+> variables floating around in the man page so it is a bit hard to find on
+> the first read or 10.
+
+Ah!  Thanks.  Learning a lot today...
+
+- Rob Guglielmetti
+www.rumblestrip.org
+
+From gregoryjward at gmail.com  Fri Feb  4 08:09:33 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri Feb  4 08:11:56 2005
+Subject: [Radiance-general] Deterministic calculations with Radiance
+In-Reply-To: <42024888.7060008@familyhealth.com.au>
+References: <4200D1F7.1050301@familyhealth.com.au>	<ef648a50e16632814f6691b27e17771b@gmail.com>	<20050202171657.GB1492@panix.com>	<50126ea9b69a791e789d7f218f8f0457@gmail.com>	<4201FAE9.5000908@familyhealth.com.au>
+	<c7aa57658f8552659e5a2f86f2507db6@gmail.com>
+	<42024888.7060008@familyhealth.com.au>
+Message-ID: <B8AA1C68-767B-11D9-82EF-000A95BB392A@gmail.com>
+
+Yes, but what's the point?  A change in the compiler or a minor 
+alteration of the code that makes no difference to the results but 
+affects the order in which rays are traced will completely defeat such 
+a test.  How can we do regression testing with something that unstable?
+
+-Greg
+
+> From: Christopher Kings-Lynne <chriskl@familyhealth.com.au>
+> Date: February 3, 2005 7:51:36 AM PST
+>
+>> Say you are tracing your 10,000,000 rays to generate a test image 
+>> that you hope to compare to the official result for Radiance 3.6.1.
+>
+> Ah, what I meant is comparing ourselves to ourselves, on the same PC...
+>
+> Would that be doable?
+>
+> Chris
+
+
+From gregoryjward at gmail.com  Fri Feb  4 08:27:03 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri Feb  4 08:27:48 2005
+Subject: [Radiance-general] functional language
+In-Reply-To: <53886.209.212.87.250.1107462867.squirrel@209.212.87.250>
+References: <20050203200457.7B5BC1C000AB@mwinf1109.wanadoo.fr>
+	<53664.209.212.87.250.1107462184.squirrel@209.212.87.250>
+	<42028968.2070804@visarc.com>
+	<53886.209.212.87.250.1107462867.squirrel@209.212.87.250>
+Message-ID: <2A6850B5-767E-11D9-82EF-000A95BB392A@gmail.com>
+
+Hi Rob et al.,
+
+The pcomb(1) man page really needs to be reformatted.  Originally, 
+there were just a couple of special-purpose variables for this tool, 
+but I kept adding more and more and sticking them in the man page until 
+I couldn't find anything there when I looked for it there, myself.  
+I'll see if I can get around to reformatting it tomorrow.
+
+Regarding "fileformats.pdf," this was a hopeful chapter in RwR along 
+with the most essential reference manual ("refman.pdf") and a source 
+tree guide, but the book was getting to long for Morgan Kaufmann so 
+they were all relegated to the CD-ROM, along with all the man pages.  
+(I don't think anyone really wants a full book of Radiance man pages as 
+part of the text, so that's OK.)  The materials description file 
+("materials.pdf") is also important reading for anyone who is doing 
+critical work on Radiance materials.
+
+Another basic introduction to Radiance and its uses is given in the 
+lecture notes files "backgrnd.pdf", "analysis.pdf" and "rad.pdf".  
+These files as well as the above are of course linked on radsite:
+
+	http://radsite.lbl.gov/radiance/framer.html
+
+Some of these materials are a bit dated, but that comes with the 
+territory....
+
+-Greg
+
+> From: "Rob Guglielmetti" <rpg@rumblestrip.org>
+> Date: February 3, 2005 12:34:27 PM PST
+>> Hi Rob,
+>>
+>> WE - White Efficacy, it is in the man page for pcomb. There are a lot 
+>> of
+>> variables floating around in the man page so it is a bit hard to find 
+>> on
+>> the first read or 10.
+>
+> Ah!  Thanks.  Learning a lot today...
+>
+> - Rob Guglielmetti
+
+
+From grobe at gmx.net  Fri Feb  4 15:47:12 2005
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Fri Feb  4 15:47:44 2005
+Subject: [Radiance-general] sharing indirect values for parallel
+	processing?
+In-Reply-To: <Pine.BSF.4.58.0502030812560.40694@emancholl.pair.com>
+References: <B5C4B063-7530-11D9-8104-000A959DDB22@gmx.net>
+	<68bb737584aec2065da1f49db1b02eeb@gmail.com>
+	<4201F26F.9030809@familyhealth.com.au>
+	<Pine.BSF.4.58.0502030812560.40694@emancholl.pair.com>
+Message-ID: <A746D2F0-76BB-11D9-8D94-000A959DDB22@gmx.net>
+
+> The most straightforward solution to our problem would probably
+> be to use lock files, as Greg suggested in earlier discussions.
+> Unfortunately nobody has found the time yet to actually implement
+> that. If anyone wants to volunteer, please move the discussion of
+> your proposal to the dev-list.
+
+Hi,
+
+as I won't be able to help on the implementation, I won't bring this to 
+the dev-list for now ;-) However, I guess the only needed feature of 
+the shared fs used is a working byte range locking, right? So I will 
+find out if the fs provided by openmosix (mfs) has this feature, which 
+would make a set of mosix nodes a great radiance installation. I don't 
+really want to spend hours on a working nfs setup to share just ONE 
+file ;-) at least if it is not really necessary.
+
+CU Lars.
+
+
+From schorsch at schorsch.com  Fri Feb  4 15:59:06 2005
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Fri Feb  4 15:59:37 2005
+Subject: [Radiance-general] sharing indirect values for parallel
+	processing?
+In-Reply-To: <A746D2F0-76BB-11D9-8D94-000A959DDB22@gmx.net>
+References: <B5C4B063-7530-11D9-8104-000A959DDB22@gmx.net>
+	<68bb737584aec2065da1f49db1b02eeb@gmail.com>
+	<4201F26F.9030809@familyhealth.com.au>
+	<Pine.BSF.4.58.0502030812560.40694@emancholl.pair.com>
+	<A746D2F0-76BB-11D9-8D94-000A959DDB22@gmx.net>
+Message-ID: <Pine.BSF.4.58.0502040950260.51654@emancholl.pair.com>
+
+Lars O. Grobe wrote:
+
+> > The most straightforward solution to our problem would probably
+> > be to use lock files, as Greg suggested in earlier discussions.
+> > Unfortunately nobody has found the time yet to actually implement
+> > that. If anyone wants to volunteer, please move the discussion of
+> > your proposal to the dev-list.
+>
+> Hi,
+>
+> as I won't be able to help on the implementation, I won't bring this to
+> the dev-list for now ;-) However, I guess the only needed feature of
+> the shared fs used is a working byte range locking, right? So I will
+> find out if the fs provided by openmosix (mfs) has this feature, which
+> would make a set of mosix nodes a great radiance installation.
+
+Ambient files are only written at the end, so file locking
+and byte range locking have the same effect.
+We also need a solution that works on all platforms and on
+all file systems. Requiring third party software just to get
+reliable file sharing is clearly out of the question.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From jedev at visarc.com  Fri Feb  4 17:12:53 2005
+From: jedev at visarc.com (Jack de Valpine)
+Date: Fri Feb  4 17:13:34 2005
+Subject: [Radiance-general] sharing indirect values for parallel
+	processing?
+In-Reply-To: <Pine.BSF.4.58.0502040950260.51654@emancholl.pair.com>
+References: <B5C4B063-7530-11D9-8104-000A959DDB22@gmx.net>	<68bb737584aec2065da1f49db1b02eeb@gmail.com>	<4201F26F.9030809@familyhealth.com.au>	<Pine.BSF.4.58.0502030812560.40694@emancholl.pair.com>	<A746D2F0-76BB-11D9-8D94-000A959DDB22@gmx.net>
+	<Pine.BSF.4.58.0502040950260.51654@emancholl.pair.com>
+Message-ID: <42039F05.40103@visarc.com>
+
+Hi all interested,
+
+Cross posting to dev as this is probably a more appropriate space for 
+this conversation.
+
+OK, let's see who I can irritate the most...
+
+As a refresher, there have been numerous threads on this topic on 
+Radiance Dev (in no order other than my searching through my mail):
+
+    * Before we give up on lock files...
+    * multiprocessor systems, Radiance and you
+    * as well as others if you want to delve in to the depths of the pre
+      radiance-online mailing list archives
+
+In general, I recall that there are a couple of directions to go:
+
+    * network filesystem locking - such as NFS or Samba, where we are
+      dependant on either the locking mechanism actually working (eg
+      NFS) or the filesystem (Samba) being installed
+    * client/server - probably more hairy from a implementation
+      standpoint as well as from a porting point of view. Although,
+      perhaps guaranteeing the best performance for selected os'?
+
+Not to rehash old stuff, but could one of the more knowledgeable 
+developers (Greg, Georg, Peter, Carsten...?) give us a refresher on what 
+the options are and perhaps some idea of the time that would be needed 
+to implement a workings solution? Locking is a recurring problem. It 
+would be nice to figure a consensus solution (ie what direction to 
+pursue) and then a strategy for implementation (ie resources, person(s), 
+money...), so perhaps we as a community could figure out how to move 
+this forward (if as always there is enough interest).
+
+I must admit to having run into this wall on a variety of occasions. NFS 
+(v3) on linux is "supposed" to lock correctly (sync mode on the 
+mount/fstab), as a test there is a test suite from Sun 
+(www.connectathon.org) that is supposed to test the nfs server. I 
+remember running this test suite in the past and getting positive 
+results on linux. Nevertheless, I have found it extremely difficult to 
+get working results with a networked image render (eg rpiece distributed 
+over multiple cpu nodes). Either there end up being problems with 
+ambient values between image cells and/or with locking of the syncfile 
+for distributing image cells to different machines. I even implemented a 
+client/server in perl at one point to try to fight this problem with the 
+syncfile (with partial success as I recall and perhaps more if my time 
+would allow). Not to cause offense... But is it possible that the 
+locking code in Radiance needs to be checked itself?
+
+In brief follow-up to Lar's comments about openmosix/mosix. As 
+understand it the msf filesystem, is supposed to implement locking 
+correctly. There are also other more sophisticated network filesystems 
+such as GFS (Systina, I think and commercial), OpenGFS and many others. 
+However these all require separate special install and perhaps 
+modification of the kernel or installation of a modified kernel, and 
+there is serious question as too whether these are portable to other 
+os's such as MS version whatever (as the main offender of portability).
+
+Note also that I tried openmosix at one point. One problem that I found 
+is that if you start multiple large (eg memory size) jobs on the master 
+node then this can lead to excessive paging and since the master node 
+tries to start the jobs at the same time into its own memory space prior 
+to migrating them off to other nodes in the cluster. So if your job 
+requires 1 Gig of memory to hold the scene and you want to run 10 jobs 
+on 5 dual processor nodes with each node having 2 Gig of memory, if you 
+start all the jobs on one node then you are hosed. If you start them on 
+individual nodes, then you should be using a different clustering 
+solution since this completely negates the value of the migration 
+algorithms in openmosix. Now it has been a while since I used OpenMosix, 
+so perhaps things are different...
+
+Note also that named pipes do not work (at least back in mid 2003, you 
+can see my brief inquiry to the openmosix list and Moshe Bar's even 
+briefer reply back in April of 2003) on OpenMosix. So if you want to do 
+memory sharing on multiprocessor nodes you have to roll your own batch 
+job distributor.
+
+-Jack de Valpine
+
+Georg Mischler wrote:
+
+>Lars O. Grobe wrote:
+>
+>  
+>
+>>>The most straightforward solution to our problem would probably
+>>>be to use lock files, as Greg suggested in earlier discussions.
+>>>Unfortunately nobody has found the time yet to actually implement
+>>>that. If anyone wants to volunteer, please move the discussion of
+>>>your proposal to the dev-list.
+>>>      
+>>>
+>>Hi,
+>>
+>>as I won't be able to help on the implementation, I won't bring this to
+>>the dev-list for now ;-) However, I guess the only needed feature of
+>>the shared fs used is a working byte range locking, right? So I will
+>>find out if the fs provided by openmosix (mfs) has this feature, which
+>>would make a set of mosix nodes a great radiance installation.
+>>    
+>>
+>
+>Ambient files are only written at the end, so file locking
+>and byte range locking have the same effect.
+>We also need a solution that works on all platforms and on
+>all file systems. Requiring third party software just to get
+>reliable file sharing is clearly out of the question.
+>
+>
+>-schorsch
+>
+>  
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20050204/11a788c3/attachment.htm
+From kthibault at biomechanicsinc.com  Fri Feb  4 17:18:10 2005
+From: kthibault at biomechanicsinc.com (Kirk Thibault)
+Date: Fri Feb  4 17:18:42 2005
+Subject: [Radiance-general] falsecolor and specific isocontours
+In-Reply-To: <420288D9.1080305@visarc.com>
+References: <420206AD.7000500@familyhealth.com.au><75714b3918bae0ee21f504fe17f0d4ef@gmail.com>	<48956.209.212.87.250.1107450673.squirrel@209.212.87.250>	<005e01c50a21$a76ca180$53000080@pnac>	<52815.209.212.87.250.1107459779.squirrel@209.212.87.250>	<42028303.2060606@visarc.com>
+	<53360.209.212.87.250.1107461430.squirrel@209.212.87.250>
+	<420288D9.1080305@visarc.com>
+Message-ID: <5728fb4693eb65c2a8f904b67b9b321d@biomechanicsinc.com>
+
+You can say thanks to Greg - I spent some frustrating hours trying to 
+determine the syntax of the conditional "if" -
+I wasn't sure if it was some language that most unix people knew, or 
+some specific scripting thing, or some C variant.
+
+Turns out Greg made up a whole new functional language....I thought, 
+"you've got to freakin' be kidding me".  At least
+I felt better knowing that this was a Radiance-specific thing and I was 
+slightly less of an idiot than I normally am,
+and it gave me an even deeper appreciation of Greg's effort and 
+commitment to Radiance.
+
+There is also a discussion of the functional Language in Rendering With 
+Radiance - don't have the book here at work,
+so I don't know the page numbers off the top of my head.
+
+Kirk
+
+On Feb 3, 2005, at 3:26 PM, Jack de Valpine wrote:
+
+>  Hey,
+>
+>  I'll also say thanks to Kirk as well! I feel like a dummy, I had 
+> never seen filefmts.pdf before! Ah, so much to learn...
+>
+>  -Jack
+>
+>  Rob Guglielmetti wrote:
+>
+> Hey Rob,
+>
+> I think learning the functional language is kind of a zen thing. The
+> best way to learn is to look at some of the simpler cals to see how
+> things are done. There are also some examples in RwR and rayinit.cal is
+> the source of many useful things. And also in this case the man page 
+> for
+> pcomb also has some variables that are specific to that tool (li, 
+> lo...)
+>
+> Thanks Jack, and thanks Kirk, that filefmts.pdf has a boatload of info
+> about this stuff.  Carsten Bauer actually tried to beat this stuff 
+> into my
+> head a couple months ago, and there was a glimmer of understanding, but
+> then I got distracted, and now I am back to square one on this. *sigh* 
+>  So
+> much to learn.
+>
+> Jack, I presume you used pcomb to do that shading impact study that you
+> presented when we were in Berkeley?
+>
+> - Rob Guglielmetti
+> www.rumblestrip.org
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>
+>
+>
+> -- 
+> #       John E. de Valpine
+> #       president
+> #
+> #       visarc incorporated
+> #       http://www.visarc.com
+> #
+> #       channeling technology for superior design and construction
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: not available
+Type: text/enriched
+Size: 2619 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20050204/beb18a46/attachment.bin
+From jedev at visarc.com  Fri Feb  4 17:50:33 2005
+From: jedev at visarc.com (Jack de Valpine)
+Date: Fri Feb  4 17:51:07 2005
+Subject: [Radiance-general] falsecolor and specific isocontours
+In-Reply-To: <5728fb4693eb65c2a8f904b67b9b321d@biomechanicsinc.com>
+References: <420206AD.7000500@familyhealth.com.au><75714b3918bae0ee21f504fe17f0d4ef@gmail.com>	<48956.209.212.87.250.1107450673.squirrel@209.212.87.250>	<005e01c50a21$a76ca180$53000080@pnac>	<52815.209.212.87.250.1107459779.squirrel@209.212.87.250>	<42028303.2060606@visarc.com>	<53360.209.212.87.250.1107461430.squirrel@209.212.87.250>	<420288D9.1080305@visarc.com>
+	<5728fb4693eb65c2a8f904b67b9b321d@biomechanicsinc.com>
+Message-ID: <4203A7D9.20207@visarc.com>
+
+Hey Kirk,
+
+I originally used trial and error, some programming knowledge, existing 
+cal files and the "Texturing and Modeling" text to learn how to 
+implement procedural materials. Although, as far as I am concerned there 
+is a huge amount still to learn!
+
+-Jack
+
+Kirk Thibault wrote:
+
+> You can say thanks to Greg - I spent some frustrating hours trying to 
+> determine the syntax of the conditional "if" -
+> I wasn't sure if it was some language that most unix people knew, or 
+> some specific scripting thing, or some C variant.
+>
+> Turns out Greg made up a whole new functional language....I thought, 
+> "you've got to freakin' be kidding me". At least
+> I felt better knowing that this was a Radiance-specific thing and I 
+> was slightly less of an idiot than I normally am,
+> and it gave me an even deeper appreciation of Greg's effort and 
+> commitment to Radiance.
+>
+> There is also a discussion of the functional Language in Rendering 
+> With Radiance - don't have the book here at work,
+> so I don't know the page numbers off the top of my head.
+>
+> Kirk
+>
+> On Feb 3, 2005, at 3:26 PM, Jack de Valpine wrote:
+>
+>     Hey,
+>
+>     I'll also say thanks to Kirk as well! I feel like a dummy, I had
+>     never seen filefmts.pdf before! Ah, so much to learn...
+>
+>     -Jack
+>
+>     Rob Guglielmetti wrote:
+>
+>     Hey Rob,
+>
+>     I think learning the functional language is kind of a zen thing. The
+>     best way to learn is to look at some of the simpler cals to see how
+>     things are done. There are also some examples in RwR and
+>     rayinit.cal is
+>     the source of many useful things. And also in this case the man
+>     page for
+>     pcomb also has some variables that are specific to that tool (li,
+>     lo...)
+>
+>     Thanks Jack, and thanks Kirk, that filefmts.pdf has a boatload of
+>     info
+>     about this stuff. Carsten Bauer actually tried to beat this stuff
+>     into my
+>     head a couple months ago, and there was a glimmer of
+>     understanding, but
+>     then I got distracted, and now I am back to square one on this.
+>     *sigh* So
+>     much to learn.
+>
+>     Jack, I presume you used pcomb to do that shading impact study
+>     that you
+>     presented when we were in Berkeley?
+>
+>     - Rob Guglielmetti
+>     www.rumblestrip.org
+>
+>     _______________________________________________
+>     Radiance-general mailing list
+>     Radiance-general@radiance-online.org
+>     http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>
+>
+>
+>     -- 
+>     # John E. de Valpine
+>     # president
+>     #
+>     # visarc incorporated
+>     # http://www.visarc.com
+>     #
+>     # channeling technology for superior design and construction
+>     _______________________________________________
+>     Radiance-general mailing list
+>     Radiance-general@radiance-online.org
+>     http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>------------------------------------------------------------------------
+>
+>_______________________________________________
+>Radiance-general mailing list
+>Radiance-general@radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-general
+>  
+>
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20050204/e060f753/attachment.htm
+From randolph at panix.com  Fri Feb  4 18:48:23 2005
+From: randolph at panix.com (Randolph Fritz)
+Date: Fri Feb  4 18:48:52 2005
+Subject: [Radiance-general] Deterministic calculations with Radiance
+In-Reply-To: <B8AA1C68-767B-11D9-82EF-000A95BB392A@gmail.com>
+References: <4200D1F7.1050301@familyhealth.com.au>
+	<ef648a50e16632814f6691b27e17771b@gmail.com>
+	<20050202171657.GB1492@panix.com>
+	<50126ea9b69a791e789d7f218f8f0457@gmail.com>
+	<4201FAE9.5000908@familyhealth.com.au>
+	<c7aa57658f8552659e5a2f86f2507db6@gmail.com>
+	<42024888.7060008@familyhealth.com.au>
+	<B8AA1C68-767B-11D9-82EF-000A95BB392A@gmail.com>
+Message-ID: <20050204174823.GB9233@panix.com>
+
+On Thu, Feb 03, 2005 at 11:09:33PM -0800, Greg Ward wrote:
+> Yes, but what's the point?  A change in the compiler or a minor 
+> alteration of the code that makes no difference to the results but 
+> affects the order in which rays are traced will completely defeat such 
+> a test.  How can we do regression testing with something that unstable?
+
+Could we perhaps "blur" the two light maps before comparing them?  
+
+Randolph
+
+From gregoryjward at gmail.com  Fri Feb  4 19:04:19 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri Feb  4 19:05:53 2005
+Subject: [Radiance-general] Deterministic calculations with Radiance
+In-Reply-To: <20050204174823.GB9233@panix.com>
+References: <4200D1F7.1050301@familyhealth.com.au>
+	<ef648a50e16632814f6691b27e17771b@gmail.com>
+	<20050202171657.GB1492@panix.com>
+	<50126ea9b69a791e789d7f218f8f0457@gmail.com>
+	<4201FAE9.5000908@familyhealth.com.au>
+	<c7aa57658f8552659e5a2f86f2507db6@gmail.com>
+	<42024888.7060008@familyhealth.com.au>
+	<B8AA1C68-767B-11D9-82EF-000A95BB392A@gmail.com>
+	<20050204174823.GB9233@panix.com>
+Message-ID: <359f5976f8b243e21c617b1e1c4b5b2c@gmail.com>
+
+Perhaps.  If the pixel sampling rate were high enough (e.g. pfilt -x 
+/10 -y /10), you might get some stability.  At that point, you 
+shouldn't have to worry about the random number generator.  However, 
+the MC ray tracing literature is full of examples where even 200+ 
+samples/pixel is not enough to avoid large variance in some regions, 
+and the same can be true for Radiance, especially with specular 
+samples.
+
+-G
+
+> From: Randolph Fritz <randolph@panix.com>
+> Date: February 4, 2005 9:48:23 AM PST
+>
+> On Thu, Feb 03, 2005 at 11:09:33PM -0800, Greg Ward wrote:
+>> Yes, but what's the point?  A change in the compiler or a minor
+>> alteration of the code that makes no difference to the results but
+>> affects the order in which rays are traced will completely defeat such
+>> a test.  How can we do regression testing with something that 
+>> unstable?
+>
+> Could we perhaps "blur" the two light maps before comparing them?
+>
+> Randolph
+
+
+From jlai at lbl.gov  Fri Feb  4 21:51:54 2005
+From: jlai at lbl.gov (judy lai)
+Date: Fri Feb  4 21:47:11 2005
+Subject: [Radiance-general] Creating movie from still images
+In-Reply-To: <c8dafc9b0502041221532e008d@mail.gmail.com>
+References: <c8dafc9b05020412157f6eaa95@mail.gmail.com>
+	<4203DA37.8090001@lbl.gov>
+	<c8dafc9b0502041221532e008d@mail.gmail.com>
+Message-ID: <4203E06A.1050202@lbl.gov>
+
+hi Folks,
+
+is there a command (or series of commands) in unix that can generate a 
+movie/animation from a series of still images (.gif, .jpg, .tif)? 
+I need to automate the generation of a movie with scripts.  It will just 
+be a sequence of still images.
+
+thanks,
+
+judy
+
+
+From pisuke at blueyonder.co.uk  Fri Feb  4 22:07:32 2005
+From: pisuke at blueyonder.co.uk (Francesco Anselmo)
+Date: Fri Feb  4 22:08:28 2005
+Subject: [Radiance-general] Creating movie from still images
+In-Reply-To: <4203E06A.1050202@lbl.gov>
+References: <c8dafc9b05020412157f6eaa95@mail.gmail.com>
+	<4203DA37.8090001@lbl.gov> <c8dafc9b0502041221532e008d@mail.gmail.com>
+	<4203E06A.1050202@lbl.gov>
+Message-ID: <1107551252.3284.51.camel@leviathan>
+
+Hi Judy,
+
+I use ImageMagick's animate to preview the animation
+and mplayer/mencoder (http://mplayerhq.hu/homepage/design7/dload.html)
+to encode the final movie (with mpeg4 or some other codec).
+
+The command line can be something like this
+$ mencoder "mf://*.jpg" -mf fps=25 -o output.avi -ovc lavc \
+  -lavcopts  vcodec=mpeg4
+
+but it may become more complicated depending on your needs
+(like using music, specifying codec options, etc.).
+
+
+Francesco
+
+
+
+From gregoryjward at gmail.com  Fri Feb  4 22:09:14 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri Feb  4 22:09:59 2005
+Subject: [Radiance-general] Creating movie from still images
+In-Reply-To: <4203E06A.1050202@lbl.gov>
+References: <c8dafc9b05020412157f6eaa95@mail.gmail.com>
+	<4203DA37.8090001@lbl.gov>
+	<c8dafc9b0502041221532e008d@mail.gmail.com>
+	<4203E06A.1050202@lbl.gov>
+Message-ID: <a296a056e8ac6da1d909f88658693986@gmail.com>
+
+I actually managed to download all the TIFF images, and was thinking 
+about making some animations from them.  QuickTime Pro does it pretty 
+easily, even if it's not command-line based.  If you find something 
+that will work for you, though, great!
+
+-G
+
+> From: judy lai <jlai@lbl.gov>
+> Date: February 4, 2005 12:51:54 PM PST
+>
+> hi Folks,
+>
+> is there a command (or series of commands) in unix that can generate a 
+> movie/animation from a series of still images (.gif, .jpg, .tif)? I 
+> need to automate the generation of a movie with scripts.  It will just 
+> be a sequence of still images.
+>
+> thanks,
+>
+> judy
+
+
+From rpg at rumblestrip.org  Fri Feb  4 22:13:12 2005
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Fri Feb  4 22:14:01 2005
+Subject: [Radiance-general] Creating movie from still images
+In-Reply-To: <4203E06A.1050202@lbl.gov>
+References: <c8dafc9b05020412157f6eaa95@mail.gmail.com>
+	<4203DA37.8090001@lbl.gov> <c8dafc9b0502041221532e008d@mail.gmail.com>
+	<4203E06A.1050202@lbl.gov>
+Message-ID: <4744.209.212.87.250.1107551592.squirrel@209.212.87.250>
+
+
+> is there a command (or series of commands) in unix that can generate a
+> movie/animation from a series of still images (.gif, .jpg, .tif)?
+> I need to automate the generation of a movie with scripts.  It will just
+> be a sequence of still images.
+
+Hi Judy,
+
+Gifsicle will make an animated gif for you:
+http://www.lcdf.org/~eddietwo/gifsicle/
+
+I've used MakeAVI for years.  This will make you a nice AVI file using a
+variety of codecs, but it's a Windows program:
+http://makeavi.sourceforge.net/
+
+These are quick & dirty, but easy.  The animated gif is nice because
+*everyone* has something to play those back, but you have no control over
+the playback process.  An mpeg or something would be better because of the
+better playback control.  For this you need mencoder or something Jack
+uses and I forgot the name.  I never did figure out how to use mencoder,
+but I'd like to.  I think Jack and Francesco have some experience with
+this stuff...
+
+- Rob Guglielmetti
+www.rumblestrip.org
+
+From rpg at rumblestrip.org  Fri Feb  4 22:20:14 2005
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Fri Feb  4 22:20:57 2005
+Subject: [Radiance-general] Creating movie from still images
+In-Reply-To: <1107551252.3284.51.camel@leviathan>
+References: <c8dafc9b05020412157f6eaa95@mail.gmail.com>
+	<4203DA37.8090001@lbl.gov> <c8dafc9b0502041221532e008d@mail.gmail.com>
+	<4203E06A.1050202@lbl.gov> <1107551252.3284.51.camel@leviathan>
+Message-ID: <4896.209.212.87.250.1107552014.squirrel@209.212.87.250>
+
+
+
+> The command line can be something like this
+> $ mencoder "mf://*.jpg" -mf fps=25 -o output.avi -ovc lavc \
+>   -lavcopts  vcodec=mpeg4
+
+Sheesh, I send off an email lamenting my inability to get mencoder to
+work, and then this shows up in my inbox.  Thanks Fransesco, I'll have
+another go at things!  Baciamo le mani!
+
+- Rob Guglielmetti
+www.rumblestrip.org
+
+From jedev at visarc.com  Sat Feb  5 04:12:39 2005
+From: jedev at visarc.com (Jack de Valpine)
+Date: Sat Feb  5 04:13:15 2005
+Subject: [Radiance-general] Creating movie from still images
+In-Reply-To: <4896.209.212.87.250.1107552014.squirrel@209.212.87.250>
+References: <c8dafc9b05020412157f6eaa95@mail.gmail.com>	<4203DA37.8090001@lbl.gov>
+	<c8dafc9b0502041221532e008d@mail.gmail.com>	<4203E06A.1050202@lbl.gov>
+	<1107551252.3284.51.camel@leviathan>
+	<4896.209.212.87.250.1107552014.squirrel@209.212.87.250>
+Message-ID: <420439A7.6060902@visarc.com>
+
+ffmpeg.sourgeforge.net
+
+I think that this may be under the hood of mencoder, not sure though.
+
+-Jack
+
+Rob Guglielmetti wrote:
+
+>  
+>
+>>The command line can be something like this
+>>$ mencoder "mf://*.jpg" -mf fps=25 -o output.avi -ovc lavc \
+>>  -lavcopts  vcodec=mpeg4
+>>    
+>>
+>
+>Sheesh, I send off an email lamenting my inability to get mencoder to
+>work, and then this shows up in my inbox.  Thanks Fransesco, I'll have
+>another go at things!  Baciamo le mani!
+>
+>- Rob Guglielmetti
+>www.rumblestrip.org
+>
+>_______________________________________________
+>Radiance-general mailing list
+>Radiance-general@radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>  
+>
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20050204/51d41255/attachment.html
+From canoe at onetel.com  Sat Feb  5 10:55:18 2005
+From: canoe at onetel.com (James Lee)
+Date: Sat Feb  5 10:56:20 2005
+Subject: [Radiance-general] Creating movie from still images
+In-Reply-To: <4203E06A.1050202@lbl.gov>
+References: <c8dafc9b05020412157f6eaa95@mail.gmail.com>
+	<4203DA37.8090001@lbl.gov>
+	<c8dafc9b0502041221532e008d@mail.gmail.com>
+	<4203E06A.1050202@lbl.gov>
+Message-ID: <20050205.9551800.329941838@landeck.jamesipoos.com>
+
+On 04/02/05, 20:51:54, judy lai <jlai@lbl.gov> wrote regarding 
+[Radiance-general] Creating movie from still images:
+
+> is there a command (or series of commands) in unix that can generate a
+> movie/animation from a series of still images (.gif, .jpg, .tif)?
+> I need to automate the generation of a movie with scripts.
+
+For simple sequences I use Imagemagik's convert to make an mng from 
+jpegs.
+
+    convert -delay 8 pic_??.jpeg animation.mng
+
+I view with the contrib mngview from the libmng distribution or view
+with a capable web browser.
+
+
+Refs:
+http://www.imagemagick.org/
+http://www.libmng.com/
+
+From rfmurray at sas.upenn.edu  Sun Feb  6 23:18:38 2005
+From: rfmurray at sas.upenn.edu (Richard Murray)
+Date: Sun Feb  6 23:19:06 2005
+Subject: [Radiance-general] plasfunc
+Message-ID: <0CC69F71-788D-11D9-9EBF-000A9599B040@sas.upenn.edu>
+
+Any advice on using the plasfunc material type?  I've searched the 
+Radiance documentation, digests, etc., and the following was the best I 
+could come up with, but it doesn't seem to work.  Any advice would be 
+welcome.
+
+I think I should be able to define a material like this:
+
+     void plasfunc myplastic
+     2 refl mybrdf.cal
+     0
+     4 1 1 1 0
+
+and then in a file mybrdf.cal, put an arbitrary definition for the BRDF 
+function refl, something like this:
+
+     refl(x,y,z,area) = (x*Nx + y*Ny + z*Nz)^10;
+
+(This isn't actually the form of BRDF I'm interested in.)  Then, I 
+define an object with material myplastic:
+
+     myplastic sphere ball
+     0
+     0
+     4 0 0 .5 .5
+
+When I render this, though (with light sources, other objects, etc. 
+added), the sphere just looks Lambertian.  What am I doing wrong?
+
+Thanks,
+
+Richard
+
+
+From gregoryjward at gmail.com  Mon Feb  7 03:43:04 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon Feb  7 03:43:57 2005
+Subject: [Radiance-general] plasfunc
+In-Reply-To: <0CC69F71-788D-11D9-9EBF-000A9599B040@sas.upenn.edu>
+References: <0CC69F71-788D-11D9-9EBF-000A9599B040@sas.upenn.edu>
+Message-ID: <3d1b585403da28f211a5daa0d22fd4f6@gmail.com>
+
+Hi Richard,
+
+What you did wrong is specified a specularity of 0 in your plasfunc:
+
+>     void plasfunc myplastic
+>     2 refl mybrdf.cal
+>     0
+>     4 1 1 1 0
+
+The fourth argument is the fraction of reflected light that is modified 
+by your specified BRDF.
+
+-Greg
+
+> From: Richard Murray <rfmurray@sas.upenn.edu>
+> Date: February 6, 2005 2:18:38 PM PST
+>
+> Any advice on using the plasfunc material type?  I've searched the 
+> Radiance documentation, digests, etc., and the following was the best 
+> I could come up with, but it doesn't seem to work.  Any advice would 
+> be welcome.
+>
+> I think I should be able to define a material like this:
+>
+>     void plasfunc myplastic
+>     2 refl mybrdf.cal
+>     0
+>     4 1 1 1 0
+>
+> and then in a file mybrdf.cal, put an arbitrary definition for the 
+> BRDF function refl, something like this:
+>
+>     refl(x,y,z,area) = (x*Nx + y*Ny + z*Nz)^10;
+>
+> (This isn't actually the form of BRDF I'm interested in.)  Then, I 
+> define an object with material myplastic:
+>
+>     myplastic sphere ball
+>     0
+>     0
+>     4 0 0 .5 .5
+>
+> When I render this, though (with light sources, other objects, etc. 
+> added), the sphere just looks Lambertian.  What am I doing wrong?
+>
+> Thanks,
+>
+> Richard
+
+
+From tarik.rahman at ed.ac.uk  Tue Feb  8 16:02:20 2005
+From: tarik.rahman at ed.ac.uk (Tarik Rahman)
+Date: Tue Feb  8 16:03:05 2005
+Subject: [Radiance-general] if statement with vwrays
+In-Reply-To: <41FA5795.70202@familyhealth.com.au>
+References: <5.1.0.14.2.20050128151205.01fe1bb8@pop.eif.ch>
+	<41FA532D.1030608@familyhealth.com.au>
+	<7C7BFD29-713F-11D9-970E-000A95BB392A@gmail.com>
+	<41FA5795.70202@familyhealth.com.au>
+Message-ID: <1107874940.4208d47cb555d@sms.ed.ac.uk>
+
+Hi there
+I'm trying to get the hang of the syntax using an if statement with the
+following command
+
+
+./vwrays.exe -fd someRender.pic | rtrace -fda `vwrays -d zoomsomeRender.pic`
+-oodLpnsm testroom.oct > rays.txt
+
+but only output the rays that hit the surface called greenbox.
+Is it something like
+
+./vwrays.exe -fd someRender.pic | rtrace -fda `vwrays -d zoomsomeRender.pic`
+-oodLpnsm `if(s='greenbox')` testroom.oct > rays.txt
+
+Thanks for any help
+
+Tarik
+--
+Tarik Rahman
+PhD student, Institute of Perception, Action and Behaviour
+School of Informatics
+University of Edinburgh
+
+From chriskl at familyhealth.com.au  Tue Feb  8 16:19:34 2005
+From: chriskl at familyhealth.com.au (Christopher Kings-Lynne)
+Date: Tue Feb  8 16:21:31 2005
+Subject: [Radiance-general] if statement with vwrays
+In-Reply-To: <1107874940.4208d47cb555d@sms.ed.ac.uk>
+References: <5.1.0.14.2.20050128151205.01fe1bb8@pop.eif.ch>	<41FA532D.1030608@familyhealth.com.au>	<7C7BFD29-713F-11D9-970E-000A95BB392A@gmail.com>	<41FA5795.70202@familyhealth.com.au>
+	<1107874940.4208d47cb555d@sms.ed.ac.uk>
+Message-ID: <4208D886.6060902@familyhealth.com.au>
+
+> ./vwrays.exe -fd someRender.pic | rtrace -fda `vwrays -d zoomsomeRender.pic`
+> -oodLpnsm `if(s='greenbox')` testroom.oct > rays.txt
+
+Look at the HOWTO section in the Radiance Wiki:
+
+http://www.radiance-wiki.org/index.php?title=HOWTOs
+
+Speaking of...looks like the radiance wiki is now a link spam target.  Hmmm.
+
+Chris
+
+From gvn at retena.com  Tue Feb  8 17:13:58 2005
+From: gvn at retena.com (=?ISO-8859-15?Q?Ignacio_Mun=E1rriz?=)
+Date: Tue Feb  8 17:23:28 2005
+Subject: [Radiance-general] if statement with vwrays
+References: <5.1.0.14.2.20050128151205.01fe1bb8@pop.eif.ch><41FA532D.1030608@familyhealth.com.au><7C7BFD29-713F-11D9-970E-000A95BB392A@gmail.com><41FA5795.70202@familyhealth.com.au>
+	<1107874940.4208d47cb555d@sms.ed.ac.uk>
+Message-ID: <002701c50df9$31fa1d20$53000080@pnac>
+
+you can use grep, ie
+
+ ./vwrays.exe -fd someRender.pic | rtrace -fda `vwrays -d
+zoomsomeRender.pic`
+ -oodLpnsm `if(s='greenbox')` testroom.oct  | grep "surface_name" > rays.txt
+
+----- Original Message -----
+From: "Tarik Rahman" <tarik.rahman@ed.ac.uk>
+To: "Radiance general discussion" <radiance-general@radiance-online.org>
+Sent: Tuesday, February 08, 2005 4:02 PM
+Subject: [Radiance-general] if statement with vwrays
+
+
+> Hi there
+> I'm trying to get the hang of the syntax using an if statement with the
+> following command
+>
+>
+> ./vwrays.exe -fd someRender.pic | rtrace -fda `vwrays -d
+zoomsomeRender.pic`
+> -oodLpnsm testroom.oct > rays.txt
+>
+> but only output the rays that hit the surface called greenbox.
+> Is it something like
+>
+> ./vwrays.exe -fd someRender.pic | rtrace -fda `vwrays -d
+zoomsomeRender.pic`
+> -oodLpnsm `if(s='greenbox')` testroom.oct > rays.txt
+>
+> Thanks for any help
+>
+> Tarik
+> --
+> Tarik Rahman
+> PhD student, Institute of Perception, Action and Behaviour
+> School of Informatics
+> University of Edinburgh
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+
+From Christoph.Reinhart at nrc-cnrc.gc.ca  Tue Feb  8 23:28:11 2005
+From: Christoph.Reinhart at nrc-cnrc.gc.ca (Reinhart, Christoph)
+Date: Tue Feb  8 23:28:44 2005
+Subject: [Radiance-general] Daysim 2.1
+Message-ID: <10C94843061E094A98C02EB77CFC328711D26013@nrcmrdex1d.imsb.nrc.ca>
+
+Dear colleagues, 
+
+ 
+
+My apologies for any cross postings. 
+
+ 
+
+The National Research Council Canada and the Fraunhofer Institute for Solar
+Energy Systems have released version 2.1 of the Daysim daylighting analysis
+tool. Daysim is based on LBNL's Radiance software and combines the Perez sky
+model with a daylight coefficient approach to effectively predict the annual
+daylight availability (daylight factor and daylight autonomy) in buildings
+for multiple sites worldwide (you can import EnergyPlus epw climate files).
+Daysim further features a user behavior model which allows to compare the
+electric lighting use for manual and automated controls (occupancy sensor,
+photocell control). The software runs under Windows and Linux OS and can be
+downloaded from  <http://www.daysim.com/> www.daysim.com. The following new
+features have been added since version 2.0:
+
+*	extended tutorial: an extensive document to help newcomers to get
+started with daylight simulations 
+
+*	step-by-step instructions of how to import building scenes from
+AutoCAD, SketchUp, and Ecotect into Daysim 
+
+*	a list of case studies of how your colleagues have used Daysim in
+actual building projects 
+
+*	improved simulation output in html-format 
+
+*	improved JAVA GUI with an extensive help file system 
+
+*	based on Radiance version 3R6P1(latest version) 
+
+*	the new version allows to model Radiance function file materials
+(transdata, etc.)
+
+Your comments/suggestions are appreciated. Best regards,
+
+ 
+
+Christoph 
+
+Christoph Reinhart, Ph.D.                        Associate Research Officer 
+National Research Council Canada         NRC Construction
+1200 Montreal Road M-24, Ottawa          Ontario K1A 0R6 Canada 
+tel: (613) 993-9703                                  fax: (613) 954 3733
+
+e-mail:  <blocked::mailto:christoph.reinhart@nrc-cnrc.gc.ca>
+christoph.reinhart@nrc-cnrc.gc.ca 
+ 
+The Lightswitch Wizard (initial design)
+<blocked::http://www.buildwiz.com/> www.buildwiz.com  
+DAYSIM (expert software)
+<blocked::http://www.daysim.com/> www.daysim.com  
+Radiance Workshop 2005
+<blocked::http://irc.nrc-cnrc.gc.ca/ie/light/RadianceWorkshop2005>
+http://irc.nrc-cnrc.gc.ca/ie/light/RadianceWorkshop2005   
+ 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20050208/ca58480b/attachment.htm
+From chriskl at familyhealth.com.au  Wed Feb  9 11:34:33 2005
+From: chriskl at familyhealth.com.au (Christopher Kings-Lynne)
+Date: Wed Feb  9 11:36:31 2005
+Subject: [Radiance-general] Sky illumination vs. mkillum
+Message-ID: <4209E739.8090005@familyhealth.com.au>
+
+Hi all,
+
+I'm tearing my hair out here trying to grok mkillum windows vs. sky 
+illumination through the window.
+
+I am trying to visualise the DIRECT sky factor on the floor of a room 
+before and after a new building is put in.  The green area is the area 
+that is above 0.2% sky factor before the building and the red area is 
+the area that is above 0.2% sky factor after the new building is put in.
+
+I have tried with and without mkillum:
+
+Skyglow:
+
+http://img138.exs.cx/img138/977/skyglow8bi.gif
+
+Mkillum:
+
+http://img239.exs.cx/img239/2804/mkillum7kx.gif
+
+Note that the skyglow one would seem to be much more accurate (basically 
+a big building that covers almost all the window in the top left edge is 
+put in), but the mkillum one has smoother edges.
+
+I guess what I just do not understand after hours of playing with all 
+the rendering and mkillum settings is how to either:
+
+* get rid of the speckling in the skyglow render
+
+or
+
+* make the mkillum render actually accurate (in particular, the green 
+leakage in the top left corner seems wrong)
+
+Can anyone give any suggestions?
+
+Thanks,
+
+Chris
+
+From jm at dmu.ac.uk  Wed Feb  9 13:51:00 2005
+From: jm at dmu.ac.uk (John Mardaljevic)
+Date: Wed Feb  9 13:52:13 2005
+Subject: [Radiance-general] Sky illumination vs. mkillum
+Message-ID: <400E767A-7A99-11D9-894E-000D93355E26@dmu.ac.uk>
+
+Chris,
+
+> I am trying to visualise the DIRECT sky factor on the floor of a room
+> before and after a new building is put in.  The green area is the area
+> that is above 0.2% sky factor before the building and the red area is
+> the area that is above 0.2% sky factor after the new building is put 
+> in.
+
+This looks like a Rights to Light study, yes?  In any case, for the 
+direct sky
+factor, whack up ad to whatever gives you a converged value - try a few
+in steps of two starting -ad 1024.  Turn interpolation off (-aa 0) and, 
+of course,
+use -ab 1.  If it's RTL, then a uniform sky is used rather than the CIE 
+ovc and
+I seem to recall that the window is an aperture without any glazing.
+
+I really wouldn't bother with a source window for something like this.
+
+If the grid was orthogonal, I'd be tempted to supply a grid of points to
+rtrace and process the results in my preferred crunching/display 
+software.
+
+-John
+
+-----------------------------------------------
+Dr. John Mardaljevic
+Senior Research Fellow
+Institute of Energy and Sustainable Development
+De Montfort University
+The Gateway
+Leicester
+LE1 9BH, UK
++44 (0) 116 257 7972
++44 (0) 116 257 7981 (fax)
+
+jm@dmu.ac.uk
+http://www.iesd.dmu.ac.uk/~jm
+
+
+From jelle.feringa at ezct.net  Wed Feb  9 15:01:20 2005
+From: jelle.feringa at ezct.net (Jelle Feringa // EZCT / Paris)
+Date: Wed Feb  9 15:02:13 2005
+Subject: [Radiance-general] masking openings
+Message-ID: <20050209140136.A19871C000AD@mwinf1201.wanadoo.fr>
+
+I?m working on a python script which applies genetic algorithms for a fa?ade
+design (yeah, still doing that
+)
+I?m computing the fitness value of a given simulations by producing a
+falsecolor image, by calculating the 64 brightest levels per channel, R
+being most intense (direct light) , G being diffused light, and B for
+shadows.
+ 
+This approach seems to be ok, except that openings are also included, since
+their bright values. I need to get rid of those. First I tried the most
+simple approach, setting the viewfile such that the sky isn?t included, et
+voila, openings are black. This approach seems oversimplistic, since it
+yields a complete different rendering, looks like any source outside of the
+clipping plane isn?t included (I suppose this is the expected behaviour). So
+I need to do this in a smarter manner. Has anyone run into this before? The
+best would be to render the mask as a separated image, such that they can be
+combined using pcomb.
+ 
+Cheers,
+ 
+Jelle.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20050209/182fddea/attachment.html
+From chriskl at familyhealth.com.au  Wed Feb  9 15:08:36 2005
+From: chriskl at familyhealth.com.au (Christopher Kings-Lynne)
+Date: Wed Feb  9 15:10:25 2005
+Subject: [Radiance-general] masking openings
+In-Reply-To: <20050209140136.A19871C000AD@mwinf1201.wanadoo.fr>
+References: <20050209140136.A19871C000AD@mwinf1201.wanadoo.fr>
+Message-ID: <420A1964.5040807@familyhealth.com.au>
+
+> The best would be to render the 
+> mask as a separated image, such that they can be combined using pcomb.
+
+Using a mask would seem sensible to me.  There's a very small HOWTO on 
+the radiance wiki that gives some basic info:
+
+http://www.radiance-wiki.org/index.php?title=Mask_an_image
+
+You'd probably want to generate your mask as a black and white image 
+based on the polygon at that point.  eg. if the polygon is 'sky', then 
+output a 0, else output a 1.
+
+Chris
+
+From jelle.feringa at ezct.net  Wed Feb  9 15:57:17 2005
+From: jelle.feringa at ezct.net (Jelle Feringa // EZCT / Paris)
+Date: Wed Feb  9 15:57:48 2005
+Subject: [Radiance-general] masking openings
+Message-ID: <20050209145719.A4F7B1C000B3@mwinf1209.wanadoo.fr>
+
+Chris,
+
+I'm familiar with the pcomb technique as found on the radiance-wiki, but am
+lost in how to generate a 0/1 image where a 0 is outputted when a ray hits
+sky. Would it be necessary to write a radiance functional language script
+(.cal) for doing such?
+
+
+
+From chriskl at familyhealth.com.au  Wed Feb  9 16:14:03 2005
+From: chriskl at familyhealth.com.au (Christopher Kings-Lynne)
+Date: Wed Feb  9 16:15:52 2005
+Subject: [Radiance-general] Solar paths in a .cal file?
+Message-ID: <420A28BB.3020301@familyhealth.com.au>
+
+Hi,
+
+I've been having a thought about generating solar paths.  It seems to me 
+that instead of generating a sky full of suns at every 5 minute 
+positions (losing control of the sun icon and color), you might be able 
+to do it in a .cal file for pcomb...
+
+Off the top of my head, this seems possible, but rather difficult.
+
+Thinking of a way to do it is giving me a headache, however...
+
+Chris
+
+From gvn at retena.com  Wed Feb  9 19:45:05 2005
+From: gvn at retena.com (=?iso-8859-1?Q?Ignacio_Mun=E1rriz?=)
+Date: Wed Feb  9 19:54:41 2005
+Subject: [Radiance-general] masking openings
+References: <20050209145719.A4F7B1C000B3@mwinf1209.wanadoo.fr>
+Message-ID: <00a501c50ed7$79095760$53000080@pnac>
+
+Chris, changing the variable distance, you can create a mask with the
+objects till that distance, i dont know if it's what you need
+
+
+vwrays -x 200 -y 200 -vf myview -ff \
+|rtrace -oL -fff -x 200 -y 200 simple.oct\
+|pvalue -r -df -b|pcomb -e 'lo=if(gi(1)-distance,0,1)' - > image.pic
+
+----- Original Message -----
+From: "Jelle Feringa // EZCT / Paris" <jelle.feringa@ezct.net>
+To: <radiance-general@radiance-online.org>
+Sent: Wednesday, February 09, 2005 3:57 PM
+Subject: [Radiance-general] masking openings
+
+
+> Chris,
+>
+> I'm familiar with the pcomb technique as found on the radiance-wiki, but
+am
+> lost in how to generate a 0/1 image where a 0 is outputted when a ray hits
+> sky. Would it be necessary to write a radiance functional language script
+> (.cal) for doing such?
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+
+From randolph at panix.com  Thu Feb 10 01:32:13 2005
+From: randolph at panix.com (Randolph Fritz)
+Date: Thu Feb 10 01:32:46 2005
+Subject: [Radiance-general] Deterministic calculations with Radiance
+In-Reply-To: <359f5976f8b243e21c617b1e1c4b5b2c@gmail.com>
+References: <4200D1F7.1050301@familyhealth.com.au>
+	<ef648a50e16632814f6691b27e17771b@gmail.com>
+	<20050202171657.GB1492@panix.com>
+	<50126ea9b69a791e789d7f218f8f0457@gmail.com>
+	<4201FAE9.5000908@familyhealth.com.au>
+	<c7aa57658f8552659e5a2f86f2507db6@gmail.com>
+	<42024888.7060008@familyhealth.com.au>
+	<B8AA1C68-767B-11D9-82EF-000A95BB392A@gmail.com>
+	<20050204174823.GB9233@panix.com>
+	<359f5976f8b243e21c617b1e1c4b5b2c@gmail.com>
+Message-ID: <20050210003213.GA23585@panix.com>
+
+Perhaps with carefully chosen models and parameters?  I would expect
+it to be possible to compare well-chosen test scenes with appropriate
+parameters between versions, as well as with actual physical models,
+so long as a random number generator of reasonable quality is used.
+Seems to me such combinations of scenes and parameters would be
+excellent testing and debugging tools.  (Having the physical models
+for comparison would be *most* excellent, but let us not assume there
+is a budget for them!)
+
+Randolph, still drowning here in Portland, Oregon.
+
+On Fri, Feb 04, 2005 at 10:04:19AM -0800, Greg Ward wrote:
+> Perhaps.  If the pixel sampling rate were high enough (e.g. pfilt -x 
+> /10 -y /10), you might get some stability.  At that point, you 
+> shouldn't have to worry about the random number generator.  However, 
+> the MC ray tracing literature is full of examples where even 200+ 
+> samples/pixel is not enough to avoid large variance in some regions, 
+> and the same can be true for Radiance, especially with specular 
+> samples.
+> 
+> -G
+> 
+> >From: Randolph Fritz <randolph@panix.com>
+> >Date: February 4, 2005 9:48:23 AM PST
+> >
+> >On Thu, Feb 03, 2005 at 11:09:33PM -0800, Greg Ward wrote:
+> >>Yes, but what's the point?  A change in the compiler or a minor
+> >>alteration of the code that makes no difference to the results but
+> >>affects the order in which rays are traced will completely defeat such
+> >>a test.  How can we do regression testing with something that 
+> >>unstable?
+> >
+> >Could we perhaps "blur" the two light maps before comparing them?
+> >
+> >Randolph
+> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+From gregoryjward at gmail.com  Thu Feb 10 08:13:16 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu Feb 10 08:14:10 2005
+Subject: [Radiance-general] Deterministic calculations with Radiance
+In-Reply-To: <20050210003213.GA23585@panix.com>
+References: <4200D1F7.1050301@familyhealth.com.au>
+	<ef648a50e16632814f6691b27e17771b@gmail.com>
+	<20050202171657.GB1492@panix.com>
+	<50126ea9b69a791e789d7f218f8f0457@gmail.com>
+	<4201FAE9.5000908@familyhealth.com.au>
+	<c7aa57658f8552659e5a2f86f2507db6@gmail.com>
+	<42024888.7060008@familyhealth.com.au>
+	<B8AA1C68-767B-11D9-82EF-000A95BB392A@gmail.com>
+	<20050204174823.GB9233@panix.com>
+	<359f5976f8b243e21c617b1e1c4b5b2c@gmail.com>
+	<20050210003213.GA23585@panix.com>
+Message-ID: <9f7a68f44988c25747528411cb468832@gmail.com>
+
+Yes, I could see doing this.  We would of course be accepting 
+differences between versions and machines to some tolerance, but it 
+should be sufficient for spotting any major regressions in the code or 
+between releases.  The trick then is to have enough well-designed test 
+scenes to cover all of the basic and some of the more esoteric features 
+of Radiance.  (The "prism" and "BRTDfunc" primitives spring to mind.)
+
+-Greg
+
+> From: Randolph Fritz <randolph@panix.com>
+> Date: February 9, 2005 4:32:13 PM PST
+>
+> Perhaps with carefully chosen models and parameters?  I would expect
+> it to be possible to compare well-chosen test scenes with appropriate
+> parameters between versions, as well as with actual physical models,
+> so long as a random number generator of reasonable quality is used.
+> Seems to me such combinations of scenes and parameters would be
+> excellent testing and debugging tools.  (Having the physical models
+> for comparison would be *most* excellent, but let us not assume there
+> is a budget for them!)
+>
+> Randolph, still drowning here in Portland, Oregon.
+
+
+From chriskl at familyhealth.com.au  Thu Feb 10 10:38:48 2005
+From: chriskl at familyhealth.com.au (Christopher Kings-Lynne)
+Date: Thu Feb 10 10:40:45 2005
+Subject: [Radiance-general] Deterministic calculations with Radiance
+In-Reply-To: <9f7a68f44988c25747528411cb468832@gmail.com>
+References: <4200D1F7.1050301@familyhealth.com.au>	<ef648a50e16632814f6691b27e17771b@gmail.com>	<20050202171657.GB1492@panix.com>	<50126ea9b69a791e789d7f218f8f0457@gmail.com>	<4201FAE9.5000908@familyhealth.com.au>	<c7aa57658f8552659e5a2f86f2507db6@gmail.com>	<42024888.7060008@familyhealth.com.au>	<B8AA1C68-767B-11D9-82EF-000A95BB392A@gmail.com>	<20050204174823.GB9233@panix.com>	<359f5976f8b243e21c617b1e1c4b5b2c@gmail.com>	<20050210003213.GA23585@panix.com>
+	<9f7a68f44988c25747528411cb468832@gmail.com>
+Message-ID: <420B2BA8.1060104@familyhealth.com.au>
+
+> Yes, I could see doing this.  We would of course be accepting 
+> differences between versions and machines to some tolerance, but it 
+> should be sufficient for spotting any major regressions in the code or 
+> between releases.  The trick then is to have enough well-designed test 
+> scenes to cover all of the basic and some of the more esoteric features 
+> of Radiance.  (The "prism" and "BRTDfunc" primitives spring to mind.)
+
+I am a developer on the PostgreSQL database, and we have a full suite of 
+regression tests.  We use diff to compare actual vs. expected results. 
+Perhaps we could borrow that code.
+
+We have per-platform floating point files that we need to use to allow 
+for differences in IEEE implementation between some platforms.  ie. -0, etc.
+
+I was personally thinking for my own project checking that as I make 
+changes to this big script I have, I don't affect other stuff.  However, 
+having a regression suite for Radiance seems like something that's way 
+overdue for a piece of software that needs to be correct for legal 
+purposes :)
+
+Chris
+
+From chriskl at familyhealth.com.au  Thu Feb 10 16:14:44 2005
+From: chriskl at familyhealth.com.au (Christopher Kings-Lynne)
+Date: Thu Feb 10 16:16:34 2005
+Subject: [Radiance-general] Marching squares
+Message-ID: <420B7A64.30800@familyhealth.com.au>
+
+Hi,
+
+Does anyone have an implementation of marching squares in .cal file 
+format (or whatever) for Radiance?
+
+I'm going to have a go at it soon, but was just wondering if anyone has 
+code already...
+
+The idea is to turn all the white areas in a black and white Radiance 
+image into polygon definitions.
+
+Chris
+
+From gregoryjward at gmail.com  Thu Feb 10 17:15:33 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu Feb 10 17:16:36 2005
+Subject: [Radiance-general] Deterministic calculations with Radiance
+In-Reply-To: <420B2BA8.1060104@familyhealth.com.au>
+References: <4200D1F7.1050301@familyhealth.com.au>	<ef648a50e16632814f6691b27e17771b@gmail.com>	<20050202171657.GB1492@panix.com>	<50126ea9b69a791e789d7f218f8f0457@gmail.com>	<4201FAE9.5000908@familyhealth.com.au>	<c7aa57658f8552659e5a2f86f2507db6@gmail.com>	<42024888.7060008@familyhealth.com.au>	<B8AA1C68-767B-11D9-82EF-000A95BB392A@gmail.com>	<20050204174823.GB9233@panix.com>	<359f5976f8b243e21c617b1e1c4b5b2c@gmail.com>	<20050210003213.GA23585@panix.com>
+	<9f7a68f44988c25747528411cb468832@gmail.com>
+	<420B2BA8.1060104@familyhealth.com.au>
+Message-ID: <597711c9fdd127f9ffc0006bb331b491@gmail.com>
+
+I don't think repurposing PostgreSQL code is going to be useful in this 
+case.  We'll be comparing floating point values within some delta, 
+probably over large images, and the existing tools should be sufficient 
+for that (pcomb, etc.)  We just need to create a few dozen test scenes, 
+a Makefile for generating results, and a generic script for comparing 
+them against the official results for each regression.
+
+It's probably a 2-4 weeks effort to do it right.  It's always a 
+question of who has the time, I suppose.  We could make assignments, 
+each volunteer testing out their favorite aspect of Radiance.  Anyone 
+want to step forward?
+
+-Greg
+
+> From: Christopher Kings-Lynne <chriskl@familyhealth.com.au>
+> Date: February 10, 2005 1:38:48 AM PST
+>
+>> Yes, I could see doing this.  We would of course be accepting 
+>> differences between versions and machines to some tolerance, but it 
+>> should be sufficient for spotting any major regressions in the code 
+>> or between releases.  The trick then is to have enough well-designed 
+>> test scenes to cover all of the basic and some of the more esoteric 
+>> features of Radiance.  (The "prism" and "BRTDfunc" primitives spring 
+>> to mind.)
+>
+> I am a developer on the PostgreSQL database, and we have a full suite 
+> of regression tests.  We use diff to compare actual vs. expected 
+> results. Perhaps we could borrow that code.
+>
+> We have per-platform floating point files that we need to use to allow 
+> for differences in IEEE implementation between some platforms.  ie. 
+> -0, etc.
+>
+> I was personally thinking for my own project checking that as I make 
+> changes to this big script I have, I don't affect other stuff.  
+> However, having a regression suite for Radiance seems like something 
+> that's way overdue for a piece of software that needs to be correct 
+> for legal purposes :)
+>
+> Chris
+
+
+From schorsch at schorsch.com  Thu Feb 10 17:44:18 2005
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Thu Feb 10 17:44:51 2005
+Subject: [Radiance-general] testing framework (was: Deterministic calc...)
+In-Reply-To: <9f7a68f44988c25747528411cb468832@gmail.com>
+References: <4200D1F7.1050301@familyhealth.com.au>
+	<ef648a50e16632814f6691b27e17771b@gmail.com>
+	<20050202171657.GB1492@panix.com>
+	<50126ea9b69a791e789d7f218f8f0457@gmail.com>
+	<4201FAE9.5000908@familyhealth.com.au>
+	<c7aa57658f8552659e5a2f86f2507db6@gmail.com>
+	<42024888.7060008@familyhealth.com.au>
+	<B8AA1C68-767B-11D9-82EF-000A95BB392A@gmail.com>
+	<20050204174823.GB9233@panix.com>
+	<359f5976f8b243e21c617b1e1c4b5b2c@gmail.com>
+	<20050210003213.GA23585@panix.com>
+	<9f7a68f44988c25747528411cb468832@gmail.com>
+Message-ID: <Pine.BSF.4.58.0502101057430.55573@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> Yes, I could see doing this.  We would of course be accepting
+> differences between versions and machines to some tolerance, but it
+> should be sufficient for spotting any major regressions in the code or
+> between releases.
+
+The Python based testing framework that is already in CVS takes
+this into account, and allows to check whether any output values
+are within a certain range (in contrast to checking for exact
+values). If people can come up with good test cases, I'd be very
+happy to add them to the official test suite.
+
+My previous calls for test case contributions have mostly gone
+unanswered, so I'm happy to hear that peole are now starting to
+understand the importance of this tool.
+
+Don't worry about the testing and comparison machinery if you're
+not familiar with Python. Just give me the test data, the
+commands to perform, and the desired results, and I'll implement
+the rest.  There are a handful of tests already in place, but so
+far those mainly serve to demonstrate that the framework actually
+works as expected.
+
+At the moment, the following programs get tested more or less
+comprehensively: cnt, ev, genbeads, getinfo, histo, rlam, neaten,
+ttyimage, and  xform. I just updated the tests to take the new
+executable names (lam->rlam, neat->neaten) into account, the
+changes will be in the nightly HEAD dump tomorrow.
+
+You can run the tests by executing the Python script
+ray/test/run_all.py. The test suite assumes that Radiance was
+built with scons. Check the exact requirements in the file
+ray/test/README.txt.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From tarik.rahman at ed.ac.uk  Fri Feb 11 18:38:10 2005
+From: tarik.rahman at ed.ac.uk (Tarik Rahman)
+Date: Fri Feb 11 18:38:55 2005
+Subject: [Radiance-general] Divide by zero with colorpict
+Message-ID: <1108143490.420ced824e3b0@sms.ed.ac.uk>
+
+Hi there
+
+I'm running the the Debevec tutorial 2002  IBL program that uses beach.hdr with
+the spheres on the pedestal and it's rendering with rview but I keep getting
+these outputs and it takes ages. I tried changing the .hdr environment map but
+the same thing happens. Anyone know what the problem is?
+
+./rview: warning - compute error for colorpict "hdr_probe_image"
+./rview: acos: domain error
+./rview: warning - compute error for colorpict "hdr_probe_image"
+./rview: Division by zero
+
+Thanks for any help
+
+Tarik
+--
+Tarik Rahman
+PhD student, Institute of Perception, Action and Behaviour
+School of Informatics
+University of Edinburgh
+
+
+From kthibault at biomechanicsinc.com  Fri Feb 11 20:12:51 2005
+From: kthibault at biomechanicsinc.com (Kirk Thibault)
+Date: Fri Feb 11 20:13:24 2005
+Subject: [Radiance-general] Divide by zero with colorpict
+In-Reply-To: <1108143490.420ced824e3b0@sms.ed.ac.uk>
+References: <1108143490.420ced824e3b0@sms.ed.ac.uk>
+Message-ID: <16c21401f644b4eae0f565613b864c65@biomechanicsinc.com>
+
+Tarik
+
+One thing I noticed when I did that exercise is that Debevec's world in 
+<angmap.cal> is Y up and Radiance defaults to Z up.
+
+I have no idea if this is a problem from the standpoint of generating 
+the errors below, but it is something that I noticed.
+
+I have gotten multiple "divide by zero" messages from rpict when using 
+IBL as well.  It just keeps on chugging through the calcs though.  
+Greg?
+
+Here is a link to my Radiance-IBL tests with the Debevec scene and some 
+of my homegrown HDR's (thanks to Debevec's HDR shop and Greg's 
+Photosphere).
+
+http://www.3dfightclubforum.com/phpBB2/viewtopic.php?t=4328
+
+good luck
+
+kirk
+
+On Feb 11, 2005, at 12:38 PM, Tarik Rahman wrote:
+
+> Hi there
+>
+> I'm running the the Debevec tutorial 2002  IBL program that uses 
+> beach.hdr with
+> the spheres on the pedestal and it's rendering with rview but I keep 
+> getting
+> these outputs and it takes ages. I tried changing the .hdr environment 
+> map but
+> the same thing happens. Anyone know what the problem is?
+>
+> ./rview: warning - compute error for colorpict "hdr_probe_image"
+> ./rview: acos: domain error
+> ./rview: warning - compute error for colorpict "hdr_probe_image"
+> ./rview: Division by zero
+>
+> Thanks for any help
+>
+> Tarik
+> --
+> Tarik Rahman
+> PhD student, Institute of Perception, Action and Behaviour
+> School of Informatics
+> University of Edinburgh
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From jedev at visarc.com  Fri Feb 11 20:25:46 2005
+From: jedev at visarc.com (Jack de Valpine)
+Date: Fri Feb 11 20:26:33 2005
+Subject: [Radiance-general] Divide by zero with colorpict
+In-Reply-To: <16c21401f644b4eae0f565613b864c65@biomechanicsinc.com>
+References: <1108143490.420ced824e3b0@sms.ed.ac.uk>
+	<16c21401f644b4eae0f565613b864c65@biomechanicsinc.com>
+Message-ID: <420D06BA.1060303@visarc.com>
+
+I think that this error is resulting from one of the functions in the 
+.cal (angmap.cal?) . In this case acos() is probably being fed a value 
+outside the bounds -1 to 1, acos() is defined to return an error outside 
+these bounds (man acos). An alternative is to use Acos() (see 
+rayinit.cal), which I believe forces the boundary condition. It is 
+likely that the subsequent divide by zero error is related to the domain 
+error with acos(). Of course this is largely a guess based on the error 
+output you indicated. If we had the cal to lookout then this might 
+provide more information.
+
+-Jack
+
+Kirk Thibault wrote:
+
+> Tarik
+>
+> One thing I noticed when I did that exercise is that Debevec's world 
+> in <angmap.cal> is Y up and Radiance defaults to Z up.
+>
+> I have no idea if this is a problem from the standpoint of generating 
+> the errors below, but it is something that I noticed.
+>
+> I have gotten multiple "divide by zero" messages from rpict when using 
+> IBL as well.  It just keeps on chugging through the calcs though.  Greg?
+>
+> Here is a link to my Radiance-IBL tests with the Debevec scene and 
+> some of my homegrown HDR's (thanks to Debevec's HDR shop and Greg's 
+> Photosphere).
+>
+> http://www.3dfightclubforum.com/phpBB2/viewtopic.php?t=4328
+>
+> good luck
+>
+> kirk
+>
+> On Feb 11, 2005, at 12:38 PM, Tarik Rahman wrote:
+>
+>> Hi there
+>>
+>> I'm running the the Debevec tutorial 2002  IBL program that uses 
+>> beach.hdr with
+>> the spheres on the pedestal and it's rendering with rview but I keep 
+>> getting
+>> these outputs and it takes ages. I tried changing the .hdr 
+>> environment map but
+>> the same thing happens. Anyone know what the problem is?
+>>
+>> ./rview: warning - compute error for colorpict "hdr_probe_image"
+>> ./rview: acos: domain error
+>> ./rview: warning - compute error for colorpict "hdr_probe_image"
+>> ./rview: Division by zero
+>>
+>> Thanks for any help
+>>
+>> Tarik
+>> -- 
+>> Tarik Rahman
+>> PhD student, Institute of Perception, Action and Behaviour
+>> School of Informatics
+>> University of Edinburgh
+>>
+>>
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general@radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+
+
+
+From a.jacobs at londonmet.ac.uk  Mon Feb 14 12:32:59 2005
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Mon Feb 14 12:28:16 2005
+Subject: [Radiance-general] Daysim 2.1
+In-Reply-To: <10C94843061E094A98C02EB77CFC328711D26013@nrcmrdex1d.imsb.nrc.ca>
+References: <10C94843061E094A98C02EB77CFC328711D26013@nrcmrdex1d.imsb.nrc.ca>
+Message-ID: <47365.193.137.43.137.1108380779.squirrel@193.137.43.137>
+
+Hi list,
+
+for all LINUX users out there that used to think gamma calibrating was for
+wimps, just because they couldt do it under X, I thought I send you this
+link
+http://applications.linux.com/article.pl?sid=05/02/07/2244242&from=rss
+to an article titled
+"Looking good: Monitor calibration under X". There are tons of other
+interesting links included in the article, all about colour calibration of
+monitors and printers.
+
+Somewhere on the RADIANCE web site there is a test chart with some
+instructions to go with it, but I doubt anybody has ever taken a look at
+them.
+
+If you have no idea what Gamma calibration means, then DO read the article
+and follow some links, no matter what system you use!
+
+Cheers
+
+Axel
+
+
+
+From a.jacobs at londonmet.ac.uk  Mon Feb 14 12:40:23 2005
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Mon Feb 14 12:35:38 2005
+Subject: [Radiance-general] Monitor calibration under X
+Message-ID: <52409.193.137.43.137.1108381223.squirrel@193.137.43.137>
+
+Apologies for the last message which had a wrong subject line. Here we go
+again...
+
+Hi list,
+
+for all LINUX users out there that used to think gamma calibrating was for
+wimps, just because they couldt do it under X, I thought I send you this
+link
+http://applications.linux.com/article.pl?sid=05/02/07/2244242&from=rss to
+an article titled
+"Looking good: Monitor calibration under X". There are tons of other
+interesting links included in the article, all about colour calibration of
+monitors and printers.
+
+Somewhere on the RADIANCE web site there is a test chart with some
+instructions to go with it, but I doubt anybody has ever taken a look at
+them.
+
+If you have no idea what Gamma calibration means, then DO read the article
+and follow some links, no matter what system you use!
+
+Cheers
+
+Axel
+
+
+
+From chriskl at familyhealth.com.au  Tue Feb 15 13:00:42 2005
+From: chriskl at familyhealth.com.au (Christopher Kings-Lynne)
+Date: Tue Feb 15 13:02:33 2005
+Subject: [Radiance-general] Real time photon mapping,
+	caustics and ray tracing??
+Message-ID: <4211E46A.6060307@familyhealth.com.au>
+
+Have you guys seen this?
+
+http://www.openrt.de/
+
+Chris
+
+From ap.huangwx at archi.kyoto-u.ac.jp  Wed Feb 16 05:56:35 2005
+From: ap.huangwx at archi.kyoto-u.ac.jp (Huang Weixin)
+Date: Wed Feb 16 05:56:51 2005
+Subject: [Radiance-general] why I got such blotchy results?
+Message-ID: <004201c513e3$e47edb30$1f7af90a@huangweixin>
+
+Skipped content of type multipart/alternative-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 22_11.jpg
+Type: image/jpeg
+Size: 6545 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20050216/6a3938bf/22_11.jpg
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 22_current.jpg
+Type: image/jpeg
+Size: 8130 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20050216/6a3938bf/22_current.jpg
+From furry at ihug.com.au  Wed Feb 16 06:11:16 2005
+From: furry at ihug.com.au (furry@ihug.com.au)
+Date: Wed Feb 16 06:11:49 2005
+Subject: [Radiance-general] Angular selectivity of blinds
+Message-ID: <E1D1HT2-0005fA-00@noir.ihug.com.au>
+
+Does anyone have any suggestions which would be helpful for modelling blinds 
+which let different amounts of light through at different angles of incident 
+light, an obvious example of this being a Venetian blind.  The particular case 
+I am interested in is a woven wire blind where the light incident normal to the 
+blind would be transmitted better than at an angle.
+
+At the moment, I am modelling using BRTDfunc with a tranmittance value 
+appropriate to the light at normal incidence, however I assume this is no 
+different really to modelling glass with the same transmittance value.
+
+Thanks,
+Richard
+Clibborn
+
+
+
+
+From gregoryjward at gmail.com  Wed Feb 16 06:43:49 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed Feb 16 06:44:09 2005
+Subject: [Radiance-general] Angular selectivity of blinds
+In-Reply-To: <E1D1HT2-0005fA-00@noir.ihug.com.au>
+References: <E1D1HT2-0005fA-00@noir.ihug.com.au>
+Message-ID: <a0686351a79c13fe2be942d89551cd86@gmail.com>
+
+Hi Richard,
+
+Attached is a .cal file which is distributed with the latest version of 
+Radiance, I believe.  It allows you to specify the spacing of a 
+grating, and it comes up with a reasonable approximation to the angular 
+transmission.
+
+-Greg
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: grating.cal
+Type: application/octet-stream
+Size: 1023 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20050215/3afd2afc/grating-0001.obj
+-------------- next part --------------
+
+
+> From: furry@ihug.com.au
+> Date: February 15, 2005 9:12:16 PM PST
+>
+> Does anyone have any suggestions which would be helpful for modelling 
+> blinds
+> which let different amounts of light through at different angles of 
+> incident
+> light, an obvious example of this being a Venetian blind.  The 
+> particular case
+> I am interested in is a woven wire blind where the light incident 
+> normal to the
+> blind would be transmitted better than at an angle.
+>
+> At the moment, I am modelling using BRTDfunc with a tranmittance value
+> appropriate to the light at normal incidence, however I assume this is 
+> no
+> different really to modelling glass with the same transmittance value.
+>
+> Thanks,
+> Richard
+> Clibborn
+From furry at ihug.com.au  Wed Feb 16 07:06:53 2005
+From: furry at ihug.com.au (Richard Clibborn)
+Date: Wed Feb 16 07:07:07 2005
+Subject: [Radiance-general] Angular selectivity of blinds
+Message-ID: <E1D1IKr-0007Sd-00@noir.ihug.com.au>
+
+Greg,
+
+Thanks for that.  I'm just a little unsure about the orientation of 
+this "aligned with x-y plane" in the header .. is this absolute (ie. the 
+project x-y plane) or does it automatically align with the surface it is being 
+applied to.  Sorry if this is a stupid question, it's just I have had trouble 
+before simulating fritting with mixfunc and different surface orientations.
+
+Cheer,
+Richard.
+
+> Hi Richard,
+> 
+> Attached is a .cal file which is distributed with the latest version of 
+> Radiance, I believe.  It allows you to specify the spacing of a 
+> grating, and it comes up with a reasonable approximation to the angular 
+> transmission.
+> 
+> -Greg
+> 
+> 
+
+
+
+
+
+From gregoryjward at gmail.com  Wed Feb 16 07:22:18 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed Feb 16 07:22:33 2005
+Subject: [Radiance-general] Angular selectivity of blinds
+In-Reply-To: <E1D1IKr-0007Sd-00@noir.ihug.com.au>
+References: <E1D1IKr-0007Sd-00@noir.ihug.com.au>
+Message-ID: <e8d7c098f4549dd27545ed9f1507e986@gmail.com>
+
+It means that the .cal file assumes the surface is aligned in the x-y 
+plane.  Assuming you want a vertical grid and your z-axis is up, adding 
+the following transform to the string arguments would rotate the 
+material so that your surface was instead in the x-z plane:
+
+	-rx -90
+
+Since we use a right-handed coordinate system in Radiance, and positive 
+angles correspond to counter-clockwise rotations looking down the 
+selected axis, this rotates the positive y direction in the original 
+orientation so it is now in the positive z direction.  Since this 
+material is symmetric front-to-back, it actually didn't matter in this 
+case which direction we rotated it.
+
+If you want the surface in the y-z plane instead,  you would use:
+
+	-ry -90
+
+This rotates the positive x-axis into the positive z direction.  Just 
+to be clear, your BRTDfunc would look like so:
+
+void BRTDfunc grating
+12
+         0       0       0
+         spectrans spectrans spectrans
+         0       0       0
+         grating.cal -ry -90
+0
+13
+         rrefl grefl brefl
+         rtrns gtrns btrns
+         rrefl grefl brefl
+         A10 A11 A12 A13
+
+You just add a couple of arguments to the string arg count, and tack 
+them on the end.
+
+I hope this helps.
+-Greg
+
+> From: Richard Clibborn <furry@ihug.com.au>
+> Date: February 15, 2005 10:07:55 PM PST
+>
+> Greg,
+>
+> Thanks for that.  I'm just a little unsure about the orientation of
+> this "aligned with x-y plane" in the header .. is this absolute (ie. 
+> the
+> project x-y plane) or does it automatically align with the surface it 
+> is being
+> applied to.  Sorry if this is a stupid question, it's just I have had 
+> trouble
+> before simulating fritting with mixfunc and different surface 
+> orientations.
+>
+> Cheer,
+> Richard.
+
+
+From grobe at gmx.net  Wed Feb 16 12:14:21 2005
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Wed Feb 16 12:14:26 2005
+Subject: [Radiance-general] why I got such blotchy results?
+In-Reply-To: <004201c513e3$e47edb30$1f7af90a@huangweixin>
+References: <004201c513e3$e47edb30$1f7af90a@huangweixin>
+Message-ID: <aff13c42675fc9e51edafa167339a77a@gmx.net>
+
+Hi,
+
+think we need some info on the scene: what kind of light source is 
+this, what rendering parameters did you use (especially the indirect 
+values, like aa, ar, ab, ad). What did you change (the pictures look 
+quite different ;-)?
+
+CU Lars.
+
+
+From chriskl at familyhealth.com.au  Wed Feb 16 14:59:08 2005
+From: chriskl at familyhealth.com.au (Christopher Kings-Lynne)
+Date: Wed Feb 16 15:02:44 2005
+Subject: [Radiance-general] Plotting specific points
+Message-ID: <421351AC.6030705@familyhealth.com.au>
+
+Hmmm, does anyone know the best/easiest way to take a file of x and y 
+coordinates of dots, and draw those dots on a .pic?
+
+Chris
+
+From gregoryjward at gmail.com  Wed Feb 16 18:05:39 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed Feb 16 18:05:54 2005
+Subject: [Radiance-general] Plotting specific points
+In-Reply-To: <421351AC.6030705@familyhealth.com.au>
+References: <421351AC.6030705@familyhealth.com.au>
+Message-ID: <dbd6e9b23ea7e29b893347d7e72da7ae@gmail.com>
+
+Hi Chris,
+
+Unfortunately, there is no program that will do what you want directly, 
+as it would be an easy thing to do.  The only way I could figure out to 
+do this without writing a very nasty pcomb script is a hack involving 
+vwrays and glow sources in rpict.  For a 1024x768 image, it would go 
+something like this:
+
+% echo void glow sglow 0 0 4 100 0 0 0 > sources.rad
+% vwrays -i orig.pic < image.pts | rcalc -o 'sglow source s${recno} 0 0 
+4 ${$4} ${$5} ${$6} 2' >> sources.rad
+% oconv sources.rad | rpict -vf orig.pic -w -x 1024 -y 768 \
+	| pcompos orig.pic 0 0 -t 1 - 0 0 > spotty.pic
+% rm sources.rad
+
+The file "orig.pic" is your original rendering, and "image.pts" is a 
+set of x and y picture coordinates (x left to right, y bottom to top) 
+giving positions in this image where you want to place red spots.  
+(Change the echo command if you want a different color.)  The vwrays 
+then generates rays to each point in the image, which get converted to 
+2-degree distant sources by the rcalc command.  (Again, you may wish to 
+alter this if 2 is too big or too small.)  Finally, we render these 
+sources and superimpose them on the original picture using rpict and 
+pcompos (with a threshold), resulting in "spotty.pic".
+
+I haven't tried this, and I probably messed up some bit of it, but 
+hopefully you'll be able to sort it out.
+
+-Greg
+
+> From: Christopher Kings-Lynne <chriskl@familyhealth.com.au>
+> Date: February 16, 2005 5:59:08 AM PST
+>
+> Hmmm, does anyone know the best/easiest way to take a file of x and y 
+> coordinates of dots, and draw those dots on a .pic?
+>
+> Chris
+
+
+From tarik.rahman at ed.ac.uk  Thu Feb 17 18:18:41 2005
+From: tarik.rahman at ed.ac.uk (Tarik Rahman)
+Date: Thu Feb 17 18:19:11 2005
+Subject: [Radiance-general] About angmap.cal
+In-Reply-To: <1108143490.420ced824e3b0@sms.ed.ac.uk>
+References: <1108143490.420ced824e3b0@sms.ed.ac.uk>
+Message-ID: <1108660721.4214d1f1af540@sms.ed.ac.uk>
+
+Hi
+Can anyone explain this statement in the angmap.cal file.
+r = if(d,0.159154943*Acos(DDz)/d, 0);
+
+Is the 0.159154943 value related to the focal length and field of view
+parameters for Paul Debevec's light map .hdrs, so that if I want to map my own
+light maps I must calculate the value of r using my camera parameters (well
+simulated in Radiance vv and vh angles) ?
+
+Thanks for any help
+
+Tarik
+--
+Tarik Rahman
+PhD student, Institute of Perception, Action and Behaviour
+School of Informatics
+University of Edinburgh
+
+From ap.huangwx at archi.kyoto-u.ac.jp  Fri Feb 18 03:32:31 2005
+From: ap.huangwx at archi.kyoto-u.ac.jp (Huang Weixin)
+Date: Fri Feb 18 03:32:51 2005
+Subject: [Radiance-general] Re: why I got such blotchy results?
+Message-ID: <001501c51562$1a54cab0$1f7af90a@huangweixin>
+
+Dear Lars O. Grobe:
+
+Thanks very much for your reply. :-)
+I am just starting to use Radiance. I used the Desktop Radiance 2.0 bata to 
+generate those rendering images, they are just for testing. I am not sure 
+about the values of aa, ar, ab, ad, (I think I was using the default setting 
+in the Desktop Radiance.) but I got this kind of results randomly.
+So I wonder if there are some guidelines which I can follow to get rid of 
+this problem, or is it just based on experance?
+By the way, those 2 pictures looks different mainly because I changed the 
+view type from Hemispherical to Perspective.
+Best wishes.
+
+Huang 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20050218/6d51b25c/attachment.htm
+From tarik.rahman at ed.ac.uk  Fri Feb 18 17:07:38 2005
+From: tarik.rahman at ed.ac.uk (Tarik Rahman)
+Date: Fri Feb 18 17:07:44 2005
+Subject: [Radiance-general] Cubic, not spherical light map in IBL tutorial
+Message-ID: <1108742858.421612caa7cc3@sms.ed.ac.uk>
+
+
+Hi there
+I've just realised that the picture in the IBL tutorial of the rendering with
+the beach_probe.hdr is done using a cubic light map
+
+!genbox light_probe ibl_environment 500 500 500 -i | xform -t -250 -18 -250
+this is the same line as in Rendering with Natural Light
+
+and therefore it's not done with the spherical map as stated in the tutorial
+
+light_probe source ibl_environment
+0
+0
+4 0 1 0 360
+as I get arendering which is all fuzzy and incorrect
+
+Relating to my last message, still wonder where the 0.159154943 value comes from
+in angmap.cal
+
+Tarik
+
+
+--
+Tarik Rahman
+PhD student, Institute of Perception, Action and Behaviour
+School of Informatics
+University of Edinburgh
+
+From jm at dmu.ac.uk  Mon Feb 21 18:54:19 2005
+From: jm at dmu.ac.uk (John Mardaljevic)
+Date: Mon Feb 21 19:15:19 2005
+Subject: [Radiance-general] IBM PowerPC C-Compiler?
+Message-ID: <6D2CACF507A7D31187AF00508B5E194B0CF707B9@atnas.dmu.ac.uk>
+
+Lars,
+
+There appears to be a 60 day trial version on offer from IBM:
+
+http://www-306.ibm.com/software/awdtools/xlcpp/features/macosx/
+
+Perhaps the license prohibits distribution of software compiled with the
+trial
+version.  Even so, may be worth trying out just to find out what the speed
+advantage is over gcc.
+
+-John
+
+-----------------------------------------------
+Dr. John Mardaljevic
+Senior Research Fellow
+Institute of Energy and Sustainable Development
+De Montfort University
+The Gateway
+Leicester
+LE1 9BH, UK
++44 (0) 116 257 7972
++44 (0) 116 257 7981 (fax)
+
+jm@dmu.ac.uk
+http://www.iesd.dmu.ac.uk/~jm
+
+
+From chriskl at familyhealth.com.au  Tue Feb 22 12:04:37 2005
+From: chriskl at familyhealth.com.au (Christopher Kings-Lynne)
+Date: Tue Feb 22 12:06:35 2005
+Subject: [Radiance-general] DRQueue
+Message-ID: <421B11C5.7060401@familyhealth.com.au>
+
+I wonder what it would take to add Radiance distributed rendering 
+support to this:
+
+http://www.drqueue.org/
+
+It's an open source distributed render queue...
+
+Chris
+
+From grobe at gmx.net  Tue Feb 22 10:38:44 2005
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Tue Feb 22 13:08:36 2005
+Subject: [Radiance-general] Re: why I got such blotchy results?
+In-Reply-To: <001501c51562$1a54cab0$1f7af90a@huangweixin>
+References: <001501c51562$1a54cab0$1f7af90a@huangweixin>
+Message-ID: <ee522808873a51ff4315db7524cae9de@gmx.net>
+
+Hi Huang,
+
+I think what you observe is a problem of the indirect calculation. If I 
+guess that the only light source in your room is the descended light, 
+which may be defined by using a manufacturers ies (is this the case?), 
+than it is not that easy for the software to calculate the indirect 
+illumination of the room correctly without finetuning a bit. First try 
+to set a reasonable -ab value, maybe 2, depending on how many bounces 
+you need to come from a surface to the source (it is just a simple 
+room, so try 2 for the beginning). More important settings may be the 
+-ad, -ar and -ad values, which define, generally speaking, the accuracy 
+of the calculation of the indirect values (imagine a resolution used in 
+the step of the indirect calculation, which is not the same as the 
+final image resolution but must be coarse enough to find all the 
+differences in the indirect values over your surfaces). On the other 
+hand, setting these values to too accurate numbers is dangerous and 
+will give terrible rendering times.
+
+Just take a look at this list's archives, also at the documentation 
+(there should be a small text file in the software documentation just 
+about rpict settings), and, if possible, at the book Rendering with 
+Radiance.
+
+And try to find out what values are actually used by Desktop Radiance 
+and how to influence them. If you want to rely on the GUI and it's 
+defaults, this is the wrong list here, you need to know what's 
+happening.
+
+Good luck ;-)
+
+CU Lars.
+
+
+From gregoryjward at gmail.com  Tue Feb 22 17:01:01 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue Feb 22 17:02:06 2005
+Subject: [Radiance-general] DRQueue
+In-Reply-To: <421B11C5.7060401@familyhealth.com.au>
+References: <421B11C5.7060401@familyhealth.com.au>
+Message-ID: <937eec0d9d0c9e13334a79bd48e3e658@gmail.com>
+
+Hi Chris,
+
+I would have to look at it in detail for a real answer, but from a 
+cursory glance, it looks sufficiently general to handle rendering load 
+distribution with Radiance.  I bet you could figure it out yourself.
+
+-Greg
+
+> From: Christopher Kings-Lynne <chriskl@familyhealth.com.au>
+> Date: February 22, 2005 3:04:37 AM PST
+>
+> I wonder what it would take to add Radiance distributed rendering 
+> support to this:
+>
+> http://www.drqueue.org/
+>
+> It's an open source distributed render queue...
+>
+> Chris
+
+
+From chriskl at familyhealth.com.au  Tue Feb 22 17:05:01 2005
+From: chriskl at familyhealth.com.au (Christopher Kings-Lynne)
+Date: Tue Feb 22 17:07:09 2005
+Subject: [Radiance-general] DRQueue
+In-Reply-To: <937eec0d9d0c9e13334a79bd48e3e658@gmail.com>
+References: <421B11C5.7060401@familyhealth.com.au>
+	<937eec0d9d0c9e13334a79bd48e3e658@gmail.com>
+Message-ID: <421B582D.1060405@familyhealth.com.au>
+
+Hi Greg,
+
+It was more of a rhetorical question :) Perhaps I should have said "this 
+looks cool, I wonder if any Radiance users would be interested" :)
+
+Cheers,
+
+Chris
+
+Gregory J. Ward wrote:
+> Hi Chris,
+> 
+> I would have to look at it in detail for a real answer, but from a 
+> cursory glance, it looks sufficiently general to handle rendering load 
+> distribution with Radiance.  I bet you could figure it out yourself.
+> 
+> -Greg
+> 
+>> From: Christopher Kings-Lynne <chriskl@familyhealth.com.au>
+>> Date: February 22, 2005 3:04:37 AM PST
+>>
+>> I wonder what it would take to add Radiance distributed rendering 
+>> support to this:
+>>
+>> http://www.drqueue.org/
+>>
+>> It's an open source distributed render queue...
+>>
+>> Chris
+> 
+> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+From rfmurray at sas.upenn.edu  Thu Feb 24 23:26:24 2005
+From: rfmurray at sas.upenn.edu (Richard Murray)
+Date: Thu Feb 24 23:26:37 2005
+Subject: [Radiance-general] .pic precision
+Message-ID: <2c9687d65fc194d04b8d35e88a63d5fa@sas.upenn.edu>
+
+I'm starting to use Radiance in research on visual perception of 3D 
+shape.  The .pic file format assigns each colour channel one byte, plus 
+a common exponent for all three, resulting in about 1% precision.  When 
+testing peoples' ability to detect faint patterns, 1% isn't precise 
+enough, e.g., humans can detect sine wave patterns at less than 1% 
+contrast, but in the .pic format, a 1% amplitude sine wave would come 
+out more like a square wave.
+
+ From a quick look through rpmain.c and rpict.c, it looks like the the 
+floating-point COLOR struct is used throughout the rendering 
+calculations, and that the conversion to COLR is made at the very end, 
+in fwritescan(), when writing the .pic file.  This suggests that I 
+could just replace fwritescan() with a routine that writes the file at 
+a higher precision.
+
+My question is this:  are there other factors in the rendering 
+calculations (rounding, etc.) that limit the precision to around 1% 
+anyway?
+
+Thanks,
+
+Richard
+
+
+From gregoryjward at gmail.com  Fri Feb 25 04:03:12 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri Feb 25 04:04:12 2005
+Subject: [Radiance-general] .pic precision
+In-Reply-To: <2c9687d65fc194d04b8d35e88a63d5fa@sas.upenn.edu>
+References: <2c9687d65fc194d04b8d35e88a63d5fa@sas.upenn.edu>
+Message-ID: <e2d020cd3ac2e12091cc1d5b35155eb9@gmail.com>
+
+Hi Richard,
+
+As long as you are not relying on textures that derive from images of 
+any kind, there is no inherent limitation in the precision of the 
+lighting calculations in Radiance -- everything is carried out in 
+double-precision floating point.  However, the accuracy of any Monte 
+Carlo calculation is going to depend on a lot of different factors, 
+such as number of samples and so on, and if you don't pass the output 
+to pfilt to filter the result, you are likely to have samples with 
+occassional large discrepancies to their neighboring pixels.
+
+Avoiding these variances requires turning off Monte Carlo sampling as 
+much as possible, which probably requires no diffuse interreflection 
+and only purely specular (polished) or diffuse surfaces.  I can give 
+you hints on how to do this if that is what you are after.
+
+To get out a floating-point image without going into the 32-bit/pixel 
+RGBE representation, you can use rtrace instead of rpict, like so:
+
+% vwrays -vf view.vf -x 1024 -y 1024 -ff | rtrace -ff -h [options] 
+octree > picture.flt
+
+This will produce a raw floating-point image with 96-bits/pixel (RGB 
+floats in scanline order).  The size of the image can be determined by 
+running "vwrays -vf view.xf -x 1024 -y 1024 -d" as it won't be 
+1024x1024 unless you give it a square view, as vwrays produces square 
+pixels by default.
+
+-Greg
+
+> From: Richard Murray <rfmurray@sas.upenn.edu>
+> Date: February 24, 2005 2:26:24 PM PST
+>
+> I'm starting to use Radiance in research on visual perception of 3D 
+> shape.  The .pic file format assigns each colour channel one byte, 
+> plus a common exponent for all three, resulting in about 1% precision. 
+>  When testing peoples' ability to detect faint patterns, 1% isn't 
+> precise enough, e.g., humans can detect sine wave patterns at less 
+> than 1% contrast, but in the .pic format, a 1% amplitude sine wave 
+> would come out more like a square wave.
+>
+> From a quick look through rpmain.c and rpict.c, it looks like the the 
+> floating-point COLOR struct is used throughout the rendering 
+> calculations, and that the conversion to COLR is made at the very end, 
+> in fwritescan(), when writing the .pic file.  This suggests that I 
+> could just replace fwritescan() with a routine that writes the file at 
+> a higher precision.
+>
+> My question is this:  are there other factors in the rendering 
+> calculations (rounding, etc.) that limit the precision to around 1% 
+> anyway?
+>
+> Thanks,
+>
+> Richard
+
+
+From gvn at retena.com  Fri Feb 25 09:40:40 2005
+From: gvn at retena.com (=?iso-8859-1?Q?Ignacio_Mun=E1rriz?=)
+Date: Fri Feb 25 09:50:12 2005
+Subject: [Radiance-general] high reflectance & roughness metals
+Message-ID: <000d01c51b15$af8ddbe0$53000080@pnac>
+
+hi, althought i guess it has been discussed already at the forum, i've
+having some problems with high reflectance & roughness metals to simulate a
+diffuse   metal (alluminium) garage door
+
+my first atempt:
+
+rpict -x 4000 -y 3000 -vf vistas/e3 -af ambext -ab 2 -ad 200 -as 30 -ar
+300 -sj 1 -st 0 -dj .5 -pj .5 -t 60 exterior.oct>img/exteriore3.pic
+pfilt -r .6 -x 800 -y 600 img/exteriore3.pic>img/exteriore3pf.pic
+
+with the material
+void metal jaimito_l_3dpgaraje
+0
+0
+5 0.65 0.65 0.65 0.5 .1
+
+and the result is
+http://www.alfanature.com/avis/exteriore3b.jpg
+
+as you can see there are some artifacts (horizontal bands) , are them due to
+low-discrepancy?
+
+the second attempt is using pure montecarlo
+
+void texfunc metro
+4 gloss_dx gloss_dy gloss_dz gloss.cal
+0
+3 .02 .02 .02
+metro metal jaimito_l_3dpgaraje
+0
+0
+5 0.65 0.65 0.65 0.5 0
+
+and the result is
+http://www.alfanature.com/avis/exteriore3.jpg
+
+any way to improve that?
+anyway i prefer pure montecarlo to default radiance, do you?
+in other threads it was recommended to decrement sj and increment st, but
+this isn't it a way to elude the problem?
+
+thanks all
+
+
+From chriskl at familyhealth.com.au  Fri Feb 25 11:05:46 2005
+From: chriskl at familyhealth.com.au (Christopher Kings-Lynne)
+Date: Fri Feb 25 11:07:46 2005
+Subject: [Radiance-general] Questions about uniform sky
+Message-ID: <421EF87A.7040906@familyhealth.com.au>
+
+Hi,
+
+I'm just trying to understand a few things about using a uniform sky.
+
+1. With a uniform sky, how can I determine the theoretical irradiance or 
+illuminance at 0,0,0 looking straight up?  I'm currently testing a 
+polygon on the z=0 plane and I get a slight variance in the illumination 
+across that surface, due to slight errors in the calcs I presume.  What 
+I need is the theoretical exact value...
+
+2. With a uniform sky, will the position of my test plane matter?  ie. 
+If I translate the plane from the origin +10000 in the Z direction, will 
+the illumination on that plane still be identical?
+
+Thanks,
+
+Chris
+
+From chriskl at familyhealth.com.au  Fri Feb 25 11:39:27 2005
+From: chriskl at familyhealth.com.au (Christopher Kings-Lynne)
+Date: Fri Feb 25 11:41:28 2005
+Subject: [Radiance-general] Questions about uniform sky
+In-Reply-To: <421EF87A.7040906@familyhealth.com.au>
+References: <421EF87A.7040906@familyhealth.com.au>
+Message-ID: <421F005F.7090001@familyhealth.com.au>
+
+> I'm just trying to understand a few things about using a uniform sky.
+> 
+> 1. With a uniform sky, how can I determine the theoretical irradiance or 
+> illuminance at 0,0,0 looking straight up?  I'm currently testing a 
+> polygon on the z=0 plane and I get a slight variance in the illumination 
+> across that surface, due to slight errors in the calcs I presume.  What 
+> I need is the theoretical exact value...
+
+OK I presume I have to convert this brightness value:
+
+# Ground ambient level: 23.8
+
+Into an illuminance value.  Ummm, what is "brightness" as far as 
+Radiance is concerned and how to convert to illuminance?
+
+> 2. With a uniform sky, will the position of my test plane matter?  ie. 
+> If I translate the plane from the origin +10000 in the Z direction, will 
+> the illumination on that plane still be identical?
+
+OK, I tested it and I can easily go up many tens of kilometres and still 
+have same illumination...
+
+Chris
+
+From gvn at retena.com  Fri Feb 25 11:33:53 2005
+From: gvn at retena.com (=?iso-8859-1?Q?Ignacio_Mun=E1rriz?=)
+Date: Fri Feb 25 11:43:21 2005
+Subject: [Radiance-general] Questions about uniform sky
+References: <421EF87A.7040906@familyhealth.com.au>
+Message-ID: <001701c51b25$8100f270$53000080@pnac>
+
+1. Christopher, the theoretical factor between radiance and irradiance at a
+point in that case is pi, you only have to integrate a uniform radiance over
+a hemisphere to obtain it. Radiance can give some lite error due to the
+randomless of indirect calculation.
+
+2. yes,  the simulation is over hemisphere or you can determine the source
+angle you want.ie
+
+void glow sky_glow
+0
+0
+4 1 1 1 0
+
+sky_glow source sky
+0
+0
+4 0 0 1 angle
+
+
+----- Original Message -----
+From: "Christopher Kings-Lynne" <chriskl@familyhealth.com.au>
+To: "Radiance-General" <radiance-general@radiance-online.org>
+Sent: Friday, February 25, 2005 11:05 AM
+Subject: [Radiance-general] Questions about uniform sky
+
+
+> Hi,
+>
+> I'm just trying to understand a few things about using a uniform sky.
+>
+> 1. With a uniform sky, how can I determine the theoretical irradiance or
+> illuminance at 0,0,0 looking straight up?  I'm currently testing a
+> polygon on the z=0 plane and I get a slight variance in the illumination
+> across that surface, due to slight errors in the calcs I presume.  What
+> I need is the theoretical exact value...
+>
+> 2. With a uniform sky, will the position of my test plane matter?  ie.
+> If I translate the plane from the origin +10000 in the Z direction, will
+> the illumination on that plane still be identical?
+>
+> Thanks,
+>
+> Chris
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+
+From chriskl at familyhealth.com.au  Fri Feb 25 12:00:07 2005
+From: chriskl at familyhealth.com.au (Christopher Kings-Lynne)
+Date: Fri Feb 25 12:02:03 2005
+Subject: [Radiance-general] Questions about uniform sky
+In-Reply-To: <001701c51b25$8100f270$53000080@pnac>
+References: <421EF87A.7040906@familyhealth.com.au>
+	<001701c51b25$8100f270$53000080@pnac>
+Message-ID: <421F0537.4060305@familyhealth.com.au>
+
+> 1. Christopher, the theoretical factor between radiance and irradiance at a
+> point in that case is pi, you only have to integrate a uniform radiance over
+> a hemisphere to obtain it. Radiance can give some lite error due to the
+> randomless of indirect calculation.
+
+Ah, I think I've got it...
+
+Execute "gensky 3 21 14:00 -a 51.3 -o 0.1 -m 0.0 -u" to see:
+
+# Ground ambient level: 23.8
+
+Now, take the 23.8 and multiply by 179PI:
+
+horiz_illum = 23.8 * 179 * PI = 13383.813
+
+Which is very close to my empirical values, so must be correct, right? :D
+
+Thanks,
+
+Chris
+
+
+From gvn at retena.com  Fri Feb 25 13:22:22 2005
+From: gvn at retena.com (=?iso-8859-1?Q?Ignacio_Mun=E1rriz?=)
+Date: Fri Feb 25 13:31:49 2005
+Subject: [Radiance-general] Questions about uniform sky
+References: <421EF87A.7040906@familyhealth.com.au><001701c51b25$8100f270$53000080@pnac>
+	<421F0537.4060305@familyhealth.com.au>
+Message-ID: <001801c51b34$a8468390$53000080@pnac>
+
+take a look at skybright.cal to know how radiance deals with sky, it's
+explained too in rendering with radiance book
+
+
+----- Original Message -----
+From: "Christopher Kings-Lynne" <chriskl@familyhealth.com.au>
+To: "Radiance general discussion" <radiance-general@radiance-online.org>
+Sent: Friday, February 25, 2005 12:00 PM
+Subject: Re: [Radiance-general] Questions about uniform sky
+
+
+> > 1. Christopher, the theoretical factor between radiance and irradiance
+at a
+> > point in that case is pi, you only have to integrate a uniform radiance
+over
+> > a hemisphere to obtain it. Radiance can give some lite error due to the
+> > randomless of indirect calculation.
+>
+> Ah, I think I've got it...
+>
+> Execute "gensky 3 21 14:00 -a 51.3 -o 0.1 -m 0.0 -u" to see:
+>
+> # Ground ambient level: 23.8
+>
+> Now, take the 23.8 and multiply by 179PI:
+>
+> horiz_illum = 23.8 * 179 * PI = 13383.813
+>
+> Which is very close to my empirical values, so must be correct, right? :D
+>
+> Thanks,
+>
+> Chris
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+
+From raphael.compagnon at eif.ch  Fri Feb 25 14:46:35 2005
+From: raphael.compagnon at eif.ch (Raphael Compagnon)
+Date: Fri Feb 25 14:46:43 2005
+Subject: [Radiance-general] Questions about uniform sky
+In-Reply-To: <421EF87A.7040906@familyhealth.com.au>
+Message-ID: <5.1.0.14.2.20050225144358.02161bc0@pop.eif.ch>
+
+Hi,
+
+You may find some information regarding sky models, irradiance and 
+illuminance calculations in my RADIANCE tutorial:
+http://www.eif.ch/~compag/ref/RADIANCE_tutorial_E.pdf
+
+Hope this will be useful for you.
+
+Rapha?l
+
+
+From Christoph.Reinhart at nrc-cnrc.gc.ca  Fri Feb 25 15:02:28 2005
+From: Christoph.Reinhart at nrc-cnrc.gc.ca (Reinhart, Christoph)
+Date: Fri Feb 25 15:03:07 2005
+Subject: [Radiance-general] Questions about uniform sky
+Message-ID: <10C94843061E094A98C02EB77CFC3287125DBF77@nrcmrdex1d.imsb.nrc.ca>
+
+Hi Rapha?l,
+
+Your tutorial looks very useful. I am giving an introductory course on
+building simulation this winter term at McGill and I am struggling to find
+good tutorials for beginners. Maybe we should set up a central place, e.g.
+on the Radiance online web site, which points to the various
+Radiance/daylight simulation documents that are out there? 
+
+For those interested, our tutorial on the use of Radiance/Daysim Simulations
+for Sustainable Design is located under
+http://irc.nrc-cnrc.gc.ca/ie/light/daysim/DaysimTutorial.pdf.
+
+Christoph
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Raphael
+Compagnon
+Sent: Friday, February 25, 2005 8:47 AM
+To: Radiance general discussion
+Subject: Re: [Radiance-general] Questions about uniform sky
+
+Hi,
+
+You may find some information regarding sky models, irradiance and
+illuminance calculations in my RADIANCE tutorial:
+http://www.eif.ch/~compag/ref/RADIANCE_tutorial_E.pdf
+
+Hope this will be useful for you.
+
+Rapha?l
+
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+From rpg at rumblestrip.org  Fri Feb 25 15:13:12 2005
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Fri Feb 25 15:13:20 2005
+Subject: [Radiance-general] Questions about uniform sky
+In-Reply-To: <10C94843061E094A98C02EB77CFC3287125DBF77@nrcmrdex1d.imsb.nrc.ca>
+References: <10C94843061E094A98C02EB77CFC3287125DBF77@nrcmrdex1d.imsb.nrc.ca>
+Message-ID: <121083892a88b8f50a633e016a504142@rumblestrip.org>
+
+
+On Feb 25, 2005, at 9:02 AM, Reinhart, Christoph wrote:
+
+> Hi Rapha?l,
+>
+> Your tutorial looks very useful. I am giving an introductory course on
+> building simulation this winter term at McGill and I am struggling to 
+> find
+> good tutorials for beginners. Maybe we should set up a central place, 
+> e.g.
+> on the Radiance online web site, which points to the various
+> Radiance/daylight simulation documents that are out there?
+
+Agreed; I have been reading this document this morning with my coffee, 
+and I have learned a couple things already.  Sheesh, my "Radiance for 
+Dummies" talk at the Montreal Workshop could consist of a list of urls 
+to these fine documents.  Axel, Christoph and Raphael have compiled 
+some great stuff here.
+
+=================
+    Rob Guglielmetti
+www.rumblestrip.org
+
+
+From Christoph.Reinhart at nrc-cnrc.gc.ca  Fri Feb 25 15:02:28 2005
+From: Christoph.Reinhart at nrc-cnrc.gc.ca (Reinhart, Christoph)
+Date: Fri Feb 25 15:51:21 2005
+Subject: [Radiance-general] Questions about uniform sky
+Message-ID: <10C94843061E094A98C02EB77CFC3287125DBF77@nrcmrdex1d.imsb.nrc.ca>
+
+Hi Rapha?l,
+
+Your tutorial looks very useful. I am giving an introductory course on
+building simulation this winter term at McGill and I am struggling to find
+good tutorials for beginners. Maybe we should set up a central place, e.g.
+on the Radiance online web site, which points to the various
+Radiance/daylight simulation documents that are out there? 
+
+For those interested, our tutorial on the use of Radiance/Daysim Simulations
+for Sustainable Design is located under
+http://irc.nrc-cnrc.gc.ca/ie/light/daysim/DaysimTutorial.pdf.
+
+Christoph
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Raphael
+Compagnon
+Sent: Friday, February 25, 2005 8:47 AM
+To: Radiance general discussion
+Subject: Re: [Radiance-general] Questions about uniform sky
+
+Hi,
+
+You may find some information regarding sky models, irradiance and
+illuminance calculations in my RADIANCE tutorial:
+http://www.eif.ch/~compag/ref/RADIANCE_tutorial_E.pdf
+
+Hope this will be useful for you.
+
+Rapha?l
+
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+From rfmurray at sas.upenn.edu  Fri Feb 25 15:56:28 2005
+From: rfmurray at sas.upenn.edu (Richard Murray)
+Date: Fri Feb 25 15:56:37 2005
+Subject: [Radiance-general] .pic precision
+In-Reply-To: <200502251100.j1PB0Wcn025232@orion.sas.upenn.edu>
+References: <200502251100.j1PB0Wcn025232@orion.sas.upenn.edu>
+Message-ID: <1cb13edf133a2373adf4c071e424c52e@sas.upenn.edu>
+
+> Date: Thu, 24 Feb 2005 19:03:12 -0800
+> From: Gregory J. Ward <gregoryjward@gmail.com>
+> Subject: Re: [Radiance-general] .pic precision
+> To: Radiance general discussion <radiance-general@radiance-online.org>
+>
+> Hi Richard,
+>
+> As long as you are not relying on textures that derive from images of
+> any kind, there is no inherent limitation in the precision of the
+> lighting calculations in Radiance -- everything is carried out in
+> double-precision floating point.  However, the accuracy of any Monte
+> Carlo calculation is going to depend on a lot of different factors,
+> such as number of samples and so on, and if you don't pass the output
+> to pfilt to filter the result, you are likely to have samples with
+> occassional large discrepancies to their neighboring pixels.
+>
+> Avoiding these variances requires turning off Monte Carlo sampling as
+> much as possible, which probably requires no diffuse interreflection
+> and only purely specular (polished) or diffuse surfaces.  I can give
+> you hints on how to do this if that is what you are after.
+
+Yes, that would be very helpful, thanks.
+
+> To get out a floating-point image without going into the 32-bit/pixel
+> RGBE representation, you can use rtrace instead of rpict, like so:
+>
+> % vwrays -vf view.vf -x 1024 -y 1024 -ff | rtrace -ff -h [options]
+> octree > picture.flt
+
+Exactly what I'm looking for.  Thanks so much.
+
+Richard
+
+> This will produce a raw floating-point image with 96-bits/pixel (RGB
+> floats in scanline order).  The size of the image can be determined by
+> running "vwrays -vf view.xf -x 1024 -y 1024 -d" as it won't be
+> 1024x1024 unless you give it a square view, as vwrays produces square
+> pixels by default.
+>
+> -Greg
+
+
+From gregoryjward at gmail.com  Fri Feb 25 18:19:51 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri Feb 25 18:20:55 2005
+Subject: [Radiance-general] .pic precision
+In-Reply-To: <1cb13edf133a2373adf4c071e424c52e@sas.upenn.edu>
+References: <200502251100.j1PB0Wcn025232@orion.sas.upenn.edu>
+	<1cb13edf133a2373adf4c071e424c52e@sas.upenn.edu>
+Message-ID: <2459da6a2b05366ad7d36916b2a1b152@gmail.com>
+
+>> Avoiding these variances requires turning off Monte Carlo sampling as
+>> much as possible, which probably requires no diffuse interreflection
+>> and only purely specular (polished) or diffuse surfaces.  I can give
+>> you hints on how to do this if that is what you are after.
+>
+> Yes, that would be very helpful, thanks.
+
+OK, let's start with a set of rendering (rtrace) options to use:
+
+	-dt 0 -dj 0 -sj 0 -ab 0
+
+This turns off direct, specular, and diffuse interreflection sampling, 
+so you won't see any MC noise from those.  (Technically, the -dt 0 is 
+not really necessary, as it uses a mostly deterministic algorithm, but 
+I put it in there to be on the safe side.)  Next, you need to eliminate 
+sources of noise in your scene.  This means sticking to simple 
+materials like plastic, metal, glass, and light, and avoiding patterns 
+and textures with random or complex behaviors.  Certain ones will be 
+OK, but explaining which and why would take too much space, so it's 
+best to ask when you need one.
+
+That should get you started well enough.
+-Greg
+
+
+From gregoryjward at gmail.com  Fri Feb 25 18:24:16 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri Feb 25 18:25:11 2005
+Subject: [Radiance-general] high reflectance & roughness metals
+In-Reply-To: <000d01c51b15$af8ddbe0$53000080@pnac>
+References: <000d01c51b15$af8ddbe0$53000080@pnac>
+Message-ID: <9c056e40e4c2d6d7c0d069012e4ba1c9@gmail.com>
+
+Hi Ignacio,
+
+If you prefer standard Monte Carlo sampling over the low-discrepency 
+method, then you should recompile with -DMC as a flag in your rmake 
+script.  The only way to reduce the noise is to increase your sampling 
+density (initial rendering resolution).
+
+-Greg
+
+> From: Ignacio Mun?rriz <gvn@retena.com>
+> Date: February 25, 2005 12:40:40 AM PST
+>
+> hi, althought i guess it has been discussed already at the forum, i've
+> having some problems with high reflectance & roughness metals to 
+> simulate a
+> diffuse   metal (alluminium) garage door
+>
+> ...
+
+From chriskl at familyhealth.com.au  Fri Feb 25 18:23:49 2005
+From: chriskl at familyhealth.com.au (Christopher Kings-Lynne)
+Date: Fri Feb 25 18:25:48 2005
+Subject: [Radiance-general] Marching squares
+In-Reply-To: <420B7A64.30800@familyhealth.com.au>
+References: <420B7A64.30800@familyhealth.com.au>
+Message-ID: <421F5F25.7040300@familyhealth.com.au>
+
+By the way, I ended up solving this problem with this incredible tool:
+
+http://potrace.sourceforge.net/
+
+Chris
+
+Christopher Kings-Lynne wrote:
+> Hi,
+> 
+> Does anyone have an implementation of marching squares in .cal file 
+> format (or whatever) for Radiance?
+> 
+> I'm going to have a go at it soon, but was just wondering if anyone has 
+> code already...
+> 
+> The idea is to turn all the white areas in a black and white Radiance 
+> image into polygon definitions.
+> 
+> Chris
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+From mike at cityscape3d.com  Mon Feb 28 12:24:07 2005
+From: mike at cityscape3d.com (Michael Kruger)
+Date: Mon Feb 28 12:26:14 2005
+Subject: [Radiance-general] Hardware accelerated radiance
+In-Reply-To: <200502261059.j1QAxoG3097920@server.cityscape3d.com>
+References: <200502261059.j1QAxoG3097920@server.cityscape3d.com>
+Message-ID: <4222FF57.6030001@cityscape3d.com>
+
+Has anyone done any work on integrating radiance with a hardware 
+solution? I'm thinking of porting the basics of radiance to an FPGA with 
+a view to (near-)realtime rendering from AutoCAD or similar. I'm 
+currently evaluating previous work in this area, and so far it appears 
+that the most difficult bit of the problem would be the hardware 
+implementation of complex functions for procedural textures and surface 
+models - in particular the generic lookup tables for images / function 
+data. Other than that it's just a lot of legwork... am I missing something?
+
+Has anyone tried this in the past? Perhaps a different type of hardware 
+acceleration? Please let me know if you've got any success / horror 
+stories! :)
+
+mike
+
+ps: Another major problem for point + shoot rendering from 3D modeling 
+programs is ensuring oconv has a bounded finishing time for any given 
+model. Most models I work with in AutoCAD or Lightwave (exporter coming 
+Real Soon!) need extensive conversion work before oconv will run to 
+completion. (Most often it simply runs continuously until it dies 
+because it uses up all available memory. >4GB! ) Are other people having 
+similar problems?
+
+From cbauer- at t-online.de  Mon Feb 28 19:53:36 2005
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Mon Feb 28 18:41:32 2005
+Subject: [Radiance-general] Hardware accelerated radiance
+References: <200502261059.j1QAxoG3097920@server.cityscape3d.com>
+	<4222FF57.6030001@cityscape3d.com>
+Message-ID: <422368B0.4060605@t-online.de>
+
+Michael Kruger wrote:
+>
+> 
+> ps: Another major problem for point + shoot rendering from 3D modeling 
+> programs is ensuring oconv has a bounded finishing time for any given 
+> model. Most models I work with in AutoCAD or Lightwave (exporter coming 
+> Real Soon!) need extensive conversion work before oconv will run to 
+> completion. (Most often it simply runs continuously until it dies 
+> because it uses up all available memory. >4GB! ) Are other people having 
+> similar problems?
+> 
+Hi Mike,
+
+the oconv code is not much if counted in lines and statements, but it is 
+  definitly one of the complicated parts of Radiance. The memory issue 
+is certainly connected to the amount of fine detail in the scene, as one 
+algrithm within oconv calls itself recursively again and again when 
+stepping down the tree and subdividing the cube into octants and 
+suboctants etc. This results in oconv 'blowing' itself up considerably, 
+using far more memory for the process than the produced octree later has 
+itself.
+
+This means by subdividing the scene beforehand and then including the 
+parts as instances you have far better chances to get a model 'oconved'.
+(If I remember it right Greg once said that by using instances and 
+subinstances etc the whole world could be converted to an octree with 
+resolution down to some inches ...)
+
+Another optimisation comes into play: if you have lots of similar 
+instances, they are only allocated once. A drawback of using instance is 
+that every ray has to undergo a transformation on entering, but for huge 
+models this effect becomes negligible.
+
+All in all this means of course some appropriate user intervention. 
+Coming up with an automatic solution which e.g triggers subdivision of 
+the scene automatically presumably will be not easy :-)
+
+-Cb
+
+
+
+
+
+From gregoryjward at gmail.com  Mon Feb 28 18:52:40 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon Feb 28 18:53:45 2005
+Subject: [Radiance-general] Hardware accelerated radiance
+In-Reply-To: <4222FF57.6030001@cityscape3d.com>
+References: <200502261059.j1QAxoG3097920@server.cityscape3d.com>
+	<4222FF57.6030001@cityscape3d.com>
+Message-ID: <c0427d7585d139e4c72e5a3353d48013@gmail.com>
+
+Hi Mike,
+
+Unless you're really, really careful, the communication with the FPGA  
+will kill any savings you make in the ray tracing times on a hardware  
+implementation.  This has been found time and again for the past  
+decades by the numerous people who have written or attempted  
+ray-tracing on hardware.  The literature is extensive in this area, and  
+I suggest you start with one of the textbooks on parallel rendering  
+algorithms, such as:
+
+Practical Parallel Rendering
+by  Alan Chalmers (Editor), Timothy Davis (Editor), Erik Reinhard
+
+http://www.amazon.com/exec/obidos/tg/detail/-/1568811799/ 
+qid=1109613036/sr=1-1/ref=sr_1_1/104-1366464-7333544?v=glance&s=books
+
+Regarding oconv, you might have better luck converting some larger  
+models into a Radiance mesh, which uses less memory to represent  
+triangular tesselations.  Most CAD software these days spits out  
+hundreds of thousands of polygons, even when they aren't needed, such  
+as for large, flat surfaces.  Using Alias/Wavefront .OBJ as your export  
+format, obj2mesh can convert these models much more efficiently into  
+Radiance.
+
+-Greg
+
+> From: Michael Kruger <mike@cityscape3d.com>
+> Date: February 28, 2005 3:24:07 AM PST
+>
+> Has anyone done any work on integrating radiance with a hardware  
+> solution? I'm thinking of porting the basics of radiance to an FPGA  
+> with a view to (near-)realtime rendering from AutoCAD or similar. I'm  
+> currently evaluating previous work in this area, and so far it appears  
+> that the most difficult bit of the problem would be the hardware  
+> implementation of complex functions for procedural textures and  
+> surface models - in particular the generic lookup tables for images /  
+> function data. Other than that it's just a lot of legwork... am I  
+> missing something?
+>
+> Has anyone tried this in the past? Perhaps a different type of  
+> hardware acceleration? Please let me know if you've got any success /  
+> horror stories! :)
+>
+> mike
+>
+> ps: Another major problem for point + shoot rendering from 3D modeling  
+> programs is ensuring oconv has a bounded finishing time for any given  
+> model. Most models I work with in AutoCAD or Lightwave (exporter  
+> coming Real Soon!) need extensive conversion work before oconv will  
+> run to completion. (Most often it simply runs continuously until it  
+> dies because it uses up all available memory. >4GB! ) Are other people  
+> having similar problems?
+
+
+From tarik.rahman at ed.ac.uk  Mon Feb 28 19:13:08 2005
+From: tarik.rahman at ed.ac.uk (Tarik Rahman)
+Date: Mon Feb 28 19:13:16 2005
+Subject: [Radiance-general] Cube vertical cross light maps 
+Message-ID: <1109614388.42235f3430feb@sms.ed.ac.uk>
+
+Hi there
+When composing a cube map on HDRShop I find that the walls don't line up
+properly when mapped onto a 6 polygon room, e.g. east wall doens't line up
+quite right with north wall. Does anyone know what the best procedure for this
+area is (i.e. views and cam params). I've already tried using the light probe
+(angular map) with vh and vv = 10 degrees and am just experimenting trying to
+make a cube vertical cross map using the same close up shot of the mirror ball
+in HDR shop.
+
+Thanks for any help
+Tarik
+
+--
+Tarik Rahman
+PhD student, Institute of Perception, Action and Behaviour
+School of Informatics
+University of Edinburgh
+

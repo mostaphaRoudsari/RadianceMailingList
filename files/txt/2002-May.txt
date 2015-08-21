@@ -1,0 +1,3207 @@
+From radiance-general@radiance-online.org  Fri May  3 15:21:08 2002
+From: radiance-general@radiance-online.org (radiance-general@radiance-online.org)
+Date: Fri, 03 May 2002 16:21:08 +0200
+Subject: [Radiance-general] Surface normal and Rdot in mix functions
+Message-ID: <5.1.0.14.0.20020503150112.00b97800@vttmail.vtt.fi>
+
+Hi,
+Is there anybody (Greg?) who could help in the following problem:
+
+For the mixture material type one has to define a weight coefficient 
+[0...1] for the 'foreground' material. Respectively, this coefficient 
+subtracted from 1 is the weight for the 'background' material.
+
+I have used .cal functions based on cos(theta) of the incoming (eye) ray. 
+For this purpose, there is a special variable available, Rdot, which is the 
+dot product of the eye ray and the surface normal and hence should be equal 
+to cos(theta), if I have understood correctly. I have also supposed 
+Radiance always flips the normal so that Rdot would get only positive 
+values between 0 and 1. However, when I tested this, my functions gave 
+warnings that imply negative values of Rdot. Something seems to be wrong in 
+my reasoning.
+
+Is it ok to treat positive and negative Rdot values symmetrically in mix 
+functions?
+
+I have not used surface textures, but the roughness values for trans 
+material are moderately big.
+
+Regards,
+Markku
+
+
+Markku_Norvasuo
+Technical_Research_Centre_of_Finland
+
+
+From radiance-general@radiance-online.org  Fri May  3 17:09:44 2002
+From: radiance-general@radiance-online.org (Peter Apian-Bennewitz)
+Date: Fri, 03 May 2002 18:09:44 +0200
+Subject: [Radiance-general] Surface normal and Rdot in mix functions
+References: <5.1.0.14.0.20020503150112.00b97800@vttmail.vtt.fi>
+Message-ID: <3CD2B648.57A49A07@pab-opto.de>
+
+markku.norvasuo@vtt.fi wrote:
+
+> 
+> I have used .cal functions based on cos(theta) of the incoming (eye) ray.
+> For this purpose, there is a special variable available, Rdot, which is the
+> dot product of the eye ray and the surface normal and hence should be equal
+> to cos(theta), if I have understood correctly. I have also supposed
+> Radiance always flips the normal
+
+... if I recall it right:
+dielectric, interface, BRTDfunc, glow and mixfunc don't re-orient
+surfaces and Rdot[-1:1]
+colorfunc, brightfunc, transfunc (+ their ~data equivalents), trans,
+plastic(2), metal(2), glass do flip surface normals and so Rdot[0:1] .
+
+-Peter
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+From radiance-general@radiance-online.org  Fri May  3 19:02:21 2002
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Fri, 3 May 2002 14:02:21 -0400 (EDT)
+Subject: [Radiance-general] Surface normal and Rdot in mix functions
+In-Reply-To: <3CD2B648.57A49A07@pab-opto.de>
+Message-ID: <Pine.BSF.4.30.0205031351180.7638-100000@emancholl.pair.com>
+
+Peter Apian-Bennewitz wrote:
+
+> markku.norvasuo@vtt.fi wrote:
+>
+> >
+> > I have used .cal functions based on cos(theta) of the incoming (eye) ray.
+> > For this purpose, there is a special variable available, Rdot, which is the
+> > dot product of the eye ray and the surface normal and hence should be equal
+> > to cos(theta), if I have understood correctly. I have also supposed
+> > Radiance always flips the normal
+>
+> ... if I recall it right:
+> dielectric, interface, BRTDfunc, glow and mixfunc don't re-orient
+> surfaces and Rdot[-1:1]
+> colorfunc, brightfunc, transfunc (+ their ~data equivalents), trans,
+> plastic(2), metal(2), glass do flip surface normals and so Rdot[0:1] .
+
+
+Note that, as far as I am aware of, this "normal flipping" is
+NEVER done for non-material modifiers.  The original question
+was about mixtures, though the wording unintentionally confused
+the issue a bit. For the materials, I think the list above is
+about correct.
+
+You can assign different materials/patterns/textures to the front
+and back side of a surface simply by using "if(Rdot,1,0)" as the
+coefficient for a mixture. In fact, there is a file "diffside.cal"
+available in the Rayfront library that does exactly this.
+
+If you don't want to differentiate between the two sides of a
+surface in non-material modifiers, then you'll have to look at the
+absolute value of Rdot (or the absolute values of Nx/Ny/Nz).
+Positive and negative values of Rdot are equivalent to each other
+for the respective "other" side of the surface. I'm not sure if
+the perturbation caused by the roughness parameter is reflected
+in the N# values seen by a function file.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch.com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-general@radiance-online.org  Mon May  6 09:36:09 2002
+From: radiance-general@radiance-online.org (radiance-general@radiance-online.org)
+Date: Mon, 06 May 2002 10:36:09 +0200
+Subject: [Radiance-general] Surface normal and Rdot in mix functions
+In-Reply-To: <Pine.BSF.4.30.0205031351180.7638-100000@emancholl.pair.com
+ >
+References: <3CD2B648.57A49A07@pab-opto.de>
+Message-ID: <5.1.0.14.0.20020506100530.00b97a60@vttmail.vtt.fi>
+
+At 14:02 2002-05-03 -0400, you wrote:
+>You can assign different materials/patterns/textures to the front
+>and back side of a surface simply by using "if(Rdot,1,0)" as the
+>coefficient for a mixture.
+
+So respectively "if(Rdot,Rdot, -Rdot)" returns cos(theta) if both sides are 
+similar. - By the way, I never realised before that modifiers "foreground" 
+and "background" could refer to the concrete front and back of a surface...
+
+Thanks very much,
+Markku N.
+
+
+
+From radiance-general@radiance-online.org  Fri May  3 13:38:09 2002
+From: radiance-general@radiance-online.org (atelier iebele abel)
+Date: Fri, 03 May 2002 14:38:09 +0200
+Subject: [Radiance-general] animation
+Message-ID: <3CD284B0.72EB180C@iebele.nl>
+
+Hi all,
+
+I am rendering an animation of an interior scene. At this moment one
+frame takes about half an hour to render(*), with fine results per
+frame. When I view the frames as an animation however, the artifacts are
+"unstable". It looks like Radiance renders shadows,
+reflections(specularity) and indirect illumination in a random way.
+Sometimes objects also get different color intensities in the rendered
+image, as if they were lit in a (radical) other way.
+I have rendered a lot of still images in Radiance and never noticed that
+two renderings with exactly the same geometry, render-options, viewport
+etc. results in slightly different images (!).
+How can I solve this? Does anybody knows how to render without these
+"moving artifacts"? Is there a random thing in Radiance that we can turn
+off ?
+
+Regards,
+
+Iebele
+
+
+(*)  Below are the settings I use for the rendering. I know that I can
+increase the quality using different settings, but that is not the point
+here. My point is that the overall solution has too many, and
+unexpectable differences between  rendered images.
+
+The settings are (as they appear in my ran file):
+DIRECTORY  = /disk11/ani01
+OCTREE = glow.oct
+VIEWFILE = ani01.vp
+START  = 1
+END  = 448
+BASENAME = /disk11/ani01/ani01%03d
+DISKSPACE = 250
+OVERSAMPLE = 4
+INTERPOLATE = 0
+RESOLUTION = 720 576
+render = -dp 1024 -ab 1 -ad 1024 -ar 2048 -as 512 -aa 0.2 -lr 1 -st 0.01
+-ps 8 -av 20 20 20
+pfilt  = -r .7
+
+
+From radiance-general@radiance-online.org  Thu May  9 16:50:50 2002
+From: radiance-general@radiance-online.org (Rob Guglielmetti)
+Date: Thu, 9 May 2002 11:50:50 -0400
+Subject: [Radiance-general] Too many questions to fit in the subject
+Message-ID: <3CDA629A.13873.83396C@localhost>
+
+Hello all.  Some of you know me, many do not.  But I have 
+been experimenting with Radiance lately.  Thanks to Greg 
+who tipped me off to the power of OS X (and his pre-
+compiled binaries for 3.4).  I struggled with LINUX many 
+times, but never got a totally functional system; I was 
+rpicting all over the place after a week on OS X.  =8-)
+
+Anyway, now that I'm getting a feel for how the various 
+programs work together, I have gone back and am now 
+reading the old Radiance Digests.  This has been helpful. 
+Those things read like a "Who's Who in the Radiance 
+Community".  And to see many of the gurus, with more 
+questions than answers, makes me feel like someday I 
+may get my head around all of this stuff!  Of course, many 
+of those messages are eight years old.  Hmmm...
+
+Enough rambling.  Questions:
+
+Philip Thompson, way back in '94, inquired about the 
+ability to show surface normal orientation in rview.  Was 
+this ever developed?  My frame of reference is Lightscape, 
+which has been excellent in this regard.  Surface normals 
+can be interractively viewed, and backfaces are displayed 
+in a garish green color.  Incorrectly oriented surfaces can 
+be flipped with a click of a button.  It was only after my 
+initial experiments that I learned surface normal 
+orientation is a non-issue in Radiance (excepting windows 
+via mkillum).  
+
+Failing rview, what other geometry previewers are you 
+folks using?  Ole Lemming's ConRad has a useful 
+previewer, that operates similarly to the "view setup" 
+dialog in Lightscape.  I really think this would speed 
+things along for me, the ability to interractively orbit a 
+scene & check for modeling errors, normal orientation, etc, 
+and most importantly, SETTING VIEWS.  THis is a real 
+hassle when you have to provide vp, vd as 3D points.  Are 
+there other previewers besides ConRad?  
+
+Greg in one of the digests said windows can be modelled 
+using a single plane of glass.  (I'm used to Lightscape's 
+requirement of two opposite-facing planes, lest you get 
+refraction errors in a raytrace.)  Does this hold true for the 
+rest of the building?  IOW, a simple room can be modelled 
+with a single genbox?  I have been creating an inner 
+room and an outer "shell".  Again, this may be my 
+Lightscape logic getting in the way of things here.  Of 
+course for detailed renderings you *have* to model the 
+wall thickness, but for daylighting analysis, would a single 
+box (with windows of course) suffice?  In Lightscape you 
+would get "light leaks" around the corners of the interior 
+as sunlight affected the vertices unless you enclosed the 
+interior with an outer shell.
+
+Re: skies.  Gensky (directed by George Mischler's radout) 
+creates a description of the sky & ground luminance, and 
+creates two colored hemispheres.  I have seen some 
+special sky textures available for mapping to a sphere for 
+more realistic environments.  How do these work?  Are 
+they transparent placeholders, which merely display a 
+picture of the sky but allow the sun & sky luminance to 
+"pass through", or do they actually modulate the sky 
+luminance as a function of the chromacity of the pixels in 
+the sky image?
+
+I have been using George Mischler's radout to bring 
+geometry from AutoCAD to radiance.  But there doesn't 
+seem to be a way to handle blocks.  It would be great if 
+there was a way to substitute autocad blocks for 
+instanced rad files!  One could export the blocks as 
+separate rad files, but is there a way to take a series of 
+insertion point coordinates and build a rad file that 
+instances the "block" rad file at those 
+coords/orientations?  That seems to be the key to being 
+able to rapidly change scenes, and stay accurate.  Anyone 
+doing this type of thing already?
+
+Along those lines, is there a way to create a grid or really 
+any series of points in autocad (via nodes, or blocks or 
+whatever) and then have the coordinates of those points 
+be fed to rtrace for lighting analysis?  I know you can feed 
+rtrace the points, but I'm interested in a way to have 
+autocad export the information rather than me figure out 
+the points manually.  I like to draw the stuff and have 
+CAD keep track of all the math, ya know?
+
+I found a nice collection of materials online (Kevin 
+Matthews, Design Workshop).  Some of the cal files are 
+missing, but many of the materials are usable.  Does 
+anyone else have material & light libraries they are willing 
+to share?  I'm also really interested in obtaining 
+definitions of translucent materials, such as one would 
+find in a light fixture (sandblasted glass, acrylic, etc).  
+
+Paul Bourke offers some great tree examples.  Again, 
+does anyone have other blocks they are willing to share 
+(vegetation, furniture, you name it)??  =8-)
+
+Paul also has a benchmark page: 
+http://astronomy.swin.edu.au/~pbourke/radiance |
+/benchrad/
+
+I tried the first one and my PowerBook G4 550 rendered it 
+in 582 secs, which is almost exactly three times as long as 
+the render time for a 1.5 GHz P4 (see the site for more 
+times).  Is it just coincidence, or is there a fairly direct 
+correlation between CPU speed and render time, 
+regardless of processor type?  Makes Apple's ad copy 
+about the "Velocity engine" in the G4 seem like a load of 
+bunk (which I suspected in the first place).   Don't get me 
+wrong, I love this Mac.  But it seems that when I finally 
+am ready to do production work with Radiance I'm gonna 
+have to learn LINUX once and for all.  The cheapest cpu 
+cycles are with homebuilt PCs, so it seems that's the way 
+to go.  Interestingly, there is a benchmark for a dual 2GHz 
+PC, which was only 50% faster than the single 1.5 GHz.  
+I'm interested in parallel processing, but this seems to 
+make a case against it.  What are your experiences out 
+there in the field? 
+
+Woah.  That got long in a hurry.  I'll leave it at that for 
+now.  More questions to follow hopefully.  I'd greatly 
+appreciate any responses to my inquiries above.  
+
+
+         ====================
+ Rob Guglielmetti <rpg777@earthlink.net>
+    http://home.earthlink.net/~rpg777
+
+From radiance-general@radiance-online.org  Thu May  9 19:16:30 2002
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Thu, 9 May 2002 14:16:30 -0400 (EDT)
+Subject: [Radiance-general] Too many questions to fit in the subject
+In-Reply-To: <3CDA629A.13873.83396C@localhost>
+Message-ID: <Pine.BSF.4.30.0205091411570.21119-100000@emancholl.pair.com>
+
+Rob Guglielmetti wrote:
+
+>   I struggled with LINUX many
+> times, but never got a totally functional system; I was
+> rpicting all over the place after a week on OS X.  =8-)
+
+Hi Rob,
+
+I recommend SuSe as an Linux distribution that is relatively easy
+to install and configure. Other people seem to get good results
+with Mandrake. Don't even think about RedHat if you're not very
+familiar with Linux already.
+
+
+> Philip Thompson, way back in '94, inquired about the
+> ability to show surface normal orientation in rview.  Was
+> this ever developed?
+
+This may not be exactly what you wanted, but if you use the -bv-
+boolean switch, then all faces will become invisible from the
+back...
+
+My personal philosophy about this point is (so far anyway), that
+this is the task of the modeller you're using. Once you're
+running rview (or any similar program), it's really a bit late
+to do anything about flipped orientations. The fact that the
+orientation doesn't matter at all for most material types in
+Radiance has helped me to stick to this position.
+
+Of course, there is the rshow program by Peter, which works on
+most unix systems with OpenGL. I don't know if anyone has tried
+to port it to OS X though, nor if it can do anything about
+surface normals.
+
+
+> Greg in one of the digests said windows can be modelled
+> using a single plane of glass.  (I'm used to Lightscape's
+> requirement of two opposite-facing planes, lest you get
+> refraction errors in a raytrace.)  Does this hold true for the
+> rest of the building?  IOW, a simple room can be modelled
+> with a single genbox?  I have been creating an inner
+> room and an outer "shell".
+
+Radiance normally does fine with thin boxes. There *may* be light
+leaks in low quality simulations when the ambient density is too
+loose. But with tougher settings, you will rarely see this.
+
+
+>   I have seen some
+> special sky textures available for mapping to a sphere for
+> more realistic environments.  How do these work?  Are
+> they transparent placeholders, which merely display a
+> picture of the sky but allow the sun & sky luminance to
+> "pass through", or do they actually modulate the sky
+> luminance as a function of the chromacity of the pixels in
+> the sky image?
+
+The latter is the case, as it's a simple colorpict pattern.
+You will lose the accountability of the CIE sky model when you
+map a picture onto the sky sphere.
+
+Btw: Rayfront has a simple drop-down box in the sky configuration
+dialog to select sky maps... ;)
+
+
+>   It would be great if
+> there was a way to substitute autocad blocks for
+> instanced rad files!  One could export the blocks as
+> separate rad files, but is there a way to take a series of
+> insertion point coordinates and build a rad file that
+> instances the "block" rad file at those
+> coords/orientations?
+
+In theory, this sounds easy. In practise, it would open a
+pandora's box of consistency problems, not to mention the
+questions about how to assign materials to subentities within
+such blocks that are placed on different layers. I have been
+pondering those issues for years, and haven't come up with a
+practical solution yet.
+
+I think there was some talking about doing this for Desktop
+Radiance, but I have no idea if they actually got around to
+implement anything of the kind. Since DR never looks back at the
+Radiance data it has written, but simply overwrites it when you
+change anything within Autocad, it can avoid many (but not all)
+of the consistency questions.
+
+If you're feeling adventurous and know some Autolisp, then you
+could try to hack my old torad.lsp translator. If you manage to
+come up with a fool proof solution, then I'll immediately
+integrate it into Radout.
+
+
+> Along those lines, is there a way to create a grid or really
+> any series of points in autocad (via nodes, or blocks or
+> whatever) and then have the coordinates of those points
+> be fed to rtrace for lighting analysis?  I know you can feed
+> rtrace the points, but I'm interested in a way to have
+> autocad export the information rather than me figure out
+> the points manually.  I like to draw the stuff and have
+> CAD keep track of all the math, ya know?
+
+Both DR and Rayfront can do this for you.
+
+
+> I found a nice collection of materials online (Kevin
+> Matthews, Design Workshop).  Some of the cal files are
+> missing, but many of the materials are usable.  Does
+> anyone else have material & light libraries they are willing
+> to share?  I'm also really interested in obtaining
+> definitions of translucent materials, such as one would
+> find in a light fixture (sandblasted glass, acrylic, etc).
+
+If anyone wants to share their creations, I'd be more than
+willing to establish and maintain an online repository.
+Of course, if you use materials that others have created and
+expect them to be physically meaningful (beyond just looking
+nice), then you'll have to run some sanity checks on them
+yourself, especially if you're thinking about procedural
+definitions.
+
+
+> Paul Bourke offers some great tree examples.  Again,
+> does anyone have other blocks they are willing to share
+> (vegetation, furniture, you name it)??  =8-)
+
+If you buy DesignWorkshop, then I think you also get a tree
+generator program, which produces data that can be exported to
+the Radiance scene file format.
+
+
+> I tried the first one and my PowerBook G4 550 rendered it
+> in 582 secs, which is almost exactly three times as long as
+> the render time for a 1.5 GHz P4 (see the site for more
+> times).  Is it just coincidence, or is there a fairly direct
+> correlation between CPU speed and render time,
+> regardless of processor type?
+
+There's something wrong either with your machine, or with the
+OS X port of Radiance. There is no direct relation of processing
+power and clock speed between different CPU types.  In general,
+PowerPC CPUs require about half the cycles for the same results
+(ie. your 550 MHz G4 is roughly aequivalent to a 1 GHz P4). If
+you get only the same performance per cycle on your G4, then
+you're probably running into a system bottleneck of some kind
+(disk access, RAM size etc.).
+
+Does your HD go to sleep when it isn't accessed for a few
+minutes, or do you have any other power saving features turned
+on? Were the Radiance binaries compiled with comparable
+optimization flags? It may also be that a laptop simply has a
+relatively slow HD installed to preserve energy. If you're low on
+RAM, then this could stall a Radiance simulation to some degree.
+
+
+> Makes Apple's ad copy
+> about the "Velocity engine" in the G4 seem like a load of
+> bunk (which I suspected in the first place).
+
+No, this must have something to do with your specific system.
+The G4s *are* faster than most Pentiums out there.
+
+
+>   Interestingly, there is a benchmark for a dual 2GHz
+> PC, which was only 50% faster than the single 1.5 GHz.
+> I'm interested in parallel processing, but this seems to
+> make a case against it.  What are your experiences out
+> there in the field?
+
+Linux isn't optimized for multi-CPU systems yet, although it's
+getting better. It is even more difficult to directly equate
+clock speed with processing power on multi-CPU system than it
+already is with normal boxes. The overall architecture of the
+system (both in hardware and software) can influence the result
+up to a factor of 50% or more. If the amount and type of your RAM
+or the configuration of your HD isn't carefully balanced against
+the CPU specifications, then you'll get quite surprising results.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch.com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-general@radiance-online.org  Thu May  9 20:58:48 2002
+From: radiance-general@radiance-online.org (Peter Apian-Bennewitz)
+Date: Thu, 09 May 2002 21:58:48 +0200
+Subject: [Radiance-general] Too many questions to fit in the subject
+References: <3CDA629A.13873.83396C@localhost>
+Message-ID: <3CDAD4F8.E936A2FE@pab-opto.de>
+
+Hi Rob,
+
+> Philip Thompson, way back in '94, inquired about the
+> ability to show surface normal orientation in rview.  Was
+> this ever developed?  My frame of reference is Lightscape,
+> which has been excellent in this regard.  Surface normals
+> can be interractively viewed, and backfaces are displayed
+> in a garish green color.  Incorrectly oriented surfaces can
+> be flipped with a click of a button.  It was only after my
+> initial experiments that I learned surface normal
+> orientation is a non-issue in Radiance (excepting windows
+> via mkillum).
+IMHO, the only real non-trivial problem with incorrectly oriented
+surfaces happens with solid glass (=dielectric) objects. If the CAD
+spills out polygons with quasi-random orientation (AutoCAD 12 caused me
+some temporary headaches years back), hand tweaking the orientations is
+not an option. Problems with orientation of glow and spotlight surfaces
+are typically easier to hand-tweak. All other surfaces, as you know,
+don't care for orientation. 
+
+> Failing rview, what other geometry previewers are you
+> folks using?  Ole Lemming's ConRad has a useful
+> previewer, that operates similarly to the "view setup"
+> dialog in Lightscape.  I really think this would speed
+> things along for me, the ability to interractively orbit a
+> scene & check for modeling errors, normal orientation, etc,
+> and most importantly, SETTING VIEWS.  THis is a real
+> hassle when you have to provide vp, vd as 3D points.  Are
+> there other previewers besides ConRad?
+http://www.pab-opto.de/progs/rshow/rshow.html - shows surface
+orientation too (when moving the mouse over surfaces and keeping the
+middle (OS-X ??) button down.) come to think of it,- there's no OS-X
+version available yet.
+
+> ...
+> 
+
+> 
+> Along those lines, is there a way to create a grid or really
+> any series of points in autocad (via nodes, or blocks or
+> whatever) and then have the coordinates of those points
+> be fed to rtrace for lighting analysis? 
+rshow has an option for that too
+ ... 
+> I found a nice collection of materials online (Kevin
+> Matthews, Design Workshop).  Some of the cal files are
+> missing, but many of the materials are usable.  Does
+> anyone else have material & light libraries they are willing
+> to share?  I'm also really interested in obtaining
+> definitions of translucent materials, such as one would
+> find in a light fixture (sandblasted glass, acrylic, etc).
+I guess one problem with libraries is the naming. When 4 people find
+"Sandblasted" in the list, they have 25 different ideas how that looks
+in reality. "Lightly sandblasted" doesn't help either.
+> 
+...
+> 
+> I tried the first one and my PowerBook G4 550 rendered it
+> in 582 secs, which is almost exactly three times as long as
+> the render time for a 1.5 GHz P4 (see the site for more
+> times).  Is it just coincidence, or is there a fairly direct
+> correlation between CPU speed and render time,
+> regardless of processor type? 
+No way. CPU architectures (super-scalar, pipelining, cache coherence)
+plus compiler optimizations de-correlate clock speed from rendering
+times.
+
+> to go.  Interestingly, there is a benchmark for a dual 2GHz
+> PC, which was only 50% faster than the single 1.5 GHz.
+> I'm interested in parallel processing, but this seems to
+> make a case against it.  What are your experiences out
+> there in the field?
+I've got no experience with 2Ghz (AMD ?) dual boards, although all other
+duals (PII 200MHz- PIII 1Ghz) worked as expected so far. Mem speed, disk
+times (if needed, typically not so much for Radiance during rendering,
+rpict does heavy I/O only at startup while reading the scene) and cache
+size may slow down overall throughput.
+btw: With rpict, -PP allows sharing the geometry between two rpict
+programs on the same machine. Useful for large scenes.
+
+-Peter
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+From radiance-general@radiance-online.org  Thu May  9 20:15:53 2002
+From: radiance-general@radiance-online.org (Peter Apian-Bennewitz)
+Date: Thu, 09 May 2002 21:15:53 +0200
+Subject: [Radiance-general] animation
+References: <3CD284B0.72EB180C@iebele.nl>
+Message-ID: <3CDACAE9.3E60F54B@pab-opto.de>
+
+atelier iebele abel wrote:
+> 
+> Hi all,
+> 
+> I am rendering an animation of an interior scene. At this moment one
+> frame takes about half an hour to render(*), with fine results per
+> frame. When I view the frames as an animation however, the artifacts are
+> "unstable". It looks like Radiance renders shadows,
+> reflections(specularity) and indirect illumination in a random way.
+> Sometimes objects also get different color intensities in the rendered
+> image, as if they were lit in a (radical) other way.
+> I have rendered a lot of still images in Radiance and never noticed that
+> two renderings with exactly the same geometry, render-options, viewport
+> etc. results in slightly different images (!).
+> How can I solve this? Does anybody knows how to render without these
+> "moving artifacts"? Is there a random thing in Radiance that we can turn
+> off ?
+stochastic calculations are used as MC integration in specular and
+ambient calculations and for efficency reasons in direct and secondary
+light sources. Your vastly different images sound like a too optimistic
+approximation in the direct calcs (dt, dc options- how many light
+sources are there ?), but most animation suffer from varying ambient
+calculations. If it's only a walk-through animation with a fixed scene,
+it helps to pre-run along the path doing every n-th frame (n=2..10) with
+a small resolution and fill an ambient file. 
+
+Very probably rendering times will go up for artifacts to go down - You
+may want to try the pinterp program to interpolate between frames,
+although it uses more diskspace and the controlling script/program gets
+more complex (especially using multiple machines to render on).
+Interpolation breaks with reflecting/refracting surfaces too, but
+otherwise speeds up animation quite a bit.
+
+-Peter
+
+> 
+> Regards,
+> 
+> Iebele
+> 
+> (*)  Below are the settings I use for the rendering. I know that I can
+> increase the quality using different settings, but that is not the point
+> here. My point is that the overall solution has too many, and
+> unexpectable differences between  rendered images.
+> 
+> The settings are (as they appear in my ran file):
+> DIRECTORY  = /disk11/ani01
+> OCTREE = glow.oct
+> VIEWFILE = ani01.vp
+> START  = 1
+> END  = 448
+> BASENAME = /disk11/ani01/ani01%03d
+> DISKSPACE = 250
+> OVERSAMPLE = 4
+> INTERPOLATE = 0
+> RESOLUTION = 720 576
+> render = -dp 1024 -ab 1 -ad 1024 -ar 2048 -as 512 -aa 0.2 -lr 1 -st 0.01
+> -ps 8 -av 20 20 20
+> pfilt  = -r .7
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+From radiance-general@radiance-online.org  Thu May  9 21:35:47 2002
+From: radiance-general@radiance-online.org (Rob Guglielmetti)
+Date: Thu, 9 May 2002 16:35:47 -0400
+Subject: [Radiance-general] Too many questions to fit in the subject
+In-Reply-To: <Pine.BSF.4.30.0205091411570.21119-100000@emancholl.pair.com>
+References: <3CDA629A.13873.83396C@localhost>
+Message-ID: <3CDAA563.26962.1881A2A@localhost>
+
+On 9 May 2002, at 14:16, Georg Mischler wrote:
+
+> Hi Rob,
+> 
+> I recommend SuSe as an Linux distribution that is relatively
+> easy to install and configure. Other people seem to get good
+> results with Mandrake. Don't even think about RedHat if
+> you're not very familiar with Linux already.
+
+Hi Georg, how ya doin'?  Did you get a chance to see that 
+movie "Pi" I was telling you about?  
+
+Yes, I heeded your advice about SuSE a number of years 
+ago, and that was indeed the closest I got to really doing 
+something with Radiance on the PC.  That was the first 
+distro that I got installed and was able to compile 
+Radiance.  There were some utilities not working correctly 
+though, and I never got a chance to troubleshoot them, 
+because about a week after my first radiance compile 
+success, a fire broke out in my apartment building.  The 
+good news was the fire did not destroy my apartment; 
+the bad news was, mine was was on the top floor and 
+the fire department cut a cole in my ceiling to vent the 
+smoke.  They cut a 4'x4' hole in the ceiling.  Guess what 
+was under it -- my computer!!  Grrr.  Yes, I had countless 
+problems with Red Hat, and no, I'm not familiar with it.  I 
+expect that soon I will need to go out & buy the latest 
+SuSE and try installing it on my PC at home.  The Mac has 
+been a good jump-starter for me though.
+
+> This may not be exactly what you wanted, but if you use the
+> -bv- boolean switch, then all faces will become invisible
+> from the back...
+
+Interesting.  Well, since you have confirmed that normals 
+don't matter (except for mkillum), I guess I shouldn't 
+worry about it.  I can use that switch to confirm that 
+mkillum polygons are correct though.  Thanks. 
+
+> My personal philosophy about this point is (so far anyway),
+> that this is the task of the modeller you're using. Once
+> you're running rview (or any similar program), it's really a
+> bit late to do anything about flipped orientations. The fact
+> that the orientation doesn't matter at all for most material
+> types in Radiance has helped me to stick to this position.
+
+I agree with you.  It is a bit late in the game to fix it at the 
+rview stage.  You wouldn't happen to know the name of 
+the lisp utility that comes with DR, that shows normals?  I 
+suppose I could use that too...
+
+> Of course, there is the rshow program by Peter, which works
+> on most unix systems with OpenGL. I don't know if anyone has
+> tried to port it to OS X though, nor if it can do anything
+> about surface normals.
+
+Yes, I have heard of rshow and it looks good.  But as 
+soon as I saw that it was OGL, I assumed I'd need Mesa, 
+and compiling, and well you know my experience is not 
+quite up to that yet.  Maybe that's a good challenge for 
+me though, since Greg already took care of compiling Rad 
+for us OS X users.  
+
+> Radiance normally does fine with thin boxes. There *may* be
+> light leaks in low quality simulations when the ambient
+> density is too loose. But with tougher settings, you will
+> rarely see this.
+
+OK then, my modelling chores are getting easier!  
+
+> >   I have seen some
+> > special sky textures available for mapping to a sphere for
+> > more realistic environments.  How do these work? 
+
+> The latter is the case, as it's a simple colorpict pattern.
+> You will lose the accountability of the CIE sky model when
+> you map a picture onto the sky sphere.
+> 
+> Btw: Rayfront has a simple drop-down box in the sky
+> configuration dialog to select sky maps... ;)
+
+OK, so validity goes out the window when you map the 
+pretty pictures.  For serious daylighting analysys I should 
+stick to the gensky primitives.  
+
+Yeah, maybe I need to have a look at your demo.  Since I 
+don't have a Linux system running (yet), what will I be 
+missing by using the NT version?  See, the whole reason 
+I'm trying to learn Radiance from the Unix side is because 
+I'm amazed by all the scripting possibilities (the time of 
+day image sequence in "Rendering With Radiance" for 
+example) it affords.  Just wondering if there are things 
+that just aren't possible on the NT side.
+
+> In theory, this sounds easy. In practise, it would open a
+> pandora's box of consistency problems, not to mention the
+> questions about how to assign materials to subentities
+> within such blocks that are placed on different layers. I
+> have been pondering those issues for years, and haven't come
+> up with a practical solution yet.
+
+Hmmm.  I was thinking of only using it for importing 
+luminaire layouts and lighting analysis points.  In fact, I do 
+this all the time in Lightscape, using their block 
+substitution routine.   How do you get your luminaires 
+from AutoCAD into Radiance scene descriptions?
+
+> If you're feeling adventurous and know some Autolisp, then
+> you could try to hack my old torad.lsp translator. If you
+> manage to come up with a fool proof solution, then I'll
+> immediately integrate it into Radout.
+
+I know very little AutoLISP.  But maybe I'll have a look.
+
+> > Along those lines, is there a way to create a grid or
+> > really any series of points in autocad (via nodes, or
+> > blocks or whatever) and then have the coordinates of those
+> > points be fed to rtrace for lighting analysis?  
+> 
+> Both DR and Rayfront can do this for you.
+
+I figured, I was just wondering if there was a way to 
+script it with the basic package.  
+  
+> If you buy DesignWorkshop, then I think you also get a tree
+> generator program, which produces data that can be exported
+> to the Radiance scene file format.
+
+Yes, I saw on their website that there is a tree generator -
+- you sort-of build your own tree by selecting from a menu 
+of choices, and then you download a DW file, which can 
+then be exported to Radiance format from DW.  I had DW 
+at my old office but found it very buggy, crash-prone.
+
+> There's something wrong either with your machine, or with
+> the OS X port of Radiance. There is no direct relation of
+> processing power and clock speed between different CPU
+> types.  
+
+> Does your HD go to sleep when it isn't accessed for a few
+> minutes, or do you have any other power saving features
+> turned on? Were the Radiance binaries compiled with
+> comparable optimization flags? It may also be that a laptop
+> simply has a relatively slow HD installed to preserve
+> energy. If you're low on RAM, then this could stall a
+> Radiance simulation to some degree.
+
+Hmmm.  I ran it while on battery, and figured the CPU was 
+ramping down to conserve juice and that that was the 
+cause, but I plugged it in and re ran it, and the first three 
+checkpoints were all identical (i.e. same percentage 
+complete).  It's a small scene and the laptop has 512MB 
+of RAM, so I didn't think it could be paging/disk access.  
+I'm still not up on all the tweaks one can do in unix to give 
+jobs priority; perhaps that's the problem.  Dunno.  That's 
+why I didn't bother to send the timing to Paul Bourke, 
+because I suspect it's inaccurate (or unfair).  
+
+         ====================
+ Rob Guglielmetti <rpg777@earthlink.net>
+    http://home.earthlink.net/~rpg777
+
+From radiance-general@radiance-online.org  Thu May  9 23:27:56 2002
+From: radiance-general@radiance-online.org (John E. de Valpine)
+Date: Thu, 09 May 2002 18:27:56 -0400
+Subject: [Radiance-general] Too many questions to fit in the subject
+References: <3CDA629A.13873.83396C@localhost> <3CDAA563.26962.1881A2A@localhost>
+Message-ID: <3CDAF7EC.6717389E@visarc.com>
+
+Hey Rob:
+
+One way to check normal orientation by hand with Radiance is to assign a
+temporary material using a glow material to the geometry in questions.
+The "front" side will be the color of the glow while the "back" side
+will be black. Rather than looking at all the geometry in question you
+can use objview to look at the specific geometry of interest.
+
+Regards,
+
+-Jack de Valpine
+--
+#     John E. de Valpine
+#     president
+#
+#     visarc incorporated
+#     http://www.visarc.com
+#
+#     channeling technology for superior design and construction
+
+
+
+From radiance-general@radiance-online.org  Fri May 10 06:02:00 2002
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Thu, 9 May 2002 22:02:00 -0700
+Subject: [Radiance-general] Re: animation
+In-Reply-To: <200205092036.g49KagQ16584@darkside-animation.com>
+Message-ID: <0F87EB38-63D3-11D6-8BD2-00306540F848@lmi.net>
+
+Hi lebele,
+
+I concur with Georg that you should use the -af option of rpict to save 
+your ambient values, both to accelerate your rendering and to reduce 
+differences between adjacent frames.  The -ps 8 option you specify is 
+also going to aggravate sampling errors in your image.  I also think you 
+should use a larger value for -lr -- 1 is awfully limiting.
+
+If you want to minimize sampling differences, you can explicitly turn 
+off some of the randomness in Radiance with:
+	-dj 0 -sj 0
+You will lose penumbras and soft specular reflections in the process, 
+unfortunately.
+
+I agree with Peter that pinterp will speed things up considerably, along 
+with the -af option. (INTERPOLATE=4 is a good starting value).
+
+-Greg
+
+> I am rendering an animation of an interior scene. At this moment one
+> frame takes about half an hour to render(*), with fine results per
+> frame. When I view the frames as an animation however, the artifacts are
+> "unstable". It looks like Radiance renders shadows,
+> reflections(specularity) and indirect illumination in a random way.
+> Sometimes objects also get different color intensities in the rendered
+> image, as if they were lit in a (radical) other way.
+> I have rendered a lot of still images in Radiance and never noticed that
+> two renderings with exactly the same geometry, render-options, viewport
+> etc. results in slightly different images (!).
+> How can I solve this? Does anybody knows how to render without these
+> "moving artifacts"? Is there a random thing in Radiance that we can turn
+> off ?
+>
+> Regards,
+> Iebele
+>
+> (*)  Below are the settings I use for the rendering. I know that I can
+> increase the quality using different settings, but that is not the point
+> here. My point is that the overall solution has too many, and
+> unexpectable differences between  rendered images.
+>
+> The settings are (as they appear in my ran file):
+> DIRECTORY  = /disk11/ani01
+> OCTREE = glow.oct
+> VIEWFILE = ani01.vp
+> START  = 1
+> END  = 448
+> BASENAME = /disk11/ani01/ani01%03d
+> DISKSPACE = 250
+> OVERSAMPLE = 4
+> INTERPOLATE = 0
+> RESOLUTION = 720 576
+> render = -dp 1024 -ab 1 -ad 1024 -ar 2048 -as 512 -aa 0.2 -lr 1 -st 0.01
+> -ps 8 -av 20 20 20
+> pfilt  = -r .7
+
+
+From radiance-general@radiance-online.org  Fri May 10 06:13:56 2002
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Thu, 9 May 2002 22:13:56 -0700
+Subject: [Radiance-general] Re: Too many questions to fit in the subject
+In-Reply-To: <200205092036.g49KagQ16584@darkside-animation.com>
+Message-ID: <BA669864-63D4-11D6-8BD2-00306540F848@lmi.net>
+
+Hi Rob,
+
+Georg and Peter have already done a really good job answering these, but 
+I wanted to add my two cents, anyway....
+
+> Failing rview, what other geometry previewers are you
+> folks using?  Ole Lemming's ConRad has a useful
+> previewer, that operates similarly to the "view setup"
+> dialog in Lightscape.  I really think this would speed
+> things along for me, the ability to interractively orbit a
+> scene & check for modeling errors, normal orientation, etc,
+> and most importantly, SETTING VIEWS.  THis is a real
+> hassle when you have to provide vp, vd as 3D points.  Are
+> there other previewers besides ConRad?
+
+Check out the "glrad" program that comes with Radiance 3.4.  It works on 
+my version of X11 for OS X, which is the same as yours, as you told me 
+how to install it!  Also, take a look at the rholo program and see if 
+you can figure out how to work it.  This gives you a more flexible way 
+to move around your scene than rview.
+
+> I have been using George Mischler's radout to bring
+> geometry from AutoCAD to radiance.  But there doesn't
+> seem to be a way to handle blocks.  It would be great if
+> there was a way to substitute autocad blocks for
+> instanced rad files!  One could export the blocks as
+> separate rad files, but is there a way to take a series of
+> insertion point coordinates and build a rad file that
+> instances the "block" rad file at those
+> coords/orientations?  That seems to be the key to being
+> able to rapidly change scenes, and stay accurate.  Anyone
+> doing this type of thing already?
+
+I'm way out of my depth, here, but have you looked at the replmarks 
+program that comes with Radiance?  I would think Georg would have 
+mentioned it in his reply unless he had a reason not to, so maybe it's 
+irrelevant.  Anyway, replmarks replaces triangular placeholders with 
+Radiance instances or objects, and it shouldn't be too difficult to 
+adapt this to work with AutoCAD blocks, though I admit that I'm not sure 
+what these are.
+
+-Greg
+
+
+From radiance-general@radiance-online.org  Fri May 10 16:07:26 2002
+From: radiance-general@radiance-online.org (Rob Guglielmetti)
+Date: Fri, 10 May 2002 11:07:26 -0400
+Subject: [Radiance-general] Thanks
+Message-ID: <3CDBA9EE.24395.560758@localhost>
+
+Thanks to all who replied to my numerous questions, both 
+on- and off-list.  I appreciate it.  I'd like to follow up with 
+some of you separately, time permitting.  
+
+Replmarks look interesting, I will look at the manpage in 
+more detail.  I can see how that truly could be a disaster 
+in terms of version tracking, etc, but it's worth a shot.  
+
+I must be a glutton for punishment, because now I'm off 
+on a new tangent -- thinking of installing Linux on the 
+PowerBook. (!) I found out about a product called 
+YellowDog Linux, which purports to be a no-brainer install 
+(triple boot scheme with Mac OS9, OSX and Linux) on the 
+PowerBooks.  My thought was that if I'm gonna have to 
+ultimately learn to manage Radiance installations on Linux 
+to have a render farm, why not start sooner than later?  
+The down side is that YellowDog is based on... Red Hat.  
+Now I know that some of the Radiance community is 
+having success with Red Hat (Hi Jack!); could you explain 
+what the caveats are regarding trying to compile 
+Radiance on Red Hat?  It's just a thought right now, I'm 
+not really excited about backing up my young system and 
+repartitioning the whole deal, but supposedly this 
+YellowDog Linux really flies, and then I could try out 
+Peter's rshow, and...
+
+Time to check on the status of my application for the 36 
+hour day! 
+
+         ====================
+ Rob Guglielmetti <rpg777@earthlink.net>
+    http://home.earthlink.net/~rpg777
+
+From radiance-general@radiance-online.org  Fri May 10 06:32:44 2002
+From: radiance-general@radiance-online.org (Peter Apian-Bennewitz)
+Date: Fri, 10 May 2002 07:32:44 +0200
+Subject: [Radiance-general] Too many questions to fit in the subject
+References: <3CDA629A.13873.83396C@localhost> <3CDAA563.26962.1881A2A@localhost>
+Message-ID: <3CDB5B7C.F8D57E23@pab-opto.de>
+
+Rob Guglielmetti wrote:
+ 
+> Yes, I have heard of rshow and it looks good.  But as
+> soon as I saw that it was OGL, I assumed I'd need Mesa,
+> and compiling, 
+MESA is one Open-GL implementation running on top of X11 with no
+hardware acceleration.
+If a system is configured with other Open-GL libraries, typically using
+direct hardware rendering in conjuntion with kernel and X11 server,
+rshow, as other Open-GL programs, will use that, since it uses the
+shared libraries installed on the system. It is known to run on
+I386-architecture SUSE7.3 on a machine which had been configured to use
+HW accel.
+-P.
+
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+From radiance-general@radiance-online.org  Fri May 10 20:35:36 2002
+From: radiance-general@radiance-online.org (Kurt Altmann)
+Date: Fri, 10 May 2002 21:35:36 +0200
+Subject: [Radiance-general] Too many questions to fit in the subject
+References: <Pine.BSF.4.30.0205091411570.21119-100000@emancholl.pair.com>
+Message-ID: <3CDC2108.10E7A240@kurt-altmann.de>
+
+
+Georg Mischler wrote:
+> 
+> Rob Guglielmetti wrote:
+> 
+
+> >   It would be great if
+> > there was a way to substitute autocad blocks for
+> > instanced rad files!  One could export the blocks as
+> > separate rad files, but is there a way to take a series of
+> > insertion point coordinates and build a rad file that
+> > instances the "block" rad file at those
+> > coords/orientations?
+> 
+> In theory, this sounds easy. In practise, it would open a
+> pandora's box of consistency problems, not to mention the
+> questions about how to assign materials to subentities within
+> such blocks that are placed on different layers. I have been
+> pondering those issues for years, and haven't come up with a
+> practical solution yet.
+> 
+> I think there was some talking about doing this for Desktop
+> Radiance, but I have no idea if they actually got around to
+> implement anything of the kind. Since DR never looks back at the
+> Radiance data it has written, but simply overwrites it when you
+> change anything within Autocad, it can avoid many (but not all)
+> of the consistency questions.
+> 
+> If you're feeling adventurous and know some Autolisp, then you
+> could try to hack my old torad.lsp translator. If you manage to
+> come up with a fool proof solution, then I'll immediately
+> integrate it into Radout.
+> 
+Hi all,
+
+I also spent some time on tests on the export of blocks from AutoCAD to
+instances in Radiance.
+At least it's working in a more or less rough manner (even with nested
+blocks).
+Beside the consistency problems Georg already mentioned, problems arose
+concerning the paths
+(to texture files or IES-data) and the shape of the octree hierarchy.
+Especially thin long Objects, like railings, or flat Objects, like
+leafs, produce the biggest problems.
+I had to reorganize the blocks to get the expected savings in memory and
+file sizes (which could be enormous, of course).
+In other words - I must create the geometry in terms Radiance likes it
+most - which isn't always the most efficient way to build 3D-Modells.
+As I understood, the octree is based on cubes. Looking at a leaf
+parallel to the xy-plane inside a cube, there is a lot of 'emptiness'
+inside this cube. The cubes of other nearby leaves are interconnected
+which often result in an error by oconv. 
+As a result I have to reorganize the blocks or increase the n-parameter
+dramatically.
+For these problems it could help a lot, if the 'cage' around objects
+could be handled in a more relaxed way, i.e. in terms of a real bounding
+box.
+Are there any thoughts done already in that direction? Could it be a
+feature for the future?
+Or is it impossible due to the existing octree organization?
+Any comments are welcome.
+
+Kurt
+
+________________________________________
+
+Kurt Altmann
+Sophienstr. 114a
+76135 Karlsruhe
+Germany
+TEL     +49 (0)721 3849730
+FAX     +49 (0)721 3849735
+EMAIL   mail@kurt-altmann.de
+
+From radiance-general@radiance-online.org  Sat May 11 15:20:02 2002
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Sat, 11 May 2002 07:20:02 -0700
+Subject: [Radiance-general] Octree blocks
+In-Reply-To: <200205111001.g4BA12Q21771@darkside-animation.com>
+Message-ID: <2F03A82F-64EA-11D6-81A5-00306540F848@lmi.net>
+
+Kurt Altmann wrote:
+
+> I also spent some time on tests on the export of blocks from AutoCAD to
+> instances in Radiance.
+> At least it's working in a more or less rough manner (even with nested
+> blocks).
+> Beside the consistency problems Georg already mentioned, problems arose
+> concerning the paths
+> (to texture files or IES-data) and the shape of the octree hierarchy.
+> Especially thin long Objects, like railings, or flat Objects, like
+> leafs, produce the biggest problems.
+> I had to reorganize the blocks to get the expected savings in memory and
+> file sizes (which could be enormous, of course).
+> In other words - I must create the geometry in terms Radiance likes it
+> most - which isn't always the most efficient way to build 3D-Modells.
+> As I understood, the octree is based on cubes. Looking at a leaf
+> parallel to the xy-plane inside a cube, there is a lot of 'emptiness'
+> inside this cube. The cubes of other nearby leaves are interconnected
+> which often result in an error by oconv.
+> As a result I have to reorganize the blocks or increase the n-parameter
+> dramatically.
+> For these problems it could help a lot, if the 'cage' around objects
+> could be handled in a more relaxed way, i.e. in terms of a real bounding
+> box.
+> Are there any thoughts done already in that direction? Could it be a
+> feature for the future?
+> Or is it impossible due to the existing octree organization?
+> Any comments are welcome.
+>
+> Kurt
+> EMAIL   mail@kurt-altmann.de
+
+It is terribly inefficient to create instances with only a few 
+primitives in them.
+An octree should have a few hundred geometric primitives to make it
+worthwhile in terms of rendering time.  Given such a constraint, it is 
+usually
+possible to partition geometry so it is roughly cubical in terms of 
+volume,
+though I agree this is an inconvenience.  The only reason it was done 
+this
+way is to stick with a strict octree as opposed to a binary partition 
+tree,
+which is more complicated to code and takes up more space in memory.
+One could have an octree with a non-cubical bounding box, but the
+efficiency of tracing rays through long, thin subcubes would be awful.
+
+I don't recommend putting individual leaves into instances -- when I have
+used instances for trees, I put groups of leaves or needles together into
+an instance.  It may be better to put in the entire tree in many cases.
+Railings and walls should never go into instances.
+
+As I suggested to Rob, the replmarks program offers the ability to 
+generate
+xform calls to place raw geometry into the scene, and this is far 
+preferable
+for long or thin geometry such as you describe.  Instancing should be
+reserved for cases where duplicating geometry causes memory problems
+during rendering, such as when you are modeling a forest of trees or
+a great number of similarly complicated geometric objects.  For simple,
+replicated geometry, you will get faster renderings and less hassle if
+you just duplicate it throughout your scene, even if it means having
+hundreds of identical objects floating around.
+
+Here's a good rule of thumb for when instances might be appropriate:
+
+N_p > 200, and
+N_o * N_p > N_t / 5
+
+where:
+	N_p = number of geometric primitives in instanced object
+	N_o = number of instances
+	N_t = total scene size (excluding other instances)
+
+Otherwise, it is better to use xform and just duplicate geometry.
+
+-Greg
+
+
+From radiance-general@radiance-online.org  Sun May 12 16:33:46 2002
+From: radiance-general@radiance-online.org (Peter Apian-Bennewitz)
+Date: Sun, 12 May 2002 17:33:46 +0200
+Subject: [Radiance-general] Octree blocks
+References: <2F03A82F-64EA-11D6-81A5-00306540F848@lmi.net>
+Message-ID: <3CDE8B5A.F0F35697@pab-opto.de>
+
+Greg Ward wrote:
+
+> An octree should have a few hundred geometric primitives to make it
+> worthwhile in terms of rendering time.  Given such a constraint, it is
+> usually
+> possible to partition geometry so it is roughly cubical in terms of
+> volume,
+> though I agree this is an inconvenience. 
+Geometry exported from CAD is often complex and uses Radiance primitives
+not very efficiently, e.g. everything is tesselated into polygons, even
+if the surface could be described as sphere, cone etc. Mostly
+hierarchical structures are left intact, e.g. a line of complex carved
+posts is known to the exporting routine as "instances" of the same
+element.
+Then, IMHO, there's no generaly sound way to reorganize geometry to fill
+RADIANCE instances with cube like geometry.
+
+> One could have an octree with a non-cubical bounding box, but the
+> efficiency of tracing rays through long, thin subcubes would be awful.
+If I get this right, the penalty for non-cubical bounding boxes with
+non-thin geometry distribution would be nil, with the advantage that it
+would allow placing "thinny" instances next to another without
+overlapping bounding cubes. 
+Code for checking ray intersections with non-cubical boxes would be as
+efficient as checking cubical boxes ? If not, would that be
+counterweight by the speedup as rays close to the bounding box miss the
+non-cubical box completely whereas they hit (and trigger at least one
+octree lookup) a cubical now ?
+
+As always, any insights very much welcome
+-Peter
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+From radiance-general@radiance-online.org  Tue May  7 10:54:03 2002
+From: radiance-general@radiance-online.org (atelier iebele abel)
+Date: Tue, 07 May 2002 11:54:03 +0200
+Subject: [Radiance-general] animation
+References: <3CD284B0.72EB180C@iebele.nl> <3CDACAE9.3E60F54B@pab-opto.de>
+Message-ID: <3CD7A43B.F83F2FE9@iebele.nl>
+
+--------------74D1507D3B1A95F2484367A5
+Content-Type: text/plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+
+Thanks Greg and Peter for your replies,
+
+I tried your suggestions, while some already were taken into account. The
+results are better, but not that good that my problem is solved (put it in
+other words: it does not fit my application yet). Also rendering times are
+very long now.
+That is why I like to ask you something that is in my mind for over a year.
+
+The general purpose I use Radiance for is presentation and design of
+architecture and public exterior lighting. There is no other rendering tool
+that offers me the flexibility and kind of images that Radiance produces. What
+I also need from Radiance is the photometric correctness of the images, but I
+always use the images in a sequence, comparing one image with the other, to
+disccuss design issues. That means that the numerical representation of
+lighting is less important for me as the 'look'. This allows me to work on
+images with image processing tools, this actually destroys some of the
+Radiance data, but makes the design better to communicate (for my purposes).
+
+Back to the animation-issue. It takes too much time to render animations for
+our application, because we use very large geometry, we use a lot of light
+sources,  we have to render several minutes, we only (?) have 4 cpu's
+available on Linux and we have to produce very good looking images for our
+customers (they expect images like they have seen on tv/dvd : sharp sharper
+sharpest).
+To survive the competition using Radiance (we are using Radiance daily, so we
+really don't want to work with something else) we need another approach, and
+we are willing to spent our time to get it work.
+
+Taken the above into account, I and my partner are thinking about an image
+format like the radiance .pic, that is rendered without ambient bounces (-ab
+0). In this (or additional) image format we also like to have the following
+data per pixel (ok, these images take lots of diskspace...):
+
+
+   * name of the modifier for the object this pixel represent (as a string)
+   * normal orientation of this object (float float float)
+   * position of the pixel in XYZ space (float float float)
+
+With this information per pixel (maybe I need more info in te future) we think
+we can produce an automated proces in enhancing radiance pictures that are
+rendered without radiosity. This process is 2D image processing, using some 3d
+data that is 'stored' with the pixel.
+Also this kind of image data allows us to separate objects in one image, to
+process them individually in 2D.
+
+We think we can speed up animation times using a combination of 3d and 2d (
+rendering my scene with -ab 0 takes about 9 minutes on 4 times PAL res.
+against 3 hours with a nice radiosity as you suggested.
+Probably far more to achieve the results we really want. 2d/3d image
+processing will take about 5 minutes or less per frame ).
+
+I already looked at rtrace, which seems to produce the kind of information I
+need. Two problems arose when I looked at rtrace:
+
+1. I don't know where to start
+2. I think I prefer changing code in rpict (to use the -S option and -vf
+option )
+3. I think I prefer changing code in rpict.c (to have a all in one executable,
+instead of using scripts)
+
+As you understand, some hints are very much appreciated.
+I think about these kind of hints:
+-where in rpict.c are pixels stored into a file (or stdout)?
+-Is it possible at that point to write the mentioned data to stdout also?
+-What are the variables/pointers that hold these data?
+
+The 2D processing of the resulting files will be my work (although I don't
+know what kind of project I start here) and I like to share the results with
+the 'community', when it finally works as we want.
+
+I hope my questions are not to difficult or time consuming to answer. I would
+be really _happy_  to experiment with this. I think it will result in a really
+nice tool for video production environments (again, we will work on these
+tools, I only need a good starting point for them).
+
+Ok, this starts to get a long email, I hope you believe with me that the above
+is worth trying, although it might have a very expiremental character in the
+beginning.
+
+
+Iebele
+
+
+
+
+
+--------------74D1507D3B1A95F2484367A5
+Content-Type: text/html; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+Thanks Greg and Peter for your replies,
+<p>I tried your suggestions, while some already were taken into account.
+The results are better, but not that good that my problem is solved (put
+it in other words: it does not fit my application yet). Also rendering
+times are very long now.
+<br>That is why I like to ask you something that is in my mind for over
+a year.
+<p>The general purpose I use Radiance for is presentation and design of
+architecture and public exterior lighting. There is no other rendering
+tool that offers me the flexibility and kind of images that Radiance produces.
+What I also need from Radiance is the photometric correctness of the images,
+but I always use the images in a sequence, comparing one image with the
+other, to disccuss design issues. That means that the numerical representation
+of lighting is less important for me as the 'look'. This allows me to work
+on images with image processing tools, this actually destroys some of the&nbsp;
+Radiance data, but makes the design better to communicate (for my purposes).
+<p>Back to the animation-issue. It takes too much time to render animations
+for our application, because we use very large geometry, we use a lot of
+light sources,&nbsp; we have to render several minutes, we only (?) have
+4 cpu's available on Linux and we have to produce very good looking images
+for our customers (they expect images like they have seen on tv/dvd : sharp
+sharper sharpest).
+<br>To survive the competition using Radiance (we are using Radiance daily,
+so we really don't want to work with something else) we need another approach,
+and we are willing to spent our time to get it work.
+<p>Taken the above into account, I and my partner are thinking about an
+image format like the radiance .pic, that is rendered without ambient bounces
+(-ab 0). In this (or additional) image format we also like to have the
+following data per pixel (ok, these images take lots of diskspace...):
+<br>&nbsp;
+<ul>
+<li>
+name of the modifier for the object this pixel represent (as a string)</li>
+
+<li>
+normal orientation of this object (float float float)</li>
+
+<li>
+position of the pixel in XYZ space (float float float)</li>
+</ul>
+
+<p><br>With this information per pixel (maybe I need more info in te future)
+we think we can produce an automated proces in enhancing radiance pictures
+that are rendered without radiosity. This process is 2D image processing,
+using some 3d data that is 'stored' with the pixel.&nbsp;
+<br>Also this kind of image data allows us to separate objects in one image,
+to process them individually in 2D.
+<p>We think we can speed up animation times using a combination of 3d and
+2d ( rendering my scene with -ab 0 takes about 9 minutes on 4 times PAL
+res. against 3 hours with a nice radiosity as you suggested.
+<br>Probably far more to achieve the results we really want. 2d/3d image
+processing will take about 5 minutes or less per frame ).
+<p>I already looked at rtrace, which seems to produce the kind of information
+I need. Two problems arose when I looked at rtrace:
+<p>1. I don't know where to start
+<br>2. I think I prefer changing code in rpict (to use the -S option and
+-vf option )
+<br>3. I think I prefer changing code in rpict.c (to have a all in one
+executable, instead of using scripts)
+<p>As you understand, some hints are very much appreciated.
+<br>I think about these kind of hints:
+<br>-where in rpict.c are pixels stored into a file (or stdout)?
+<br>-Is it possible at that point to write the mentioned data to stdout
+also?
+<br>-What are the variables/pointers that hold these data?
+<p>The 2D processing of the resulting files will be my work (although I
+don't know what kind of project I start here) and I like to share the results
+with the 'community', when it finally works as we want.
+<p>I hope my questions are not to difficult or time consuming to answer.
+I would be really _happy_&nbsp; to experiment with this. I think it will
+result in a really nice tool for video production environments (again,
+we will work on these tools, I only need a good starting point for them).
+<p>Ok, this starts to get a long email, I hope you believe with me that
+the above is worth trying, although it might have a very expiremental character
+in the beginning.
+<br>&nbsp;
+<p>Iebele
+<br>&nbsp;
+<br>&nbsp;
+<br>&nbsp;
+<br>&nbsp;</html>
+
+--------------74D1507D3B1A95F2484367A5--
+
+
+From radiance-general@radiance-online.org  Mon May 13 17:37:43 2002
+From: radiance-general@radiance-online.org (Floriberta Binarti)
+Date: Mon, 13 May 2002 16:37:43 +0000
+Subject: [Radiance-general] (no subject)
+Message-ID: <F85mTrRvJPxAHXBejKV0001381f@hotmail.com>
+
+<html><div style='background-color:'><DIV>
+<P> </P>
+<P class=MsoNormal><SPAN lang=IN>I am learning to run Radiance to simulate daylight in a simple atrium. When I defined grid, the photometer only appear in one node and in the dialog box was written: Unhandled Exceptin C0000005 (Access Violation Reading Ox ffffffff) at address 671E3570h). I never met this problem in other cases.</SPAN></P>
+<P class=MsoNormal><SPAN lang=IN>&nbsp;</SPAN><SPAN lang=IN>My second question: How to turn up AM/PM in the time box of Camera Simulation Set Up.</SPAN></P>
+<P>thanks, Floriberta<BR><BR></P></DIV></div><br clear=all><hr>MSN Photos is the easiest way to share and print your photos: <a href='http://g.msn.com/1HM100901/157'>Click Here</a><br></html>
+
+From radiance-general@radiance-online.org  Mon May 13 18:08:40 2002
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Mon, 13 May 2002 10:08:40 -0700
+Subject: [Radiance-general] Re: Octree blocks
+In-Reply-To: <200205131001.g4DA1MQ26741@darkside-animation.com>
+Message-ID: <12BA835C-6694-11D6-93EC-00306540F848@lmi.net>
+
+Hi Peter,
+
+> From: Peter Apian-Bennewitz <apian@pab-opto.de>
+>
+>> An octree should have a few hundred geometric primitives to make it
+>> worthwhile in terms of rendering time.  Given such a constraint, it is
+>> usually
+>> possible to partition geometry so it is roughly cubical in terms of
+>> volume,
+>> though I agree this is an inconvenience.
+> Geometry exported from CAD is often complex and uses Radiance primitives
+> not very efficiently, e.g. everything is tesselated into polygons, even
+> if the surface could be described as sphere, cone etc. Mostly
+> hierarchical structures are left intact, e.g. a line of complex carved
+> posts is known to the exporting routine as "instances" of the same
+> element.
+> Then, IMHO, there's no generaly sound way to reorganize geometry to fill
+> RADIANCE instances with cube like geometry.
+
+Then use "xform" rather than instances.
+
+>> One could have an octree with a non-cubical bounding box, but the
+>> efficiency of tracing rays through long, thin subcubes would be awful.
+> If I get this right, the penalty for non-cubical bounding boxes with
+> non-thin geometry distribution would be nil, with the advantage that it
+> would allow placing "thinny" instances next to another without
+> overlapping bounding cubes.
+> Code for checking ray intersections with non-cubical boxes would be as
+> efficient as checking cubical boxes ? If not, would that be
+> counterweight by the speedup as rays close to the bounding box miss the
+> non-cubical box completely whereas they hit (and trigger at least one
+> octree lookup) a cubical now ?
+
+I shouldn't have said "subcubes" when I meant "sub-boxes."  Ray
+intersection tests in long, thin sub-boxes would be inefficient, and
+the only way to make it efficient again is using a kd-tree, which
+is more complicated to code.  I originally implemented cubical
+octrees because they were simpler and just as fast as kd-trees
+according to other people's research on the subject, and when
+I added instances later, I was too lazy to reimplement everything
+just so I could have non-cubical bounding boxes for instances.
+I barely got it to work properly as it was -- you wouldn't believe
+how much stuff is going on "behind the scenes" to make instancing
+work right.  (Well, maybe you would.)
+
+I wouldn't trust the octree code with long, thin boxes.  It's too likely
+to run into floating point inaccuracies in extreme cases.  A lot of
+the design of Radiance is based on my intuition of what will work
+and what won't, and you're welcome to try things out
+and prove me wrong.  I really don't mind, or take it personally.
+
+-Greg
+
+
+From radiance-general@radiance-online.org  Mon May 13 17:41:33 2002
+From: radiance-general@radiance-online.org (Carsten Bauer)
+Date: Mon, 13 May 2002 18:41:33 +0200
+Subject: [Radiance-general] animation
+References: <3CD284B0.72EB180C@iebele.nl> <3CDACAE9.3E60F54B@pab-opto.de> <3CD7A43B.F83F2FE9@iebele.nl>
+Message-ID: <3CDFECBD.6CCA515@t-online.de>
+
+Hi Iebele !
+
+I dare to mix in the discussion, as the general topic is of some
+interest for me, too. I myself thought/still think (and did experiment
+as well) about "tricks" of what kind ever to produce good looking images 
+in less time as currently needed. (Despite the benefits of physical
+accuracy, the look of an image is very important for me, too).
+
+By the way, if you use lots of light sources, you may check out that
+direct cache stuff, (now the missing patch is included in the
+distribution as well, so installation should work, too, sorry for
+forgetting it at the first time). As long as you need some ambient
+calculation, time saving is quite significant, maybe not as much as you
+want, but making things 4 times faster is better than nothing.
+
+Now back to your ideas: I thought of 2D postprocessing, too, for example
+some sort of "shadow-softener" for images traced without ambient light,
+with help of your idea of 3D-data integration maybe this might become a
+realistic thing. There are some ways of tricking in 3D as well. POVRay
+for example allows to assign ambient illumination to different objects
+directly, it is no problem to integrate this into RADIANCE, too. If
+you're interested, I may dig out the stuff and send it to you. (Don't
+tell Greg of all this ... :-) ). Another way is to simulate ambient
+light effects by some weak additional and invisible direct sources
+suitably placed, as often it suffices to lighten the dark shadows which
+appear in standard raytracing to mimick a realistic look. This method
+has the further advantage that it is accessible to "feeling" rather than
+the dry topic of parameters.
+
+Last but not least, some of the hints you've asked for:
+
+getting the mentioned data out of the machine certainly is the easiest
+part of the way your're setting out to tread: 
+
+Color output is done in the 'render()' routine within rpict.c, with help
+of the 'pixvalue()' (rpict.c) routine giving that color, the rest is not
+of interest for this case. Rather than writing data to stdout, it would
+be easier to write them directly to a file, as rpict uses stdout for
+messages. The data you want to extract are contained in the ray
+structure (check ray.h), with exception of the object name (a number is
+used instead so a separate mapping to the name will be needed), so
+extracting them should be fairly straightforward. 
+ 
+Maybe this suffices as starting point ... off you go, and good luck of
+course. And please tell me, if it works.
+
+-- Carsten
+
+From radiance-general@radiance-online.org  Mon May 13 18:47:26 2002
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Mon, 13 May 2002 10:47:26 -0700
+Subject: [Radiance-general] Re: animation
+In-Reply-To: <200205131001.g4DA1MQ26741@darkside-animation.com>
+Message-ID: <7CB3132B-6699-11D6-93EC-00306540F848@lmi.net>
+
+> From: atelier iebele abel <atelier@iebele.nl>:
+
+> Back to the animation-issue. It takes too much time to render 
+> animations for
+> our application, because we use very large geometry, we use a lot of 
+> light
+> sources,  we have to render several minutes, we only (?) have 4 cpu's
+> available on Linux and we have to produce very good looking images for 
+> our
+> customers (they expect images like they have seen on tv/dvd : sharp 
+> sharper
+> sharpest).
+> To survive the competition using Radiance (we are using Radiance daily, 
+> so we
+> really don't want to work with something else) we need another 
+> approach, and
+> we are willing to spent our time to get it work.
+
+I don't know about your country, but in the U.S., computers are a whole 
+lot cheaper
+than people, and it might be worthwhile to invest in a stack of Linux 
+boxes to run
+your animations -- Charles Ehrlich while he was still at LBNL put a 
+tower together
+last year with 9 CPUs and a disk array for less than $15K US.
+
+> Taken the above into account, I and my partner are thinking about an 
+> image
+> format like the radiance .pic, that is rendered without ambient bounces 
+> (-ab
+> 0). In this (or additional) image format we also like to have the 
+> following
+> data per pixel (ok, these images take lots of diskspace...):
+>
+>    * name of the modifier for the object this pixel represent (as a 
+> string)
+>    * normal orientation of this object (float float float)
+>    * position of the pixel in XYZ space (float float float)
+>
+> With this information per pixel (maybe I need more info in te future) 
+> we think
+> we can produce an automated proces in enhancing radiance pictures that 
+> are
+> rendered without radiosity. This process is 2D image processing, using 
+> some 3d
+> data that is 'stored' with the pixel.
+> Also this kind of image data allows us to separate objects in one 
+> image, to
+> process them individually in 2D.
+>
+> We think we can speed up animation times using a combination of 3d and 
+> 2d (
+> rendering my scene with -ab 0 takes about 9 minutes on 4 times PAL res.
+> against 3 hours with a nice radiosity as you suggested.
+> Probably far more to achieve the results we really want. 2d/3d image
+> processing will take about 5 minutes or less per frame ).
+
+This reminds me a lot of Ken Perlin's classic 1985 Siggraph paper, where
+he uses his noise function with similar pixel information to sythesize 
+images.
+
+> I already looked at rtrace, which seems to produce the kind of 
+> information I
+> need. Two problems arose when I looked at rtrace:
+>
+> 1. I don't know where to start
+> 2. I think I prefer changing code in rpict (to use the -S option and -vf
+> option )
+> 3. I think I prefer changing code in rpict.c (to have a all in one 
+> executable,
+> instead of using scripts)
+
+I strongly suggest you use rtrace, as it is already designed and 
+optimized
+for this type of output.  When you use the -fff and -omNp options, you 
+will
+avoid all recursive ray calls and get a very fast calculation.  The rays
+for any desired view can be generated with the vwrays command (new
+with 3.4).  To generate the 10th view in the file "anim.vf", you could 
+use:
+
+% sed -n 10p anim.vf > frame10.vf
+% vwrays -ff -vf frame10.vf -pa 0 -x 3072 -y 2304 \
+	| rtrace -x 3072 -y 2304 -fff -omNp anim.oct > frame10.data
+
+See the vwrays man page for more details and examples.
+
+-Greg
+
+
+From radiance-general@radiance-online.org  Tue May 14 09:01:51 2002
+From: radiance-general@radiance-online.org (Peter Apian-Bennewitz)
+Date: Tue, 14 May 2002 10:01:51 +0200
+Subject: [Radiance-general] animation
+References: <3CD284B0.72EB180C@iebele.nl> <3CDACAE9.3E60F54B@pab-opto.de> <3CD7A43B.F83F2FE9@iebele.nl>
+Message-ID: <3CE0C46F.1718C236@pab-opto.de>
+
+atelier iebele abel wrote:
+> 
+>    Part 1.1    Type: Plain Text (text/plain)
+>            Encoding: 7bit
+...
+With this information per pixel (maybe I need more info in te future) we
+think
+we can produce an automated proces in enhancing radiance pictures that
+are
+rendered without radiosity. This process is 2D image processing, using
+some 3d
+data that is 'stored' with the pixel.
+Also this kind of image data allows us to separate objects in one image,
+to
+process them individually in 2D.
+...
+
+Will it work generally ? With specular/reflecting surfaces and shadows ?
+Will 2d processing be validated to have the same trust as Radiance now
+has ? Maybe you're on the way towards Wavefront, Renderman or whetever
+there is for professional animations, without actually getting their
+speed or quality, but loosing a lot of Radiance.
+IMHO, speedups for animations in Radiance will be a side effect when/if
+the core rendering is enhanced (photon map, direct caching maybe) and
+validated. Meanwhile, Greg's recommendation of using brute force and
+some more CPUs sounds right to me.
+
+Or you may try to render texture maps through Radiance, which are then
+glued onto surfaces and final frame rendering is done by other rendering
+engines (which may have more inter-frame coherence too). At least the
+interface would be well defined. Your mileage may very.
+
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+From radiance-general@radiance-online.org  Tue May 14 12:28:17 2002
+From: radiance-general@radiance-online.org (Carsten Bauer)
+Date: Tue, 14 May 2002 13:28:17 +0200
+Subject: [Radiance-general] animation
+References: <3CD284B0.72EB180C@iebele.nl> <3CDACAE9.3E60F54B@pab-opto.de> <3CD7A43B.F83F2FE9@iebele.nl> <3CE0C46F.1718C236@pab-opto.de>
+Message-ID: <3CE0F4D1.F262E199@t-online.de>
+
+Hi all !
+
+I think two aspects have to be separately kept in mind concerning the
+whole matter, to avoid useless work or disappointment.
+
+The Radiance ambient treatment is somewhat awkward to handle, and I've
+noticed that people without a sound scientific background have
+difficulties with the overwhelming features and parameters and all the
+thinking behind it, which is a pity as it appears rather often that
+designers or architects are not computer specialists or scientists as
+well (which shouldn't be misinterpreted now, I do not mean this as
+offence, simply an observation).
+
+On the other hand, Radiance, esp. the ambient calculation, simply is a
+fantastic thing which allows to create images with superior quality
+which outscore everything else. And I readily agree with the opinion
+that 2D postprocessing or some other tricks and workarounds never can
+replace this adequately and a more promising way is to optimize the
+method within itself. Besides, lighting visualisation is a complex
+matter, and it is common sense that there is no easy way for
+accomplishing difficult tasks.
+
+Of course, Radiance is aimed very much at realistic image generation,
+and it would be nice to have more "artistic freedom" in using it. This
+is a totally different matter. Within the first stages of a creative
+progress scientific exactness does not count that much, and so all kinds
+of tricks are welcome as long as they help to produce an impression,
+something which can convey ideas. One may compare this to the deliberate
+abstraction and individual styles employed in "old-fashioned" techniques
+like oil-painting for example. And opening Radiance for these kinds of -
+maybe "freaky" - applications certainly is interesting, as then all
+stages of a design process could be covered in a better way as it is
+possible right now. Of course it then is important to keep track of 
+what is art, what is trick, what is scientifically exact, etc, so in the
+end everything will be even more complex. But complexity makes life
+interesting, who wants to be bored ?
+
+-- Carsten
+
+From radiance-general@radiance-online.org  Wed May  8 15:17:23 2002
+From: radiance-general@radiance-online.org (atelier iebele abel)
+Date: Wed, 08 May 2002 16:17:23 +0200
+Subject: [Radiance-general] Re: animation
+References: <7CB3132B-6699-11D6-93EC-00306540F848@lmi.net>
+Message-ID: <3CD93373.E2736636@iebele.nl>
+
+As I wrote in my previous message : "I would be really _happy_  to
+experiment with this". Now I am _HAPPY_!
+
+Thanks Greg and Carsten for your replies.
+This morning the first thing I did was trying Greg's command line suggestions,
+I changed the output to ASCII to explore the results, and: this is exactly
+what I meant!
+I will work on this as much as time permits me to do, and I will share the
+results. This might take a while, therefore I will thank you both at this
+moment very, very much.
+Carsten, also your suggestions where to look in rpict (ray.h) are very
+helpfull. For this moment I will start with Greg's suggestion. The syntax of
+the command line is far less complicated as I expected, so this will work for
+now.
+I changed Greg's line a little, so the output per pixel now is:
+modifier-name value normal position
+( vwrays -ff -vf view01.vf -pa 0 -x 1000 -y 1000  | rtrace -x 1000 -y 1000
+-fff -omvNp model.oct > test.data ).
+
+This is where I can start from, I let you know when I have some results (or
+questions), but for now there is a lot to experiment with.
+
+Thanks a lot!
+
+Iebele
+
+
+Greg Ward wrote:
+
+> > From: atelier iebele abel <atelier@iebele.nl>:
+>
+> > Back to the animation-issue. It takes too much time to render
+> > animations for
+> > our application, because we use very large geometry, we use a lot of
+> > light
+> > sources,  we have to render several minutes, we only (?) have 4 cpu's
+> > available on Linux and we have to produce very good looking images for
+> > our
+> > customers (they expect images like they have seen on tv/dvd : sharp
+> > sharper
+> > sharpest).
+> > To survive the competition using Radiance (we are using Radiance daily,
+> > so we
+> > really don't want to work with something else) we need another
+> > approach, and
+> > we are willing to spent our time to get it work.
+>
+> I don't know about your country, but in the U.S., computers are a whole
+> lot cheaper
+> than people, and it might be worthwhile to invest in a stack of Linux
+> boxes to run
+> your animations -- Charles Ehrlich while he was still at LBNL put a
+> tower together
+> last year with 9 CPUs and a disk array for less than $15K US.
+>
+> > Taken the above into account, I and my partner are thinking about an
+> > image
+> > format like the radiance .pic, that is rendered without ambient bounces
+> > (-ab
+> > 0). In this (or additional) image format we also like to have the
+> > following
+> > data per pixel (ok, these images take lots of diskspace...):
+> >
+> >    * name of the modifier for the object this pixel represent (as a
+> > string)
+> >    * normal orientation of this object (float float float)
+> >    * position of the pixel in XYZ space (float float float)
+> >
+> > With this information per pixel (maybe I need more info in te future)
+> > we think
+> > we can produce an automated proces in enhancing radiance pictures that
+> > are
+> > rendered without radiosity. This process is 2D image processing, using
+> > some 3d
+> > data that is 'stored' with the pixel.
+> > Also this kind of image data allows us to separate objects in one
+> > image, to
+> > process them individually in 2D.
+> >
+> > We think we can speed up animation times using a combination of 3d and
+> > 2d (
+> > rendering my scene with -ab 0 takes about 9 minutes on 4 times PAL res.
+> > against 3 hours with a nice radiosity as you suggested.
+> > Probably far more to achieve the results we really want. 2d/3d image
+> > processing will take about 5 minutes or less per frame ).
+>
+> This reminds me a lot of Ken Perlin's classic 1985 Siggraph paper, where
+> he uses his noise function with similar pixel information to sythesize
+> images.
+>
+> > I already looked at rtrace, which seems to produce the kind of
+> > information I
+> > need. Two problems arose when I looked at rtrace:
+> >
+> > 1. I don't know where to start
+> > 2. I think I prefer changing code in rpict (to use the -S option and -vf
+> > option )
+> > 3. I think I prefer changing code in rpict.c (to have a all in one
+> > executable,
+> > instead of using scripts)
+>
+> I strongly suggest you use rtrace, as it is already designed and
+> optimized
+> for this type of output.  When you use the -fff and -omNp options, you
+> will
+> avoid all recursive ray calls and get a very fast calculation.  The rays
+> for any desired view can be generated with the vwrays command (new
+> with 3.4).  To generate the 10th view in the file "anim.vf", you could
+> use:
+>
+> % sed -n 10p anim.vf > frame10.vf
+> % vwrays -ff -vf frame10.vf -pa 0 -x 3072 -y 2304 \
+>         | rtrace -x 3072 -y 2304 -fff -omNp anim.oct > frame10.data
+>
+> See the vwrays man page for more details and examples.
+>
+> -Greg
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From radiance-general@radiance-online.org  Wed May  8 17:10:56 2002
+From: radiance-general@radiance-online.org (atelier iebele abel)
+Date: Wed, 08 May 2002 18:10:56 +0200
+Subject: [Radiance-general] animation
+References: <3CD284B0.72EB180C@iebele.nl> <3CDACAE9.3E60F54B@pab-opto.de> <3CD7A43B.F83F2FE9@iebele.nl> <3CE0C46F.1718C236@pab-opto.de>
+Message-ID: <3CD94E10.EA496208@iebele.nl>
+
+Hi Peter,
+
+Your reply includes some critical remarks on the subject.
+I will try to answer them from my point of view, within the context of
+animation (please remember that  my project would have taken about 2250
+hours (14 weeks) on 4 1000Mhz cpus when rendered as animation, and still
+having significant artifacts).
+
+> Will it work generally ? With specular/reflecting surfaces and shadows ?
+
+Transparent surfaces (like glass) seem yet another problem for me....
+
+What I will try is using a radiance picture without radiosity and then
+change the value of each pixel a little depending on the normal orientation
+of that pixel. When the normal points upward, I make the pixel just a liitle
+brighter, facing downwards, the pixel becomes a liitle darker, etc.
+This is needed for my application, since a non-radiosity interior image
+looks very flat (a cube in such a case is hardly recognisable as a cube).
+
+My approach is a little like "vloeken in de kerk" (dutch: using bad language
+in the church):  I am aware of that.  Believe me: I hardly dared to bring
+the topic into this discussion (...).
+We want to use animation in combination with "real" radiance images in the
+editing of a project (so we don't use bad words all the time :).
+The animation is meant to provide a way of having some insight in the
+spatial behaviour of a building.
+When we use another renderers besides radiance however, these images don't
+look very good (they are _different_ ). To mention: luminaires, sky
+defention, the appearance of 'white' surfaces etc, the overall feeling of
+light (even if ab=0 I feel light in the scene -  I never felt light in
+Lightscape, but ok, that was about 8 years ago).
+
+> Will 2d processing be validated to have the same trust as Radiance now
+> has ?
+
+When I program this 2d processing: certainly not!
+That will be far beyond my skills.
+I give it a try, when it does what I imagine I am satisfied.
+If anybody can do it better: please!!!
+
+> Maybe you're on the way towards Wavefront, Renderman or whetever
+> there is for professional animations, without actually getting their
+> speed or quality, but loosing a lot of Radiance.
+
+I don't want to use different rendering tools within one project. As I said:
+we will use radiance anyway.
+Other renderers require other ways of getting the data right. This means:
+much extra work within the same deadlines.
+There is something else. I worked with a lot of renderers (except renderman)
+and what I like about radiance is that we are able to write scripts for
+complex situations. For example we did a project in which there were 4
+variations on 4 building types on 2 different location-types.
+We rendered two views from every possible combination and put these images
+in a simple user-interface. The scripting took 2 hours, the renderings
+overnight. Is there any renderer that allows me to do this? I really rely on
+Radaince in such cases.
+
+> IMHO, speedups for animations in Radiance will be a side effect when/if
+> the core rendering is enhanced (photon map, direct caching maybe) and
+> validated. Meanwhile, Greg's recommendation of using brute force and
+> some more CPUs sounds right to me.
+
+To me also. Maybe I am wrong and the whole idea will not work.
+I will be happy to show you some images after I finished  my homework :)
+I am very curious what the result are. My opinion is very humble in this....
+
+Yet there is another application where I am thinking about: when I know
+which object/modifier is represented by a pixel, I easily can put each
+object-pixel in a different layer ( as in photoshop) and enhance them
+seperately.
+This is very usefull in video, for example to dim oversaturated colors a
+bit.
+
+> Or you may try to render texture maps through Radiance, which are then
+> glued onto surfaces and final frame rendering is done by other rendering
+> engines
+
+Why not Radiance in this case?
+
+> (which may have more inter-frame coherence too). At least the
+> interface would be well defined.
+
+Last but not least: Is there a way to do this ? I read some discussions
+about this topic, and it seems to me that it does not really work (?). Or am
+I wrong here?
+
+Just to mention within this context. Something simular to the above: we work
+on 360o panoramic views (2048x2048pixels, rendering times about 10 hours for
+one oversampled image, but that doesn't hurt for a single image), which we
+map on a slowly rotating cylinder in OpenGL, and then we render these frames
+to file. These result are quite good (and fast and reliable/trustable). The
+only bad thing is that I am not an educated programmer, and the application
+crashes as soon as I write an image to a file... So I've seen the results
+only in the application, not on video yet.
+Time will fix this sooner or later.
+
+
+> Your mileage may very.
+
+I can't translate this sentence, mileage is not in my dictionary (?)
+
+
+Regards (nice discussion),
+
+Iebele
+
+
+From radiance-general@radiance-online.org  Wed May 15 00:48:28 2002
+From: radiance-general@radiance-online.org (Peter Apian-Bennewitz)
+Date: Wed, 15 May 2002 01:48:28 +0200
+Subject: [Radiance-general] animation
+References: <3CD284B0.72EB180C@iebele.nl> <3CDACAE9.3E60F54B@pab-opto.de> <3CD7A43B.F83F2FE9@iebele.nl> <3CE0C46F.1718C236@pab-opto.de> <3CE0F4D1.F262E199@t-online.de>
+Message-ID: <3CE1A24C.AF770C6B@pab-opto.de>
+
+Carsten Bauer wrote:
+... 
+> The Radiance ambient treatment is somewhat awkward to handle, and I've
+> noticed that people without a sound scientific background have
+> difficulties with the overwhelming features and parameters and all the
+> thinking behind it, ...
+It's true. All the options are awful. However, not a single solution,
+both efficient and general, is known that solves the underlying,
+fundamental light "rendering equation", without hand tweaking the
+algorithms by specifying parameters. That's where technology stands now. 
+Tweaking simulation to do non-realistic images doesn't really help any
+designer in finding a solution that is actually realistic.
+...
+> Of course, Radiance is aimed very much at realistic image generation,
+> and it would be nice to have more "artistic freedom" in using it. This
+> is a totally different matter. ...
+I'm not quite certain that'll become a main-stream direction of Radiance
+development, as the physical quality is the prime motivation to use it.
+
+My experiences with rayshade where excellent- Much easier, many more
+features (motion blur built in, more powerful input format, easier
+texture mapping). POVray is probably even more powerful and easier to
+customize. Both are in the public domain. There are many converters, or
+converters could be build to go from one rendering systems to the other.
+There's nothing wrong in using another package. There's nothing wrong in
+playing with scenes and "artistic freedom" lighting in spaces. There
+just aren't convincing reasons why Radiance should leave the path of
+strict physical correct simulation.
+
+-Peter
+
+From radiance-general@radiance-online.org  Wed May 15 01:03:07 2002
+From: radiance-general@radiance-online.org (Roland Schregle)
+Date: Wed, 15 May 2002 02:03:07 +0200
+Subject: [Radiance-general] animation
+References: <3CD284B0.72EB180C@iebele.nl> <3CDACAE9.3E60F54B@pab-opto.de> <3CD7A43B.F83F2FE9@iebele.nl> <3CE0C46F.1718C236@pab-opto.de> <3CE0F4D1.F262E199@t-online.de> <3CE1A24C.AF770C6B@pab-opto.de>
+Message-ID: <3CE1A5BB.CD94CF0@gmx.net>
+
+ 
+Carsten Bauer wrote:
+
+> > Of course, Radiance is aimed very much at realistic image generation,
+> > and it would be nice to have more "artistic freedom" in using it. This
+> > is a totally different matter. ...
+
+Isn't that what they call "non-photorealism" nowadays? :^)
+Do we really want to *downgrade* RADIANCE with this?
+
+--Roland
+
+-- 
+"Life is too short for core dumps"
+
+From radiance-general@radiance-online.org  Wed May 15 18:12:35 2002
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Wed, 15 May 2002 10:12:35 -0700
+Subject: [Radiance-general] Radiance workshop preregistration deadline
+In-Reply-To: <200204271001.g3RA12Q19411@darkside-animation.com>
+Message-ID: <F3587C2C-6826-11D6-BA46-00306540F848@lmi.net>
+
+Just a reminder that the deadline for pre-registration is TODAY!
+--------------
+
+CALL FOR PARTICIPATION -- RADIANCE WORKSHOP
+
+What:	Scientific Applications Using RADIANCE
+
+Where:	University of Applied Sciences of Fribourg, Switzerland
+
+When:	September 30 to October 1 or 2, 2002
+
+Organizers:	RaphaÎl Compagnon and Greg Ward
+
+Estimated Cost:	200-300 CHF per person to cover meals and Greg's travel
+
+Purpose:
+To provide researchers with an opportunity to present their work with
+Radiance, and to share ideas and solutions with workshop participants.
+Participants are invited to give a 20 minute talk, which will be
+followed by 10-15 minutes of open discussion.  No printed proceedings
+will be produced, but a CD-ROM will be distributed to attendees that
+will include electronic materials submitted by the speakers and edited
+by the organizers.
+
+Greg will open the workshop with an overview of Radiance development,
+the current 3.4 release, and an update on his work in high dynamic range
+imaging and visualization.
+
+If you would like to give a talk, please submit a preliminary title and
+abstract or short description to the e-mail address below.  If you wish
+to attend the workshop but not give a talk, let us know and we will see
+if we can accommodate you.  If you are a student who would like to give
+a talk but cannot afford the registration fee, let us know this, also.
+
+Rates in Fribourg are around 120 CHF/night for a three star hotel.  (1
+CHF ~ 0.6 USD or 0.66 EURO)  We will look into getting a 10-15% discount
+at one or more hotels once we find out how many attendees we can
+expect.  In all likelihood, the workshop will last two days start to
+finish, but if the response is large, we may need to make it two and a
+half days.  There is also a national exposition happening at the time,
+which attendees may wish to include on their itinerary.  See
+http://www.expo.02.ch for details.
+
+A final announcement with the agenda, workshop dates and registration
+fees will be sent out in late May, and registration will be due on June
+15.  Please complete the form below if you would like to attend.  We
+look forward to meeting you in Firbourg!
+
+------------------------- Pre-registration 
+Form ----------------------------
+
+Attendee Name (First M. Last, Title):
+E-mail:
+Address:
+Telephone:
+
+Student (Yes/No):
+
+Title (if you plan to give a talk):
+Abstract/Description:
+
+Other Comments:
+
+-----------------------------------------------------------------------------------------
+
+Please respond by May 15 to:
+
+RaphaÎl Compagnon
+mailto:raphael.compagnon@eif.ch
+http://www.eif.ch
+
+
+From radiance-general@radiance-online.org  Thu May 16 12:59:26 2002
+From: radiance-general@radiance-online.org (Carsten Bauer)
+Date: Thu, 16 May 2002 13:59:26 +0200
+Subject: [Radiance-general] animation
+References: <3CD284B0.72EB180C@iebele.nl> <3CDACAE9.3E60F54B@pab-opto.de> <3CD7A43B.F83F2FE9@iebele.nl> <3CE0C46F.1718C236@pab-opto.de> <3CE0F4D1.F262E199@t-online.de> <3CE1A24C.AF770C6B@pab-opto.de>
+Message-ID: <3CE39F1E.D5754BF6@t-online.de>
+
+Hi all !
+
+I think the discussion starts to leave the range this forum was set up
+for, but as I don't want to be looked at as the heretic, I simply have
+to state something for self defence :) .
+I really didn't mean Radiance to go for a Disney-style colorful pictures
+renderer, there are lots of them already available. But on the other
+hand, disregarding physical accuracy here and there is no black magic
+either. In fact, it is already offered by Radiance, e.g with the "glow"
+primitive and its maximum radius for shadow testing, which helps very
+much in certain cases. Almost each task shows small details where the
+means to create an effect within a picture / a simulation are not 1:1
+copies from the ones applied in the real installation within a building,
+and this doesn't have to mean a loss of realistic thinking, it simply is
+a question of efficiency. And having more freedom to do so would be no
+"downgrading" either. 
+It might of course be confusing if too many different approaches to an
+issue appear within the same tool. In this respect I understand the hint
+of relegating "artistic" tasks to other programs. But this often is
+horribly inefficient, more time is spent with converting or setting up a
+scene a second time in another format, so that I personnally prefer to
+do as much as possible with one tool (cf. Iebeles comment..).
+
+And then there is of course the aesthetical dimension. For the reception
+of a picture, the question of accuracy is not the only criterium. And
+the demands of the public are paradox. One one hand, they want sound,
+efficient and realisable solutions, but the same time they want to be
+"entertained", want to see something fantastic, impressive. Maybe trying
+to bring this together makes the main proportion of the art of
+simulation. It is a difficult task, so why restrain oneself by locking
+away some sections of the toolbox?
+
+In the end, all is of course a question of individual preferences, so
+now I will be quiet. Really. :)
+
+-Carsten
+
+From radiance-general@radiance-online.org  Fri May 10 16:09:10 2002
+From: radiance-general@radiance-online.org (atelier iebele abel)
+Date: Fri, 10 May 2002 17:09:10 +0200
+Subject: [Radiance-general] animation
+References: <3CD284B0.72EB180C@iebele.nl> <3CDACAE9.3E60F54B@pab-opto.de> <3CD7A43B.F83F2FE9@iebele.nl> <3CE0C46F.1718C236@pab-opto.de> <3CE0F4D1.F262E199@t-online.de> <3CE1A24C.AF770C6B@pab-opto.de> <3CE39F1E.D5754BF6@t-online.de>
+Message-ID: <3CDBE296.717AA753@iebele.nl>
+
+Carsten Bauer wrote:
+
+>  so now I will be quiet. Really. :)
+
+I think I will be quiet  for a short while too. We now work on the subject
+and I really hope we get some useable results, within reasonable time. I am
+very pleased with the hints and helps, and the implicit discussion is of
+great value too(!), although it indeed might 'leave the range this forum was
+set up for'.
+
+See you later!
+
+Iebele
+
+
+From radiance-general@radiance-online.org  Fri May 17 12:21:17 2002
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Fri, 17 May 2002 07:21:17 -0400 (EDT)
+Subject: [Radiance-general] OT: compiling on sgi
+Message-ID: <Pine.BSF.4.30.0205170712290.12881-100000@emancholl.pair.com>
+
+Hi all,
+
+I appologize for the slightly off-topic request, even though
+it actually *is* related to Radiance.
+
+I am urgently looking for the possibility to compile some
+software on an sgi machine under IRIX. Space and performance
+requirements are minimal, and the whole operation should be
+over within less than an hour per ssh. A functioning C
+complier is mandatory (gcc is fine), a working installation
+of Python 1.5.2 would be helpful, but isn't critical.
+I could also live with a commercial service, as long as I
+can afford the price...
+
+If anyone knows of an installation where this would be possible,
+or has one available, please e-mail me directly, so we don't
+pollute this list any further.
+
+
+Thanks for any pointers!
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch.com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-general@radiance-online.org  Wed May 22 20:58:28 2002
+From: radiance-general@radiance-online.org (Rob Guglielmetti)
+Date: Wed, 22 May 2002 15:58:28 -0400
+Subject: [Radiance-general] computing illuminance across a grid
+Message-ID: <3CEBC024.26404.1773D5F@localhost>
+
+Me again.  I have a couple of test scenes I'm 
+experimenting with, and I'd now like to use rtrace et. al. 
+to automate the extraction of illuminance levels to a file.  
+
+>From a Radiance digest:
+> As an example of producing illuminance values at regularly
+> spaced points on a 4x5 workplane, you might use the
+> following command:
+> 
+>  % cnt 3 4 | rcalc -e
+>  '$1=$1+.5;$2=$2+.5;$3=1;$4=0;$5=0;$6=1' \
+>   | rtrace -h -I [options] octree \
+>   | rcalc -e '$1=179*(.3*$1+.59*$2+.11*$3)' > outfile
+
+Could you decipher this a little bit?  I don't see where you 
+feed it the 4x5 grid.  Also, looking at the manpage, it 
+looks like rtrace with the -I switch takes the input origin & 
+direction and interprets it as "measurement point and 
+orientation".
+
+I tried something like:
+rtrace -h -I 60 60 30 0 0 1 scene.oct 
+
+I thought this would give me the irradiance at a point 60" 
+over(+x), 60" up (+y), and 30" off the floor (+z), whth the 
+"light meter" facing up along the z axis.  But this gave me 
+an error at the command line.  WHat is the proper syntax? 
+ I was hoping to fill a text file with measurement points 
+and feed it to rtrace, and use something like your script 
+above to produce a table of measurement points and 
+corresponding illuminance values...
+
+         ====================
+ Rob Guglielmetti <rpg777@earthlink.net>
+    http://home.earthlink.net/~rpg777
+
+From radiance-general@radiance-online.org  Wed May 22 21:33:18 2002
+From: radiance-general@radiance-online.org (Roland Schregle)
+Date: Wed, 22 May 2002 22:33:18 +0200
+Subject: [Radiance-general] computing illuminance across a grid
+References: <3CEBC024.26404.1773D5F@localhost>
+Message-ID: <3CEC008E.6726876A@gmx.net>
+
+Rob Guglielmetti wrote:
+> 
+> Me again.  
+
+YOU again? :^)
+
+> I tried something like:
+> rtrace -h -I 60 60 30 0 0 1 scene.oct
+> 
+> I thought this would give me the irradiance at a point 60"
+> over(+x), 60" up (+y), and 30" off the floor (+z), whth the
+> "light meter" facing up along the z axis.  But this gave me
+> an error at the command line.  WHat is the proper syntax?
+
+the position and orientation vectors are grabbed from standard input.
+For example, grabbing them from a file would require:
+
+rtrace -h -I scene.oct < scene.pos
+
+For your single measurement you'd use:
+
+echo 60 60 30 0 0 1 | rtrace -h -I scene.oct
+
+Ain't UNIX fun? :^)
+
+
+--Roland
+
+-- 
+"Life is too short for core dumps"
+
+From radiance-general@radiance-online.org  Wed May 22 23:31:00 2002
+From: radiance-general@radiance-online.org (Phillip Greenup)
+Date: Thu, 23 May 2002 08:31:00 +1000
+Subject: [Radiance-general] computing illuminance across a grid
+In-Reply-To: <3CEBC024.26404.1773D5F@localhost>
+Message-ID: <4.3.2.7.2.20020523082133.00af27f0@pop.qut.edu.au>
+
+Hi Rob,
+
+Do you have rillum?  if you have rillum, it makes this process somewhat easier.
+
+1. create an input file with a pile of measuring points and positions, 
+similar to your 60 60 30 0 0 1.  cnt and rcalc can help in the creation of 
+this file, but it can also be done in any text editor, or spreadsheet and 
+exported as an ascii file.  use one line per measuring point.
+2. rillum [rtrace options] octree < infile > outfile
+
+the output file then contains a column of illuminances corresponding to the 
+measuring points and orientations defined in the input file.  if you wish, 
+you can then use lam to put the input and output files together in a table.
+
+good luck!
+Phil Greenup.
+
+At 03:58 pm 22/05/02 -0400, you wrote:
+>Me again.  I have a couple of test scenes I'm
+>experimenting with, and I'd now like to use rtrace et. al.
+>to automate the extraction of illuminance levels to a file.
+>
+> >From a Radiance digest:
+> > As an example of producing illuminance values at regularly
+> > spaced points on a 4x5 workplane, you might use the
+> > following command:
+> >
+> >  % cnt 3 4 | rcalc -e
+> >  '$1=$1+.5;$2=$2+.5;$3=1;$4=0;$5=0;$6=1' \
+> >   | rtrace -h -I [options] octree \
+> >   | rcalc -e '$1=179*(.3*$1+.59*$2+.11*$3)' > outfile
+>
+>Could you decipher this a little bit?  I don't see where you
+>feed it the 4x5 grid.  Also, looking at the manpage, it
+>looks like rtrace with the -I switch takes the input origin &
+>direction and interprets it as "measurement point and
+>orientation".
+>
+>I tried something like:
+>rtrace -h -I 60 60 30 0 0 1 scene.oct
+>
+>I thought this would give me the irradiance at a point 60"
+>over(+x), 60" up (+y), and 30" off the floor (+z), whth the
+>"light meter" facing up along the z axis.  But this gave me
+>an error at the command line.  WHat is the proper syntax?
+>  I was hoping to fill a text file with measurement points
+>and feed it to rtrace, and use something like your script
+>above to produce a table of measurement points and
+>corresponding illuminance values...
+>
+>          ====================
+>  Rob Guglielmetti <rpg777@earthlink.net>
+>     http://home.earthlink.net/~rpg777
+
+
+From radiance-general@radiance-online.org  Thu May 23 16:35:03 2002
+From: radiance-general@radiance-online.org (Rob Guglielmetti)
+Date: Thu, 23 May 2002 11:35:03 -0400
+Subject: [Radiance-general] computing illuminance across a grid
+In-Reply-To: <4.3.2.7.2.20020523082133.00af27f0@pop.qut.edu.au>
+References: <3CEBC024.26404.1773D5F@localhost>
+Message-ID: <3CECD3E7.1649.84211F@localhost>
+
+THanks again for the advice.  Replies to the replies below:
+
+On 22 May 2002, at 22:33, Roland Schregle wrote:
+> For your single measurement you'd use:
+> 
+> echo 60 60 30 0 0 1 | rtrace -h -I scene.oct
+> 
+> Ain't UNIX fun? :^)
+
+It's getting more fun all the time, as I move out of the 
+"complete idiot" category and into the "pathetic novice" 
+category, unix-wise.  Greg's tip about OSX and his pre-
+compiled binaries have really helped me get up & running 
+on a unix-based Radiance learning trip, and this list is 
+now helping too.  I appreciate it. 
+
+On 23 May 2002, at 8:31, Phillip Greenup wrote:
+
+> Do you have rillum?  if you have rillum, it makes this
+> process somewhat easier.
+> 
+> 1. create an input file with a pile of measuring points and
+> positions, similar to your 60 60 30 0 0 1.  cnt and rcalc
+> can help in the creation of this file, but it can also be
+> done in any text editor, or spreadsheet and exported as an
+> ascii file.  use one line per measuring point. 2. rillum
+> [rtrace options] octree < infile > outfile
+
+Well, that sounds like a useful little program.  I don't have 
+this.  Where do I get it??  I am using pre-compiled 
+binaries for OS X, created by Greg Ward.  Most of the 
+other stuff is there, but not glrad or this rillum.  
+
+I'd compile the source myself, but I get errors all the time, 
+both on OSX and Linux. (Yes, I installed Yellow Dog Linux 
+2.2 on my Powerbook.  I couldn't help myself.)  And at the 
+moment I'm far more interested in using Radiance than 
+administering a unix system, so I guess I'm cheating a bit 
+by using precompiled binaries.  =8-)
+
+> the output file then contains a column of illuminances
+> corresponding to the measuring points and orientations
+> defined in the input file.  if you wish, you can then use
+> lam to put the input and output files together in a table.
+
+On 22 May 2002, at 14:21, Greg Ward wrote:
+> a better example for a grid
+> of 15 by 30 points spread in a 10x20 room and 2.5 feet 
+off
+> the floor with a half foot margin on each side would be:
+> 
+> % cnt 15 30 | rcalc -e
+> '$1=(10-.5)/(15-1)*$1;$2=(20-.5)/(30-1);$3=2.5' \
+>  -e '$4=0;$5=0;$6=1' | rtrace -I -h [options] octree \
+>  | rcalc -e '$1=179*(.265*$1+.670*$2+.065*$3)' > 
+output.dat
+
+Thanks Greg.  Since I don't have rillum (yet) this works 
+well.  I typed this up in a text file, and did a chmod 755 on 
+it, so I can call that whole mess with one filename.  
+(Roland- fun with unix! ;-)) However, my problem now is 
+that it recorded values of zero!  The scene is not dark.  I 
+double checked the inputs.  It's still zero.  My room is 
+12'x14', but I'm working in inch units, so my code went 
+like this:
+
+cnt 15 30 | rcalc -e 
+$1=(144-6)/(15-1)*$1;$2=(168-6)/(30-1);$3=30' \
+-e '$4=0;$5=0;$6=1' | rtrace -I -h [options] octree \
+  | rcalc -e '$1=179*(.265*$1+.670*$2+.065*$3)' > 
+output.dat
+
+(note: the first two lines above are on one line in the 
+command file.  Damn emailer.)
+
+This should place a grid of "light meters" facing up, 2'6" 
+off the floor, right?  Why is my scene illuminance reading 
+zero??  It's a daylit space!  When I load a pic into ximage 
+and pick a point & press return, I get radiance values of 
+.298, .428, on the floor.  Hmmm...
+
+Also, I'm wondering how rtrace gets its information, since 
+it's working with an octree, not a pic file.  I don't 
+understand how it can compute irradiance so fast unless 
+it somehow works with a pic file and/or the cached 
+ambient file.  Along those lines, if you want accurate 
+values for a room, and only have generated a pic of, say, 
+the north elevation, how accurate are the vertical 
+illuminance values on the south elevation?  
+
+         ====================
+ Rob Guglielmetti <rpg777@earthlink.net>
+    http://home.earthlink.net/~rpg777
+
+From radiance-general@radiance-online.org  Thu May 23 16:53:58 2002
+From: radiance-general@radiance-online.org (Rob Guglielmetti)
+Date: Thu, 23 May 2002 11:53:58 -0400
+Subject: [Radiance-general] computing illuminance across a grid
+In-Reply-To: <3CECD3E7.1649.84211F@localhost>
+References: <4.3.2.7.2.20020523082133.00af27f0@pop.qut.edu.au>
+Message-ID: <3CECD856.12063.9571AA@localhost>
+
+Some more info:
+
+I just did a falsecolor image of my scene and it too shows 
+a totally dark room, with a single patch of direct sun.  THe 
+rest of the space is < 1Lux.  So, that explains why the 
+cnt/rcalc/rtrace/rcalc program is returning these zero 
+values, but I don't understand why the lighting analysis 
+and the pic files don't seem to agree on things at all.  It's 
+a simple room with a north-facing clerestory and an 
+opening punched out of the south wall.  There is a scene 
+description with a gensky command and the two 
+hemispheres for sky/ground glow.  Several renderings of 
+the space show that it is indeed illuminated, and running 
+it through pcond -h creates a nice looking image.  I've 
+been using the rad program for now, so I think the 
+parameters are in order, I have ambient=4 detail=high 
+quality=medium.  
+
+So, my photons are leaving the scene between the time I 
+create the pic files and the time I run the ligting analysis.  
+Did I create my model over a black hole?  Hmmm...
+
+         ====================
+ Rob Guglielmetti <rpg777@earthlink.net>
+    http://home.earthlink.net/~rpg777
+
+From radiance-general@radiance-online.org  Thu May 23 17:05:33 2002
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Thu, 23 May 2002 12:05:33 -0400 (EDT)
+Subject: [Radiance-general] computing illuminance across a grid
+In-Reply-To: <3CECD3E7.1649.84211F@localhost>
+Message-ID: <Pine.BSF.4.30.0205231155120.58847-100000@emancholl.pair.com>
+
+Rob Guglielmetti wrote:
+
+> cnt 15 30 | rcalc -e
+> $1=(144-6)/(15-1)*$1;$2=(168-6)/(30-1);$3=30' \
+> -e '$4=0;$5=0;$6=1' | rtrace -I -h [options] octree \
+>   | rcalc -e '$1=179*(.265*$1+.670*$2+.065*$3)' >
+> output.dat
+>
+> (note: the first two lines above are on one line in the
+> command file.  Damn emailer.)
+>
+> This should place a grid of "light meters" facing up, 2'6"
+> off the floor, right?  Why is my scene illuminance reading
+> zero??  It's a daylit space!  When I load a pic into ximage
+> and pick a point & press return, I get radiance values of
+> .298, .428, on the floor.  Hmmm...
+
+
+That's what you get for using those weird nonstandad units... ;)
+I suspect that your points are located inside some wall,
+since they all have the same y-value of 5.5862069.
+
+You migh want to check the output of the first two stages
+of the pipe sequence for a sanity check:
+
+ cnt 15 30 | rcalc -e '$1=(144-6)/(15-1)*$1;$2=(168-6)/(30-1);$3=30' \
+  -e '$4=0;$5=0;$6=1'
+
+(You also had a quote character missing at the start of the first
+expression, but that's probably a copying error in the e-mail)
+
+
+-schorsch
+
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch.com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-general@radiance-online.org  Thu May 23 17:07:49 2002
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Thu, 23 May 2002 12:07:49 -0400 (EDT)
+Subject: [Radiance-general] computing illuminance across a grid
+In-Reply-To: <3CECD856.12063.9571AA@localhost>
+Message-ID: <Pine.BSF.4.30.0205231206330.58847-100000@emancholl.pair.com>
+
+Rob Guglielmetti wrote:
+
+> Some more info:
+>
+> I just did a falsecolor image of my scene and it too shows
+> a totally dark room, with a single patch of direct sun.  THe
+> rest of the space is < 1Lux.
+
+
+That's a pretty safe indicator for the -ab 0 syndrome...
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch.com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-general@radiance-online.org  Thu May 23 20:57:06 2002
+From: radiance-general@radiance-online.org (Rob Guglielmetti)
+Date: Thu, 23 May 2002 15:57:06 -0400
+Subject: [Radiance-general] computing illuminance across a grid
+Message-ID: <3CED1152.16594.1740BCA@localhost>
+
+On 23 May 2002, at 11:35, I wrote:
+
+> Also, I'm wondering how rtrace gets its information, since
+> it's working with an octree, not a pic file.  I don't
+> understand how it can compute irradiance so fast unless it
+> somehow works with a pic file and/or the cached ambient
+> file.  Along those lines, if you want accurate values for a
+> room, and only have generated a pic of, say, the north
+> elevation, how accurate are the vertical illuminance values
+> on the south elevation?  
+
+And then later I wrote:
+
+> > Some more info:
+> >
+> > I just did a falsecolor image of my scene and it too 
+shows
+> > a totally dark room, with a single patch of direct sun. 
+> > The rest of the space is < 1Lux.
+
+To which Schorsch replied:
+
+> That's a pretty safe indicator for the -ab 0 syndrome...
+
+Which I suppose is one way of saying RTFM.  Sorry gang.  
+Now I see that rtrace needs to be told what to do just 
+like rpict, in terms of the myriad switches.  Sigh.  I guess 
+coming from the Lightscape/radiosity world I still can't 
+shake the idea that once you wait a while for a calc, all 
+the data is there for the asking.  
+
+Is there a way to somehow tell rad to do some rtrace 
+stuff and have rad control the options based on a .rif file, 
+in the manner that rad controls rpict?
+
+         ====================
+ Rob Guglielmetti <rpg777@earthlink.net>
+    http://home.earthlink.net/~rpg777
+
+From radiance-general@radiance-online.org  Thu May 23 21:44:50 2002
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Thu, 23 May 2002 16:44:50 -0400 (EDT)
+Subject: [Radiance-general] computing illuminance across a grid
+In-Reply-To: <3CED1152.16594.1740BCA@localhost>
+Message-ID: <Pine.BSF.4.30.0205231639330.58847-100000@emancholl.pair.com>
+
+> > That's a pretty safe indicator for the -ab 0 syndrome...
+>
+> Which I suppose is one way of saying RTFM.  Sorry gang.
+> Now I see that rtrace needs to be told what to do just
+> like rpict, in terms of the myriad switches.  Sigh.  I guess
+> coming from the Lightscape/radiosity world I still can't
+> shake the idea that once you wait a while for a calc, all
+> the data is there for the asking.
+
+I really hate this damned machine,
+I wish that I could sell it.
+It never does quite what I want,
+But only what I tell it.
+
+
+Ok, I admit that the default parameters of the various Radiance
+programs are not designed to give you a first "nice looking"
+result without any tweaking. Which is probably a healthy fact
+to get bumped against right before the first illusions of
+perfection can kick in... ;)
+
+
+> Is there a way to somehow tell rad to do some rtrace
+> stuff and have rad control the options based on a .rif file,
+> in the manner that rad controls rpict?
+
+You can run a "rad -n" on the rif, and copy the relevant parts of
+the output to a file. Then use the @<file> parameter with rtrace.
+In fact, it often is a good idea to run a small picture before the
+rtrace, to more thoroughly initialize the ambient file. The few
+dozen initial rays from your grid may not cause the altorithm to
+look at all corners of your space in sufficient density, which can
+result in somewhat erratic or even lopsided output values.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch.com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-general@radiance-online.org  Thu May 23 21:59:20 2002
+From: radiance-general@radiance-online.org (Roland Schregle)
+Date: Thu, 23 May 2002 22:59:20 +0200
+Subject: [Radiance-general] computing illuminance across a grid
+References: <Pine.BSF.4.30.0205231639330.58847-100000@emancholl.pair.com>
+Message-ID: <3CED5828.97114EF3@gmx.net>
+
+Georg Mischler wrote:
+
+> I really hate this damned machine,
+> I wish that I could sell it.
+> It never does quite what I want,
+> But only what I tell it.
+
+Get an SGI... :^)
+
+-- 
+"Life is too short for core dumps"
+
+From radiance-general@radiance-online.org  Fri May 24 01:07:57 2002
+From: radiance-general@radiance-online.org (Phillip Greenup)
+Date: Fri, 24 May 2002 10:07:57 +1000
+Subject: [Radiance-general] computing illuminance across a grid
+In-Reply-To: <3CECD3E7.1649.84211F@localhost>
+References: <4.3.2.7.2.20020523082133.00af27f0@pop.qut.edu.au>
+ <3CEBC024.26404.1773D5F@localhost>
+Message-ID: <4.3.2.7.2.20020524100140.00b04310@pop.qut.edu.au>
+
+Hi Rob,
+
+rillum is available with Adeline, Desktop Radiance and Rayfront.  Perhaps 
+it's not a unix thing.
+
+as Georg has said, all your y values are the same possibly placing your 
+measuring point in the wall somewhere.  try adding a '*$2' into your y 
+definition, as below.
+
+>cnt 15 30 | rcalc -e
+>'$1=(144-6)/(15-1)*$1;$2=(168-6)/(30-1)*$2;$3=30' \
+>-e '$4=0;$5=0;$6=1' | rtrace -I -h [options] octree \
+>   | rcalc -e '$1=179*(.265*$1+.670*$2+.065*$3)' >
+>output.dat
+
+good luck!
+Phil Greenup.
+
+>On 23 May 2002, at 8:31, Phillip Greenup wrote:
+>
+> > Do you have rillum?  if you have rillum, it makes this
+> > process somewhat easier.
+> >
+> > 1. create an input file with a pile of measuring points and
+> > positions, similar to your 60 60 30 0 0 1.  cnt and rcalc
+> > can help in the creation of this file, but it can also be
+> > done in any text editor, or spreadsheet and exported as an
+> > ascii file.  use one line per measuring point. 2. rillum
+> > [rtrace options] octree < infile > outfile
+>
+>Well, that sounds like a useful little program.  I don't have
+>this.  Where do I get it??  I am using pre-compiled
+>binaries for OS X, created by Greg Ward.  Most of the
+>other stuff is there, but not glrad or this rillum.
+>
+>On 22 May 2002, at 14:21, Greg Ward wrote:
+> > a better example for a grid
+> > of 15 by 30 points spread in a 10x20 room and 2.5 feet
+>off
+> > the floor with a half foot margin on each side would be:
+> >
+> > % cnt 15 30 | rcalc -e
+> > '$1=(10-.5)/(15-1)*$1;$2=(20-.5)/(30-1);$3=2.5' \
+> >  -e '$4=0;$5=0;$6=1' | rtrace -I -h [options] octree \
+> >  | rcalc -e '$1=179*(.265*$1+.670*$2+.065*$3)' >
+>output.dat
+>
+>Thanks Greg.  Since I don't have rillum (yet) this works
+>well.  I typed this up in a text file, and did a chmod 755 on
+>it, so I can call that whole mess with one filename.
+>(Roland- fun with unix! ;-)) However, my problem now is
+>that it recorded values of zero!  The scene is not dark.  I
+>double checked the inputs.  It's still zero.  My room is
+>12'x14', but I'm working in inch units, so my code went
+>like this:
+>
+>cnt 15 30 | rcalc -e
+>$1=(144-6)/(15-1)*$1;$2=(168-6)/(30-1);$3=30' \
+>-e '$4=0;$5=0;$6=1' | rtrace -I -h [options] octree \
+>   | rcalc -e '$1=179*(.265*$1+.670*$2+.065*$3)' >
+>output.dat
+>
+>(note: the first two lines above are on one line in the
+>command file.  Damn emailer.)
+>
+>This should place a grid of "light meters" facing up, 2'6"
+>off the floor, right?  Why is my scene illuminance reading
+>zero??  It's a daylit space!  When I load a pic into ximage
+>and pick a point & press return, I get radiance values of
+>.298, .428, on the floor.  Hmmm...
+
+
+From radiance-general@radiance-online.org  Fri May 24 01:53:59 2002
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Thu, 23 May 2002 20:53:59 -0400 (EDT)
+Subject: [Radiance-general] computing illuminance across a grid
+In-Reply-To: <4.3.2.7.2.20020524100140.00b04310@pop.qut.edu.au>
+Message-ID: <Pine.BSF.4.30.0205232020540.58847-100000@emancholl.pair.com>
+
+Phillip Greenup wrote:
+
+> Hi Rob,
+>
+> rillum is available with Adeline, Desktop Radiance and Rayfront.  Perhaps
+> it's not a unix thing.
+
+
+Interesting, I wasn't even aware of that...
+
+Rillum came with the Radiance for Windows sources, so I just
+included it without having another look. I am not licensed to
+distribute the source, but on a unix system, a shell script
+doing the same thing would look like this:
+
+
+#!/bin/sh
+rtrace -I+ -dv- -h- -x 1 $* | rcalc -e '$1=47.1*$1+117.2*$2+14.7*$3'
+
+
+You call this with all the rtrace parameters you like, followed
+by the octree, and it will read the points and vectors from
+stdin, spitting out illuminance values at the other end.
+Basically rillum is part of what we have already seen written out
+few times now, just implemented in C because there's no decent
+shell on Windows...  ;)
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch.com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+From radiance-general@radiance-online.org  Fri May 24 16:07:12 2002
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Fri, 24 May 2002 08:07:12 -0700
+Subject: [Radiance-general] Re: computing illuminance across a grid
+In-Reply-To: <200205241001.g4OA12M20328@darkside-animation.com>
+Message-ID: <ED249432-6F27-11D6-8662-00306540F848@lmi.net>
+
+Hi Guys,
+
+I am continually impressed by the quality of support this group offers!  
+They even caught the little mistake I included  in my example, which Rob 
+so dutifully copied, where I forgot the second index variable:
+
+> as Georg has said, all your y values are the same possibly placing your
+> measuring point in the wall somewhere.  try adding a '*$2' into your y
+> definition, as below.
+>
+> cnt 15 30 | rcalc -e
+> '$1=(144-6)/(15-1)*$1;$2=(168-6)/(30-1)*$2;$3=30' \
+> -e '$4=0;$5=0;$6=1' | rtrace -I -h [options] octree \
+>   | rcalc -e '$1=179*(.265*$1+.670*$2+.065*$3)' >
+> output.dat
+>
+> good luck!
+> Phil Greenup.
+
+The only thing we all missed is that the rillum script does exist in the 
+Unix distribution -- it's just called "rlux".  It wasn't until schorsch 
+pointed out the contents that I recognized it.  I thought rillum might 
+do something more than this.  Anyway, there is also a program called 
+"dayfact" which can generate false color images of the workplane 
+illuminance (as well as daylight factor contours), and that might be 
+useful in this situation.  It's also interactive, which means a little 
+less command-line coding for the "pathetic novice."
+
+Regarding calculation options, you can use rad directly to do what 
+schorsch was suggesting with cut and paste:
+
+% rad scene.rif OPTFILE=render.opt
+% ... | rtrace @render.opt [other options] octree | ...
+
+If you like, you can put the OPTFILE definition right in your scene.rif 
+file, then you'll always have this file handy when you need it.  Rad is 
+careful only to put options that are understood by all the renderers 
+into this file, rtrace, rpict, and rview.
+
+-Greg
+
+
+From radiance-general@radiance-online.org  Fri May 24 17:55:29 2002
+From: radiance-general@radiance-online.org (=?iso-8859-1?Q?Rapha=EBl?= Compagnon)
+Date: Fri, 24 May 2002 18:55:29 +0200
+Subject: [Radiance-general] Re: computing illuminance across a grid
+In-Reply-To: <ED249432-6F27-11D6-8662-00306540F848@lmi.net>
+References: <200205241001.g4OA12M20328@darkside-animation.com>
+Message-ID: <l03130300b9141f6442cc@[160.98.2.35]>
+
+>The only thing we all missed is that the rillum script does exist in the
+>Unix distribution -- it's just called "rlux".  It wasn't until schorsch
+>pointed out the contents that I recognized it.  I thought rillum might
+>do something more than this.
+
+Beware! In fact rlux is not exactly similar to rillum since it calls rtrace
+with option -i+ instead of -I
+
+rlux is supposed to be used in conjunction with ximage to compute
+irradiance at locations in the scene selected from an already exsiting
+picture like this:
+
+ximage picture.pic | rlux (rtrace options) octreefile
+where octreefile is the same that served for producing the picture
+
+>From ximage use command "t" to send the x,y,z,xdir,ydir,zdir values to rlux
+that will then compute the illuminance reaching the first encountred
+surface in this direction.
+
+Raphaël
+
+__________________________________________________________
+Raphael Compagnon
+HES-SO Ecole d'ingenieurs et d'architectes de Fribourg
+Bd. de Perolles 80, 1705 Fribourg  Switzerland
+Tel:    +41 26 429 6666 or +41 26 429 6611 (secretariat)
+Fax:    +41 26 429 6600
+E-Mail: Raphael.Compagnon@eif.ch    WWW: http://www.eif.ch
+
+
+
+From radiance-general@radiance-online.org  Sat May 25 16:48:14 2002
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Sat, 25 May 2002 08:48:14 -0700
+Subject: [Radiance-general] Beware, indeed!
+In-Reply-To: <200205251001.g4PA12M22986@darkside-animation.com>
+Message-ID: <D2B1CD37-6FF6-11D6-B271-00306540F848@lmi.net>
+
+Thanks to Raphael for pointing out that rlux is different from rillum -- 
+I was mistaken in thinking them the same.  I really need to think more 
+carefully before I type, and especially before I press "send!"  I 
+realized after I'd sent that message that I had made another mistake, as 
+the following is the correct way to execute rad to create an options 
+file without running any renderings:
+
+% rad -n -s scene.rif OPTFILE=render.opt
+
+Without the -n option (as I had put in the last message), rad will run 
+whatever renderings are indicated in the scene.rif file, which was not 
+the point.  The -s option simply prevents it from echoing the commands 
+it _would_ have executed, which you probably don't want to see...
+
+There are a number of other fun ways to execute rad.  The following 
+command will fill in ambient values for all the views in the scene.rif 
+file at once (provided the AMBFILE variable is set):
+
+% rad -v 0 scene.rif OPTFILE=render.opt
+% rad -n -s -V scene.rif | rpict @render.opt -S 1 -x 64 -y 64 
+scene.oct > /dev/null
+
+The -v 0 option causes rad to generate the octree without rendering any 
+views.  The -V option causes rad to print out all the views for this 
+scene in the standard "VIEW=" specification that rpict accepts for 
+animated sequences.  These views are then rendered by rpict at very low 
+resolution and discarded, filling in the ambient file as a side-effect.
+
+I used a trick like this in the "compamb" script to compute a good -av 
+setting for a particular scene.  (See the man page for compamb, which 
+comes with 3.4.)
+
+I hope the above is correct, because I'm pressing "send," now!
+
+-Greg
+
+
+From radiance-general@radiance-online.org  Mon May 27 01:34:42 2002
+From: radiance-general@radiance-online.org (radiance-general@radiance-online.org)
+Date: Sun, 26 May 2002 20:34:42 -0400
+Subject: [Radiance-general] Beware, indeed!
+In-Reply-To: <D2B1CD37-6FF6-11D6-B271-00306540F848@lmi.net>
+References: <D2B1CD37-6FF6-11D6-B271-00306540F848@lmi.net>
+Message-ID: <a05111700b9172d18b5d7@[63.208.115.123]>
+
+>There are a number of other fun ways to execute rad.  The following 
+>command will fill in ambient values for all the views in the 
+>scene.rif file at once (provided the AMBFILE variable is set):
+>
+>% rad -v 0 scene.rif OPTFILE=render.opt
+>% rad -n -s -V scene.rif | rpict @render.opt -S 1 -x 64 -y 64 
+>scene.oct > /dev/null
+
+What would be the reason to do this? As far as I can tell, rad runs 
+an overture calc (at 64x64 pixels/view) for each view specified in 
+the .rif file, just before each specified view calculation.  What am 
+I missing this time?
+-- 
+
+      =================================
+               Rob Guglielmetti
+            rpg777@earthlink.net
+      http://home.earthlink.net/~rpg777
+         "That creep can roll, man."
+      =================================
+
+From radiance-general@radiance-online.org  Thu May 30 16:24:27 2002
+From: radiance-general@radiance-online.org (Westling, Robert)
+Date: Thu, 30 May 2002 11:24:27 -0400
+Subject: [Radiance-general] Machine Speed Questions
+Message-ID: <ABFF6503317F18438E79E0ACE208FC4E04D121@EXCHANGE001.AD.MLP.COM>
+
+This is a multi-part message in MIME format.
+
+------_=_NextPart_001_01C207EE.160BCF1E
+Content-Type: text/plain;
+	charset="US-ASCII"
+Content-Transfer-Encoding: quoted-printable
+
+Hi,
+=20
+I've been using Radiance on and off for about 7 years on a variety of
+platforms.  I am getting going again after a bit of a hiatus and was
+interested in what machines are currently thought of as providing the
+fastest rendering times.  I have Radiance running on OSX and Linux
+boxes, but they are older G3 and Xeon 500 cpus.  Anyone have any
+thoughts? =20
+=20
+Thanks,
+=20
+Robert Westling
+
+------_=_NextPart_001_01C207EE.160BCF1E
+Content-Type: text/html;
+	charset="US-ASCII"
+Content-Transfer-Encoding: quoted-printable
+
+<html xmlns:o=3D"urn:schemas-microsoft-com:office:office" =
+xmlns:w=3D"urn:schemas-microsoft-com:office:word" =
+xmlns=3D"http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=3DContent-Type content=3D"text/html; =
+charset=3Dus-ascii">
+<meta name=3DProgId content=3DWord.Document>
+<meta name=3DGenerator content=3D"Microsoft Word 10">
+<meta name=3DOriginator content=3D"Microsoft Word 10">
+<link rel=3DFile-List href=3D"cid:filelist.xml@01C207CC.8EFC7DF0">
+<!--[if gte mso 9]><xml>
+ <o:OfficeDocumentSettings>
+  <o:DoNotRelyOnCSS/>
+ </o:OfficeDocumentSettings>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:SpellingState>Clean</w:SpellingState>
+  <w:GrammarState>Clean</w:GrammarState>
+  <w:DocumentKind>DocumentEmail</w:DocumentKind>
+  <w:EnvelopeVis/>
+  <w:Compatibility>
+   <w:BreakWrappedTables/>
+   <w:SnapToGridInCell/>
+   <w:WrapTextWithPunct/>
+   <w:UseAsianBreakRules/>
+  </w:Compatibility>
+  <w:BrowserLevel>MicrosoftInternetExplorer4</w:BrowserLevel>
+ </w:WordDocument>
+</xml><![endif]-->
+<style>
+<!--
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{mso-style-parent:"";
+	margin:0in;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Times New Roman";
+	mso-fareast-font-family:"Times New Roman";}
+a:link, span.MsoHyperlink
+	{color:blue;
+	text-decoration:underline;
+	text-underline:single;}
+a:visited, span.MsoHyperlinkFollowed
+	{color:purple;
+	text-decoration:underline;
+	text-underline:single;}
+span.EmailStyle17
+	{mso-style-type:personal-compose;
+	mso-style-noshow:yes;
+	mso-ansi-font-size:10.0pt;
+	mso-bidi-font-size:10.0pt;
+	font-family:Arial;
+	mso-ascii-font-family:Arial;
+	mso-hansi-font-family:Arial;
+	mso-bidi-font-family:Arial;
+	color:windowtext;}
+span.SpellE
+	{mso-style-name:"";
+	mso-spl-e:yes;}
+@page Section1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.25in 1.0in 1.25in;
+	mso-header-margin:.5in;
+	mso-footer-margin:.5in;
+	mso-paper-source:0;}
+div.Section1
+	{page:Section1;}
+-->
+</style>
+<!--[if gte mso 10]>
+<style>
+ /* Style Definitions */=20
+ table.MsoNormalTable
+	{mso-style-name:"Table Normal";
+	mso-tstyle-rowband-size:0;
+	mso-tstyle-colband-size:0;
+	mso-style-noshow:yes;
+	mso-style-parent:"";
+	mso-padding-alt:0in 5.4pt 0in 5.4pt;
+	mso-para-margin:0in;
+	mso-para-margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:"Times New Roman";}
+</style>
+<![endif]-->
+</head>
+
+<body lang=3DEN-US link=3Dblue vlink=3Dpurple =
+style=3D'tab-interval:.5in'>
+
+<div class=3DSection1>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'>Hi,<o:p></o:p></span></font></p>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'><o:p>&nbsp;</o:p></span></font></p>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'>I&#8217;ve been using Radiance on and off for about 7 =
+years
+on a variety of platforms.<span style=3D'mso-spacerun:yes'>&nbsp; =
+</span>I am
+getting going again after a bit of a hiatus and was interested in what =
+machines
+are currently thought of as providing the fastest rendering times.<span
+style=3D'mso-spacerun:yes'>&nbsp; </span>I have Radiance running on OSX =
+and Linux
+boxes, but they are older G3 and Xeon 500 <span =
+class=3DSpellE>cpus</span>.<span
+style=3D'mso-spacerun:yes'>&nbsp; </span>Anyone have any thoughts?<span
+style=3D'mso-spacerun:yes'>&nbsp; </span><o:p></o:p></span></font></p>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'><o:p>&nbsp;</o:p></span></font></p>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'>Thanks,<o:p></o:p></span></font></p>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'><o:p>&nbsp;</o:p></span></font></p>
+
+<p class=3DMsoNormal><font size=3D2 face=3DArial><span =
+style=3D'font-size:10.0pt;
+font-family:Arial'>Robert <span =
+class=3DSpellE>Westling</span><o:p></o:p></span></font></p>
+
+</div>
+
+</body>
+
+</html>
+=00
+------_=_NextPart_001_01C207EE.160BCF1E--
+
+From radiance-general@radiance-online.org  Fri May 31 16:22:57 2002
+From: radiance-general@radiance-online.org (Rob Guglielmetti)
+Date: Fri, 31 May 2002 11:22:57 -0400
+Subject: [Radiance-general] Machine Speed Questions
+In-Reply-To: <ABFF6503317F18438E79E0ACE208FC4E04D121@EXCHANGE001.AD.MLP.COM>
+Message-ID: <3CF75D11.5944.6F8414@localhost>
+
+On 30 May 2002, at 11:24, Westling, Robert wrote:
+
+> ... was interested in what machines are
+> currently thought of as providing the fastest rendering
+> times.  I have Radiance running on OSX and Linux boxes, but
+> they are older G3 and Xeon 500 cpus.  
+
+Robert-
+
+Have a peek at these urls:
+
+http://astronomy.swin.edu.au/~pbourke/radiance/benchrad/
+
+http://mark.technolope.org/pages/rad_bench.html
+
+The latter (which is based on the former's tests) has 
+some timings for the latest hardware, including 
+Powerbooks (G4) running OSX.  Interesting reading.
+
+         ====================
+ Rob Guglielmetti <rpg777@earthlink.net>
+    http://home.earthlink.net/~rpg777
+

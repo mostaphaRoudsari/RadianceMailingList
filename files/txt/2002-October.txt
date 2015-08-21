@@ -1,0 +1,2719 @@
+From radiance-general@radiance-online.org  Tue Oct  1 17:04:10 2002
+From: radiance-general@radiance-online.org (Qing Xu)
+Date: Tue, 01 Oct 2002 18:04:10 +0200
+Subject: [Radiance-general] transform from Radiance to PPM file
+Message-ID: <3D99C77A.67FC2696@itc.it>
+
+Dear all,
+I use the "rtrace" to get the radiance value for each pixel on an image.
+
+I know that there are some related clues inside the Radiance or source
+codes, but I do not have much time to look into the Radiance. Could you
+please give me some suggestion on how to transform from pixel value to
+the value that PPM file needs?
+
+Thanks a lot in advance!
+
+Qing Xu
+
+
+From radiance-general@radiance-online.org  Thu Oct  3 09:32:19 2002
+From: radiance-general@radiance-online.org (Peter Apian-Bennewitz)
+Date: Thu, 03 Oct 2002 10:32:19 +0200
+Subject: [Radiance-general] transform from Radiance to PPM file
+References: <3D99C77A.67FC2696@itc.it>
+Message-ID: <3D9C0093.B10A7097@pab-opto.de>
+
+Qing Xu wrote:
+> 
+> Dear all,
+> I use the "rtrace" to get the radiance value for each pixel on an image.
+> 
+> I know that there are some related clues inside the Radiance or source
+> codes, but I do not have much time to look into the Radiance. Could you
+> please give me some suggestion on how to transform from pixel value to
+> the value that PPM file needs?
+> 
+> Thanks a lot in advance!
+> 
+> Qing Xu
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+Hi Qing Xu,
+
+rtrace gives floating point values, PPM uses 8bit integers (the format
+is flexible and could handle more bits, but that is rarely supported).
+So, to render a PPM image with rtrace, you'll have to scale the floating
+point values and use something like:
+	(echo -e "P3\n1 1\n255" ; ( echo 10 10 10 -1 -1 -1 | rtrace -ov -h
+teich.oct | awk '{printf "%d %d %d\n", 255*$1/3e-1, 255*$1/3e-1,
+255*$1/3e-1}' ) ) > q
+Of course, you'll have to feed appropriate input to rtrace. The whole
+exercise seems a bit exotic, what's your reason not to use rpict ?
+
+Should you'll be looking for converting from a pic file (rendered by
+rpict or rview) to PPM, use ra_ppm .
+
+regards
+Peter
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+From radiance-general@radiance-online.org  Thu Oct  3 15:09:25 2002
+From: radiance-general@radiance-online.org (radiance-general@radiance-online.org)
+Date: Thu, 03 Oct 2002 09:09:25 -0500
+Subject: [Radiance-general] Re: trouble creating coloured window glass
+Message-ID: <AA-20373E0E1E8B64A1D02B32C4F7337E3C-ZZ@www2.prodigy.net>
+
+Hi Anton,
+
+What you describe sounds a bit like a bug, so I looked into it.
+However, my tests indicate that version 3.4 (at least) of
+Radiance is working correctly for the glass type.  What
+version/platform are you using?  Are you certain it is not
+an exposure issue -- that your level is set so that everything
+is clamped to white no matter what the actual color is?
+(You can use pfilt or the ximage '=' command to change
+the exposure.)
+
+Using mkillum may actually average the window contribution
+to white if you do not use the correct options, but just a
+regular glass window should work without mkillum, really.
+
+-Greg
+
+
+
+From radiance-general@radiance-online.org  Mon Oct  7 03:20:34 2002
+From: radiance-general@radiance-online.org (Rob Guglielmetti)
+Date: Sun, 6 Oct 2002 22:20:34 -0400
+Subject: [Radiance-general] Radiance Workshop article
+Message-ID: <5C76BDE8-D99B-11D6-AB8B-000393824274@rumblestrip.org>
+
+Howdy folks-
+
+I just wanted to drop a line to let you know that a brief article about 
+the recent Radiance Workshop was published on CGArchitect.com, a 
+computer graphics website run by a friend of mine.  The story should 
+show up on the main page (www.cgarchitect.com) in an hour or so, but 
+the direct link will take you there now:
+
+http://www.cgarchitect.com/news/Reviews/Review013_1.asp
+
+I'd like to take this opportunity to say that I had a great time there, 
+and learned a lot.  It was great to meet some folks I have known 
+electronically for many years!  I wanted to send the editor a copy of 
+the picture Greg took of all of us, but my email for the last 24 hours 
+has been fairly well screwed up.  I seem to be able to send, but cannot 
+receive.  This, as you may expect, is causing me a great deal of 
+frustration.  Raphael, keep trying.  I hope to have my email back up by 
+tomorrow, or I look for another host!!
+
+As an aside, I am deeply depressed over the early exit of the New York 
+Yankees from baseball's post season.  But I am enjoying watching the 
+Atlanta Braves get spanked by the Giants this evening.  (I'm fully 
+aware that the majority of the workshop attendees could not care less 
+about the whims of a band of jocks swinging a wooden stick at a hurled 
+ball, but I feel the need to vent.)
+
+I hope you all had a good return trip from the workshop.  When's the 
+next one? ;-)
+
+Rob Guglielmetti
+rpg@rumblestrip.org
+www.rumblestrip.org
+
+
+From radiance-general@radiance-online.org  Mon Oct  7 16:26:00 2002
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Mon, 7 Oct 2002 08:26:00 -0700
+Subject: [Radiance-general] Re: Radiance workshop, etc.
+In-Reply-To: <20021007100002.29453.2751.Mailman@darkside-animation.com>
+Message-ID: <156D4FC8-DA09-11D6-9720-00306540F848@lmi.net>
+
+Hi Everyone,
+
+I just read through Rob's very well-written and flattering article on 
+the workshop, which didn't include a single reference to baseball (must 
+have been some oversight).  I hope the other attendees enjoyed it half 
+as much as he did -- for my part, the workshop gave me loads to think 
+about as I go into Exponent for the last time today to clean out my 
+desk and contemplate what I'll do next....
+
+I'm sorry that my presentation on Radiance OpenSource raised more 
+questions than it answered.  I didn't want to conceal the fact that I 
+have no clear notion what it means, myself.  I am hoping it will be a 
+good thing.  Certainly, having LBNL continue to own and "manage" the 
+UNIX source code is not desirable, and the fact that they're willing to 
+let it go is something I take as a very good sign for the rest of us.  
+Still, it is nice to have a single, authoritative version on which to 
+base derivative works, so we may have to think up a way to do this 
+(possibly with LBNL's cooperation).
+
+Like I said, the workshop gave me lots to think about, and I made a 
+list of the improvements I would like to see in  the source code, 
+ordered here from most to least compelling from my standpoint.  I would 
+welcome feedback on this list with additions or things you think ought 
+to be made a priority.  The ones with an asterisk are features that 
+others have already done most (or all) of the work on, and the ones 
+with double-asterisks are enhancements I really need someone else's 
+help in doing.
+
+Possible Radiance Enhancements
+-----------------------------------------------
+1. ANSI-fication and CVS, library conversion
+2**. Integration of Windows version or addition of Windows portability 
+and functionality
+3*. Photon map
+4. Direct calculation improvements
+5. Cylindrical arcs
+6. Rendering with light probes
+7*. Complex fenestration
+8**. Rendering artifact assistance pages
+9**. Material library/assistance pages
+
+I would also encourage people to try out Roland Schregle's photon map 
+extension to Radiance 3.4.  I think this could be a very good thing for 
+Radiance, but it probably needs some critical stress-testing before 
+being rolled into the main distribution.  At least, it would if I had 
+written it!
+
+-Greg
+
+
+From radiance-general@radiance-online.org  Mon Oct  7 21:12:25 2002
+From: radiance-general@radiance-online.org (pillo)
+Date: Mon, 7 Oct 2002 22:12:25 +0200
+Subject: [Radiance-general] after the workshop
+In-Reply-To: <3D4A6B25.4219.458CA0@localhost>
+Message-ID: <187B16FC-DA31-11D6-B2FE-0003930BCBE6@tin.it>
+
+hi, i m pillo (the beginner... oops, may be now i should say : "pillo 
+the Winner" ;-))
+the only thing i want to say is that i feel sad for the workshop has 
+finished...
+it has been a wonderful experience!
+thanks a lot!!
+i hope next year we'll meet again, and why not, again in fribourg
+i'll be there,
+pillo
+
+
+
+From radiance-general@radiance-online.org  Tue Oct  8 11:58:03 2002
+From: radiance-general@radiance-online.org (Roland Schregle)
+Date: Tue, 08 Oct 2002 12:58:03 +0200
+Subject: [Radiance-general] Re: Radiance workshop, etc.
+References: <156D4FC8-DA09-11D6-9720-00306540F848@lmi.net>
+Message-ID: <3DA2BA3B.DB505DD4@gmx.net>
+
+Greg Ward wrote:
+> 
+> Hi Everyone,
+> 
+> I just read through Rob's very well-written and flattering article on
+> the workshop, which didn't include a single reference to baseball (must
+> have been some oversight).  I hope the other attendees enjoyed it half
+> as much as he did -- for my part, the workshop gave me loads to think
+> about as I go into Exponent for the last time today to clean out my
+> desk and contemplate what I'll do next....
+> 
+> I'm sorry that my presentation on Radiance OpenSource raised more
+> questions than it answered.  I didn't want to conceal the fact that I
+> have no clear notion what it means, myself.  I am hoping it will be a
+> good thing.  Certainly, having LBNL continue to own and "manage" the
+> UNIX source code is not desirable, and the fact that they're willing to
+> let it go is something I take as a very good sign for the rest of us.
+> Still, it is nice to have a single, authoritative version on which to
+> base derivative works, so we may have to think up a way to do this
+> (possibly with LBNL's cooperation).
+> 
+> Like I said, the workshop gave me lots to think about, and I made a
+> list of the improvements I would like to see in  the source code,
+> ordered here from most to least compelling from my standpoint.  I would
+> welcome feedback on this list with additions or things you think ought
+> to be made a priority.  The ones with an asterisk are features that
+> others have already done most (or all) of the work on, and the ones
+> with double-asterisks are enhancements I really need someone else's
+> help in doing.
+> 
+> Possible Radiance Enhancements
+> -----------------------------------------------
+> 1. ANSI-fication and CVS, library conversion
+> 2**. Integration of Windows version or addition of Windows portability
+> and functionality
+> 3*. Photon map
+> 4. Direct calculation improvements
+> 5. Cylindrical arcs
+> 6. Rendering with light probes
+> 7*. Complex fenestration
+> 8**. Rendering artifact assistance pages
+> 9**. Material library/assistance pages
+> 
+> I would also encourage people to try out Roland Schregle's photon map
+> extension to Radiance 3.4.  I think this could be a very good thing for
+> Radiance, but it probably needs some critical stress-testing before
+> being rolled into the main distribution.  At least, it would if I had
+> written it!
+
+Actually, the validation we're doing can, in all fairness, only be
+considered an exemplary case study (albeit a pretty exacting one). What
+this basically means is that we test the *fundamental* correctness of
+the method. The caveat is that a poor choice of parameters can still
+throw you off by several percent, at least locally in some regions of
+the rendering. All the more reason for people try the thing out with
+scenes of their own. Stress-testing basically relies on the feedback I
+get from the RADIANCE community and entails applying the addon to a
+broader spectrum of scenes.
+
+See ya!
+
+--Roland
+
+
+-- 
+"Life is too short for core dumps"
+
+From radiance-general@radiance-online.org  Tue Oct  8 11:37:01 2002
+From: radiance-general@radiance-online.org (Carsten Bauer)
+Date: Tue, 08 Oct 2002 12:37:01 +0200
+Subject: [Radiance-general] Re: Radiance workshop, etc.
+References: <156D4FC8-DA09-11D6-9720-00306540F848@lmi.net>
+Message-ID: <3DA2B54D.E014E8D2@t-online.de>
+
+Hi all,
+
+a first feedback from my point of view... 
+
+Having one central code base is certainly something desireable, although
+it may take more effort than thought at the first glance, including some
+of the 'good old' hierachy and scheduling. People taking over
+responsibilities for certain parts and deliver results more or less
+within some schedule, test persons willing to bother about sending back
+detailed feedback and so on ...
+
+Personally, I would like to have some more time for checking out the new
+stuff, thinking about further ideas of modifications and ways how to
+combine everything. But, in order to keep things and persons from
+drifting apart some sort of deadline might be helpful, by which those
+who are interested to continue further development deliver short lists
+or possible short reports of interesting topics similar to Gregs
+'wishlist', plus additional information about the amount of work they
+are able to spend on it. People form the user's end of the line should
+be integrated in the same manner right at the beginning, too, giving
+info about what improvement is needed in the everyday applications.
+A very vague assumption of mine is, that when the process finally 
+starts, it will not just end in pouring all add-ons into one bigger
+bucket (stirr well !), but that a rather comprehensive renewal will take
+place in the end. 
+
+(OK, this sounds very much of a typical politians speech, talking big
+about organizing without actually doing something. For a personal
+excuse, there have been elections in Germany recently, so still everyone
+here is in some way infiltrated by that spirit ...)
+
+so long
+
+- Carsten
+
+From radiance-general@radiance-online.org  Tue Oct  8 16:12:39 2002
+From: radiance-general@radiance-online.org (Qing Xu)
+Date: Tue, 08 Oct 2002 17:12:39 +0200
+Subject: [Radiance-general] Re: Re: transform from Radiance to PPM file
+Message-ID: <3DA2F5E7.BA36D449@itc.it>
+
+Dear all (especially Dr. Peter),
+First of all , thank you very much for giving me timely help.
+
+I am trying to practice the method you told me, but it seems that the
+scaling is not working very well. Actually, my point is to render a
+region on the image plane pixel by pixel. As long as I can get the
+radiance values, I can organize then into a picture (file). So could you
+please tell me how to form a radiance picture file (unf or pic) or
+something like that from the floating point values produced from
+"rtrace"? It is really urgent for me!
+
+Thanks a lot!
+
+Qing Xu 
+
+Today's Topics:
+
+   1. Re: transform from Radiance to PPM file (Peter Apian-Bennewitz)
+
+--__--__--
+
+Message: 1
+Date: Thu, 03 Oct 2002 10:32:19 +0200
+From: Peter Apian-Bennewitz <apian@pab-opto.de>
+To: radiance-general@radiance-online.org
+Subject: Re: [Radiance-general] transform from Radiance to PPM file
+Reply-To: radiance-general@radiance-online.org
+
+Hi Qing Xu,
+
+rtrace gives floating point values, PPM uses 8bit integers (the format
+is flexible and could handle more bits, but that is rarely supported).
+So, to render a PPM image with rtrace, you'll have to scale the floating
+point values and use something like:
+	(echo -e "P3\n1 1\n255" ; ( echo 10 10 10 -1 -1 -1 | rtrace -ov -h
+teich.oct | awk '{printf "%d %d %d\n", 255*$1/3e-1, 255*$1/3e-1,
+255*$1/3e-1}' ) ) > q
+Of course, you'll have to feed appropriate input to rtrace. The whole
+exercise seems a bit exotic, what's your reason not to use rpict ?
+
+Should you'll be looking for converting from a pic file (rendered by
+rpict or rview) to PPM, use ra_ppm .
+
+regards
+Peter
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+--__--__--
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+End of Radiance-general Digest
+
+From radiance-general@radiance-online.org  Tue Oct  8 21:40:51 2002
+From: radiance-general@radiance-online.org (Andrew McNeil)
+Date: Tue, 8 Oct 2002 21:40:51 +0100
+Subject: [Radiance-general] Radiance Workshop article
+Message-ID: <373E115448042A408DD136870F3FE04CC649CA@n-ynts07.us.arup.com>
+
+This message is in MIME format. Since your mail reader does not understand
+this format, some or all of this message may not be legible.
+
+------=_NextPartTM-000-92f77583-2341-4022-8a2c-fbff8ef5aa3e
+Content-Type: multipart/alternative;
+	boundary="----_=_NextPart_001_01C26F0A.FDD29E30"
+
+------_=_NextPart_001_01C26F0A.FDD29E30
+Content-Type: text/plain;
+	charset="iso-8859-1"
+
+Hi Rob,
+
+I finally got around to reading your article on cgarchitect.  It was great.
+I found myself agreeing with everything you wrote.  Thanks for using my
+image, I sent the link to my family and friends (I'm such a tool).  One
+thing though, could you add ArupLighting to the image credit?
+
+Thanks,
+Andrew
+
+
+
+-----Original Message-----
+From: Rob Guglielmetti [mailto:rpg@rumblestrip.org]
+Sent: Sunday, October 06, 2002 10:21 PM
+To: radiance-general@radiance-online.org
+Subject: [Radiance-general] Radiance Workshop article
+
+
+Howdy folks-
+
+I just wanted to drop a line to let you know that a brief article about 
+the recent Radiance Workshop was published on CGArchitect.com, a 
+computer graphics website run by a friend of mine.  The story should 
+show up on the main page (www.cgarchitect.com) in an hour or so, but 
+the direct link will take you there now:
+
+http://www.cgarchitect.com/news/Reviews/Review013_1.asp
+
+I'd like to take this opportunity to say that I had a great time there, 
+and learned a lot.  It was great to meet some folks I have known 
+electronically for many years!  I wanted to send the editor a copy of 
+the picture Greg took of all of us, but my email for the last 24 hours 
+has been fairly well screwed up.  I seem to be able to send, but cannot 
+receive.  This, as you may expect, is causing me a great deal of 
+frustration.  Raphael, keep trying.  I hope to have my email back up by 
+tomorrow, or I look for another host!!
+
+As an aside, I am deeply depressed over the early exit of the New York 
+Yankees from baseball's post season.  But I am enjoying watching the 
+Atlanta Braves get spanked by the Giants this evening.  (I'm fully 
+aware that the majority of the workshop attendees could not care less 
+about the whims of a band of jocks swinging a wooden stick at a hurled 
+ball, but I feel the need to vent.)
+
+I hope you all had a good return trip from the workshop.  When's the 
+next one? ;-)
+
+Rob Guglielmetti
+rpg@rumblestrip.org
+www.rumblestrip.org
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+------_=_NextPart_001_01C26F0A.FDD29E30
+Content-Type: text/html;
+	charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+<META HTTP-EQUIV=3D"Content-Type" CONTENT=3D"text/html; =
+charset=3Diso-8859-1">
+<META NAME=3D"Generator" CONTENT=3D"MS Exchange Server version =
+5.5.2653.12">
+<TITLE>RE: [Radiance-general] Radiance Workshop article</TITLE>
+</HEAD>
+<BODY>
+
+<P><FONT SIZE=3D2>Hi Rob,</FONT>
+</P>
+
+<P><FONT SIZE=3D2>I finally got around to reading your article on =
+cgarchitect.&nbsp; It was great.&nbsp; I found myself agreeing with =
+everything you wrote.&nbsp; Thanks for using my image, I sent the link =
+to my family and friends (I'm such a tool).&nbsp; One thing though, =
+could you add ArupLighting to the image credit?</FONT></P>
+
+<P><FONT SIZE=3D2>Thanks,</FONT>
+<BR><FONT SIZE=3D2>Andrew</FONT>
+</P>
+<BR>
+<BR>
+
+<P><FONT SIZE=3D2>-----Original Message-----</FONT>
+<BR><FONT SIZE=3D2>From: Rob Guglielmetti [<A =
+HREF=3D"mailto:rpg@rumblestrip.org">mailto:rpg@rumblestrip.org</A>]</FON=
+T>
+<BR><FONT SIZE=3D2>Sent: Sunday, October 06, 2002 10:21 PM</FONT>
+<BR><FONT SIZE=3D2>To: radiance-general@radiance-online.org</FONT>
+<BR><FONT SIZE=3D2>Subject: [Radiance-general] Radiance Workshop =
+article</FONT>
+</P>
+<BR>
+
+<P><FONT SIZE=3D2>Howdy folks-</FONT>
+</P>
+
+<P><FONT SIZE=3D2>I just wanted to drop a line to let you know that a =
+brief article about </FONT>
+<BR><FONT SIZE=3D2>the recent Radiance Workshop was published on =
+CGArchitect.com, a </FONT>
+<BR><FONT SIZE=3D2>computer graphics website run by a friend of =
+mine.&nbsp; The story should </FONT>
+<BR><FONT SIZE=3D2>show up on the main page (www.cgarchitect.com) in an =
+hour or so, but </FONT>
+<BR><FONT SIZE=3D2>the direct link will take you there now:</FONT>
+</P>
+
+<P><FONT SIZE=3D2><A =
+HREF=3D"http://www.cgarchitect.com/news/Reviews/Review013_1.asp" =
+TARGET=3D"_blank">http://www.cgarchitect.com/news/Reviews/Review013_1.as=
+p</A></FONT>
+</P>
+
+<P><FONT SIZE=3D2>I'd like to take this opportunity to say that I had a =
+great time there, </FONT>
+<BR><FONT SIZE=3D2>and learned a lot.&nbsp; It was great to meet some =
+folks I have known </FONT>
+<BR><FONT SIZE=3D2>electronically for many years!&nbsp; I wanted to =
+send the editor a copy of </FONT>
+<BR><FONT SIZE=3D2>the picture Greg took of all of us, but my email for =
+the last 24 hours </FONT>
+<BR><FONT SIZE=3D2>has been fairly well screwed up.&nbsp; I seem to be =
+able to send, but cannot </FONT>
+<BR><FONT SIZE=3D2>receive.&nbsp; This, as you may expect, is causing =
+me a great deal of </FONT>
+<BR><FONT SIZE=3D2>frustration.&nbsp; Raphael, keep trying.&nbsp; I =
+hope to have my email back up by </FONT>
+<BR><FONT SIZE=3D2>tomorrow, or I look for another host!!</FONT>
+</P>
+
+<P><FONT SIZE=3D2>As an aside, I am deeply depressed over the early =
+exit of the New York </FONT>
+<BR><FONT SIZE=3D2>Yankees from baseball's post season.&nbsp; But I am =
+enjoying watching the </FONT>
+<BR><FONT SIZE=3D2>Atlanta Braves get spanked by the Giants this =
+evening.&nbsp; (I'm fully </FONT>
+<BR><FONT SIZE=3D2>aware that the majority of the workshop attendees =
+could not care less </FONT>
+<BR><FONT SIZE=3D2>about the whims of a band of jocks swinging a wooden =
+stick at a hurled </FONT>
+<BR><FONT SIZE=3D2>ball, but I feel the need to vent.)</FONT>
+</P>
+
+<P><FONT SIZE=3D2>I hope you all had a good return trip from the =
+workshop.&nbsp; When's the </FONT>
+<BR><FONT SIZE=3D2>next one? ;-)</FONT>
+</P>
+
+<P><FONT SIZE=3D2>Rob Guglielmetti</FONT>
+<BR><FONT SIZE=3D2>rpg@rumblestrip.org</FONT>
+<BR><FONT SIZE=3D2>www.rumblestrip.org</FONT>
+</P>
+
+<P><FONT =
+SIZE=3D2>_______________________________________________</FONT>
+<BR><FONT SIZE=3D2>Radiance-general mailing list</FONT>
+<BR><FONT SIZE=3D2>Radiance-general@radiance-online.org</FONT>
+<BR><FONT SIZE=3D2><A =
+HREF=3D"http://www.radiance-online.org/mailman/listinfo/radiance-general=
+" =
+TARGET=3D"_blank">http://www.radiance-online.org/mailman/listinfo/radian=
+ce-general</A></FONT>
+</P>
+
+</BODY>
+</HTML>
+------_=_NextPart_001_01C26F0A.FDD29E30--
+
+------=_NextPartTM-000-92f77583-2341-4022-8a2c-fbff8ef5aa3e--
+
+
+From radiance-general@radiance-online.org  Wed Oct  9 16:31:50 2002
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Wed, 9 Oct 2002 08:31:50 -0700
+Subject: [Radiance-general] Re: Re: transform from Radiance to PPM file
+In-Reply-To: <20021009100002.3882.6474.Mailman@darkside-animation.com>
+Message-ID: <3ADC7B48-DB9C-11D6-AA85-00306540F848@lmi.net>
+
+Hello Qing,
+
+There are many options for getting the output of rtrace and converting 
+it to an image.  I would first echo Peter's question, which is why you 
+are not using rpict?  If it is because you cannot generate the image 
+you want, be sure you have explored all of the view types (-vt?) and 
+options rpict has to offer from the man page.  If you do not have the 
+man pages installed on your system, you can always get them from the 
+online versions (slightly out of date) at LBNL:
+
+	http://radsite.lbl.gov/radiance/refer/index.html#cat2
+
+If you want to create a Radiance picture from rtrace, the simplest 
+method is to specify the horizontal and vertical resolutions on the 
+rtrace command line, and use the -fac output option, like so:
+
+	% rtrace -ov -fac -x $xsiz -y $ysiz $octree < $input_rays > $output_pic
+
+where the variables xsiz, ysiz, octree, input_rays, and output_pic are 
+set appropriately.  The second option is to output the standard 
+floating point values, and convert the result with the pvalue program, 
+like so
+
+	% rtrace -ov $octree < $input_rays | pvalue -r -y $yres +x $xres -d > 
+$output_pic
+
+There is no real advantage to using this method, however.  And as I 
+said, there is no real advantage to using rtrace over rpict, either, 
+unless you absolutely cannot generate the view you want with rpict.
+
+-Greg
+
+
+From radiance-general@radiance-online.org  Thu Oct 10 13:11:46 2002
+From: radiance-general@radiance-online.org (Qing Xu)
+Date: Thu, 10 Oct 2002 14:11:46 +0200
+Subject: [Radiance-general] my real question
+References: <3ADC7B48-DB9C-11D6-AA85-00306540F848@lmi.net>
+Message-ID: <3DA56E82.9413F334@itc.it>
+
+Hi Greg,
+Thank you for your suggestion at first!
+
+For this moment, I think I should tell you my real situation. From the requirement
+of our project, I could not use the Radiance in the form of command line and I
+must change some codes to form our own APIs (making use of static library). Also,
+I couldn't use system calls. We can get the required image using API altered from
+"rpict", and then our real problem is to specify a region (or even a single pixel)
+on the image plane to get the radiance value and the picture of that region. In my
+opinion, "rpict" can specify the exact position on an image plane. So, I use the
+changed "rtrace" to render the region to obtain their radiance values (r, g, b)
+and then I want to transform them into a suitable file form to obtain the picture.
+I know I can get the answer through looking into the source codes, but I do not
+have so much time for that. I have tried the method Dr. Peter told me. However,
+that method sometimes works well and sometimes not. Now, I want to take advantage
+the Radiance picture directly. Could you please tell me the suggestion? From your
+opinion, what is the better solution for my problem?
+
+Thank you in advance!
+
+Qing
+
+Greg Ward wrote:
+
+> Hello Qing,
+>
+> There are many options for getting the output of rtrace and converting
+> it to an image.  I would first echo Peter's question, which is why you
+> are not using rpict?  If it is because you cannot generate the image
+> you want, be sure you have explored all of the view types (-vt?) and
+> options rpict has to offer from the man page.  If you do not have the
+> man pages installed on your system, you can always get them from the
+> online versions (slightly out of date) at LBNL:
+>
+>         http://radsite.lbl.gov/radiance/refer/index.html#cat2
+>
+> If you want to create a Radiance picture from rtrace, the simplest
+> method is to specify the horizontal and vertical resolutions on the
+> rtrace command line, and use the -fac output option, like so:
+>
+>         % rtrace -ov -fac -x $xsiz -y $ysiz $octree < $input_rays > $output_pic
+>
+> where the variables xsiz, ysiz, octree, input_rays, and output_pic are
+> set appropriately.  The second option is to output the standard
+> floating point values, and convert the result with the pvalue program,
+> like so
+>
+>         % rtrace -ov $octree < $input_rays | pvalue -r -y $yres +x $xres -d >
+> $output_pic
+>
+> There is no real advantage to using this method, however.  And as I
+> said, there is no real advantage to using rtrace over rpict, either,
+> unless you absolutely cannot generate the view you want with rpict.
+>
+> -Greg
+
+
+From radiance-general@radiance-online.org  Thu Oct 10 17:28:09 2002
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Thu, 10 Oct 2002 09:28:09 -0700
+Subject: [Radiance-general] Re: my real question
+In-Reply-To: <3DA56E82.9413F334@itc.it>
+Message-ID: <43B0074B-DC6D-11D6-9720-00306540F848@lmi.net>
+
+Hi Qing,
+
+I don't really have anything to add to what Dr. Peter and I have 
+written, already.  You may use the -fac option of rtrace to get a 
+Radiance RGBE image on the output, which you may then pass to any of 
+the Radiance picture filters and converters provided (e.g., pfilt, 
+pcomb, ra_ppm, etc.).  You have not given me enough specifics about 
+your project for me to determine whether or not rpict could generate 
+the views directly, but in most cases, it can.  Rpict has options for 
+fore and aft clipping planes, parallel and fisheye views, and view 
+camera features.  Anyway, if you need to use rtrace, we have given you 
+at least three methods for doing so.
+
+One other thing you might investigate is the code in 
+ray/src/common/process.c, which provides routines for communicating 
+with a separate rtrace process from a controlling program.  For an 
+example of how you might do this, you can look at the code in 
+ray/src/px/pinterp.c.
+
+-Greg
+
+
+> Hi Greg,
+> Thank you for your suggestion at first!
+>
+> For this moment, I think I should tell you my real situation. From the 
+> requirement
+> of our project, I could not use the Radiance in the form of command 
+> line and I
+> must change some codes to form our own APIs (making use of static 
+> library). Also,
+> I couldn't use system calls. We can get the required image using API 
+> altered from
+> "rpict", and then our real problem is to specify a region (or even a 
+> single pixel)
+> on the image plane to get the radiance value and the picture of that 
+> region. In my
+> opinion, "rpict" can specify the exact position on an image plane. So, 
+> I use the
+> changed "rtrace" to render the region to obtain their radiance values 
+> (r, g, b)
+> and then I want to transform them into a suitable file form to obtain 
+> the picture.
+> I know I can get the answer through looking into the source codes, but 
+> I do not
+> have so much time for that. I have tried the method Dr. Peter told me. 
+> However,
+> that method sometimes works well and sometimes not. Now, I want to 
+> take advantage
+> the Radiance picture directly. Could you please tell me the 
+> suggestion? From your
+> opinion, what is the better solution for my problem?
+>
+> Thank you in advance!
+>
+> Qing
+
+
+From radiance-general@radiance-online.org  Fri Oct 11 00:19:55 2002
+From: radiance-general@radiance-online.org (Peter Apian-Bennewitz)
+Date: Fri, 11 Oct 2002 01:19:55 +0200
+Subject: [Radiance-general] my real question
+References: <3ADC7B48-DB9C-11D6-AA85-00306540F848@lmi.net> <3DA56E82.9413F334@itc.it>
+Message-ID: <3DA60B1B.8DB17B10@pab-opto.de>
+
+Hi Qing,
+ 
+> For this moment, I think I should tell you my real situation. From the requirement
+> of our project, I could not use the Radiance in the form of command line and I
+> must change some codes to form our own APIs (making use of static library).
+
+So, I guess you're developing an interactive, graphical program that
+displays an image that uses values calculated by some routines of
+Radiance. Which would be most easily done using one of
+fork&exec/system/popen on Posix (e.g. Linux/UNIX) systems, Windows may
+have similar means of communicating with external programs. But you
+said, you can't do 'system' calls. Does that mean you can't read from an
+externally started program ?
+
+> I couldn't use system calls. We can get the required image using API altered from
+> "rpict", 
+
+What do you mean by "API altered from rpict" ? Using the rendering
+routines from rtrace/rpict would be feasible, but it doesn't explain why
+you have trouble with rtrace output.
+
+and then our real problem is to specify a region (or even a single
+pixel)
+> on the image plane to get the radiance value and the picture of that region. In my
+> opinion, "rpict" can specify the exact position on an image plane.
+?? 
+
+> So, I use the changed "rtrace" to render the region to obtain their radiance values (r, g, b)
+> and then I want to transform them into a suitable file form to obtain the picture.
+> I know I can get the answer through looking into the source codes, but I do not
+> have so much time for that. I have tried the method Dr. Peter told me. However,
+> that method sometimes works well and sometimes not.
+?? It fails if and how ?
+
+> Now, I want to take advantage the Radiance picture directly.
+??
+
+> opinion, what is the better solution for my problem?
+I'm still not quite sure I understand what you problem is-
+
+-Peter
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+From radiance-general@radiance-online.org  Mon Oct  7 18:22:12 2002
+From: radiance-general@radiance-online.org (Martin Moeck)
+Date: Mon, 7 Oct 2002 13:22:12 -0400
+Subject: [Radiance-general] Re: Radiance workshop, etc.
+Message-ID: <937AC68A9AFF694991B176C5E13831170185A411@engrmail1.cedcc.psu.edu>
+
+This is a multi-part message in MIME format.
+
+------_=_NextPart_001_01C26E26.1320EEAD
+Content-Type: text/plain;
+	charset="utf-8"
+Content-Transfer-Encoding: base64
+
+SGkgR3JlZywNCiANCm15IHN1Z2dlc3RlZCBpbXByb3ZlbWVudCB0byBSYWRpYW5jZToNCiANCnJ2
+aWV3IHZlcnNpb24gb2YgcnBpZWNlDQphY3RpdmUgYnJkZnM6ICBta2lsbHVtIGJyZGZzDQplYXNp
+ZXIgYXBwbGljYXRpb24gb2YgcGljdHVyZSBtYXBzIHRvIHN1cmZhY2VzIC0gd3JpdGUgYSByb3V0
+aW5lIHRoYXQgbWFwcyBwaWN0dXJlcy90ZXh0dXJlcyBvbnRvIHN1cmZhY2VzIG9mIGFueSBvcmll
+bnRhdGlvbg0KcmVsaWFibGUgc21vb3RoaW5nIGZ1bmN0aW9ucyB0byBtb2RlbCBhdXRvbW9iaWxl
+cyBldGMuIA0KdGhlIGFtYmllbnQgY2FsY3VsYXRpb24gaXMgcmVhbGx5IG9ubHkgdmlzdWFsbHkg
+cGxlYXNpbmcgYXQgYWQgPj0gMjA0OCBhbmQgYXMgPj0xMDI0IG9yIHNvLiBGaW5kIGEgYmV0dGVy
+IGludGVycG9sYXRpb24gYWxnb3JpdGhtIGZvciBsb3cgdmFsdWVzIG9mIGFkIGFuZCBhcyB0byBn
+ZXQgcmlkIG9mIHRoZSBuYXN0eSBpbmRpcmVjdCBibG9icyB0aGF0IGxvb2sgbGlrZSBzcHJheSBw
+YWludCBzcG90cyAoc29ycnksIEkgZG9uJ3QgbWVhbiB0byBiZSBoYXJzaCwgYnV0IEkgd291bGQg
+ZGlmZmVyZW50IGludGVycG9sYXRpb24gYXBwcm9hY2hlcyBmb3IgdGhlIGluZGlyZWN0IGNvbXBv
+bmVudCkNCiANCk1hcnRpbg0KIA0KDQoNCiANCg==
+
+------_=_NextPart_001_01C26E26.1320EEAD
+Content-Type: application/ms-tnef;
+	name="winmail.dat"
+Content-Transfer-Encoding: base64
+
+eJ8+IhERAQaQCAAEAAAAAAABAAEAAQeQBgAIAAAA5AQAAAAAAADoAAENgAQAAgAAAAIAAgABBYAD
+AA4AAADSBwoABwANABYADAABABoBASCAAwAOAAAA0gcKAAcADQAWAAwAAQAaAQEJgAEAIQAAAEJG
+M0Y2RUUxRUI0RTEzNDY5QTc1NkYzRkE4NzYzMDRDAFsHAQOQBgCoDgAAOAAAAB8AGgABAAAAEgAA
+AEkAUABNAC4ATgBvAHQAZQAAAAAAAwA2AAAAAAAfADcAAQAAAGYAAABSAEUAOgAgAFsAUgBhAGQA
+aQBhAG4AYwBlAC0AZwBlAG4AZQByAGEAbABdACAAUgBlADoAIABSAGEAZABpAGEAbgBjAGUAIAB3
+AG8AcgBrAHMAaABvAHAALAAgAGUAdABjAC4AAAAAAEAAOQCt7iATJm7CAR8APQABAAAACgAAAFIA
+RQA6ACAAAAAAAAIBRwABAAAAPAAAAGM9VVM7YT0gO3A9UGVubiBTdGF0ZSBVbml2ZTtsPUVOR1JN
+QUlMMS0wMjEwMDcxNzIyMTJaLTI4MjIyAB8ASQABAAAAXgAAAFsAUgBhAGQAaQBhAG4AYwBlAC0A
+ZwBlAG4AZQByAGEAbABdACAAUgBlADoAIABSAGEAZABpAGEAbgBjAGUAIAB3AG8AcgBrAHMAaABv
+AHAALAAgAGUAdABjAC4AAAAAAEAATgAA9PvWFW7CAR8AWgABAAAAFAAAAEcAcgBlAGcAIABXAGEA
+cgBkAAAAAgFbAAEAAAA1AAAAAAAAAIErH6S+oxAZnW4A3QEPVAIAAAAAR3JlZyBXYXJkAFNNVFAA
+Z3dhcmRAbG1pLm5ldAAAAAACAVwAAQAAABMAAABTTVRQOkdXQVJEQExNSS5ORVQAAB8AXQABAAAA
+FAAAAEcAcgBlAGcAIABXAGEAcgBkAAAAAgFeAAEAAAA1AAAAAAAAAIErH6S+oxAZnW4A3QEPVAIA
+AAAAR3JlZyBXYXJkAFNNVFAAZ3dhcmRAbG1pLm5ldAAAAAACAV8AAQAAABMAAABTTVRQOkdXQVJE
+QExNSS5ORVQAAB8AZgABAAAACgAAAFMATQBUAFAAAAAAAB8AZwABAAAAHAAAAGcAdwBhAHIAZABA
+AGwAbQBpAC4AbgBlAHQAAAAfAGgAAQAAAAoAAABTAE0AVABQAAAAAAAfAGkAAQAAABwAAABnAHcA
+YQByAGQAQABsAG0AaQAuAG4AZQB0AAAAHwBwAAEAAABeAAAAWwBSAGEAZABpAGEAbgBjAGUALQBn
+AGUAbgBlAHIAYQBsAF0AIABSAGUAOgAgAFIAYQBkAGkAYQBuAGMAZQAgAHcAbwByAGsAcwBoAG8A
+cAAsACAAZQB0AGMALgAAAAAAAgFxAAEAAAAbAAAAAcJuFwwEGjKZz7/wTCC6kuN7HiAwSwAC1hp+
+AB8AdAABAAAASgAAAHIAYQBkAGkAYQBuAGMAZQAtAGcAZQBuAGUAcgBhAGwAQAByAGEAZABpAGEA
+bgBjAGUALQBvAG4AbABpAG4AZQAuAG8AcgBnAAAAAAAfABoMAQAAABoAAABNAGEAcgB0AGkAbgAg
+AE0AbwBlAGMAawAAAAAAHwAdDgEAAABeAAAAWwBSAGEAZABpAGEAbgBjAGUALQBnAGUAbgBlAHIA
+YQBsAF0AIABSAGUAOgAgAFIAYQBkAGkAYQBuAGMAZQAgAHcAbwByAGsAcwBoAG8AcAAsACAAZQB0
+AGMALgAAAAAAAgEJEAEAAADDBQAAvwUAANcRAABMWkZ1PPCFVwMACgByY3BnMTI1gjIDQ2h0bWwx
+AzA/AQMB9wqAAqQD4wIAY2jBCsBzZXQwIAcTAoD/EAMAUARWCFUHshHVDlEDAd0Q1zIGAAbDEdUz
+BEYQ2W8S6xHjCO8J9zsYzw4wNTsR0gxgYwBQCwkBZDM2kxFgC6U0IBACKlwOsr0BkGcU8AqjEeMd
+6DQU8AA8IURPQ1RZUABFIEhUTUwgUABVQkxJQyAiLSAvL1czQyGARFQiRCCUMy4yIYBFTpwiPh7t
+Ho8jwTE4H/BvIKIjDyQfJpAzHYAlcEV8QUQlzQ7xJu8pbyT0NkEO8DxNRVRBB7BBMSxgPSJHCfAE
+kGF0RQWwIhLQT05UItBUEyzwBeFFeBDxbmdlPQZSdhMxL0EAkAIgIDYQLjAuNh1wOS4xJyL+Ks8l
+Azc3H/BUSShUTEUlzjQO8FtShGFkBzBuY2UtLuDJLTJsXQfwZToH8DTlBCB3BbBrc2hvcKQsIBFA
+Yy4kbjUf8P4vM08xfyZFNJE4wChPJp8FPJQ1EWA8Qk9EWdIgNPByPTywcjwAPHPnACEDMD8RZG8A
+4D8RCrH8XHEYsD8REPADMD91EWBHPCsc8T0vZzk2H/BEPElWP0kAAEGHPEk2NENEv0HSSGkgRxjQ
+Z/4sPEkBwD9XCqI/VwpxJHz+MCgRIeBEi0pIQg9DH0QvL0U/Rk9Q6zwrOB2AJm6YYnNwAoA/aCdh
+AUD/US9JL0o/S09MX1N/Tn9PjwdSv1GvXq8gbXkgc6R1Zy7gc3QJgCAHcN5wA2AvQAeAAjAgLXA2
+J/46Vr9Xz1jfWe9a/1wPXR//Xi9fP2BPaM9UX1VvVn9lD/9mH2cvaD9pT2pfa29sf22P33qLLzAI
+kAfgL4ZvP9BAkP8IkDUwck9zX3RvdX92j3efP3iveb96z3vfg3cA0HRp+S9AIGILIAPQNhBvb3B/
+2XGKbWsDEApAbYp0fu//f/+BD4Ifgy+EP4VPhl+HbzOIf5M3ZWEAkBMxYXD/C1AN4C1gfhV+kIog
+CHAu8J0AwHAEIGNxYhByZgDQ/QeRLTawBRBicIoAfWAIYP+KMC0wY2ARAAVAm7M6rJSl6Zs1cy9i
+cHigA35AAjD/nBl+UQBwYfAFsAiQAjCao/+Or4+/kM+R35Lvk/+VD5Yft5cvmD986GWacAGgbC7w
+GnMEYG+d4AuAZyBmvnU1IJqym+MEYgMgYZ2A+QNwb2IDEAeRN2JyP6P//6UPph+nL6g/qU+qX6tv
+rH9fthid4J0hBtCiYiCakGx8Y3ULYJqzBACuEQdAbP2iIW6+sX2AYhC+kwtQmdKPryGeATTgiu8m
+Z3SMSdI+thg9IAHQNCVQno//t8IAcGKQmeDAr8G/wse0wNMdcQWxc2+xcEYLgMUhv4pwEUBicAXA
+C4DJcXAG8PuapAdAZ6JBneCOMAIQBcD/GGB9sQdAClChs8O/xMPFIf/FFGNxLuAFQAUQYpB+UbzC
++m6Z4HRh8MjhPuAFkAVAnwJgsNCb4Z3yGGBva8tg7GlrrpFi0GG/oQtxBUBfzF+3wowgruAEICjI
+kHK0cnk3QEk+wAIgJ54Rr5nQA6BjcclAIBECaDdA/mKdgNSBNsC9wGKQNPABIP8EkGMyybzSb8TD
+mlADYADQ/7zQBCDLMrzCz8cFoGLAAiD9YzEpsZ+yr7O/tM+137bv/7f/uQ+6H7sv4L+Lf4yPcg//
+3P/eD98f4C/hP+JP41/kb/vlf/J7TQrAnZHqP+tP7F//7W/uf++P8J/xr/K/88/6X//n3+jv6f/2
+n/ev+L/5z/rff/vv/P/+D/8fAC8kuMOBPAZGLdFiAGl6ZT0yfwuLHVEc8Q5/JPQsED5hUv8/S52h
+G1ESDxMfFC8VPyUh+jULIS8QIgefGE8BvwLP/wPfBO8F/wcPGo8JLzlMJD/7PgMP8S8+gjwPJa8o
+MTMRUTuwVE1MJ2B9KmAAHwA1EAEAAACGAAAAPAA5ADMANwBBAEMANgA4AEEAOQBBAEYARgA2ADkA
+NAA5ADkAMQBCADEANwA2AEMANQBFADEAMwA4ADMAMQAxADcAMAAxADgANQBBADQAMQAxAEAAZQBu
+AGcAcgBtAGEAaQBsADEALgBjAGUAZABjAGMALgBwAHMAdQAuAGUAZAB1AD4AAAAAAB8ARxABAAAA
+HgAAAG0AZQBzAHMAYQBnAGUALwByAGYAYwA4ADIAMgAAAAAACwDyEAEAAAAfAPMQAQAAAHYAAABS
+AEUAJQAzAEEAIABbAFIAYQBkAGkAYQBuAGMAZQAtAGcAZQBuAGUAcgBhAGwAXQAgAFIAZQAlADMA
+QQAgAFIAYQBkAGkAYQBuAGMAZQAgAHcAbwByAGsAcwBoAG8AcAAsACAAZQB0AGMALgAuAEUATQBM
+AAAAAAALAPYQAAAAAEAABzCBNG5kIm7CAUAACDDEFSgTJm7CAQMA3j/p/QAAAwDxPwkEAAAfAPg/
+AQAAABoAAABNAGEAcgB0AGkAbgAgAE0AbwBlAGMAawAAAAAAAgH5PwEAAABmAAAAAAAAANynQMjA
+QhAatLkIACsv4YIBAAAAAAAAAC9PPVBFTk4gU1RBVEUgVU5JVkVSU0lUWSAtIENPRS9PVT1QU1Vf
+RU5HSU5FRVJJTkcvQ049UkVDSVBJRU5UUy9DTj1NTU9FQ0sAAAAfAPo/AQAAACoAAABTAHkAcwB0
+AGUAbQAgAEEAZABtAGkAbgBpAHMAdAByAGEAdABvAHIAAAAAAAIB+z8BAAAAHgAAAAAAAADcp0DI
+wEIQGrS5CAArL+GCAQAAAAAAAAAuAAAAAwD9P+QEAAADABlAAAAAAAMAGkAAAAAAAwAdQAAAAAAD
+AB5AAAAAAB8AMEABAAAADgAAAE0ATQBPAEUAQwBLAAAAAAAfADFAAQAAAA4AAABNAE0ATwBFAEMA
+SwAAAAAAHwAyQAEAAAAcAAAAZwB3AGEAcgBkAEAAbABtAGkALgBuAGUAdAAAAB8AM0ABAAAAHAAA
+AGcAdwBhAHIAZABAAGwAbQBpAC4AbgBlAHQAAAAfADhAAQAAAA4AAABNAE0ATwBFAEMASwAAAAAA
+HwA5QAEAAAAEAAAALgAAAAsAKQAAAAAACwAjAAAAAAADAAYQRHeh4wMABxAHAgAAAwAQEAAAAAAD
+ABEQAAAAAB4ACBABAAAAZQAAAEhJR1JFRyxNWVNVR0dFU1RFRElNUFJPVkVNRU5UVE9SQURJQU5D
+RTpSVklFV1ZFUlNJT05PRlJQSUVDRUFDVElWRUJSREZTOk1LSUxMVU1CUkRGU0VBU0lFUkFQUExJ
+Q0FUSU8AAAAAAgF/AAEAAABDAAAAPDkzN0FDNjhBOUFGRjY5NDk5MUIxNzZDNUUxMzgzMTE3MDE4
+NUE0MTFAZW5ncm1haWwxLmNlZGNjLnBzdS5lZHU+AAAnzQ==
+
+------_=_NextPart_001_01C26E26.1320EEAD--
+
+From radiance-general@radiance-online.org  Wed Oct 16 12:31:29 2002
+From: radiance-general@radiance-online.org (Carsten Bauer)
+Date: Wed, 16 Oct 2002 13:31:29 +0200
+Subject: [Radiance-general] Re: Radiance workshop, etc.
+References: <937AC68A9AFF694991B176C5E13831170185A411@engrmail1.cedcc.psu.edu>
+Message-ID: <3DAD4E11.7C7AC960@t-online.de>
+
+Hi Martin, 
+
+some short comments to your suggestions:
+
+> rview version of rpiece
+would be a nice thing to have. Indeed, I already wrote something like
+this (although not based on rpiece, but generally on a separate parallel
+processing library (PVM)). The problem is, however, that the succesive
+refining scheme of rview needs a lot of data shuffling when sending the
+output of different processes to the display, so the parallel rview came
+out really slooooooow, which is why I abandoned it and do parallel
+processing only in rpict mode.
+
+> easier application of picture mapping
+try to include the picture/texture mapping and the object on which it is
+mapped in one file. When placing this file with xform to an arbitrary
+position and orientation, the mapping function gets transformed
+automatically as well
+
+> reliable smoothing functions
+the smoothing option in e.g. gensurf (-s) works very well. I don't have
+any experience in cases when polygon meshes are imported from CAD
+programs, although I already thought about an independent smoothing
+process which could be let loose on any given polygon set. 
+Question: does the smoothing generally get lost when importing stuff
+from, say, Autocad ?
+
+> the ambient calculation..
+well, there's no easy way to accomplish difficult tasks. Intricate
+geometry demands a high sampling density, interpolation always is some
+sort of 'secondary' measure which - no matter how sophisticated it is
+performed - often reaches its limits rather soon . Nevertheless, I judge
+your given settings to be very high. I had much succes in achieving
+visually appealing images (judged not only by myself.. :) with far
+lesser parameter settings. 
+
+-Carsten
+
+From radiance-general@radiance-online.org  Wed Oct 16 14:02:44 2002
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Wed, 16 Oct 2002 09:02:44 -0400 (EDT)
+Subject: [Radiance-general] Re: Radiance workshop, etc.
+In-Reply-To: <3DAD4E11.7C7AC960@t-online.de>
+Message-ID: <Pine.BSF.4.44.0210160845580.10233-100000@emancholl.pair.com>
+
+> > easier application of picture mapping
+> try to include the picture/texture mapping and the object on which it is
+> mapped in one file. When placing this file with xform to an arbitrary
+> position and orientation, the mapping function gets transformed
+> automatically as well
+
+Martin, have you checked out the "arbmap.cal" file included
+with Rayfront? That normalizes the *orientation* of image
+maps in space, so that they are always mapped flat onto the
+respective surface. Of course you still need to make sure
+that they appear at the right location in space (unless it's
+a global mapping).
+
+In general, the best approach for location specific mappings
+(pictures hanging at the wall) is to create a seperate file
+with the picture sufrace, and possibly the frame etc. Peters
+genpic program does a nice job there for most situations.
+Then transform that file to the right location, geometry,
+mapping, and all.
+
+Rayfront includes genpic binaries, and the "parts" mechanism
+provides an easy way to place external objects in the scene.
+And no, this is not all cheap advertizing, Martin maintains an
+educational Rayfront license at PSU (whether he actually
+uses it is another question, of course... ;)
+
+
+> > reliable smoothing functions
+> the smoothing option in e.g. gensurf (-s) works very well. I don't have
+> any experience in cases when polygon meshes are imported from CAD
+> programs, although I already thought about an independent smoothing
+> process which could be let loose on any given polygon set.
+> Question: does the smoothing generally get lost when importing stuff
+> from, say, Autocad ?
+
+Yes. That may eventually change once I have understood how
+gensurfs smoothing actually works (doesn't seem to bee too
+complicated, just that I didn't have the nerve to dig into
+the topic yet).
+
+It seems that Ole Lemmings ConRAD preserves smooting when
+converting from 3D-Max files.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch.com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-general@radiance-online.org  Wed Oct 16 15:51:39 2002
+From: radiance-general@radiance-online.org (Lars O. Grobe)
+Date: Wed, 16 Oct 2002 16:51:39 +0200
+Subject: [Radiance-general] colorpict modifiers in instances and frozen octrees?
+Message-ID: <200210161445.g9GEj2k20619@darkside-animation.com>
+
+Hi!
+
+I use a makefile to create a lot of frozen octrees using colorpict modifiers 
+(via aliases). These octrees are than used as instances to build a part of a
+building, which is than transformed into a frozen octree. So  I want to get 
+frozen octrees for all major parts of my scene which should be useable on 
+their own, without dependencies on other files.
+
+My makefile than runs rpict on the octree, and I get a nice image.... but I 
+don't see any image mappings.... I also don't get any error or warnings (I 
+was used to get "image xxx uses yyy kB" when I used image map patterns so 
+far).
+
+Are the image maps included in a frozen octree? Do I need any special switch 
+in rpict to make colorpicts visible (I use just vp vd at the moment)? Is 
+there anything special when using alias-modifiers in instances (i get my 
+geometry from dxf2rad, so for each object, I define a file object.mat which 
+contains just the aliases refering to material definitions in a global file 
+project.mat).
+
+Thank You, CU, Lars.
+
+From radiance-general@radiance-online.org  Wed Oct 16 15:56:59 2002
+From: radiance-general@radiance-online.org (Lars O. Grobe)
+Date: Wed, 16 Oct 2002 16:56:59 +0200
+Subject: [Radiance-general] Re: Radiance workshop, etc.
+In-Reply-To: <3DAD4E11.7C7AC960@t-online.de>
+References: <937AC68A9AFF694991B176C5E13831170185A411@engrmail1.cedcc.psu.edu> <3DAD4E11.7C7AC960@t-online.de>
+Message-ID: <200210161450.g9GEoKk20708@darkside-animation.com>
+
+Hi!
+
+> try to include the picture/texture mapping and the object on which it is
+> mapped in one file. When placing this file with xform to an arbitrary
+> position and orientation, the mapping function gets transformed
+> automatically as well
+
+Does this work with frozen octrees as instances, too? I don't get these 
+images visible...
+
+CU, Lars.
+
+From radiance-general@radiance-online.org  Wed Oct 16 16:13:30 2002
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Wed, 16 Oct 2002 11:13:30 -0400 (EDT)
+Subject: [Radiance-general] colorpict modifiers in instances and frozen
+ octrees?
+In-Reply-To: <200210161445.g9GEj2k20619@darkside-animation.com>
+Message-ID: <Pine.BSF.4.44.0210161106140.10233-100000@emancholl.pair.com>
+
+Lars O. Grobe wrote:
+
+> Are the image maps included in a frozen octree?
+
+No, and neither are the function files. You need to make sure
+that the paths those are referenced with point to a location
+where they can actually be found, especially after moving the
+octree to a different directory. Note that relative paths (which
+are recommended) are generally resolved relative to the current
+directory of the *process* that creates (oconv) or reads (rpict)
+the octree.
+
+
+> Do I need any special switch
+> in rpict to make colorpicts visible (I use just vp vd at the moment)?
+> Is there anything special when using alias-modifiers in instances?
+
+No and no.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch.com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-general@radiance-online.org  Wed Oct 16 17:33:32 2002
+From: radiance-general@radiance-online.org (Lars O. Grobe)
+Date: Wed, 16 Oct 2002 18:33:32 +0200
+Subject: [Radiance-general] colorpict modifiers in instances and frozen octrees?
+In-Reply-To: <Pine.BSF.4.44.0210161106140.10233-100000@emancholl.pair.com>
+References: <Pine.BSF.4.44.0210161106140.10233-100000@emancholl.pair.com>
+Message-ID: <200210161626.g9GGQsk21517@darkside-animation.com>
+
+Hi!
+
+So it is better to avoid any "cd"-command in Makefile, and specify all paths 
+relative to the Makefile's directory? Even in the material file (which is not 
+in the same dir as the Makefile)?
+
+So far I have been thinking that the path is relative to the file where it 
+appears, but in fact, relative to the process' starting dir makes much more 
+sense.
+
+Thank you, CU, Lars.
+
+From radiance-general@radiance-online.org  Thu Oct 17 15:08:59 2002
+From: radiance-general@radiance-online.org (Lars O. Grobe)
+Date: Thu, 17 Oct 2002 16:08:59 +0200
+Subject: [Radiance-general] colorpict modifiers in instances and frozen octrees?
+In-Reply-To: <Pine.BSF.4.44.0210161106140.10233-100000@emancholl.pair.com>
+References: <Pine.BSF.4.44.0210161106140.10233-100000@emancholl.pair.com>
+Message-ID: <200210171402.g9HE2Pk23811@darkside-animation.com>
+
+Hi!
+
+Am Mittwoch, 16. Oktober 2002 17:13 schrieben Sie:
+
+> No, and neither are the function files. You need to make sure
+> that the paths those are referenced with point to a location
+> where they can actually be found, especially after moving the
+> octree to a different directory. Note that relative paths (which
+> are recommended) are generally resolved relative to the current
+> directory of the *process* that creates (oconv) or reads (rpict)
+> the octree.
+
+One more question regarding this topic, if I apply a colorpict to an object, 
+and use this as instance, will the transformations of the instance be applied 
+to the pattern, too? I have a floor build of tiles. A tile here is an 
+instance, refering to an octree which is made from a rad-file describing the 
+geometry at 0;0;0 with a colorpict modifier (which also defaults to 0;0;0). I 
+use these instances with replmarks, so I should get the tiles with their 
+pattern transformed to the points defined by the markers? Or will replmarks 
+transform only the geometry to the triangle marker's position, not it's 
+colorpict modifier?
+
+In fact, I simply wonder why I don't get any patterns if I render my scene 
+(and no error messages).
+
+CU, Lars.
+
+Here is my material-definition (as you see, the geometry is from dxf2rad ;-):
+
+void colorpict porphyr_pattern
+9 clip clip clip 13_36a_map_porphyr.pic picture.cal pic_u pic_v -s 3
+0
+1 2
+
+porphyr_pattern plastic porphyr
+0
+0
+5 .11 .11 .08 .05 0
+
+void alias l_floor_green_stripes porphyr
+
+From radiance-general@radiance-online.org  Thu Oct 17 15:19:39 2002
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Thu, 17 Oct 2002 10:19:39 -0400 (EDT)
+Subject: [Radiance-general] colorpict modifiers in instances and frozen
+ octrees?
+In-Reply-To: <200210171402.g9HE2Pk23811@darkside-animation.com>
+Message-ID: <Pine.BSF.4.44.0210171012140.30909-100000@emancholl.pair.com>
+
+Lars O. Grobe wrote:
+
+> One more question regarding this topic, if I apply a colorpict to an object,
+> and use this as instance, will the transformations of the instance be applied
+> to the pattern, too?
+
+I'd certainly hope so! (though I'm too lazy to test reight now)
+Greg?
+
+
+> I have a floor build of tiles. A tile here is an
+> instance, refering to an octree which is made from a rad-file describing the
+> geometry at 0;0;0 with a colorpict modifier (which also defaults to 0;0;0). I
+> use these instances with replmarks, so I should get the tiles with their
+> pattern transformed to the points defined by the markers? Or will replmarks
+> transform only the geometry to the triangle marker's position, not it's
+> colorpict modifier?
+
+As a principle, replmarks will transform everything. After all, It
+just generates the appropriate xform commands or instance primitives
+in the output.
+
+Did you verify that a single tile shows the pattern when viewed
+eg. with objview? Just to eliminate simple mistakes like mapping
+to the wrong side of it etc...
+
+As another remark: For very simple objects like this, instances
+create more overhead than they are worth. Consider using the -x
+argument with the scene file instead of -i with the octree.
+Oh, and I hope you're not using the -m parameter to replmarks...
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch.com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-general@radiance-online.org  Thu Oct 17 18:03:46 2002
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Thu, 17 Oct 2002 10:03:46 -0700
+Subject: [Radiance-general] Re: Radiance workshop, etc.
+In-Reply-To: <20021017100002.23242.93702.Mailman@darkside-animation.com>
+Message-ID: <65CC54A6-E1F2-11D6-9C73-00306540F848@lmi.net>
+
+Unfortunately, I couldn't read Martin's posting, as it came out as an 
+encoded sequence that my mailer couldn't decypher.  Folks, if you're 
+sending text, see if you can use ASCII.  It's a good standard, and it's 
+been around for some time.  My mailer figures out most things, but it's 
+not 100% reliable.
+
+I'm gathering my notion of what was said by Carsten and Schorsch's 
+responses...
+
+>> rview version of rpiece
+> would be a nice thing to have. Indeed, I already wrote something like
+> this (although not based on rpiece, but generally on a separate 
+> parallel
+> processing library (PVM)). The problem is, however, that the succesive
+> refining scheme of rview needs a lot of data shuffling when sending the
+> output of different processes to the display, so the parallel rview 
+> came
+> out really slooooooow, which is why I abandoned it and do parallel
+> processing only in rpict mode.
+
+The new rholo program is runs like rview in parallel, as you can start 
+as many processes as you have processors.  I never got around to making 
+it work over a network, and I have doubts it would really pay off due 
+to the latencies involved.  Carsten's statement would seem to confirm 
+this.
+
+>>> reliable smoothing functions
+>> the smoothing option in e.g. gensurf (-s) works very well. I don't 
+>> have
+>> any experience in cases when polygon meshes are imported from CAD
+>> programs, although I already thought about an independent smoothing
+>> process which could be let loose on any given polygon set.
+>> Question: does the smoothing generally get lost when importing stuff
+>> from, say, Autocad ?
+>
+> Yes. That may eventually change once I have understood how
+> gensurfs smoothing actually works (doesn't seem to bee too
+> complicated, just that I didn't have the nerve to dig into
+> the topic yet).
+
+Gensurf will also take vertices from its standard input or a file and 
+generate smoothed polygons, but the vertices have to be laid out on a 
+grid.  (I added for the next release a feature to enable you to cut 
+rough holes into gensurf meshes.)  If you have a triangle mesh and you 
+know the vertex normals, you can use the tmesh2rad or mgf2rad 
+converters to get these into smoothed triangles in Radiance.  The 
+mgf2rad program will also smooth quadrilaterals, but it does so by 
+breaking them into triangles.  The obj2rad program can also take 
+smoothed surfaces in Alias/Wavefront format, so there really are many 
+options for getting smoothed surfaces into Radiance.
+
+-Greg
+
+
+From radiance-general@radiance-online.org  Thu Oct 17 18:26:47 2002
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Thu, 17 Oct 2002 10:26:47 -0700
+Subject: [Radiance-general] Re: colorpict modifiers in instances and frozen octrees?
+In-Reply-To: <20021017100002.23242.93702.Mailman@darkside-animation.com>
+Message-ID: <9D3BAD7C-E1F5-11D6-9C73-00306540F848@lmi.net>
+
+Lars O. Grobe wrote:
+>
+> I use a makefile to create a lot of frozen octrees using colorpict 
+> modifiers
+> (via aliases). These octrees are than used as instances to build a 
+> part of a
+> building, which is than transformed into a frozen octree. So  I want 
+> to get
+> frozen octrees for all major parts of my scene which should be useable 
+> on
+> their own, without dependencies on other files.
+>
+> My makefile than runs rpict on the octree, and I get a nice image.... 
+> but I
+> don't see any image mappings.... I also don't get any error or 
+> warnings (I
+> was used to get "image xxx uses yyy kB" when I used image map patterns 
+> so
+> far).
+>
+> Are the image maps included in a frozen octree? Do I need any special 
+> switch
+> in rpict to make colorpicts visible (I use just vp vd at the moment)? 
+> Is
+> there anything special when using alias-modifiers in instances (i get 
+> my
+> geometry from dxf2rad, so for each object, I define a file object.mat 
+> which
+> contains just the aliases refering to material definitions in a global 
+> file
+> project.mat).
+>
+> Thank You, CU, Lars.
+
+In general, it is a good idea to make the picture references local when 
+you create your model (or in a local subdirectory), then move/copy the 
+pictures/subdirectories along with the frozen octree to a library 
+location for convenient access.  As long as this library location is 
+included in your RAYPATH environment variable, Radiance will be able to 
+find both the frozen octree and any pictures it refers to in that 
+directory.
+
+This same trick works for scene files -- you can refer to oft-used 
+scene descriptions that exist in your private (or public) library 
+directory, and these scene descriptions can include any geometry they 
+need in their local directory or subdirectories via !xform commands 
+they contain.  This was accomplished by a change that came out with 
+3.0, where xform searches directories in the RAYPATH variable rather 
+than simply looking in the process' local directory.  It's actually a 
+huge advantage to the way it used to work, but you have to be aware of 
+it!
+
+-Greg
+
+
+From radiance-general@radiance-online.org  Thu Oct 17 18:35:38 2002
+From: radiance-general@radiance-online.org (Thomas Bleicher)
+Date: Thu, 17 Oct 2002 19:35:38 +0200
+Subject: [Radiance-general] Re: Radiance workshop, etc.
+In-Reply-To: <937AC68A9AFF694991B176C5E13831170185A411@engrmail1.cedcc.psu.edu>
+References: <937AC68A9AFF694991B176C5E13831170185A411@engrmail1.cedcc.psu.edu>
+Message-ID: <20021017173538.GA1382@tu-bs.de>
+
+On Mon, Oct 07, 2002 at 01:22:12PM -0400, Martin Moeck wrote:
+> Hi Greg,
+>  
+> my suggested improvement to Radiance:
+
+> reliable smoothing functions to model automobiles etc. 
+
+You can use the mgf-format to store the geometry meshes with the vertex
+normals. These files are much smaller than "pure" radiance primitives.
+To include the mgf files use "!mgf2rad car.mgf | xform ... " in your *.rad 
+files.
+
+To create the mgf file use "3ds2mgf" or write your own exporter. I did
+one for Blender a year ago. It's simple if you can access the vertex
+normals.
+
+Thomas
+-- 
+Thomas Bleicher
+t.bleicher@tu-bs.de
+...................................................................
+There is no room for smalltalk in a big universe.
+        -- Terry Pratchett, Thief of Time
+
+From radiance-general@radiance-online.org  Thu Oct 17 19:23:16 2002
+From: radiance-general@radiance-online.org (Thomas Bleicher)
+Date: Thu, 17 Oct 2002 20:23:16 +0200
+Subject: [Radiance-general] colorpict modifiers in instances and frozen octrees?
+In-Reply-To: <200210171402.g9HE2Pk23811@darkside-animation.com>
+References: <Pine.BSF.4.44.0210161106140.10233-100000@emancholl.pair.com> <200210171402.g9HE2Pk23811@darkside-animation.com>
+Message-ID: <20021017182316.GA1458@tu-bs.de>
+
+On Thu, Oct 17, 2002 at 04:08:59PM +0200, Lars O. Grobe wrote:
+
+> Here is my material-definition (as you see, the geometry is from dxf2rad ;-):
+> 
+> void colorpict porphyr_pattern
+> 9 clip clip clip 13_36a_map_porphyr.pic picture.cal pic_u pic_v -s 3
+> 0
+> 1 2
+
+If you only want to shuffle the tiles in the x-y-plane, try instead of
+"pic_u pic_v" "tile_u tile_v"; this will repeat the image and you won't
+see the difference (if your tiles are all of the same size, of course).
+
+I played around with picture.cal recently (after the colored window
+thread) but found no time to prepare a html documentation.
+
+Thomas
+-- 
+Thomas Bleicher
+t.bleicher@tu-bs.de
+...................................................................
+Hast Du sonst noch was zu erzählen oder benutzt Du Windows?
+        -- Martin Neitzel
+
+From radiance-general@radiance-online.org  Fri Oct 18 11:24:57 2002
+From: radiance-general@radiance-online.org (Lars O. Grobe)
+Date: Fri, 18 Oct 2002 12:24:57 +0200
+Subject: [Radiance-general] Re: colorpict modifiers in instances and frozen octrees?
+In-Reply-To: <9D3BAD7C-E1F5-11D6-9C73-00306540F848@lmi.net>
+References: <9D3BAD7C-E1F5-11D6-9C73-00306540F848@lmi.net>
+Message-ID: <200210181019.g9IAJhk27608@darkside-animation.com>
+
+Hi!
+
+I rewrote my Makefile, so I store all geometry in dxf, pic in tif (that's 
+what the rest of the team gives me), and make than converts everything into a 
+work directory. Here I use oconv and co, and in the makefile, I set the 
+RAYPATH=$RAYPATH:./ . That works fine in general, but if I use material 
+aliases, the pictures are not mapped. That's quite funny... I always used a 
+mapping-file containing only aliases to the material definitons which I hold 
+in a seperate file, as dxf2rad uses layer names to set modifiers, and I was 
+able to simply correct the mapping without interfering with the rest of the 
+scene if one object changed. Are there any special issues concerning 
+colorpict and aliases???
+
+So, with
+oconv material.mat mapping.mat object.rad sky.rad > object.oct
+I have no visible mappings, with
+oconv material.mat object.rad sky.rad > object.oct
+everything is fine.....if I set the modifiers in the object.rad file itself.
+
+Thank you, CU, Lars.
+
+From radiance-general@radiance-online.org  Fri Oct 18 11:41:02 2002
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Fri, 18 Oct 2002 06:41:02 -0400 (EDT)
+Subject: [Radiance-general] Re: colorpict modifiers in instances and
+ frozen octrees?
+In-Reply-To: <200210181019.g9IAJhk27608@darkside-animation.com>
+Message-ID: <Pine.BSF.4.44.0210180639190.37656-100000@emancholl.pair.com>
+
+Lars O. Grobe wrote:
+
+> Hi!
+>
+> I rewrote my Makefile, so I store all geometry in dxf, pic in tif (that's
+> what the rest of the team gives me), and make than converts everything into a
+> work directory. Here I use oconv and co, and in the makefile, I set the
+> RAYPATH=$RAYPATH:./ . That works fine in general, but if I use material
+> aliases, the pictures are not mapped.
+
+You do realize that you need to specify the modifier *for the alias*
+instead of for the aliased material?
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch.com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-general@radiance-online.org  Fri Oct 18 15:28:42 2002
+From: radiance-general@radiance-online.org (Lars O. Grobe)
+Date: Fri, 18 Oct 2002 16:28:42 +0200
+Subject: [Radiance-general] Re: colorpict modifiers in instances and frozen octrees?
+In-Reply-To: <Pine.BSF.4.44.0210180639190.37656-100000@emancholl.pair.com>
+References: <Pine.BSF.4.44.0210180639190.37656-100000@emancholl.pair.com>
+Message-ID: <200210181423.g9IENTk28918@darkside-animation.com>
+
+Hi !
+
+> You do realize that you need to specify the modifier *for the alias*
+> instead of for the aliased material?
+
+Stupid me..... no, I really didn't know THAT.... is this documented? I was 
+always defining the material including the colorpict modifier and "mapped" 
+this material to the modifier that dxf2rad used in the geometry. Now i 
+changed this - and that's it....
+
+THANK YOU for this hint, I'd never found this....
+
+CU Lars.
+
+From radiance-general@radiance-online.org  Fri Oct 18 15:52:38 2002
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Fri, 18 Oct 2002 10:52:38 -0400 (EDT)
+Subject: [Radiance-general] Re: colorpict modifiers in instances and
+ frozen octrees?
+In-Reply-To: <200210181423.g9IENTk28918@darkside-animation.com>
+Message-ID: <Pine.BSF.4.44.0210181042030.37656-100000@emancholl.pair.com>
+
+Lars O. Grobe wrote:
+
+> Hi !
+>
+> > You do realize that you need to specify the modifier *for the alias*
+> > instead of for the aliased material?
+>
+> Stupid me..... no, I really didn't know THAT.... is this documented?
+
+
+There's a hint in the description of the material types, saying
+that aliases are "useful when the same material is used with a
+different modifier".
+
+So you never wondered how Rayfront manages its complete flexibility
+in composing modifier trees? That wouldn't be possible without
+reassigning modifiers through aliases. Not that you really need
+to know that when using Rayfront, as it happens transparently in
+the background and all you see is that it works... ;)
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch.com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-general@radiance-online.org  Fri Oct 18 17:19:56 2002
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Fri, 18 Oct 2002 09:19:56 -0700
+Subject: [Radiance-general] Re: colorpict modifiers in instances and frozen
+In-Reply-To: <20021018100002.27412.44439.Mailman@darkside-animation.com>
+Message-ID: <71262755-E2B5-11D6-A310-00306540F848@lmi.net>
+
+Lars O. Grobe wrote:
+> One more question regarding this topic, if I apply a colorpict to an 
+> object,
+> and use this as instance, will the transformations of the instance be 
+> applied
+> to the pattern, too?
+
+Only if the colorpict pattern was included in the original file you 
+used to create your octree instance.  If it is defined in a separate 
+material file included with the scene containing the instance, the 
+transformation will not be applied the same way.
+
+You really should follow Schorsch's advice also about when to use the 
+instance primitive.  There really needs to be a help file or something 
+on instances, and I seem to remember writing something like this 
+somewhere, but now I can't even find it...  The rule of thumb I use is 
+that there have to be at least 200 geometric primitives in an object 
+before it's worth making an instance.  Otherwise, the overhead of 
+tracing rays through instanced octrees negates the memory savings.
+
+Replmarks replaces the markers with transformed scene files (or 
+instances), and as long as you put the related colorpict's in the 
+transformed scene files (or instances), and not in the replmarks input, 
+you should be OK.
+
+
+From radiance-general@radiance-online.org  Mon Oct 21 20:26:50 2002
+From: radiance-general@radiance-online.org (Qing Xu)
+Date: Mon, 21 Oct 2002 21:26:50 +0200
+Subject: [Radiance-general] projection plane
+Message-ID: <3DB454F9.FB067E9D@itc.it>
+
+Dear all,
+How are you!
+
+I want to know the position of project plane in the context of
+perspective projection. Where can find that in source codes? Or how can
+I specify some parameters to simulate the effect of changing the focus
+diatance when using rpict or rtrace?
+
+Thank you in advance!
+
+Qing
+
+
+From radiance-general@radiance-online.org  Tue Oct 22 08:46:34 2002
+From: radiance-general@radiance-online.org (Lars O. Grobe)
+Date: Tue, 22 Oct 2002 09:46:34 +0200
+Subject: [Radiance-general] Re: colorpict modifiers in instances and frozen
+In-Reply-To: <71262755-E2B5-11D6-A310-00306540F848@lmi.net>
+References: <71262755-E2B5-11D6-A310-00306540F848@lmi.net>
+Message-ID: <200210220739.g9M7dlk06529@darkside-animation.com>
+
+Hi!
+
+Thank you for your help!
+
+> Only if the colorpict pattern was included in the original file you
+> used to create your octree instance.  If it is defined in a separate
+> material file included with the scene containing the instance, the
+> transformation will not be applied the same way.
+
+I think I understand, while I still don't get this working. I have added some 
+lines to my Makefile now that copy the lines defining the colorpict modifier 
+into the geometry file of the instance instead of defining the colorpict 
+modifier in my global materials file. So I have a objectname.rad.mat file for 
+every object, which is included into the the file I get from dxf2rad. This 
+file has a statement "void colorpict mypattern....", and a line "mypattern 
+alias l_object mymaterial", with mymaterial defined in the global materials 
+file. This should work...?
+
+> You really should follow Schorsch's advice also about when to use the
+> instance primitive.  There really needs to be a help file or something
+> on instances, and I seem to remember writing something like this
+> somewhere, but now I can't even find it...  The rule of thumb I use is
+> that there have to be at least 200 geometric primitives in an object
+> before it's worth making an instance.  Otherwise, the overhead of
+> tracing rays through instanced octrees negates the memory savings.
+
+Yes, I will do these "optimation" later... at the moment, I try the general 
+concept of using instances, as most objects have quite complex geometries, or 
+at least they will get more and more complicated.
+
+> Replmarks replaces the markers with transformed scene files (or
+> instances), and as long as you put the related colorpict's in the
+> transformed scene files (or instances), and not in the replmarks input,
+> you should be OK.
+
+Now I'm really not sure anymore if I understood anything right... If I 
+putanything (geometry and colorpict statement) into the instance, and place 
+this instance in my scene with replmarks, the colorpict mapping will be 
+transformed to the position of the instance!??? So, if I have an plane at 
+0;0;0, with a mapping (using picture.cal, pic_u, pic_v) applied with 
+colorpict without any transformation (which means it is at 0;0;0 on the 
+plane), I than oconv this into an octree, and place this octree with 
+replmarks into my scene, the plane with it's pattern will appear at the 
+triangle markers positions, not only the transformed geometry without pattern?
+
+Thank you,CU, Lars.
+
+
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+From radiance-general@radiance-online.org  Tue Oct 22 14:55:10 2002
+From: radiance-general@radiance-online.org (Francesco Anselmo)
+Date: Tue, 22 Oct 2002 15:55:10 +0200
+Subject: [Radiance-general] intermediate sky
+Message-ID: <200210221406.g9ME69q20051@www.unipa.it>
+
+Hi all!
+
+Since it's the first time I write to this mailing list, I want to thank all,
+and especially Greg Ward for coding Radiance!
+Unfortunately I couldn't come to the 1st workshop, but I appreciated very much
+that the papers are available online: fantastic!
+
+My first question is about how Radiance models the intermediate sky.
+I studied the code that generates the sky luminance distributions 
+(gensky.c + skygright.cal) and found that the overcast and clear skies
+are modelled according to CIE 110-1994 Technical Report.
+But the intermediate sky hasn't been coded according to the Nakamura, Oki et 
+al. sky function (that is the present standard, right?): is it related to 
+some previous standard?
+
+Thank you!
+
+-- 
+Francesco Anselmo
+anselmo@dream.unipa.it
+
+From radiance-general@radiance-online.org  Tue Oct 22 16:49:05 2002
+From: radiance-general@radiance-online.org (Lars O. Grobe)
+Date: Tue, 22 Oct 2002 17:49:05 +0200
+Subject: [Radiance-general] Re: colorpict modifiers in instances and frozen
+In-Reply-To: <200210220739.g9M7dlk06529@darkside-animation.com>
+References: <71262755-E2B5-11D6-A310-00306540F848@lmi.net> <200210220739.g9M7dlk06529@darkside-animation.com>
+Message-ID: <200210221542.g9MFgMk07996@darkside-animation.com>
+
+Hi,
+
+I've got it - finally, after getting a lot of help and after trying with a 
+lot of objects, pics and transformations ;-)))
+
+Thank you again, CU, Lars.
+
+From radiance-general@radiance-online.org  Tue Oct 22 17:44:04 2002
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Tue, 22 Oct 2002 09:44:04 -0700
+Subject: [Radiance-general] Re: projection plane
+In-Reply-To: <20021022100002.6987.29868.Mailman@darkside-animation.com>
+Message-ID: <79952168-E5DD-11D6-9738-00306540F848@lmi.net>
+
+> From: Qing Xu <qingxu@itc.it>
+> Date: Tue Oct 22, 2002  6:41:54 AM US/Pacific
+>
+> For this moment, I want to know the position of project plane in the
+> context of
+> perspective projection. I looked for inside the codes, but I did not
+> find. Where can I find that in source codes? Actually, we want to
+> simulate the effect for changing the focus distance with the fixed view
+> point. How to do that? Is the view point the perspective projection
+> center in Radiance? What is the real meaning for focus distance in
+> Radiance?
+
+The Radiance image projection code is in "ray/src/common/image.c".  A 
+guide to the source tree may be found on the website under "Documents":
+
+	http://radsite.lbl.gov/radiance/refer/index.html
+
+The "view center" as it's often called does not really exist in 
+Radiance per se.  In fact, one could argue that there is no such thing 
+for a pinhole camera, which is what rpict simulates.  In order to have 
+depth of field, you have to have a sampled aperture and a focus 
+distance, neither of which are present in the default Radiance view 
+model.  Instead, you give rpict a view origin (-vp Ox Oy Oz) and 
+direction vector (-vd Dx Dy Dz), which says where the camera is looking 
+from and the direction it is looking in.
+
+To get motion blur, you need to sample over an aperature with a 
+particular view center, and I wrote a script called "pdfblur" that does 
+just this.  You can pass the views produced by pdfblur to rpict or 
+(preferably) pinterp to get a depth-of-field blurred image.  See the 
+pdfblur(1) man page for details.  I will send you an example image 
+generated with pdfblur and pinterp.
+
+-Greg
+
+
+From radiance-general@radiance-online.org  Tue Oct 22 17:52:07 2002
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Tue, 22 Oct 2002 09:52:07 -0700
+Subject: [Radiance-general] Re: colorpict modifiers in instances and frozen
+In-Reply-To: <20021022100002.6987.29868.Mailman@darkside-animation.com>
+Message-ID: <99BF99FC-E5DE-11D6-9738-00306540F848@lmi.net>
+
+> From: "Lars O. Grobe" <grobe@gmx.net>
+>> Only if the colorpict pattern was included in the original file you
+>> used to create your octree instance.  If it is defined in a separate
+>> material file included with the scene containing the instance, the
+>> transformation will not be applied the same way.
+>
+> I think I understand, while I still don't get this working. I have 
+> added some
+> lines to my Makefile now that copy the lines defining the colorpict 
+> modifier
+> into the geometry file of the instance instead of defining the 
+> colorpict
+> modifier in my global materials file. So I have a objectname.rad.mat 
+> file for
+> every object, which is included into the the file I get from dxf2rad. 
+> This
+> file has a statement "void colorpict mypattern....", and a line 
+> "mypattern
+> alias l_object mymaterial", with mymaterial defined in the global 
+> materials
+> file. This should work...?
+
+Maybe it's time to break down and share some of your files, so I can 
+figure out what's going on.  Mail them to me directly, rather than 
+adding to the chatter on the list...
+
+>> Replmarks replaces the markers with transformed scene files (or
+>> instances), and as long as you put the related colorpict's in the
+>> transformed scene files (or instances), and not in the replmarks 
+>> input,
+>> you should be OK.
+>
+> Now I'm really not sure anymore if I understood anything right... If I
+> putanything (geometry and colorpict statement) into the instance, and 
+> place
+> this instance in my scene with replmarks, the colorpict mapping will be
+> transformed to the position of the instance!??? So, if I have an plane 
+> at
+> 0;0;0, with a mapping (using picture.cal, pic_u, pic_v) applied with
+> colorpict without any transformation (which means it is at 0;0;0 on the
+> plane), I than oconv this into an octree, and place this octree with
+> replmarks into my scene, the plane with it's pattern will appear at the
+> triangle markers positions, not only the transformed geometry without 
+> pattern?
+
+It sounds like you understand things perfectly.  The xform command (and 
+the instance primitive) add transformations to the surfaces and 
+materials to which they are applied.  They don't affect materials 
+contained elsewhere.  It's really no more complicated than that.
+
+-Greg
+
+
+From radiance-general@radiance-online.org  Thu Oct 24 10:36:18 2002
+From: radiance-general@radiance-online.org (alex summerfield)
+Date: Thu, 24 Oct 2002 10:36:18 +0100
+Subject: [Radiance-general] an invisible glow
+Message-ID: <B9DD7DA1.1381%alex@arch.usyd.edu.au>
+
+Hi
+
+Does anyone have any suggestions for the following:
+
+Under the current definition for glow
+
+        mod glow id
+        0
+        0
+        4 red green blue maxrad
+
+if maxrad is a negative value, then the glow is visible on a surface but
+does not participate in scene illumination.
+
+I would like to generate a surface with a glow that does the opposite - from
+the viewpoint invisible or assigned to another texture but as a glow it
+still contributes to the indirect illuminance (in the same way that an illum
+does with the direct calculation).
+
+Is there a way to do this in general (with mixfunc?) so that a surface
+appears from the viewpoint as one material, but as far as the lighting
+calculation is concerned is another? Or more to the point how can i test if
+the ray being traced is a view ray or not?
+
+To explain an example situation - suppose there is a complicated existing
+building that is simplest to represent with an image mapped onto its facade
+(and that only appears correct when viewed from the viewpoint), but in terms
+of its lighting contribution on the site in general is more accurately
+described in some other way.
+
+Any help is greatly appreciated.
+
+Many thanks too to Peter, Greg, and the other regulars for their efforts in
+revitalising the Radiance group.
+
+cheers
+alex
+
+*******************************************************
+A. J. Summerfield                 alex@arch.usyd.edu.au
+Faculty of Architecture, University of Sydney
+*******************************************************
+Outside of a dog, a book is man's best friend.
+Inside a dog, it's too dark to read.       Groucho Marx
+*******************************************************
+
+
+
+From radiance-general@radiance-online.org  Thu Oct 24 11:24:58 2002
+From: radiance-general@radiance-online.org (Carsten Bauer)
+Date: Thu, 24 Oct 2002 12:24:58 +0200
+Subject: [Radiance-general] an invisible glow
+References: <B9DD7DA1.1381%alex@arch.usyd.edu.au>
+Message-ID: <3DB7CA7A.68675AC1@t-online.de>
+
+Hi Alex !
+
+To some extent, there is the possibility of having invisible glows. In
+my workshop contribution (available from the workshop page on
+radiance-online) there are patches to the standard Radiance version
+providing some further features. One of them is the possibility to
+assign a so called "secondary ambient material" (currently only to
+plastic, metal and trans). This was originally implemented to save
+calculation time in case of complicated mathematical textures applied to
+the object, but it can be used for other purposes, too.
+
+So, if for example you provide a blue plastic box and give a yellow glow
+material for the secondary ambient mat., you will see the blue box and
+the yellow shining on surfaces nearby stemming from the glow. (rather
+freaky, though, but - why not??) This of course affects only the
+indirect calculation, so the fourth glow parameter has to be zero, and
+self-evidently there will be no direct contribution from this glow.
+
+A real invisible glow comparable to the illum which works with the
+direct calculation, too, should be not too difficult to implement as a
+new primitive ("glow-illum"), at least I think so ... 
+
+-Carsten
+
+From radiance-general@radiance-online.org  Thu Oct 24 12:07:52 2002
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Thu, 24 Oct 2002 07:07:52 -0400 (EDT)
+Subject: [Radiance-general] an invisible glow
+In-Reply-To: <3DB7CA7A.68675AC1@t-online.de>
+Message-ID: <Pine.BSF.4.44.0210240700080.67776-100000@emancholl.pair.com>
+
+Carsten Bauer wrote:
+
+> A real invisible glow comparable to the illum which works with the
+> direct calculation, too, should be not too difficult to implement as a
+> new primitive ("glow-illum"), at least I think so ...
+
+
+The relevant difference between glow and illum in this context is
+that *glow* is ignored for the *direct* calculation if it exceeds
+the distance specified, not the other way round. Illum is only
+ignored/replaced for direct view rays, but participates normally
+in both the direct and indirect calculation for all other rays.
+
+If I understand the original question correctly, then illum is
+the solution.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch.com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-general@radiance-online.org  Thu Oct 24 13:06:32 2002
+From: radiance-general@radiance-online.org (Carsten Bauer)
+Date: Thu, 24 Oct 2002 14:06:32 +0200
+Subject: [Radiance-general] an invisible glow
+References: <Pine.BSF.4.44.0210240700080.67776-100000@emancholl.pair.com>
+Message-ID: <3DB7E248.D41520AF@t-online.de>
+
+Hi Schorsch and Alex !
+
+Independent of what Alex really wants large area sources are a
+problematic case for the direct calculation in the region near to the
+source, as then the simplification of the inverse square law is not
+valid anymore. Of course, they can be subdivided with -ds/dj, but if you
+have objects very close to the source, especially transparent stuff
+covering the source, you see the subdivision effect. So it can make
+sense to treat a large area source with the indirect calculation only,
+and so there might be the need of an invisible indirect source material
+just as there's an invisible direct source material (illum). It's a
+rather exceptional case though. And it all sounds pretty much of
+cheating and faking, but for image generation, this is allowed :).
+
+I have to admit, however, that the secondary ambient hack which I have
+mentioned doesn't seem to work correctly for this purpose, you see the
+effect of the glow but not with the correct illumination levels. But as
+this hack wasn't meant to be used in this way (I just tried to 'abuse'
+it for fun after reading Alex's mail) I don't have to feel guilty about
+it... 
+
+:-).
+
+
+-Carsten
+
+From radiance-general@radiance-online.org  Thu Oct 24 14:20:08 2002
+From: radiance-general@radiance-online.org (Carsten Bauer)
+Date: Thu, 24 Oct 2002 15:20:08 +0200
+Subject: [Radiance-general] an invisible glow
+References: <Pine.BSF.4.44.0210240700080.67776-100000@emancholl.pair.com> <3DB7E248.D41520AF@t-online.de>
+Message-ID: <3DB7F388.BC5FC14A@t-online.de>
+
+Yeah !
+
+somehow this is funny, I just had to look again at the matter ...
+
+In the current secondary ambient material hack, you stick within the
+plastic/material/trans range, but it was just a case of adding two lines
+to the code to really hand over glows (at least those with fourth param
+= 0) as secondary ambient material. So you can have invisible glows with
+correct illumination calculation, too. (except for the glow object
+itself of course). If anyone needs this freaky stuff, just call me ...
+
+Probably no one will ...  :-)
+
+-Carsten
+
+From radiance-general@radiance-online.org  Thu Oct 24 15:30:18 2002
+From: radiance-general@radiance-online.org (Markku Norvasuo)
+Date: Thu, 24 Oct 2002 17:30:18 +0300
+Subject: [Radiance-general] an invisible glow
+Message-ID: <5.0.2.1.0.20021024173001.00a19ac0@pop3.norton.antivirus>
+
+At 2002-10-24  / 14:07, you wrote:
+
+>If I understand the original question correctly, then illum is
+>the solution.
+>
+>
+>-schorsch
+
+A propos, is there any way to convert calculated illums to other types of 
+sources (light, glow)? The original source could then be precomputed only 
+once. I have sometimes missed this option, for example when having dozens 
+of small identical window openings in a room.
+
+Markku
+
+
+From radiance-general@radiance-online.org  Fri Oct 25 14:03:09 2002
+From: radiance-general@radiance-online.org (alex summerfield)
+Date: Fri, 25 Oct 2002 14:03:09 +0100
+Subject: [Radiance-general] an invisible glow
+In-Reply-To: <Pine.BSF.4.44.0210240700080.67776-100000@emancholl.pair.com>
+Message-ID: <B9DEFF9C.1393%alex@arch.usyd.edu.au>
+
+
+Thanks Carsten 
+
+> 
+> To some extent, there is the possibility of having invisible glows. In
+> my workshop contribution (available from the workshop page on
+> radiance-online) there are patches to the standard Radiance version
+> providing some further features. One of them is the possibility to
+> assign a so called "secondary ambient material" (currently only to
+> plastic, metal and trans). This was originally implemented to save
+> calculation time in case of complicated mathematical textures applied to
+> the object, but it can be used for other purposes, too.
+> 
+
+I was disappointed to be unable to attend that workshop. I'll check it out
+on the web! And will be in touch regarding some of the other extensions you
+mention.
+
+> So, if for example you provide a blue plastic box and give a yellow glow
+> material for the secondary ambient mat., you will see the blue box and
+> the yellow shining on surfaces nearby stemming from the glow. (rather
+> freaky, though, but - why not??)
+
+One possible practical use would be to communicate to students the role of
+diffuse inter-reflection in a space due to a particular surface - without
+radically altering the perception of the space as a whole - as might happen
+if you had to change the surface colour, rather than just its indirect
+contribution. 
+
+>> If I understand the original question correctly, then illum is
+>> the solution.
+>>
+
+Thanks Schorsch, continuing on from Carsten's comments regarding glow vs
+illum, I can confirm that these contextual elements form very large area
+secondary sources and hence thought that using glow would be the correct
+approach (the situation similar to the standard use of sky and ground glow).
+
+I'm also referring to views from outside the proposed building  - interior
+views are not a problem. The issue arises out of difference between the
+viewer's immediate context and the building's lighting environment - and the
+need to minimise any unnecessary modelling.
+
+I have some slightly messy solutions - usually involving bits of outline
+geometry like pieces of stage scenery near the viewer  - and these work well
+in terms of the final results. But just thought that an invisible glow would
+definitely be a better and more integrated way to go.
+
+As a general rule i think to make visualisations more defensible some
+explanatory imagery should be provided - in this case without the viewers
+context to explicitly indicate what is happening.
+
+cheers
+alex
+
+*******************************************************
+A. J. Summerfield                 alex@arch.usyd.edu.au
+Faculty of Architecture, University of Sydney
+*******************************************************
+Outside of a dog, a book is man's best friend.
+Inside a dog, it's too dark to read.       Groucho Marx
+*******************************************************
+
+
+
+From radiance-general@radiance-online.org  Fri Oct 25 17:58:05 2002
+From: radiance-general@radiance-online.org (Francesco Anselmo)
+Date: Fri, 25 Oct 2002 18:58:05 +0200
+Subject: [Radiance-general] rtrace: strange behaviour
+Message-ID: <200210251709.g9PH9ME25373@www.unipa.it>
+
+Hi!
+
+While waiting for an answer to my first message, here is a second question.
+
+I get a strange behaviour when I use rtrace to get irradiance/illuminance 
+values from sky patches described using the primitive "source" with modifier
+"glow". Here is an example:
+
+--------8<--------8<--------8<--------8<--------8<--------8<--------8<--------
+#file: patch1.rad = patch located at altitude gamma=30°; theta=90°-30°=60°
+void glow skyglow
+0
+0
+4 1 1 1 0
+
+skyglow source skypatch
+0
+0
+4 0.836516 0.224144 0.500000 11.500000
+--------8<--------8<--------8<--------8<--------8<--------8<--------8<--------
+#file: patch2.rad = patch located at altitude gamma=90°; theta=90°-90°=0°
+void glow skyglow
+0
+0
+4 1 1 1 0
+
+skyglow source zenith_skypatch
+0
+0
+4 0.000000 0.000000 1.000000 11.500000
+--------8<--------8<--------8<--------8<--------8<--------8<--------8<--------
+
+The solid angles subtended by the patches are equal to 0.0316 steradians in 
+both cases.
+
+Then I "oconv" the two files to get the octrees (respectively p1.oct and 
+p2.oct) and I want to get the direct daylight coefficients for the two 
+patches.
+The patch radiance is 1 and the scene is made only by each patch and a 
+measurement point located at 0 0 0, direction 0 0 1. So ...
+
+$ echo '0 0 0 0 0 1' | rtrace -h -w -I+ -ab 1 p1.oct | rcalc -e \       
+      '$1=$1/0.0316'
+0.373048734
+
+ok! in this simple case it should be equal to sin(30)=cos(60)=0.5
+so I increase the -ad and -as values:
+
+$ echo '0 0 0 0 0 1' | rtrace -ad 2048 -as 1024 -h -w -I+ -ab 1 \
+p1oct | rcalc -e '$1=$1/0.0316'
+0.497311709
+
+that is very close to the correct value.
+
+Let's make the same with the second patch (orthogonal to the measurement 
+point):
+
+$ echo '0 0 0 0 0 1' | rtrace -h -w -I+ -ab 1 p2.oct | rcalc -e \
+'$1=$1/0.0316'
+1.1191462
+
+uhm ok! let's increase the -ad and -as values:
+
+$echo '0 0 0 0 0 1' | rtrace -ad 2048 -as 1024 -h -w -I+ -ab 1 \
+p2.oct | rcalc -e '$1=$1/0.0316'
+0.413590506
+
+Hey! What happened?
+
+If I set -as 0 I still get a good value ... is it a trouble with my way of 
+using it or something wrong with the code?
+Should I use some other -a* switch?
+
+Thank you!
+
+-- 
+Francesco Anselmo
+anselmo@dream.unipa.it
+
+From radiance-general@radiance-online.org  Fri Oct 25 18:56:21 2002
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Fri, 25 Oct 2002 13:56:21 -0400 (EDT)
+Subject: [Radiance-general] rtrace: strange behaviour
+In-Reply-To: <200210251709.g9PH9ME25373@www.unipa.it>
+Message-ID: <Pine.BSF.4.44.0210251348310.74383-100000@emancholl.pair.com>
+
+Francesco Anselmo wrote:
+
+> [...]
+> $echo '0 0 0 0 0 1' | rtrace -ad 2048 -as 1024 -h -w -I+ -ab 1 \
+> p2.oct | rcalc -e '$1=$1/0.0316'
+> 0.413590506
+>
+> Hey! What happened?
+>
+> If I set -as 0 I still get a good value ... is it a trouble with my way of
+> using it or something wrong with the code?
+> Should I use some other -a* switch?
+
+
+Since this is the zenithal patch, that's the expected result.
+Well, maybe not expected without seeing the code, but the ambient
+ray distribution happens to have a small statistical irregularity
+near the normal vector of the measuring plane. Any other patch
+of your sky should give you a value very close to 0.5.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch.com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-general@radiance-online.org  Fri Oct 25 20:12:21 2002
+From: radiance-general@radiance-online.org (Rob Guglielmetti)
+Date: Fri, 25 Oct 2002 15:12:21 -0400
+Subject: [Radiance-general] points 'n vectors
+Message-ID: <3DB99795.3080603@rumblestrip.org>
+
+I have an autocad block consisting of a line and an attribute.
+
+I'm looking to write a program (using AutoLISP, since I'm using ACAD for 
+my Radiance models) that snags the start and endpoints of the line, 
+determines the vector, and saves the xyz of the start point, the vector, 
+and the block attribute to a text file.  This text file would be used as 
+a data file for rtrace, to keep this somewhat on topic.
+
+Wondering if anyone had any code snippets or references for such an 
+adventure?  Sorry for the off-topic question.  Email me privately if you 
+want to.
+
+----
+RPG
+
+
+From radiance-general@radiance-online.org  Fri Oct 25 20:24:27 2002
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Fri, 25 Oct 2002 15:24:27 -0400 (EDT)
+Subject: [Radiance-general] points 'n vectors
+In-Reply-To: <3DB99795.3080603@rumblestrip.org>
+Message-ID: <Pine.BSF.4.44.0210251514270.74383-100000@emancholl.pair.com>
+
+Rob Guglielmetti wrote:
+
+> I have an autocad block consisting of a line and an attribute.
+>
+> I'm looking to write a program (using AutoLISP, since I'm using ACAD for
+> my Radiance models) that snags the start and endpoints of the line,
+> determines the vector, and saves the xyz of the start point, the vector,
+> and the block attribute to a text file.  This text file would be used as
+> a data file for rtrace, to keep this somewhat on topic.
+>
+> Wondering if anyone had any code snippets or references for such an
+> adventure?  Sorry for the off-topic question.  Email me privately if you
+> want to.
+
+
+  http://www.schorsch.com/download/torad/
+
+The reason why you want this is that it already implements all the
+transformations from within your block coordinate system to world.
+Just plug in a different selection mechanism from the front, and
+a different file writing routine from behind, and you're done. ;)
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch.com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-general@radiance-online.org  Fri Oct 25 20:45:26 2002
+From: radiance-general@radiance-online.org (Rob Guglielmetti)
+Date: Fri, 25 Oct 2002 15:45:26 -0400
+Subject: [Radiance-general] points 'n vectors
+References: <Pine.BSF.4.44.0210251514270.74383-100000@emancholl.pair.com>
+Message-ID: <3DB99F56.2010005@rumblestrip.org>
+
+Georg Mischler wrote:
+
+>   http://www.schorsch.com/download/torad/
+> 
+> The reason why you want this is that it already implements all the
+> transformations from within your block coordinate system to world.
+> Just plug in a different selection mechanism from the front, and
+> a different file writing routine from behind, and you're done. ;)
+
+Thx, Schorsch.  I'll see what I can do with it.
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+
+From radiance-general@radiance-online.org  Fri Oct 25 23:54:10 2002
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Fri, 25 Oct 2002 15:54:10 -0700
+Subject: [Radiance-general] Re: intermediate sky
+In-Reply-To: <20021023100002.10246.49526.Mailman@darkside-animation.com>
+Message-ID: <ACBFC0D6-E86C-11D6-A20A-00306540F848@lmi.net>
+
+> From: Francesco Anselmo <anselmo@dream.unipa.it>
+>
+> My first question is about how Radiance models the intermediate sky.
+> I studied the code that generates the sky luminance distributions
+> (gensky.c + skygright.cal) and found that the overcast and clear skies
+> are modelled according to CIE 110-1994 Technical Report.
+> But the intermediate sky hasn't been coded according to the Nakamura, 
+> Oki et
+> al. sky function (that is the present standard, right?): is it related 
+> to
+> some previous standard?
+
+Hi Francesco,
+
+I meant to reply to this message earlier, but I forgot.  I also forgot 
+where the intermediate sky model I used in gensky came from, but it 
+wasn't my idea.  I do recall that there were a few models competing at 
+the time -- I wasn't aware that Nakamura, Oki et al was selected as the 
+standard.  Can you provide a reference?
+
+At any rate, most people who are interested in more sophisticated sky 
+simulations rely on the gendaylit program developed by Jean Brange 
+while he was at the ISE in Fribourg.  It may still be found on the 
+Radiance website at:
+
+	http://radsite.lbl.gov/radiance/pub/generators/
+
+I don't know if there is a newer version, but if there is, someone 
+should tell me so I can update the website copy.
+
+-Greg
+
+
+From radiance-general@radiance-online.org  Sat Oct 26 00:05:37 2002
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Fri, 25 Oct 2002 16:05:37 -0700
+Subject: [Radiance-general] Re: an invisible glow
+In-Reply-To: <20021024100002.12957.25656.Mailman@darkside-animation.com>
+Message-ID: <4620FF95-E86E-11D6-A20A-00306540F848@lmi.net>
+
+Hi Alex,
+
+I'm a bit afraid to even dip into this conversation, as there are so  
+many tricks and hacks you can play with Radiance before even delving  
+into the source code, but I thought I'd offer at least one modest  
+suggestion...
+
+If you just want to substitute a material in the case of eye rays, you  
+can use a mixfunc and pass it the world coordinates of the viewpoint  
+(-vp Vx Vy Vz) in the real arguments like so:
+
+void mixfunc view_switch_mat
+4 view_mat normal_mat
+	if(and(FTINY-abs(A1-Px+T*Dx),and(FTINY-abs(A2-Py+T*Dy),FTINY-abs(A3- 
+Pz+T*Dz))),1,0)
+	.
+3 {Vx} {Vy} {Vz}
+
+where of course {Vx} {Vy} and {Vz} are replaced by the appropriate real  
+values.  The above works by testing to see if the ray that hit the  
+surface originated at the viewpoint without being reflected or  
+refracted along the way.  The FTINY values (equal to 1e-7) are  
+necessary to avoid floating point roundoff errors in the equality  
+tests.  I haven't tested this, but I believe it would work, and you  
+wouldn't have to hack the source code.
+
+-Greg
+
+> From: alex summerfield <alex@arch.usyd.edu.au>
+
+> Is there a way to do this in general (with mixfunc?) so that a surface
+> appears from the viewpoint as one material, but as far as the lighting
+> calculation is concerned is another? Or more to the point how can i  
+> test if
+> the ray being traced is a view ray or not?
+>
+> To explain an example situation - suppose there is a complicated  
+> existing
+> building that is simplest to represent with an image mapped onto its  
+> facade
+> (and that only appears correct when viewed from the viewpoint), but in  
+> terms
+> of its lighting contribution on the site in general is more accurately
+> described in some other way.
+
+
+From radiance-general@radiance-online.org  Sat Oct 26 00:17:02 2002
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Fri, 25 Oct 2002 16:17:02 -0700
+Subject: [Radiance-general] Re: Radiance-general digest, Vol 1 #191 - 5 msgs
+In-Reply-To: <20021025100002.16528.12009.Mailman@darkside-animation.com>
+Message-ID: <DEB452AB-E86F-11D6-A20A-00306540F848@lmi.net>
+
+> From: Markku Norvasuo <m_norva2@welho.com>
+>
+> A propos, is there any way to convert calculated illums to other types 
+> of
+> sources (light, glow)? The original source could then be precomputed 
+> only
+> once. I have sometimes missed this option, for example when having 
+> dozens
+> of small identical window openings in a room.
+
+If you use mkillum to generate the distribution of a section of a 
+window and wish to apply the computed material to other identically 
+situated panes, simply reuse the material name it produces, which you 
+may set with the m=string option.  It was designed to work this way.
+
+-Greg
+
+
+From radiance-general@radiance-online.org  Sat Oct 26 19:32:48 2002
+From: radiance-general@radiance-online.org (Bernhard Spanlang)
+Date: Sat, 26 Oct 2002 19:32:48 +0100
+Subject: [Radiance-general] mixpict applied to files from tmesh2rad
+Message-ID: <002b01c27d1e$16f326c0$9c091080@CSVEIVE2>
+
+Hi,
+
+I m using tmesh2rad to generate smooth surfaces for rendering in radiance.
+tmesh2rad allows to apply a colorpict pattern to the surface.
+Now I want to have a transparency value (alpha channel) for each colorpict
+RGB value.
+In the workshop it was mentioned a few times that mixpict could be used for
+this and
+I know Carsten has written a patch that allows to load colorpictures with
+alpha channel.
+
+If I create a radiance file with tmesh2rad can I add transparency from an
+additional grayscale
+image (alpha values) using mixpict ?
+
+Thanks
+Bernhard
+
+
+From radiance-general@radiance-online.org  Sun Oct 27 12:25:11 2002
+From: radiance-general@radiance-online.org (alex summerfield)
+Date: Sun, 27 Oct 2002 12:25:11 +0000
+Subject: [Radiance-general] Re: an invisible glow
+In-Reply-To: <4620FF95-E86E-11D6-A20A-00306540F848@lmi.net>
+Message-ID: <B9E18BA6.13A5%alex@arch.usyd.edu.au>
+
+Many thanks Greg - very nice trick!
+
+I had completely forgotten that distance travelled T is available. I guess
+the moral of the story is always to check the beginning of rayinit.cal!
+
+Looks like just what we needed.
+
+cheers
+alex
+
+ 
+> Hi Alex,
+> 
+> I'm a bit afraid to even dip into this conversation, as there are so
+> many tricks and hacks you can play with Radiance before even delving
+> into the source code, but I thought I'd offer at least one modest
+> suggestion...
+> 
+> If you just want to substitute a material in the case of eye rays, you
+> can use a mixfunc and pass it the world coordinates of the viewpoint
+> (-vp Vx Vy Vz) in the real arguments like so:
+> 
+> void mixfunc view_switch_mat
+> 4 view_mat normal_mat
+> if(and(FTINY-abs(A1-Px+T*Dx),and(FTINY-abs(A2-Py+T*Dy),FTINY-abs(A3-
+> Pz+T*Dz))),1,0)
+> .
+> 3 {Vx} {Vy} {Vz}
+> 
+> where of course {Vx} {Vy} and {Vz} are replaced by the appropriate real
+> values.  The above works by testing to see if the ray that hit the
+> surface originated at the viewpoint without being reflected or
+> refracted along the way.  The FTINY values (equal to 1e-7) are
+> necessary to avoid floating point roundoff errors in the equality
+> tests.  I haven't tested this, but I believe it would work, and you
+> wouldn't have to hack the source code.
+> 
+> -Greg
+> 
+>> From: alex summerfield <alex@arch.usyd.edu.au>
+> 
+>> Is there a way to do this in general (with mixfunc?) so that a surface
+>> appears from the viewpoint as one material, but as far as the lighting
+>> calculation is concerned is another? Or more to the point how can i
+>> test if
+>> the ray being traced is a view ray or not?
+>> 
+>> To explain an example situation - suppose there is a complicated
+>> existing
+>> building that is simplest to represent with an image mapped onto its
+>> facade
+>> (and that only appears correct when viewed from the viewpoint), but in
+>> terms
+>> of its lighting contribution on the site in general is more accurately
+>> described in some other way.
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+
+*******************************************************
+A. J. Summerfield                 alex@arch.usyd.edu.au
+Faculty of Architecture, University of Sydney
+*******************************************************
+Outside of a dog, a book is man's best friend.
+Inside a dog, it's too dark to read.       Groucho Marx
+*******************************************************
+
+
+
+From radiance-general@radiance-online.org  Sun Oct 27 16:55:27 2002
+From: radiance-general@radiance-online.org (Peter Apian-Bennewitz)
+Date: Sun, 27 Oct 2002 17:55:27 +0100
+Subject: [Radiance-general] Re: intermediate sky
+References: <ACBFC0D6-E86C-11D6-A20A-00306540F848@lmi.net>
+Message-ID: <3DBC1A7F.B78A380B@pab-opto.de>
+
+Hi all,
+two minor corrections for the records:
+ 
+> At any rate, most people who are interested in more sophisticated sky
+> simulations rely on the gendaylit program developed by Jean Brange
+Jean-Jacques Delaunay , last heard of to be at jean@aecl.ntt.co.jp in
+spring 2000.
+
+> while he was at the ISE in Fribourg.  It may still be found on the
+Freiburg, - sorry for a sudden urge for patriosm with the two
+Fr(e)ib(o)urgs.
+> Radiance website at:
+> 
+>         http://radsite.lbl.gov/radiance/pub/generators/
+> 
+> I don't know if there is a newer version, but if there is, someone
+> should tell me so I can update the website copy.
+Not that I'm aware of a more recent version distributed from ISE.
+
+-Peter
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+From radiance-general@radiance-online.org  Mon Oct 28 14:37:21 2002
+From: radiance-general@radiance-online.org (Francesco Anselmo)
+Date: Mon, 28 Oct 2002 15:37:21 +0100
+Subject: [Radiance-general] rtrace: strange behaviour
+In-Reply-To: <Pine.BSF.4.44.0210251348310.74383-100000@emancholl.pair.com>
+References: <Pine.BSF.4.44.0210251348310.74383-100000@emancholl.pair.com>
+Message-ID: <200210281448.g9SEmhE27293@www.unipa.it>
+
+Hi!
+
+> Since this is the zenithal patch, that's the expected result.
+> Well, maybe not expected without seeing the code, but the ambient
+> ray distribution happens to have a small statistical irregularity
+> near the normal vector of the measuring plane. 
+
+Oh, thanks for showing me the truth! 
+So it is not possible to get the right result there ...
+
+Now I understand that I should begin to study the code 
+and to read the second part
+of the book (Rendering with Radiance) carefully ...
+
+Thank you!
+
+-- 
+Francesco Anselmo
+anselmo@dream.unipa.it
+
+From radiance-general@radiance-online.org  Mon Oct 28 14:57:17 2002
+From: radiance-general@radiance-online.org (Francesco Anselmo)
+Date: Mon, 28 Oct 2002 15:57:17 +0100
+Subject: [Radiance-general] Re: intermediate sky
+In-Reply-To: <ACBFC0D6-E86C-11D6-A20A-00306540F848@lmi.net>
+References: <ACBFC0D6-E86C-11D6-A20A-00306540F848@lmi.net>
+Message-ID: <200210281508.g9SF8dE29251@www.unipa.it>
+
+Hi!
+
+> I meant to reply to this message earlier, but I forgot.  
+
+No problem!
+
+> I also forgot
+> where the intermediate sky model I used in gensky came from, but it
+> wasn't my idea.  
+
+Ok, I'll try to find it by myself somehow ...
+
+> I do recall that there were a few models competing at
+> the time -- I wasn't aware that Nakamura, Oki et al was selected as the
+> standard.  Can you provide a reference?
+
+Of course! I can scan a copy of the CIE technical report and send it to 
+you ... just let me know ...
+
+> At any rate, most people who are interested in more sophisticated sky
+> simulations rely on the gendaylit program 
+
+I've used it sometimes, I know it uses the All-weather sky model, but I
+was interested in understanding how gensky works, that's all ... 
+
+Thank you!
+
+-- 
+Francesco Anselmo
+anselmo@dream.unipa.it
+
+From radiance-general@radiance-online.org  Mon Oct 28 15:38:34 2002
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Mon, 28 Oct 2002 07:38:34 -0800
+Subject: [Radiance-general] Re: intermediate sky
+In-Reply-To: <20021028110002.26098.81298.Mailman@darkside-animation.com>
+Message-ID: <51D6606C-EA8B-11D6-B6A6-00306540F848@lmi.net>
+
+Sorry for the many errors in my e-mail on gensky.  I was trying to beat 
+my record for the most mistakes in the fewest words, which was already 
+quite good.  I should have known that gendaylit was by Msr. Delaunay, 
+but at some point years ago, I got him confused with Msr. Brange.  The 
+confusion between Fribourg and Freiburg was more recent, and that was 
+all in my fingers -- I just got too used to typing "Fribourg" for the 
+workshop.  I know the ISE is in Germany, not Switzerland.  (It is in 
+Germany, right?)  Anyway, the german-speaking Swiss spell their 
+Freiburg the same way on the other side of the river, so it's even more 
+confusing....
+
+That said, I would like a copy of the CIE intermediate sky standard.  
+If Francesco could e-mail me an electronic or scanned copy, that would 
+be great.  Otherwise, my regular mail address is:
+
+1200 Dartmouth St., #C
+Albany, CA  94706
+U.S.A.
+
+(Not to be confused with Albany, New York.)
+-Greg
+
+
+From radiance-general@radiance-online.org  Mon Oct 28 15:43:59 2002
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Mon, 28 Oct 2002 07:43:59 -0800
+Subject: [Radiance-general] Re: rtrace: strange behaviour
+Message-ID: <131A411A-EA8C-11D6-B6A6-00306540F848@lmi.net>
+
+> Francesco Anselmo responds to Schorsch:
+>
+> > Since this is the zenithal patch, that's the expected result.
+> > Well, maybe not expected without seeing the code, but the ambient
+> > ray distribution happens to have a small statistical irregularity
+> > near the normal vector of the measuring plane.
+>
+> Oh, thanks for showing me the truth!
+> So it is not possible to get the right result there ...
+
+Actually, it should get the right result, but I wouldn't be surprised 
+if the convergence was slow...  The sampling irregularity is due to the 
+use of polar coordinates, which causes a convergence of sample areas at 
+the normal (pole).  I should have adopted a different sampling strategy 
+to maintain area aspect ratios, but this would have made the gradient 
+calculation impossible.
+
+More excuses as I am able to think them up.
+-Greg
+
+
+From radiance-general@radiance-online.org  Mon Oct 28 15:53:10 2002
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Mon, 28 Oct 2002 07:53:10 -0800
+Subject: [Radiance-general] Re: mixpict applied to files from tmesh2rad
+In-Reply-To: <20021027110002.23404.91016.Mailman@darkside-animation.com>
+Message-ID: <5B8BF2EA-EA8D-11D6-B6A6-00306540F848@lmi.net>
+
+Bernhard Spanlang wrote:
+> I'm using tmesh2rad to generate smooth surfaces for rendering in
+> radiance.  tmesh2rad allows to apply a colorpict pattern to the
+> surface.  Now I want to have a transparency value (alpha channel)
+> for each colorpict RGB value.  In the workshop it was mentioned a
+> few times that mixpict could be used for this and I know Carsten
+> has written a patch that allows to load colorpictures with alpha
+> channel.
+>
+> If I create a radiance file with tmesh2rad can I add transparency
+> from an additional grayscale image (alpha values) using mixpict ?
+
+Just put the transparency layer into a grayscale TIFF and covert to 
+Radiance with ra_tiff -r, then use this picture in a mixpict.  If you 
+are mixing the surface material with nothing (as in a ghostly object), 
+you would mix the material with the "void" placeholder.  If you want to 
+mix a pattern with nothing, then do the same but with the pattern 
+rather than the material.
+
+void mixpict alpha_mix
+7 my_material void green alpha.pic picture.cal pic_u pic_v
+0
+0
+
+I use the "green" function above rather than "grey" because it arrives 
+at the same value with less computation for a grayscale picture.  
+Obviously, you should replace the "picture.cal" and "pic_u" and "pic_v" 
+file and variables with whatever matches your original pattern in order 
+to get them to match.
+
+Corrections to follow, no doubt.
+-Greg
+
+
+From radiance-general@radiance-online.org  Wed Oct 30 09:32:38 2002
+From: radiance-general@radiance-online.org (radiance-general@radiance-online.org)
+Date: Wed, 30 Oct 2002 17:32:38 +0800
+Subject: [Radiance-general] where to get GretagMacbeth ColorCheck/ColorChecker DC/ with Readings?
+Message-ID: <DAV50Gjj2CTiLeNlXyr0000b045@hotmail.com>
+
+This is a multi-part message in MIME format.
+
+------=_NextPart_000_0074_01C2803A.57C3BF60
+Content-Type: text/plain;
+	charset="big5"
+Content-Transfer-Encoding: quoted-printable
+
+Please kindly reply!
+
+------=_NextPart_000_0074_01C2803A.57C3BF60
+Content-Type: text/html;
+	charset="big5"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv=3DContent-Type content=3D"text/html; charset=3Dbig5">
+<META content=3D"MSHTML 5.50.4134.100" name=3DGENERATOR>
+<STYLE></STYLE>
+</HEAD>
+<BODY bgColor=3D#ffffff>
+<DIV><FONT face=3DMingLiu size=3D2>Please kindly =
+reply!</FONT></DIV></BODY></HTML>
+
+------=_NextPart_000_0074_01C2803A.57C3BF60--
+
+From radiance-general@radiance-online.org  Wed Oct 30 16:44:14 2002
+From: radiance-general@radiance-online.org (Roland Fleming)
+Date: Wed, 30 Oct 2002 11:44:14 -0500
+Subject: [Radiance-general] Rendering translucent materials
+Message-ID: <v04020a07b9e5b1ee5f75@[18.229.0.201]>
+
+Hi ---
+
+I am interested in rendering translucent materials such as wax, milk and
+fruit, in a physically realistic manner.  There is currently no way of
+representing such materials in Radiance.  However, as I'm sure many of you
+are aware, Henrik Wann Jensen has developed a technique, called
+photon-mapping, which makes it possible to represent sub-surface scatter
+(and other effects such as caustics and "bleed") efficiently.  For those of
+you who haven't seen the stunning results, I recommend a quick look at
+http://www.cgarchitect.com/upclose/article1_HWJ.asp.
+
+Translucency is a really important property of many real-world materials
+and adds considerable realism to scenes.  Here are my questions: Is there
+any way that we can implement photon-mapping within Radiance?  Is there any
+alternative method that can be implemented in Radiance which permits
+parametric control over sub-surface scatter, and produces physically
+realistic results?  Is anyone interested in collaborating in implementing
+these techniques?  Jensen has a book on the topic
+(http://www.amazon.com/exec/obidos/ASIN/1568811470/cgarchitect-20/002-4144829-47
+30441) and has given a number of tutorials at SIGGRAPH on the technique.
+But I'm not a graphics specialist, so I can't implement this on my own.
+Any ideas?
+
+Cheers,
+Roland
+

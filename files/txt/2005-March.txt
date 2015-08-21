@@ -1,0 +1,5705 @@
+From gvn at retena.com  Tue Mar  1 11:20:25 2005
+From: gvn at retena.com (=?iso-8859-1?Q?Ignacio_Mun=E1rriz?=)
+Date: Tue Mar  1 11:30:05 2005
+Subject: [Radiance-general] high reflectance & roughness metals
+References: <000d01c51b15$af8ddbe0$53000080@pnac>
+	<9c056e40e4c2d6d7c0d069012e4ba1c9@gmail.com>
+Message-ID: <000b01c51e48$4895e9b0$53000080@pnac>
+
+I was disturbed with the horizontal lines that was present in the metal
+http://www.alfanature.com/avis/exteriore3b.jpg
+
+son i took a look at the code normal.c, first discovering that the random
+functions
+lrand48(), drand48() in random.h
+did not work in my computer (return always 0), so i changed them for:
+#define random() rand()
+#define srandom(s) srand((unsigned)(s))
+#define frandom() (random()*(1./2147483648.))
+then random works but continued with the artifact, then i changed normal.c
+in this way:
+
+instead of multisamp(rv, 2, d);
+rv[0]=frandom();
+rv[1]=frandom();
+
+i think that multisamp creates a pattern in the random because the randoms
+numbers i got were rare( some too exacts .50000 0.00000 .7500000)
+
+and the result is
+http://www.alfanature.com/avis/exter.jpg
+
+
+
+
+
+
+----- Original Message -----
+From: "Gregory J. Ward" <gregoryjward@gmail.com>
+To: "Radiance general discussion" <radiance-general@radiance-online.org>
+Sent: Friday, February 25, 2005 6:24 PM
+Subject: Re: [Radiance-general] high reflectance & roughness metals
+
+
+Hi Ignacio,
+
+If you prefer standard Monte Carlo sampling over the low-discrepency
+method, then you should recompile with -DMC as a flag in your rmake
+script.  The only way to reduce the noise is to increase your sampling
+density (initial rendering resolution).
+
+-Greg
+
+> From: Ignacio Mun?rriz <gvn@retena.com>
+> Date: February 25, 2005 12:40:40 AM PST
+>
+> hi, althought i guess it has been discussed already at the forum, i've
+> having some problems with high reflectance & roughness metals to
+> simulate a
+> diffuse   metal (alluminium) garage door
+>
+> ...
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From mike at cityscape3d.com  Tue Mar  1 13:06:55 2005
+From: mike at cityscape3d.com (Michael Kruger)
+Date: Tue Mar  1 13:08:11 2005
+Subject: [Radiance-general] Re: Hardware accelerated radiance
+In-Reply-To: <200503011059.j21AxMVL073336@server.cityscape3d.com>
+References: <200503011059.j21AxMVL073336@server.cityscape3d.com>
+Message-ID: <42245ADF.8050600@cityscape3d.com>
+
+
+> Unless you're really, really careful, the communication with the FPGA 
+> will kill any savings you make in the ray tracing times on a hardware 
+> implementation.  This has been found time and again for the past 
+> decades by the numerous people who have written or attempted 
+> ray-tracing on hardware.  The literature is extensive in this area, and 
+> I suggest you start with one of the textbooks on parallel rendering 
+> algorithms, such as:
+>
+> Practical Parallel Rendering
+> by  Alan Chalmers (Editor), Timothy Davis (Editor), Erik Reinhard
+>
+> http://www.amazon.com/exec/obidos/tg/detail/-/1568811799/
+> qid=1109613036/sr=1-1/ref=sr_1_1/104-1366464-7333544?v=glance&s=books
+>
+Thanks for the advice. :)  I'm pretty sure that the memory capacities of 
+FPGAs nowadays would allow me to store everything I need on the device, 
+which should ensure communications overhead is relatively marginal. Most 
+of the work I'm interested in doing with radiance is high-resolution and 
+high-accuracy (10k renders, with high -ab & -ad)  so I'm hoping that the 
+tasks would be computensive enough to give me sufficient performance 
+gains as to make it worthwhile. Anyhoo, I'm off to the bookstore...
+
+> Regarding oconv, you might have better luck converting some larger 
+> models into a Radiance mesh, which uses less memory to represent 
+> triangular tesselations.  Most CAD software these days spits out 
+> hundreds of thousands of polygons, even when they aren't needed, such 
+> as for large, flat surfaces.  Using Alias/Wavefront .OBJ as your export 
+> format, obj2mesh can convert these models much more efficiently into 
+> Radiance.
+>
+I'll give it a go. Just for reference, the models I'm using have less 
+than 10k polygons so I'm not sure that that is the problem. (I've had 
+problems in the past with 1k models.)
+
+mike
+
+From gvn at retena.com  Tue Mar  1 17:19:21 2005
+From: gvn at retena.com (=?iso-8859-1?Q?Ignacio_Mun=E1rriz?=)
+Date: Tue Mar  1 17:28:44 2005
+Subject: [Radiance-general] high reflectance & roughness metals
+References: <000d01c51b15$af8ddbe0$53000080@pnac><9c056e40e4c2d6d7c0d069012e4ba1c9@gmail.com>
+	<000b01c51e48$4895e9b0$53000080@pnac>
+Message-ID: <000901c51e7a$6e2a8190$53000080@pnac>
+
+and a more smoother result is achieved using urand in rv[0]
+rv[0]=urand(ilhash(dimlist,ndims)+samplendx);
+
+rv[1]=frandom();
+
+http://www.alfanature.com/avis/exter3.jpg
+
+----- Original Message -----
+From: "Ignacio Mun?rriz" <gvn@retena.com>
+To: "Radiance general discussion" <radiance-general@radiance-online.org>
+Sent: Tuesday, March 01, 2005 11:20 AM
+Subject: Re: [Radiance-general] high reflectance & roughness metals
+
+
+> I was disturbed with the horizontal lines that was present in the metal
+> http://www.alfanature.com/avis/exteriore3b.jpg
+>
+> son i took a look at the code normal.c, first discovering that the random
+> functions
+> lrand48(), drand48() in random.h
+> did not work in my computer (return always 0), so i changed them for:
+> #define random() rand()
+> #define srandom(s) srand((unsigned)(s))
+> #define frandom() (random()*(1./2147483648.))
+> then random works but continued with the artifact, then i changed normal.c
+> in this way:
+>
+> instead of multisamp(rv, 2, d);
+> rv[0]=frandom();
+> rv[1]=frandom();
+>
+> i think that multisamp creates a pattern in the random because the randoms
+> numbers i got were rare( some too exacts .50000 0.00000 .7500000)
+>
+> and the result is
+> http://www.alfanature.com/avis/exter.jpg
+>
+>
+>
+>
+>
+>
+> ----- Original Message -----
+> From: "Gregory J. Ward" <gregoryjward@gmail.com>
+> To: "Radiance general discussion" <radiance-general@radiance-online.org>
+> Sent: Friday, February 25, 2005 6:24 PM
+> Subject: Re: [Radiance-general] high reflectance & roughness metals
+>
+>
+> Hi Ignacio,
+>
+> If you prefer standard Monte Carlo sampling over the low-discrepency
+> method, then you should recompile with -DMC as a flag in your rmake
+> script.  The only way to reduce the noise is to increase your sampling
+> density (initial rendering resolution).
+>
+> -Greg
+>
+> > From: Ignacio Mun?rriz <gvn@retena.com>
+> > Date: February 25, 2005 12:40:40 AM PST
+> >
+> > hi, althought i guess it has been discussed already at the forum, i've
+> > having some problems with high reflectance & roughness metals to
+> > simulate a
+> > diffuse   metal (alluminium) garage door
+> >
+> > ...
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+
+From gregoryjward at gmail.com  Tue Mar  1 17:53:17 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue Mar  1 17:55:05 2005
+Subject: [Radiance-general] Re: Hardware accelerated radiance
+In-Reply-To: <42245ADF.8050600@cityscape3d.com>
+References: <200503011059.j21AxMVL073336@server.cityscape3d.com>
+	<42245ADF.8050600@cityscape3d.com>
+Message-ID: <d0830dbdc1d9722de7a698d3028f1e58@gmail.com>
+
+> From: Michael Kruger <mike@cityscape3d.com>
+> Date: March 1, 2005 4:06:55 AM PST
+>
+>> Regarding oconv, you might have better luck converting some larger 
+>> models into a Radiance mesh, which uses less memory to represent 
+>> triangular tesselations.  Most CAD software these days spits out 
+>> hundreds of thousands of polygons, even when they aren't needed, such 
+>> as for large, flat surfaces.  Using Alias/Wavefront .OBJ as your 
+>> export format, obj2mesh can convert these models much more 
+>> efficiently into Radiance.
+>>
+> I'll give it a go. Just for reference, the models I'm using have less 
+> than 10k polygons so I'm not sure that that is the problem. (I've had 
+> problems in the past with 1k models.)
+
+The only times I've heard of oconv getting stuck and using up memory is 
+when there are many overlapping instances, or if many polygons come 
+together at a single vertex, when it tries to resolve this down to the 
+finest level.  Otherwise, it should work -- especially with such a 
+small model.  If you send me one of these models, I'd love to have a 
+look to see what's going on.
+
+-Greg
+
+
+From tarik.rahman at ed.ac.uk  Wed Mar  2 11:13:13 2005
+From: tarik.rahman at ed.ac.uk (Tarik Rahman)
+Date: Wed Mar  2 11:13:34 2005
+Subject: [Radiance-general] Objects with plastic material in IBL scene
+In-Reply-To: <1109614388.42235f3430feb@sms.ed.ac.uk>
+References: <1109614388.42235f3430feb@sms.ed.ac.uk>
+Message-ID: <1109758393.422591b98151f@sms.ed.ac.uk>
+
+Hi
+Does anyone know why inserting a diffuse object in an IBL scene, such as the
+red_plastic sphere in the Debevec tutorial does not reflect light properly,
+i.e. renders as black? It works sometimes and other times it doesn't, I don't
+understand why. The metal spheres such as the gold and steel ones and the
+crystal  sphere all render perfectly but sometimes (not all the time) any
+object with plastic material doesn't render properly.
+
+Tarik
+--
+Tarik Rahman
+PhD student, Institute of Perception, Action and Behaviour
+School of Informatics
+University of Edinburgh
+
+From despina_m81 at hotmail.com  Wed Mar  2 13:32:37 2005
+From: despina_m81 at hotmail.com (Despina Michael)
+Date: Wed Mar  2 13:33:49 2005
+Subject: [Radiance-general] illuminate a 3ds with radiance
+Message-ID: <BAY22-DAV102701D98BC6B34F4C5FFD905A0@phx.gbl>
+
+Hello!
+
+I need to illuminate a scene with radiance which does not only  contain primitives (e.g. sphere) but some more complex models such  a 3ds model.
+That is, I need to do what is described in Debevec's IBL tutorial but instead to have spheres in the scene, i wolud like to have a 3ds model
+
+As I understood so far from what I have read from web, is that I need to convert .3ds to .obj and then use obj2mesh radiance programm
+
+Then I should use that mesh (lets sat output.rtm) in the scene (file: scene.rad) with this:
+
+mod mesh id 
+1+ output.rtm [xform args] 
+0 
+0 
+
+I would like to know if this is the correct process or there is another way to illuminate a 3ds with radiance? 
+What about [xform args]. What I should write over there? Is anywhere that I can find a simple and complete example for illuminating scenes constist from more complex models?
+Should I let 1+ and two zeros just as there are?
+
+
+..Beside the help I need for the above, I would like to read "Real Pixels" Graphics Gem II. I' ve ty to find it in the web but waht I found are only many references about this paper. Can I found it anywhere online? 
+
+Thank you  a lot,
+Regards,
+Despina
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20050302/e1a440b8/attachment.htm
+From Giulio.Antonutto at arup.com  Wed Mar  2 14:22:56 2005
+From: Giulio.Antonutto at arup.com (Giulio Antonutto)
+Date: Wed Mar  2 14:23:17 2005
+Subject: [Radiance-general] illuminate a 3ds with radiance
+Message-ID: <3D77044FDAF3694E995689FC920C53E650EE62@l-gnts05>
+
+Despina,
+
+ 
+
+You can convert almost any  3ds model directly into radiance:
+
+3ds2mgf name.3ds
+
+mgf2rad name.mgf > name.rad
+
+ 
+
+now simply try:
+
+objview name.rad
+
+the rvu window should open showing the model illuminated by 3 light sources,
+
+it's a quick and good check to start with.
+
+Of everything is ok, you can now create in a separate file the sky,
+
+When you have done you combine the two with:
+
+ 
+
+oconv sky.rad name.rad > name.oct
+
+ 
+
+and preview them with 
+
+ 
+
+rvu name.oct
+
+ 
+
+now you just need to set up the view,
+
+type v in the rvu window, select point and viewing direction...
+
+good luck!
+
+ 
+
+ 
+
+ 
+
+giulio
+
+ 
+
+ 
+
+PS
+
+this is quick but do not incorporates uv coordinates, only colours are
+translated.
+
+ 
+
+If you have textures and uv you may need to use obj2mesh
+
+ 
+
+Once converted the model the syntax is:
+
+ 
+
+void mesh example
+
+7 modelname.mesh -rx 90 -t 10 10 10
+
+0
+
+0
+
+ 
+
+Where:
+
+7 is the number of inputs on the same line,
+
+-rx 90 rotates the model by 90 degrees on the y axys
+
+-t 10 10 10 translate the model from 0 0 0 to the point 10 10 10
+
+ 
+
+ 
+
+When creating the mesh use:
+
+obj2mesh -a materialfile objfile > meshfile
+
+About that there is a quick tutorial I wrote at: 
+
+http://www.bozzograo.net/radiance/modules.php?op=modload
+<http://www.bozzograo.net/radiance/modules.php?op=modload&name=Downloads&fil
+e=index&req=viewdownload&cid=5>
+&name=Downloads&file=index&req=viewdownload&cid=5
+
+ 
+
+ 
+
+ 
+
+   _____  
+
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Despina
+Michael
+Sent: 02 March 2005 12:33
+To: Radiance general discussion
+Subject: [Radiance-general] illuminate a 3ds with radiance
+
+ 
+
+Hello!
+
+ 
+
+I need to illuminate a scene with radiance which does not only  contain
+primitives (e.g. sphere) but some more complex models such  a 3ds model.
+
+That is, I need to do what is described in Debevec's IBL tutorial but
+instead to have spheres in the scene, i wolud like to have a 3ds model
+
+ 
+
+As I understood so far from what I have read from web, is that I need to
+convert .3ds to .obj and then use obj2mesh radiance programm
+
+ 
+
+Then I should use that mesh (lets sat output.rtm) in the scene (file:
+scene.rad) with this:
+
+ 
+
+mod mesh id 
+1+ output.rtm [xform args] 
+0 
+0 
+
+ 
+
+I would like to know if this is the correct process or there is another way
+to illuminate a 3ds with radiance? 
+
+What about [xform args]. What I should write over there? Is anywhere that I
+can find a simple and complete example for illuminating scenes constist from
+more complex models?
+
+Should I let 1+ and two zeros just as there are?
+
+ 
+
+ 
+
+...Beside the help I need for the above, I would like to read "Real Pixels"
+Graphics Gem II. I' ve ty to find it in the web but waht I found are only
+many references about this paper. Can I found it anywhere online? 
+
+ 
+
+Thank you  a lot,
+
+Regards,
+
+Despina
+
+
+___________________________________________________________________
+Electronic mail messages entering and leaving Arup business
+systems are scanned for acceptability of content and viruses.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20050302/57471f67/attachment.html
+From kthibault at biomechanicsinc.com  Wed Mar  2 15:08:47 2005
+From: kthibault at biomechanicsinc.com (Kirk Thibault)
+Date: Wed Mar  2 15:09:02 2005
+Subject: [Radiance-general] Objects with plastic material in IBL scene
+In-Reply-To: <1109758393.422591b98151f@sms.ed.ac.uk>
+References: <1109614388.42235f3430feb@sms.ed.ac.uk>
+	<1109758393.422591b98151f@sms.ed.ac.uk>
+Message-ID: <ff2dab5146e3527f8b99ba17fc3dc53a@biomechanicsinc.com>
+
+I had this occur as well when previewing in rview (rvu) but everything 
+rendered fine when a final render was made.
+To answer your question, I don;t know why.  I run RADIANCE on a Mac, 
+OSX 10.3.X.
+
+kirk
+
+On Mar 2, 2005, at 5:13 AM, Tarik Rahman wrote:
+
+> Hi
+> Does anyone know why inserting a diffuse object in an IBL scene, such 
+> as the
+> red_plastic sphere in the Debevec tutorial does not reflect light 
+> properly,
+> i.e. renders as black? It works sometimes and other times it doesn't, 
+> I don't
+> understand why. The metal spheres such as the gold and steel ones and 
+> the
+> crystal  sphere all render perfectly but sometimes (not all the time) 
+> any
+> object with plastic material doesn't render properly.
+>
+> Tarik
+> --
+> Tarik Rahman
+> PhD student, Institute of Perception, Action and Behaviour
+> School of Informatics
+> University of Edinburgh
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From kthibault at biomechanicsinc.com  Wed Mar  2 15:12:40 2005
+From: kthibault at biomechanicsinc.com (Kirk Thibault)
+Date: Wed Mar  2 15:12:54 2005
+Subject: [Radiance-general] illuminate a 3ds with radiance
+In-Reply-To: <3D77044FDAF3694E995689FC920C53E650EE62@l-gnts05>
+References: <3D77044FDAF3694E995689FC920C53E650EE62@l-gnts05>
+Message-ID: <b0d0fcf3ee3f3feb12bec5becb33d8dd@biomechanicsinc.com>
+
+On a separate but related note, is there some flag when using obj2rad  
+or similar transformation which will instruct the renderer to smooth  
+the face normals for converted mesh objects?
+
+I recall seeing a "-s" option somewhere.  The basic idea is, I have  
+this externally modeled object, i convert it to obj, bring it into  
+RADIANCE using obj2rad and then xform it into place.  During the  
+conversion, the object is made into a mesh and I would like the mesh to  
+render smooth.
+
+Thanks,
+
+kirk
+
+On Mar 2, 2005, at 8:22 AM, Giulio Antonutto wrote:
+
+> Despina,
+>
+> ?
+>
+> You can convert almost any ?3ds model directly into radiance:
+>
+> 3ds2mgf name.3ds
+>
+> mgf2rad name.mgf > name.rad
+>
+> ?
+>
+> now simply try:
+>
+> objview name.rad
+>
+> the rvu window should open showing the model illuminated by 3 light  
+> sources,
+>
+> it's a quick and good check to start with.
+>
+> Of everything is ok, you can now create in a separate file the sky,
+>
+> When you have done you combine the two with:
+>
+> ?
+>
+> oconv sky.rad name.rad > name.oct
+>
+> ?
+>
+> and preview them with
+>
+>  ?
+>
+> rvu name.oct
+>
+> ?
+>
+> now you just need to set up the view,
+>
+> type v in the rvu window, select point and viewing direction...
+>
+> good luck!
+>
+> ?
+>
+> ?
+>
+> ?
+>
+> giulio
+>
+> ?
+>
+> ?
+>
+> PS
+>
+> this is quick but do not incorporates uv coordinates, only colours are  
+> translated.
+>
+> ?
+>
+> If you have textures and uv you may need to use obj2mesh
+>
+> ?
+>
+> Once converted the model the syntax is:
+>
+> ?
+>
+> void mesh example
+>
+> 7 modelname.mesh -rx 90 -t 10 10 10
+>
+> 0
+>
+> 0
+>
+> ?
+>
+> Where:
+>
+> 7 is the number of inputs on the same line,
+>
+> -rx 90 rotates the model by 90 degrees on the y axys
+>
+> -t 10 10 10 translate the model from 0 0 0 to the point 10 10 10
+>
+> ?
+>
+> ?
+>
+> When creating the mesh use:
+>
+> obj2mesh -a materialfile objfile > meshfile
+>
+> About that there is a quick tutorial I wrote at:
+>
+>   
+> http://www.bozzograo.net/radiance/modules.php? 
+> op=modload&name=Downloads&file=index&req=viewdownload&cid=5
+>
+> ?
+>
+> ?
+>
+> ?
+>
+>
+> From: radiance-general-bounces@radiance-online.org  
+> [mailto:radiance-general-bounces@radiance-online.org] On Behalf Of  
+> Despina Michael
+> Sent: 02 March 2005 12:33
+> To: Radiance general discussion
+> Subject: [Radiance-general] illuminate a 3ds with radiance
+>
+> ?
+>
+> Hello!
+>
+> ?
+>
+> I need to illuminate a scene with radiance which does not only?  
+> contain primitives (e.g. sphere) but some more complex models such ?a  
+> 3ds model.
+>
+> That is, I need to do what is described in Debevec's IBL tutorial but  
+> instead to have spheres in the scene, i wolud like to have a 3ds model
+>
+> ?
+>
+> As I understood so far from what I have read from web, is that I need  
+> to convert .3ds to .obj and then use obj2mesh radiance programm
+>
+> ?
+>
+> Then I should use that mesh (lets sat output.rtm) in the scene (file:  
+> scene.rad) with this:
+>
+> ?
+>
+> mod mesh id
+>  1+ output.rtm [xform args]
+>  0
+>  0
+>
+>  ?
+>
+> I would like to know if this is the correct process or there is  
+> another way to illuminate a 3ds with radiance?
+>
+>  What about [xform args]. What I should write over there? Is anywhere  
+> that I can find a simple and complete example for illuminating scenes  
+> constist from more complex models?
+>
+> Should I let 1+ and two zeros just as there are?
+>
+> ?
+>
+> ?
+>
+> ...Beside the help I need for the above, I would like to read "Real  
+> Pixels" Graphics Gem II. I' ve ty to find it in the web but waht I  
+> found are only many references about this paper. Can I found it  
+> anywhere online?
+>
+>  ?
+>
+> Thank you? a lot,
+>
+> Regards,
+>
+> Despina
+>
+>
+>
+> ___________________________________________________________________
+>
+> Electronic mail messages entering and leaving Arup business
+>
+> systems are scanned for acceptability of content and viruses.
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: not available
+Type: text/enriched
+Size: 13141 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20050302/81cc66f4/attachment.bin
+From Giulio.Antonutto at arup.com  Wed Mar  2 15:54:23 2005
+From: Giulio.Antonutto at arup.com (Giulio Antonutto)
+Date: Wed Mar  2 15:54:48 2005
+Subject: [Radiance-general] Objects with plastic material in IBL scene
+Message-ID: <3D77044FDAF3694E995689FC920C53E650EE64@l-gnts05>
+
+
+A possible reason:
+
+is it -ab > 0 (i.e. rvu -ab 1 or rpict -ab 1) ? 
+(needed if there are only secondary sources of light, such as the Sky...)
+hope it helps,
+giulio
+
+PS I have Radiance 3.6.1 on 10.3.8, MacOSX, everything ok here, BTW it's a
+pleasure to see how many people are running Radiance on a Mac ;-))
+
+
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Kirk
+Thibault
+Sent: 02 March 2005 14:09
+To: Radiance general discussion
+Subject: Re: [Radiance-general] Objects with plastic material in IBL scene
+
+I had this occur as well when previewing in rview (rvu) but everything 
+rendered fine when a final render was made.
+To answer your question, I don;t know why.  I run RADIANCE on a Mac, 
+OSX 10.3.X.
+
+kirk
+
+On Mar 2, 2005, at 5:13 AM, Tarik Rahman wrote:
+
+> Hi
+> Does anyone know why inserting a diffuse object in an IBL scene, such 
+> as the
+> red_plastic sphere in the Debevec tutorial does not reflect light 
+> properly,
+> i.e. renders as black? It works sometimes and other times it doesn't, 
+> I don't
+> understand why. The metal spheres such as the gold and steel ones and 
+> the
+> crystal  sphere all render perfectly but sometimes (not all the time) 
+> any
+> object with plastic material doesn't render properly.
+>
+> Tarik
+> --
+> Tarik Rahman
+> PhD student, Institute of Perception, Action and Behaviour
+> School of Informatics
+> University of Edinburgh
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+___________________________________________________________________
+Electronic mail messages entering and leaving Arup business
+systems are scanned for acceptability of content and viruses.
+
+From Giulio.Antonutto at arup.com  Wed Mar  2 16:09:26 2005
+From: Giulio.Antonutto at arup.com (Giulio Antonutto)
+Date: Wed Mar  2 16:09:40 2005
+Subject: [Radiance-general] illuminate a 3ds with radiance
+Message-ID: <3D77044FDAF3694E995689FC920C53E650EE65@l-gnts05>
+
+There are at least three different approaches:
+
+ 
+
+obj2rad takes into account normals (if your program exports them properly)
+unless you use the -f option (flat faces) - generates a RAD file (you can
+compile and use instances)
+
+ 
+
+ob2mesh does the trick - generates a MESH file (you need the mesh primitive)
+
+ 
+
+3ds2mgf does the trick  - generates a RAD file (you can compile and use
+instances)
+
+ 
+
+I always prefer to use 3ds2mgf for quick things, like if I want to render
+something with colors and smoothing without bothering about reflectance of
+materials
+
+ 
+
+ 
+
+I use obj2rad if I want to edit the material description properly
+
+(for Cinema4d you need to xform the model to change Y and Z and smoothing do
+not seem to work, don't know why...
+
+It works well with FormZ though... boh! Mysteries of 3D world)
+
+ 
+
+I use obj2mesh if there are complicate textures to consider.
+
+ 
+
+All of them refer to tmesh.cal and surf.cal into your lib folder.
+
+ 
+
+ 
+
+A quick note: the -s option you recall is used by gensurf to add smoothing
+to your procedurally generated surface (not imported form any CAD).
+
+ 
+
+Hope it helps,
+
+giulio
+
+ 
+
+ 
+
+ 
+
+   _____  
+
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Kirk
+Thibault
+Sent: 02 March 2005 14:13
+To: Radiance general discussion
+Subject: Re: [Radiance-general] illuminate a 3ds with radiance
+
+ 
+
+On a separate but related note, is there some flag when using obj2rad or
+similar transformation which will instruct the renderer to smooth the face
+normals for converted mesh objects? 
+
+ 
+
+I recall seeing a "-s" option somewhere. The basic idea is, I have this
+externally modeled object, i convert it to obj, bring it into RADIANCE using
+obj2rad and then xform it into place. During the conversion, the object is
+made into a mesh and I would like the mesh to render smooth. 
+
+ 
+
+Thanks, 
+
+ 
+
+kirk 
+
+ 
+
+On Mar 2, 2005, at 8:22 AM, Giulio Antonutto wrote: 
+
+ 
+
+Despina, 
+
+ 
+
+  
+
+ 
+
+You can convert almost any  3ds model directly into radiance: 
+
+ 
+
+3ds2mgf name.3ds 
+
+ 
+
+mgf2rad name.mgf > name.rad 
+
+ 
+
+  
+
+ 
+
+now simply try: 
+
+ 
+
+objview name.rad 
+
+ 
+
+the rvu window should open showing the model illuminated by 3 light sources,
+
+
+ 
+
+it's a quick and good check to start with. 
+
+ 
+
+Of everything is ok, you can now create in a separate file the sky, 
+
+ 
+
+When you have done you combine the two with: 
+
+ 
+
+  
+
+ 
+
+oconv sky.rad name.rad > name.oct 
+
+ 
+
+  
+
+ 
+
+and preview them with 
+
+ 
+
+  
+
+ 
+
+rvu name.oct 
+
+ 
+
+  
+
+ 
+
+now you just need to set up the view, 
+
+ 
+
+type v in the rvu window, select point and viewing direction... 
+
+ 
+
+good luck! 
+
+ 
+
+  
+
+ 
+
+  
+
+ 
+
+  
+
+ 
+
+giulio 
+
+ 
+
+  
+
+ 
+
+  
+
+ 
+
+PS 
+
+ 
+
+this is quick but do not incorporates uv coordinates, only colours are
+translated. 
+
+ 
+
+  
+
+ 
+
+If you have textures and uv you may need to use obj2mesh 
+
+ 
+
+  
+
+ 
+
+Once converted the model the syntax is: 
+
+ 
+
+  
+
+ 
+
+void mesh example 
+
+ 
+
+7 modelname.mesh -rx 90 -t 10 10 10 
+
+ 
+
+0 
+
+ 
+
+0 
+
+ 
+
+  
+
+ 
+
+Where: 
+
+ 
+
+7 is the number of inputs on the same line, 
+
+ 
+
+-rx 90 rotates the model by 90 degrees on the y axys 
+
+ 
+
+-t 10 10 10 translate the model from 0 0 0 to the point 10 10 10 
+
+ 
+
+  
+
+ 
+
+  
+
+ 
+
+When creating the mesh use: 
+
+ 
+
+obj2mesh -a materialfile objfile > meshfile 
+
+ 
+
+About that there is a quick tutorial I wrote at: 
+
+ 
+
+http://www.bozzograo.net/radiance/modules.php?op=modload&name=Downloads&file
+=index&req=viewdownload&cid=5 
+
+ 
+
+  
+
+ 
+
+  
+
+ 
+
+  
+
+ 
+
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Despina
+Michael 
+
+Sent: 02 March 2005 12:33 
+
+To: Radiance general discussion 
+
+Subject: [Radiance-general] illuminate a 3ds with radiance 
+
+ 
+
+  
+
+ 
+
+Hello! 
+
+ 
+
+  
+
+ 
+
+I need to illuminate a scene with radiance which does not only  contain
+primitives (e.g. sphere) but some more complex models such  a 3ds model. 
+
+ 
+
+That is, I need to do what is described in Debevec's IBL tutorial but
+instead to have spheres in the scene, i wolud like to have a 3ds model 
+
+ 
+
+  
+
+ 
+
+As I understood so far from what I have read from web, is that I need to
+convert .3ds to .obj and then use obj2mesh radiance programm 
+
+ 
+
+  
+
+ 
+
+Then I should use that mesh (lets sat output.rtm) in the scene (file:
+scene.rad) with this: 
+
+ 
+
+  
+
+ 
+
+mod mesh id 
+
+1+ output.rtm [xform args] 
+
+0 
+
+0 
+
+ 
+
+  
+
+ 
+
+I would like to know if this is the correct process or there is another way
+to illuminate a 3ds with radiance? 
+
+ 
+
+What about [xform args]. What I should write over there? Is anywhere that I
+can find a simple and complete example for illuminating scenes constist from
+more complex models? 
+
+ 
+
+Should I let 1+ and two zeros just as there are? 
+
+ 
+
+  
+
+ 
+
+  
+
+ 
+
+...Beside the help I need for the above, I would like to read "Real Pixels"
+Graphics Gem II. I' ve ty to find it in the web but waht I found are only
+many references about this paper. Can I found it anywhere online? 
+
+ 
+
+  
+
+ 
+
+Thank you  a lot, 
+
+ 
+
+Regards, 
+
+ 
+
+Despina 
+
+
+
+
+
+___________________________________________________________________ 
+
+ 
+
+Electronic mail messages entering and leaving Arup business 
+
+ 
+
+systems are scanned for acceptability of content and viruses. 
+
+_______________________________________________ 
+
+Radiance-general mailing list 
+
+Radiance-general@radiance-online.org 
+
+http://www.radiance-online.org/mailman/listinfo/radiance-general 
+
+
+___________________________________________________________________
+Electronic mail messages entering and leaving Arup business
+systems are scanned for acceptability of content and viruses.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20050302/8a5c5140/attachment.html
+From jelle.feringa at ezct.net  Wed Mar  2 16:22:21 2005
+From: jelle.feringa at ezct.net (Jelle Feringa / EZCT Architecture & Design Research)
+Date: Wed Mar  2 16:19:07 2005
+Subject: [Radiance-general] Re: illuminate a 3ds with radiance (Kirk
+	Thibault)
+Message-ID: <20050302151855.B4E341C001AE@mwinf0402.wanadoo.fr>
+
+Kirk, you could have a go with the 3ds to Radiance interface called ConRad
+which has been freely available, and developed by a Danish fellow, Ole
+Lemming. No longer in development, sniff, still rather useful. I'm afraid
+Ole's site isn't available anymore where the original version had been made
+available, but I'm willing to share.
+
+Cheers,
+
+Jelle.
+
+
+
+From gregoryjward at gmail.com  Wed Mar  2 16:34:26 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed Mar  2 16:35:32 2005
+Subject: [Radiance-general] Objects with plastic material in IBL scene
+In-Reply-To: <3D77044FDAF3694E995689FC920C53E650EE64@l-gnts05>
+References: <3D77044FDAF3694E995689FC920C53E650EE64@l-gnts05>
+Message-ID: <4917d297309f34ae4a25c3592c0dca29@gmail.com>
+
+Giulio is correct.  IBL creates glow sources rather than lights, so  
+materials with primarily diffuse components rely on the ambient  
+calculation to pick up any illumination at all, and the parameters must  
+be set such that Radiance can find the bright areas in the light probe.  
+  Something like -ab 1 -ad 1024 -as 512 at least, and sometimes even  
+that is not enough.  There are tools for locating and replacing bright  
+areas in the light probe with equivalent sources.  I think HDRshop has  
+such a tool, and others have worked on similar tools.  There are even a  
+number of papers on it -- I know Alex Keller wrote one, and Bernhard  
+Spanglang worked on this as part of his thesis, and you can check out  
+his talk from the first Radiance workshop online:
+
+	http://www.radiance-online.org/radiance-workshop1/cd/Spanlang/ 
+index.html
+
+See also Santiago Torres' presentation from the second workshop:
+
+	http://www.radiance-online.org/radiance-workshop2/cd/Torres/ 
+abstract.html
+
+This topic is also well-covered in the notes Paul Debevec has online at  
+his website from the various Siggraph tutorials he's given.  See for  
+example page 8 from "Paul Debevec's main slides on HDRI and Image-Based  
+Lighting (6.7MB pdf)" in the notes of the Siggraph 2003 course on IBL:
+
+	http://www.debevec.org/IBL2003/
+
+There are resources out there.  It's a matter of finding them, as  
+always...
+
+-Greg
+
+> From: Giulio Antonutto <Giulio.Antonutto@arup.com>
+> Date: March 2, 2005 6:54:23 AM PST
+>
+> A possible reason:
+>
+> is it -ab > 0 (i.e. rvu -ab 1 or rpict -ab 1) ?
+> (needed if there are only secondary sources of light, such as the  
+> Sky...)
+> hope it helps,
+> giulio
+>
+> PS I have Radiance 3.6.1 on 10.3.8, MacOSX, everything ok here, BTW  
+> it's a
+> pleasure to see how many people are running Radiance on a Mac ;-))
+>
+> -----Original Message-----
+> From: radiance-general-bounces@radiance-online.org
+> [mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Kirk
+> Thibault
+>
+> I had this occur as well when previewing in rview (rvu) but everything
+> rendered fine when a final render was made.
+> To answer your question, I don;t know why.  I run RADIANCE on a Mac,
+> OSX 10.3.X.
+>
+> kirk
+>
+> On Mar 2, 2005, at 5:13 AM, Tarik Rahman wrote:
+>
+>> Hi
+>> Does anyone know why inserting a diffuse object in an IBL scene, such
+>> as the
+>> red_plastic sphere in the Debevec tutorial does not reflect light
+>> properly,
+>> i.e. renders as black? It works sometimes and other times it doesn't,
+>> I don't
+>> understand why. The metal spheres such as the gold and steel ones and
+>> the
+>> crystal  sphere all render perfectly but sometimes (not all the time)
+>> any
+>> object with plastic material doesn't render properly.
+>>
+>> Tarik
+
+
+From kthibault at biomechanicsinc.com  Wed Mar  2 17:17:25 2005
+From: kthibault at biomechanicsinc.com (Kirk Thibault)
+Date: Wed Mar  2 17:17:38 2005
+Subject: [Radiance-general] Objects with plastic material in IBL scene
+In-Reply-To: <3D77044FDAF3694E995689FC920C53E650EE64@l-gnts05>
+References: <3D77044FDAF3694E995689FC920C53E650EE64@l-gnts05>
+Message-ID: <ebaedfc69ffd905f481653b8d3c64b08@biomechanicsinc.com>
+
+Duh, that's how I remedied the situation too.  Man, I am losing my mind.
+
+thanks for the reality check.
+
+kirk
+
+On Mar 2, 2005, at 9:54 AM, Giulio Antonutto wrote:
+
+>
+> A possible reason:
+>
+> is it -ab > 0 (i.e. rvu -ab 1 or rpict -ab 1) ?
+> (needed if there are only secondary sources of light, such as the 
+> Sky...)
+> hope it helps,
+> giulio
+
+
+From jm at dmu.ac.uk  Wed Mar  2 17:35:16 2005
+From: jm at dmu.ac.uk (John Mardaljevic)
+Date: Wed Mar  2 17:36:15 2005
+Subject: [Radiance-general] Re: illuminate a 3ds with radiance (Kirk
+Message-ID: <0EF7D75D-8B39-11D9-BC85-000D93355E26@dmu.ac.uk>
+
+A discussion from last year included an example of a simple  
+shell-script to hide the intermediate stage of the conversion from 3ds  
+to rad:
+
+http://www.radiance-online.org/pipermail/radiance-general/2004-June/ 
+001836.html
+
+If needed, you could add:
+
+objview mat$nam.rad  $nam.rad
+
+at the end of the script to start objview on each newly converted model  
+to give a quick visual check.
+
+-John
+
+PS.  The mgfilt line in the script was wrapped - see note in the  
+message.
+
+-----------------------------------------------
+Dr. John Mardaljevic
+Senior Research Fellow
+Institute of Energy and Sustainable Development
+De Montfort University
+The Gateway
+Leicester
+LE1 9BH, UK
++44 (0) 116 257 7972
++44 (0) 116 257 7981 (fax)
+
+jm@dmu.ac.uk
+http://www.iesd.dmu.ac.uk/~jm
+
+
+From kthibault at biomechanicsinc.com  Wed Mar  2 21:07:53 2005
+From: kthibault at biomechanicsinc.com (Kirk Thibault)
+Date: Wed Mar  2 21:08:07 2005
+Subject: [Radiance-general] Re: illuminate a 3ds with radiance (Kirk
+In-Reply-To: <0EF7D75D-8B39-11D9-BC85-000D93355E26@dmu.ac.uk>
+References: <0EF7D75D-8B39-11D9-BC85-000D93355E26@dmu.ac.uk>
+Message-ID: <f9e1ecfb9132ba18a19b3a8677d0786a@biomechanicsinc.com>
+
+Thanks to all who responded to my question.   I'll try all the various  
+conversions and see what happens.
+
+Kirk
+
+
+On Mar 2, 2005, at 11:35 AM, John Mardaljevic wrote:
+
+> A discussion from last year included an example of a simple  
+> shell-script to hide the intermediate stage of the conversion from 3ds  
+> to rad:
+>
+> http://www.radiance-online.org/pipermail/radiance-general/2004-June/ 
+> 001836.html
+>
+> If needed, you could add:
+>
+> objview mat$nam.rad  $nam.rad
+>
+> at the end of the script to start objview on each newly converted  
+> model to give a quick visual check.
+>
+> -John
+>
+> PS.  The mgfilt line in the script was wrapped - see note in the  
+> message.
+>
+> -----------------------------------------------
+> Dr. John Mardaljevic
+> Senior Research Fellow
+> Institute of Energy and Sustainable Development
+> De Montfort University
+> The Gateway
+> Leicester
+> LE1 9BH, UK
+> +44 (0) 116 257 7972
+> +44 (0) 116 257 7981 (fax)
+>
+> jm@dmu.ac.uk
+> http://www.iesd.dmu.ac.uk/~jm
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From cbauer- at t-online.de  Wed Mar  2 23:01:28 2005
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Wed Mar  2 21:50:17 2005
+Subject: [Radiance-general] Photon Map for Radiance 3.6
+Message-ID: <422637B8.2000305@t-online.de>
+
+Hi all,
+
+just a quick note:
+Rolands Photon Map module is available now for Radiance 3.6p1 and for
+the actual Radiance HEAD version.
+
+It can be grabbed from
+http://www.cb-d.de/pmap/pmap.html#dwload
+
+Have Fun!
+
+-Carsten
+
+
+
+From kthibault at biomechanicsinc.com  Wed Mar  2 22:21:01 2005
+From: kthibault at biomechanicsinc.com (Kirk Thibault)
+Date: Wed Mar  2 22:21:14 2005
+Subject: [Radiance-general] Photon Map for Radiance 3.6
+In-Reply-To: <422637B8.2000305@t-online.de>
+References: <422637B8.2000305@t-online.de>
+Message-ID: <c28a2cda58531ee77bfe8a0b1709927c@biomechanicsinc.com>
+
+I'm on fire today with questions:  What is the "HEAD" version of 
+Radiance?  A photon map module is very cool.
+
+Thanks,
+
+kirk
+
+
+On Mar 2, 2005, at 5:01 PM, Carsten Bauer wrote:
+
+> Hi all,
+>
+> just a quick note:
+> Rolands Photon Map module is available now for Radiance 3.6p1 and for
+> the actual Radiance HEAD version.
+>
+> It can be grabbed from
+> http://www.cb-d.de/pmap/pmap.html#dwload
+>
+> Have Fun!
+>
+> -Carsten
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From a.jacobs at londonmet.ac.uk  Thu Mar  3 00:20:05 2005
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Thu Mar  3 00:12:50 2005
+Subject: [Radiance-general] Transparent textures (again)
+In-Reply-To: <422637B8.2000305@t-online.de>
+References: <422637B8.2000305@t-online.de>
+Message-ID: <10201.213.58.101.145.1109805605.squirrel@213.58.101.145>
+
+Dear all,
+
+this was discussed here
+http://www.radiance-online.org/pipermail/radiance-general/2004-July/001926.html,
+but if there was an answer that I understand, I missed it.
+
+I am working on the advanced tutorial again.
+Created a falsecolor picture of the working plane illuminance in a room
+following John M.'s technical note number 2 here
+http://www.radiance-online.org/pipermail/radiance-general/2002-September/000405.html
+
+See the tutorial for details:
+http://luminance.londonmet.ac.uk/learnix/files/phatfile/radcourse_advanced.pdf
+
+I would like to map the falsecolor illuminance image back into the room
+onto a new surface at working plane height to make the result more
+understandable. For this, the background of the falsecolor contour line
+image should probably be black, but this is no problem. The false colour
+lines would appear to be hovering in the room. I saw something similar in
+a demo of some commercial lighting software, but don't remember where.
+
+I think my problem is the cal file (PAB named his one picture_UV.cal)
+which is often referred to, but never given as an example. Since my object
+is a nice'n'easy plane, would it be possible to use picture.cal that comes
+with RADIANCE?
+
+Those are PAB's words of wisdom:
+
+--------------------- 8< - Schnipp -----------------
+
+void plastic mp1
+0
+0
+5 .01 0.01 0.01  0.35 0.1
+
+void glass mp2
+0
+0
+3  .9 .9 .9
+
+void mixpict mp
+15 mp1 mp2 digital1 sp.pic picture_UV.cal tpic_u tpic_v ...
+0
+0
+
+--------------------- 8< - Schnapp -----------------
+
+Could somebody explain the mixpict primitive a bit more?
+
+Cheers
+
+Axel
+
+
+
+From a.jacobs at londonmet.ac.uk  Thu Mar  3 00:33:36 2005
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Thu Mar  3 00:26:10 2005
+Subject: [Radiance-general] Image dimensions
+In-Reply-To: <422637B8.2000305@t-online.de>
+References: <422637B8.2000305@t-online.de>
+Message-ID: <10203.213.58.101.145.1109806416.squirrel@213.58.101.145>
+
+Dear all,
+
+rpict with -vh 25.8083 -vv 18.6685 -x 512 -y 512 will create an image of
+367x512 pixels.
+
+If I calculate the y dimension by hand, I get:
+
+y/18.6685 = 512/25.8083
+-> y = 370.3565132
+
+This number can be rounded up or down to the nearest integer, but how can
+it be rounded to 367?
+
+I started doing these hand calculation when I noticed that an image
+generated with xwrays|rtrace had a couple of extra lines down the bottom
+of it which are outside of the region specified in the view file (for a
+parallel view, though).
+
+Cheers
+
+Axel
+
+
+
+From gregoryjward at gmail.com  Thu Mar  3 02:08:26 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu Mar  3 02:08:46 2005
+Subject: [Radiance-general] Image dimensions
+In-Reply-To: <10203.213.58.101.145.1109806416.squirrel@213.58.101.145>
+References: <422637B8.2000305@t-online.de>
+	<10203.213.58.101.145.1109806416.squirrel@213.58.101.145>
+Message-ID: <d72aaa476ff88748209362b91d299fba@gmail.com>
+
+Hi Axel,
+
+For perspective views, the actual relation for image dimensions 
+involves the tangents of the view angles, not the angles themselves.  
+The relation is:
+
+	tan(vh)/tan(vv) = x/y
+
+For more info, see:
+
+	http://radsite.lbl.gov/radiance/digests_html/v2n7.html#VIEW_ANGLES
+
+-Greg
+
+> From: "Axel Jacobs" <a.jacobs@londonmet.ac.uk>
+> Date: March 2, 2005 3:33:36 PM PST
+>
+> Dear all,
+>
+> rpict with -vh 25.8083 -vv 18.6685 -x 512 -y 512 will create an image 
+> of
+> 367x512 pixels.
+>
+> If I calculate the y dimension by hand, I get:
+>
+> y/18.6685 = 512/25.8083
+> -> y = 370.3565132
+>
+> This number can be rounded up or down to the nearest integer, but how 
+> can
+> it be rounded to 367?
+>
+> I started doing these hand calculation when I noticed that an image
+> generated with xwrays|rtrace had a couple of extra lines down the 
+> bottom
+> of it which are outside of the region specified in the view file (for a
+> parallel view, though).
+>
+> Cheers
+>
+> Axel
+
+
+From gregoryjward at gmail.com  Thu Mar  3 02:30:38 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu Mar  3 02:30:55 2005
+Subject: [Radiance-general] Transparent textures (again)
+In-Reply-To: <10201.213.58.101.145.1109805605.squirrel@213.58.101.145>
+References: <422637B8.2000305@t-online.de>
+	<10201.213.58.101.145.1109805605.squirrel@213.58.101.145>
+Message-ID: <5514a0e8e894d7e10db151b1683ba7d3@gmail.com>
+
+Hi Axel,
+
+The mixpict primitive uses the indicated function of the red, green and 
+blue channels of an image to determine how much of one material to use 
+versus another.  One of these materials may be "void", which I 
+recommend instead of the "glass" primitive that you're using in your 
+current example.  A "void" material is the same as a perfectly 
+transparent surface, which glass is not.  I would also recommend using 
+"glow" instead of plastic to show up your falsecolor lines as something 
+not truly belonging to the scene.
+
+Here is a more complete example:
+
+void colorpict fc_val
+7 red green blue sp.pic fc.cal fc_u fc_v
+0
+0
+
+fc_val glow fc_glow
+0
+0
+4 1 1 1 0
+
+void mixpict mp
+7 fc_glow void nonzero sp.pic fc.cal fc_u fc_v
+0
+0
+--------
+The file "fc.cal" looks like so:
+
+{ Use false color contour image as selector }
+nonzero(r,g,b) = if(max(r,max(g,b))-FTINY, 1, 0);
+fc_u = Px;
+fc_v = Py;
+------
+The mapping for fc_u and fc_v may need to be a little more 
+sophisticated if your image and space don't match, or you can try 
+transforming the colorpict and mixpict primitives to match these 
+coordinates, similar to how it's done for picture.cal.  Let me know if 
+you need help with this part, and be specific with your questions (it 
+helps a lot).
+
+-Greg
+
+> From: "Axel Jacobs" <a.jacobs@londonmet.ac.uk>
+> Date: March 2, 2005 3:20:05 PM PST
+> ...
+> I would like to map the falsecolor illuminance image back into the room
+> onto a new surface at working plane height to make the result more
+> understandable. For this, the background of the falsecolor contour line
+> image should probably be black, but this is no problem. The false 
+> colour
+> lines would appear to be hovering in the room. I saw something similar 
+> in
+> a demo of some commercial lighting software, but don't remember where.
+>
+> I think my problem is the cal file (PAB named his one picture_UV.cal)
+> which is often referred to, but never given as an example. Since my 
+> object
+> is a nice'n'easy plane, would it be possible to use picture.cal that 
+> comes
+> with RADIANCE?
+
+
+From despina_m81 at hotmail.com  Thu Mar  3 13:10:14 2005
+From: despina_m81 at hotmail.com (Despina Michael)
+Date: Thu Mar  3 13:11:55 2005
+Subject: [Radiance-general] illuminate a 3ds with radiance
+References: <3D77044FDAF3694E995689FC920C53E650EE62@l-gnts05>
+Message-ID: <BAY22-DAV2DD5D208CF63CC2041E18905B0@phx.gbl>
+
+Thank you very much for your useful advice. They are very helpful!
+I'll give it a try. 
+
+
+Can anyone tell me where I can find "Real Pixels" in an electronic version?
+I have searched the web but I did't find the paper.
+
+Despina
+
+
+  ----- Original Message ----- 
+  From: Giulio Antonutto 
+  To: 'Radiance general discussion' 
+  Sent: Wednesday, March 02, 2005 3:22 PM
+  Subject: RE: [Radiance-general] illuminate a 3ds with radiance
+
+
+  Despina,
+
+   
+
+  You can convert almost any  3ds model directly into radiance:
+
+  3ds2mgf name.3ds
+
+  mgf2rad name.mgf > name.rad
+
+   
+
+  now simply try:
+
+  objview name.rad
+
+  the rvu window should open showing the model illuminated by 3 light sources,
+
+  it's a quick and good check to start with.
+
+  Of everything is ok, you can now create in a separate file the sky,
+
+  When you have done you combine the two with:
+
+   
+
+  oconv sky.rad name.rad > name.oct
+
+   
+
+  and preview them with 
+
+   
+
+  rvu name.oct
+
+   
+
+  now you just need to set up the view,
+
+  type v in the rvu window, select point and viewing direction...
+
+  good luck!
+
+   
+
+   
+
+   
+
+  giulio
+
+   
+
+   
+
+  PS
+
+  this is quick but do not incorporates uv coordinates, only colours are translated.
+
+   
+
+  If you have textures and uv you may need to use obj2mesh
+
+   
+
+  Once converted the model the syntax is:
+
+   
+
+  void mesh example
+
+  7 modelname.mesh -rx 90 -t 10 10 10
+
+  0
+
+  0
+
+   
+
+  Where:
+
+  7 is the number of inputs on the same line,
+
+  -rx 90 rotates the model by 90 degrees on the y axys
+
+  -t 10 10 10 translate the model from 0 0 0 to the point 10 10 10
+
+   
+
+   
+
+  When creating the mesh use:
+
+  obj2mesh -a materialfile objfile > meshfile
+
+  About that there is a quick tutorial I wrote at: 
+
+  http://www.bozzograo.net/radiance/modules.php?op=modload&name=Downloads&file=index&req=viewdownload&cid=5
+
+   
+
+   
+
+   
+
+
+------------------------------------------------------------------------------
+
+  From: radiance-general-bounces@radiance-online.org [mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Despina Michael
+  Sent: 02 March 2005 12:33
+  To: Radiance general discussion
+  Subject: [Radiance-general] illuminate a 3ds with radiance
+
+   
+
+  Hello!
+
+   
+
+  I need to illuminate a scene with radiance which does not only  contain primitives (e.g. sphere) but some more complex models such  a 3ds model.
+
+  That is, I need to do what is described in Debevec's IBL tutorial but instead to have spheres in the scene, i wolud like to have a 3ds model
+
+   
+
+  As I understood so far from what I have read from web, is that I need to convert .3ds to .obj and then use obj2mesh radiance programm
+
+   
+
+  Then I should use that mesh (lets sat output.rtm) in the scene (file: scene.rad) with this:
+
+   
+
+  mod mesh id 
+  1+ output.rtm [xform args] 
+  0 
+  0 
+
+   
+
+  I would like to know if this is the correct process or there is another way to illuminate a 3ds with radiance? 
+
+  What about [xform args]. What I should write over there? Is anywhere that I can find a simple and complete example for illuminating scenes constist from more complex models?
+
+  Should I let 1+ and two zeros just as there are?
+
+   
+
+   
+
+  ...Beside the help I need for the above, I would like to read "Real Pixels" Graphics Gem II. I' ve ty to find it in the web but waht I found are only many references about this paper. Can I found it anywhere online? 
+
+   
+
+  Thank you  a lot,
+
+  Regards,
+
+  Despina
+
+
+
+  ___________________________________________________________________
+
+  Electronic mail messages entering and leaving Arup business
+
+  systems are scanned for acceptability of content and viruses.
+
+
+
+------------------------------------------------------------------------------
+
+
+  _______________________________________________
+  Radiance-general mailing list
+  Radiance-general@radiance-online.org
+  http://www.radiance-online.org/mailman/listinfo/radiance-general
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20050303/5ea88527/attachment.htm
+From a.jacobs at londonmet.ac.uk  Thu Mar  3 21:05:22 2005
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Thu Mar  3 20:57:41 2005
+Subject: [Radiance-general] Transparent textures (again)
+In-Reply-To: <5514a0e8e894d7e10db151b1683ba7d3@gmail.com>
+References: <422637B8.2000305@t-online.de>
+	<10201.213.58.101.145.1109805605.squirrel@213.58.101.145>
+	<5514a0e8e894d7e10db151b1683ba7d3@gmail.com>
+Message-ID: <10229.213.58.100.238.1109880322.squirrel@213.58.100.238>
+
+Hi Greg,
+
+> The mixpict primitive uses the indicated function of the red, green and
+> blue channels of an image to determine how much of one material to use
+> versus another.  One of these materials may be "void", which I
+> recommend instead of the "glass" primitive that you're using in your
+> current example.  A "void" material is the same as a perfectly
+> transparent surface, which glass is not.  I would also recommend using
+> "glow" instead of plastic to show up your falsecolor lines as something
+> not truly belonging to the scene.
+
+All this makes sense to me.
+
+> void colorpict fc_val
+> 7 red green blue sp.pic fc.cal fc_u fc_v
+> 0
+> 0
+
+Since the black is going to be removed anyhow, we could use the normal
+picture.cal like so:
+
+void colorpict fc_val
+15 red green blue sp.pic picture.cal pic_u pic_v -s 4 -rz -90 -t .5 5.5 0
+0
+0
+
+Doesn't seem to make any diff.
+
+> fc_val glow fc_glow
+> 0
+> 0
+> 4 1 1 1 0
+
+The glow intensity would have to be adjusted to 'look nice' with the
+ambient light in the scene, right? It looks better in my scene with a glow
+of 2 2 2 0 or 3 3 3 0.
+
+> void mixpict mp
+> 7 fc_glow void nonzero sp.pic fc.cal fc_u fc_v
+> 0
+> 0
+> --------
+> The file "fc.cal" looks like so:
+>
+> { Use false color contour image as selector }
+> nonzero(r,g,b) = if(max(r,max(g,b))-FTINY, 1, 0);
+> fc_u = Px;
+> fc_v = Py;
+> ------
+
+Exactly what I was missing. The FTINY thing is in case the black isn't
+really black, isn't it? Or is it for internal rounding errors etc. With my
+perfectly back background (you wished you had this in a lighting lab...),
+I could drop this. Well, I did remove it and it still works, anyhow.
+
+You've been a great help
+
+Axel
+
+
+
+From gregoryjward at gmail.com  Thu Mar  3 22:07:40 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu Mar  3 22:08:57 2005
+Subject: [Radiance-general] Transparent textures (again)
+In-Reply-To: <10229.213.58.100.238.1109880322.squirrel@213.58.100.238>
+References: <422637B8.2000305@t-online.de>
+	<10201.213.58.101.145.1109805605.squirrel@213.58.101.145>
+	<5514a0e8e894d7e10db151b1683ba7d3@gmail.com>
+	<10229.213.58.100.238.1109880322.squirrel@213.58.100.238>
+Message-ID: <e56c12a68cfd708e2a57ab22bcd08c3e@gmail.com>
+
+Hi Axel,
+
+Beware, quick response ahead:
+
+> From: "Axel Jacobs" <a.jacobs@londonmet.ac.uk>
+> Date: March 3, 2005 12:05:22 PM PST
+>> void colorpict fc_val
+>> 7 red green blue sp.pic fc.cal fc_u fc_v
+>> 0
+>> 0
+>
+> Since the black is going to be removed anyhow, we could use the normal
+> picture.cal like so:
+>
+> void colorpict fc_val
+> 15 red green blue sp.pic picture.cal pic_u pic_v -s 4 -rz -90 -t .5 
+> 5.5 0
+> 0
+> 0
+>
+> Doesn't seem to make any diff.
+
+True, but they you won't be able to change the definitions of fc_u and 
+fc_v and have the colorpict line up with the mixpict.  I think it's 
+better to use the same file for clarity.
+
+>> fc_val glow fc_glow
+>> 0
+>> 0
+>> 4 1 1 1 0
+>
+> The glow intensity would have to be adjusted to 'look nice' with the
+> ambient light in the scene, right? It looks better in my scene with a 
+> glow
+> of 2 2 2 0 or 3 3 3 0.
+
+Yes, you are right to adjust it for your scene -- should have mentioned 
+that.
+
+>> void mixpict mp
+>> 7 fc_glow void nonzero sp.pic fc.cal fc_u fc_v
+>> 0
+>> 0
+>> --------
+>> The file "fc.cal" looks like so:
+>>
+>> { Use false color contour image as selector }
+>> nonzero(r,g,b) = if(max(r,max(g,b))-FTINY, 1, 0);
+>> fc_u = Px;
+>> fc_v = Py;
+>> ------
+>
+> Exactly what I was missing. The FTINY thing is in case the black isn't
+> really black, isn't it? Or is it for internal rounding errors etc. 
+> With my
+> perfectly back background (you wished you had this in a lighting 
+> lab...),
+> I could drop this. Well, I did remove it and it still works, anyhow.
+
+The FTINY is in there as a guard against rounding errors, and I 
+wouldn't recommend removing it.  It may work on your compile on your 
+machine, but another machine may not.
+
+-Greg
+
+
+From despina_m81 at hotmail.com  Mon Mar  7 20:01:58 2005
+From: despina_m81 at hotmail.com (Despina Michael)
+Date: Mon Mar  7 20:03:01 2005
+Subject: [Radiance-general] "Real Pixels" Graphics Gem II.
+Message-ID: <BAY22-DAV7FB55AA144BADBD14BB68905F0@phx.gbl>
+
+Hi there again,
+
+Is there anywhere an electonic version of "Real Pixels" paper about RGBE format?
+
+Thanks!
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20050307/c4e39e2f/attachment.html
+From a.jacobs at londonmet.ac.uk  Mon Mar  7 23:04:31 2005
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Mon Mar  7 22:56:12 2005
+Subject: [Radiance-general] Transparent textures (again)
+In-Reply-To: <5514a0e8e894d7e10db151b1683ba7d3@gmail.com>
+References: <422637B8.2000305@t-online.de>
+	<10201.213.58.101.145.1109805605.squirrel@213.58.101.145>
+	<5514a0e8e894d7e10db151b1683ba7d3@gmail.com>
+Message-ID: <10253.213.58.101.254.1110233071.squirrel@213.58.101.254>
+
+Greg
+----
+Thanks for your help; it worked like a charm.
+
+Matiu Carr
+----------
+If you read this, would it be o.k. to put up a PDF of your "Image Mapping"
+binhexed ancient Mac Word file on the RAD site? The old one was a bit of a
+challenge to decode. Excellent document!
+
+All
+---
+I've written down what I've learned from this threat in the Advanced
+tutorial under
+http://luminance.londonmet.ac.uk/learnix/files/phatfile/radcourse_advanced.pdf
+
+Inspired by Andrews EcoTect presentation in Fribourg, I tried to find some
+ways of putting RADIANCE results back into the scene. The results take a
+little bit of effort but look REALLY COOL! See sections 2.4.2 Transparent
+Textures and 4.6 Vector Illuminance in the above PDF.
+
+Also new: 2.5 Using pcomb, 3.2 Using Ground Planes, 4.1 Non-standard
+views, 4.5 Illuminance on a Virtual Plane.
+
+Please send comments if you spot any errors or would like to contribute
+any personal experience/wisdom.
+
+Cheers
+
+Axel
+
+
+
+From marichurad at yahoo.co.uk  Tue Mar  8 11:48:55 2005
+From: marichurad at yahoo.co.uk (Marisela Mendoza)
+Date: Tue Mar  8 11:49:08 2005
+Subject: [Radiance-general] Transparency
+Message-ID: <20050308104855.88691.qmail@web26505.mail.ukl.yahoo.com>
+
+Skipped content of type multipart/alternative-------------- next part --------------
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!-- saved from url=(0188)http://gwmail3.nottingham.ac.uk/servlet/webacc/qkeiy9Sb9ku5ne4Fq8/GWAP/HREF/1?action=Attachment.View&Item.Attachment.id=1&User.context=qkeiy9Sb9ku5ne4Fq8&Item.drn=11781z10z0&Item.Child.id= -->
+<HTML><HEAD>
+<META http-equiv=Content-Type content="text/html; charset=windows-1252">
+<META content="MSHTML 6.00.2800.1458" name=GENERATOR></HEAD>
+<BODY><IMG src="Photos_files/1.jpg"></BODY></HTML>
+From jelle.feringa at ezct.net  Tue Mar  8 12:06:07 2005
+From: jelle.feringa at ezct.net (Jelle Feringa / EZCT Architecture & Design Research)
+Date: Tue Mar  8 12:06:22 2005
+Subject: [Radiance-general] radcourse_advanced is nothing but stunning!
+Message-ID: <20050308110609.3D9F32000336@mwinf1003.wanadoo.fr>
+
+Axel, 
+
+The radcourse_advanced.pdf document is _stunning_ !!!
+Amazing tutorial, thank you so much!!!
+
+Jelle.
+
+
+
+From gregoryjward at gmail.com  Tue Mar  8 16:26:30 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue Mar  8 16:27:46 2005
+Subject: [Radiance-general] Transparency
+In-Reply-To: <20050308104855.88691.qmail@web26505.mail.ukl.yahoo.com>
+References: <20050308104855.88691.qmail@web26505.mail.ukl.yahoo.com>
+Message-ID: <e3addf19fec36c937a5899253b6d47f2@gmail.com>
+
+Hello Marisela,
+
+Your image(s) did not come through in your e-mail.  Please try sending 
+them to me directly at <gregoryjward@gmail.com> and perhaps I can 
+answer your question.
+
+-Greg
+
+> From: Marisela Mendoza <marichurad@yahoo.co.uk>
+> Date: March 8, 2005 2:48:55 AM PST
+>
+I am using desktop radiance in Ecotec.? I am trying to analyse the 
+glare effect produced by applying different screen transparency on a 
+window.? But when I applied the transparency in Ecotec?to the screen 
+material,? (i.e. 12% )? the material disappear from my renderings.?? I 
+know the material still there it is there since I can see the shadows 
+it proyects on the floor.?? I enclose some of the images I got.?
+  ?
+Figure 1 shows the deskto radiance rendering view from an exterior 
+camera that faces the window of a room ?which has these exterior 
+octagonal modules. The modules material that I chose is fabric with a 
+transparency of 0% for this case.
+
+Figure 2 shows the interior of the room and the shadows projected on 
+the floor by the modules.
+
+Figure 3 shows the same camera view as Figure 1. ?But in this case I 
+changed the transparency material in Ecotec to be 60% and the modules 
+are not visible anymore as it can be seen in. ??However when I render 
+with desktop radiance?an interior view similar to the one in ?Figure 2, 
+it turns out that the modules are actually projecting shade, see Fig 4. 
+?It is quiet strange that the transparency material can be perceived on 
+the projected shadows but it is not shown on the material itself.
+
+Anyone has clue of what is happening?
+
+
+From Rob.Fitzsimmons at Summit.Fiserv.com  Wed Mar  9 02:53:48 2005
+From: Rob.Fitzsimmons at Summit.Fiserv.com (Fitzsimmons, Rob)
+Date: Wed Mar  9 02:54:26 2005
+Subject: [Radiance-general] Digital Camera recommendations?
+Message-ID: <B8DD8375FCE2C94B9F170D9277C1FA2B8C5804@corvallis>
+
+I think this may have been discussed, but I can't find the threads...
+Does anyone have camera recommendations for creating HDR Probes?
+
+Something that has manual override, shutter / aperture priority for
+bracketing
+Auto bracketing?
+Anyone guessing on when digital cameras will be taking native HDR picures? 
+Don't think I can wait that long
+
+My budget is $500
+
+Thanks,
+Rob Fitzsimmons
+
+From randhirkumar.singh at epfl.ch  Wed Mar  9 12:37:38 2005
+From: randhirkumar.singh at epfl.ch (Randhir Kumar Singh)
+Date: Wed Mar  9 12:37:52 2005
+Subject: [Radiance-general] integrating lens system in Radiance
+In-Reply-To: <0ID20035GZYBFS@imap.epfl.ch>
+References: <0ID20035GZYBFS@imap.epfl.ch>
+Message-ID: <1110368258.422ee0028feac@imapwww.epfl.ch>
+
+Hi,
+  I am trying to simulate digital camera system in software. I understand that
+the Radiance uses pinhole camera model to render a 3D scene. Is it possible to
+integrate a lens system before rendering? Or any ideas how to go about it?
+
+Regards,
+Randhir
+
+From despina_m81 at hotmail.com  Wed Mar  9 15:23:18 2005
+From: despina_m81 at hotmail.com (Despina Michael)
+Date: Wed Mar  9 15:24:27 2005
+Subject: [Radiance-general] Digital Camera recommendations?
+References: <B8DD8375FCE2C94B9F170D9277C1FA2B8C5804@corvallis>
+Message-ID: <BAY22-DAV6153FBF5CF2EED9E627E090510@phx.gbl>
+
+Hi Rob,
+
+I have create a couple of HDR probes lately and I can tell you what settings 
+I have used.
+
+First of all, the sequence of photos that you have to take must be perfectly 
+alighned.
+The only way that works for me to do that, is to place the camera on a 
+tripod and take photos remotely (that is connect the camera with a computer 
+and use remotly capturing pressing a key on the keyboard - camera's software 
+should have the appropriate software for that - but good cameras usually do 
+have)
+
+I don't think so, auto bracketing is a good idea. Most cameras can take 
+about 3 (or 5) photos with Auto Bracketing but you need more in order to 
+create an HDR Probe (about10-15 photos)
+
+In order to take the photos set aperture at a fix value and change only 
+exposure time in order to change the overall exposure.
+You also have to set your camera at no flash.
+
+You should  take a sequence of photos (about 10-15) with different exposure 
+times, changing 1 f-stop each time, starting with bigger exposure.
+Before begin to take your photos, take one photo using auto-focus in order 
+camera focus on the mirrored ball. Then set manual-focus and don't change 
+focusing (that is in order to have all photos with same "focus value")
+
+If you planning ton use hdrgen for generating HDR probe, I recommned you to 
+disable alignment algorithm. At least in my case, when alignment was enable 
+hdrgen gave worst results.
+
+I hope it helps,
+Regards,
+Despina
+
+
+
+----- Original Message ----- 
+From: "Fitzsimmons, Rob" <Rob.Fitzsimmons@Summit.Fiserv.com>
+To: <Radiance-general@radiance-online.org>
+Sent: Wednesday, March 09, 2005 3:53 AM
+Subject: [Radiance-general] Digital Camera recommendations?
+
+
+>I think this may have been discussed, but I can't find the threads...
+> Does anyone have camera recommendations for creating HDR Probes?
+>
+> Something that has manual override, shutter / aperture priority for
+> bracketing
+> Auto bracketing?
+> Anyone guessing on when digital cameras will be taking native HDR picures?
+> Don't think I can wait that long
+>
+> My budget is $500
+>
+> Thanks,
+> Rob Fitzsimmons
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+
+From gregoryjward at gmail.com  Wed Mar  9 17:27:20 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed Mar  9 17:28:32 2005
+Subject: [Radiance-general] integrating lens system in Radiance
+In-Reply-To: <1110368258.422ee0028feac@imapwww.epfl.ch>
+References: <0ID20035GZYBFS@imap.epfl.ch>
+	<1110368258.422ee0028feac@imapwww.epfl.ch>
+Message-ID: <a0fdc110ecfcc073d1f6439fd1d3748d@gmail.com>
+
+Hi Randhir,
+
+You should read the 1995 SIGGRAPH paper by Craig Kolb, Don Mitchell and 
+Pat Hanrahan, "A Realistic Camera Model for Computer Graphics," which 
+you may find at the following URL:
+
+	http://graphics.stanford.edu/papers/camera/gamma-corrected/
+
+Radiance's inherent camera model is indeed a pinhole, though there are 
+methods available for simulating depth-of-field using a synthetic 
+aperture.  Vignetting, coating effects, etc. are all beyond what 
+Radiance was designed to simulate in it's camera model.  You could 
+model the lens system and camera geometry in Radiance directly, I 
+suppose, but it would be a lot of work.  Calculating an image this way 
+would be quite expensive, but I think it's possible.
+
+Have you considered using a more general optics simulation package, 
+such as TracePro?
+
+	http://www.lambdares.com/products/tracepro/
+
+-Greg
+
+> From: Randhir Kumar Singh <randhirkumar.singh@epfl.ch>
+> Date: March 9, 2005 3:37:38 AM PST
+>
+> Hi,
+>   I am trying to simulate digital camera system in software. I 
+> understand that
+> the Radiance uses pinhole camera model to render a 3D scene. Is it 
+> possible to
+> integrate a lens system before rendering? Or any ideas how to go about 
+> it?
+>
+> Regards,
+> Randhir
+
+
+From kthibault at biomechanicsinc.com  Wed Mar  9 17:45:46 2005
+From: kthibault at biomechanicsinc.com (Kirk Thibault)
+Date: Wed Mar  9 17:46:04 2005
+Subject: [Radiance-general] Digital Camera recommendations?
+In-Reply-To: <BAY22-DAV6153FBF5CF2EED9E627E090510@phx.gbl>
+References: <B8DD8375FCE2C94B9F170D9277C1FA2B8C5804@corvallis>
+	<BAY22-DAV6153FBF5CF2EED9E627E090510@phx.gbl>
+Message-ID: <7cd64ed70f7697df889c7120d8d1a71d@biomechanicsinc.com>
+
+Great tips!  I would also add that in addition to a remote camera 
+trigger (computer or camera-specific remote) you typically can also use 
+the timer function on cameras so equipped.  My camera, a Canon 300D 
+("Digital Rebel"), shoots 3 auto bracketed exposures from a single 
+timer triggered event.  This way you can change your exposure via the 
+shutter speed, set the AEB to +/-1 and then hit the shutter release, 
+run out of the mirror ball environment and the camera will shoot all 
+three AEB images.  This is particularly useful for settings where 
+lugging a laptop may be a pain, and it also allows you to get out of 
+the scene.
+
+Also, i usually shoot overlapping exposures throughout the sequence and 
+then compare the exposures that have identical settings to make sure 
+that the light conditions were not changing significantly while 
+shooting the mirror ball.  Otherwise, the recorded exposure and the 
+actual exposure may differ - although I don't really know how 
+significant this effect may be.  Obviously this would be more for 
+natural light sources like the sun behind clouds, etc.  I usually shoot 
+about 7 or 8 exposures worth of info and use HDRShop or Photosphere to 
+make the images.  Tripod is a must and white balance setting would 
+probably also be helpful so it does not change while shooting.
+
+Have fun - I'm sure there are already several compact point and shoot 
+type digital cameras out there that are already better than my digital 
+SLR - for what it's worth, I have seen price drops on the 300D that are 
+coming close to your ball park for a camera, if you are entertaining 
+the notion of a digital SLR - I would highly recommend this camera to 
+amateur digital camera users.  Good luck!
+
+kirk
+
+On Mar 9, 2005, at 9:23 AM, Despina Michael wrote:
+
+> Hi Rob,
+>
+> I have create a couple of HDR probes lately and I can tell you what 
+> settings I have used.
+>
+> First of all, the sequence of photos that you have to take must be 
+> perfectly alighned.
+> The only way that works for me to do that, is to place the camera on a 
+> tripod and take photos remotely (that is connect the camera with a 
+> computer and use remotly capturing pressing a key on the keyboard - 
+> camera's software should have the appropriate software for that - but 
+> good cameras usually do have)
+>
+> I don't think so, auto bracketing is a good idea. Most cameras can 
+> take about 3 (or 5) photos with Auto Bracketing but you need more in 
+> order to create an HDR Probe (about10-15 photos)
+>
+> In order to take the photos set aperture at a fix value and change 
+> only exposure time in order to change the overall exposure.
+> You also have to set your camera at no flash.
+>
+> You should  take a sequence of photos (about 10-15) with different 
+> exposure times, changing 1 f-stop each time, starting with bigger 
+> exposure.
+> Before begin to take your photos, take one photo using auto-focus in 
+> order camera focus on the mirrored ball. Then set manual-focus and 
+> don't change focusing (that is in order to have all photos with same 
+> "focus value")
+>
+> If you planning ton use hdrgen for generating HDR probe, I recommned 
+> you to disable alignment algorithm. At least in my case, when 
+> alignment was enable hdrgen gave worst results.
+>
+> I hope it helps,
+> Regards,
+> Despina
+
+
+From gregoryjward at gmail.com  Wed Mar  9 17:50:45 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed Mar  9 17:52:05 2005
+Subject: [Radiance-general] Digital Camera recommendations?
+In-Reply-To: <B8DD8375FCE2C94B9F170D9277C1FA2B8C5804@corvallis>
+References: <B8DD8375FCE2C94B9F170D9277C1FA2B8C5804@corvallis>
+Message-ID: <5925ba33a184edade655deea6e01b1c0@gmail.com>
+
+Hi Rob,
+
+There is no perfect camera for capturing HDR sequences.  The main 
+things you need to be able to control are the white balance, ASA, 
+aperture and speed, and an autobracketing mode that can cover +/-2 
+f-stops or more is ideal.
+
+The thing you want to avoid is a camera that does weird processing on 
+the images, and this is often difficult to determine until you get it.  
+I believe the Olympus C series and the Canon G series are pretty safe 
+in the price range you're after.  I've owned an Olympus C-3030, C-3040, 
+and C-4040.  I'm sticking with the last one, as the newer in the C line 
+add megapixels and features but nothing I'm interested in.  Generally, 
+the more megapixels you have in a small camera, the more noise you're 
+going to see.  The current race to 10 MPixels in a consumer-grade 
+camera is lunacy in my opinion.  Who wants to blow up an image to 20x30 
+inches?  Even if you do blow up an image to that size once every year 
+or so, you're paying for the privilege with image files that are 3-5 
+times larger than you would need otherwise.  (End rant.)
+
+My main problem with the C-4040, which you can't even get anymore, is 
+purple fringing caused by the lens at the edges of high contrast, 
+wide-angle shots.  It also has a very occassional knack of painting 
+white, blown-out areas blue.  This must have been an ill-considered 
+feature some Olympus engineer came up with it for making washed-out 
+skies look more natural, and it sometimes backfires.  I've only had a 
+few images this happened to in the thousands and thousands I've shot, 
+but another fellow with the same camera (but different firmware) has 
+seen it more often with his.
+
+-Greg
+
+> From: "Fitzsimmons, Rob" <Rob.Fitzsimmons@Summit.Fiserv.com>
+> Date: March 8, 2005 5:53:48 PM PST
+>
+> I think this may have been discussed, but I can't find the threads...
+> Does anyone have camera recommendations for creating HDR Probes?
+>
+> Something that has manual override, shutter / aperture priority for
+> bracketing
+> Auto bracketing?
+> Anyone guessing on when digital cameras will be taking native HDR 
+> picures?
+> Don't think I can wait that long
+>
+> My budget is $500
+>
+> Thanks,
+> Rob Fitzsimmons
+
+
+From rpg at rumblestrip.org  Wed Mar  9 17:57:39 2005
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Wed Mar  9 17:58:08 2005
+Subject: [Radiance-general] Digital Camera recommendations?
+In-Reply-To: <7cd64ed70f7697df889c7120d8d1a71d@biomechanicsinc.com>
+References: <B8DD8375FCE2C94B9F170D9277C1FA2B8C5804@corvallis>
+	<BAY22-DAV6153FBF5CF2EED9E627E090510@phx.gbl>
+	<7cd64ed70f7697df889c7120d8d1a71d@biomechanicsinc.com>
+Message-ID: <c22ecdf88c22cdd0c06aa572517b9ca7@rumblestrip.org>
+
+
+On Mar 9, 2005, at 11:45 AM, Kirk Thibault wrote:
+
+> Great tips!  I would also add that in addition to a remote camera 
+> trigger (computer or camera-specific remote) you typically can also 
+> use the timer function on cameras so equipped.  My camera, a Canon 
+> 300D ("Digital Rebel"), shoots 3 auto bracketed exposures from a 
+> single timer triggered event.  This way you can change your exposure 
+> via the shutter speed, set the AEB to +/-1 and then hit the shutter 
+> release, run out of the mirror ball environment and the camera will 
+> shoot all three AEB images.  This is particularly useful for settings 
+> where lugging a laptop may be a pain, and it also allows you to get 
+> out of the scene.
+
+Also don't forget to turn off auto white balance!  The QuickStart guide 
+that comes in the archive for Greg's Photosphere includes a really good 
+primer on getting started with shooting hdr sequences.
+
+Rob, I have an Olympus C4040Z, which I picked up on eBay a couple 
+months ago and love it--  (Greg's post came in as I typed this up, he 
+says everything else that needs to be said...)
+
+=================
+    Rob Guglielmetti
+www.rumblestrip.org
+
+
+From jk at ateliereng.com  Wed Mar  9 17:37:06 2005
+From: jk at ateliereng.com (Jochen Kauschmann)
+Date: Wed Mar  9 18:03:21 2005
+Subject: [Radiance-general] Transparency
+Message-ID: <6D02D0F44DF01644AE52BB76612DC75558CA@sbs1.ateliereng.com>
+
+Marisela,
+
+I haven't seen your pictures but my guess is - without jumping to wrong conclusions -that  your material, pressumably a 'trans' material, disapears from the images because its an illuminance image - the last reflection is missing.  Try and run a luminance simulation and check if it becomes visible.
+
+Jochen
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org]On Behalf Of Greg
+Ward
+Sent: 08 March 2005 15:27
+To: Marisela Mendoza
+Cc: Radiance general discussion
+Subject: Re: [Radiance-general] Transparency
+
+
+Hello Marisela,
+
+Your image(s) did not come through in your e-mail.  Please try sending 
+them to me directly at <gregoryjward@gmail.com> and perhaps I can 
+answer your question.
+
+-Greg
+
+> From: Marisela Mendoza <marichurad@yahoo.co.uk>
+> Date: March 8, 2005 2:48:55 AM PST
+>
+I am using desktop radiance in Ecotec.? I am trying to analyse the 
+glare effect produced by applying different screen transparency on a 
+window.? But when I applied the transparency in Ecotec?to the screen 
+material,? (i.e. 12% )? the material disappear from my renderings.?? I 
+know the material still there it is there since I can see the shadows 
+it proyects on the floor.?? I enclose some of the images I got.?
+  ?
+Figure 1 shows the deskto radiance rendering view from an exterior 
+camera that faces the window of a room ?which has these exterior 
+octagonal modules. The modules material that I chose is fabric with a 
+transparency of 0% for this case.
+
+Figure 2 shows the interior of the room and the shadows projected on 
+the floor by the modules.
+
+Figure 3 shows the same camera view as Figure 1. ?But in this case I 
+changed the transparency material in Ecotec to be 60% and the modules 
+are not visible anymore as it can be seen in. ??However when I render 
+with desktop radiance?an interior view similar to the one in ?Figure 2, 
+it turns out that the modules are actually projecting shade, see Fig 4. 
+?It is quiet strange that the transparency material can be perceived on 
+the projected shadows but it is not shown on the material itself.
+
+Anyone has clue of what is happening?
+
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+________________________________________________________________________
+This e-mail has been scanned for all viruses by Star. The
+service is powered by MessageLabs. For more information on a proactive
+anti-virus service working around the clock, around the globe, visit:
+http://www.star.net.uk
+________________________________________________________________________
+
+
+
+
+________________________________________________________________________
+This e-mail has been scanned for all viruses by Star. The
+service is powered by MessageLabs. For more information on a proactive
+anti-virus service working around the clock, around the globe, visit:
+http://www.star.net.uk
+________________________________________________________________________
+
+From a.jacobs at londonmet.ac.uk  Wed Mar  9 19:14:30 2005
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Wed Mar  9 19:05:50 2005
+Subject: [Radiance-general] Transparency
+In-Reply-To: <e3addf19fec36c937a5899253b6d47f2@gmail.com>
+References: <20050308104855.88691.qmail@web26505.mail.ukl.yahoo.com>
+	<e3addf19fec36c937a5899253b6d47f2@gmail.com>
+Message-ID: <10140.213.58.101.203.1110392070.squirrel@213.58.101.203>
+
+Marisela,
+
+if you are using the trans material, be aware that it's rather difficult
+to get it right. Check out this thread from the old archives:
+
+http://radsite.lbl.gov/radiance/digests_html/v2n7.html#TRANS_MATERIAL
+
+Tell us all more about your scene
+
+Cheers
+
+Axel
+
+
+
+From plaberge at labergedaylight.com  Wed Mar  9 19:41:50 2005
+From: plaberge at labergedaylight.com (Paul LaBerge)
+Date: Wed Mar  9 19:42:49 2005
+Subject: [Radiance-general] Digital Camera recommendations?
+In-Reply-To: <5925ba33a184edade655deea6e01b1c0@gmail.com>
+References: <B8DD8375FCE2C94B9F170D9277C1FA2B8C5804@corvallis>
+	<5925ba33a184edade655deea6e01b1c0@gmail.com>
+Message-ID: <0d3e429d50919b17d2f37e8ac046e40e@labergedaylight.com>
+
+Hello,
+After the previous camera questions in early January I did some  
+checking to find out just what my Nikon 990 could do as well as other  
+camera options.
+By using the manual setting on the 990, and a remote release for  
+steadiness, it is possible to take 14 bracketed photographs in 1 EV  
+step increments from 1/1000 to 8 seconds. The technique is to set the  
+camera to manual exposure and use the ?command dial? to step through  
+the shutter speeds alternating with firing the camera with the remote  
+release.
+An alternative is to use the built-in auto bracketing feature and  
+exposure compensation to take two series of 5 bracketed photos in 1/3  
+EV steps, one where compensation is set to +2 EV and one where  
+compensation is set to -2 EV. This produces a smaller overall range and  
+in smaller steps.
+The 990 is designed for interchangeable lenses, one of which is a  
+fisheye with an angular view of 183?. I assume that this would provide  
+the same information as the mirror ball, but I?ve not read up nor tried  
+that technique.
+_____________________
+A company called Harbortronics makes a device, a Digisnap, that can  
+control the 990, as well as many other cameras. I exchanged several  
+messages with Mark Roberts to find out if the Digisnap could provide  
+auto bracket control beyond +or- one frame and specifically if it could  
+do so while varying the shutter speed only.
+
+?It is 'possible' to add that capability to the firmware, but frankly  
+without a lot of incentive, it's not going to happen.?
+?
+Mark Roberts
+Chief Engineer
+Harbortronics LLC
+(253) 858-7769 (Phone)
+(253) 858-9517 (Fax)
+Mark@Harbortronics.com
+www.Harbortronics.com
+
+This would mean hacking the firmware of the camera, something I?m  
+reluctant to experiment with.
+I?ve not tried this device. A friend who has says its clunky, but works.
+Harbortronics makes a wide variety of camera controllers for an array  
+of different actions.
+_____________________
+I also checked with a Nikon Technical Representative, Scott Frier, at  
+the recent MacWorld show in San Francisco. The Nikon D2H and D2X can  
+auto bracket up to 9 frames at up to 1 EV steps. That?s one in the  
+middle and 4 over exposed and 4 under exposed. I also asked about how  
+the data is stored, since Greg (thank you) had mentioned that the new  
+cameras are incorporating their own, as opposed to Photosphere, image  
+processing to adjust the over and under exposed areas of a picture. It  
+seems that if the image is stored in raw format that there are no  
+software exposure adjustments in the file. The file is broken into two  
+parts: one folder contains the 0 and 1 data, the other contains a set  
+of instructions to be applied to the aforementioned.
+
+The D2H and D2X are professional cameras in every sense of the word.  
+The good news is, thanks to the D2H now being superseded by the D2X, it  
+only costs $2000.00. I didn?t ask about the D2X. If someone already has  
+Nikon lenses, this might be a path to HDRI photography.
+
+Maybe there is someone who can rewrite the Digisnap or the camera  
+firmware??
+
+By the way Greg, Scott was very intrigued with what Photosphere does.  
+He may be getting in contact with you.
+
+Paul LaBerge
+________________________________________________________________________ 
+_________________
+
+On Mar 9, 2005, at 8:50 AM, Greg Ward wrote:
+
+> Hi Rob,
+>
+> There is no perfect camera for capturing HDR sequences.  The main  
+> things you need to be able to control are the white balance, ASA,  
+> aperture and speed, and an autobracketing mode that can cover +/-2  
+> f-stops or more is ideal.
+>
+> The thing you want to avoid is a camera that does weird processing on  
+> the images, and this is often difficult to determine until you get it.  
+>  I believe the Olympus C series and the Canon G series are pretty safe  
+> in the price range you're after.  I've owned an Olympus C-3030,  
+> C-3040, and C-4040.  I'm sticking with the last one, as the newer in  
+> the C line add megapixels and features but nothing I'm interested in.   
+> Generally, the more megapixels you have in a small camera, the more  
+> noise you're going to see.  The current race to 10 MPixels in a  
+> consumer-grade camera is lunacy in my opinion.  Who wants to blow up  
+> an image to 20x30 inches?  Even if you do blow up an image to that  
+> size once every year or so, you're paying for the privilege with image  
+> files that are 3-5 times larger than you would need otherwise.  (End  
+> rant.)
+>
+> My main problem with the C-4040, which you can't even get anymore, is  
+> purple fringing caused by the lens at the edges of high contrast,  
+> wide-angle shots.  It also has a very occassional knack of painting  
+> white, blown-out areas blue.  This must have been an ill-considered  
+> feature some Olympus engineer came up with it for making washed-out  
+> skies look more natural, and it sometimes backfires.  I've only had a  
+> few images this happened to in the thousands and thousands I've shot,  
+> but another fellow with the same camera (but different firmware) has  
+> seen it more often with his.
+>
+> -Greg
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: not available
+Type: text/enriched
+Size: 5134 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20050309/3a6ed285/attachment.bin
+From gregoryjward at gmail.com  Wed Mar  9 20:23:01 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed Mar  9 20:24:13 2005
+Subject: [Radiance-general] Digital Camera recommendations?
+In-Reply-To: <0d3e429d50919b17d2f37e8ac046e40e@labergedaylight.com>
+References: <B8DD8375FCE2C94B9F170D9277C1FA2B8C5804@corvallis>
+	<5925ba33a184edade655deea6e01b1c0@gmail.com>
+	<0d3e429d50919b17d2f37e8ac046e40e@labergedaylight.com>
+Message-ID: <6988fc98a5f6097f4d269677bca399ba@gmail.com>
+
+Thanks, Paul, for that wealth of information.
+
+I just wanted to add a note on the RAW image files -- most of the time, 
+the native converters lose the exposure information on their way to an 
+(uncorrected) JPEG or TIFF image for Photosphere, so I don't recommend 
+RAW unless you know your camera is screwing with your JPEG's.  
+Photoshop CS actually does a decent job converting RAW files, saving 
+the exposure info in the Exif header, and it handles most varieties of 
+RAW.  Each RAW format is maker- and model-specific, which causes real 
+problems for long-term support and archiving -- another reason to avoid 
+this format.  RAW files also tend to be large, and their advantages for 
+reduced noise and exposure latitude are widely exaggerated.  Since 
+multiple images are averaged together to make an HDR, noise tends to 
+get smoothed out, anyway, and JPEG artifacts disappear as well.
+
+That said, I encourage you to do your own experiments, but weigh the 
+cost in your time using RAW against the actual benefit you get from 
+them.  I've done my own, and I've found the benefit to be negligible 
+next to the effort required.
+
+-Greg
+
+P.S.  I should have included the Nikon 900 series in my list of 
+recommended cameras -- most people who have used them for HDR capture 
+have had good experiences from all I've heard.
+
+> From: Paul LaBerge <plaberge@labergedaylight.com>
+> Date: March 9, 2005 10:41:50 AM PST
+>
+> Hello,
+> After the previous camera questions in early January I did some 
+> checking to find out just what my Nikon 990 could do as well as other 
+> camera options.
+> ...
+
+
+From MInanici at lbl.gov  Wed Mar  9 20:38:44 2005
+From: MInanici at lbl.gov (Mehlika Inanici)
+Date: Wed Mar  9 20:38:58 2005
+Subject: [Radiance-general] Digital Camera recommendations?
+In-Reply-To: <6988fc98a5f6097f4d269677bca399ba@gmail.com>
+References: <B8DD8375FCE2C94B9F170D9277C1FA2B8C5804@corvallis>
+	<5925ba33a184edade655deea6e01b1c0@gmail.com>
+	<0d3e429d50919b17d2f37e8ac046e40e@labergedaylight.com>
+	<6988fc98a5f6097f4d269677bca399ba@gmail.com>
+Message-ID: <422F50C4.50908@lbl.gov>
+
+
+Hello. I would also recommend Nikon 5400. I have used both Nikon 990 and 
+5400 with a fisheye lens (FC-E8  and FC-E9, respectively). I have got 
+consistent results with both cameras.
+
+Thanks,
+Mehlika
+
+Greg Ward wrote:
+
+> P.S.  I should have included the Nikon 900 series in my list of 
+> recommended cameras -- most people who have used them for HDR capture 
+> have had good experiences from all I've heard.
+>
+>> From: Paul LaBerge <plaberge@labergedaylight.com>
+>> Date: March 9, 2005 10:41:50 AM PST
+>>
+>> Hello,
+>> After the previous camera questions in early January I did some 
+>> checking to find out just what my Nikon 990 could do as well as other 
+>> camera options.
+>> ...
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+
+From Rob.Fitzsimmons at Summit.Fiserv.com  Wed Mar  9 21:27:36 2005
+From: Rob.Fitzsimmons at Summit.Fiserv.com (Fitzsimmons, Rob)
+Date: Wed Mar  9 21:28:23 2005
+Subject: [Radiance-general] Digital Camera recommendations?
+Message-ID: <B8DD8375FCE2C94B9F170D9277C1FA2B8C580B@corvallis>
+
+ Thanks to everyone for your input!
+
+Rob F
+
+
+From a.jacobs at londonmet.ac.uk  Thu Mar 10 17:26:27 2005
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Thu Mar 10 17:17:46 2005
+Subject: [Radiance-general] trans mat
+In-Reply-To: <d72aaa476ff88748209362b91d299fba@gmail.com>
+References: <422637B8.2000305@t-online.de>
+	<10203.213.58.101.145.1109806416.squirrel@213.58.101.145>
+	<d72aaa476ff88748209362b91d299fba@gmail.com>
+Message-ID: <10222.213.58.100.96.1110471987.squirrel@213.58.100.96>
+
+Dear all,
+
+I am trying to nail this one down, once and for all.
+What is your experience/approach? Feedback welcome.
+
+refman:
+"The transmissivity is the fraction of penetrating light that travels all
+the way through the material.
+The transmitted specular component is the fraction of transmitted light
+that is not diffusely scattered.
+Transmitted and diffusely reflected light is modified by the material color.
+Translucent objects are infinitely thin."
+
+BIG QUESTION:
+How do CAPITAL indeces (RADIANCE) relate to
+lower case indices (PHYSICS)??? See below. Also for a lot more little
+questions...
+
+mod trans id
+0
+0
+7 red green blue spec rough trans tspec
+#7  A1   A2   A3  A4    A5    A6    A7
+
+Let's talk about grey objects for now:
+A=179*(.265*A1+.65*A2+.065*A3)
+
+[hope you like ASCII art]
+!!! View with monospaced font !!!
+             _.
+ _|          /|
+  \         /
+ 1 \  ---  /
+    \/   \/  b \
+    /\   /\     > a
+   |  \ /  | c /
+   |   V   |
+----------------  g
+   |   \   |
+   |    \  | f \
+    \    \/     > d
+     \   /\  e /
+      ---  \
+            \|
+            -.
+Legend
+------
+Incident light = 1 (is that our assumption?)
+Reflected light a
+ - specular b
+ - diffuse c
+Transmitted light d
+ - specular e
+ - diffuse f
+Absorpt light g
+
+What I am quite sure about:
+---------------------------
+1 = a + d + g
+a = b + c
+d = e + f
+
+Some Qs:
+--------
+The specular components (both diff and spec) are hard to measure.
+However, this is what the calculation in the radbook is based on.
+How would one make estimations?
+Is this only possible through visual comparision?
+What are the steps to A1..A7 if given:
+- reflectance (luxmeter + luminance meter)
+- transmittance (2x luxmeter)
+(practical scenario, assuming grey colour)
+if
+- Lambertion properties or
+- clearly see-through
+What is the plastic equivalent to a trans without transmittance?
+Would that be _wrong_ or just _stupid_ to use?
+
+References
+----------
+- http://radsite.lbl.gov/radiance/digests_html/v2n7.html#TRANS_MATERIAL
+- radbook 5.2.6, page 325 (new edition)
+
+Cheers
+
+Axel
+
+
+From schorsch at schorsch.com  Thu Mar 10 17:47:19 2005
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Thu Mar 10 17:47:36 2005
+Subject: [Radiance-general] trans mat
+In-Reply-To: <10222.213.58.100.96.1110471987.squirrel@213.58.100.96>
+References: <422637B8.2000305@t-online.de>
+	<10203.213.58.101.145.1109806416.squirrel@213.58.101.145>
+	<d72aaa476ff88748209362b91d299fba@gmail.com>
+	<10222.213.58.100.96.1110471987.squirrel@213.58.100.96>
+Message-ID: <Pine.BSF.4.58.0503101146290.31300@emancholl.pair.com>
+
+Axel Jacobs wrote:
+
+> Dear all,
+>
+> I am trying to nail this one down, once and for all.
+> What is your experience/approach? Feedback welcome.
+>
+> refman:
+> "The transmissivity is the fraction of penetrating light that travels all
+> the way through the material.
+> The transmitted specular component is the fraction of transmitted light
+> that is not diffusely scattered.
+> Transmitted and diffusely reflected light is modified by the material color.
+> Translucent objects are infinitely thin."
+>
+> BIG QUESTION:
+> How do CAPITAL indeces (RADIANCE) relate to
+> lower case indices (PHYSICS)??? See below. Also for a lot more little
+> questions...
+
+
+  http://www.schorsch.com/rayfront/manual/transdef.html
+
+Scroll down a bit for the diagram.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From gregoryjward at gmail.com  Thu Mar 10 18:43:58 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu Mar 10 18:45:17 2005
+Subject: [Radiance-general] trans mat
+In-Reply-To: <Pine.BSF.4.58.0503101146290.31300@emancholl.pair.com>
+References: <422637B8.2000305@t-online.de>
+	<10203.213.58.101.145.1109806416.squirrel@213.58.101.145>
+	<d72aaa476ff88748209362b91d299fba@gmail.com>
+	<10222.213.58.100.96.1110471987.squirrel@213.58.100.96>
+	<Pine.BSF.4.58.0503101146290.31300@emancholl.pair.com>
+Message-ID: <7265410cf4f75cfdaaa6bf59dc54654b@gmail.com>
+
+Wow, that's a great diagram, Schorsch.  I think I understand the 
+"trans" type for the first time, myself!
+
+Be sure also to refer to section 5.2.6 (pp. 325-6) in "Rendering with 
+Radiance," which translates between more sensible physical quanitites 
+and the parameters of the "trans" type.  I believe Rob G. has an Excel 
+spreadsheet that implements these formulas nicely, if you'd like to 
+request a copy.
+
+By way of excuse, the reason the trans type is so baffling is my 
+stubborn adherence to the principle that Radiance primitives have 
+well-defined legal ranges.  All the material parameters (except 
+roughness) have legal physical ranges of [0,1).  Since Radiance does 
+not enforce these limits, you can specify values outside this range, 
+but you should know that you are on shakey ground at that point.
+
+That said, I freely admit that the obtuse derivation of the trans 
+parameters in particular has caused a good deal more consternation than 
+if I had used more usual values of Rd, Td, Rs, and Ts and simply noted 
+that these coefficients must sum up to something less than 1.  Oh, 
+well.
+
+-Greg
+
+> From: Georg Mischler <schorsch@schorsch.com>
+> Date: March 10, 2005 8:47:19 AM PST
+>
+> Axel Jacobs wrote:
+>
+>> Dear all,
+>>
+>> I am trying to nail this one down, once and for all.
+>> What is your experience/approach? Feedback welcome.
+>>
+>> refman:
+>> "The transmissivity is the fraction of penetrating light that travels 
+>> all
+>> the way through the material.
+>> The transmitted specular component is the fraction of transmitted 
+>> light
+>> that is not diffusely scattered.
+>> Transmitted and diffusely reflected light is modified by the material 
+>> color.
+>> Translucent objects are infinitely thin."
+>>
+>> BIG QUESTION:
+>> How do CAPITAL indeces (RADIANCE) relate to
+>> lower case indices (PHYSICS)??? See below. Also for a lot more little
+>> questions...
+>
+>   http://www.schorsch.com/rayfront/manual/transdef.html
+>
+> Scroll down a bit for the diagram.
+>
+> -schorsch
+
+
+From a.jacobs at londonmet.ac.uk  Thu Mar 10 19:50:30 2005
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Thu Mar 10 19:41:42 2005
+Subject: [Radiance-general] trans mat
+In-Reply-To: <7265410cf4f75cfdaaa6bf59dc54654b@gmail.com>
+References: <422637B8.2000305@t-online.de>
+	<10203.213.58.101.145.1109806416.squirrel@213.58.101.145>
+	<d72aaa476ff88748209362b91d299fba@gmail.com>
+	<10222.213.58.100.96.1110471987.squirrel@213.58.100.96>
+	<Pine.BSF.4.58.0503101146290.31300@emancholl.pair.com>
+	<7265410cf4f75cfdaaa6bf59dc54654b@gmail.com>
+Message-ID: <10141.213.58.100.96.1110480630.squirrel@213.58.100.96>
+
+> Wow, that's a great diagram, Schorsch.  I think I understand the
+> "trans" type for the first time, myself!
+
+Couldn't agree more. Super! I might just like to your site, then.
+
+> Be sure also to refer to section 5.2.6 (pp. 325-6) in "Rendering with
+> Radiance," which translates between more sensible physical quanitites
+> and the parameters of the "trans" type.
+
+I did, but called it radbook.
+
+How about real-world examples for those of us that don't have a
+goniphotometer in their kitchen cupboard?
+
+Cheers
+
+Axel
+
+
+
+From a.jacobs at londonmet.ac.uk  Thu Mar 10 20:05:30 2005
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Thu Mar 10 19:56:53 2005
+Subject: [Radiance-general] trans mat
+In-Reply-To: <10222.213.58.100.96.1110471987.squirrel@213.58.100.96>
+References: <422637B8.2000305@t-online.de>
+	<10203.213.58.101.145.1109806416.squirrel@213.58.101.145>
+	<d72aaa476ff88748209362b91d299fba@gmail.com>
+	<10222.213.58.100.96.1110471987.squirrel@213.58.100.96>
+Message-ID: <10144.213.58.100.96.1110481530.squirrel@213.58.100.96>
+
+
+> 7 red green blue spec rough trans tspec
+> #7  A1   A2   A3  A4    A5    A6    A7
+>
+> What is the plastic equivalent to a trans without transmittance?
+> Would that be _wrong_ or just _stupid_ to use?
+
+Is trans with A6=0 equal to plastic? And could it be used interchangeably?
+
+Axel
+
+
+From gregoryjward at gmail.com  Thu Mar 10 20:01:20 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu Mar 10 20:02:35 2005
+Subject: [Radiance-general] trans mat
+In-Reply-To: <10141.213.58.100.96.1110480630.squirrel@213.58.100.96>
+References: <422637B8.2000305@t-online.de>
+	<10203.213.58.101.145.1109806416.squirrel@213.58.101.145>
+	<d72aaa476ff88748209362b91d299fba@gmail.com>
+	<10222.213.58.100.96.1110471987.squirrel@213.58.100.96>
+	<Pine.BSF.4.58.0503101146290.31300@emancholl.pair.com>
+	<7265410cf4f75cfdaaa6bf59dc54654b@gmail.com>
+	<10141.213.58.100.96.1110480630.squirrel@213.58.100.96>
+Message-ID: <9055f7a1537ba6f65261977d9351fcff@gmail.com>
+
+Sorry, Axel -- I should have read through your original posting more 
+carefully.  I missed your questions and references at the end:
+
+> Some Qs:
+> --------
+> The specular components (both diff and spec) are hard to measure.
+> However, this is what the calculation in the radbook is based on.
+> How would one make estimations?
+
+I don't know of any *good* ways to measure these without some kind of 
+photometer.  A crude way to measure total transmittance would be to 
+measure illuminance near a large white card, then again, covering the 
+illuminance probe completely with your material.  The same trick will 
+work with a camera and Photosphere or hdrgen if you don't own a lux 
+meter.  Use your camera in the same way as the probe.  Divide the 
+average of the second image by the first using Photosphere (or hdrgen) 
+and running "pvalue -h -H -d -b -o capture.hdr | total -m" (or "Edit -> 
+Select All" in the image viewer of Photosphere).
+
+For reflectance, you can try a similar trick if you know the 
+reflectance of your white card, and this is described in RwR, I think.
+
+Specular is more difficult to measure, but you can usually guess with 
+reasonable accuracy.  If a surface is a single dielectric interface 
+(plastic or glass), it's specular reflectance will be around 4%.  If it 
+is a double interface, as in a pane of glass, it will be about twice 
+that, unless the glass is very dark, where it will be somewhere between 
+4% and 8% depending on the amount of absorption.
+
+As for roughness, I have a nice little device with LEDs and a viewport 
+that allow me to estimate this value, but I don't know how to offer it 
+to anyone as it's a piece of hardware, and requires a lot of experience 
+to use effectively.
+
+> Is this only possible through visual comparision?
+> What are the steps to A1..A7 if given:
+> - reflectance (luxmeter + luminance meter)
+> - transmittance (2x luxmeter)
+> (practical scenario, assuming grey colour)
+> if
+> - Lambertion properties or
+> - clearly see-through
+> What is the plastic equivalent to a trans without transmittance?
+
+I'm not sure I understand the question.  If you set A6 to 0, trans is 
+the same as plastic.
+
+> Would that be _wrong_ or just _stupid_ to use?
+
+If you mean substituting trans for plastic to be general, there's no 
+harm.
+
+-Greg
+
+> From: "Axel Jacobs" <a.jacobs@londonmet.ac.uk>
+> Date: March 10, 2005 10:50:30 AM PST
+>
+>> Wow, that's a great diagram, Schorsch.  I think I understand the
+>> "trans" type for the first time, myself!
+>
+> Couldn't agree more. Super! I might just like to your site, then.
+>
+>> Be sure also to refer to section 5.2.6 (pp. 325-6) in "Rendering with
+>> Radiance," which translates between more sensible physical quanitites
+>> and the parameters of the "trans" type.
+>
+> I did, but called it radbook.
+>
+> How about real-world examples for those of us that don't have a
+> goniphotometer in their kitchen cupboard?
+>
+> Cheers
+> Axel
+
+
+From gregoryjward at gmail.com  Thu Mar 10 20:04:05 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu Mar 10 20:05:19 2005
+Subject: [Radiance-general] trans mat
+In-Reply-To: <10144.213.58.100.96.1110481530.squirrel@213.58.100.96>
+References: <422637B8.2000305@t-online.de>
+	<10203.213.58.101.145.1109806416.squirrel@213.58.101.145>
+	<d72aaa476ff88748209362b91d299fba@gmail.com>
+	<10222.213.58.100.96.1110471987.squirrel@213.58.100.96>
+	<10144.213.58.100.96.1110481530.squirrel@213.58.100.96>
+Message-ID: <bca360fae81b71a7c8a47c84212f2d4a@gmail.com>
+
+A P.S. to my last message -- the reasonable value ranges for the basic 
+material types are given in the document called "materials" under 
+ray/doc/notes, or from the website at:
+
+	http://radsite.lbl.gov/radiance/refer/Notes/materials.html
+
+-G
+
+
+From marichurad at yahoo.co.uk  Thu Mar 10 21:56:02 2005
+From: marichurad at yahoo.co.uk (Marisela Mendoza)
+Date: Thu Mar 10 21:56:35 2005
+Subject: [Radiance-general] Transparency
+In-Reply-To: 6667
+Message-ID: <20050310205602.52008.qmail@web26504.mail.ukl.yahoo.com>
+
+HI Axel, 
+ 
+Thaks a lot for the information it helped me to get my rendering.  I will send you the images when I finish them.
+ 
+Cheers
+Marisela
+
+Axel Jacobs <a.jacobs@londonmet.ac.uk> wrote:
+Marisela,
+
+if you are using the trans material, be aware that it's rather difficult
+to get it right. Check out this thread from the old archives:
+
+http://radsite.lbl.gov/radiance/digests_html/v2n7.html#TRANS_MATERIAL
+
+Tell us all more about your scene
+
+Cheers
+
+Axel
+
+
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+Send instant messages to your online friends http://uk.messenger.yahoo.com 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20050310/b16153b1/attachment.htm
+From a.jacobs at londonmet.ac.uk  Fri Mar 11 01:56:32 2005
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Fri Mar 11 01:47:45 2005
+Subject: [Radiance-general] trans mat
+In-Reply-To: <9055f7a1537ba6f65261977d9351fcff@gmail.com>
+References: <422637B8.2000305@t-online.de>
+	<10203.213.58.101.145.1109806416.squirrel@213.58.101.145>
+	<d72aaa476ff88748209362b91d299fba@gmail.com>
+	<10222.213.58.100.96.1110471987.squirrel@213.58.100.96>
+	<Pine.BSF.4.58.0503101146290.31300@emancholl.pair.com>
+	<7265410cf4f75cfdaaa6bf59dc54654b@gmail.com>
+	<10141.213.58.100.96.1110480630.squirrel@213.58.100.96>
+	<9055f7a1537ba6f65261977d9351fcff@gmail.com>
+Message-ID: <10011.213.58.100.96.1110502592.squirrel@213.58.100.96>
+
+Greg,
+
+> Specular is more difficult to measure, but you can usually guess with
+> reasonable accuracy.  If a surface is a single dielectric interface
+> (plastic or glass), it's specular reflectance will be around 4%. If it
+> is a double interface, as in a pane of glass, it will be about twice
+> that, unless the glass is very dark, where it will be somewhere between
+> 4% and 8% depending on the amount of absorption.
+
+Is this the so-called Fresnel reflection you're talking about? It's 4% at
+right angles. I'm with you...
+
+> As for roughness, I have a nice little device with LEDs and a viewport
+> that allow me to estimate this value, but I don't know how to offer it
+> to anyone as it's a piece of hardware, and requires a lot of experience
+> to use effectively.
+
+I wonder if it was possible to just measure the size of the hilight and
+derive the roughness from there, given a known light source diametre and
+distance, e.g. sun? Well, it's not going to be have sharp edges, but one
+could take an HDR image and a luminance profile through it that finds the
+50% intensity...
+
+>> Is this only possible through visual comparision?
+>> What are the steps to A1..A7 if given:
+>> - reflectance (luxmeter + luminance meter)
+>> - transmittance (2x luxmeter)
+>> (practical scenario, assuming grey colour)
+>> if
+>> - Lambertion properties or
+>> - clearly see-through
+>> What is the plastic equivalent to a trans without transmittance?
+>
+> I'm not sure I understand the question.  If you set A6 to 0, trans is
+> the same as plastic.
+
+What I means is almost exactly what you described above:
+To measure the reflectance: refl = L * PI / E. Measuring the luminance and
+the illuminance for the same spot (even illuminance assumed) gives us a
+figure for the reflectance
+To measure the transmittance: trans = E_behind_material /
+E_in_front_of_material, ideally taken with 2 lux meters, but under
+relatively constant illumination and with some averaging over several
+readings, it will work.
+
+Question is: how far does this improvisation get us with the trans material?
+
+Axel
+
+
+
+From gregoryjward at gmail.com  Fri Mar 11 04:11:59 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri Mar 11 04:18:56 2005
+Subject: [Radiance-general] trans mat
+In-Reply-To: <10011.213.58.100.96.1110502592.squirrel@213.58.100.96>
+References: <422637B8.2000305@t-online.de>
+	<10203.213.58.101.145.1109806416.squirrel@213.58.101.145>
+	<d72aaa476ff88748209362b91d299fba@gmail.com>
+	<10222.213.58.100.96.1110471987.squirrel@213.58.100.96>
+	<Pine.BSF.4.58.0503101146290.31300@emancholl.pair.com>
+	<7265410cf4f75cfdaaa6bf59dc54654b@gmail.com>
+	<10141.213.58.100.96.1110480630.squirrel@213.58.100.96>
+	<9055f7a1537ba6f65261977d9351fcff@gmail.com>
+	<10011.213.58.100.96.1110502592.squirrel@213.58.100.96>
+Message-ID: <6a6645184ecbf8da70c4eddcd0525910@gmail.com>
+
+Hi Axel,
+
+> I wonder if it was possible to just measure the size of the hilight and
+> derive the roughness from there, given a known light source diametre 
+> and
+> distance, e.g. sun? Well, it's not going to be have sharp edges, but 
+> one
+> could take an HDR image and a luminance profile through it that finds 
+> the
+> 50% intensity...
+
+Well, you can take an HDR photo and use a known source and geometry to 
+fit the distribution, but it's a fair amount of work.
+
+>>> What are the steps to A1..A7 if given:
+>>> - reflectance (luxmeter + luminance meter)
+>>> - transmittance (2x luxmeter)
+>>> (practical scenario, assuming grey colour)
+>>> if
+>>> - Lambertion properties or
+>>> - clearly see-through
+>>> What is the plastic equivalent to a trans without transmittance?
+>>
+>> I'm not sure I understand the question.  If you set A6 to 0, trans is
+>> the same as plastic.
+>
+> What I means is almost exactly what you described above:
+> To measure the reflectance: refl = L * PI / E. Measuring the luminance 
+> and
+> the illuminance for the same spot (even illuminance assumed) gives us a
+> figure for the reflectance
+> To measure the transmittance: trans = E_behind_material /
+> E_in_front_of_material, ideally taken with 2 lux meters, but under
+> relatively constant illumination and with some averaging over several
+> readings, it will work.
+>
+> Question is: how far does this improvisation get us with the trans 
+> material?
+
+Well, it's OK, but you still don't know how much of the transmitted 
+light is specular and how much is diffuse.  You could try putting a 
+tube on your lux meter (or using a luminance probe) and couple with a 
+collimated source (a good quality flashlight will do in a pinch) and 
+back the source and probe away from the material.  Subtracting the 
+measured specular (direct) transmittance from the previous integrated 
+measurement will give you the approximate diffuse value.
+
+This is all very, very rough.
+
+-Greg
+
+
+From jelle.feringa at ezct.net  Fri Mar 11 15:35:11 2005
+From: jelle.feringa at ezct.net (Jelle Feringa / EZCT Architecture & Design Research)
+Date: Fri Mar 11 15:34:37 2005
+Subject: [Radiance-general] radiance graph
+Message-ID: <20050311143419.15ED11C001C2@mwinf0402.wanadoo.fr>
+
+Hi,
+
+Currently I'm trying to construct a light-graph of a given scene by
+raytracing Radiance samples using rtrace, and dumping these to a polyline
+instead of pixels. I think such a graph could give a lot of insight apart
+from an image as well. Also I like the idea of being able to construct
+geometry instead of generating yet another pixel. I already have sooo many
+of these. 
+
+Thing is that my experiment has only been semi successful, and I'd like to
+hear what you think of it: I've made it available on my server:
+www.ezct.net/radiance
+
+The technique I used is simple, I have been using the following commandline:
+
+ximage trace.pic | rtrace -ab 1 -ds 0.2 -dr 6  -dt 1 -otodp -h -x 1 -i
+ok.oct  > raytrace_sample.dmp
+
+The coordinates in raytrace_sample.dmp are converted to .dxf geometry.
+To give you some insight, I've merged it with the original scene:
+radiance_graph_01_in_context.dxf
+
+The problem so far is that 'graph' implies clarity, and as you'll see, my
+experiments so far are rather noisy. Getting lots of rays isn't the point,
+getting the ones that matter is another! The other thing is that I do not
+know how I could generate such a point dump from a whole image instead of
+sampling a single pixel, as I'm doing now. I've done some experiments
+sampling many points, but that's not the way to do it. How could I have
+rtrace trace all pixels in a given picture?
+
+To make the graph more clear, it would be interesting to color them for
+instance accordingly to how often a ray bounced. What would be a good way
+for scripting rtrace such that I'll be able to do so?
+
+Another thing would be that the graph would be most coherent when a ray is
+traced from camera all the way to the source. Would my best option be to
+render with just a sun and to forget about the sky? I've tried a couple of
+option but it seems difficult to have many rays reach a light source.
+
+Love to hear what you think of it.
+
+Cheers, 
+
+Jelle.
+
+
+
+From raphael.compagnon at eif.ch  Fri Mar 11 16:50:24 2005
+From: raphael.compagnon at eif.ch (Raphael Compagnon)
+Date: Fri Mar 11 16:50:47 2005
+Subject: [Radiance-general] radiance graph
+In-Reply-To: <20050311143419.15ED11C001C2@mwinf0402.wanadoo.fr>
+Message-ID: <5.1.0.14.2.20050311162112.0209f8d8@pop.eif.ch>
+
+Hello,
+
+A few years ago I did similar things as you are doing. Here are some 
+advices you may find useful:
+
+At 11.03.2005 15:35, you wrote:
+>The technique I used is simple, I have been using the following commandline:
+>
+>ximage trace.pic | rtrace -ab 1 -ds 0.2 -dr 6  -dt 1 -otodp -h -x 1 -i
+>ok.oct  > raytrace_sample.dmp
+
+You may have noticed that rays which are directed towards source objects 
+(e.g. the sky hemisphere) get point coordinates that are in fact the origin 
+(0,0,0). This leads to many rays wrongly directed to the origin instead of 
+going in the right direction. The solution I found is to filter the rtrace 
+output just to ignore these rays. This can be done using rcalc like this:
+ximage trace.pic | rtrace -ab 1 -ds 0.2 -dr 6  -dt 1 -otodp -h -x 1 -i 
+ok.oct |  \
+rcalc -e 'abs(x)=if(x,x,-x);cond=abs($7)+abs($8)+abs($9)' > raytrace_sample.dmp
+
+>To make the graph more clear, it would be interesting to color them for
+>instance accordingly to how often a ray bounced. What would be a good way
+>for scripting rtrace such that I'll be able to do so?
+
+I just outline herefater a technique that works for a scene with opaque 
+diffusers only. You may also adapt this technique to other type of materials.
+
+First define a new plastic with a .9 reflectance:
+void plastic new_mat
+0
+0
+5 .9 .9 .9 0 0
+
+Then apply this new material to your scene file:
+
+pfilt -m new_mat original_scene.rad >new_scene.rad
+
+Alter also all light emitting types (i.e. glow, light, illum) of your scene 
+so that their R,G,B values are 1
+
+By doing so the radiance values that is attached to a single ray will be 
+0.9^n with n the number of bounces it has encoutered.
+
+Then add to your rtrace output the value of each rays using option -otodpv 
+(this last v is the thing you need!)
+
+The output of rtrace can then be processed using rcalc to retrieve the 
+number of bounces n that you may then use to whatever you need:
+rtrace -otodpv... | rcalc -e 'n=$10/log(0.9); ... '
+
+Raphael Compagnon
+
+
+From raphael.compagnon at eif.ch  Fri Mar 11 16:52:19 2005
+From: raphael.compagnon at eif.ch (Raphael Compagnon)
+Date: Fri Mar 11 16:52:39 2005
+Subject: [Radiance-general] radiance graph
+Message-ID: <5.1.0.14.2.20050311165116.020a5fd8@pop.eif.ch>
+
+Sorry I made a mistake in the last line of my previous message:
+
+Here is the right formula:
+
+rtrace -otodpv... | rcalc -e 'n=log($10)/log(0.9); ... '
+
+Raphael Compagnon
+
+
+From jelle.feringa at ezct.net  Fri Mar 11 18:54:10 2005
+From: jelle.feringa at ezct.net (Jelle Feringa / EZCT Architecture & Design Research)
+Date: Fri Mar 11 18:53:48 2005
+Subject: [Radiance-general] radiance graph | cygwin mess up?
+Message-ID: <20050311175330.62F5C1C00329@mwinf0403.wanadoo.fr>
+
+Hi Raphael,
+
+Thanks so much for your feedback, that gives me a lot of insight!
+
+I tried to run 
+[.]rcalc -e "abs(x)=if(x,x,-x);cond=abs($7)+abs($8)+abs($9)" >
+raytrace_sample.dmp
+
+But rtrace & rcalc run into a standstill, and output is not being created.
+Could this be due the fact I'm a poor bugger on cygwin?
+
+I tried to run:
+
+$ rcalc -e 'abs(x)=if(x,x,-x);cond=abs($7)+abs($8)+abs($9)' pointdump.tmp >
+test.dmp
+
+Where rtrace output being located in pointdump.tmp, which runs without
+errors, but the file created is empty... -a 7th/8th/9th variable being
+present in the file-
+
+However, so far my script is just using $1 $2 $3 so also these lines haven't
+been showing up so far.
+
+The suggested idea for counting bounces is brilliant, wouldn't have come up
+with that! Thanks so much. I think I'll color rays in the graph according to
+how often they bounce; the more often, the lighter they get since the light
+will be more diffused accordingly. 
+
+//One of these days I'll do myself a favor and get a linux box I promise ;)
+
+Thanks again for your feedback!
+
+Jelle.
+
+
+
+From marcdevon at hotmail.com  Fri Mar 11 20:34:15 2005
+From: marcdevon at hotmail.com (Marcus Jacobs)
+Date: Fri Mar 11 20:35:05 2005
+Subject: [Radiance-general] Color Bleeding
+In-Reply-To: <MC8-F34WM7F9l6k88jb0004ff46@MC8-F34.hotmail.com>
+Message-ID: <BAY102-F17578E698928F45DBBB4BEA4530@phx.gbl>
+
+Dear Group
+
+I have come across an issue with the color bleeding of image maps that I use 
+with my Radiance renderings. I have the dual objective of achieving a 
+physically accurate and asthetically pleasing rendering. It is my 
+understanding that to obtain physically accurate attributes for a material 
+associated with an image map, one should normpat'd the image and then set 
+the appropriate rgb reflection for its associated material. The problem I 
+have come into is that the color bleedng seems excessive. Here are some 
+examples:
+
+For the wood floor image map in this rendering, the image map was not 
+normpat'd and a rgb reflection for the floor (plastic) was set at .4 .4 .4. 
+The floor image map brightness is a bit darker than what I would expect:
+
+http://pg.photos.yahoo.com/ph/marcdevon/detail?.dir=/b3e9&.dnm=d98b.jpg&.src=ph
+
+For this rendering, the wood floor image image was normpat'd. The red green 
+blue option in colorpict was set to red green blue and a rgb reflection for 
+the floor (plastic) was set at .4 .4 .4. Notice the level of color bleeding 
+in the rendering. Also, the brightness and saturation of the image map is 
+much higher than the pre-normpat'd image map:
+
+http://pg.photos.yahoo.com/ph/marcdevon/detail?.dir=/b3e9&.dnm=e6b4.jpg&.src=ph
+
+In this rendering, the wood floor image map was not normpat'd and a rgb 
+reflection for the floor (plastic) was set at 1 1 1. I know not how 
+physically accurate the floor material is reacting but the brightness of the 
+floor material is what I think I would expect:
+
+http://pg.photos.yahoo.com/ph/marcdevon/detail?.dir=/b3e9&.dnm=adb6.jpg&.src=ph
+
+In this rendering, the wood floor image map was normpat'd, the red green 
+blue option in colorpict was set to clip clip clip and a rgb reflection for 
+the floor (plastic) was set at .4 .4 .4:
+
+http://pg.photos.yahoo.com/ph/marcdevon/detail?.dir=/b3e9&.dnm=3242.jpg&.src=ph
+
+In this rendering, the wood floor image map was normpat'd, the red green 
+blue option in colorpict was set to grey grey grey and a rgb reflection for 
+the floor (plastic) was set at .4 .4 .4:
+
+http://pg.photos.yahoo.com/ph/marcdevon/detail?.dir=/b3e9&.dnm=36c5.jpg&.src=ph
+
+In this rendering, the wood floor image map was normpat'd, the red green 
+blue option in colorpict was set to noop noop noop (I think this was 
+recommended in RWR) and a rgb reflection for the floor (plastic) was set at 
+.4 .4 .4. This rendering and the floor is very saturated.
+
+http://pg.photos.yahoo.com/ph/marcdevon/detail?.dir=/b3e9&.dnm=d1fc.jpg&.src=ph
+
+I guess this is the rundown. Any suggestions?
+
+Thanks
+
+Marcus
+
+
+
+From despina_m81 at hotmail.com  Sat Mar 12 14:47:02 2005
+From: despina_m81 at hotmail.com (Despina Michael)
+Date: Sat Mar 12 14:48:06 2005
+Subject: [Radiance-general] illuminate a 3ds  - new
+References: <3D77044FDAF3694E995689FC920C53E650EE62@l-gnts05>
+Message-ID: <BAY22-DAV113DE5674A7A642224638990540@phx.gbl>
+
+Hi all, 
+I am trying to follow the instructions of Giulio in order to illuminate a model with radiance but I faced some troubles.
+
+First of all, 3ds2mgf command is not found. When I tried all other commands there in no such a problem so I supposed I have set correct my path. 3ds2mgf does not appear eihter in this list: http://radsite.lbl.gov/radiance/man_html/index.htm Does exist such a program in radiance?
+
+For this reason I decided to make it with an "indirect process" and export my model as .obj (I used anim8or (www.anim8or.com ) to make model and export it as 3ds and obj as well)
+
+I used 
+obj2rad thermos6.obj > thermos6.rad 
+and successfully thermos6.rad was created.
+
+But when I call
+objview thermos6.rad there is the following error:
+      oconv -f -r 16384 example.rad /usr/tmp/lt27666.rad > usr/tmp.ov27666.oct
+      oconv: fatal - (thermos6.rad): undefined modifier "mesh01"
+      rad: error generating octree usr/tmp/ov27666.oct removed
+
+Same error ( oconv: fatal - (thermos6.rad): undefined modifier "mesh01") appears when I call oconv command
+
+Can anyone help me? What I am I doing wrong? How can I solve the problem?
+(by the way I have also used 3D studio max to try for a simpler model but the same problem appears, so I assume that it is not a problem of anim8or exporting)
+
+Here are the files i used:
+www.cs.ucy.ac.cy/~cs99dm1/rad/thermos6.rad (430K)
+www.cs.ucy.ac.cy/~cs99dm1/rad/thermos6.3ds (30K)
+www.cs.ucy.ac.cy/~cs99dm1/rad/thermos6.obj (80K)
+
+
+Thanks a lot,
+Despina
+
+  ----- Original Message ----- 
+  From: Giulio Antonutto 
+  To: 'Radiance general discussion' 
+  Sent: Wednesday, March 02, 2005 3:22 PM
+  Subject: RE: [Radiance-general] illuminate a 3ds with radiance
+
+
+  Despina,
+
+   
+
+  You can convert almost any  3ds model directly into radiance:
+
+  3ds2mgf name.3ds
+
+  mgf2rad name.mgf > name.rad
+
+   
+
+  now simply try:
+
+  objview name.rad
+
+  the rvu window should open showing the model illuminated by 3 light sources,
+
+  it's a quick and good check to start with.
+
+  Of everything is ok, you can now create in a separate file the sky,
+
+  When you have done you combine the two with:
+
+   
+
+  oconv sky.rad name.rad > name.oct
+
+   
+
+  and preview them with 
+
+   
+
+  rvu name.oct
+
+   
+
+  now you just need to set up the view,
+
+  type v in the rvu window, select point and viewing direction...
+
+  good luck!
+
+   
+
+   
+
+   
+
+  giulio
+
+   
+
+   
+
+  PS
+
+  this is quick but do not incorporates uv coordinates, only colours are translated.
+
+   
+
+  If you have textures and uv you may need to use obj2mesh
+
+   
+
+  Once converted the model the syntax is:
+
+   
+
+  void mesh example
+
+  7 modelname.mesh -rx 90 -t 10 10 10
+
+  0
+
+  0
+
+   
+
+  Where:
+
+  7 is the number of inputs on the same line,
+
+  -rx 90 rotates the model by 90 degrees on the y axys
+
+  -t 10 10 10 translate the model from 0 0 0 to the point 10 10 10
+
+   
+
+   
+
+  When creating the mesh use:
+
+  obj2mesh -a materialfile objfile > meshfile
+
+  About that there is a quick tutorial I wrote at: 
+
+  http://www.bozzograo.net/radiance/modules.php?op=modload&name=Downloads&file=index&req=viewdownload&cid=5
+
+   
+
+   
+
+   
+
+
+------------------------------------------------------------------------------
+
+  From: radiance-general-bounces@radiance-online.org [mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Despina Michael
+  Sent: 02 March 2005 12:33
+  To: Radiance general discussion
+  Subject: [Radiance-general] illuminate a 3ds with radiance
+
+   
+
+  Hello!
+
+   
+
+  I need to illuminate a scene with radiance which does not only  contain primitives (e.g. sphere) but some more complex models such  a 3ds model.
+
+  That is, I need to do what is described in Debevec's IBL tutorial but instead to have spheres in the scene, i wolud like to have a 3ds model
+
+   
+
+  As I understood so far from what I have read from web, is that I need to convert .3ds to .obj and then use obj2mesh radiance programm
+
+   
+
+  Then I should use that mesh (lets sat output.rtm) in the scene (file: scene.rad) with this:
+
+   
+
+  mod mesh id 
+  1+ output.rtm [xform args] 
+  0 
+  0 
+
+   
+
+  I would like to know if this is the correct process or there is another way to illuminate a 3ds with radiance? 
+
+  What about [xform args]. What I should write over there? Is anywhere that I can find a simple and complete example for illuminating scenes constist from more complex models?
+
+  Should I let 1+ and two zeros just as there are?
+
+   
+
+   
+
+  ...Beside the help I need for the above, I would like to read "Real Pixels" Graphics Gem II. I' ve ty to find it in the web but waht I found are only many references about this paper. Can I found it anywhere online? 
+
+   
+
+  Thank you  a lot,
+
+  Regards,
+
+  Despina
+
+
+
+  ___________________________________________________________________
+
+  Electronic mail messages entering and leaving Arup business
+
+  systems are scanned for acceptability of content and viruses.
+
+
+
+------------------------------------------------------------------------------
+
+
+  _______________________________________________
+  Radiance-general mailing list
+  Radiance-general@radiance-online.org
+  http://www.radiance-online.org/mailman/listinfo/radiance-general
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20050312/5aa5d135/attachment-0001.html
+From vangelis at unb.br  Sat Mar 12 15:25:17 2005
+From: vangelis at unb.br (Evangelos D. Christakou)
+Date: Sat Mar 12 15:24:17 2005
+Subject: [Radiance-general] 3ds2mgf command not found
+In-Reply-To: <20050312135318.2E372F1847@mx.unb.br>
+References: <20050312135318.2E372F1847@mx.unb.br>
+Message-ID: <1110637516.4232fbcd02795@webmail.unb.br>
+
+
+
+
+
+> Date: Sat, 12 Mar 2005 15:47:02 +0200
+> From: "Despina Michael" <despina_m81@hotmail.com>
+> Subject: Re: [Radiance-general] illuminate a 3ds  - new
+ 
+> Hi all, 
+> I am trying to follow the instructions of Giulio in order to illuminate a
+> model with radiance but I faced some troubles.
+> 
+> First of all, 3ds2mgf command is not found. When I tried all other commands
+> there in no such a problem so I supposed I have set correct my path. 3ds2mgf
+> does not appear eihter in this list:
+> http://radsite.lbl.gov/radiance/man_html/index.htm Does exist such a program
+> in radiance?
+> 
+> For this reason I decided to make it with an "indirect process" and export my
+> model as .obj (I used anim8or (www.anim8or.com ) to make model and export it
+> as 3ds and obj as well)
+> 
+> I used 
+> obj2rad thermos6.obj > thermos6.rad 
+> and successfully thermos6.rad was created.
+> 
+> But when I call
+> objview thermos6.rad there is the following error:
+>       oconv -f -r 16384 example.rad /usr/tmp/lt27666.rad >
+> usr/tmp.ov27666.oct
+>       oconv: fatal - (thermos6.rad): undefined modifier "mesh01"
+>       rad: error generating octree usr/tmp/ov27666.oct removed
+> 
+> Same error ( oconv: fatal - (thermos6.rad): undefined modifier "mesh01")
+> appears when I call oconv command
+> 
+> Can anyone help me? What I am I doing wrong? How can I solve the problem?
+> (by the way I have also used 3D studio max to try for a simpler model but the
+> same problem appears, so I assume that it is not a problem of anim8or
+> exporting)
+> 
+> Here are the files i used:
+> www.cs.ucy.ac.cy/~cs99dm1/rad/thermos6.rad (430K)
+> www.cs.ucy.ac.cy/~cs99dm1/rad/thermos6.3ds (30K)
+> www.cs.ucy.ac.cy/~cs99dm1/rad/thermos6.obj (80K)
+> 
+
+Hi Despina, gia sou!
+
+re: "command not found"
+
+3ds2mgf needs "to be installed" in the compiled version of  RADIANCE. It?s not
+available in the initial installation. (I'm using Radiance 3.5 version....)
+
+you have to use "make" to install it.
+
+I hope to have helped.
+
+Vangelis Christakos
+
+
+
+
+-------------------------------------------------
+Mail enviado atrav?s do WebMail/UnB
+CPD - Centro de Inform?tica
+
+
+From gregoryjward at gmail.com  Mon Mar 14 03:26:12 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon Mar 14 03:26:36 2005
+Subject: [Radiance-general] Color Bleeding
+In-Reply-To: <BAY102-F17578E698928F45DBBB4BEA4530@phx.gbl>
+References: <BAY102-F17578E698928F45DBBB4BEA4530@phx.gbl>
+Message-ID: <1ce41fc8457a03a05277286f5f31bb9b@gmail.com>
+
+Hi Marcus,
+
+In brief, I think that 40% reflectance for a wood floor is too high.   
+An off-white wall might have a 40% reflectance, but most wood floors  
+would be closer to 20%.  If you use macbethcal for your floor capture,  
+then it gives you back true reflectance values.  In such cases, I would  
+not pass the pattern trhough normpat.
+
+Further comments below:
+
+> From: "Marcus Jacobs" <marcdevon@hotmail.com>
+> Date: March 11, 2005 11:34:15 AM PST
+>
+> For the wood floor image map in this rendering, the image map was not  
+> normpat'd and a rgb reflection for the floor (plastic) was set at .4  
+> .4 .4. The floor image map brightness is a bit darker than what I  
+> would expect:
+>
+> http://pg.photos.yahoo.com/ph/marcdevon/detail?.dir=/ 
+> b3e9&.dnm=d98b.jpg&.src=ph
+
+Here you are multiplying your captured reflectance from the image by  
+40%, which makes it 40% of what it should be (most likely).  Too dark,  
+as you say.
+
+> For this rendering, the wood floor image image was normpat'd. The red  
+> green blue option in colorpict was set to red green blue and a rgb  
+> reflection for the floor (plastic) was set at .4 .4 .4. Notice the  
+> level of color bleeding in the rendering. Also, the brightness and  
+> saturation of the image map is much higher than the pre-normpat'd  
+> image map:
+>
+> http://pg.photos.yahoo.com/ph/marcdevon/detail?.dir=/ 
+> b3e9&.dnm=e6b4.jpg&.src=ph
+
+Probably because 40% is too high a reflectance for your floor.
+
+> In this rendering, the wood floor image map was not normpat'd and a  
+> rgb reflection for the floor (plastic) was set at 1 1 1. I know not  
+> how physically accurate the floor material is reacting but the  
+> brightness of the floor material is what I think I would expect:
+>
+> http://pg.photos.yahoo.com/ph/marcdevon/detail?.dir=/ 
+> b3e9&.dnm=adb6.jpg&.src=ph
+
+If you were using macbethcal to create your floor pattern, this is the  
+technique I would recommend (using the functions red() green() and  
+blue() as the first three string arguments in your colorpict).
+
+> In this rendering, the wood floor image map was normpat'd, the red  
+> green blue option in colorpict was set to clip clip clip and a rgb  
+> reflection for the floor (plastic) was set at .4 .4 .4:
+>
+> http://pg.photos.yahoo.com/ph/marcdevon/detail?.dir=/ 
+> b3e9&.dnm=3242.jpg&.src=ph
+
+I assume you mean clip_r(), clip_g() and clip_b().  The function clip()  
+by itself would always return the red channel, and you would end up  
+with a gray-looking floor.
+
+> In this rendering, the wood floor image map was normpat'd, the red  
+> green blue option in colorpict was set to grey grey grey and a rgb  
+> reflection for the floor (plastic) was set at .4 .4 .4:
+>
+> http://pg.photos.yahoo.com/ph/marcdevon/detail?.dir=/ 
+> b3e9&.dnm=36c5.jpg&.src=ph
+>
+> In this rendering, the wood floor image map was normpat'd, the red  
+> green blue option in colorpict was set to noop noop noop (I think this  
+> was recommended in RWR) and a rgb reflection for the floor (plastic)  
+> was set at .4 .4 .4. This rendering and the floor is very saturated.
+>
+> http://pg.photos.yahoo.com/ph/marcdevon/detail?.dir=/ 
+> b3e9&.dnm=d1fc.jpg&.src=ph
+
+Again, I don't see how using noop() would give you this image, as  
+noop() expects a single argument, and if given three (r,g,b), will  
+return the first.
+
+> I guess this is the rundown. Any suggestions?
+
+Again, I suggest using macbethcal to capture your image, and don't run  
+normpat unless you have a measured reflectance value to use.
+
+-Greg
+
+
+From raphael.compagnon at eif.ch  Mon Mar 14 08:48:00 2005
+From: raphael.compagnon at eif.ch (Raphael Compagnon)
+Date: Mon Mar 14 08:48:16 2005
+Subject: [Radiance-general] radiance graph | cygwin mess up?
+In-Reply-To: <20050311175330.62F5C1C00329@mwinf0403.wanadoo.fr>
+Message-ID: <5.1.0.14.2.20050314084358.0211b4a8@pop.eif.ch>
+
+At 11.03.2005 18:54, you wrote:
+>I tried to run
+>[.]rcalc -e "abs(x)=if(x,x,-x);cond=abs($7)+abs($8)+abs($9)" >
+>raytrace_sample.dmp
+>
+>But rtrace & rcalc run into a standstill, and output is not being created.
+>Could this be due the fact I'm a poor bugger on cygwin?
+
+Sorry again! The rcalc call was not totally right. Here is the corrected 
+version:
+
+ximage trace.pic | rtrace -ab 1 -ds 0.2 -dr 6 -dt 1 -otodp -h -x 1 -i 
+ok.oct | \
+rcalc -e 
+'abs(x)=if(x,x,-x);cond=abs($7)+abs($8)+abs($9);$1=$1;$2=$2;$3=$3;$4=$4;$5=$5;$6=$6;$7=$7;$8=$8;$9=$9'  
+ > raytrace_sample.dmp
+
+Raphael
+
+
+From cbauer- at t-online.de  Mon Mar 14 13:23:47 2005
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Mon Mar 14 12:11:17 2005
+Subject: [Radiance-general] Color Bleeding
+References: <BAY102-F17578E698928F45DBBB4BEA4530@phx.gbl>
+	<1ce41fc8457a03a05277286f5f31bb9b@gmail.com>
+Message-ID: <42358253.5040902@t-online.de>
+
+Hi Marcus,
+
+one hint concerning the expected appearance:
+
+I assume that the image map you use for the floor originally is a photo 
+(TIFF, JPG, TGA or whatever), converted to a Radiance pic. In the 
+conversion process a gamma correction is applied (unless you set the 
+option -g 1.0).
+
+The gamma correction makes the images appear darker, means if you click 
+on your photo in an image editing program, and it gives you, say, 
+0.6/0.5/0.1 as rgb (or 153/127/25 in the 0-255 range), the corresponding 
+r/g/b coefficients will be lower after the import into Radiance.
+
+Only if you set -g 1.0 (e.g. in ra_t16 -r -g 1.0 test.tga test.pic) and 
+then map the image onto a plastic with rgb = 1/1/1, you'll get the 
+original r/g/b values form the picture (regardless if they're physically 
+meaningful or not), means the appearance will be the same as if you use 
+a 'plastic' with rgb = 0.6/0.5/0.1 directly.
+
+-cb
+
+
+PS
+nice images...is this the room in the registry office where Prince 
+Charles and Camilla are going to hold their wedding???? Especially the 
+pink version would suit perfectly for it !!
+
+
+From despina_m81 at hotmail.com  Mon Mar 14 19:18:18 2005
+From: despina_m81 at hotmail.com (Despina Michael)
+Date: Mon Mar 14 19:19:15 2005
+Subject: [Radiance-general] 3ds2mgf command not found
+References: <20050312135318.2E372F1847@mx.unb.br>
+	<1110637516.4232fbcd02795@webmail.unb.br>
+Message-ID: <BAY22-DAV7DB8A585914B00A35E19990560@phx.gbl>
+
+Gia sou Vangeli :-)
+Thank you for the reply,
+that was a useful info.
+
+Although, unfortunately, I don't have administrative priviliges in order to 
+install 3ds2mgf so I guess I have to find another way to do that. Probably 
+use of obj2rad or something like that...
+
+Despina
+
+----- Original Message ----- 
+From: "Evangelos D. Christakou" <vangelis@unb.br>
+To: <radiance-general@radiance-online.org>
+Sent: Saturday, March 12, 2005 4:25 PM
+Subject: [Radiance-general] 3ds2mgf command not found
+
+
+
+
+
+
+> Date: Sat, 12 Mar 2005 15:47:02 +0200
+> From: "Despina Michael" <despina_m81@hotmail.com>
+> Subject: Re: [Radiance-general] illuminate a 3ds  - new
+
+> Hi all,
+> I am trying to follow the instructions of Giulio in order to illuminate a
+> model with radiance but I faced some troubles.
+>
+> First of all, 3ds2mgf command is not found. When I tried all other 
+> commands
+> there in no such a problem so I supposed I have set correct my path. 
+> 3ds2mgf
+> does not appear eihter in this list:
+> http://radsite.lbl.gov/radiance/man_html/index.htm Does exist such a 
+> program
+> in radiance?
+>
+> For this reason I decided to make it with an "indirect process" and export 
+> my
+> model as .obj (I used anim8or (www.anim8or.com ) to make model and export 
+> it
+> as 3ds and obj as well)
+>
+> I used
+> obj2rad thermos6.obj > thermos6.rad
+> and successfully thermos6.rad was created.
+>
+> But when I call
+> objview thermos6.rad there is the following error:
+>       oconv -f -r 16384 example.rad /usr/tmp/lt27666.rad >
+> usr/tmp.ov27666.oct
+>       oconv: fatal - (thermos6.rad): undefined modifier "mesh01"
+>       rad: error generating octree usr/tmp/ov27666.oct removed
+>
+> Same error ( oconv: fatal - (thermos6.rad): undefined modifier "mesh01")
+> appears when I call oconv command
+>
+> Can anyone help me? What I am I doing wrong? How can I solve the problem?
+> (by the way I have also used 3D studio max to try for a simpler model but 
+> the
+> same problem appears, so I assume that it is not a problem of anim8or
+> exporting)
+>
+> Here are the files i used:
+> www.cs.ucy.ac.cy/~cs99dm1/rad/thermos6.rad (430K)
+> www.cs.ucy.ac.cy/~cs99dm1/rad/thermos6.3ds (30K)
+> www.cs.ucy.ac.cy/~cs99dm1/rad/thermos6.obj (80K)
+>
+
+Hi Despina, gia sou!
+
+re: "command not found"
+
+3ds2mgf needs "to be installed" in the compiled version of  RADIANCE. It's 
+not
+available in the initial installation. (I'm using Radiance 3.5 version....)
+
+you have to use "make" to install it.
+
+I hope to have helped.
+
+Vangelis Christakos
+
+
+
+
+-------------------------------------------------
+Mail enviado atrav?s do WebMail/UnB
+CPD - Centro de Inform?tica
+
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+From cbauer- at t-online.de  Tue Mar 15 02:27:00 2005
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Tue Mar 15 01:15:46 2005
+Subject: [Radiance-general] 3ds2mgf command not found
+References: <20050312135318.2E372F1847@mx.unb.br>	<1110637516.4232fbcd02795@webmail.unb.br>
+	<BAY22-DAV7DB8A585914B00A35E19990560@phx.gbl>
+Message-ID: <423639E4.80407@t-online.de>
+
+Despina Michael wrote:
+> Gia sou Vangeli :-)
+> Thank you for the reply,
+> that was a useful info.
+> 
+> Although, unfortunately, I don't have administrative priviliges in order 
+> to install 3ds2mgf so I guess I have to find another way to do that. 
+> Probably use of obj2rad or something like that...
+>
+
+Hi Despina,
+
+Hmm, this sounds strange, I don't know if I get your question right,
+but normally you don't need root or administrator privileges to run a 
+compilation. The 'make' program and a C-Compiler needs to be present, 
+but this is usually the case on any UNIX-like system. If you don't have 
+access to some of the usual places for executables (/usr/local/bin, 
+/usr/bin, etc ) you can store your Radiance programs in your home 
+directory and call them with the path.
+
+Concerning your error message.
+oconv: fatal - (thermos6.rad): undefined modifier "mesh01"
+
+this looks like a missing material definition, you might write a file
+with some Radiance material definitons yourself and name them appropriately.
+then you can oconv the material file together with the geometry file
+
+-cb
+
+
+
+
+
+From tarik.rahman at ed.ac.uk  Tue Mar 15 14:51:09 2005
+From: tarik.rahman at ed.ac.uk (Tarik Rahman)
+Date: Tue Mar 15 14:51:34 2005
+Subject: [Radiance-general] Difference between .pic colours and traced ray
+	colours
+In-Reply-To: <423639E4.80407@t-online.de>
+References: <20050312135318.2E372F1847@mx.unb.br>
+	<1110637516.4232fbcd02795@webmail.unb.br>
+	<BAY22-DAV7DB8A585914B00A35E19990560@phx.gbl>
+	<423639E4.80407@t-online.de>
+Message-ID: <1110894669.4236e84d92612@sms.ed.ac.uk>
+
+Hi there
+I'm wondering why when I view a .pic image I've created in HDRShop, the pixel
+values aren't the same as when I generate a text file of their colours using
+vwrays.
+
+I wnat a green box's surface reflectances in the pic file so I do
+
+./vwrays.exe -fd greenbox.pic | rtrace -fda `vwrays -d greenbox.pic`
+-ovm `if(s='green_plastic')` testroom.oct  | grep "green_plastic" > rays.txt
+
+Is it because I need to put an I in there somewhere for irradiance values?
+
+Thanks for any help
+
+Tarik
+
+
+--
+Tarik Rahman
+PhD student, Institute of Perception, Action and Behaviour
+School of Informatics
+University of Edinburgh
+
+From tiago at tkh.att.ne.jp  Tue Mar 15 16:41:33 2005
+From: tiago at tkh.att.ne.jp (Santiago Torres)
+Date: Tue Mar 15 16:33:33 2005
+Subject: [Radiance-general] London tour 2005
+In-Reply-To: <DC0CAEEA090E984C911D3B85B16C3F90302EFE@l-gnts05>
+References: <DC0CAEEA090E984C911D3B85B16C3F90302EFE@l-gnts05>
+Message-ID: <4e60803736e6c227aeb2ef14a5d77ad2@tkh.att.ne.jp>
+
+Hi Giulio!
+
+here i am again in argentina, visiting relatives, and doing all i 
+haven`t done in a year. it`s hard but nice because it`s home...
+on my way back i`ll be stoping by in london for one day, visiting your 
+office (still trying my best to get their attention)
+i thought, if you have the time maybe we could meet for lunch and/or 
+dinner on that day, wednesday march 23.
+i hope everything is fine for you and Annalisa, and to see you soon.
+best,
+
+Santiago
+
+
+From gregoryjward at gmail.com  Tue Mar 15 16:45:58 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue Mar 15 16:46:21 2005
+Subject: [Radiance-general] Difference between .pic colours and traced ray
+	colours
+In-Reply-To: <1110894669.4236e84d92612@sms.ed.ac.uk>
+References: <20050312135318.2E372F1847@mx.unb.br>
+	<1110637516.4232fbcd02795@webmail.unb.br>
+	<BAY22-DAV7DB8A585914B00A35E19990560@phx.gbl>
+	<423639E4.80407@t-online.de>
+	<1110894669.4236e84d92612@sms.ed.ac.uk>
+Message-ID: <c215acf0e784f76c269e3a7049ea3455@gmail.com>
+
+Hi Tarik,
+
+I couldn't really follow your question:
+
+> I'm wondering why when I view a .pic image I've created in HDRShop, 
+> the pixel
+> values aren't the same as when I generate a text file of their colours 
+> using
+> vwrays.
+
+I first read this as if you had created the .pic in HDRShop, which 
+didn't make sense.  I assume now you are only viewing it with HDRShop.  
+What do you mean that the pixel values aren't the same?  The same as 
+what?  The same as eachother?  You are expecting them all to be the 
+same?  ??
+
+> I wnat a green box's surface reflectances in the pic file so I do
+>
+> ./vwrays.exe -fd greenbox.pic | rtrace -fda `vwrays -d greenbox.pic`
+> -ovm `if(s='green_plastic')` testroom.oct  | grep "green_plastic" > 
+> rays.txt
+
+Ignoring the `if(s='green_plastic')` nonsense, which I'm hoping doesn't 
+do anything, this command might give you the luminance at each visible 
+point on the green surface, but not its reflectance.  If you want the 
+reflectance, just look at the Radiance scene file.  It's right there in 
+the definition of "green_plastic".
+
+-Greg
+
+
+From gregoryjward at gmail.com  Tue Mar 15 16:51:24 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue Mar 15 16:51:48 2005
+Subject: [Radiance-general] London tour 2005
+In-Reply-To: <4e60803736e6c227aeb2ef14a5d77ad2@tkh.att.ne.jp>
+References: <DC0CAEEA090E984C911D3B85B16C3F90302EFE@l-gnts05>
+	<4e60803736e6c227aeb2ef14a5d77ad2@tkh.att.ne.jp>
+Message-ID: <5b0f3ce89014c88499b335572f84ef8f@gmail.com>
+
+This is a good reminder that we need to remember the "reply" button, 
+when used on a mailing list message, goes to the mailing list rather 
+than to the sender.  If you want to reply to the sender only, then 
+select their address and past it in the "To" box of your mailer.
+
+I think we've all made this mistake at one time or another.
+
+-Greg
+
+> From: Santiago Torres <tiago@tkh.att.ne.jp>
+> Date: March 15, 2005 7:41:33 AM PST
+>
+> Hi Giulio!
+>
+> here i am again in argentina, visiting relatives, and doing all i 
+> haven`t done in a year. it`s hard but nice because it`s home...
+
+
+From tiago at tkh.att.ne.jp  Tue Mar 15 17:20:09 2005
+From: tiago at tkh.att.ne.jp (Santiago Torres)
+Date: Tue Mar 15 17:12:11 2005
+Subject: [Radiance-general] London tour 2005
+In-Reply-To: <5b0f3ce89014c88499b335572f84ef8f@gmail.com>
+References: <DC0CAEEA090E984C911D3B85B16C3F90302EFE@l-gnts05>
+	<4e60803736e6c227aeb2ef14a5d77ad2@tkh.att.ne.jp>
+	<5b0f3ce89014c88499b335572f84ef8f@gmail.com>
+Message-ID: <452033a0f63546e7acab27ce445341e9@tkh.att.ne.jp>
+
+Indeed, I am VERY sorry. this was written in a hurry (i`m not at home)
+if everybody could just delete the message and pretend it didn't 
+happen...
+and thanks Greg for your remark
+
+sorry again,
+
+Santiago
+
+
+
+
+On Mar 16, 2005, at 12:51 AM, Greg Ward wrote:
+
+> This is a good reminder that we need to remember the "reply" button, 
+> when used on a mailing list message, goes to the mailing list rather 
+> than to the sender.  If you want to reply to the sender only, then 
+> select their address and past it in the "To" box of your mailer.
+>
+> I think we've all made this mistake at one time or another.
+>
+> -Greg
+>
+>> From: Santiago Torres <tiago@tkh.att.ne.jp>
+>> Date: March 15, 2005 7:41:33 AM PST
+>>
+>> Hi Giulio!
+>>
+>> here i am again in argentina, visiting relatives, and doing all i 
+>> haven`t done in a year. it`s hard but nice because it`s home...
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+
+From tarik.rahman at ed.ac.uk  Wed Mar 16 12:22:14 2005
+From: tarik.rahman at ed.ac.uk (Tarik Rahman)
+Date: Wed Mar 16 12:22:28 2005
+Subject: [Radiance-general] Difference between .pic colours and traced ray
+	colours
+In-Reply-To: <c215acf0e784f76c269e3a7049ea3455@gmail.com>
+References: <20050312135318.2E372F1847@mx.unb.br>
+	<1110637516.4232fbcd02795@webmail.unb.br>
+	<BAY22-DAV7DB8A585914B00A35E19990560@phx.gbl>
+	<423639E4.80407@t-online.de>
+	<1110894669.4236e84d92612@sms.ed.ac.uk>
+	<c215acf0e784f76c269e3a7049ea3455@gmail.com>
+Message-ID: <1110972134.423816e62d31e@sms.ed.ac.uk>
+
+Sorry I meant that I have created the .pic and then I view it in HDRShop. Say
+the first pixel of the green surface rendered, ( Aren't .pics rendered  from
+top down, left to right?) pixel 216, 238 has the luminance (sorry, not
+reflectance) value of
+(0.307, 0.541, 0.291)
+Well, in the rays.txt file from
+
+ ./vwrays.exe -fd greenbox.pic | rtrace -fda `vwrays -d greenbox.pic` -ovm 
+testroom.oct  | grep "green_plastic" > rays.txt
+
+I get (0.239, 0.443, 0.219) which are similar but not exactly the same values.
+
+
+
+
+
+
+--
+Tarik Rahman
+PhD student, Institute of Perception, Action and Behaviour
+School of Informatics
+University of Edinburgh
+
+From despina_m81 at hotmail.com  Wed Mar 16 12:37:31 2005
+From: despina_m81 at hotmail.com (Despina Michael)
+Date: Wed Mar 16 12:38:00 2005
+Subject: [Radiance-general] 3ds2mgf command not found
+References: <20050312135318.2E372F1847@mx.unb.br>	<1110637516.4232fbcd02795@webmail.unb.br><BAY22-DAV7DB8A585914B00A35E19990560@phx.gbl>
+	<423639E4.80407@t-online.de>
+Message-ID: <BAY22-DAV132FABB67997757C471CB390480@phx.gbl>
+
+Thanks  a lot Carsten, for your answer!
+I though that material properties of model were included in .obj file and 
+using obj2rad would "inherit" material properties to .rad file.
+
+Thanks,
+Despina
+
+----- Original Message ----- 
+From: "Carsten Bauer" <cbauer-@t-online.de>
+To: "Radiance general discussion" <radiance-general@radiance-online.org>
+Sent: Tuesday, March 15, 2005 3:27 AM
+Subject: Re: [Radiance-general] 3ds2mgf command not found
+
+>
+> Hi Despina,
+>
+> Hmm, this sounds strange, I don't know if I get your question right,
+> but normally you don't need root or administrator privileges to run a 
+> compilation. The 'make' program and a C-Compiler needs to be present, but 
+> this is usually the case on any UNIX-like system. If you don't have access 
+> to some of the usual places for executables (/usr/local/bin, /usr/bin, 
+> etc ) you can store your Radiance programs in your home directory and call 
+> them with the path.
+>
+> Concerning your error message.
+> oconv: fatal - (thermos6.rad): undefined modifier "mesh01"
+>
+> this looks like a missing material definition, you might write a file
+> with some Radiance material definitons yourself and name them 
+> appropriately.
+> then you can oconv the material file together with the geometry file
+>
+> -cb
+>
+>
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+
+From gregoryjward at gmail.com  Wed Mar 16 16:25:34 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed Mar 16 16:26:01 2005
+Subject: [Radiance-general] Difference between .pic colours and traced ray
+	colours
+In-Reply-To: <1110972134.423816e62d31e@sms.ed.ac.uk>
+References: <20050312135318.2E372F1847@mx.unb.br>
+	<1110637516.4232fbcd02795@webmail.unb.br>
+	<BAY22-DAV7DB8A585914B00A35E19990560@phx.gbl>
+	<423639E4.80407@t-online.de>
+	<1110894669.4236e84d92612@sms.ed.ac.uk>
+	<c215acf0e784f76c269e3a7049ea3455@gmail.com>
+	<1110972134.423816e62d31e@sms.ed.ac.uk>
+Message-ID: <6ec5aeb6670fb9575789be07504b981e@gmail.com>
+
+Hi Tarik,
+
+The difference could be due to the change in pixel center between 
+vwrays and rpict.  Rpict normally "jitters" pixel centers as an 
+anti-aliasing measure.  If you rerender your image, turning jitterinig 
+off with -pj 0, you will get the exact pixel centers produced by 
+vwrays.  Being off by even a fraction of a pixel can make a difference 
+in the result, especially near the object's visible boundaries.
+
+-Greg
+
+> From: Tarik Rahman <tarik.rahman@ed.ac.uk>
+> Date: March 16, 2005 3:22:14 AM PST
+>
+> Sorry I meant that I have created the .pic and then I view it in 
+> HDRShop. Say
+> the first pixel of the green surface rendered, ( Aren't .pics rendered 
+>  from
+> top down, left to right?) pixel 216, 238 has the luminance (sorry, not
+> reflectance) value of
+> (0.307, 0.541, 0.291)
+> Well, in the rays.txt file from
+>
+>  ./vwrays.exe -fd greenbox.pic | rtrace -fda `vwrays -d greenbox.pic` 
+> -ovm
+> testroom.oct  | grep "green_plastic" > rays.txt
+>
+> I get (0.239, 0.443, 0.219) which are similar but not exactly the same 
+> values.
+
+
+From zrogers at archenergy.com  Tue Mar 22 21:55:39 2005
+From: zrogers at archenergy.com (Zack Rogers)
+Date: Tue Mar 22 21:57:09 2005
+Subject: [Radiance-general] SPOT Beta 2.1 Release
+Message-ID: <4240864B.1020007@archenergy.com>
+
+Dear Colleagues,
+
+The California Energy Commission's Public Interest Energy Research 
+(PIER) program has provided funding for the development of the Sensor 
+Placement & Orientation Tool (SPOT).  SPOT is a free software program 
+that assists in the design and installation of photosensor systems in 
+daylit environments.  In addition, SPOT is a useful tool for general 
+daylighting and daylight and electric light integration analysis.  The 
+program consists of a Microsoft Excel based user interface with a 
+Radiance engine performing the calculations in the background.  The 
+newest version SPOT Beta 2.1 can be downloaded from the SPOT website 
+at:  (please uninstall any previous versions of SPOT)
+
+www.archenergy.com/SPOT <http://www.archenergy.com/SPOT>
+
+The main forum for Q & A, bug reports, product updates, and other 
+announcements will be through a SPOT discussion list.  If you plan on 
+using the program, please consider signing up for this list.  The home 
+website, where you can sign up and access postings, is accessible 
+through the main site or with the following URL:
+
+http://www.archenergy.com/mailman/listinfo/spot
+
+Previous list postings can be accessed with the SPOT Archives link on 
+this website.  You can also choose to recieve various forms of e-mail 
+reports containing the lists postings.
+
+Note that SPOT is still in the Beta stages as further development will 
+continue to occur.  We have been working hard getting out all the kinks, 
+but bugs are inevitable, so please report any program errors, erroneous 
+or suspicious data, or other awkward / misleading behavior to either the 
+discussion list or to spotsupport@archenergy.com 
+<mailto:spotsupport@archenergy.com> .  Feel free to submit any positive 
+findings as well!  We welcome any comments, suggestions, interesting 
+case studies!
+
+You have recieved this e-mail cause either: a) you have downloaded the 
+Beta v2.0 version b.) you are part of the SPOT Technical Advisory Group 
+c.) you are on the Radiance online group d.) you have expressed interest 
+e.) you are a photosensor manufacturer and we are interested in better 
+integrating your system into the program f.) the SPOT Design Team just 
+wants your feedback.  We apologize for any cross postings!
+
+Thank you for your time!
+Zack Rogers and the
+SPOT Development Team
+
+-- 
+Zack Rogers
+Staff Engineer
+Architectural Energy Corporation
+2540 Frontier Avenue, Suite 201
+Boulder, CO 80301 USA
+
+tel (303)444-4149 ext.235
+fax (303)444-4304
+www.archenergy.com
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20050322/76d1c694/attachment.htm
+From gvn at retena.com  Wed Mar 23 17:47:35 2005
+From: gvn at retena.com (=?iso-8859-1?Q?Ignacio_Mun=E1rriz?=)
+Date: Wed Mar 23 18:01:43 2005
+Subject: [Radiance-general] color bands
+Message-ID: <001101c52fc8$03ceb410$53000080@pnac>
+
+I have a color bands artifact in the sky that appears when i print the image, i have converted it with ra_t16 -3, thought it appears in rview too, 
+
+ http://www.alfanature.com/avis/exteriore2.JPG
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20050323/e7f087ed/attachment.html
+From gregoryjward at gmail.com  Wed Mar 23 18:06:01 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed Mar 23 18:06:34 2005
+Subject: [Radiance-general] color bands
+In-Reply-To: <001101c52fc8$03ceb410$53000080@pnac>
+References: <001101c52fc8$03ceb410$53000080@pnac>
+Message-ID: <31ec6d98d520caa99a017db95fde58ab@gmail.com>
+
+Hi Ignacio,
+
+This is probably due to the -pt parameter, which can be lowered to 0.02 
+to avoid such artifacts.  They only show up in smooth gradients like 
+the sky.
+
+-G
+
+> From: Ignacio Mun?rriz <gvn@retena.com>
+> Date: March 23, 2005 8:47:35 AM PST
+>
+I have a color bands artifact in the sky that appears when i print the 
+image, i have converted it with ra_t16 -3, thought it appears in rview 
+too,
+  ?
+?http://www.alfanature.com/avis/exteriore2.JPG
+
+
+From despina_m81 at hotmail.com  Wed Mar 23 22:45:11 2005
+From: despina_m81 at hotmail.com (Despina Michael)
+Date: Wed Mar 23 22:46:21 2005
+Subject: [Radiance-general] lighting per pixel or per face?
+Message-ID: <BAY22-DAV13467163617CAB34675509904F0@phx.gbl>
+
+Hi there!
+
+I am wondering whether radiance make per pixel computations for lighting or it just make computations per face (triangle/surface)
+
+I have tried to illuminate a cylinder with a light probe. 
+If you look at resulted image, you can distinguish the faces/divisions from which cylinder model is made of.
+
+You can see the result in jpg here
+http://www2.cs.ucy.ac.cy/~cs99dm1/resultRadiance.jpg
+The problem that I tried to explain in the previous paragraph is there where red arrows show. (I added arrows manually)
+
+Is there a way to make the lighting smoother in area  where red arrows show? 
+
+I used this to take the result:
+rpict -x 600 -y 600 -t 30 -ab 2 -ar 10000 -aa 1.0 -ad 2048 -as 1024 -st 0 -sj 1 -lw 0 -lr 8 -vf camera.vp thermos12_base.oct > res.hdr
+
+Thanks,
+Despina
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20050323/44ab21dd/attachment.html
+From Rob.Fitzsimmons at Summit.Fiserv.com  Wed Mar 23 23:01:36 2005
+From: Rob.Fitzsimmons at Summit.Fiserv.com (Fitzsimmons, Rob)
+Date: Wed Mar 23 23:02:55 2005
+Subject: [Radiance-general] lighting per pixel or per face?
+Message-ID: <B8DD8375FCE2C94B9F170D9277C1FA2B8C5859@corvallis>
+
+ Is that an imported/converted cylinder or a native Radiance cylinder?
+If the former, try increasing the poly resolution before exporting
+I use obj2mesh and it smooths pretty well
+
+I believe its per pixel computation
+
+Rob F
+
+-----Original Message-----
+From: Despina Michael
+To: Radiance general discussion
+Sent: 3/23/2005 1:45 PM
+Subject: [Radiance-general] lighting per pixel or per face?
+
+Hi there!
+ 
+I am wondering whether radiance make per pixel computations for lighting
+or it just make computations per face (triangle/surface)
+ 
+I have tried to illuminate a cylinder with a light probe. 
+If you look at resulted image, you can distinguish the faces/divisions
+from which cylinder model is made of.
+ 
+You can see the result in jpg here
+http://www2cs.ucy.ac.cy/~cs99dm1/resultRadiance.jpg
+<http://www2.cs.ucy.ac.cy/~cs99dm1/resultRadiance.jpg> 
+The problem that I tried to explain in the previous paragraph is there
+where red arrows show. (I added arrows manually)
+ 
+Is there a way to make the lighting smoother in area  where red arrows
+show? 
+ 
+I used this to take the result:
+rpict -x 600 -y 600 -t 30 -ab 2 -ar 10000 -aa 1.0 -ad 2048 -as 1024 -st
+0 -sj 1 -lw 0 -lr 8 -vf camera.vp thermos12_base.oct > res.hdr
+ 
+Thanks,
+Despina
+ <<ATT1462924.txt>> 
+
+From jedev at visarc.com  Wed Mar 23 23:03:33 2005
+From: jedev at visarc.com (Jack de Valpine)
+Date: Wed Mar 23 23:03:57 2005
+Subject: [Radiance-general] lighting per pixel or per face?
+In-Reply-To: <BAY22-DAV13467163617CAB34675509904F0@phx.gbl>
+References: <BAY22-DAV13467163617CAB34675509904F0@phx.gbl>
+Message-ID: <4241E7B5.8010903@visarc.com>
+
+Hi,
+
+You probably need to figure out how to export your polygonal geometry in 
+a format such as .obj or .3ds which can be converted into Radiance with 
+smoothing. Alternatively, you could construct the object in Radiance 
+using the built in cylinder and ring geometric primitives.
+
+-Jack
+
+Despina Michael wrote:
+
+> Hi there!
+>  
+> I am wondering whether radiance make per pixel computations for 
+> lighting or it just make computations per face (triangle/surface)
+>  
+> I have tried to illuminate a cylinder with a light probe.
+> If you look at resulted image, you can distinguish the faces/divisions 
+> from which cylinder model is made of.
+>  
+> You can see the result in jpg here
+> http://www2cs.ucy.ac.cy/~cs99dm1/resultRadiance.jpg 
+> <http://www2.cs.ucy.ac.cy/%7Ecs99dm1/resultRadiance.jpg>
+> The problem that I tried to explain in the previous paragraph is there 
+> where red arrows show. (I added arrows manually)
+>  
+> Is there a way to make the lighting smoother in area  where red arrows 
+> show?
+>  
+> I used this to take the result:
+> rpict -x 600 -y 600 -t 30 -ab 2 -ar 10000 -aa 1.0 -ad 2048 -as 1024 
+> -st 0 -sj 1 -lw 0 -lr 8 -vf camera.vp thermos12_base.oct > res.hdr
+>  
+> Thanks,
+> Despina
+>
+>------------------------------------------------------------------------
+>
+>_______________________________________________
+>Radiance-general mailing list
+>Radiance-general@radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-general
+>  
+>
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20050323/87f969ce/attachment.htm
+From despina_m81 at hotmail.com  Thu Mar 24 12:18:52 2005
+From: despina_m81 at hotmail.com (Despina Michael)
+Date: Thu Mar 24 12:29:55 2005
+Subject: [Radiance-general] lighting per pixel or per face?
+References: <B8DD8375FCE2C94B9F170D9277C1FA2B8C5859@corvallis>
+Message-ID: <BAY22-DAV3F4399473668252823BC090400@phx.gbl>
+
+Hi,
+thank you for your answers.
+
+the model is .obj file and I used obj2rad to convert it in .rad file. Then I
+added in .rad material and lighting info and use rpict to illuminate the
+object.
+
+It's not a "perfect cylinder" and this is the reason I don't use radiace
+primitive cylinder (it just looks like a cylinder)
+
+Can you tell me please how I use obj2mesh command?
+
+I tried this
+obj2mesh model.obj > out1.rtm
+but it does not seem to work. There is an error: obj2mesh: fatal -
+unreferenced uv coordinates
+
+Thanks,
+Despina
+
+From despina_m81 at hotmail.com  Fri Mar 25 21:46:41 2005
+From: despina_m81 at hotmail.com (Despina Michael)
+Date: Fri Mar 25 21:47:45 2005
+Subject: [Radiance-general] lighting per pixel or per face? - obj2mesh
+	(new)
+References: <B8DD8375FCE2C94B9F170D9277C1FA2B8C5859@corvallis>
+	<BAY22-DAV3F4399473668252823BC090400@phx.gbl>
+Message-ID: <BAY22-DAV12FC78D4E1536869BEF5AE90410@phx.gbl>
+
+hello all again,
+
+well I finally managed to run obj2mesh (after installing last version of 
+Radiance)
+the result is somehow different but still not enough good.
+http://www2.cs.ucy.ac.cy/~cs99dm1/res1mesh.jpg (new result)
+http://www2.cs.ucy.ac.cy/~cs99dm1/resultRadiance.jpg (old result)
+
+Is there anyway to make the lighting even smoother?
+
+Thanks!
+Despina
+
+
+
+----- Original Message ----- 
+From: "Despina Michael" <despina_m81@hotmail.com>
+To: "Radiance general discussion" <radiance-general@radiance-online.org>
+Sent: Thursday, March 24, 2005 1:18 PM
+Subject: Re: [Radiance-general] lighting per pixel or per face?
+
+
+> Hi,
+> thank you for your answers.
+>
+> the model is .obj file and I used obj2rad to convert it in .rad file. Then 
+> I
+> added in .rad material and lighting info and use rpict to illuminate the
+> object.
+>
+> It's not a "perfect cylinder" and this is the reason I don't use radiace
+> primitive cylinder (it just looks like a cylinder)
+>
+> Can you tell me please how I use obj2mesh command?
+>
+> I tried this
+> obj2mesh model.obj > out1.rtm
+> but it does not seem to work. There is an error: obj2mesh: fatal -
+> unreferenced uv coordinates
+>
+> Thanks,
+> Despina
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+
+From gregoryjward at gmail.com  Fri Mar 25 22:19:22 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri Mar 25 22:19:54 2005
+Subject: [Radiance-general] lighting per pixel or per face? - obj2mesh
+	(new)
+In-Reply-To: <BAY22-DAV12FC78D4E1536869BEF5AE90410@phx.gbl>
+References: <B8DD8375FCE2C94B9F170D9277C1FA2B8C5859@corvallis>
+	<BAY22-DAV3F4399473668252823BC090400@phx.gbl>
+	<BAY22-DAV12FC78D4E1536869BEF5AE90410@phx.gbl>
+Message-ID: <a98e34a572c609992e3bce673bbffa8e@gmail.com>
+
+Hi Despina,
+
+If your geometry actually contains these creases, which it does, how 
+can you expect Radiance NOT to render them?  The .OBJ file you sent me 
+has numerous problems.  The creases are caused by incorrect surface 
+normals at the patch boundaries.  If you take these out by running 
+obj2rad -f, then you see the polygonal faces and get a lot of warnings 
+about non-planar polygons.  I didn't check to determine if your 
+polygons really are non-planar or if it's simply an issue with too few 
+significant digits in your vertex coordinates.
+
+I would recommend a different modeling system.
+-Greg
+
+> From: "Despina Michael" <despina_m81@hotmail.com>
+> Date: March 25, 2005 12:46:41 PM PST
+>
+> hello all again,
+>
+> well I finally managed to run obj2mesh (after installing last version 
+> of Radiance)
+> the result is somehow different but still not enough good.
+> http://www2.cs.ucy.ac.cy/~cs99dm1/res1mesh.jpg (new result)
+> http://www2.cs.ucy.ac.cy/~cs99dm1/resultRadiance.jpg (old result)
+>
+> Is there anyway to make the lighting even smoother?
+>
+> Thanks!
+> Despina
+
+
+From mw at ip5.de  Sat Mar 26 11:58:10 2005
+From: mw at ip5.de (Mathias Wambsganß)
+Date: Sat Mar 26 12:00:13 2005
+Subject: [Radiance-general] Re: Radiance-general Digest, Vol 13, Issue 24
+Message-ID: <846880581@zeus.ccom-inet.de>
+
+Sehr geehrte Damen und Herren,
+
+ich bin erst ab Montag, den 4. April wieder erreichbar. Bitte wenden Sie sich in dringenden Fällen an meine Kollegen von ip5. Ihre mail wird nicht an Kollegen weitergeleitet, sondern von mir nach meiner Rückkehr gelesen.
+
+Vielen Dank für Ihr Verständnis
+
+Mathias Wambsganß
+
+Telefon:  0721 38489090
+Klaus Rohlffs:     kr@ip5.de
+Thomas Knapp:  tk@ip5.de
+Martin Selig:       ms@ip5.de
+
+From despina_m81 at hotmail.com  Sat Mar 26 22:38:45 2005
+From: despina_m81 at hotmail.com (Despina Michael)
+Date: Sat Mar 26 22:39:56 2005
+Subject: [Radiance-general] lighting per pixel or per face? - obj2mesh(new)
+References: <B8DD8375FCE2C94B9F170D9277C1FA2B8C5859@corvallis><BAY22-DAV3F4399473668252823BC090400@phx.gbl><BAY22-DAV12FC78D4E1536869BEF5AE90410@phx.gbl>
+	<a98e34a572c609992e3bce673bbffa8e@gmail.com>
+Message-ID: <BAY22-DAV886EBB34881E29E1154CD90420@phx.gbl>
+
+ok, thanks for the information! I think I'll try a more professional 
+modelling tool.
+
+I was thinking that maybe there was a way to interpolate normals and find 
+each normal per pixel.. so I supposed that lighting would be smoother.
+
+Thanks again,
+Despina
+
+
+----- Original Message ----- 
+From: "Gregory J. Ward" <gregoryjward@gmail.com>
+To: "Radiance general discussion" <radiance-general@radiance-online.org>
+Sent: Friday, March 25, 2005 11:19 PM
+Subject: Re: [Radiance-general] lighting per pixel or per face? - 
+obj2mesh(new)
+
+
+> Hi Despina,
+>
+> If your geometry actually contains these creases, which it does, how can 
+> you expect Radiance NOT to render them?  The .OBJ file you sent me has 
+> numerous problems.  The creases are caused by incorrect surface normals at 
+> the patch boundaries.  If you take these out by running obj2rad -f, then 
+> you see the polygonal faces and get a lot of warnings about non-planar 
+> polygons.  I didn't check to determine if your polygons really are 
+> non-planar or if it's simply an issue with too few significant digits in 
+> your vertex coordinates.
+>
+> I would recommend a different modeling system.
+> -Greg
+>
+>> From: "Despina Michael" <despina_m81@hotmail.com>
+>> Date: March 25, 2005 12:46:41 PM PST
+>>
+>> hello all again,
+>>
+>> well I finally managed to run obj2mesh (after installing last version of 
+>> Radiance)
+>> the result is somehow different but still not enough good.
+>> http://www2.cs.ucy.ac.cy/~cs99dm1/res1mesh.jpg (new result)
+>> http://www2.cs.ucy.ac.cy/~cs99dm1/resultRadiance.jpg (old result)
+>>
+>> Is there anyway to make the lighting even smoother?
+>>
+>> Thanks!
+>> Despina
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+
+From grobe at gmx.net  Sun Mar 27 18:37:18 2005
+From: grobe at gmx.net (Lars Grobe)
+Date: Sun Mar 27 18:37:36 2005
+Subject: [Radiance-general] how to filter objects by modifier?
+Message-ID: <19397.1111941438@www48.gmx.net>
+
+Hi!
+
+I want to "filter" a radiance scene by modifier. E.g. I want to remove all
+objects with modifier "invisible_mod". I know that I could simply alias them
+to void, however, I don't want to keep geometry in my rather large scenes
+when not necessary.
+
+I found that some translators (e.g. obj2rad) have such features during
+import, however, I can't use the tool-for-everything mgfilt here and don't
+know any other way to filter radiance scenes which have already been
+imported.
+
+The background for this question: I have windows objects as instances in my
+scene. These are complete models of the windows including frames and glass
+panes. I want to use mkillum to have the glass as light source, but as
+illums cannot been instanced, I have to treat the glass panes different. My
+idea was to filter the glasspanes out, the create the octree for the
+instance (replamrks -i), than filter out everything except the glass pane
+and place theses "objects" (in fact all the glass panes of one window) with
+replmark -x. I know that I could simply have to rad-files per object for
+that (one with the glass panes and one with the frame), but I have to stay
+close to my CAD-files here, as the whole project consists of quite a lot of
+objects.
+
+So is there any known way to filter radiance scenes? Or should I just forget
+about this and use replmarks -x for all the windows? Will add some MB to my
+scene...
+
+TIA, CU and happy easter,
+
+Lars.
+
+From grobe at gmx.net  Sun Mar 27 21:30:16 2005
+From: grobe at gmx.net (Lars Grobe)
+Date: Sun Mar 27 21:30:36 2005
+Subject: [Radiance-general] lighting per pixel or per face? - obj2mesh(new)
+References: <BAY22-DAV886EBB34881E29E1154CD90420@phx.gbl>
+Message-ID: <15647.1111951816@www39.gmx.net>
+
+> ok, thanks for the information! I think I'll try a more professional 
+> modelling tool.
+> 
+> I was thinking that maybe there was a way to interpolate normals and find 
+> each normal per pixel.. so I supposed that lighting would be smoother.
+
+Hi!
+
+So-called smooth rendering is a topic again and again. In fact, many
+modeling apps provide some kind of smooth rendering, but still there are few
+ways to get such smooth models from one polygon-based app to another.
+
+The only way I found to work reasonable well is using "fixed-angle"
+smoothing together with 3ds or obj formats. This will make most modelers
+forget all normals (also the wrong surface normals ;-) and generate the
+interpolated normals for export if the angle between surfaces is over a
+value you have to specify. I am using this with success in formZ. You may
+habe to "mesh" the objects before you export them, as sometimes, the
+calculation of the interpolated normals works only on triangles, at least
+flat polygons. I usually triangulate everything, than export as obj with
+"smoothed" interpolated normals support from formZ.
+
+The other problem that may arise is that your model's geometry is not clean.
+In radiance, you need "watertight" models, that means you have to work
+accurately. If there is a gap between surfaces, even if small and almost
+invisible, this produces errors. E.g. the interpolation described won't work
+when exporting, and, worse, you will have light leakage, getting light where
+it should not be in the model. So the model quality (as in all simulations)
+is really important.
+
+You might find a lot of information about clean meshes if you google for
+mesh generators, as they are used in industry for building "real" physical
+models, e.g. by litografie, 3d-printing, cnc... These processes need clean,
+meshed models, and there is a huge amount of tools available to produce and
+process mesh geometry.
+
+The key problem is that all importers for radiance support more or less
+primitive types. There is no support for nurbs, and many formats even reduce
+everything to polygons. Radiance itself doesn't only support "flat"
+surfaces, however, this won't help if you can't import e.g. a ball as a
+ball, but only as a mesh following its surface, or write the radiance scene
+with your favorite text editor ;-) The lack of support for these more
+complicated objects is related to radiance's application, which is
+simulation of buildings - and most of our built environment is made of
+polygonal surfaces ;-)
+
+CU Lars.
+
+From despina_m81 at hotmail.com  Mon Mar 28 15:56:52 2005
+From: despina_m81 at hotmail.com (Despina Michael)
+Date: Mon Mar 28 15:58:09 2005
+Subject: [Radiance-general] lighting per pixel or per face? - obj2mesh(new)
+References: <BAY22-DAV886EBB34881E29E1154CD90420@phx.gbl>
+	<15647.1111951816@www39.gmx.net>
+Message-ID: <BAY22-DAV99C3203D5172EDCEF81A390440@phx.gbl>
+
+Hello Lars,
+thank you very much for your reply and for your tips!
+after your explanation, I guess I got a better idea what is going on with 
+normals
+
+Thanks,
+Despina
+
+----- Original Message ----- 
+From: "Lars Grobe" <grobe@gmx.net>
+To: "Radiance general discussion" <radiance-general@radiance-online.org>
+Sent: Sunday, March 27, 2005 10:30 PM
+
+>
+> Hi!
+>
+> So-called smooth rendering is a topic again and again. In fact, many
+> modeling apps provide some kind of smooth rendering, but still there are 
+> few
+> ways to get such smooth models from one polygon-based app to another.
+>
+> The only way I found to work reasonable well is using "fixed-angle"
+> smoothing together with 3ds or obj formats. This will make most modelers
+> forget all normals (also the wrong surface normals ;-) and generate the
+> interpolated normals for export if the angle between surfaces is over a
+> value you have to specify. I am using this with success in formZ. You may
+> habe to "mesh" the objects before you export them, as sometimes, the
+> calculation of the interpolated normals works only on triangles, at least
+> flat polygons. I usually triangulate everything, than export as obj with
+> "smoothed" interpolated normals support from formZ.
+>
+> The other problem that may arise is that your model's geometry is not 
+> clean.
+> In radiance, you need "watertight" models, that means you have to work
+> accurately. If there is a gap between surfaces, even if small and almost
+> invisible, this produces errors. E.g. the interpolation described won't 
+> work
+> when exporting, and, worse, you will have light leakage, getting light 
+> where
+> it should not be in the model. So the model quality (as in all 
+> simulations)
+> is really important.
+>
+> You might find a lot of information about clean meshes if you google for
+> mesh generators, as they are used in industry for building "real" physical
+> models, e.g. by litografie, 3d-printing, cnc... These processes need 
+> clean,
+> meshed models, and there is a huge amount of tools available to produce 
+> and
+> process mesh geometry.
+>
+> The key problem is that all importers for radiance support more or less
+> primitive types. There is no support for nurbs, and many formats even 
+> reduce
+> everything to polygons. Radiance itself doesn't only support "flat"
+> surfaces, however, this won't help if you can't import e.g. a ball as a
+> ball, but only as a mesh following its surface, or write the radiance 
+> scene
+> with your favorite text editor ;-) The lack of support for these more
+> complicated objects is related to radiance's application, which is
+> simulation of buildings - and most of our built environment is made of
+> polygonal surfaces ;-)
+>
+> CU Lars.
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+
+From cbauer- at t-online.de  Tue Mar 29 11:10:55 2005
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Tue Mar 29 09:59:19 2005
+Subject: [Radiance-general] how to filter objects by modifier?
+References: <19397.1111941438@www48.gmx.net>
+Message-ID: <42491B9F.7070608@t-online.de>
+
+Hi Lars,
+
+you might have a look at some basic UNIX text-stream processing tools, 
+like e.g. 'sed'. This allows to perform a lot of manipulations on any 
+text file.
+
+-cb
+
+
+
+From grobe at gmx.net  Tue Mar 29 14:02:47 2005
+From: grobe at gmx.net (Lars Grobe)
+Date: Tue Mar 29 14:03:09 2005
+Subject: [Radiance-general] how to filter objects by modifier?
+References: <42491B9F.7070608@t-online.de>
+Message-ID: <26715.1112097767@www39.gmx.net>
+
+Hi Carsten,
+
+yes, I guess that is the most promising way to go. I hesitated because the
+fact that the name of the modifier can appear in different contexts (not
+only to modify geometry, but also e.g. to modify a material type etc) made
+me prefer some tool built on top of a real radiance scene parser. However,
+it should be possible to achieve that with sed, too (maybe even grep can do
+it).
+
+I was always afraid of sed so far, so it's time to start that now ;-)
+
+Thanks, CU Lars.
+
+From despina_m81 at hotmail.com  Tue Mar 29 16:30:00 2005
+From: despina_m81 at hotmail.com (Despina Michael)
+Date: Tue Mar 29 16:30:03 2005
+Subject: [Radiance-general] dynamic range
+Message-ID: <BAY22-DAV17DFA3387DC4196EE0E19890450@phx.gbl>
+
+Hi,
+
+I am not sure if I am allowed to ask something out of Radiance commands but I venture this because I don't know any other forum where can someone answer this.
+
+I am studying High Dynamic Range Image Encodings (G. Ward) and in order to undrestand some things better I would like to ask the following:
+a) does dynamic range 1000:1 same as 1 order of magnitude?
+b) what is maximum dynamic range that can exist in real world?
+c) what dynamic range can human eye see?
+d) what do we mean with cd/(m^2) ? where m^2: m=base, 2 = exponent
+
+Thanks,
+Despina
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20050329/0960e080/attachment.html
+From a.jacobs at londonmet.ac.uk  Tue Mar 29 16:57:05 2005
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Tue Mar 29 16:44:29 2005
+Subject: {*SPAM*b} [Radiance-general] dynamic range
+In-Reply-To: <BAY22-DAV17DFA3387DC4196EE0E19890450@phx.gbl>
+References: <BAY22-DAV17DFA3387DC4196EE0E19890450@phx.gbl>
+Message-ID: <10060.213.58.100.147.1112108225.squirrel@213.58.100.147>
+
+Despina,
+
+> a) does dynamic range 1000:1 same as 1 order of magnitude?
+1 OoM is like shifting the decimal point to the left/right by one digit
+(divide/multiply by 10), so 1000:1 = 3 OoM
+
+> b) what is maximum dynamic range that can exist in real world?
+Very much depends on your scene: The sun has a luminance of 10^9 cd/m2,
+and 'no light at all' would be 0 cd/m2.
+
+> c) what dynamic range can human eye see?
+Please see WebHDR:
+http://luminance.londonmet.ac.uk/webhdr/
+
+> d) what do we mean with cd/(m^2) ? where m^2: m=base, 2 = exponent
+candela per meter square is the unit of luminance. 2 is not an exponent,
+just a simple square.
+See SynthLight, chapter one for more info on photometric units:
+http://www.learn.londonmet.ac.uk/packages/synthlight/handbook/index.html
+
+Axel
+
+
+
+From a.jacobs at londonmet.ac.uk  Tue Mar 29 16:57:37 2005
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Tue Mar 29 16:44:56 2005
+Subject: [Radiance-general] dynamic range
+Message-ID: <10061.213.58.100.147.1112108257.squirrel@213.58.100.147>
+
+Despina,
+
+> a) does dynamic range 1000:1 same as 1 order of magnitude?
+1 OoM is like shifting the decimal point to the left/right by one digit
+(divide/multiply by 10), so 1000:1 = 3 OoM
+
+> b) what is maximum dynamic range that can exist in real world?
+Very much depends on your scene: The sun has a luminance of 10^9 cd/m2,
+and 'no light at all' would be 0 cd/m2.
+
+> c) what dynamic range can human eye see?
+Please see WebHDR:
+http://luminance.londonmet.ac.uk/webhdr/
+
+> d) what do we mean with cd/(m^2) ? where m^2: m=base, 2 = exponent
+candela per meter square is the unit of luminance. 2 is not an exponent,
+just a simple square.
+See SynthLight, chapter one for more info on photometric units:
+http://www.learn.londonmet.ac.uk/packages/synthlight/handbook/index.html
+
+Axel
+
+
+
+From despina_m81 at hotmail.com  Tue Mar 29 18:54:10 2005
+From: despina_m81 at hotmail.com (Despina Michael)
+Date: Tue Mar 29 18:54:11 2005
+Subject: [Radiance-general] dynamic range
+References: <10061.213.58.100.147.1112108257.squirrel@213.58.100.147>
+Message-ID: <BAY22-DAV58C12C19D9E3DA8C578A390450@phx.gbl>
+
+Thanks Axel,
+your ansewer was very explanotory and the webHDR webpage as well.
+
+I have another question on this - how we compute Dynamic Range?
+If for example: the brightest pixel has luminance 50 000 cd/m^2 and the 
+darkest one 5 cd/m^2
+is dynamic range 50 000/5 = 10 000:1? is that correct?
+(i.e. 4 OoM)
+
+And something more... is there any standard threshold, that "seperates" 
+dynamic range to High and Low?
+
+Thanks again,
+Despina
+
+
+----- Original Message ----- 
+From: "Axel Jacobs" <a.jacobs@londonmet.ac.uk>
+To: "Radiance general discussion" <radiance-general@radiance-online.org>
+Sent: Tuesday, March 29, 2005 5:57 PM
+Subject: Re: [Radiance-general] dynamic range
+
+
+> Despina,
+>
+>> a) does dynamic range 1000:1 same as 1 order of magnitude?
+> 1 OoM is like shifting the decimal point to the left/right by one digit
+> (divide/multiply by 10), so 1000:1 = 3 OoM
+>
+>> b) what is maximum dynamic range that can exist in real world?
+> Very much depends on your scene: The sun has a luminance of 10^9 cd/m2,
+> and 'no light at all' would be 0 cd/m2.
+>
+>> c) what dynamic range can human eye see?
+> Please see WebHDR:
+> http://luminance.londonmet.ac.uk/webhdr/
+>
+>> d) what do we mean with cd/(m^2) ? where m^2: m=base, 2 = exponent
+> candela per meter square is the unit of luminance. 2 is not an exponent,
+> just a simple square.
+> See SynthLight, chapter one for more info on photometric units:
+> http://www.learn.londonmet.ac.uk/packages/synthlight/handbook/index.html
+>
+> Axel
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+
+From a.jacobs at londonmet.ac.uk  Tue Mar 29 19:41:52 2005
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Tue Mar 29 19:29:12 2005
+Subject: [Radiance-general] dynamic range
+In-Reply-To: <BAY22-DAV58C12C19D9E3DA8C578A390450@phx.gbl>
+References: <10061.213.58.100.147.1112108257.squirrel@213.58.100.147>
+	<BAY22-DAV58C12C19D9E3DA8C578A390450@phx.gbl>
+Message-ID: <10175.213.58.101.78.1112118112.squirrel@213.58.101.78>
+
+> I have another question on this - how we compute Dynamic Range?
+> If for example: the brightest pixel has luminance 50 000 cd/m^2 and the
+> darkest one 5 cd/m^2
+> is dynamic range 50 000/5 = 10 000:1? is that correct?
+> (i.e. 4 OoM)
+
+That looks right. It's easier in exponential notation -- the division
+becomes a subtraction then: 5*10^5 / 5*10^1 = (5/5) * 10^(5-1) = 10 000
+
+> And something more... is there any standard threshold, that "seperates"
+> dynamic range to High and Low?
+
+Not to my knowledge. However, it's save to assume that all images are low
+DR, except for the ones that explicitly say that they are high. They must
+then be stored in a file format that supports HDR, _and_ be created
+suitably. It is possible to have a LDR image stored in a HDR file (e.g.
+falsecolor RADIANCE images).
+
+The difference between the dynamic range of LDR and HDR images is several
+orders of magnitude ;-) (Just winding you up...)
+
+Cheers
+
+Axel
+
+
+
+From despina_m81 at hotmail.com  Wed Mar 30 11:45:18 2005
+From: despina_m81 at hotmail.com (Despina Michael)
+Date: Wed Mar 30 11:46:18 2005
+Subject: [Radiance-general] dynamic range - RGBE
+References: <10061.213.58.100.147.1112108257.squirrel@213.58.100.147><BAY22-DAV58C12C19D9E3DA8C578A390450@phx.gbl>
+	<10175.213.58.101.78.1112118112.squirrel@213.58.101.78>
+Message-ID: <BAY22-DAV160DB33A17651603B794FA90460@phx.gbl>
+
+Thanks again,
+
+well..  I have a couple questions again, on this
+1. In the paper "High Dynamic Range Image Encodings" is mentioned that RGBE 
+format cannot cover the visible gamut.
+I can not understand this since RGBE supports 76 order of magnitudes and our 
+eye can see luminances between 10 ^ 6 - 10 ^-7 that is ontly 13 orders of 
+Magnitudes.
+The only thing that I can think is that propaply RGBE can not encode small 
+steps of change for luminance. Is that the reason that RGBE cannot cover the 
+visible gamut?
+
+2. and my second question is what we mean by relative precision of an hdr 
+image format? Is the smallest step (change of lumminance) that format 
+supports? (and why we measure it in %?)
+If it is so, when the value of relative precision is greater means that we 
+have greater precision (smaller step) or the opposite?
+
+
+Despina
+
+From grobe at gmx.net  Wed Mar 30 12:57:06 2005
+From: grobe at gmx.net (Lars Grobe)
+Date: Wed Mar 30 12:57:25 2005
+Subject: [Radiance-general] how to filter objects by modifier?
+References: <42491B9F.7070608@t-online.de>
+Message-ID: <22644.1112180226@www39.gmx.net>
+
+Hi again,
+
+so there is a real problem now... I had forgotten that there are not only
+4liners as objects in radiance. So e.g. a polygon may be described on 5 or
+more lines, depending on the number of points, and that's where I have to
+write some kind of a parser to filter the complete objects :-( At least I
+will have to get the first integer in a line, read n1 objects, than the
+first  integer on the line following the last objects, again read n2
+objects, and so on... a pretty difficult task for someone new to sed and
+awk... Will have a look at O'Reilly's "Awk and Sed" book now.
+
+CU Lars.
+
+From gregoryjward at gmail.com  Wed Mar 30 19:06:09 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed Mar 30 19:06:56 2005
+Subject: [Radiance-general] dynamic range - RGBE
+In-Reply-To: <BAY22-DAV160DB33A17651603B794FA90460@phx.gbl>
+References: <10061.213.58.100.147.1112108257.squirrel@213.58.100.147><BAY22-DAV58C12C19D9E3DA8C578A390450@phx.gbl>
+	<10175.213.58.101.78.1112118112.squirrel@213.58.101.78>
+	<BAY22-DAV160DB33A17651603B794FA90460@phx.gbl>
+Message-ID: <f46c4c163897a0bf99c2a7808dec3d42@gmail.com>
+
+Hi Despina,
+
+This is all explained in detail at:
+
+	http://www.anyhere.com/gward/hdrenc/
+
+-Greg
+
+> From: "Despina Michael" <despina_m81@hotmail.com>
+> Date: March 30, 2005 1:45:18 AM PST
+>
+> Thanks again,
+>
+> well..  I have a couple questions again, on this
+> 1. In the paper "High Dynamic Range Image Encodings" is mentioned that 
+> RGBE format cannot cover the visible gamut.
+> I can not understand this since RGBE supports 76 order of magnitudes 
+> and our eye can see luminances between 10 ^ 6 - 10 ^-7 that is ontly 
+> 13 orders of Magnitudes.
+> The only thing that I can think is that propaply RGBE can not encode 
+> small steps of change for luminance. Is that the reason that RGBE 
+> cannot cover the visible gamut?
+>
+> 2. and my second question is what we mean by relative precision of an 
+> hdr image format? Is the smallest step (change of lumminance) that 
+> format supports? (and why we measure it in %?)
+> If it is so, when the value of relative precision is greater means 
+> that we have greater precision (smaller step) or the opposite?
+>
+> Despina
+
+
+From Rob.Fitzsimmons at Summit.Fiserv.com  Wed Mar 30 22:21:26 2005
+From: Rob.Fitzsimmons at Summit.Fiserv.com (Fitzsimmons, Rob)
+Date: Wed Mar 30 22:23:25 2005
+Subject: [Radiance-general] My first HDR probe - and some Q's
+Message-ID: <B8DD8375FCE2C94B9F170D9277C1FA2B8C5873@corvallis>
+
+List,
+
+A while back I asked about digital cameras...
+I ended up getting a 5 MP Canon Powershot A95
+Seems to work fine, but autofocus gets funky with the small sphere
+
+I have made my first HDR Probe
+http://rastermon.com/rad/image/8amECrop.pic
+and
+http://rastermon.com/rad/image/8amNCrop.pic
+These 2 HDRs ar approx 90 degrees offset - hence the N and E
+
+My reflective ball is quite scratched, but I'm just practicing now.
+BTW - here is a render with that HDR environment
+http://rastermon.com/rad/image/cabintable_window.jpg
+(the center ball is real -  Photoshopped into the CG render)
+
+My question is on getting rid of the photographer and fixing the pinch point
+on the opposite side of the sphere.
+According to this tutorial,
+http://www.cgtechniques.com/tutorials/getridof.php
+
+PTools is a plugin for Photoshop to undistort the image
+http://webuser.fh-furtwangen.de/~dersch/
+
+I've downloaded it and put it in my photoshop - plugins - filters folder
+But then I can't find it in Photoshop - Filter
+(I'm wondering if it only works in OS 9 / Classic Photoshop)
+
+Has anyone done this?
+Can it be done after the HDR is compiled, or does each source LDR have to be
+fixed before creating the HDR?
+If so - doesn't that remove EXIF info that PhotoSphere uses for the response
+curve?
+
+Most Photoshop filters are inactive when the in 16 bits/channel mode..
+
+BTW - I'm on a Mac, so I don't use HDR Shop (don't know if that has any
+undistort filters anyway)
+
+thanks, 
+Rob F
+
+From kthibault at biomechanicsinc.com  Wed Mar 30 23:13:20 2005
+From: kthibault at biomechanicsinc.com (Kirk Thibault)
+Date: Wed Mar 30 23:13:43 2005
+Subject: [Radiance-general] My first HDR probe - and some Q's
+In-Reply-To: <B8DD8375FCE2C94B9F170D9277C1FA2B8C5873@corvallis>
+References: <B8DD8375FCE2C94B9F170D9277C1FA2B8C5873@corvallis>
+Message-ID: <003c45b62764fe0625ace364e3281087@biomechanicsinc.com>
+
+It seems to work only in the Classic version of PShop.  I tried to 
+designate the plug-in for PShop CS and drop the .lib file into the 
+System folder.  No luck in OSX 10.3.X.  I will try the Gimp and see how 
+that PANS out (ha ha ha!)
+
+Nice render!  Yeah I noticed the "real" sphere had none of the 
+reflections of the others in it - looks very convincing nonetheless.  I 
+have used HDRShop to remove the tripod/camera from 2 images taken at 90 
+degrees.  I run it on a Mac with Virtual PC with no problems other than 
+it is slow.  I use HDRShop v.1 (the free, or formerly free version).
+
+Rock on.
+
+kirk
+
+On Mar 30, 2005, at 3:21 PM, Fitzsimmons, Rob wrote:
+
+>
+> PTools is a plugin for Photoshop to undistort the image
+> http://webuser.fh-furtwangen.de/~dersch/
+>
+> I've downloaded it and put it in my photoshop - plugins - filters 
+> folder
+> But then I can't find it in Photoshop - Filter
+> (I'm wondering if it only works in OS 9 / Classic Photoshop)
+>
+> thanks,
+> Rob F
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From Rob.Fitzsimmons at Summit.Fiserv.com  Thu Mar 31 02:47:14 2005
+From: Rob.Fitzsimmons at Summit.Fiserv.com (Fitzsimmons, Rob)
+Date: Thu Mar 31 02:49:07 2005
+Subject: [Radiance-general] My first HDR probe - and some Q's
+Message-ID: <B8DD8375FCE2C94B9F170D9277C1FA2B8C5875@corvallis>
+
+ 
+
+-----Original Message-----
+From: Kirk Thibault
+To: Radiance general discussion
+Sent: 3/30/2005 1:13 PM
+Subject: Re: [Radiance-general] My first HDR probe - and some Q's
+
+It seems to work only in the Classic version of PShop.  I tried to 
+designate the plug-in for PShop CS and drop the .lib file into the 
+System folder.  No luck in OSX 10.3.X.  I will try the Gimp and see how 
+that PANS out (ha ha ha!)
+
+Nice render!  Yeah I noticed the "real" sphere had none of the 
+reflections of the others in it - looks very convincing nonetheless.  I 
+have used HDRShop to remove the tripod/camera from 2 images taken at 90 
+degrees.  I run it on a Mac with Virtual PC with no problems other than 
+it is slow.  I use HDRShop v.1 (the free, or formerly free version).
+
+So you can do that in HDR bit depths?
+Hmm not free - Plus I don't really want to buy Virtual PC.
+
+perhaps I'l email the author of PTools.
+Thanks for your input.
+
+
+Rock on.
+
+kirk
+
+On Mar 30, 2005, at 3:21 PM, Fitzsimmons, Rob wrote:
+
+>
+> PTools is a plugin for Photoshop to undistort the image
+> http://webuser.fh-furtwangen.de/~dersch/
+>
+> I've downloaded it and put it in my photoshop - plugins - filters 
+> folder
+> But then I can't find it in Photoshop - Filter
+> (I'm wondering if it only works in OS 9 / Classic Photoshop)
+>
+> thanks,
+> Rob F
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+

@@ -1,0 +1,2002 @@
+From kkonis at berkeley.edu  Tue Mar  1 06:48:48 2011
+From: kkonis at berkeley.edu (kkonis at berkeley.edu)
+Date: Tue, 1 Mar 2011 06:48:48 -0800
+Subject: [Radiance-general] image formatting for input to evalglare
+Message-ID: <f9fe629e83666d76139edc0398c8513d.squirrel@calmail.berkeley.edu>
+
+Dear list,
+
+I am trying to format HDR images produced from a Canon A570 digital camera
+with a 180 deg fisheye converter attached.
+
+The images are 1600,1200 pixels (x,y) and have the circular "fisheye" view
+centered in the image.
+
+I need to do three operations:
+
+1) crop image down to a square shape, so that it bounds the hemispherical
+view of the lens and
+
+2) filter the cropped image down to less than 800 x 800 pixels to input to
+evalglare (i can do this with pfilt -1, and this works fine so long as
+pcompos is not involved)
+
+3) then i need to edit the image file's header info and trick it into
+thinking it has a 180 view (since the camera does not know it has a
+converter attached!) e.g.
+
+
+VIEW= -vta -vh 180 -vv 180 -vp 0 0 0 -vd 1 0 0 -vu 0 0 1
+
+
+Right now i am perplexed when i use pcompos to crop the image via:
+
+pcompos -x 1200 input/$image -200 0 > output/{$image}
+
+The result is a new "cropped" hdr image that looks great from a cropping
+standpoint, but the luminance values are much lower when viewed in
+photosphere (compared to the orig image)
+
+My guess is there is something happening to the header:
+
+here is the original header:
+
+
+#?RADIANCE
+CAMERA= Canon Canon PowerShot A570 IS version v.0
+EXPOSURE=8.278360e-02
+VIEW= -vtv -vh 52.456387 -vv 40.558973
+CAPDATE= 2010:10:07 10:41:59
+hdrgen created HDR image from 'IMG_0450.JPG' 'IMG_0449.JPG' 'IMG_0448.JPG'
+'IMG_0447.JPG' 'IMG_0446.JPG' 'IMG_0445.JPG' 'IMG_0444.JPG' 'IMG_0443.JPG'
+'IMG_0442.JPG' 'IMG_0441.JPG'
+PRIMARIES= 0.6400 0.3300 0.3000 0.6000 0.1500 0.0600 0.3127 0.3290
+FORMAT=32-bit_rle_rgbe
+
+-Y 1200 +X 1600
+
+................ and the result after the pcompos ...................
+
+#?RADIANCE
+CAPDATE= 2011:03:01 06:30:57
+GMT= 2011:03:01 14:30:57
+input/201010071045.hdr:
+	CAMERA= Canon Canon PowerShot A570 IS version v.0
+	EXPOSURE=8.778544e-02
+	VIEW= -vtv -vh 52.456387 -vv 40.558973
+	CAPDATE= 2010:10:07 10:46:59
+	hdrgen created HDR image from 'IMG_0460.JPG' 'IMG_0459.JPG'
+'IMG_0458.JPG' 'IMG_0457.JPG' 'IMG_0456.JPG' 'IMG_0455.JPG'
+'IMG_0454.JPG' 'IMG_0453.JPG' 'IMG_0452.JPG' 'IMG_0451.JPG'
+	PRIMARIES= 0.6400 0.3300 0.3000 0.6000 0.1500 0.0600 0.3127 0.3290
+pcompos -x 1200 input/201010071045.hdr -200 0
+FORMAT=32-bit_rle_rgbe
+
+-Y 1200 +X 1200
+
+..................................................................
+
+While on the subject of header manipulation, I am eager for suggestions
+for how to edit lines of the header. In my case i want to replace the
+original view line
+
+VIEW= -vtv -vh 52.456387 -vv 40.558973
+
+
+with
+
+
+VIEW= -vta -vh 180 -vv 180 -vp 0 0 0 -vd 1 0 0 -vu 0 0 1
+
+
+
+I have tried doing this "manually" in BBedit and Xcode, but get an
+"unexpected end of file" error
+
+
+
+Any suggestions are appreciated!
+
+-Kyle
+
+Kyle Konis
+Ph.D. Candidate
+Dept. of Architecture (Building Science)
+University of California, Berkeley
+Research Assistant, Lawrence Berkeley National Lab
+Tel. (206) 303 9786
+Email: kkonis at berkeley.edu
+
+
+
+
+From gregoryjward at gmail.com  Tue Mar  1 08:14:47 2011
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue, 1 Mar 2011 08:14:47 -0800
+Subject: [Radiance-general] image formatting for input to evalglare
+In-Reply-To: <f9fe629e83666d76139edc0398c8513d.squirrel@calmail.berkeley.edu>
+References: <f9fe629e83666d76139edc0398c8513d.squirrel@calmail.berkeley.edu>
+Message-ID: <6E2162A8-32C3-4FCC-945B-442F98726FD2@lmi.net>
+
+Hi Kyle,
+
+This discussion probably belongs on the HDRI list, so I'm cross-posting there.
+
+The thing about pcompos is that it doesn't transfer exposure information, which you need for most images to get the absolute numbers back.  Here are the commands you want:
+
+echo "VIEW= -vta -vh 180 -vv 180 -vp 0 0 0 -vd 1 0 0 -vu 0 0 1" > corrected.hdr
+ra_xyze -r -o -u orig.hdr | pcompos -x 1200 - -200 0 >> corrected.hdr
+
+The first one puts the view information you want in the header.  The ra_xyze command undoes the exposure on the image before passing it to pcompos, which does the cropping and appends it to the view header.
+
+Hope this works.
+-Greg
+
+> From: kkonis at berkeley.edu
+> Date: March 1, 2011 6:48:48 AM PST
+> 
+> Dear list,
+> 
+> I am trying to format HDR images produced from a Canon A570 digital camera
+> with a 180 deg fisheye converter attached.
+> 
+> The images are 1600,1200 pixels (x,y) and have the circular "fisheye" view
+> centered in the image.
+> 
+> I need to do three operations:
+> 
+> 1) crop image down to a square shape, so that it bounds the hemispherical
+> view of the lens and
+> 
+> 2) filter the cropped image down to less than 800 x 800 pixels to input to
+> evalglare (i can do this with pfilt -1, and this works fine so long as
+> pcompos is not involved)
+> 
+> 3) then i need to edit the image file's header info and trick it into
+> thinking it has a 180 view (since the camera does not know it has a
+> converter attached!) e.g.
+> 
+> 
+> VIEW= -vta -vh 180 -vv 180 -vp 0 0 0 -vd 1 0 0 -vu 0 0 1
+> 
+> 
+> Right now i am perplexed when i use pcompos to crop the image via:
+> 
+> pcompos -x 1200 input/$image -200 0 > output/{$image}
+> 
+> The result is a new "cropped" hdr image that looks great from a cropping
+> standpoint, but the luminance values are much lower when viewed in
+> photosphere (compared to the orig image)
+> 
+> My guess is there is something happening to the header:
+> 
+> here is the original header:
+> 
+> 
+> #?RADIANCE
+> CAMERA= Canon Canon PowerShot A570 IS version v.0
+> EXPOSURE=8.278360e-02
+> VIEW= -vtv -vh 52.456387 -vv 40.558973
+> CAPDATE= 2010:10:07 10:41:59
+> hdrgen created HDR image from 'IMG_0450.JPG' 'IMG_0449.JPG' 'IMG_0448.JPG'
+> 'IMG_0447.JPG' 'IMG_0446.JPG' 'IMG_0445.JPG' 'IMG_0444.JPG' 'IMG_0443.JPG'
+> 'IMG_0442.JPG' 'IMG_0441.JPG'
+> PRIMARIES= 0.6400 0.3300 0.3000 0.6000 0.1500 0.0600 0.3127 0.3290
+> FORMAT=32-bit_rle_rgbe
+> 
+> -Y 1200 +X 1600
+> 
+> ................ and the result after the pcompos ...................
+> 
+> #?RADIANCE
+> CAPDATE= 2011:03:01 06:30:57
+> GMT= 2011:03:01 14:30:57
+> input/201010071045.hdr:
+> 	CAMERA= Canon Canon PowerShot A570 IS version v.0
+> 	EXPOSURE=8.778544e-02
+> 	VIEW= -vtv -vh 52.456387 -vv 40.558973
+> 	CAPDATE= 2010:10:07 10:46:59
+> 	hdrgen created HDR image from 'IMG_0460.JPG' 'IMG_0459.JPG'
+> 'IMG_0458.JPG' 'IMG_0457.JPG' 'IMG_0456.JPG' 'IMG_0455.JPG'
+> 'IMG_0454.JPG' 'IMG_0453.JPG' 'IMG_0452.JPG' 'IMG_0451.JPG'
+> 	PRIMARIES= 0.6400 0.3300 0.3000 0.6000 0.1500 0.0600 0.3127 0.3290
+> pcompos -x 1200 input/201010071045.hdr -200 0
+> FORMAT=32-bit_rle_rgbe
+> 
+> -Y 1200 +X 1200
+> 
+> ..................................................................
+> 
+> While on the subject of header manipulation, I am eager for suggestions
+> for how to edit lines of the header. In my case i want to replace the
+> original view line
+> 
+> VIEW= -vtv -vh 52.456387 -vv 40.558973
+> 
+> 
+> with
+> 
+> 
+> VIEW= -vta -vh 180 -vv 180 -vp 0 0 0 -vd 1 0 0 -vu 0 0 1
+> 
+> 
+> 
+> I have tried doing this "manually" in BBedit and Xcode, but get an
+> "unexpected end of file" error
+> 
+> 
+> 
+> Any suggestions are appreciated!
+> 
+> -Kyle
+> 
+> Kyle Konis
+> Ph.D. Candidate
+> Dept. of Architecture (Building Science)
+> University of California, Berkeley
+> Research Assistant, Lawrence Berkeley National Lab
+> Tel. (206) 303 9786
+> Email: kkonis at berkeley.edu
+> 
+
+
+From RFritz at lbl.gov  Wed Mar  2 14:27:30 2011
+From: RFritz at lbl.gov (Randolph M. Fritz)
+Date: Wed, 2 Mar 2011 14:27:30 -0800
+Subject: [Radiance-general] psign error on 64-bit Windows
+References: <AANLkTinuosML343YYFv6o4mzDcA_+NWahNBkvN307H9V@mail.gmail.com>
+Message-ID: <ikmg8i$ifd$1@dough.gmane.org>
+
+Hmmm.  64-bit apps are placed into a different directory than 32-bit 
+apps.  I wonder if that has something to do with it?
+
+On 2011-02-25 07:12:10 -0800, Thomas Bleicher said:
+
+> Hi folks
+> 
+> Has anyone on a 64-bit Windows system ever experienced problems with 
+> psign (compiled on a 32-bit system)?
+> 
+> In particular I'm interested in a "Fatal - cannot find font file 
+> 'helvet.fnt'" error that might pop up during a falsecolor conversion.
+> 
+> 
+> Thanks and have a nice weekend.
+> Thomas
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+-- 
+Randolph M. Fritz ? RFritz at lbl.gov
+Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+
+
+
+
+From tbleicher at googlemail.com  Fri Mar  4 15:41:40 2011
+From: tbleicher at googlemail.com (Thomas Bleicher)
+Date: Fri, 4 Mar 2011 23:41:40 +0000
+Subject: [Radiance-general] psign error on 64-bit Windows
+In-Reply-To: <ikmg8i$ifd$1@dough.gmane.org>
+References: <AANLkTinuosML343YYFv6o4mzDcA_+NWahNBkvN307H9V@mail.gmail.com>
+	<ikmg8i$ifd$1@dough.gmane.org>
+Message-ID: <AANLkTi=zp=WOxmMMW49SRCmLSsUQBuLj8ZQxcU5YmwEn@mail.gmail.com>
+
+On Wed, Mar 2, 2011 at 10:27 PM, Randolph M. Fritz <RFritz at lbl.gov> wrote:
+
+Hmmm.  64-bit apps are placed into a different directory than 32-bit apps.
+>  I wonder if that has something to do with it?
+
+
+It would surprise me. As far as I know Radiance should not depend on the
+installation of the apps; only the RAYPATH setting should affect the search
+for libs (and fonts). In this particular case all app are installed in
+C:\Radiance anyway (Daysim installation).
+
+Thomas
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20110304/3b1f9f04/attachment.html>
+
+From kthuot at mit.edu  Tue Mar 15 08:45:37 2011
+From: kthuot at mit.edu (Kevin Thuot)
+Date: Tue, 15 Mar 2011 11:45:37 -0400
+Subject: [Radiance-general] Problem with Metal Roughness Parameter
+Message-ID: <AANLkTi=CVj6b6BdGJfmZ=SAOt3Be98=isdzh0UmJtpBH@mail.gmail.com>
+
+Hello Radiance Community,
+
+I'm having a problem with the metal material when it is both highly specular
+and rough. In my room model, I have a vertical array of specular louvers at
+the top of a glazed facade which bounce light onto the ceiling. The ceiling
+for the first 6 m from the facade has a bumpy specular surface, using the
+metal material. Material description:
+
+void metal ceil_diff2
+0
+0
+5 .856 .856 .856 .95 .125
+
+The problem I'm seeing is that as I increase the roughness of the metal
+ceiling from 0 (I've tried 0, .125, .2, and .9) the total amount of light in
+the room increases significantly. This should not happen as the ceiling is
+only redistributing the light that enters through the louver array. I found
+that metal with 0 roughness produces essentially the same results as if I
+used the mirror material on the ceiling, which we would expect. As I
+increase the roughness, the area under the illuminance curve increases (to
+absurd levels in the case of .9 roughness, but I know that .2 is about the
+max for real objects). I  tested the illuminance profile at the centerline
+of the room as well as nearer to the side walls and saw the same pattern, so
+I don't think it's a matter of undersampling the room. The only thing I
+changed between cases was the roughness of the ceiling.
+
+Can anyone think of what might be causing this effect? Are there any known
+problems relating to the roughness of the metal material? I've searched the
+archives, but didn't find an answer to my problem.
+
+If you are interested in helping, here is a link to the graph of the
+illuminance results for my test room. The values are the aggregate of
+individual time steps from an annual simulation. The legend shows the
+roughness in parentheses.
+
+https://docs.google.com/leaf? <http://goog_618206457/>
+id=0B69GQAj_Aw_QNzZhNWMwOTktZjRjOS00NWJiLThhMTUtODNlNDQxYmMyYjJi&hl=en&authkey=CIC91fUF<https://docs.google.com/leaf?id=0B69GQAj_Aw_QNzZhNWMwOTktZjRjOS00NWJiLThhMTUtODNlNDQxYmMyYjJi&hl=en&authkey=CIC91fUF>
+
+Thanks very much for your help. I can send more information on my model if
+requested.
+
+-Kevin
+
+
+
+-- 
+Kevin Thuot
+Research Assistant
+Massachusetts Institute of Technology
+kthuot at gmail.com
+(512) 497-8168
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20110315/c941a5bc/attachment.html>
+
+From qiuzhongzhu at shiep.edu.cn  Tue Mar 15 08:55:48 2011
+From: qiuzhongzhu at shiep.edu.cn (ZZ)
+Date: Tue, 15 Mar 2011 23:55:48 +0800
+Subject: [Radiance-general] Auto-Re: Problem with Metal Roughness Parameter
+Message-ID: <ZPOPRELHJJBMRSMJOTXYIBTECWGN.qiuzhongzhu@shiep.edu.cn>
+
+?????????????????
+1 ?????????????????????????????
+2 ??????????????????????????????????????????
+3 ??????????????????????????????????????????????????????????????????
+4 ??????????????????????????
+5 ?????????????????????????????????????????????????????????????????????????
+6 ??????????? ??????? ???????????????????????????????
+7 ??????????????????????????
+??????????????????????????????????????????????????????????????? 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20110315/905d5a41/attachment.html>
+
+From grobe at gmx.net  Tue Mar 15 09:24:11 2011
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Tue, 15 Mar 2011 17:24:11 +0100
+Subject: [Radiance-general] Problem with Metal Roughness Parameter
+In-Reply-To: <AANLkTi=CVj6b6BdGJfmZ=SAOt3Be98=isdzh0UmJtpBH@mail.gmail.com>
+References: <AANLkTi=CVj6b6BdGJfmZ=SAOt3Be98=isdzh0UmJtpBH@mail.gmail.com>
+Message-ID: <4D7F92AB.30707@gmx.net>
+
+Hi Kevin!
+
+> I'm having a problem with the metal material when it is both highly
+> specular and rough. In my room model, I have a vertical array of
+> specular louvers at the top of a glazed facade which bounce light onto
+> the ceiling.
+(...)
+> The problem I'm seeing is that as I increase the roughness of the metal
+> ceiling from 0 (I've tried 0, .125, .2, and .9) the total amount of
+> light in the room increases significantly.
+
+I am just following your textual description as such:
+
+1) direct sunlight gets specularly reflected from louvers to ceiling
+
+2) light gets reflected from ceiling to sensor (and you have a very high 
+specular reflectance of .95)
+
+As long as the sun is not perfectly aligned perpendicular with your 
+facade, you will probably also have some diffuse reflection over the 
+wall, but that should not cause these effects.
+
+Is it that surprising?
+
+In case of zero roughness, all light reflected by the ceiling probably 
+hits the back wall. Your sensor should probably only get hit by light 
+reflected of the back wall (if there is any), light from the sky and 
+maybe scattered light from the louvers.
+
+In case of higher roughnesses, the distribution after the reflection on 
+the ceiling gets wider - less light reaches the back wall, more light 
+reaches the sensor. Seen from below, the ceiling would appear brighter 
+(unless you are at the exact sun position where the sun would get 
+reflected at by a mirror-like ceiling).
+
+All this can be visualized by holding a mirror, a scattering mirror and 
+a piece of paper in front of a (small) lamp in a dark room. The mirror 
+will appear black - unless you find the exact one position where light 
+gets reflected straight into your eyes. The scatter mirror will appear 
+brighter when seen close to the mirror angle, paper will appear bright 
+at any angle.
+
+My guess that this is all the reason for your observation. Am I right?
+
+Cheers, Lars.
+
+
+From Christopher.Rush at arup.com  Tue Mar 15 10:03:53 2011
+From: Christopher.Rush at arup.com (Christopher Rush)
+Date: Tue, 15 Mar 2011 13:03:53 -0400
+Subject: [Radiance-general] Problem with Metal Roughness Parameter
+In-Reply-To: <4D7F92AB.30707@gmx.net>
+References: <AANLkTi=CVj6b6BdGJfmZ=SAOt3Be98=isdzh0UmJtpBH@mail.gmail.com>
+	<4D7F92AB.30707@gmx.net>
+Message-ID: <28285BAEA8C0814DBF1B199C876EC5B04A017583F4@AMXEXC01.global.arup.com>
+
+If the models are already available it shouldn't be much work to create renderings of the different scenarios to see if you can confirm Lars suspicions.
+
+> In case of zero roughness, all light reflected by the ceiling probably 
+> hits the back wall. Your sensor should probably only get hit by light 
+> reflected of the back wall (if there is any), light from the sky and 
+> maybe scattered light from the louvers.
+
+> In case of higher roughnesses, the distribution after the reflection on 
+> the ceiling gets wider - less light reaches the back wall, more light 
+> reaches the sensor. Seen from below, the ceiling would appear brighter 
+> (unless you are at the exact sun position where the sun would get 
+> reflected at by a mirror-like ceiling).
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+
+
+
+From hope.zh at gmail.com  Tue Mar 15 11:13:21 2011
+From: hope.zh at gmail.com (Ji Zhang)
+Date: Wed, 16 Mar 2011 02:13:21 +0800
+Subject: [Radiance-general] how to generate a customized cumulative sky
+ based on an arbitrarily defined sky brightness formular?
+Message-ID: <AANLkTimM39QHa_37H6sq277hkeUX0Jg_ZFs_fmadbKjX@mail.gmail.com>
+
+Dear Radience experts,
+
+suppose I have a formular which defines the luminance of a point (L) in the
+sky according to it's solar altitude and solar azimuth:
+
+L = f(altitude, azimuth)
+
+how to generate a sky file which describes the cumulative sky brightness
+distribution pattern based on this formular.
+
+I roughly know that gencumulativesky.exe can only take weather file as input
+to create a .cal file which will be cited in the .sky file to generate the
+cumulative diffuse radiation distribution pattern.
+
+But can we write our own sky.cal file to define the rationle to determine
+sky radiance or luminace distribution pattern? and How to do that?
+
+e.g. what if the sky brightness pattern is something like a checkerboard
+pattern with black and white patches arranged in alternating way?
+
+
+Thanks!
+
+Ji
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20110316/599ac609/attachment.html>
+
+From qiuzhongzhu at shiep.edu.cn  Tue Mar 15 11:14:25 2011
+From: qiuzhongzhu at shiep.edu.cn (ZZ)
+Date: Wed, 16 Mar 2011 02:14:25 +0800
+Subject: [Radiance-general] Auto-Re: how to generate a customized cumulative
+	skybased on an arbitrarily defined sky br
+Message-ID: <CKIOCVKBCDDOFWUYJLQAZMHBDNQD.qiuzhongzhu@shiep.edu.cn>
+
+?????????????????
+1 ?????????????????????????????
+2 ??????????????????????????????????????????
+3 ??????????????????????????????????????????????????????????????????
+4 ??????????????????????????
+5 ?????????????????????????????????????????????????????????????????????????
+6 ??????????? ??????? ???????????????????????????????
+7 ??????????????????????????
+??????????????????????????????????????????????????????????????? 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20110316/ea0baf6b/attachment-0001.html>
+
+From gregoryjward at gmail.com  Tue Mar 15 11:38:07 2011
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue, 15 Mar 2011 11:38:07 -0700
+Subject: [Radiance-general] Auto-Re: how to generate a customized
+	cumulative skybased on an arbitrarily defined sky br
+In-Reply-To: <CKIOCVKBCDDOFWUYJLQAZMHBDNQD.qiuzhongzhu@shiep.edu.cn>
+References: <CKIOCVKBCDDOFWUYJLQAZMHBDNQD.qiuzhongzhu@shiep.edu.cn>
+Message-ID: <F064B3CE-C82E-405A-A81F-7ECFBEA7E968@lmi.net>
+
+Note to list:
+
+I have temporarily disabled this user to avoid getting their auto-replies.
+
+Best,
+-Greg
+
+> From: "ZZ" <qiuzhongzhu at shiep.edu.cn>
+> Date: March 15, 2011 11:14:25 AM PDT
+> 
+> ?????????????????
+> 1 ?????????????????????????????
+> 2 ??????????????????????????????????????????
+> 3 ??????????????????????????????????????????????????????????????????
+> 4 ??????????????????????????
+> 5 ?????????????????????????????????????????????????????????????????????????
+> 6 ??????????? ??????? ???????????????????????????????
+> 7 ??????????????????????????
+> ???????????????????????????????????????????????????????????????
+> 
+> 
+> 
+> ---------------------------------------------------
+> ???
+> ????????
+> ?????? ????????? ????
+> ????????2103??????????????????? 200090
+> 
+> Qiu Zhong-zhu       (PhD, Professor)
+> Director of Thermal Energy and Power Engineering Discipline
+> Mailing address: School of  Energy and Environment Engineering, Shanghai University of Electric Power, Shanghai, China
+> Zip code: 200090
+> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20110315/9e9dfd30/attachment.html>
+
+From grobe at gmx.net  Tue Mar 15 12:12:17 2011
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Tue, 15 Mar 2011 20:12:17 +0100
+Subject: [Radiance-general] how to generate a customized cumulative sky
+ based on an arbitrarily defined sky brightness formular?
+In-Reply-To: <AANLkTimM39QHa_37H6sq277hkeUX0Jg_ZFs_fmadbKjX@mail.gmail.com>
+References: <AANLkTimM39QHa_37H6sq277hkeUX0Jg_ZFs_fmadbKjX@mail.gmail.com>
+Message-ID: <4D7FBA11.2070008@gmx.net>
+
+Hi Ji Zhang!
+
+> L = f(altitude, azimuth)
+>
+> how to generate a sky file which describes the cumulative sky brightness
+> distribution pattern based on this formular.
+
+Did you take a look at skybright.cal? It should serve as a starting 
+point. Your file should be far less complicated, though. Learning the 
+cal-file-language in Radiance is done best by
+
+1) studying examples (the lib/ directory is full of them)
+
+2) studying rayinit.cal (it contains all the variables that are 
+available to you as well as functions - e.g. the surface normal Nx Ny Nz 
+that should useful
+
+4) trying with simple examples, debugging / comparing results to what is 
+expected
+
+Later, if you modify (using brightfunc) a source of type glow (RGB 1 1 
+1) calling the cal file, you can multiply the (1 1 1) by the variable 
+selected in the brighfunc definition and (hopefully) defined in the 
+cal-file.
+
+Using gensky, everyone is already doing this. Looking at the output of 
+calling "gensky 03 21 10CET +i -a 51 -o 7":
+
+(...)
+void brightfunc skyfunc
+2 skybr skybright.cal
+0
+7 4 1.05e+01 3.82e+00 1.12e+00 0.807462 -0.462819 0.365792
+(...)
+
+This means that skyfunc is a modifier that, if applied to a glow 
+material, will multiply each of the three channels (which is usually 
+RGB) of the glow material with the value of variable skybr.
+
+The value of skybr is found by evaluating the skybright.cal file (which 
+is in your Radiance library directory):
+
+(...)
+skybr = wmean((Dz+1.01)^10,
+                 select(A1, sunnysky, cloudysky, unifsky, intersky),
+                 (Dz+1.01)^-10, A3);
+(...)
+A1 is the first parameter passed into the cal-file (the first parameter 
+of the fourth line of the calling brightfunc definition, '4' in this 
+example. The select command here checks the value, and, as it is '4' 
+here, returns the 4th of the four skytype-variables - intersky. Compare 
+to the gensky command line: gensky 03 21 10CET +i -a 51 -o 7 (+i means 
+intermediate sky with sun).
+
+A3 is 3.82e+00 according to my skyfunc definition (see above), and 
+refers to the ground plane brightness.
+
+Dz is defined in rayinit.cal: Dx, Dy, Dz is the ray direction vector at 
+the time of evaluation - which means at the time the ray hits the 
+geometry modified by the brightfunc, which is the sky dome here.
+
+This is as an example how the typically used gensky tool makes use of 
+cal-files. Again, yours should be less complicated. Just keep everything 
+clean and in accordance with Radiance concepts and everything in SI 
+units, and write comments :-)
+
+Another idea, you mention cumulative skies - unless there are problems 
+with interpolation, you may consider brighdat, which uses data files for 
+input.
+
+Cheers, Lars.
+
+
+From kzelenay at berkeley.edu  Wed Mar 16 00:11:41 2011
+From: kzelenay at berkeley.edu (Krystyna Zelenay)
+Date: Wed, 16 Mar 2011 00:11:41 -0700
+Subject: [Radiance-general] Gendaylit command
+Message-ID: <AANLkTimgV9x3tQ-vpF5WWNqf3KYM5KRDPb+w9UbjX7BN@mail.gmail.com>
+
+Hi,
+
+I am trying to define a clear and overcast sky for a particular
+location using gendaylit. I have collected global horizontal exterior
+illuminance data, but no diffuse illum. or irradiance data, so I would
+thus like to use TMY3 data. I am using DIVA-for-Rhino which requires
+an input in W/m2 for gendaylit, so I have two options:
+
+a) use the direct and diffuse horizontal irradiance values from the TMY3 file
+b) divide the direct and diffuse horizontal illuminances by 179 lm/W
+to obtain the irradiances
+
+Which of these is the correct input for gendaylit?
+
+What is the significance of the luminous efficacy used in Radiance
+(179 lm/W)? The book "Rendering with Radiance" states that luminous
+efficacy can vary from 50 to 150 lm/W depending on the type of sky or
+light considered (p357). And indeed when I divide for example, diffuse
+horizontal illum. data by 179, the irradiances I get are quite
+different from those in the TMY3 file.
+
+Does this mean that I should use the irradiance data from the TMY3 file?
+
+Thanks,
+
+Krystyna Zelenay
+
+
+
+
+from the site (but not irradiance data).The default DIVA input is in terms of
+direct horizontal irradiance (W/m^2) and
+diffuse horizontalirradiance (W/m^2)
+
+Is there a way to change the default input to
+
+NORMAL horizontal ILLUMINANCE (lm/m^2) and
+diffuse horizontal ILLUMINANCE (lm/m^2)
+(i.e. similar to the -L option in the gendaylit command)
+
+Alternatively, does anyone know how to go about converting illuminance
+to irradiance data?
+
+Thank you,
+
+Krystyna
+
+
+From brajeshlal at yahoo.com  Thu Mar 17 04:33:10 2011
+From: brajeshlal at yahoo.com (Brajesh Lal)
+Date: Thu, 17 Mar 2011 04:33:10 -0700 (PDT)
+Subject: [Radiance-general] 3d Depth of a pixel
+In-Reply-To: <59223A21-3989-4893-936A-2A1276EB7824@lmi.net>
+References: <928572.9599.qm@web57311.mail.re1.yahoo.com>
+	<59223A21-3989-4893-936A-2A1276EB7824@lmi.net>
+Message-ID: <381239.43715.qm@web57311.mail.re1.yahoo.com>
+
+Hi, 
+
+I need to know the z depth of  each 3d point. I want an output image such that 
+color of each pixel stores the info of z-depth of the corresponding pixel . 
+in rpict i am confused in syntax. How do i use -z option ?
+
+e.g.
+rpict -x ResX -y ResY -z  depth.hdr  -vf  camera.vp  scene.oct > scene.hdr   
+ ????
+
+ Best Regards, 
+Brajesh Lal
+
+
+
+
+________________________________
+
+
+      
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20110317/6e5ece76/attachment.html>
+
+From grobe at gmx.net  Thu Mar 17 04:58:17 2011
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Thu, 17 Mar 2011 12:58:17 +0100
+Subject: [Radiance-general] 3d Depth of a pixel
+In-Reply-To: <381239.43715.qm@web57311.mail.re1.yahoo.com>
+References: <928572.9599.qm@web57311.mail.re1.yahoo.com>	<59223A21-3989-4893-936A-2A1276EB7824@lmi.net>
+	<381239.43715.qm@web57311.mail.re1.yahoo.com>
+Message-ID: <4D81F759.4060601@gmx.net>
+
+Hi!
+
+> I need to know the z depth of each 3d point. I want an output image such
+> that color of each pixel stores the info of z-depth of the corresponding
+> pixel .
+> in rpict i am confused in syntax. How do i use -z option ?
+
+Didn't your command line work? I would probably avoid using the 
+.hdr-extension for a depth-map, as its content are not hdr (in rgbe) but 
+only floats.
+
+Besides rpict, you could also use rtrace if you do not need the 
+radiance/irradiance map but only the depth map. Probably I'd do that, as 
+I could directly access the data then transparently without worrying 
+about scanline ordering and reading binary files :-)
+
+Look at the possible output values of rtrace (from 'man rtrace'):
+--
+(..)
+-ospec    Produce output fields  according  to  spec.   Characters
+           are interpreted as follows:
+
+                  o    origin (input)
+
+                  d    direction (normalized)
+
+(..)
+
+                  L    first intersection distance
+
+(..)
+                  p    point of intersection
+(..)
+--
+So lots of data you can get for finding the first point of intersection 
+seen from a point of view. vwrays gives you ray directions to shoot at 
+your scene.
+
+Maybe this is helpful, maybe someone has a working example using rpict's -z?
+
+Cheers, Lars.
+
+
+From jedev at visarc.com  Thu Mar 17 06:28:58 2011
+From: jedev at visarc.com (Jack de Valpine)
+Date: Thu, 17 Mar 2011 09:28:58 -0400
+Subject: [Radiance-general] Gendaylit command
+In-Reply-To: <AANLkTimgV9x3tQ-vpF5WWNqf3KYM5KRDPb+w9UbjX7BN@mail.gmail.com>
+References: <AANLkTimgV9x3tQ-vpF5WWNqf3KYM5KRDPb+w9UbjX7BN@mail.gmail.com>
+Message-ID: <4D820C9A.70802@visarc.com>
+
+Hi Krystyna,
+
+I suggest having a look at at Axel Jacobs document on "Understanding 
+rtcontrib":
+
+    http://luminance.londonmet.ac.uk/learnix/docs/rtcontrib_lesson.pdf
+
+On pages 30-32 he provide some excellent explanation of processing 
+weather data for Radiance and gendaylit. According to this, the best 
+data points to use are direct normal and diffuse horizontal irradiance 
+(W/m^2) which should be provided to gendaylit AS IS (eg without any 
+additional factoring for Radiance). Irradiance data points are suggested 
+as the best option as apparently not all weather stations actually 
+measure photometric data, meaning that such values if not measured are 
+derived from the radiometric data points.
+
+Note reading further will provide some potential cautions on gendaylit 
+as well....
+
+-Jack
+
+-- 
+# Jack de Valpine
+# president
+#
+# visarc incorporated
+# http://www.visarc.com
+#
+# channeling technology for superior design and construction
+
+
+On 3/16/2011 3:11 AM, Krystyna Zelenay wrote:
+> Hi,
+>
+> I am trying to define a clear and overcast sky for a particular
+> location using gendaylit. I have collected global horizontal exterior
+> illuminance data, but no diffuse illum. or irradiance data, so I would
+> thus like to use TMY3 data. I am using DIVA-for-Rhino which requires
+> an input in W/m2 for gendaylit, so I have two options:
+>
+> a) use the direct and diffuse horizontal irradiance values from the TMY3 file
+> b) divide the direct and diffuse horizontal illuminances by 179 lm/W
+> to obtain the irradiances
+>
+> Which of these is the correct input for gendaylit?
+>
+> What is the significance of the luminous efficacy used in Radiance
+> (179 lm/W)? The book "Rendering with Radiance" states that luminous
+> efficacy can vary from 50 to 150 lm/W depending on the type of sky or
+> light considered (p357). And indeed when I divide for example, diffuse
+> horizontal illum. data by 179, the irradiances I get are quite
+> different from those in the TMY3 file.
+>
+> Does this mean that I should use the irradiance data from the TMY3 file?
+>
+> Thanks,
+>
+> Krystyna Zelenay
+>
+>
+>
+>
+> from the site (but not irradiance data).The default DIVA input is in terms of
+> direct horizontal irradiance (W/m^2) and
+> diffuse horizontalirradiance (W/m^2)
+>
+> Is there a way to change the default input to
+>
+> NORMAL horizontal ILLUMINANCE (lm/m^2) and
+> diffuse horizontal ILLUMINANCE (lm/m^2)
+> (i.e. similar to the -L option in the gendaylit command)
+>
+> Alternatively, does anyone know how to go about converting illuminance
+> to irradiance data?
+>
+> Thank you,
+>
+> Krystyna
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20110317/000ebc8c/attachment.html>
+
+From gregoryjward at gmail.com  Thu Mar 17 08:40:42 2011
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu, 17 Mar 2011 08:40:42 -0700
+Subject: [Radiance-general] 3d Depth of a pixel
+In-Reply-To: <381239.43715.qm@web57311.mail.re1.yahoo.com>
+References: <928572.9599.qm@web57311.mail.re1.yahoo.com>
+	<59223A21-3989-4893-936A-2A1276EB7824@lmi.net>
+	<381239.43715.qm@web57311.mail.re1.yahoo.com>
+Message-ID: <103B0A5F-81E5-4486-96F4-010DC55CA8C0@lmi.net>
+
+Hi Brajesh,
+
+Lars is right that you can use vwrays with rtrace to get more flexible output.  The Z-buffer file is a string of binary floats, and not formatted as such.  You need to pass it through pvalue if you want to produce a (grayscale) image.  You can use the following sequence if you like:
+
+	rpict -x ResX -y ResY -z  depth.zbf  -vf  camera.vp  scene.oct > scene.hdr
+	pvalue -r -h -df -b `getinfo -d < scene.hdr` depth.zbf > depth.hdr
+
+Notice the back-quotes above, which substitute the resolution output of getinfo -d on the command line.  You can then view "depth.hdr" as a grayscale image or convert to color using falsecolor:
+
+	falsecolor -l Depth -s auto -m 1 -i depth.hdr > depth_fc.hdr
+
+If you don't want the grayscale image at all, you can combine your pvalue and falsecolor commands like so:
+
+	pvalue -r -h -df -b `getinfo -d < scene.hdr` depth.zbf | falsecolor -l Depth -s auto -m 1 > depth_fc.hdr
+
+Best,
+-Greg
+
+> From: Brajesh Lal <brajeshlal at yahoo.com>
+> Date: March 17, 2011 4:33:10 AM PDT
+> 
+> Hi, 
+> 
+> I need to know the z depth of  each 3d point. I want an output image such that color of each pixel stores the info of z-depth of the corresponding pixel . 
+> in rpict i am confused in syntax. How do i use -z option ?
+> 
+> e.g.
+> rpict -x ResX -y ResY -z  depth.hdr  -vf  camera.vp  scene.oct > scene.hdr    ????
+> 
+>  
+> Best Regards, 
+> Brajesh Lal
+
+
+From reinhart at gsd.harvard.edu  Thu Mar 17 11:01:22 2011
+From: reinhart at gsd.harvard.edu (Reinhart, Christoph)
+Date: Thu, 17 Mar 2011 14:01:22 -0400
+Subject: [Radiance-general] Gendaylit command
+In-Reply-To: <AANLkTimgV9x3tQ-vpF5WWNqf3KYM5KRDPb+w9UbjX7BN@mail.gmail.com>
+References: <AANLkTimgV9x3tQ-vpF5WWNqf3KYM5KRDPb+w9UbjX7BN@mail.gmail.com>
+Message-ID: <C5E1527F129BF545A250B5AD0B0C26EF08AC8C6A@ENTWEXMB0000000.university.harvard.edu>
+
+Dear Krystyna,
+
+The DIAV-for-Rhino input for gendaylit is not ideal right now but we are
+working on it. If you have measured global solar radiation that you want
+to use to generate a Perez sky using gendaylit, you can - for example -
+use a little program called 'gen_reindl' that comes with Daysim. Just
+open a DOS command and type 'gen_reindl' and you will get a description
+of the required input and resulting output file formats. The output
+direct and diffuse irradiance are what you have to enter into the DIVA
+dialogue box. As the name suggests, the program uses the 'Reindl model'
+to generate direct and diffuse irradiances for global irradiances
+(http://www.sciencedirect.com/science?_ob=ArticleURL&_udi=B6V50-497TD1G-
+1GR&_user=10&_coverDate=12%2F31%2F1990&_alid=1682991794&_rdoc=3&_fmt=hig
+h&_orig=search&_origin=search&_zone=rslt_list_item&_cdi=5772&_sort=r&_st
+=13&_docanchor=&view=c&_ct=5&_acct=C000050221&_version=1&_urlVersion=0&_
+userid=10&md5=40baa0c089e7bf9f8f3a02f4581aafbe&searchtype=a) . The model
+is not necessarily the 'best' model available any more. But, when I
+wrote the program about eight years ago and it did a convincing job for
+a site in Ottawa. 
+
+I hope that this helps.
+
+All the best,
+
+Christoph
+
+-----Original Message-----
+From: Krystyna Zelenay [mailto:kzelenay at berkeley.edu] 
+Sent: Wednesday, March 16, 2011 3:12 AM
+To: Radiance general discussion
+Subject: [Radiance-general] Gendaylit command
+
+Hi,
+
+I am trying to define a clear and overcast sky for a particular
+location using gendaylit. I have collected global horizontal exterior
+illuminance data, but no diffuse illum. or irradiance data, so I would
+thus like to use TMY3 data. I am using DIVA-for-Rhino which requires
+an input in W/m2 for gendaylit, so I have two options:
+
+a) use the direct and diffuse horizontal irradiance values from the TMY3
+file
+b) divide the direct and diffuse horizontal illuminances by 179 lm/W
+to obtain the irradiances
+
+Which of these is the correct input for gendaylit?
+
+What is the significance of the luminous efficacy used in Radiance
+(179 lm/W)? The book "Rendering with Radiance" states that luminous
+efficacy can vary from 50 to 150 lm/W depending on the type of sky or
+light considered (p357). And indeed when I divide for example, diffuse
+horizontal illum. data by 179, the irradiances I get are quite
+different from those in the TMY3 file.
+
+Does this mean that I should use the irradiance data from the TMY3 file?
+
+Thanks,
+
+Krystyna Zelenay
+
+
+
+
+from the site (but not irradiance data).The default DIVA input is in
+terms of
+direct horizontal irradiance (W/m^2) and
+diffuse horizontalirradiance (W/m^2)
+
+Is there a way to change the default input to
+
+NORMAL horizontal ILLUMINANCE (lm/m^2) and
+diffuse horizontal ILLUMINANCE (lm/m^2)
+(i.e. similar to the -L option in the gendaylit command)
+
+Alternatively, does anyone know how to go about converting illuminance
+to irradiance data?
+
+Thank you,
+
+Krystyna
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From kzelenay at berkeley.edu  Thu Mar 17 22:45:41 2011
+From: kzelenay at berkeley.edu (Krystyna Zelenay)
+Date: Thu, 17 Mar 2011 22:45:41 -0700
+Subject: [Radiance-general] Gendaylit command
+In-Reply-To: <C5E1527F129BF545A250B5AD0B0C26EF08AC8C6A@ENTWEXMB0000000.university.harvard.edu>
+References: <AANLkTimgV9x3tQ-vpF5WWNqf3KYM5KRDPb+w9UbjX7BN@mail.gmail.com>
+	<C5E1527F129BF545A250B5AD0B0C26EF08AC8C6A@ENTWEXMB0000000.university.harvard.edu>
+Message-ID: <AANLkTi=34MVYB_Rn2obvk_O16O3TNmaZ0EiL5kSfpA2_@mail.gmail.com>
+
+Hi,
+
+Thank you very much for your input.
+
+I am considering using horizontal (direct and diffuse) irradiance data
+since this is the required DIVA input. However, now I am wondering if
+I can actually use TMY3 data since I think these may be hourly
+averages calculated for the 60-minute period preceding the timestamp.
+While I could subtract 30 minutes from the timestamp, this would only
+be an approximation at best.
+
+I wonder if anyone knows of any sources of instantaneous GH direct and
+GH diffuse irradiance data (required input for DIVA) or a way I could
+use the TMY3 hourly averages?
+
+Krystyna
+
+
+
+
+On Thu, Mar 17, 2011 at 11:01 AM, Reinhart, Christoph
+<reinhart at gsd.harvard.edu> wrote:
+> Dear Krystyna,
+>
+> The DIAV-for-Rhino input for gendaylit is not ideal right now but we are
+> working on it. If you have measured global solar radiation that you want
+> to use to generate a Perez sky using gendaylit, you can - for example -
+> use a little program called 'gen_reindl' that comes with Daysim. Just
+> open a DOS command and type 'gen_reindl' and you will get a description
+> of the required input and resulting output file formats. The output
+> direct and diffuse irradiance are what you have to enter into the DIVA
+> dialogue box. As the name suggests, the program uses the 'Reindl model'
+> to generate direct and diffuse irradiances for global irradiances
+> (http://www.sciencedirect.com/science?_ob=ArticleURL&_udi=B6V50-497TD1G-
+> 1GR&_user=10&_coverDate=12%2F31%2F1990&_alid=1682991794&_rdoc=3&_fmt=hig
+> h&_orig=search&_origin=search&_zone=rslt_list_item&_cdi=5772&_sort=r&_st
+> =13&_docanchor=&view=c&_ct=5&_acct=C000050221&_version=1&_urlVersion=0&_
+> userid=10&md5=40baa0c089e7bf9f8f3a02f4581aafbe&searchtype=a) . The model
+> is not necessarily the 'best' model available any more. But, when I
+> wrote the program about eight years ago and it did a convincing job for
+> a site in Ottawa.
+>
+> I hope that this helps.
+>
+> All the best,
+>
+> Christoph
+>
+> -----Original Message-----
+> From: Krystyna Zelenay [mailto:kzelenay at berkeley.edu]
+> Sent: Wednesday, March 16, 2011 3:12 AM
+> To: Radiance general discussion
+> Subject: [Radiance-general] Gendaylit command
+>
+> Hi,
+>
+> I am trying to define a clear and overcast sky for a particular
+> location using gendaylit. I have collected global horizontal exterior
+> illuminance data, but no diffuse illum. or irradiance data, so I would
+> thus like to use TMY3 data. I am using DIVA-for-Rhino which requires
+> an input in W/m2 for gendaylit, so I have two options:
+>
+> a) use the direct and diffuse horizontal irradiance values from the TMY3
+> file
+> b) divide the direct and diffuse horizontal illuminances by 179 lm/W
+> to obtain the irradiances
+>
+> Which of these is the correct input for gendaylit?
+>
+> What is the significance of the luminous efficacy used in Radiance
+> (179 lm/W)? The book "Rendering with Radiance" states that luminous
+> efficacy can vary from 50 to 150 lm/W depending on the type of sky or
+> light considered (p357). And indeed when I divide for example, diffuse
+> horizontal illum. data by 179, the irradiances I get are quite
+> different from those in the TMY3 file.
+>
+> Does this mean that I should use the irradiance data from the TMY3 file?
+>
+> Thanks,
+>
+> Krystyna Zelenay
+>
+>
+>
+>
+> from the site (but not irradiance data).The default DIVA input is in
+> terms of
+> direct horizontal irradiance (W/m^2) and
+> diffuse horizontalirradiance (W/m^2)
+>
+> Is there a way to change the default input to
+>
+> NORMAL horizontal ILLUMINANCE (lm/m^2) and
+> diffuse horizontal ILLUMINANCE (lm/m^2)
+> (i.e. similar to the -L option in the gendaylit command)
+>
+> Alternatively, does anyone know how to go about converting illuminance
+> to irradiance data?
+>
+> Thank you,
+>
+> Krystyna
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+
+From brajeshlal at yahoo.com  Fri Mar 18 02:36:32 2011
+From: brajeshlal at yahoo.com (Brajesh Lal)
+Date: Fri, 18 Mar 2011 02:36:32 -0700 (PDT)
+Subject: [Radiance-general] 3d Depth of a pixel
+In-Reply-To: <103B0A5F-81E5-4486-96F4-010DC55CA8C0@lmi.net>
+References: <928572.9599.qm@web57311.mail.re1.yahoo.com>
+	<59223A21-3989-4893-936A-2A1276EB7824@lmi.net>
+	<381239.43715.qm@web57311.mail.re1.yahoo.com>
+	<103B0A5F-81E5-4486-96F4-010DC55CA8C0@lmi.net>
+Message-ID: <219473.76452.qm@web57304.mail.re1.yahoo.com>
+
+Hi Lars/ Greg,
+
+I tried with small expression in a cal file.
+
+As i know camera position and Camera view direction from camera.vp file.
+I suppose rpict is similar to rtrace in terms of internal processing.
+
+The depth of the 3d point will be = T *cos theta
+I suppose " T " returns distance from camera to point of intersection as per 
+rayinit.cal
+
+If CP = Normalized Vector from camera to Point of intersection ( Px, Py, Pz) 
+
+
+cos theta = (CP) dot product  (normalized view vector)
+
+therefore my cal file has
+{
+3dDepthshader.cal
+} 
+
+red=T * ( (CPx * ViewX)+CPy * ViewY)+Cpz * ViewZ)) ;
+
+is the correct way to compute ?
+
+Anyway i will try with your given techniques too.
+
+ Best Regards,     Brajesh Lal
+
+
+
+
+________________________________
+From: Greg Ward <gregoryjward at gmail.com>
+To: Radiance general discussion <radiance-general at radiance-online.org>
+Sent: Thu, March 17, 2011 4:40:42 PM
+Subject: Re: [Radiance-general] 3d Depth of a pixel
+
+Hi Brajesh,
+
+Lars is right that you can use vwrays with rtrace to get more flexible output.  
+The Z-buffer file is a string of binary floats, and not formatted as such.  You 
+need to pass it through pvalue if you want to produce a (grayscale) image.  You 
+can use the following sequence if you like:
+
+    rpict -x ResX -y ResY -z  depth.zbf  -vf  camera.vp  scene.oct > scene.hdr
+    pvalue -r -h -df -b `getinfo -d < scene.hdr` depth.zbf > depth.hdr
+
+Notice the back-quotes above, which substitute the resolution output of getinfo 
+-d on the command line.  You can then view "depth.hdr" as a grayscale image or 
+convert to color using falsecolor:
+
+    falsecolor -l Depth -s auto -m 1 -i depth.hdr > depth_fc.hdr
+
+If you don't want the grayscale image at all, you can combine your pvalue and 
+falsecolor commands like so:
+
+    pvalue -r -h -df -b `getinfo -d < scene.hdr` depth.zbf | falsecolor -l Depth 
+-s auto -m 1 > depth_fc.hdr
+
+Best,
+-Greg
+
+> From: Brajesh Lal <brajeshlal at yahoo.com>
+> Date: March 17, 2011 4:33:10 AM PDT
+> 
+> Hi, 
+> 
+> I need to know the z depth of  each 3d point. I want an output image such that 
+>color of each pixel stores the info of z-depth of the corresponding pixel . 
+>
+> in rpict i am confused in syntax. How do i use -z option ?
+> 
+> e.g.
+> rpict -x ResX -y ResY -z  depth.hdr  -vf  camera.vp  scene.oct > scene.hdr    
+>????
+> 
+>  
+> Best Regards, 
+> Brajesh Lal
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+
+      
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20110318/24b1cbcf/attachment.html>
+
+From tbleicher at googlemail.com  Fri Mar 18 03:15:04 2011
+From: tbleicher at googlemail.com (Thomas Bleicher)
+Date: Fri, 18 Mar 2011 11:15:04 +0100
+Subject: [Radiance-general] 3d Depth of a pixel
+In-Reply-To: <219473.76452.qm@web57304.mail.re1.yahoo.com>
+References: <928572.9599.qm@web57311.mail.re1.yahoo.com>
+	<59223A21-3989-4893-936A-2A1276EB7824@lmi.net>
+	<381239.43715.qm@web57311.mail.re1.yahoo.com>
+	<103B0A5F-81E5-4486-96F4-010DC55CA8C0@lmi.net>
+	<219473.76452.qm@web57304.mail.re1.yahoo.com>
+Message-ID: <AANLkTinTzT2QrPCc4KPgSn63DxiEKo1NJP6SiB_pnBCz@mail.gmail.com>
+
+Brajesh.
+
+It seems to me you want to undo the perspective distortion of the depth
+buffer image in your cal file to produce a realistic elevation map. You
+could also just use a parallel projection in your view specification and use
+the "T" (ray length directly.
+
+Regards,
+Thomas
+
+On Fri, Mar 18, 2011 at 10:36 AM, Brajesh Lal <brajeshlal at yahoo.com> wrote:
+
+> Hi Lars/ Greg,
+>
+> I tried with small expression in a cal file.
+>
+> As i know camera position and Camera view direction from camera.vp file.
+> I suppose rpict is similar to rtrace in terms of internal processing.
+>
+> The depth of the 3d point will be = T *cos theta
+> I suppose " T " returns distance from camera to point of intersection as
+> per rayinit.cal
+>
+> If CP = Normalized Vector from camera to Point of intersection ( Px, Py,
+> Pz)
+>
+>
+> cos theta = (CP) dot product  (normalized view vector)
+>
+> therefore my cal file has
+> {
+> 3dDepthshader.cal
+> }
+>
+> red=T * ( (CPx * ViewX)+CPy * ViewY)+Cpz * ViewZ)) ;
+>
+> is the correct way to compute ?
+>
+> Anyway i will try with your given techniques too.
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20110318/b607ded1/attachment-0001.html>
+
+From brajeshlal at yahoo.com  Fri Mar 18 03:45:45 2011
+From: brajeshlal at yahoo.com (Brajesh Lal)
+Date: Fri, 18 Mar 2011 03:45:45 -0700 (PDT)
+Subject: [Radiance-general] 3d Depth of a pixel
+In-Reply-To: <103B0A5F-81E5-4486-96F4-010DC55CA8C0@lmi.net>
+References: <928572.9599.qm@web57311.mail.re1.yahoo.com>
+	<59223A21-3989-4893-936A-2A1276EB7824@lmi.net>
+	<381239.43715.qm@web57311.mail.re1.yahoo.com>
+	<103B0A5F-81E5-4486-96F4-010DC55CA8C0@lmi.net>
+Message-ID: <370558.39117.qm@web57302.mail.re1.yahoo.com>
+
+Thanks Greg,
+
+This worked for me
+
+    rpict -x 640 -y 480 -z  depth.zbf  -vf  camera.vp  scene.oct > scene.hdr
+    pvalue -r -h -df -b +y 480 +x 640 < scene.hdr depth.zbf > depth.hdr
+
+I am able get the depth image after flip.
+
+but when i tried falsecolor
+i get error
+bash:/opt/radiance/bin/falsecolor: /bin/csh: bad interpreter: Permission denied
+ Best Regards,     Brajesh Lal
+
+
+
+
+________________________________
+From: Greg Ward <gregoryjward at gmail.com>
+To: Radiance general discussion <radiance-general at radiance-online.org>
+Sent: Thu, March 17, 2011 4:40:42 PM
+Subject: Re: [Radiance-general] 3d Depth of a pixel
+
+Hi Brajesh,
+
+Lars is right that you can use vwrays with rtrace to get more flexible output.  
+The Z-buffer file is a string of binary floats, and not formatted as such.  You 
+need to pass it through pvalue if you want to produce a (grayscale) image.  You 
+can use the following sequence if you like:
+
+    rpict -x ResX -y ResY -z  depth.zbf  -vf  camera.vp  scene.oct > scene.hdr
+    pvalue -r -h -df -b `getinfo -d < scene.hdr` depth.zbf > depth.hdr
+
+Notice the back-quotes above, which substitute the resolution output of getinfo 
+-d on the command line.  You can then view "depth.hdr" as a grayscale image or 
+convert to color using falsecolor:
+
+    falsecolor -l Depth -s auto -m 1 -i depth.hdr > depth_fc.hdr
+
+If you don't want the grayscale image at all, you can combine your pvalue and 
+falsecolor commands like so:
+
+    pvalue -r -h -df -b `getinfo -d < scene.hdr` depth.zbf | falsecolor -l Depth 
+-s auto -m 1 > depth_fc.hdr
+
+Best,
+-Greg
+
+> From: Brajesh Lal <brajeshlal at yahoo.com>
+> Date: March 17, 2011 4:33:10 AM PDT
+> 
+> Hi, 
+> 
+> I need to know the z depth of  each 3d point. I want an output image such that 
+>color of each pixel stores the info of z-depth of the corresponding pixel . 
+>
+> in rpict i am confused in syntax. How do i use -z option ?
+> 
+> e.g.
+> rpict -x ResX -y ResY -z  depth.hdr  -vf  camera.vp  scene.oct > scene.hdr    
+>????
+> 
+>  
+> Best Regards, 
+> Brajesh Lal
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+
+      
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20110318/a97d6096/attachment.html>
+
+From gregoryjward at gmail.com  Fri Mar 18 09:16:05 2011
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri, 18 Mar 2011 09:16:05 -0700
+Subject: [Radiance-general] 3d Depth of a pixel
+In-Reply-To: <370558.39117.qm@web57302.mail.re1.yahoo.com>
+References: <928572.9599.qm@web57311.mail.re1.yahoo.com>
+	<59223A21-3989-4893-936A-2A1276EB7824@lmi.net>
+	<381239.43715.qm@web57311.mail.re1.yahoo.com>
+	<103B0A5F-81E5-4486-96F4-010DC55CA8C0@lmi.net>
+	<370558.39117.qm@web57302.mail.re1.yahoo.com>
+Message-ID: <62A81490-7C97-4287-991D-6CF08ED3EADA@lmi.net>
+
+Hi Brajesh,
+
+It sounds like you should download the latest version of falsecolor, which uses Perl instead of the C-shell.  It seems that the C-shell is not properly installed on your system.  I will send this to you in a private message, so you don't have to download the entire HEAD.
+
+Best,
+-Greg
+
+> From: Brajesh Lal <brajeshlal at yahoo.com>
+> Date: March 18, 2011 3:45:45 AM PDT
+> 
+> Thanks Greg,
+> 
+> This worked for me
+> 
+>     rpict -x 640 -y 480 -z  depth.zbf  -vf  camera.vp  scene.oct > scene.hdr
+>     pvalue -r -h -df -b +y 480 +x 640 < scene.hdr depth.zbf > depth.hdr
+> 
+> I am able get the depth image after flip.
+> 
+> but when i tried falsecolor
+> i get error
+> bash:/opt/radiance/bin/falsecolor: /bin/csh: bad interpreter: Permission denied
+>  
+> Best Regards, Brajesh Lal
+
+
+From tbleicher at googlemail.com  Fri Mar 18 05:26:36 2011
+From: tbleicher at googlemail.com (Thomas Bleicher)
+Date: Fri, 18 Mar 2011 13:26:36 +0100
+Subject: [Radiance-general] 3d Depth of a pixel
+In-Reply-To: <370558.39117.qm@web57302.mail.re1.yahoo.com>
+References: <928572.9599.qm@web57311.mail.re1.yahoo.com>
+	<59223A21-3989-4893-936A-2A1276EB7824@lmi.net>
+	<381239.43715.qm@web57311.mail.re1.yahoo.com>
+	<103B0A5F-81E5-4486-96F4-010DC55CA8C0@lmi.net>
+	<370558.39117.qm@web57302.mail.re1.yahoo.com>
+Message-ID: <AANLkTimmn2ag8va9C6wAm5=2cfFAuY2R3tKz4AbC3ji_@mail.gmail.com>
+
+On Fri, Mar 18, 2011 at 11:45 AM, Brajesh Lal <brajeshlal at yahoo.com> wrote:
+
+>
+> but when i tried falsecolor
+> i get error
+> bash:/opt/radiance/bin/falsecolor: /bin/csh: bad interpreter: Permission
+> denied
+>
+
+
+You have to install CSH on your system. Use the distribution's package
+management system and search for a csh or tcsh package.
+
+Thomas
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20110318/5faccb2b/attachment.html>
+
+From grobe at gmx.net  Fri Mar 18 04:38:46 2011
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Fri, 18 Mar 2011 12:38:46 +0100
+Subject: [Radiance-general] 3d Depth of a pixel
+In-Reply-To: <370558.39117.qm@web57302.mail.re1.yahoo.com>
+References: <928572.9599.qm@web57311.mail.re1.yahoo.com>	<59223A21-3989-4893-936A-2A1276EB7824@lmi.net>	<381239.43715.qm@web57311.mail.re1.yahoo.com>	<103B0A5F-81E5-4486-96F4-010DC55CA8C0@lmi.net>
+	<370558.39117.qm@web57302.mail.re1.yahoo.com>
+Message-ID: <4D834446.2020103@gmx.net>
+
+Hi!
+
+> but when i tried falsecolor i get error
+> bash:/opt/radiance/bin/falsecolor: /bin/csh: bad interpreter: Permission
+> denied
+
+Do you have /bin/csh installed?
+
+As Thomas mentioned, you can choose the projection using -vt with 
+vwrays. That allows you to directly get z-depth for a parallel projection.
+
+Cheers, Lars.
+
+
+From d.appelfeld at gmail.com  Fri Mar 18 20:45:45 2011
+From: d.appelfeld at gmail.com (David Appelfeld)
+Date: Fri, 18 Mar 2011 20:45:45 -0700
+Subject: [Radiance-general] Modelling glass louvres with frit in GLAZE
+Message-ID: <AANLkTimSY-iLV7n-7GJ2DDNQdis5_HMzuyx8_uupYUEt@mail.gmail.com>
+
+Dear list
+I am trying to get transmission matrix of a shading system with genBSDF. The
+system is made from double glazed window and glass louvres with silk screen
+print with coverage of 55%. For the window I could used optics2rad to get
+the material description without problem but I got problem with the louvres
+because Optics5 does not have fritted glass. I guess that I should program
+glaze as Jack de Valpine presented 2year ago at the Radiance workshop for
+the louvres. However I've got some problems with definition of the frit and
+understanding what glaze does.
+Briefly what I know about the louvres: glass is SGG Parsol green 8mm and
+silk screen print is covering 55% and the colour of frit is RAL 9010 which
+is almost pure white.
+I am not sure what  " Tr    Tg    Tb    Rcr    Rcg    Rcb    Rgr    Rgg
+Rgb    Part " should be used for frit. Does anyone was working with similar
+shading and have some values I can used, at least as assumption? Or is there
+any way to find those values without actual measurement? Maybe there is some
+source which you can recommend me.
+Are those values for frit only or is it a glass together with frit? In the
+case that it is including also a glass does the glass have to be same as the
+clear glass which is needed to be defined in glaze program?
+
+I was also wondering how the transmittance and reflectance is calculated
+exactly. As I understand it a transmittance is calculated in the way that
+the part of transmittance of the glass with frit is add to the transmittance
+of the glass surface without the frit. Is anyhow included that the
+transmittance through the frit is further reduced by the transmittance of
+the glass if we assume that the frit is on exterior surface.
+In the case of a reflectance on a glass surface opposite to the placement of
+frit I am even more confused. When I looked into the code of glaze program
+the glass reflection is calculated as reflection of the surface opposite to
+frit multiplied by coverage plus reflectance of the clear glass which is not
+covered by frit. Should I have the glass surface on the frit same as the
+clear glass and basically have the reflectance on the glass surface all over
+same. Or should I define that the opposite site of the frit as same
+reflectance as frit since the ray should go first through the glass and then
+will be reflected from the back side of frit?
+I guess that the program is simplifying the transmittance and reflectance,
+do you know how much it will be different from the reality?
+I am not sure if I described my thoughts understandable since since I may
+misunderstand several things in graze, so I will be very happy if someone
+could clear it up for me.
+
+Thank you very much for any ideas and suggestions.
+David
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20110318/c76214d6/attachment.html>
+
+From grobe at gmx.net  Sat Mar 19 07:18:49 2011
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Sat, 19 Mar 2011 15:18:49 +0100
+Subject: [Radiance-general] Modelling glass louvres with frit in GLAZE
+In-Reply-To: <AANLkTimSY-iLV7n-7GJ2DDNQdis5_HMzuyx8_uupYUEt@mail.gmail.com>
+References: <AANLkTimSY-iLV7n-7GJ2DDNQdis5_HMzuyx8_uupYUEt@mail.gmail.com>
+Message-ID: <4D84BB49.201@gmx.net>
+
+Hi David!
+
+> I am trying to get transmission matrix of a shading system with genBSDF.
+> The system is made from double glazed window and glass louvres with silk
+> screen print with coverage of 55%.
+
+Is the print translucent? For transmittance, it makes a difference 
+whether you have a translucent print (resulting in reduced direct 
+transmittance + scatter) or an opaque, purely reflective print 
+(resulting in only reduced direct transmittance).
+
+> I am not sure what " Tr    Tg    Tb    Rcr    Rcg    Rcb    Rgr
+> Rgg    Rgb    Part " should be used for frit. Does anyone was working
+> with similar shading and have some values I can used, at least as
+> assumption? Or is there any way to find those values without actual
+> measurement?
+
+My guess it that you may be able to approximate these, but I would not 
+really believe in the results of such a complex system without being 
+able to compare to a measurement.
+
+Cheers, Lars.
+
+
+From jedev at visarc.com  Sat Mar 19 07:36:16 2011
+From: jedev at visarc.com (Jack de Valpine)
+Date: Sat, 19 Mar 2011 10:36:16 -0400
+Subject: [Radiance-general] Modelling glass louvres with frit in GLAZE
+In-Reply-To: <4D84BB49.201@gmx.net>
+References: <AANLkTimSY-iLV7n-7GJ2DDNQdis5_HMzuyx8_uupYUEt@mail.gmail.com>
+	<4D84BB49.201@gmx.net>
+Message-ID: <4D84BF60.7000801@visarc.com>
+
+Hi Lars and David,
+
+For the glaze script what is needed for the frit material is T (rgb), 
+Rcoated side (rgb) and R glass side (rgb) all measured at 100% coverage 
+with the frit material. In the past I have been able to get this 
+information from glazing manufacturers. It does necessitate a call to 
+the manufacturer and speaking to someone on the technical side who can 
+get the information.
+
+Not sure what the system is that you are simulating. Have you taken a 
+look at what Window 6 can provide?
+
+-Jack
+
+-- 
+# Jack de Valpine
+# president
+#
+# visarc incorporated
+# http://www.visarc.com
+#
+# channeling technology for superior design and construction
+
+
+On 3/19/2011 10:18 AM, Lars O. Grobe wrote:
+> Hi David!
+>
+>> I am trying to get transmission matrix of a shading system with genBSDF.
+>> The system is made from double glazed window and glass louvres with silk
+>> screen print with coverage of 55%.
+>
+> Is the print translucent? For transmittance, it makes a difference 
+> whether you have a translucent print (resulting in reduced direct 
+> transmittance + scatter) or an opaque, purely reflective print 
+> (resulting in only reduced direct transmittance).
+>
+>> I am not sure what " Tr    Tg    Tb    Rcr    Rcg    Rcb    Rgr
+>> Rgg    Rgb    Part " should be used for frit. Does anyone was working
+>> with similar shading and have some values I can used, at least as
+>> assumption? Or is there any way to find those values without actual
+>> measurement?
+>
+> My guess it that you may be able to approximate these, but I would not 
+> really believe in the results of such a complex system without being 
+> able to compare to a measurement.
+>
+> Cheers, Lars.
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From jm at dmu.ac.uk  Mon Mar 21 04:21:59 2011
+From: jm at dmu.ac.uk (John Mardaljevic)
+Date: Mon, 21 Mar 2011 11:21:59 +0000
+Subject: [Radiance-general] PhD Studentship - Electrochromic Glazing
+	Performance: Measurement and Modelling (Leicester, UK)
+Message-ID: <F2553D0D-85FF-4432-8B3A-5B19CF7B4398@dmu.ac.uk>
+
+Electrochromic Glazing Performance: Measurement and Modelling
+
+http://www.iesd.dmu.ac.uk/vacancies/index_studentships.htm
+
+Three years scholarship comprising bursary and UK/EU fees
+
+A PhD research studentship within the Institute of Energy and Sustainable Development (IESD), an internationally leading multi-disciplinary research institute focused on the technological and human dimensions of sustainability, is available to suitably qualified UK or EU students.
+
+Electrochromic (EC) glazing is a window material that varies its transmission properties based on a sensor input. This project will be a combined monitoring and modelling study on the performance of EC glazing. The monitoring will use high dynamic range (HDR) imaging to quantify the visual field in actual office spaces ? the objective measures will be related to subjective response. For the modelling of EC performance, the IESD?s in-house suite of climate-based daylight modelling software will be enhanced to account for variable transmission glazing materials. The field-study will provide validation data for the modelling. The first degree (see below) should be in physics/engineering, or a related numerate discipline. Some prior experience of programming is helpful as it gives an indication of aptitude for the work, but this is not essential.
+
+For a more detailed description of the studentship project please contact Dr John Mardaljevic +44 (0) 116 257 7972, e-mail jm at dmu.ac.uk.
+
+This research opportunity is one of 28 scholarships funded by DMU in 2011/12 to build on our excellent achievements in the RAE2008 and looking forward to REF2014. It will develop the university?s research capacity into new and evolving areas of study, enhancing DMU?s national and international research partnerships.
+
+Applications are invited from UK or EU students with a good first degree (First, at least a 2:1 or equivalent) in a relevant subject.  Doctoral scholarships are available for up to three years full-time study starting October 2011 and provide a bursary of ?13,770pa in addition to University tuition fees.
+
+Closing date: 11 April 2011
+Interview date: To be confirmed
+Starting date: October 2011
+
+Applicants should contact Clare Perry at the Institute of Energy and Sustainable Development to receive an application pack, which requires a full CV with two supporting references. Please email cperry at dmu.ac.uk or call +44 (0)116 257 7979 for further details.
+
+Please quote ref:  DMU studentships 2011
+
+-----------------------------------------------
+Dr. John Mardaljevic                
+Reader in Daylight Modelling
+Institute of Energy and Sustainable Development
+De Montfort University
+The Gateway
+Leicester
+LE1 9BH, UK
++44 (0) 116 257 7972   
++44 (0) 116 257 7981 (fax)
+
+jm at dmu.ac.uk   
+http://www.iesd.dmu.ac.uk/~jm
+
+
+
+
+
+From d.appelfeld at gmail.com  Thu Mar 24 20:59:03 2011
+From: d.appelfeld at gmail.com (David Appelfeld)
+Date: Thu, 24 Mar 2011 20:59:03 -0700
+Subject: [Radiance-general] installing evalglare
+Message-ID: <AANLkTim3Rmmd0=ht0UTbr4qrHMvfKC0YShRVSbNyheFW@mail.gmail.com>
+
+Daer List, I am trying compile evalgrale on OSX but I am getting following
+error. I am sure that it is quite trivial problem since I am not much
+familiar with compiling programs. Did anyone had such a problem or can
+someone advice me how to install it correctly or maybe I just should move
+unpacked program to right directory and run it there. I could find missing
+file GL/gl.h in Mesa 3-D graphics package and copy it to the /usr/include
+where it should probably be, but by this only first part of error was solved
+(above the line).
+Thank you very much for any advices.
+David
+
+
+David:evalglare Dave$ make
+gcc -c -g -DMSDOS  -DPICT_GLARE -DFLOAT=double -O3  -Wall  -o pictool.o
+pictool.c -I. -Igeometry
+In file included from pictool.h:12,
+                 from pictool.c:1:
+geometry/g3affine.h:14:19: error: GL/gl.h: No such file or directory
+In file included from pictool.h:12,
+                 from pictool.c:1:
+geometry/g3affine.h:26: error: syntax error before 'GLdouble'
+geometry/g3affine.h:27: error: syntax error before 'GLdouble'
+---------------------------------------------------------------------------------
+pictool.c: In function 'read_exposure':
+pictool.c:89: error: nested functions are disabled, use -fnested-functions
+to re-enable
+pictool.c: In function 'pict_read_fp':
+pictool.c:228: warning: unused variable 'ex'
+pictool.c: In function 'pict_write_fp':
+pictool.c:519: warning: unused variable 'argv'
+pictool.c:518: warning: unused variable 'argc'
+make: *** [pictool.o] Error 1
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20110324/135d527e/attachment.html>
+
+From rob.guglielmetti at gmail.com  Fri Mar 25 08:05:26 2011
+From: rob.guglielmetti at gmail.com (Rob Guglielmetti)
+Date: Fri, 25 Mar 2011 09:05:26 -0600
+Subject: [Radiance-general] installing evalglare
+In-Reply-To: <AANLkTim3Rmmd0=ht0UTbr4qrHMvfKC0YShRVSbNyheFW@mail.gmail.com>
+References: <AANLkTim3Rmmd0=ht0UTbr4qrHMvfKC0YShRVSbNyheFW@mail.gmail.com>
+Message-ID: <AANLkTi=yBarcOWZA9DUm+12UiocYu0aee4kWaRmKiNF6@mail.gmail.com>
+
+Hello,
+
+Greg Ward managed to get evalglare to compile back in '09 at the Radiance
+Workshop. I don't recall what changes he made to make it happen, but he got
+it to work. It appears that this compiled executable is contained in the OS
+X binary archive available for download from www.radiance-online.org. I have
+had a few "bus error"s when using this version, but it works on many images.
+Maybe you could try that version? Option B is to use the windows version on
+a VM, which is what I usually do.
+
+- Rob
+
+On Thu, Mar 24, 2011 at 9:59 PM, David Appelfeld <d.appelfeld at gmail.com>wrote:
+
+> Daer List, I am trying compile evalgrale on OSX but I am getting following
+> error. I am sure that it is quite trivial problem since I am not much
+> familiar with compiling programs. Did anyone had such a problem or can
+> someone advice me how to install it correctly or maybe I just should move
+> unpacked program to right directory and run it there. I could find missing
+> file GL/gl.h in Mesa 3-D graphics package and copy it to the /usr/include
+> where it should probably be, but by this only first part of error was solved
+> (above the line).
+> Thank you very much for any advices.
+> David
+>
+>
+> David:evalglare Dave$ make
+> gcc -c -g -DMSDOS  -DPICT_GLARE -DFLOAT=double -O3  -Wall  -o pictool.o
+> pictool.c -I. -Igeometry
+> In file included from pictool.h:12,
+>                  from pictool.c:1:
+> geometry/g3affine.h:14:19: error: GL/gl.h: No such file or directory
+> In file included from pictool.h:12,
+>                  from pictool.c:1:
+> geometry/g3affine.h:26: error: syntax error before 'GLdouble'
+> geometry/g3affine.h:27: error: syntax error before 'GLdouble'
+>
+> ---------------------------------------------------------------------------------
+> pictool.c: In function 'read_exposure':
+> pictool.c:89: error: nested functions are disabled, use -fnested-functions
+> to re-enable
+> pictool.c: In function 'pict_read_fp':
+> pictool.c:228: warning: unused variable 'ex'
+> pictool.c: In function 'pict_write_fp':
+> pictool.c:519: warning: unused variable 'argv'
+> pictool.c:518: warning: unused variable 'argc'
+> make: *** [pictool.o] Error 1
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20110325/efff60c7/attachment.html>
+
+From d.appelfeld at gmail.com  Fri Mar 25 12:22:02 2011
+From: d.appelfeld at gmail.com (David Appelfeld)
+Date: Fri, 25 Mar 2011 12:22:02 -0700
+Subject: [Radiance-general] Radiance-general Digest, Vol 85, Issue 12
+In-Reply-To: <mailman.3.1301079601.87052.radiance-general@radiance-online.org>
+References: <mailman.3.1301079601.87052.radiance-general@radiance-online.org>
+Message-ID: <AANLkTim9SpW_H6dEtrKuWs8JB7bthbqXHeb3zsiPpDWf@mail.gmail.com>
+
+Hello Rob,
+I have figured it out yesterday night. I tried to use Grag's compiled
+version and it is working. My problem was that I was not aware that I did
+not copied the compiled version to the /usr/local/bin.
+
+I guess I also get it compiled by self, so I can share it with the list.
+The probelem was that makefile can not locate GL/gl.h directory which is
+probably called OpenGL on OSX after searching google. However I could get
+the GL/gl.h and just copied it either to /usr/include or to unpacked
+evalglare into geometry directory.
+
+Then in "makefile" I changed
+CFLAGS     = -g -DMSDOS  -DPICT_GLARE -DFLOAT=double -O3 $(DEBOPT) -Wall
+
+to
+
+CFLAGS     = -g -fnested-functions -DPICT_GLARE -DFLOAT=double -O3 $(DEBOPT)
+-Wall
+
+and it seems that it got program compiled. I did not tested because I think
+it is better to use Grag's compiled version.
+
+Probably there will be more correct and elegant way to do it but I guess
+this is working to.
+
+Thank you
+David
+
+On 25 March 2011 12:00, <radiance-general-request at radiance-online.org>wrote:
+
+> Send Radiance-general mailing list submissions to
+>        radiance-general at radiance-online.org
+>
+> To subscribe or unsubscribe via the World Wide Web, visit
+>        http://www.radiance-online.org/mailman/listinfo/radiance-general
+> or, via email, send a message with subject or body 'help' to
+>        radiance-general-request at radiance-online.org
+>
+> You can reach the person managing the list at
+>        radiance-general-owner at radiance-online.org
+>
+> When replying, please edit your Subject line so it is more specific
+> than "Re: Contents of Radiance-general digest..."
+>
+>
+> Today's Topics:
+>
+>   1. installing evalglare (David Appelfeld)
+>   2. Re: installing evalglare (Rob Guglielmetti)
+>
+>
+> ----------------------------------------------------------------------
+>
+> Message: 1
+> Date: Thu, 24 Mar 2011 20:59:03 -0700
+> From: David Appelfeld <d.appelfeld at gmail.com>
+> To: radiance-general at radiance-online.org
+> Subject: [Radiance-general] installing evalglare
+> Message-ID:
+>        <AANLkTim3Rmmd0=ht0UTbr4qrHMvfKC0YShRVSbNyheFW at mail.gmail.com>
+> Content-Type: text/plain; charset="iso-8859-1"
+>
+> Daer List, I am trying compile evalgrale on OSX but I am getting following
+> error. I am sure that it is quite trivial problem since I am not much
+> familiar with compiling programs. Did anyone had such a problem or can
+> someone advice me how to install it correctly or maybe I just should move
+> unpacked program to right directory and run it there. I could find missing
+> file GL/gl.h in Mesa 3-D graphics package and copy it to the /usr/include
+> where it should probably be, but by this only first part of error was
+> solved
+> (above the line).
+> Thank you very much for any advices.
+> David
+>
+>
+> David:evalglare Dave$ make
+> gcc -c -g -DMSDOS  -DPICT_GLARE -DFLOAT=double -O3  -Wall  -o pictool.o
+> pictool.c -I. -Igeometry
+> In file included from pictool.h:12,
+>                 from pictool.c:1:
+> geometry/g3affine.h:14:19: error: GL/gl.h: No such file or directory
+> In file included from pictool.h:12,
+>                 from pictool.c:1:
+> geometry/g3affine.h:26: error: syntax error before 'GLdouble'
+> geometry/g3affine.h:27: error: syntax error before 'GLdouble'
+>
+> ---------------------------------------------------------------------------------
+> pictool.c: In function 'read_exposure':
+> pictool.c:89: error: nested functions are disabled, use -fnested-functions
+> to re-enable
+> pictool.c: In function 'pict_read_fp':
+> pictool.c:228: warning: unused variable 'ex'
+> pictool.c: In function 'pict_write_fp':
+> pictool.c:519: warning: unused variable 'argv'
+> pictool.c:518: warning: unused variable 'argc'
+> make: *** [pictool.o] Error 1
+> -------------- next part --------------
+> An HTML attachment was scrubbed...
+> URL: <
+> http://www.radiance-online.org/pipermail/radiance-general/attachments/20110324/135d527e/attachment-0001.html
+> >
+>
+> ------------------------------
+>
+> Message: 2
+> Date: Fri, 25 Mar 2011 09:05:26 -0600
+> From: Rob Guglielmetti <rob.guglielmetti at gmail.com>
+> To: Radiance general discussion <radiance-general at radiance-online.org>
+> Subject: Re: [Radiance-general] installing evalglare
+> Message-ID:
+>        <AANLkTi=yBarcOWZA9DUm+12UiocYu0aee4kWaRmKiNF6 at mail.gmail.com>
+> Content-Type: text/plain; charset="iso-8859-1"
+>
+> Hello,
+>
+> Greg Ward managed to get evalglare to compile back in '09 at the Radiance
+> Workshop. I don't recall what changes he made to make it happen, but he got
+> it to work. It appears that this compiled executable is contained in the OS
+> X binary archive available for download from www.radiance-online.org. I
+> have
+> had a few "bus error"s when using this version, but it works on many
+> images.
+> Maybe you could try that version? Option B is to use the windows version on
+> a VM, which is what I usually do.
+>
+> - Rob
+>
+> On Thu, Mar 24, 2011 at 9:59 PM, David Appelfeld <d.appelfeld at gmail.com
+> >wrote:
+>
+> > Daer List, I am trying compile evalgrale on OSX but I am getting
+> following
+> > error. I am sure that it is quite trivial problem since I am not much
+> > familiar with compiling programs. Did anyone had such a problem or can
+> > someone advice me how to install it correctly or maybe I just should move
+> > unpacked program to right directory and run it there. I could find
+> missing
+> > file GL/gl.h in Mesa 3-D graphics package and copy it to the /usr/include
+> > where it should probably be, but by this only first part of error was
+> solved
+> > (above the line).
+> > Thank you very much for any advices.
+> > David
+> >
+> >
+> > David:evalglare Dave$ make
+> > gcc -c -g -DMSDOS  -DPICT_GLARE -DFLOAT=double -O3  -Wall  -o pictool.o
+> > pictool.c -I. -Igeometry
+> > In file included from pictool.h:12,
+> >                  from pictool.c:1:
+> > geometry/g3affine.h:14:19: error: GL/gl.h: No such file or directory
+> > In file included from pictool.h:12,
+> >                  from pictool.c:1:
+> > geometry/g3affine.h:26: error: syntax error before 'GLdouble'
+> > geometry/g3affine.h:27: error: syntax error before 'GLdouble'
+> >
+> >
+> ---------------------------------------------------------------------------------
+> > pictool.c: In function 'read_exposure':
+> > pictool.c:89: error: nested functions are disabled, use
+> -fnested-functions
+> > to re-enable
+> > pictool.c: In function 'pict_read_fp':
+> > pictool.c:228: warning: unused variable 'ex'
+> > pictool.c: In function 'pict_write_fp':
+> > pictool.c:519: warning: unused variable 'argv'
+> > pictool.c:518: warning: unused variable 'argc'
+> > make: *** [pictool.o] Error 1
+> >
+> >
+> > _______________________________________________
+> > Radiance-general mailing list
+> > Radiance-general at radiance-online.org
+> > http://www.radiance-online.org/mailman/listinfo/radiance-general
+> >
+> >
+> -------------- next part --------------
+> An HTML attachment was scrubbed...
+> URL: <
+> http://www.radiance-online.org/pipermail/radiance-general/attachments/20110325/efff60c7/attachment-0001.html
+> >
+>
+> ------------------------------
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+> End of Radiance-general Digest, Vol 85, Issue 12
+> ************************************************
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20110325/f33e9977/attachment.html>
+

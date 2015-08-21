@@ -1,0 +1,1814 @@
+From tbleicher at googlemail.com  Sun Nov  1 11:52:47 2009
+From: tbleicher at googlemail.com (Thomas Bleicher)
+Date: Sun Nov  1 11:52:50 2009
+Subject: [Radiance-general] Radiance installation on Mac OS X 10.5.6
+In-Reply-To: <e3330ba60910311501l1f296b84k471dbdc1b914b7c3@mail.gmail.com>
+References: <e3330ba60910311501l1f296b84k471dbdc1b914b7c3@mail.gmail.com>
+Message-ID: <89355c0f0911011152g692090e1qb97424ba32ad3aea@mail.gmail.com>
+
+Hi David.
+
+I just did a fresh install of my system (now Snow Leopard) and had to
+install Radiance again. I have used the source distribution for a while
+but because of your problems and the nearly 4.0 status of the HEAD
+release I decided to try to compile again. It worked fine for me but
+here are some comments:
+
+On Sat, Oct 31, 2009 at 10:01 PM, David Appelfeld <d.appelfeld@gmail.com> wrote:
+> What I did so far.
+>
+> Install Xcode and downloaded radiance-HEAD.tgz, and rad3R9supp.tar.gz.
+
+Same here. I used the "Developer" bundle on the CD to install Xcode and did
+not download anything. Source code archives are from radiance-online.org
+today.
+
+> Then unpack them inside ray folder according to the instructions on
+> http://www.radiance-online.org/software/ .
+
+I unpacked everything in a folder in my home directory. It really doesn't
+matter where you unpack it. You don't need to create a ray folder. That
+will be created for you. Make sure that both archives extract to the same
+folder.
+
+Here is a note for Greg: I downloaded the "official" 3.9 release before and
+tried to compile that. I always had some problems if the "tiff" directory but
+except for ra_tiff all tools got compiled. Only the error with the
+tifflib prevents
+the installation of these binaries. Perhaps the installation could be a bit
+more fine grained to install what can be successfully compiled.
+
+I had no problems compiling ra_tiff with the HEAD release and the
+additional rad3R9supp.tar.gz download file. Perhaps there is a dependency
+that the makefile should be adjusted for. I thought that the source archive
+should be enough to compile all the binaries.
+
+Back to David's problems:
+
+> Then place ray folder to usr/local/lib/ray and run sudo ./makeall install.
+
+No, don't do that. The necessary files will be copied to the /usr/local/lib/ray
+with the "makeall library" command. Having the source files already in that
+place might confuse things.
+
+> It started to install, but it ended again with message "There were some
+> errors."
+>
+> Here is part of the text from terminal with errors:
+> ....
+> lipo: can't open input file: /var/tmp//cc7tPgdL.out (No such file or
+> directory)
+> make: *** [rpict] Error 1
+> cc -I../common -L../lib -O2 -arch ppc -arch i386 -DBSD -DNOSTEREO -Dfreebsd
+> -I/usr/X11R6/include -L/usr/X11R6/lib -isysroot /Developer/SDKs/MacOSX10.4u.sdk -o ./rvu rvmain.o rview.o rv2.o rv3.o devtable.o devcomm.o editline.o x11.o x11twind.o colortab.o ../lib/libradiance.a -lrtrad -lm -lX11
+> ld: library not found for -lcrt1.10.5.o
+> collect2: ld returned 1 exit status
+> ld: library not found for -lcrt1.10.5.o
+> collect2: ld returned 1 exit status
+> lipo: can't open input file: /var/tmp//cczmztgf.out (No such file or
+> directory)
+> make: *** [rvu] Error 1
+> cc -I../common -L../lib -O2 -arch ppc -arch i386 -DBSD -DNOSTEREO -Dfreebsd
+> -I/usr/X11R6/include -L/usr/X11R6/lib -isysroot
+> /Developer/SDKs/MacOSX10.4u.sdk -o ./lookamb lookamb.o ambio.o -lrtrad -lm
+> ld: library not found for -lcrt1.10.5.o
+> ld:collect2:? library notld returned 1 exit status
+> ?found for -lcrt1.10.5.o
+> collect2: ld returned 1 exit status
+> lipo: can't open input file: /var/tmp//ccXciAPr.out (No such file or
+> directory)
+> make: *** [lookamb] Error 1
+> ....
+>
+> I guess it is something with wrong path or environment, I am not sure.
+
+According to these outputs you are running OS X Tiger on a PPC
+Mac. Is that correct? If you have OS X Leopard you should update
+Xcode to match the system you're using.
+
+If you have an Intel CPU you can remove the option "ARCH=PowerPC"
+and "CONFIGURE_ARCH=powerpc" from the build instructions that are
+shown at the beginning of the install script.
+
+> I also did as Mark suggested:
+>
+>>All you should need to do is set up your environment. If you are
+>>using the bash shell (check with "env | grep SHELL") then add the
+>>following lines to your ~/.bashrc file:
+>>
+>>export PATH=.:/usr/local/bin:${PATH}
+>>export LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
+>>export MANPATH=/usr/local/man:${MANPATH}
+
+The first line allows your bash shell to find the radiance commands
+like rpict, rtrace etc. So you just need to write "rpict ..." instead of
+"/usr/local/bin/rpict ..."
+
+The second line I think should read:
+
+export RAYPATH="/usr/local/lib/ray:${RAYPATH}"
+
+RAYPATH is used when Radiance runs and needs to find some files
+like patterns and *.cal files. LD_LIBRARY_PATH is only used when you
+compile applications, not when you use them. (And then it seems open
+for discussion if it's right to set this variable.)
+
+The last line is fine (although I personally prefer "/usr/local/share/man").
+It allows you to type "man rpict" to have the essential documentation
+displayed. The Radiance install script does not copy the man pages to that
+directory, though. You have to do this manually after the installation:
+Copy the contents of ray/doc/man to ie. /usr/local/share/man and add this
+line to the bash config (see comments below).
+
+>>And then re-source that file with "source ~/.bashrc" and you
+>>should be good to go. That's an effective installation path, as
+>>far as I know.
+>
+> I wrote that to the end of file "bashrc" at /etc/bashrc. I was not sure how
+> to re-source that file so I just write "source ~/.bashrc" to the beginning
+> of file "profile" at /etc/profile, but this probably dost not work.
+
+Bash environment files are a bit complicated on graphic systems like X
+or Mac's Aqua. If you only plan to use the terminal application then you
+should add those configuration lines to the file ".bashrc" (mind the leading
+dot) in your home directory. If it does not exist you can create it.
+
+If you ever use SSH to log in to your machine you have to use some
+more tricks to get it to work.
+
+Regards,
+Thomas
+
+From chris at zed-uk.com  Sun Nov  1 11:54:22 2009
+From: chris at zed-uk.com (chris@zed-uk.com)
+Date: Sun Nov  1 11:54:22 2009
+Subject: Automated Reply Re: "Re: [Radiance-general] Radiance installation on
+	Mac OS X 10.5.6"
+In-Reply-To: <89355c0f0911011152g692090e1qb97424ba32ad3aea@mail.gmail.com>
+References: <e3330ba60910311501l1f296b84k471dbdc1b914b7c3@mail.gmail.com>
+	<89355c0f0911011152g692090e1qb97424ba32ad3aea@mail.gmail.com>
+Message-ID: <E1N4gVK-0000nU-4O@athena.hosts.co.uk>
+
+This is an automated reply to your message "Re: [Radiance-general] Radiance installation on Mac OS X 10.5.6" sent to chris@zed-uk.com.
+
+Dear Thomas Bleicher <tbleicher@googlemail.com>
+
+Thank you for your email. I am away from the office the 7th November 2009.  I will be receiving my emails, but may not be able to reply to them promptly. If you have an urgent query please contact the office on 0161 3386200 where one of my colleagues will hopefully be able to assist with your query.
+
+Thanks
+
+Chris
+
+From rfritz333 at gmail.com  Sun Nov  1 13:01:30 2009
+From: rfritz333 at gmail.com (Randolph Fritz)
+Date: Sun Nov  1 13:01:56 2009
+Subject: [Radiance-general] Re: Radiance installation on Mac OS X 10.5.6
+References: <e3330ba60910311501l1f296b84k471dbdc1b914b7c3@mail.gmail.com>
+Message-ID: <slrnhertp9.1h6b.rfritz333@143.137.161.25.in-addr.arpa>
+
+There have been many good answers here.  I think I will add one more.
+This is a binary install procedure for all users of the system; there
+is no need to recompile.
+
+1. Download the following two files from the Radiance Online site:
+
+rad3R9_macosx.tar.gz
+rad3R9supp.tar.bz2
+
+2. Double-click on both of them to unpack them.  These will create two
+directories:
+ rad3R9_macosx
+ ray
+
+3. Rename rad3R9_macosx to "bin" and move it into the "ray" directory.
+
+4. Move "ray" to /usr/local.
+
+5. Add the following lines to .bash_profile in your home directory:
+ RAY=/usr/local/ray
+ RAYBIN=/usr/local/ray/bin
+ RAYPATH=.:$RAY/lib export RAYPATH
+ MANPATH=$RAY/doc/man:$MANPATH export MANPATH
+ PATH=$RAYBIN:$PATH export PATH
+
+At this point, the software is installed.  To test the installation,
+do the following steps:
+
+1. Start a Terminal window.
+
+2. Issue the command "cd /usr/local/ray/obj/cabin"
+
+3. Issue the command "make"
+
+If you are using Mac OS 10.5, I expect you will see an rvu window
+appear.  It will not behave like a normal Mac GUI window, but that's
+OK--that's how rvu works.
+
+-- 
+Randolph Fritz
+  design machine group, architecture department, university of washington
+rfritz@u.washington.edu -or- rfritz333@gmail.com
+
+When I find time, I'd like to write a Mac installer...
+
+
+From d.appelfeld at gmail.com  Mon Nov  2 03:52:20 2009
+From: d.appelfeld at gmail.com (David Appelfeld)
+Date: Mon Nov  2 03:52:22 2009
+Subject: [Radiance-general] Re: Radiance installation on Mac OS X 10.5.6
+Message-ID: <e3330ba60911020352j75abef12p601028e6a83b2ab8@mail.gmail.com>
+
+Thank you all, for all advices. Now is is running smoothly.
+
+I very appreciate all helpful advices.
+
+David
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091102/a666d2a6/attachment.html
+From iversen.anne at gmail.com  Mon Nov  2 16:05:33 2009
+From: iversen.anne at gmail.com (Anne Iversen)
+Date: Mon Nov  2 16:05:36 2009
+Subject: [Radiance-general] optics2glazedb
+Message-ID: <fdd7db810911021605g4ed23521hc2516b0f5de26a0a@mail.gmail.com>
+
+Inspired by the presentation of Jack I want to generate a new database for
+the glaze script by running optics2glazedb.
+As far as I can see, the program is not included in the latest version
+(HEAD)? Where can I find optics2glazedb?
+
+/Anne
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091102/aa78b7b9/attachment.htm
+From jedev at visarc.com  Tue Nov  3 09:12:59 2009
+From: jedev at visarc.com (Jack de Valpine)
+Date: Tue Nov  3 09:13:07 2009
+Subject: [Radiance-general] optics2glazedb
+In-Reply-To: <fdd7db810911021605g4ed23521hc2516b0f5de26a0a@mail.gmail.com>
+References: <fdd7db810911021605g4ed23521hc2516b0f5de26a0a@mail.gmail.com>
+Message-ID: <4AF0649B.8010304@visarc.com>
+
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091103/67882483/attachment.html
+From chris at zed-uk.com  Tue Nov  3 09:14:09 2009
+From: chris at zed-uk.com (chris@zed-uk.com)
+Date: Tue Nov  3 09:14:08 2009
+Subject: Automated Reply Re: "Re: [Radiance-general] optics2glazedb"
+In-Reply-To: <4AF0649B.8010304@visarc.com>
+References: <fdd7db810911021605g4ed23521hc2516b0f5de26a0a@mail.gmail.com>
+	<4AF0649B.8010304@visarc.com>
+Message-ID: <E1N5MxN-0003L2-7C@athena.hosts.co.uk>
+
+This is an automated reply to your message "Re: [Radiance-general] optics2glazedb" sent to chris@zed-uk.com.
+
+Dear Jack de Valpine <jedev@visarc.com>
+
+Thank you for your email. I am away from the office the 7th November 2009.  I will be receiving my emails, but may not be able to reply to them promptly. If you have an urgent query please contact the office on 0161 3386200 where one of my colleagues will hopefully be able to assist with your query.
+
+Thanks
+
+Chris
+
+From neha.cosmos at gmail.com  Wed Nov  4 11:17:33 2009
+From: neha.cosmos at gmail.com (NEHA SINGHAL)
+Date: Wed Nov  4 11:18:07 2009
+Subject: [Radiance-general] Solar Rays Tracing path
+Message-ID: <7b883ed90911041117u6b95ee53l4eefee0cb3688d44@mail.gmail.com>
+
+Hi
+
+I want to generate Solar Ray Tracing path in Ecotect for solar reflectors.
+Can some one guide me on this.
+I have calculated this in Shading & Shadows analysis to <<Display Solar
+Rays>>. But the reflections are not proper.
+
+How can we generate the full reflections & Bounces.
+
+Regards
+Neha
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091105/42abb462/attachment.htm
+From grobe at gmx.net  Wed Nov  4 18:35:44 2009
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Wed Nov  4 18:35:51 2009
+Subject: [Radiance-general] Solar Rays Tracing path
+In-Reply-To: <7b883ed90911041117u6b95ee53l4eefee0cb3688d44@mail.gmail.com>
+References: <7b883ed90911041117u6b95ee53l4eefee0cb3688d44@mail.gmail.com>
+Message-ID: <4AF23A00.10705@gmx.net>
+
+Hi Neha!
+
+> I want to generate Solar Ray Tracing path in Ecotect for solar reflectors.
+
+I do not know much details on Ecotect. If you mean any kind of 
+non-planar, specular reflector, than the standard work-flow in Radiance 
+will not lead to good results. I think there are to options if you want 
+to simulate such a system using Radiance - one being the rtcontrib-tool 
+(which I have never used for such tasks), the other the photon map 
+extension, which is made exactly for such cases, but available only for 
+Radiance 3.7 at the moment.
+
+In any way, you would not get a visualization of single rays. I am not 
+sure whether anyone ever developed some script to generate this (whould 
+be possible with rtrace by iterating through intersection points from 
+grid positions/directions). The typical target results for Radiance 
+users would be information on the illuminances reached on a work plane 
+by such a system.
+
+> Can some one guide me on this.
+> I have calculated this in Shading & Shadows analysis to <<Display Solar 
+> Rays>>. But the reflections are not proper.
+
+Again, this seams to be some Ecotect-specific stuff. I have no idea what 
+they use for such calculations and whether they have the required 
+forward/bidirectional tracing algorithm implemented.
+
+Another hint, many people out there use ASAP for such tasks as reflector 
+design and analysis.
+
+Cheers, Lars.
+
+From tbleicher at googlemail.com  Thu Nov  5 01:17:58 2009
+From: tbleicher at googlemail.com (Thomas Bleicher)
+Date: Thu Nov  5 01:17:58 2009
+Subject: [Radiance-general] Solar Rays Tracing path
+In-Reply-To: <4AF23A00.10705@gmx.net>
+References: <7b883ed90911041117u6b95ee53l4eefee0cb3688d44@mail.gmail.com>
+	<4AF23A00.10705@gmx.net>
+Message-ID: <89355c0f0911050117t414ebae9hea904372443889b6@mail.gmail.com>
+
+On Thu, Nov 5, 2009 at 2:35 AM, Lars O. Grobe <grobe@gmx.net> wrote:
+
+> In any way, you would not get a visualization of single rays. I am not sure
+> whether anyone ever developed some script to generate this (whould be
+> possible with rtrace by iterating through intersection points from grid
+> positions/directions).
+
+Someone did and included it in the distribution. I think it's called
+xshowtrace.
+
+Regards,
+Thomas
+
+From caria.roberto at tiscali.it  Thu Nov  5 03:43:11 2009
+From: caria.roberto at tiscali.it (caria.roberto@tiscali.it)
+Date: Thu Nov  5 03:43:25 2009
+Subject: [Radiance-general] gendaylit
+Message-ID: <11567795.164661257421391076.JavaMail.defaultUser@defaultHost>
+
+dear users
+Can someone tell me the steps to install gendaylit?
+Could I use it for DF (overcast sky), or I must to use gensky with -c 
+option? I ask you this because using gensky I get a very low DF value.
+thanks in advance 
+Roberto           
+
+
+Passa a Tiscali Tutto Incluso Light: telefono + adsl 8 Mb senza limiti a soli 9,95 euro al mese fino al 01/04/2010. Gratis la Sim Tiscali Mobile con 25 euro di traffico.L?offerta ? valida solo se attivi entro il 05/11/09 http://abbonati.tiscali.it/telefono-adsl/prodotti/tc/tuttoincluso_light/?WT.mc_id=01fw
+
+From chris at zed-uk.com  Thu Nov  5 03:44:25 2009
+From: chris at zed-uk.com (chris@zed-uk.com)
+Date: Thu Nov  5 03:44:24 2009
+Subject: Automated Reply Re: "[Radiance-general] gendaylit"
+In-Reply-To: <11567795.164661257421391076.JavaMail.defaultUser@defaultHost>
+References: <11567795.164661257421391076.JavaMail.defaultUser@defaultHost>
+Message-ID: <E1N60lN-0002yK-P6@athena.hosts.co.uk>
+
+This is an automated reply to your message "[Radiance-general] gendaylit" sent to chris@zed-uk.com.
+
+Dear "caria.roberto@tiscali.it" <caria.roberto@tiscali.it>
+
+Thank you for your email. I am away from the office the 7th November 2009.  I will be receiving my emails, but may not be able to reply to them promptly. If you have an urgent query please contact the office on 0161 3386200 where one of my colleagues will hopefully be able to assist with your query.
+
+Thanks
+
+Chris
+
+From chris at zed-uk.com  Thu Nov  5 03:44:52 2009
+From: chris at zed-uk.com (chris@zed-uk.com)
+Date: Thu Nov  5 03:44:53 2009
+Subject: Automated Reply Re: "Automated Reply Re: \"[Radiance-general]
+	gendaylit\""
+In-Reply-To: <E1N60lN-0002yK-P6@athena.hosts.co.uk>
+References: <11567795.164661257421391076.JavaMail.defaultUser@defaultHost>
+	<E1N60lN-0002yK-P6@athena.hosts.co.uk>
+Message-ID: <E1N60lo-000505-Lt@athena.hosts.co.uk>
+
+This is an automated reply to your message "Automated Reply Re: "[Radiance-general] gendaylit"" sent to chris@zed-uk.com.
+
+Dear chris@zed-uk.com
+
+Thank you for your email. I am away from the office the 7th November 2009.  I will be receiving my emails, but may not be able to reply to them promptly. If you have an urgent query please contact the office on 0161 3386200 where one of my colleagues will hopefully be able to assist with your query.
+
+Thanks
+
+Chris
+
+From tbleicher at googlemail.com  Thu Nov  5 06:22:29 2009
+From: tbleicher at googlemail.com (Thomas Bleicher)
+Date: Thu Nov  5 06:22:32 2009
+Subject: [Radiance-general] gendaylit
+In-Reply-To: <11567795.164661257421391076.JavaMail.defaultUser@defaultHost>
+References: <11567795.164661257421391076.JavaMail.defaultUser@defaultHost>
+Message-ID: <89355c0f0911050622u621e12belcad7b6302cee9feb@mail.gmail.com>
+
+Roberto.
+
+Gendaylit would not help you to improve your DF results. The overcast
+sky created by gensky is the CIE standard overcast sky which is
+used for DF/ADF calculations.
+
+If you think your results are to low you should check your the conversion
+from radiance values to DF. Are you using the right options for rtrace?
+Is your reference value (unobstructed sky) correct?
+
+Regards,
+Thomas
+
+On Thu, Nov 5, 2009 at 11:43 AM, caria.roberto@tiscali.it
+<caria.roberto@tiscali.it> wrote:
+> dear users
+> Can someone tell me the steps to install gendaylit?
+> Could I use it for DF (overcast sky), or I must to use gensky with -c
+> option? I ask you this because using gensky I get a very low DF value.
+> thanks in advance
+> Roberto
+>
+>
+> Passa a Tiscali Tutto Incluso Light: telefono + adsl 8 Mb senza limiti a soli 9,95 euro al mese fino al 01/04/2010. Gratis la Sim Tiscali Mobile con 25 euro di traffico.L?offerta ? valida solo se attivi entro il 05/11/09 http://abbonati.tiscali.it/telefono-adsl/prodotti/tc/tuttoincluso_light/?WT.mc_id=01fw
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+From grobe at gmx.net  Thu Nov  5 06:30:07 2009
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Thu Nov  5 06:30:13 2009
+Subject: [Radiance-general] Solar Rays Tracing path
+In-Reply-To: <89355c0f0911050117t414ebae9hea904372443889b6@mail.gmail.com>
+References: <7b883ed90911041117u6b95ee53l4eefee0cb3688d44@mail.gmail.com>	<4AF23A00.10705@gmx.net>
+	<89355c0f0911050117t414ebae9hea904372443889b6@mail.gmail.com>
+Message-ID: <4AF2E16F.2070909@gmx.net>
+
+Hi!
+
+> Someone did and included it in the distribution. I think it's called
+> xshowtrace.
+
+Good hint. However, I think that this use case would require to go from 
+the source, not from the view point. I guess that one could get rtrace 
+to get the intersection and direction vectors by taking the light source 
+as first view point. But I am not aware of anyone who did that.
+
+Cheers, Lars.
+
+From dbs176 at gmail.com  Thu Nov  5 07:06:49 2009
+From: dbs176 at gmail.com (David Smith)
+Date: Thu Nov  5 07:06:51 2009
+Subject: [Radiance-general] Solar Rays Tracing path
+Message-ID: <694e132c0911050706h64e3efb5i1fc77e978021d1b1@mail.gmail.com>
+
+I'd like to take a step backward here. There's a feature in Ecotect
+that lets you cast parallel rays from the sun to surfaces in the
+scene. It treats all of these surfaces as perfectly specularly
+reflective surfaces, basically mirrors.
+
+Here's a very quick and dirty animation:
+http://img695.imageshack.us/i/ecotect.mp4/
+
+If you ever wondered why so many people think light shelves are an
+easy way to get light deep into a space, this may be part of the
+reason. The way lightshelves affect a space is much more complicated
+than that.
+
+--Dave
+
+
+> -----Original Message-----
+> From: radiance-general-bounces@radiance-online.org [mailto:radiance-general-
+> bounces@radiance-online.org] On Behalf Of Lars O. Grobe
+> Sent: Thursday, November 05, 2009 9:30 AM
+> To: Radiance general discussion
+> Subject: Re: [Radiance-general] Solar Rays Tracing path
+>
+> Hi!
+>
+> > Someone did and included it in the distribution. I think it's called
+> > xshowtrace.
+>
+> Good hint. However, I think that this use case would require to go from
+> the source, not from the view point. I guess that one could get rtrace
+> to get the intersection and direction vectors by taking the light source
+> as first view point. But I am not aware of anyone who did that.
+>
+> Cheers, Lars.
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+From jm at dmu.ac.uk  Fri Nov  6 02:36:26 2009
+From: jm at dmu.ac.uk (John Mardaljevic)
+Date: Fri Nov  6 02:36:36 2009
+Subject: [Radiance-general] gendaylit
+Message-ID: <30C7794B-6A53-4D9F-909C-CCC0B31536C3@dmu.ac.uk>
+
+Roberto,
+
+Use of gendaylit for overcast sky conditions would be wrong because  
+the 'overcast' skies (note plural) produced by the Perez All-Weather  
+model do not correspond to the strict CIE definition, i.e. L_alt =  
+L_zenith(1 + 2sin(alt))/3.
+
+Actually, gendaylit gives you a range of overcast types depending on  
+the absolute diffuse horizontal illuminance.  The ratio between zenith  
+and horizon luminance seems to increase with higher values for  
+horizontal illuminance.  As several users have noted, gendaylit bombs  
+out with a warning:
+
+Warning : skyclearness or skybrightness out of range ;
+  Check your input parameters
+
+for certain input values.  The minimum diffuse horizontal illuminance  
+that works appears to be 8603 (lux).  Try:
+
+gendaylit 7 1 12 -L 0 8603
+
+gendaylit 7 1 12 -L 0 8602
+
+The diffuse horizontal illuminance upper limit for an 'overcast' sky  
+(i.e. direct normal illuminance = 0) is somewhere 80kLux and 90kLux.   
+Which is, of course, improbably high for any sort of overcast sky.
+
+-John
+
+-----------------------------------------------
+Dr. John Mardaljevic
+Reader in Daylight Modelling
+Institute of Energy and Sustainable Development
+De Montfort University
+The Gateway
+Leicester
+LE1 9BH, UK
++44 (0) 116 257 7972
++44 (0) 116 257 7981 (fax)
+
+jm@dmu.ac.uk
+http://www.iesd.dmu.ac.uk/~jm
+
+
+
+
+From jdlenard at deluminaelab.com  Fri Nov 13 04:06:59 2009
+From: jdlenard at deluminaelab.com (jeando)
+Date: Fri Nov 13 04:07:17 2009
+Subject: [Radiance-general] RadDisplay 1.1.1
+Message-ID: <4AFD4BE3.6060206@deluminaelab.com>
+
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091113/3ca4d76a/attachment.html
+From achim.geissler at intergga.ch  Thu Nov 19 05:47:28 2009
+From: achim.geissler at intergga.ch (Achim Geissler)
+Date: Thu Nov 19 05:47:38 2009
+Subject: [Radiance-general] "Sensor Surfaces"
+Message-ID: <000701ca691e$d6958920$83c09b60$@geissler@intergga.ch>
+
+Dear all
+
+ 
+
+in order to be able to "scan" a large surface which is located behind a
+partially and non-uniformly transparent surface for "if" direct light hits,
+I am looking for a way to have "Sensor Surfaces" in a Radiance model. I
+would like to avoid having to define discrete sensor points as this would
+either require an "infinite" number of such points or lead to too large gaps
+in the information, IMO.
+
+ 
+
+I have been unable to find any reference to such a possibility. If anybody
+here has any ideas, I would greatly appreciate them.
+
+ 
+
+Thanks and best regards
+
+Achim
+
+ 
+
+Yuanda-Europe
+
+ 
+
+ 
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091119/803e21de/attachment.html
+From tbleicher at googlemail.com  Thu Nov 19 06:07:47 2009
+From: tbleicher at googlemail.com (Thomas Bleicher)
+Date: Thu Nov 19 06:07:53 2009
+Subject: [Radiance-general] "Sensor Surfaces"
+In-Reply-To: <4524202860667517542@unknownmsgid>
+References: <4524202860667517542@unknownmsgid>
+Message-ID: <89355c0f0911190607v5a7803b9l2f3b4b57656dc8bc@mail.gmail.com>
+
+Hi Achim.
+
+Radzilla has a 'falsecolor' material you could use.
+
+With the standard Radiance you could use John Mardaljevic's 'stencil'
+method to calculate rtrace origin points on the fly. The resolution of
+your 'surface' then only depends on the resolution of your output
+image. More details here:
+
+http://www.radiance-online.org/pipermail/radiance-general/2007-March/004214.html
+
+Regards,
+Thomas
+
+On Thu, Nov 19, 2009 at 1:47 PM, Achim Geissler
+<achim.geissler@intergga.ch> wrote:
+> Dear all
+>
+>
+>
+> in order to be able to ?scan? a large surface which is located behind a
+> partially and non-uniformly transparent surface for ?if? direct light hits,
+> I am looking for a way to have ?Sensor Surfaces? in a Radiance model. I
+> would like to avoid having to define discrete sensor points as this would
+> either require an ?infinite? number of such points or lead to too large gaps
+> in the information, IMO.
+>
+>
+>
+> I have been unable to find any reference to such a possibility. If anybody
+> here has any ideas, I would greatly appreciate them.
+>
+>
+>
+> Thanks and best regards
+>
+> Achim
+>
+>
+>
+> Yuanda-Europe
+>
+>
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+From iversen.anne at gmail.com  Thu Nov 19 10:56:49 2009
+From: iversen.anne at gmail.com (Anne Iversen)
+Date: Thu Nov 19 10:57:05 2009
+Subject: [Radiance-general] Adding the sun to image based lighting
+	environment
+Message-ID: <fdd7db810911191056k399fac6aoe8cf4e5d41cb6a6e@mail.gmail.com>
+
+Hi list,
+
+I have tried to add a description of the sun to my ibl environment generated
+from a chrome ball. However the ?added? description of the sun is not taken
+into account. If anyone can guide me on how to proceed I would really
+appreciate it.
+
+
+
+Thanks!
+
+Anne
+
+
+
+Below I have given you information on
+
+1)    Description of the lighting environment in Environment.rad
+
+2)    The commands I have used to run the environment ? with and without
+mksource.
+
+
+
+For mapping the chrome ball image to the environment I have applied the
+following approach, taken from the ?High Dynamic Range Imaging Book?:
+
+
+#-------------------------------------------------------------------------
+
+Ad 1) Environment.rad:
+
+void colorpict hdr_env
+15 red green blue C_20091002ball@10h44_tilt38.hdr mirrorsphere.cal sb_u sb_v
+-i 1 -rx 90 -rz 8 -ry 0
+0
+0
+
+
+# specify a "glow" material that will use this image
+hdr_env glow env_glow
+0
+0
+4 1 1 1 0
+
+env_glow sphere sphereenv
+0
+0
+4 0 0 0 -1000
+
+ #To this I have added the description of the sun, the location of the sun
+has been derived from the chrome ball image:
+
+
+
+# simulation of the sun, radiance and location
+void light lum_sun
+0
+0
+3 46700 46700 46700
+
+
+
+lum_sun source sun
+-rx 90 -rz 8 -ry 0
+
+0
+
+4 0.6410 0.5537 -0.5315 0.5323
+
+
+
+
+
+#----------------------------------------------------------------------------------------------------
+
+Ad 2) When running the environment I have used following approach:
+
+Without mksource, just an oconv:
+
+
+
+oconv Environment.rad > ibl1.oct
+
+
+
+With mksource:
+
+oconv Environment.rad > iblmksource.oct
+
+mksource ?a 0.5 iblmksource.oct > srcs.rad
+
+oconv -i iblmksource.oct srcs.rad > ibl1.oct
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091119/4ff67990/attachment.html
+From grobe at gmx.net  Thu Nov 19 16:21:14 2009
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Thu Nov 19 16:21:25 2009
+Subject: [Radiance-general] Adding the sun to image based
+	lighting	environment
+In-Reply-To: <fdd7db810911191056k399fac6aoe8cf4e5d41cb6a6e@mail.gmail.com>
+References: <fdd7db810911191056k399fac6aoe8cf4e5d41cb6a6e@mail.gmail.com>
+Message-ID: <4B05E0FA.7070409@gmx.net>
+
+Hi!
+>
+> lum_sun source sun
+> -rx 90 -rz 8 -ry 0
+>
+> 0
+>
+> 4 0.6410 0.5537 -0.5315 0.5323
+>
+Does this pass oconv without error messages? I think you just need to
+remove everything in the second line except the zero here, so it becomes
+
+lum_sun source sun
+0
+0
+4 0.6410 0.5537 -0.5315 0.5323
+
+Cheers, Lars.
+
+From iversen.anne at gmail.com  Fri Nov 20 13:41:49 2009
+From: iversen.anne at gmail.com (Anne Iversen)
+Date: Fri Nov 20 13:41:55 2009
+Subject: [Radiance-general] Re: Adding the sun to image based lighting
+	environment
+Message-ID: <fdd7db810911201341l48dc201cm974efe244217f679@mail.gmail.com>
+
+Hi Lars,
+Yes - have tried both - and no difference. I get however an oconv warning
+that my srcs.rad file is empty. The experience I have with this warning is
+that it is related to a missing material description, which in this case is
+included in the Environment.rad.
+
+oconv Environment.rad > iblmksource.oct
+
+mksource ?a 0.5 iblmksource.oct > srcs.rad
+
+oconv -i iblmksource.oct srcs.rad > ibl1.oct
+/Anne
+
+Hi!
+>
+> lum_sun source sun
+> -rx 90 -rz 8 -ry 0
+>
+> 0
+>
+> 4 0.6410 0.5537 -0.5315 0.5323
+>
+Does this pass oconv without error messages? I think you just need to
+remove everything in the second line except the zero here, so it becomes
+
+lum_sun source sun
+0
+0
+4 0.6410 0.5537 -0.5315 0.5323
+
+Cheers, Lars.
+
+-- 
+Anne Iversen
+Guldborgvej 44 3.th
+2000 Frederiksberg
+
+mobil: 20646857
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091120/09d26213/attachment.htm
+From grobe at gmx.net  Fri Nov 20 18:50:11 2009
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Fri Nov 20 18:50:42 2009
+Subject: [Radiance-general] Re: Adding the sun to image based lighting
+	environment
+In-Reply-To: <fdd7db810911201341l48dc201cm974efe244217f679@mail.gmail.com>
+References: <fdd7db810911201341l48dc201cm974efe244217f679@mail.gmail.com>
+Message-ID: <4B075563.4030907@gmx.net>
+
+Hi Anne!
+> Yes - have tried both - and no difference. I get however an oconv
+> warning that my srcs.rad file is empty. The experience I have with this
+> warning is that it is related to a missing material description, which
+> in this case is included in the Environment.rad.
+
+The best for debugging is to render the scene before converting it by
+mksource. If this does not work, you know that the initial scene
+description has problems to get rendered.
+
+One thing that just catches my eye, why does your sphere have a negative
+radius (-1000)? If you wanted the normals to point inside, you should
+use a bubble object instead of a sphere object still with positive
+radius. I do not know about the effect of a negative radius at all and
+would guess that it is not valid.
+
+Cheers, Lars.
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: smime.p7s
+Type: application/x-pkcs7-signature
+Size: 3740 bytes
+Desc: S/MIME Cryptographic Signature
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20091121/c67ba433/smime.bin
+From Santiago.Torres at arup.com  Mon Nov 23 04:27:47 2009
+From: Santiago.Torres at arup.com (Santiago Torres)
+Date: Mon Nov 23 04:28:18 2009
+Subject: [Radiance-general] Re: Adding the sun to image based
+	lightingenvironment
+References: <fdd7db810911201341l48dc201cm974efe244217f679@mail.gmail.com>
+Message-ID: <4D16A091CF93B04D91453602000F97C42D5BA1@eurxmb05.global.arup.com>
+
+Hi,
+ 
+I think Lars is right, the problem is probably the sphere. Usually, when you define an IBL sky it's better to use a source object instead of a sphere (just like when you define a normal sky with gensky). That is probably also why adding the sun source is not making any difference, if you are measuring from inside the sphere (the source is outside).
+You can try:
+env_glow source sphereenv
+0
+0
+4 0 1 0 180   <--- (replace with appropriate vector for the chrome ball orientation, and angle covered)
+Does this make sense, or am I missing something?
+Regards,
+ 
+Santiago
+ 
+ 
+ 
+
+________________________________
+
+From: radiance-general-bounces@radiance-online.org on behalf of Anne Iversen
+Sent: Fri 20/11/2009 21:41
+To: radiance-general
+Subject: [Radiance-general] Re: Adding the sun to image based lightingenvironment
+
+
+Hi Lars,
+Yes - have tried both - and no difference. I get however an oconv warning that my srcs.rad file is empty. The experience I have with this warning is that it is related to a missing material description, which in this case is included in the Environment.rad.
+
+
+oconv Environment.rad > iblmksource.oct
+
+mksource -a 0.5 iblmksource.oct > srcs.rad
+
+oconv -i iblmksource.oct srcs.rad > ibl1.oct
+
+/Anne
+
+Hi!
+>
+> lum_sun source sun
+> -rx 90 -rz 8 -ry 0
+>
+> 0
+>
+> 4 0.6410 0.5537 -0.5315 0.5323
+>
+Does this pass oconv without error messages? I think you just need to
+remove everything in the second line except the zero here, so it becomes
+
+lum_sun source sun
+0
+0
+4 0.6410 0.5537 -0.5315 0.5323
+
+Cheers, Lars.
+
+-- 
+Anne Iversen
+Guldborgvej 44 3.th <http://3.th/> 
+2000 Frederiksberg
+
+mobil: 20646857
+
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: not available
+Type: application/ms-tnef
+Size: 5469 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20091123/155cc2e7/attachment.bin
+From grobe at gmx.net  Mon Nov 23 05:40:03 2009
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Mon Nov 23 05:40:15 2009
+Subject: [Radiance-general] Re: Adding the sun to image based
+	lightingenvironment
+In-Reply-To: <4D16A091CF93B04D91453602000F97C42D5BA1@eurxmb05.global.arup.com>
+References: <fdd7db810911201341l48dc201cm974efe244217f679@mail.gmail.com>
+	<4D16A091CF93B04D91453602000F97C42D5BA1@eurxmb05.global.arup.com>
+Message-ID: <4B0A90B3.6090104@gmx.net>
+
+Hi!
+>  That is probably also why adding the sun source is not making any
+> difference, if you are measuring from inside the sphere (the source is
+> outside).
+
+Ok, after all the debugging of the scene syntax, with Santiago's reply
+we got the conceptual problem - the sun source is "outside" the sky
+sphere. The rule of thumb is that the source object is enclosing the
+whole scene's octree - in other words, it catches rays sent out that did
+not hit anything else to get them reflected back or absorbed.
+
+So if you wanted to model with a sphere representing the sky, you'd have
+to go with a disk (ring with inner radius 0) for the sun. You do not
+want this. Instead, use source for both. And again - do not start using
+mksource before you got the scene running without. Optimization is great
+sometimes, but only once everything is working fine.
+
+So good luck, and once again, the wonderful many ways to get confused
+and hide some nasty bugs in a radiance scene ;-)
+
+Cheers, Lars.
+
+From maricanis at gmail.com  Mon Nov 23 06:51:06 2009
+From: maricanis at gmail.com (Marija Velickovic)
+Date: Mon Nov 23 06:51:32 2009
+Subject: [Radiance-general] Annual daylight simulations
+Message-ID: <124b40400911230651m382f6459sd929286ece402af@mail.gmail.com>
+
+Hi,
+
+I read Greg's presentation from the Workshop related to annual daylight
+calculations with rtcontrib and few additional tools.
+Greg, I'm interested if this method is still in research and validation
+phase or it can already be used in calculations.
+
+Generally, I've understood most of the calculation steps, and found in the
+HEAD release Perl scripts for additional tools you mentioned in the
+presentation.
+Question is how to calculate Transmission matrix with BTDF values for the
+specific window or group of windows?
+I see it should be some file in xml format, but not sure how to create it
+when classic transmittance and reflectance data are known for the glazing;
+and also what format if has.
+Also for non-complex glazing systems (like double or triple glazings,
+without internal blinds and similar), is it possible to compose this BTDF
+matrix "manually"?
+
+####
+Does someone on the list already performed annual calculations, with this or
+some other method, with rtcotrib program?
+
+Thanks,
+Marija
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091123/66af2031/attachment.html
+From iversen.anne at gmail.com  Mon Nov 23 17:38:19 2009
+From: iversen.anne at gmail.com (Anne Iversen)
+Date: Mon Nov 23 17:38:27 2009
+Subject: [Radiance-general] Re: Re: Re: Adding the sun to image based
+	lighting environment
+Message-ID: <fdd7db810911231738hf78acakc4bf2a5af647f7f6@mail.gmail.com>
+
+Thanks Lars and Santiago,
+Yes you are right, it doesn't make any sense to have the sun at infinite
+distance outside the sphere of finite distance. And yes, I'll keep it
+simple, no optimization with mksource at this point ;o).  And a third: Yes -
+Radiance is tricky, therefore it is so good that this list is active!
+
+However, when changing the 'sphere environment' from sphere to source I
+cannot display my scene any longer. My source description is
+env_glow source sphereenv
+0 0
+4 0 1 0 360
+The simulation approach now follows exactly the one in the Image Based
+Lighting tutorial from Debevec, p. 31,
+http://www.debevec.org/CGAIBL2/ibl-tutorial-cga2002.pdf. I get a white image
+and the rvu message:
+rvu: warning - compute error for colorpict "hdr_env"
+rvu: Division by zero
+rvu: Division by zero
+
+Do you maybe also have tips on how I can solve this?
+Thanks!
+Anne
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091123/4d0ff1dc/attachment.htm
+From grobe at gmx.net  Mon Nov 23 18:28:34 2009
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Mon Nov 23 18:28:45 2009
+Subject: [Radiance-general] eulumdat photometry tools
+Message-ID: <4B0B44D2.9070203@gmx.net>
+
+As I know, handling of luminaire data can cause quite a headache. Just 
+happened to me, as I got some Eulumdat-formatted files. First I tried 
+Carsten's eulum2ies, but it crashes - I guess due to the hight 
+resolution in 1 degree steps for my files. Then I found something quite 
+interesting:
+
+http://sourceforge.net/projects/qlumedit/
+
+It is a QT-based tool, loading eulumdat files, processing the content so 
+that it can be displayed and edited in tables, creates some plot, and - 
+converts to IES!
+
+Unfortunately I was not able to compile the QT3-sources, my knowledge on 
+QT is limited. But at least the Windows-binary runs without any problems 
+under Wine here.
+
+So maybe someone finds this useful, cheers,
+
+Lars.
+
+From maricanis at gmail.com  Tue Nov 24 00:51:29 2009
+From: maricanis at gmail.com (Marija Velickovic)
+Date: Tue Nov 24 00:51:56 2009
+Subject: [Radiance-general] Re: Annual daylight simulations
+In-Reply-To: <124b40400911230651m382f6459sd929286ece402af@mail.gmail.com>
+References: <124b40400911230651m382f6459sd929286ece402af@mail.gmail.com>
+Message-ID: <124b40400911240051x65ac2bcfp218f0fc335be0598@mail.gmail.com>
+
+Hi again,
+
+I've just found out that, I somehow skipped reading of mails with "BSDF" in
+the subject, and found out that Andrew McNeil had similar problem last month
+
+In mail
+http://www.radiance-online.org/pipermail/radiance-general/2009-October/006296.htmlthere
+is a note about script for BSDF calculation based on rtcontrib.
+
+Andrew, were script calculation results good?
+Did you manage to make complete 3-phase calculation?
+
+Marija.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091124/fbfb6b45/attachment.html
+From Santiago.Torres at arup.com  Tue Nov 24 02:08:00 2009
+From: Santiago.Torres at arup.com (Santiago Torres)
+Date: Tue Nov 24 02:08:21 2009
+Subject: [Radiance-general] Re: Re: Re: Adding the sun to image
+	basedlighting environment
+References: <fdd7db810911231738hf78acakc4bf2a5af647f7f6@mail.gmail.com>
+Message-ID: <4D16A091CF93B04D91453602000F97C42D5BA2@eurxmb05.global.arup.com>
+
+Hi Anne,
+ 
+That could be a problem with the mapping function in your .cal file. To me it seems strange to get 360 degree information only from one image, but I've never used a chrome sphere for ibl. Anyway, it seems strange that the image is white (did you change the exposure) You can check the .cal file to find why is it giving a division by zero, or you can post it to the list?
+ 
+Also, note that mksource ignores any local geometry (i.e. it considers only source objects), which makes sense because otherwise you'd have to define the viewpoint origin. That's why it was ignoring the sphere, so you should have no problems now.
+ 
+Hope this helps.
+ 
+Santiago
+ 
+
+________________________________
+
+From: radiance-general-bounces@radiance-online.org on behalf of Anne Iversen
+Sent: Tue 24/11/2009 01:38
+To: radiance-general
+Subject: [Radiance-general] Re: Re: Re: Adding the sun to image basedlighting environment
+
+
+Thanks Lars and Santiago,
+Yes you are right, it doesn't make any sense to have the sun at infinite distance outside the sphere of finite distance. And yes, I'll keep it simple, no optimization with mksource at this point ;o).  And a third: Yes - Radiance is tricky, therefore it is so good that this list is active!
+
+However, when changing the 'sphere environment' from sphere to source I cannot display my scene any longer. My source description is
+env_glow source sphereenv
+0 0 
+4 0 1 0 360
+The simulation approach now follows exactly the one in the Image Based Lighting tutorial from Debevec, p. 31, http://www.debevec.org/CGAIBL2/ibl-tutorial-cga2002.pdf. I get a white image and the rvu message:
+rvu: warning - compute error for colorpict "hdr_env"
+rvu: Division by zero
+rvu: Division by zero
+
+Do you maybe also have tips on how I can solve this?
+Thanks!
+Anne
+
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: not available
+Type: application/ms-tnef
+Size: 5769 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20091124/504fb6bd/attachment.bin
+From iversen.anne at gmail.com  Tue Nov 24 19:48:41 2009
+From: iversen.anne at gmail.com (Anne Iversen)
+Date: Tue Nov 24 19:48:47 2009
+Subject: [Radiance-general] RE: Re: Re: Re: Adding the sun to image based
+	lighting environment
+Message-ID: <fdd7db810911241948q1da28c90pd7ead3fc4fa928ee@mail.gmail.com>
+
+ - Yes, I divided with zero in the .cal file. Including an if sentence
+solved this problem - and now it works perfectly!
+Thanks Santiago, from a smiling Anne.
+
+It would however be nice if the location of the sun could be rotated without
+changing the vector coordinates. I would like this to be possible because I
+have calculated the sun position from the pixel coordinates of my original
+.hdr image, which I afterwards have rotated. I can of course take into
+account the rotation in the pixel coordinates, but if the other approach is
+possible it would be easier for me ;o)
+
+/Anne
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20091124/65570ddb/attachment.html
+From achim.geissler at intergga.ch  Tue Nov 24 23:40:48 2009
+From: achim.geissler at intergga.ch (Achim Geissler)
+Date: Tue Nov 24 23:40:57 2009
+Subject: [Radiance-general] "Sensor Surfaces"
+In-Reply-To: <89355c0f0911190607v5a7803b9l2f3b4b57656dc8bc@mail.gmail.com>
+References: <4524202860667517542@unknownmsgid>
+	<89355c0f0911190607v5a7803b9l2f3b4b57656dc8bc@mail.gmail.com>
+Message-ID: <000601ca6da2$9b89a860$d29cf920$@geissler@intergga.ch>
+
+Hi Thomas
+
+thanks for your quick reply. It took me a few days to try to understand the
+possibilities you suggested.
+
+The 'falsecolor' sounds quite interesting, but as far as I can tell it does
+not allow "automatic" evaluation, i.e. create a file / files that can be
+somehow scanned for "hit" or "no hit" per surface. My problem is, that
+visually evaluating images after the simulation does not seem practical due
+to form / size / repetitions.
+
+And I'm afraid I didn't understand if the stencil method could really help,
+but it seems evaluation (or result) is still a "picture" - again not a "hit"
+or "no hit" information for a given surface. Actually, I didn't understand
+the method, period (and haven't found the time to set up an example and play
+around with it).
+
+Something like
+http://www.radiance-online.org/radiance-workshop7/Content/Augsburger/Germain
+AugsburgerPresentation.pdf, page 8, but with "continuous" and not
+"discrete" sensors that can be evaluated for hit-or-miss somehow is what I
+have in mind.
+
+I must admit of course (if not clear from the above, anyway) that my
+knowledge of the possibilities of Radiance is rather limited.
+
+Thanks
+Achim
+
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Thomas
+Bleicher
+Sent: Donnerstag, 19. November 2009 15:08
+To: Radiance general discussion
+Subject: Re: [Radiance-general] "Sensor Surfaces"
+
+Hi Achim.
+
+Radzilla has a 'falsecolor' material you could use.
+
+With the standard Radiance you could use John Mardaljevic's 'stencil'
+method to calculate rtrace origin points on the fly. The resolution of
+your 'surface' then only depends on the resolution of your output
+image. More details here:
+
+http://www.radiance-online.org/pipermail/radiance-general/2007-March/004214.
+html
+
+Regards,
+Thomas
+
+On Thu, Nov 19, 2009 at 1:47 PM, Achim Geissler
+<achim.geissler@intergga.ch> wrote:
+> Dear all
+>
+>
+>
+> in order to be able to "scan" a large surface which is located behind a
+> partially and non-uniformly transparent surface for "if" direct light
+hits,
+> I am looking for a way to have "Sensor Surfaces" in a Radiance model. I
+> would like to avoid having to define discrete sensor points as this would
+> either require an "infinite" number of such points or lead to too large
+gaps
+> in the information, IMO.
+>
+>
+>
+> I have been unable to find any reference to such a possibility. If anybody
+> here has any ideas, I would greatly appreciate them.
+>
+>
+>
+> Thanks and best regards
+>
+> Achim
+>
+>
+>
+> Yuanda-Europe
+>
+>
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From tbleicher at googlemail.com  Wed Nov 25 09:41:37 2009
+From: tbleicher at googlemail.com (Thomas Bleicher)
+Date: Wed Nov 25 09:41:41 2009
+Subject: [Radiance-general] "Sensor Surfaces"
+In-Reply-To: <-2159304064395356976@unknownmsgid>
+References: <4524202860667517542@unknownmsgid>
+	<89355c0f0911190607v5a7803b9l2f3b4b57656dc8bc@mail.gmail.com>
+	<-2159304064395356976@unknownmsgid>
+Message-ID: <89355c0f0911250941q258d19c7n87234e3532892b82@mail.gmail.com>
+
+Achim.
+
+I'm afraid I don't quite understand what you want to do.
+
+On Wed, Nov 25, 2009 at 7:40 AM, Achim Geissler
+<achim.geissler@intergga.ch> wrote:
+> The 'falsecolor' sounds quite interesting, but as far as I can tell it does
+> not allow "automatic" evaluation, i.e. create a file / files that can be
+> somehow scanned for "hit" or "no hit" per surface. My problem is, that
+> visually evaluating images after the simulation does not seem practical due
+> to form / size / repetitions.
+
+I recently implemented a script that checks for a hit and miss
+of the sky at possible sun positions. I just used the rtrace output
+option to produce the material name of the hit surface.
+
+Example input:
+0 0 0 0 0 1
+0 0 0 0 1 1
+0 0 0 1 1 1
+
+Example output:
+skyglow
+grey_40
+grey_40
+
+If you use a unique material name you can afterwards parse the
+output with a simple awk one-liner to get the number of hits. Is
+that more what you need?
+
+> And I'm afraid I didn't understand if the stencil method could really help,
+> but it seems evaluation (or result) is still a "picture" - again not a "hit"
+> or "no hit" information for a given surface.
+
+The output is a picture if you want rtrace to produce a picture.
+It only depends on the options for rtrace. The nice thing about
+the stencil method is that it generates ray origins and directions
+over a surface, instead of a fixed size grid.
+
+> Something like
+> http://www.radiance-online.org/radiance-workshop7/Content/Augsburger/Germain
+> AugsburgerPresentation.pdf, page 8, but with "continuous" and not
+> "discrete" sensors that can be evaluated for hit-or-miss somehow is what I
+> have in mind.
+
+Stencil could create the x,y,z,dx,dy,dz coordinates but only
+for one half of the cylinder (the one facing you). And the
+resolution would degrade towards the edges.
+
+Perhaps you could outline your problem. Someone might have
+another idea.
+
+Regards,
+Thomas
+
+From achim.geissler at intergga.ch  Thu Nov 26 01:52:00 2009
+From: achim.geissler at intergga.ch (Achim Geissler)
+Date: Thu Nov 26 01:52:08 2009
+Subject: [Radiance-general] "Sensor Surfaces"
+In-Reply-To: <89355c0f0911250941q258d19c7n87234e3532892b82@mail.gmail.com>
+References: <4524202860667517542@unknownmsgid>	<89355c0f0911190607v5a7803b9l2f3b4b57656dc8bc@mail.gmail.com>	<-2159304064395356976@unknownmsgid>
+	<89355c0f0911250941q258d19c7n87234e3532892b82@mail.gmail.com>
+Message-ID: <000501ca6e7e$1a453bc0$4ecfb340$@geissler@intergga.ch>
+
+Thomas
+
+that script-solution sounds quite interesting and what you describe as what
+you did with it sounds more like what I am looking for. The multitude of
+possible switches for rtrace is quite a challenge, though.
+
+What I want to do is this: I have a large building with external shading
+that has a non-trivial geometric form. This shading is to be opened (to a
+certain degree) at a given azimuth only if no direct radiation which would
+hit the facade can get past in this location. So the task is to let the sun
+travel around the building and for each position of interest check if any
+direct hits can be found on any surface of the building fa?ade behind the
+shading.
+
+Your suggestion seems to imply that this should be possible with rtrace.
+Does setting -dr 0 mean that only direct beams are considered by rtrace? Or
+does one need a good combination of -ds, -dt and -dc? The sun is the only
+"active" source of light. I would set reflection of all shading surfaces to
+Zero.
+
+I am not sure what your input example describes. Having the material names
+of "hit" surfaces given would seem O.K. if this can be constrained to
+"direct" only, as the goal is to have "no direct hit".
+
+Regards
+Achim
+
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Thomas
+Bleicher
+Sent: Mittwoch, 25. November 2009 18:42
+To: Radiance general discussion
+Subject: Re: [Radiance-general] "Sensor Surfaces"
+
+Achim.
+
+I'm afraid I don't quite understand what you want to do.
+
+On Wed, Nov 25, 2009 at 7:40 AM, Achim Geissler
+<achim.geissler@intergga.ch> wrote:
+> The 'falsecolor' sounds quite interesting, but as far as I can tell it
+does
+> not allow "automatic" evaluation, i.e. create a file / files that can be
+> somehow scanned for "hit" or "no hit" per surface. My problem is, that
+> visually evaluating images after the simulation does not seem practical
+due
+> to form / size / repetitions.
+
+I recently implemented a script that checks for a hit and miss
+of the sky at possible sun positions. I just used the rtrace output
+option to produce the material name of the hit surface.
+
+Example input:
+0 0 0 0 0 1
+0 0 0 0 1 1
+0 0 0 1 1 1
+
+Example output:
+skyglow
+grey_40
+grey_40
+
+If you use a unique material name you can afterwards parse the
+output with a simple awk one-liner to get the number of hits. Is
+that more what you need?
+
+> And I'm afraid I didn't understand if the stencil method could really
+help,
+> but it seems evaluation (or result) is still a "picture" - again not a
+"hit"
+> or "no hit" information for a given surface.
+
+The output is a picture if you want rtrace to produce a picture.
+It only depends on the options for rtrace. The nice thing about
+the stencil method is that it generates ray origins and directions
+over a surface, instead of a fixed size grid.
+
+> Something like
+>
+http://www.radiance-online.org/radiance-workshop7/Content/Augsburger/Germain
+> AugsburgerPresentation.pdf, page 8, but with "continuous" and not
+> "discrete" sensors that can be evaluated for hit-or-miss somehow is what I
+> have in mind.
+
+Stencil could create the x,y,z,dx,dy,dz coordinates but only
+for one half of the cylinder (the one facing you). And the
+resolution would degrade towards the edges.
+
+Perhaps you could outline your problem. Someone might have
+another idea.
+
+Regards,
+Thomas
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From tbleicher at googlemail.com  Thu Nov 26 04:57:58 2009
+From: tbleicher at googlemail.com (Thomas Bleicher)
+Date: Thu Nov 26 04:58:04 2009
+Subject: [Radiance-general] "Sensor Surfaces"
+In-Reply-To: <3208019721758953115@unknownmsgid>
+References: <4524202860667517542@unknownmsgid>
+	<89355c0f0911190607v5a7803b9l2f3b4b57656dc8bc@mail.gmail.com>
+	<-2159304064395356976@unknownmsgid>
+	<89355c0f0911250941q258d19c7n87234e3532892b82@mail.gmail.com>
+	<3208019721758953115@unknownmsgid>
+Message-ID: <89355c0f0911260457m478eeff6p78cf76f6fa1aecf9@mail.gmail.com>
+
+Hi Achim.
+
+The description of your project makes the situation clearer.
+
+On Thu, Nov 26, 2009 at 9:52 AM, Achim Geissler
+<achim.geissler@intergga.ch> wrote:
+> What I want to do is this: I have a large building with external shading
+> that has a non-trivial geometric form. This shading is to be opened (to a
+> certain degree) at a given azimuth only if no direct radiation which would
+> hit the facade can get past in this location. So the task is to let the sun
+> travel around the building and for each position of interest check if any
+> direct hits can be found on any surface of the building fa?ade behind the
+> shading.
+
+Both options I mentioned could be used here:
+
+A - stencil:
+1) based on a view of the building facade you generate x,y,z coordinates
+    (sensor points). The resolution of your sensor points depends on the
+    view and image specification; it has it's limits but compared to a grid
+    it should be better. You can probably restrict the area to test to a
+    representive patch.
+2) the direction is the surface normal at that point
+3) with -ab 0 and only the sun (no sky dome) you create an image
+4) If any of your image points is bright (not 0) you have a hit. You can
+    use pvalue to do this automatically or just look at the image.
+
+B - search for material:
+1) define grid resolution to apply to building facade
+2) use sun direction as test direction
+3) use rtrace with -os (surface) or -oM (material) and without -I+
+4) if you get a "sun" or "solar" for any of the points you have a hit
+
+C - combined method:
+1) from stencil to create the grid points
+2), 3), 4) as B
+
+> Your suggestion seems to imply that this should be possible with rtrace.
+> Does setting -dr 0 mean that only direct beams are considered by rtrace? Or
+> does one need a good combination of -ds, -dt and -dc? The sun is the only
+> "active" source of light. I would set reflection of all shading surfaces to
+> Zero.
+
+In the second case all these settings do not matter. We are using the
+output format spec to let rtrace report about the material it hits instead
+of the radiance of that surface. For the stencil method I do not think
+these settings are an issue because you only have the sun in the sky
+and a single light source is tested automatically by rtrace. I might be
+wrong, though.
+
+> I am not sure what your input example describes. Having the material names
+> of "hit" surfaces given would seem O.K. if this can be constrained to
+> "direct" only, as the goal is to have "no direct hit".
+
+In the example I "tested" 3 directions from point (0,0,0).
+In an rtrace output you would have 3 lines of materials.
+Assuming that the sky material is called "skyglow" only
+the first ray actually hits the sky. You can name the materials
+as you like, of course. In fact, I don't use a sky at all and
+look for "*" in the output which rtrace reports if it doesn't hit
+anything.
+
+
+Regards,
+Thomas
+
+From dboz66 at earthlink.net  Thu Nov 26 07:45:23 2009
+From: dboz66 at earthlink.net (Dave Bosworth)
+Date: Thu Nov 26 07:45:33 2009
+Subject: [Radiance-general] hidden surfaces
+Message-ID: <5508781.1259250324160.JavaMail.root@wamui-june.atl.sa.earthlink.net>
+
+Hello All - 
+
+I'm wondering if anyone knows a clever way to allow surfaces to contribute to a rendering, but not appear in the final view.  That is, instead of using a clipping plane, is there a means to "hide" specific surfaces?  I need to pull off certain surfaces and look into the room, but the plan is sort of squiggley, and a simple cutting plane doesn't do a very good job.
+
+thank you,
+
+dave bosworth
+
+From rpg at rumblestrip.org  Thu Nov 26 09:08:16 2009
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Thu Nov 26 09:08:28 2009
+Subject: [Radiance-general] hidden surfaces
+In-Reply-To: <5508781.1259250324160.JavaMail.root@wamui-june.atl.sa.earthlink.net>
+References: <5508781.1259250324160.JavaMail.root@wamui-june.atl.sa.earthlink.net>
+Message-ID: <BA9020CC-4A92-41F4-BC69-82D9B23E8DD3@rumblestrip.org>
+
+There is a clever trick with vwrays that can do exactly that. John m  
+posted a tech note on this on his website. Google arbitrary cliping  
+planes and vwrays, I'll bet you find it. Not going to try it on this  
+stupid little iPhone keyboard...
+
+--------------------
+Rob Guglielmetti
+
+
+On Nov 26, 2009, at 8:45 AM, Dave Bosworth <dboz66@earthlink.net> wrote:
+
+> Hello All -
+>
+> I'm wondering if anyone knows a clever way to allow surfaces to  
+> contribute to a rendering, but not appear in the final view.  That  
+> is, instead of using a clipping plane, is there a means to "hide"  
+> specific surfaces?  I need to pull off certain surfaces and look  
+> into the room, but the plan is sort of squiggley, and a simple  
+> cutting plane doesn't do a very good job.
+>
+> thank you,
+>
+> dave bosworth
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+From jm at dmu.ac.uk  Thu Nov 26 09:50:00 2009
+From: jm at dmu.ac.uk (John Mardaljevic)
+Date: Thu Nov 26 09:50:25 2009
+Subject: [Radiance-general] hidden surfaces
+Message-ID: <A049CD4F-0450-42C0-8867-999AF4758685@dmu.ac.uk>
+
+I've moved over to Dokuwiki and the old links are probably stale.   
+You'll find it here:
+
+http://www.iesd.dmu.ac.uk/~jm/doku.php?id=resources
+
+Best,
+
+-John
+
+-----------------------------------------------
+Dr. John Mardaljevic
+Reader in Daylight Modelling
+Institute of Energy and Sustainable Development
+De Montfort University
+The Gateway
+Leicester
+LE1 9BH, UK
++44 (0) 116 257 7972
++44 (0) 116 257 7981 (fax)
+
+jm@dmu.ac.uk
+http://www.iesd.dmu.ac.uk/~jm
+
+
+
+
+From achim.geissler at intergga.ch  Fri Nov 27 02:40:36 2009
+From: achim.geissler at intergga.ch (Achim Geissler)
+Date: Fri Nov 27 02:40:46 2009
+Subject: [Radiance-general] "Sensor Surfaces"
+In-Reply-To: <89355c0f0911260457m478eeff6p78cf76f6fa1aecf9@mail.gmail.com>
+References: <4524202860667517542@unknownmsgid>	<89355c0f0911190607v5a7803b9l2f3b4b57656dc8bc@mail.gmail.com>	<-2159304064395356976@unknownmsgid>	<89355c0f0911250941q258d19c7n87234e3532892b82@mail.gmail.com>	<3208019721758953115@unknownmsgid>
+	<89355c0f0911260457m478eeff6p78cf76f6fa1aecf9@mail.gmail.com>
+Message-ID: <000301ca6f4e$0ec58b80$2c50a280$@geissler@intergga.ch>
+
+Hi Thomas
+
+thank you very much! I am beginning to see the light, so to speak  ;o)
+
+Regards
+Achim
+
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Thomas
+Bleicher
+Sent: Donnerstag, 26. November 2009 13:58
+To: Radiance general discussion
+Subject: Re: [Radiance-general] "Sensor Surfaces"
+
+Hi Achim.
+
+The description of your project makes the situation clearer.
+
+On Thu, Nov 26, 2009 at 9:52 AM, Achim Geissler
+<achim.geissler@intergga.ch> wrote:
+> What I want to do is this: I have a large building with external shading
+> that has a non-trivial geometric form. This shading is to be opened (to a
+> certain degree) at a given azimuth only if no direct radiation which would
+> hit the facade can get past in this location. So the task is to let the
+sun
+> travel around the building and for each position of interest check if any
+> direct hits can be found on any surface of the building fa?ade behind the
+> shading.
+
+Both options I mentioned could be used here:
+
+A - stencil:
+1) based on a view of the building facade you generate x,y,z coordinates
+    (sensor points). The resolution of your sensor points depends on the
+    view and image specification; it has it's limits but compared to a grid
+    it should be better. You can probably restrict the area to test to a
+    representive patch.
+2) the direction is the surface normal at that point
+3) with -ab 0 and only the sun (no sky dome) you create an image
+4) If any of your image points is bright (not 0) you have a hit. You can
+    use pvalue to do this automatically or just look at the image.
+
+B - search for material:
+1) define grid resolution to apply to building facade
+2) use sun direction as test direction
+3) use rtrace with -os (surface) or -oM (material) and without -I+
+4) if you get a "sun" or "solar" for any of the points you have a hit
+
+C - combined method:
+1) from stencil to create the grid points
+2), 3), 4) as B
+
+> Your suggestion seems to imply that this should be possible with rtrace.
+> Does setting -dr 0 mean that only direct beams are considered by rtrace?
+Or
+> does one need a good combination of -ds, -dt and -dc? The sun is the only
+> "active" source of light. I would set reflection of all shading surfaces
+to
+> Zero.
+
+In the second case all these settings do not matter. We are using the
+output format spec to let rtrace report about the material it hits instead
+of the radiance of that surface. For the stencil method I do not think
+these settings are an issue because you only have the sun in the sky
+and a single light source is tested automatically by rtrace. I might be
+wrong, though.
+
+> I am not sure what your input example describes. Having the material names
+> of "hit" surfaces given would seem O.K. if this can be constrained to
+> "direct" only, as the goal is to have "no direct hit".
+
+In the example I "tested" 3 directions from point (0,0,0).
+In an rtrace output you would have 3 lines of materials.
+Assuming that the sky material is called "skyglow" only
+the first ray actually hits the sky. You can name the materials
+as you like, of course. In fact, I don't use a sky at all and
+look for "*" in the output which rtrace reports if it doesn't hit
+anything.
+
+
+Regards,
+Thomas
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From andrew.mcneil at arup.com  Mon Nov 30 10:33:03 2009
+From: andrew.mcneil at arup.com (Andrew McNeil)
+Date: Mon Nov 30 10:33:19 2009
+Subject: [Radiance-general] Re: Annual daylight simulations
+In-Reply-To: <124b40400911240051x65ac2bcfp218f0fc335be0598@mail.gmail.com>
+Message-ID: <C7394FDF.DEC9%andrew.mcneil@arup.com>
+
+Hi Marija,
+
+I was out all last week for thanksgiving.  I hope my reply is not too late
+to be helpful.
+
+I haven't done the three phase method yet. I'm validating my bsdf data and
+have been side tracked by other projects.  But I'll get to it soon...
+
+> Question is how to calculate Transmission matrix with BTDF values for the
+> specific window or group of windows?
+This can be measured via a goniophotometer, exported from LBNL Window, or
+simulated using Trace Pro, or radiance using rtcontrib.
+
+> I see it should be some file in xml format, but not sure how to create it when
+> classic transmittance and reflectance data are known for the glazing; and also
+> what format if has.
+
+The BSDF data should be in LBNL?s window xml format.  I enquired LBNL about
+the format in September and at that time the documentation wasn?t complete.
+I can send you the draft specification I received in September if you like
+but it's probably worth contacting LBNL to see if documentation has
+progressed.
+
+> Also for non-complex glazing systems (like double or triple glazings, without
+> internal blinds and similar), is it possible to compose this BTDF matrix
+> "manually"?
+
+LBNL Window 6 will write an xml format bsdf file for data a window system
+described in it's program.  I found it helpful to do this to reverse
+engineer the XML file format.
+
+But... The three phase method is intended for a system that requires a bsdf
+to characterize light transport.  If your material can be characterized
+using a standard radiance material (like a simple double/triple glazing
+without blinds) than the more conventional daylight coefficient approach
+(one-phase?) will be easier, faster and more accurate.
+
+Andrew 
+
+
+
+On 11/24/09 12:51 AM, "Marija Velickovic" <maricanis@gmail.com> wrote:
+
+> Hi again,
+> 
+> I've just found out that, I somehow skipped reading of mails with "BSDF" in
+> the subject, and found out that Andrew McNeil had similar problem last month
+> 
+> In mail 
+> http://www.radiance-online.org/pipermail/radiance-general/2009-October/006296.
+> html there is a note about script for BSDF calculation based on rtcontrib.
+> 
+> Andrew, were script calculation results good?
+> Did you manage to make complete 3-phase calculation?
+> 
+> Marija.
+> 
+> 
+> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+
+

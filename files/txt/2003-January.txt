@@ -1,0 +1,1396 @@
+From radiance-general@radiance-online.org  Thu Jan 16 17:13:09 2003
+From: radiance-general@radiance-online.org (Rob Guglielmetti)
+Date: Thu, 16 Jan 2003 12:13:09 -0500
+Subject: [Radiance-general] multiprocessor systems, Radiance, and you
+Message-ID: <3E26E825.4080607@rumblestrip.org>
+
+Howdy folks-
+
+After spending the last couple of months getting up to speed with 
+Radiance (the workshop in Freibourg was really, really, good at showing 
+me how much I had to learn, how behind the curve I was [am]), and 
+performing hunderds of rtrace jobs, and compiling a cohesive analytical 
+report on the data, our client has responded:
+
+They want more.
+
+You all know how it is, once you show someone what is possible with 
+Radiance, they start thinking "what would it look like if we did this, 
+or this, or this, or this, etc, etc....".  So we intend to show them 
+some of these options.
+
+While I'm thrilled to be doing more with Radiance, I'm now Desperately 
+Seeking Cycles, CPU horsepower that is.  After Jack's fifteen minute 
+rendering claim at the workshop -- Yes Jack, that's what you said, we 
+all heard you ;-) -- for a single dual Athlon box, I'm thinking this is 
+what I want to do.  I don't need NFS lock headaches right now, I have 
+enough problems.  So I'm looking to build one very fast box, and I'm 
+hoping to make it a dualie, and skip the LAN based render farm for now.
+
+(several paragraphs later he gets to the questions...)  My questions are 
+for those of you on the list with MP linux experience.  I guess I'm hazy 
+on the way the two processors are utilized.  Do you tend to run one job 
+on one CPU and a second one on the other, or do you use rpiece to work 
+one job across both, as if the the CPUs are two different hosts?  Or is 
+there some OS and/or Radiance compile tweak that you do to simply make 
+both CPUs act as one, obviating the need for rpiece? Seems like you 
+still need rpiece so the ambient cache is managed properly. As far as 
+CPU, do I *have* to use the Athlon MP, or can I run two XPs?  Anyone 
+have hardware recommendations?  I like Abit motherboards, but they don't 
+seem to offer a dual socket variant.  What about OS?  I had great 
+success with RHL 8.0 on an old Dell -- it installed and compiled 
+Radiance without a single hiccup.  Anyone using it on a dual box?  Any 
+compile changes to either the OS or Radiance?
+
+Any info, urls or advice would be greatly appreciated.
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+
+From radiance-general@radiance-online.org  Thu Jan 16 22:45:08 2003
+From: radiance-general@radiance-online.org (Peter Apian-Bennewitz)
+Date: Thu, 16 Jan 2003 23:45:08 +0100
+Subject: [Radiance-general] multiprocessor systems, Radiance, and you
+References: <3E26E825.4080607@rumblestrip.org>
+Message-ID: <3E2735F4.DD1546CC@pab-opto.de>
+
+Hi Rob,
+...
+> 
+> (several paragraphs later he gets to the questions...)  My questions are
+> for those of you on the list with MP linux experience.  I guess I'm hazy
+> on the way the two processors are utilized.  Do you tend to run one job
+> on one CPU and a second one on the other, or do you use rpiece to work
+> one job across both, as if the the CPUs are two different hosts?  Or is
+> there some OS and/or Radiance compile tweak that you do to simply make
+> both CPUs act as one, obviating the need for rpiece? Seems like you
+> still need rpiece so the ambient cache is managed properly. As far as
+> CPU, do I *have* to use the Athlon MP, or can I run two XPs?  Anyone
+> have hardware recommendations?  I like Abit motherboards, but they don't
+> seem to offer a dual socket variant.  What about OS?  I had great
+> success with RHL 8.0 on an old Dell -- it installed and compiled
+> Radiance without a single hiccup.  Anyone using it on a dual box?  Any
+> compile changes to either the OS or Radiance?
+
++ compile changes - most certainly not (Greg relies on the general idea
+of copy-on-demand page reuse for standard fork/exec, that seems to work.
+I'm not a system guru, maybe threading would be better for whatever
+reasons) . There's no general, UNIX internal, way to present two CPUs as
+one to a program. Except PVM (parallel virtual machine) or other
+libraries (which are operating in user space and not kernel space, if
+I'm correctly aligned). LBNL had a project which extended Radiance for
+that, - don't know if and when that gets merged back into mainstream
+Radiance.
+
++ Linux distributions - Slackware 8.0 seems ok (gcc version 2.95.3, 
+/lib/libc-2.2.3.so), if others experienced problems, I'd suggest adding
+output of ("gcc -v" and "ls -la /lib/libc*so", maybe more)
+
++ MP hardware - dual PIII/1Ghz on Tyan motherboard, no known problems,
+(dual PII/400 on ASUS had been fine too, some years ago)
+
++ rpiece/ambient/rpict - rpiece organizes just the rpicts; sharing
+ambient values works with rtraces started by hand too. Running two
+rtraces/rpicts on the same octree is memory efficient, as the scenery is
+shared (that's what the earlier "copy-on-demand page reuse" yuckspeak
+wants to say). If scene memory is not a limiting factor, I wouldn't care
+how rendering is organized. Depends on your coding style of shell
+scripts, makefiles, m4 etc. 
+
++ NFS (now, I fear this will haunt me for years) is working between
+slackware boxes if nfs-3 is used. However, I do had weird experiences
+with lockd/statd on IRIX,HP-UX,Linux over the years, so anyone building
+on NFS file locking for commercial work should add a few weeks of
+testing before going productive with the machines. (file locking is
+crucial to sharing ambient files via NFS)
+
+cheers
+Peter
+
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+From radiance-general@radiance-online.org  Fri Jan 17 11:40:25 2003
+From: radiance-general@radiance-online.org (Lars O. Grobe)
+Date: Fri, 17 Jan 2003 12:40:25 +0100
+Subject: [Radiance-general] multiprocessor systems, Radiance, and you
+In-Reply-To: <3E2735F4.DD1546CC@pab-opto.de>
+References: <3E26E825.4080607@rumblestrip.org> <3E2735F4.DD1546CC@pab-opto.de>
+Message-ID: <200301171143.h0HBh2xv001182@mailserver1.hrz.tu-darmstadt.de>
+
+Hi,
+
+I still didn't manage to try it wirh radiance, but (open)mosix might be a 
+great addition, as it represents a cluster as a smp-machine, so you don't 
+need rsh and co., and it has an included file system that gives you access to 
+all clustered filesystems. So the nfs issue might belong to the past in 
+mosix-environments.
+
+Regarding the original question: I didn't need more than on processor working 
+on a scene so far. Current machines usually render one picture in a time to 
+short to make me think about using rpiece, if I need more than one picture, I 
+usually start two rendering processes (I had some very large renderings with 
+5000x5000 pixel on a 4way-Sun 880, that was one case that I had more than one 
+rendering process at a time). Of course, the memory might become a problem if 
+you do so.
+
+I still want to try mosix, but at the moment, I simply don't have the time ;-)
+
+CU, Lars.
+
+From radiance-general@radiance-online.org  Fri Jan 17 13:47:00 2003
+From: radiance-general@radiance-online.org (Carsten Bauer)
+Date: Fri, 17 Jan 2003 14:47:00 +0100
+Subject: [Radiance-general] multiprocessor systems, Radiance, and you
+References: <3E26E825.4080607@rumblestrip.org>
+Message-ID: <3E280954.E2B15B8F@t-online.de>
+
+The need for speed 1
+
+Hi Rob,
+
+I remember one mail of you half a year ago or so, when you already had
+anticipated that step.So the time has come now, maybe earlier than
+you've thought .. :-).
+
+Unfortunately I don't know anything about Dual-processor Boards, and I'm
+not up to date with the current state of Hardware, too. but I did some
+work on parallell renderings some time ago. 
+
+Now, when it comes to parallel processing, there are lots of different
+ways, so probably each one of the newsgroup will give you another tip,
+advertising his own solution, so let me just join in the howling of the
+wolfes.
+
+I've a reliably working PVM-Radiance Version ready at hand, if you're
+interested. Currently, it's for Linux only, but the advantage of PVM is
+that it can combine processes from several OS together. It would be
+interesting to make it work for a combination of OS X and Linux
+machines, but for this I would need some help of an OS X guru. How about
+you, Rob, you probably already have developed one :) ??
+Of course it is only a parallel rpict, rview is difficult to execute
+parallely (cf. the discussion somewhat earlier on this list) and rtrace,
+well, hmm, rtrace, I think I've never used it so far..  
+
+I programmed the ambient value sharing via PVM, too, so there's no lock
+manager problem. I did spend some time to make the whole stuff
+user-friendly, but I cannot claim anything about memory efficiency, I
+didn't care and just equipped every node with a sufficient amount of
+RAM. Quick and dirty. Of course you need the PVM library, but that
+should not shock you, as it should come automatically with Linux
+distributions (at least it does so with the SuSe one which is quite
+often found here in Europe.) So if you already have some machines in a
+Linux Network, probably you needn't buy  something new. 
+
+@->Lars: yeah, mosix, it's the same with me, I would like to try it but
+didn't find the time or opportunity so far. 
+
+The need for parallel treatment? Well, if you have just a big picture
+but a rather easy scene with a little amount of sources, you may well
+get away without PP. But of course there's the fun of the PP just for
+itself ... 
+
+So long
+
+-Carsten
+
+From radiance-general@radiance-online.org  Fri Jan 17 15:23:09 2003
+From: radiance-general@radiance-online.org (Rob Guglielmetti)
+Date: Fri, 17 Jan 2003 10:23:09 -0500
+Subject: [Radiance-general] multiprocessor systems, Radiance, and you
+References: <3E26E825.4080607@rumblestrip.org> <3E2735F4.DD1546CC@pab-opto.de>
+Message-ID: <3E281FDD.8080003@rumblestrip.org>
+
+Hi Peter, Lars, Carsten, et al.,
+
+Thanks so much for all the information.  As usual I am humbled by the 
+depth of your collective wisdom.
+
+It occurred to me shortly after I posted this (and was perusing the 
+rpiece man page) that rpiece really only helps rpict processes, where I 
+am primarily doing lots and lots of rtraces right now.  I will look 
+further at Carsten's PVM-ified Radiance, and mosix, but in the meantime 
+I think this next machine will be a single CPU box.  Shoot, even one 
+2Ghz Athlon will be an improvement over my current Radiance setup, a 
+wimpy PIII 450.
+
+Scene complexity and image resolution are not my problems, it's simply 
+the sheer number of rtrace calculations (with lots of ambient bounces) 
+we are doing that piqued my interest in building the Fastest Computer 
+Available.  But it sounds like my investment in a dual cpu box will not 
+necessarily be returned immediately, since the bulk of my work lies in 
+rtrace(s).  Maybe down the road I'll get another single, and then I 
+*will* have dual fast cpu's chewing on Radiance calculations, and by 
+having two separate boxes I gain a little redundancy to boot.
+
+Thanks again for the info.  Have good weekends, all.
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+
+From radiance-general@radiance-online.org  Fri Jan 17 15:55:58 2003
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Fri, 17 Jan 2003 10:55:58 -0500 (EST)
+Subject: [Radiance-general] multiprocessor systems, Radiance, and you
+In-Reply-To: <3E281FDD.8080003@rumblestrip.org>
+Message-ID: <Pine.BSF.4.44.0301171041051.39691-100000@emancholl.pair.com>
+
+Rob Guglielmetti wrote:
+
+> It occurred to me shortly after I posted this (and was perusing the
+> rpiece man page) that rpiece really only helps rpict processes, where I
+> am primarily doing lots and lots of rtraces right now.
+
+rpiece doesn't really coordinate the rpict jobs while they are
+running. It only feeds each of them the right patches of the picture.
+The ambient file sharing is done completely between the actual
+simulation processes, whether those run rpict, rtrace, or rview,
+or any combination thereof.
+
+What this means is that you *can* use a dual CPU machine to its
+full potential, without any further tools necessary. The only
+thing that you need to do is split up your vector sets into two,
+and start a seperate rtrace process with each half. If all
+preprocessing (mkillum etc) is already done, then they will
+happily share their ambient file, which accelerates both of them.
+As long as you stay on the same box, you'll also definitively
+have no locking problems.
+
+
+> I will look further at Carsten's PVM-ified Radiance,
+
+I didn't check: Is PVM also available for Windows?
+Carsten, can you tell a bit more about this, particularly
+your ambient sharing code (maybe in the dev list)?
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-general@radiance-online.org  Fri Jan 17 17:03:07 2003
+From: radiance-general@radiance-online.org (Peter Apian-Bennewitz)
+Date: Fri, 17 Jan 2003 18:03:07 +0100
+Subject: [Radiance-general] multiprocessor systems, Radiance, and you
+References: <3E26E825.4080607@rumblestrip.org> <3E2735F4.DD1546CC@pab-opto.de> <3E281FDD.8080003@rumblestrip.org>
+Message-ID: <3E28374B.C1503B07@pab-opto.de>
+
+...
+> It occurred to me shortly after I posted this (and was perusing the
+> rpiece man page) that rpiece really only helps rpict processes, where I
+> am primarily doing lots and lots of rtraces right now.  I will look
+> further at Carsten's PVM-ified Radiance, and mosix, but in the meantime
+> I think this next machine will be a single CPU box.  Shoot, even one
+> 2Ghz Athlon will be an improvement over my current Radiance setup, a
+> wimpy PIII 450.
+IMHO, additional investment in a dual motherboard plus the extra CPU is
+worth it, since you share disks, opsys, ram. CPU costs are rarely 
+linear with CPU speed, so you may end up with a better cost/performance
+ratio with two slightly slower CPUs than with one top-notch CPU.
+As Schorsch pointed out, split your rtrace input vectors to two rtraces
+and half your computing time. Easy with shell or awk programming.
+
+> having two separate boxes I gain a little redundancy to boot.
+correct. Of course two dual machines are also an option....  
+
+-Peter
+
+PS: I had a glance at mosix, - definitely a neat idea from a kernel and
+opsys perspective. However, while rendering for fun and profit, I'd
+rather prefer to know what is happening on my machines. Imagine a
+logfile of an aborted rpict. It states ".... rendered on foo", whereas,
+thanks to mosix, it had been transparently migrated during rendering to
+a different box, with happened to have a faulty RAM segment.
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+From radiance-general@radiance-online.org  Fri Jan 17 17:25:34 2003
+From: radiance-general@radiance-online.org (Rob Guglielmetti)
+Date: Fri, 17 Jan 2003 12:25:34 -0500
+Subject: [Radiance-general] multiprocessor systems, Radiance, and you
+References: <Pine.BSF.4.44.0301171041051.39691-100000@emancholl.pair.com>
+Message-ID: <3E283C8E.6070702@rumblestrip.org>
+
+Hi Schorsch:
+
+Georg Mischler wrote:
+
+> What this means is that you *can* use a dual CPU machine to its
+> full potential, without any further tools necessary. The only
+> thing that you need to do is split up your vector sets into two,
+> and start a seperate rtrace process with each half. If all
+> preprocessing (mkillum etc) is already done, then they will
+> happily share their ambient file, which accelerates both of them.
+> As long as you stay on the same box, you'll also definitively
+> have no locking problems.
+
+OK, thanks.  Your info suggests that I could just build a dual box, 
+install Linux and Radiance, and continue doing things the way I am doing 
+them (multiple shell scripts calling rtrace), and both cpus would be 
+fully utilized.  Maybe I'll still go that route, I don't know.  A single 
+Athlon 2400XP goes for less than $200 US though, and I like the 
+redundancy of having my processors in two separate machines.
+
+I was hoping for the ability to make both cpus appear as one, 
+transparently to Radiance.  PAB says this is not doable at the kernel 
+level.  I'm running shell scripts that simulate a series of days for 
+daylighting analysis.  The whole thing is fairly linear, and even the 
+sharing of the ambient file is not necessary because when the script 
+advances to the next hour, the octree is different, and thus the 
+previous calculation's ambient cache is not valid for the next one.  I 
+already have separate scripts/rtrace processes for each day, but was 
+hoping to make all the days run off one command, hence my desire for 
+"one" fast box.  I guess I was looking for one terminal window to run 
+everything from, in order, with one command.  I'm lazy.
+
+> I didn't check: Is PVM also available for Windows?
+
+Yes (http://www.csm.ornl.gov/pvm/pvm_home.html).  Maybe the beginnings 
+of the next feature of Rayfront?  =8-)
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+
+From radiance-general@radiance-online.org  Fri Jan 17 17:42:12 2003
+From: radiance-general@radiance-online.org (Rob Guglielmetti)
+Date: Fri, 17 Jan 2003 12:42:12 -0500
+Subject: [Radiance-general] multiprocessor systems, Radiance, and you
+References: <3E26E825.4080607@rumblestrip.org> <3E2735F4.DD1546CC@pab-opto.de> <3E281FDD.8080003@rumblestrip.org> <3E28374B.C1503B07@pab-opto.de>
+Message-ID: <3E284074.7080903@rumblestrip.org>
+
+Hi Peter, didn't see your reply 'till after my latest tome.
+
+Peter Apian-Bennewitz wrote:
+
+> IMHO, additional investment in a dual motherboard plus the extra CPU is
+> worth it, since you share disks, opsys, ram. CPU costs are rarely 
+> linear with CPU speed, so you may end up with a better cost/performance
+> ratio with two slightly slower CPUs than with one top-notch CPU.
+
+True enough.  Still on the fence over this choice.  But I think current 
+funds will ultimately do the deciding for me (isn't that always the case?)
+
+> As Schorsch pointed out, split your rtrace input vectors to two rtraces
+> and half your computing time. Easy with shell or awk programming.
+
+This is the main reason why I'm still on the fence.
+
+>>having two separate boxes I gain a little redundancy to boot.
+> 
+> correct. Of course two dual machines are also an option....  
+
+Not at the moment.  See "funds" reference above. ;-)
+
+> PS: I had a glance at mosix, - definitely a neat idea from a kernel and
+> opsys perspective. However, while rendering for fun and profit, I'd
+> rather prefer to know what is happening on my machines. Imagine a
+> logfile of an aborted rpict. It states ".... rendered on foo", whereas,
+> thanks to mosix, it had been transparently migrated during rendering to
+> a different box, with happened to have a faulty RAM segment.
+
+Excellent point.  I have enough trouble reigning in all the parameters 
+of a given calculation and keeping everything straight.  I don't need 
+the computer doing things behind my back to further confuse me! ;-)
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+
+From radiance-general@radiance-online.org  Fri Jan 17 18:12:04 2003
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Fri, 17 Jan 2003 13:12:04 -0500 (EST)
+Subject: [Radiance-general] multiprocessor systems, Radiance, and you
+In-Reply-To: <3E283C8E.6070702@rumblestrip.org>
+Message-ID: <Pine.BSF.4.44.0301171302390.39691-100000@emancholl.pair.com>
+
+Rob Guglielmetti wrote:
+
+> I was hoping for the ability to make both cpus appear as one,
+> transparently to Radiance.
+
+I don't expect this to happen. Actual job management is outside
+of the scope of core Radiance, and belongs into user interface
+level applications.
+
+
+> > I didn't check: Is PVM also available for Windows?
+>
+> Yes (http://www.csm.ornl.gov/pvm/pvm_home.html).  Maybe the beginnings
+> of the next feature of Rayfront?  =8-)
+
+As has been discussed before, everybody wants a reliable, platform
+independent, and network transparent ambient data sharing mechanism.
+If PVM can solve this task better through inter-process communication
+than the old file locking trickery, then that's certainly worth a
+closer look. Again, that's only the actual functionality. Any higher
+level coordination between the jobs should be handled by other tools.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-general@radiance-online.org  Fri Jan 17 19:13:03 2003
+From: radiance-general@radiance-online.org (Zack Rogers)
+Date: Fri, 17 Jan 2003 12:13:03 -0700
+Subject: [Radiance-general] Re: multiprocessor systems, Radiance, and you
+Message-ID: <3E2855BF.2090106@archenergy.com>
+
+Hello,
+
+I've been using several dual processor systems for the past year or 
+so...I thought I'd add my 2 cents.
+
+Our IT guy built my machine using a Tyan motherboard and 2 - 1.8 GHz 
+Athlon AMD MP.  I'm told by our IT tech guy that the AMD processors are 
+faster doing these floating point calculations than the Pentium III or 
+IV counter part.  He says the Pentium's fairly new MMX instruction set 
+is great for new multimedia programs coming out, but the program has to 
+be able to take advantage of this MMX instruction set.  I guess 90% of 
+the programs out there are not designed to use the MMX and require the 
+older 387 instruction set.  So, the new Pentium's can revert back to the 
+387 instruction set but are slower than the AMD counter part when doing 
+so.  So until a version of Radiance is compiled that takes advantage of 
+MMX, I believe AMD processors will perform better.  I am not an expert 
+on all this, I hope I have not misstated anything as I am just passing 
+along what was told to me, but if you have any other questions on the 
+specifics of our dual processor machines please feel free to ask.  We 
+have built several for both Radiance and CFD modeling and so have some 
+experience with this.
+
+My machine has been working great for me.  I run Windows NT on it but I 
+also use several other Dual Processor machines running Suse8.0.  On both 
+OS's, the Radiance simulations run on only a single processor.  I will 
+typically have numerous parametric designs, and so this works for me.  I 
+will usually just load up each processor and run them in parallel.  I'm 
+sure there is a way to get them to run in series, but I too have much to 
+learn about Radiance and have no idea how.  I would recommend the Suse 
+OS, it has worked great for us, although I have no experience with any 
+other Linux OS so I have nothing to compare it to.  Radiance did compile 
+easily on it and it runs great.  Radiance does run as a friendly process 
+on it, sharing the processor with other programs, which is nice.  Our 
+CFD programs our processor hogs.
+
+Hope this is of some help!
+~Zack
+
+-- 
+Celebrating 20 Years of Improving Building Energy Performance
+
+Zack Rogers
+Staff Engineer
+Architectural Energy Corporation
+2540 Frontier Avenue, Suite 201
+Boulder, CO 80301 USA
+
+tel (303)444-4149 ext.235
+fax (303)444-4304
+http://www.archenergy.com
+
+
+
+From radiance-general@radiance-online.org  Fri Jan 17 20:01:00 2003
+From: radiance-general@radiance-online.org (Charles Ehrlich)
+Date: Fri, 17 Jan 2003 12:01:00 -0800 (PST)
+Subject: [Radiance-general] Re: Radiance-general digest, Vol 1 #210 - 2 msgs
+In-Reply-To: <20030117110002.21088.14487.Mailman@darkside-animation.com>
+Message-ID: <20030117200100.94943.qmail@web80009.mail.yahoo.com>
+
+--0-1999488573-1042833660=:94858
+Content-Type: text/plain; charset=us-ascii
+
+
+ 
+My experience with multi-processor systems and Radiance rendering is that it is best to run two separate images on each process--AFTER the initial ambient file has been sufficiently seeded.
+During the seeding of the ambient file, it is efficacious to rendering two different views of the space on each processor using RVIEW.  That way, the random sampling of the image plane (rather than the sequential scanline ordering) assures that ambient rays are distributed throughout the space and that Radiance will find the "hot spots" earlier in the ambient file seeding process.  Of course, a low-resolution image has a similar effect, but if you are rendering interactively, you can also judge how long it takes to get close and stop the processes when you think it is ready.  The random sampling, in my experience, reduces overall error and reduces the chances that the final rendering will have to be thrown away because of large sources of light (error) introduced late in the rendering process.
+If you are rendering the same image on both processes using rpiece and the pfork() routine, a peculiar situation arises.  Eventually the ambient file becomes very large and later values stored to the file have updated--many times--earlier values in the file.  When the two rpict processes are initially begun, they share memory space for the executable part of the code and the static parts of the scene.  As the ambient file grows, the part of the ambient file that is resident in RAM becomes larger and larger for each process.  Eventually, there seems to arise a significant delay caused by each of these processes having to access each-other's locked memory space for bits of the ambient file.  I have noticed significant performance increases when the processes are stopped, and re-started.  Importantly, the second process should be started after some delay (depening upon the size of the ambient file)...presumably after rpict has had time to process the ambient file and coalesce similar/nearby values.  That way the second process can share more memory with the first process that is no longer going to be changing.
+P.S. Anyone going to the anti-war peace marches in San Francisco or Washington D.C. this Saturday, Jan. 18th?  I'll be in the Environmentally friendly eco-car-rally in San Francisco.  Look for my green VW Golf TDI running Biodiesel. www.biodezl.com.  More info about the demonstrations are available at: http://www.workingassets.com/nowar  and  www.internationalANSWER.org
+-Chas
+Charles Ehrlich
+
+Project Manager
+Heschong Mahone Group
+11626 Fair Oaks Blvd. #302
+Fair Oaks, CA 95628
+Phone: (916) 962-7001
+Fax: (916) 962-0101
+http://www.h-m-g.com
+
+--0-1999488573-1042833660=:94858
+Content-Type: text/html; charset=us-ascii
+
+<P>&nbsp;
+<P>My experience with multi-processor systems and Radiance rendering is that it is best to run two separate images on each process--AFTER the initial ambient file has been sufficiently seeded.
+<P>During the seeding of the ambient file, it is efficacious to rendering two different views of the space on each processor using RVIEW.&nbsp; That way, the random sampling of the image plane (rather than the sequential scanline ordering) assures that ambient rays are distributed throughout the space and that Radiance will find the "hot spots" earlier in the ambient file seeding process.&nbsp; Of course, a low-resolution image has a similar effect, but if you&nbsp;are rendering interactively, you can also judge how long it takes to get close and stop the processes when you think it is ready.&nbsp; The random sampling, in my experience, reduces overall error and reduces the chances that the final rendering will have to be thrown away because of large sources of light (error) introduced late in the rendering process.
+<P>If you are rendering the same image on both processes using rpiece and the pfork() routine,&nbsp;a peculiar situation arises.&nbsp; Eventually the ambient file becomes very large and later values stored to the file have updated--many times--earlier values in the file.&nbsp;&nbsp;When the two rpict processes&nbsp;are initially begun, they share memory space for the executable part of the code and the static parts of the scene.&nbsp; As the ambient file grows, the part of the ambient file that is&nbsp;resident in RAM becomes larger and larger&nbsp;for each process.&nbsp; Eventually, there&nbsp;seems to arise a significant delay caused by each of these processes having to access each-other's&nbsp;locked memory space for&nbsp;bits of the ambient file.&nbsp;&nbsp;I have noticed significant performance increases when the processes are stopped, and re-started.&nbsp; Importantly, the second process should be started after some delay (depening upon the size of the ambient file)...presumably after rpict has had time to process the ambient file and coalesce similar/nearby values.&nbsp; That way the second process can share more memory with the first process that is no longer going to be changing.
+<P>P.S. Anyone going to the anti-war peace marches in San Francisco or Washington D.C. this Saturday, Jan. 18th?&nbsp; I'll be in the Environmentally friendly eco-car-rally&nbsp;in San Francisco.&nbsp; Look&nbsp;for my green VW Golf&nbsp;TDI&nbsp;running Biodiesel. <A href="http://www.biodezl.com">www.biodezl.com</A>.&nbsp; More info about the demonstrations are available at: <A href="http://www.workingassets.com/nowar" target=_blank>http://www.workingassets.com/nowar</A>&nbsp; and&nbsp; <A href="http://www.internationalANSWER.org">www.internationalANSWER.org</A>
+<P>-Chas<BR>Charles Ehrlich<BR><FONT size=2><BR>Project Manager<BR>Heschong Mahone Group<BR>11626 Fair Oaks Blvd. #302<BR>Fair Oaks, CA 95628<BR>Phone: (916) 962-7001<BR>Fax: (916) 962-0101<A href="mailto:ehrlich@h-m-g.comWeb"><BR></A><A href="http://www.h-m-g.com">http://www.h-m-g.com</A></P></FONT>
+--0-1999488573-1042833660=:94858--
+
+From radiance-general@radiance-online.org  Sat Jan 18 11:34:22 2003
+From: radiance-general@radiance-online.org (Carsten Bauer)
+Date: Sat, 18 Jan 2003 12:34:22 +0100
+Subject: [Radiance-general] multiprocessor systems, Radiance, and you
+References: <Pine.BSF.4.44.0301171041051.39691-100000@emancholl.pair.com>
+Message-ID: <3E293BBE.B65B6737@t-online.de>
+
+Hi Schorsch,
+
+ooops, for several weeks the Radiance-mailing list was more or less
+'sleeping', but the issue of parallel processing still hasn't lost it's
+fascination ... so I think no one would mind if I answer your question
+right here:
+
+I had the idea of making the processes as independent as possible, so in
+the PVM version there's one master distributing the blocks, the workers
+which do the tracing, a collector receiving finished scanlines (and in
+the end  puzzles everything together for the big picture) and of course
+the ambient slave, who receives amb. values and broadcasts them to all
+the other workers. This ambient slave alone has access to the file for
+storing them. Only at the beginning of a new run the workers can access
+an already existing ambfile for reading in values.
+
+It's important not to start in one corner of the image and distribute
+the blocks regularly. The master picks them randomly from the list, thus
+the process resembles a bit the rview style, which is more appropriate
+for filling up the ambfile with values from the whole room, as Charles
+pointed out. so sharing will happen mainly at the end of the run, when
+more and more blocks happen to be adjacent to one already processed. 
+
+Let's stop here, I don't want to flush the general list too much...
+
+Except of course with general remarks :-)
+
+This sort of parallel processing of one picture is only adequate for
+really big images of really complicated scenes (btw, - this means
+automatically that bottleneck problems are unlikely to occur). For usual
+scenes and the majority of applications like sequences under different
+conditions, lots of rtrace runs etc etc, distributing the job with
+scripts or manually on some machines is easier and more efficient.
+
+A different thing is of course the idea of using PVM to couple OS X or
+Windows and Linux machines, which might be interesting for bureaus who
+already have lots of hardware standing around. And another different
+thing is thinking about the future, what about parallel processing for
+the photon-map ? I know that some have objections against using external
+libraries, but at the same time its inefficient to reinvent the wheel
+again and again, so why not use the features PVM has to offer?
+
+-Carsten
+
+From radiance-general@radiance-online.org  Sat Jan 18 11:44:43 2003
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Sat, 18 Jan 2003 06:44:43 -0500 (EST)
+Subject: [Radiance-general] Re: multiprocessor systems, Radiance, and you
+In-Reply-To: <3E293BBE.B65B6737@t-online.de>
+Message-ID: <Pine.BSF.4.44.0301180640540.90303-100000@emancholl.pair.com>
+
+Carsten Bauer wrote:
+
+> there's one master distributing the blocks, the workers
+> which do the tracing, a collector receiving finished scanlines (and in
+> the end  puzzles everything together for the big picture) and of course
+> the ambient slave, who receives amb. values and broadcasts them to all
+> the other workers. This ambient slave alone has access to the file for
+> storing them. Only at the beginning of a new run the workers can access
+> an already existing ambfile for reading in values.
+
+
+In a thread on the dev list from Wed, 12 Jun 2002
+http://www.radiance-online.org/pipermail/radiance-dev/2002-June/000001.html
+I said the following, which was received with quite a bit
+of scepticism:
+
+   Since Windows doesn't support NFS file locking
+  (and neither did cygwin, last time I looked), we'll need to find
+  a better solution for concurrent access to ambient files. I can
+  think of two portable ways to do this: Either we invent a file
+  based locking mechanism, or we establish a seperate server
+  process that accepts network store and retreival requests by the
+  actual simulation processes. The latter would be more technicall
+  involved, but probably a lot more robust. Any thoughts?
+
+And now, half a year later, you tell us that you already have such
+a server implemented? Only that you call it "slave"... ;)
+Does your "slave" require PVM? If yes, then that would probably make
+it platform independent, otherwise you'd have to tell us some more
+details. Personally, I think that this alone would be worth adding
+to the ANSified Radiance core, with the management stuff up for
+discussion.
+
+But maybe we can now really move the details to the dev list. I'm
+cross-posting this, so there's no need to reply on the general list.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-general@radiance-online.org  Mon Jan 20 16:01:42 2003
+From: radiance-general@radiance-online.org (Martin Klingler)
+Date: Sun, 20 Jan 2003 16:01:42 GMT
+Subject: [Radiance-general] Max2Rad Exporter
+References: <HLELIKHMLEGIFBBHDGNEKELECAAA.innsbruck@lichtplaner.com>
+Message-ID: <2D4D823A-1F76-45BE-AC61B215C9F714E8@Netway>
+
+This is a multi-part message in MIME format.
+
+
+
+-----=_NextPart_000_37353616952
+MIME-Version: 1.0
+Content-Type: text/plain; Charset="iso-8859-1"
+Content-Transfer-Encoding: base64
+Message-ID: <2D4D823A-1F76-45BE-AC61B215C9F714E8@Netway>
+
+SGkgdG8gdGhlIGxpc3QsDQoNCkkgYW0gam9pbmluZyBhIGdyb3VwIG9mIHBlb3BsZSwgd2hvIHdv
+dWxkIGxpa2UgdG8gYW5ub3VuY2UgdGhlIGZvbGxvd2luZyB0byB0aGUgbWVtYmVycyBvZiB0aGlz
+IGxpc3QuDQpNYXliZSB0aGlzIGlzIG9mIHNvbWUgaW50ZXJlc3QgdG8gc29tZSBvZiB5b3UuDQoN
+CldlIGFyZSBhIGdyb3VwIG9mIGxpZ2h0IGxpZ2h0IHBsYW5uZXJzIGFuZCBwaHlzaWNpc3RzLCB3
+aG8gaGF2ZSB3YXRjaGVkIHRoZSBkZXZlbG9wbWVudCBvZiB2aXN1YWxpemF0aW9uIHByb2dyYW1z
+IGZvciBtYW55IHllYXJzLg0KDQpGb3IgdGhpcyByZWFzb24gd2UgZGVjaWRlZCB0byBkZXZlbG9w
+IHBlcnNvbmFsbHkgYSBSZW5kZXJlciBhcyBQbHVnaW4gZnJvbSAzRCBzdHVkaW8gTWF4IGJlaW5n
+IGJhc2VkIG9uIFJhZGlhbmNlLiBBbiBFeHBvcnRlciBmb3IgTWF4MlJhZCBpcyBhcyBhIEJFVEEt
+VmVyc2lvbiBmcmVlIG9mIGNoYXJnZSBvbiBvdXIgaG9tZXBhZ2UgdW5kZXIgd3d3LmxpY2h0cGxh
+bmVyLmNvbSBhdmFpbGFibGUuDQoNCldlIHJlcXVlc3QgZmVlZGJhY2tzIGluIG91ciBmb3J1bSAi
+TUFYMlJhZC1FeHBvcnRlciIuDQoNCk1hbnkgdGhhbmtzIGFuZCBiZXN0IHJlZ2FyZHMNCk1hcnRp
+biBLbGluZ2xlcg0KLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLQ0KTGljaHR0ZWNobmlrIE1hcnRpbiBLbGluZ2xlcg0KU3ByYWlk
+dCA3DQo1MjcxIE1vb3NiYWNoDQpBVVNUUklBDQpUZWwgKys0My03NzI0LTQ0MzgzMw0KRmF4ICsr
+NDMtNzcyNC00NDM4MzgNCmVtYWlsIG1hcnRpbkBsaWNodHRlY2huaWsuY28uYXQNCg==
+
+-----=_NextPart_000_37353616952--
+
+
+
+From radiance-general@radiance-online.org  Wed Jan 22 21:54:27 2003
+From: radiance-general@radiance-online.org (Marcus Jacobs)
+Date: Wed, 22 Jan 2003 21:54:27 +0000
+Subject: [Radiance-general] CAL Programming
+Message-ID: <BAY2-F13RGryWtIIZS2000301a7@hotmail.com>
+
+Hi All
+
+I was wondering if there are any good references for learning how to program 
+CAL files in Radiance. I have the book "Rendering with Radiance" but it 
+seems to be void of any in-depth information concerning writing procedurals 
+with the CAL files. I have tried to go through the files to see how they are 
+written but unfortunately, I can't understand how many of the equations were 
+derived. The reason why I would like to know is so that I can write my own 
+procedurals and so that I can better optimize the parameters for the 
+standard cal files.
+
+Thanks
+
+Marcus
+
+
+
+
+
+_________________________________________________________________
+Protect your PC - get McAfee.com VirusScan Online  
+http://clinic.mcafee.com/clinic/ibuy/campaign.asp?cid=3963
+
+
+From radiance-general@radiance-online.org  Thu Jan 23 17:11:15 2003
+From: radiance-general@radiance-online.org (Jack de Valpine)
+Date: Thu, 23 Jan 2003 12:11:15 -0500
+Subject: [Radiance-general] multiprocessor systems, Radiance, and you
+References: <3E26E825.4080607@rumblestrip.org>
+Message-ID: <3E302233.7040703@visarc.com>
+
+--------------010303060008050602080707
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Transfer-Encoding: 7bit
+
+Hi All:
+
+I know that I am about a week behind on this topic. I have been out of 
+the office and disconnected for this time taking care of my son while my 
+wife was attending a trade show in LA (at least it was warm there 
+compared to the temperatures we currently have in Boston). Anyway as 
+Carsten pointed out on the topic, everyone will want to way in on the 
+topic, so here is my two cents worth. Based on Rob's original post it 
+seems that there are a couple of issues:
+
+    * hardware
+    * process management
+
+For running parallel rpiece type jobs without complications of network 
+related issues (i.e. NFS and others) smp boxes are a must have depending 
+on the rendering task complexity. For exterior daylight only scenes it 
+definitely possible to get very, very fast rendering times (15 minutes 
+is a good example at 1200 to 1600 pixel final images size with 2 to 3 
+times oversampling with careful management of rendering parameters) with 
+the only qualifier being image size. For complex lighting or large image 
+sizes, well two is better than one cpu. We have rendered images to 6000 
+to 9000 pixel final image sizes again with 2 to 3 times oversampling, 
+i.e. 18,000 pixel images (we may have done them larger but I cannot say 
+for sure offhand). Currently I think that the AMD MP systems give the 
+best price to performance. However, if you go for an AMD MP system for 
+production use, then you should only get the MP cpus not the XPs. The 
+only other major consideration is how complex your scenes are and 
+therefore how much RAM will be required. Just as a side note we have 
+been using Radiance on dual processor boxes since 1996, starting out on 
+dual processor Pentium Pros and now currently running dual processor 
+Athlon MP based systems. And with the latest Linux distributions (RedHat 
+is the only one I am currently have hands on experience with) 
+installation should be very, very easy for a typical system.
+
+Now, since Rob is running lots of rtrace jobs, the problem that he is 
+facing is more likely management and batch processing of multiple 
+"rendering" jobs. While it is not clear exactly what the task is, my 
+guess would be that there are lots of rtrace jobs representing some kind 
+of timeslice analysis that need to be started and then on completion the 
+resulting data must be integrated or aggregated for evaluation and 
+presentation. This really is a scripting task at its heart, where the 
+repetitive tasks need to be understood and scripted accordingly. It 
+should not really matter what scripting/programming tool (bash, perl, 
+python, C), whatever you are most comfortable with. Rob, if you can, 
+maybe you can give us a better understanding of the "rendering" 
+production task you are facing, people maybe able to give you feedback 
+on other scripting ideas than what you have already put together.
+
+-Jack
+
+Rob Guglielmetti wrote:
+
+> Howdy folks-
+>
+> After spending the last couple of months getting up to speed with 
+> Radiance (the workshop in Freibourg was really, really, good at 
+> showing me how much I had to learn, how behind the curve I was [am]), 
+> and performing hunderds of rtrace jobs, and compiling a cohesive 
+> analytical report on the data, our client has responded:
+>
+> They want more.
+>
+> You all know how it is, once you show someone what is possible with 
+> Radiance, they start thinking "what would it look like if we did this, 
+> or this, or this, or this, etc, etc....".  So we intend to show them 
+> some of these options.
+>
+> While I'm thrilled to be doing more with Radiance, I'm now Desperately 
+> Seeking Cycles, CPU horsepower that is.  After Jack's fifteen minute 
+> rendering claim at the workshop -- Yes Jack, that's what you said, we 
+> all heard you ;-) -- for a single dual Athlon box, I'm thinking this 
+> is what I want to do.  I don't need NFS lock headaches right now, I 
+> have enough problems.  So I'm looking to build one very fast box, and 
+> I'm hoping to make it a dualie, and skip the LAN based render farm for 
+> now.
+>
+> (several paragraphs later he gets to the questions...)  My questions 
+> are for those of you on the list with MP linux experience.  I guess 
+> I'm hazy on the way the two processors are utilized.  Do you tend to 
+> run one job on one CPU and a second one on the other, or do you use 
+> rpiece to work one job across both, as if the the CPUs are two 
+> different hosts?  Or is there some OS and/or Radiance compile tweak 
+> that you do to simply make both CPUs act as one, obviating the need 
+> for rpiece? Seems like you still need rpiece so the ambient cache is 
+> managed properly. As far as CPU, do I *have* to use the Athlon MP, or 
+> can I run two XPs? du Anyone have hardware recommendations?  I like 
+> Abit motherboards, but they don't seem to offer a dual socket 
+> variant.  What about OS?  I had great success with RHL 8.0 on an old 
+> Dell -- it installed and compiled Radiance without a single hiccup.  
+> Anyone using it on a dual box?  Any compile changes to either the OS 
+> or Radiance?
+>
+> Any info, urls or advice would be greatly appreciated.
+>
+> ----
+>
+>      Rob Guglielmetti
+>
+> e. rpg@rumblestrip.org
+> w. www.rumblestrip.org
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+
+
+--------------010303060008050602080707
+Content-Type: text/html; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+
+<html>
+<head>
+</head>
+<body>
+Hi All:<br>
+<br>
+I know that I am about a week behind on this topic. I have been out of the
+office and disconnected for this time taking care of my son while my wife
+was attending a trade show in LA (at least it was warm there compared to
+the temperatures we currently have in Boston). Anyway as Carsten pointed
+out on the topic, everyone will want to way in on the topic, so here is my
+two cents worth. Based on Rob's original post it seems that there are a couple
+of issues:<br>
+<ul>
+  <li>hardware</li>
+  <li>process management</li>
+</ul>
+For running parallel rpiece type jobs without complications of network related
+issues (i.e. NFS and others) smp boxes are a must have depending on the rendering
+task complexity. For exterior daylight only scenes it definitely possible
+to get very, very fast rendering times (15 minutes is a good example at 1200
+to 1600 pixel final images size with 2 to 3 times oversampling with careful
+management of rendering parameters) with the only qualifier being image size.
+For complex lighting or large image sizes, well two is better than one cpu.
+We have rendered images to 6000 to 9000 pixel final image sizes again with
+2 to 3 times oversampling, i.e. 18,000 pixel images (we may have done them
+larger but I cannot say for sure offhand). Currently I think that the AMD
+MP systems give the best price to performance. However, if you go for an
+AMD MP system for production use, then you should only get the MP cpus not
+the XPs. The only other major consideration is how complex your scenes are
+and therefore how much RAM will be required. Just as a side note we have
+been using Radiance on dual processor boxes since 1996, starting out on dual
+processor Pentium Pros and now currently running dual processor Athlon MP
+based systems. And with the latest Linux distributions (RedHat is the only
+one I am currently have hands on experience with) installation should be
+very, very easy for a typical system.<br>
+<br>
+Now, since Rob is running lots of rtrace jobs, the problem that he is facing
+is more likely management and batch processing of multiple "rendering" jobs.
+While it is not clear exactly what the task is, my guess would be that there
+are lots of rtrace jobs representing some kind of timeslice analysis that
+need to be started and then on completion the resulting data must be integrated
+or aggregated for evaluation and presentation. This really is a scripting
+task at its heart, where the repetitive tasks need to be understood and scripted
+accordingly. It should not really matter what scripting/programming tool
+(bash, perl, python, C), whatever you are most comfortable with. Rob, if
+you can, maybe you can give us a better understanding of the "rendering"
+production task you are facing, people maybe able to give you feedback on
+other scripting ideas than what you have already put together.<br>
+<br>
+-Jack<br>
+<br>
+Rob Guglielmetti wrote:<br>
+<blockquote type="cite" cite="mid:3E26E825.4080607@rumblestrip.org">Howdy
+folks- <br>
+  <br>
+After spending the last couple of months getting up to speed with  Radiance
+(the workshop in Freibourg was really, really, good at showing  me how much
+I had to learn, how behind the curve I was [am]), and  performing hunderds
+of rtrace jobs, and compiling a cohesive analytical  report on the data,
+our client has responded: <br>
+  <br>
+They want more. <br>
+  <br>
+You all know how it is, once you show someone what is possible with  Radiance,
+they start thinking "what would it look like if we did this,  or this, or
+this, or this, etc, etc....".&nbsp; So we intend to show them  some of these options. 
+  <br>
+  <br>
+While I'm thrilled to be doing more with Radiance, I'm now Desperately  Seeking
+Cycles, CPU horsepower that is.&nbsp; After Jack's fifteen minute  rendering claim
+at the workshop -- Yes Jack, that's what you said, we  all heard you ;-)
+-- for a single dual Athlon box, I'm thinking this is  what I want to do.&nbsp;
+I don't need NFS lock headaches right now, I have  enough problems.&nbsp; So I'm
+looking to build one very fast box, and I'm  hoping to make it a dualie,
+and skip the LAN based render farm for now. <br>
+  <br>
+(several paragraphs later he gets to the questions...)&nbsp; My questions are
+ for those of you on the list with MP linux experience.&nbsp; I guess I'm hazy
+ on the way the two processors are utilized.&nbsp; Do you tend to run one job
+ on one CPU and a second one on the other, or do you use rpiece to work  one
+job across both, as if the the CPUs are two different hosts?&nbsp; Or is  there
+some OS and/or Radiance compile tweak that you do to simply make  both CPUs
+act as one, obviating the need for rpiece? Seems like you  still need rpiece
+so the ambient cache is managed properly. As far as  CPU, do I *have* to
+use the Athlon MP, or can I run two XPs? du Anyone  have hardware recommendations?&nbsp;
+I like Abit motherboards, but they don't  seem to offer a dual socket variant.&nbsp;
+What about OS?&nbsp; I had great  success with RHL 8.0 on an old Dell -- it installed
+and compiled  Radiance without a single hiccup.&nbsp; Anyone using it on a dual
+box?&nbsp; Any  compile changes to either the OS or Radiance? <br>
+  <br>
+Any info, urls or advice would be greatly appreciated. <br>
+  <br>
+---- <br>
+  <br>
+&nbsp;&nbsp;&nbsp;&nbsp; Rob Guglielmetti <br>
+  <br>
+e. <a class="moz-txt-link-abbreviated" href="mailto:rpg@rumblestrip.org">rpg@rumblestrip.org</a> <br>
+w. <a class="moz-txt-link-abbreviated" href="http://www.rumblestrip.org">www.rumblestrip.org</a> <br>
+  <br>
+_______________________________________________ <br>
+Radiance-general mailing list <br>
+<a class="moz-txt-link-abbreviated" href="mailto:Radiance-general@radiance-online.org">Radiance-general@radiance-online.org</a> <br>
+<a class="moz-txt-link-freetext" href="http://www.radiance-online.org/mailman/listinfo/radiance-general">http://www.radiance-online.org/mailman/listinfo/radiance-general</a> <br>
+  <br>
+  <br>
+  </blockquote>
+  <br>
+  <pre class="moz-signature" cols="$mailwrapcol">-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	<a class="moz-txt-link-freetext" href="http://www.visarc.com">http://www.visarc.com</a>
+#
+#	channeling technology for superior design and construction</pre>
+  <br>
+  </body>
+  </html>
+
+--------------010303060008050602080707--
+
+
+From radiance-general@radiance-online.org  Thu Jan 23 23:01:15 2003
+From: radiance-general@radiance-online.org (Rob Guglielmetti)
+Date: Thu, 23 Jan 2003 18:01:15 -0500
+Subject: [Radiance-general] multiprocessor systems, Radiance, and you
+Message-ID: <3E30743B.5010402@rumblestrip.org>
+
+Jack de Valpine wrote:
+ > Hi All:
+ >
+ > I know that I am about a week behind on this topic
+<snip>
+
+Hi Jack.  Thanks for weighing in.  (and thanks to the others who had
+input late last week.)  And yeah Jack, I know all about the weather
+you're having, because we're having some of your Boston-style cold down
+here in NYC today.  Brrrrrrr!
+
+ > For running parallel rpiece type jobs without complications of network
+ > related issues (i.e. NFS and others) smp boxes are a must have depending
+ > on the rendering task complexity...
+
+ > Now, since Rob is running lots of rtrace jobs, the problem that he is
+ > facing is more likely management and batch processing of multiple
+ > "rendering" jobs.
+
+Yes.  As usual, my questions seem rather stupid immediately *after* I
+ask them.  Absolutely right, mine is a process management problem and
+could be solved just as easily with intelligent scripting over two
+machines, there's no inherent gain to a dual box except that for one
+software installation I essentially have two cpus available for
+rtrace(s), and of course it's a cheaper way to have two cpus.  I should
+note at this time that the RedHat installer is busily copying files to
+the new computer as I type this.  I ended up going with a single,
+primarily for financial reasons.  But I do appreciate all the info and
+advice everyone gave me on this list.  Further to that:
+
+While it is not clear exactly what the task is, my
+ > guess would be that there are lots of rtrace jobs representing some kind
+ > of timeslice analysis that need to be started and then on completion the
+ > resulting data must be integrated or aggregated for evaluation and
+ > presentation. This really is a scripting task at its heart, where the
+ > repetitive tasks need to be understood and scripted accordingly. It
+ > should not really matter what scripting/programming tool (bash, perl,
+ > python, C), whatever you are most comfortable with. Rob, if you can,
+ > maybe you can give us a better understanding of the "rendering"
+ > production task you are facing, people maybe able to give you feedback
+ > on other scripting ideas than what you have already put together.
+
+Yes, it's rather like the directions on the shampoo bottle:  lather,
+rinse, repeat.  Except in my case, it's rtrace (optionally performing
+some low-resolution rpicts too), increment hour, repeat.
+
+Right now I'm using a modified version of the time-of-day image sequence
+shell script that John Mardaljavec wrote and published in "rendering
+with Radiance".  Mine uses rad instead of calling the rpict directly (at
+least when I do renderings).  It's still quite basic, but I hope to work
+on it some more soon.  Basically I set up a rif file the way I want it,
+and have a file of calculation points for rtrace.  Then I set the
+variables in the shell script for the particular run (June 21/clear sky
+or Dec 21/overcast sky, etc), and it's off to the races.  If I ask for
+renderings, the script calls rad and renders an image as well, putting
+titles on it based on the variables, and "pcond-ing" it too.  The data
+from rtrace gets "lam-ed" to the previous hour's data.  Then the process
+loops around again:  gensky creates a new sky for the next time
+increment, sed modifies the rif file with new filename prefixes (so we
+can keep track of everything later), and we go again.  I wanna add stuff
+like report building, graph generation with gnuplot or somesuch, and a
+host of other things, but my application for the 36 hour day is
+apparently still held up in processing. =8-)
+
+It's just the sheer number of simulations, and high number of ambient
+bounces that had me looking toward a dual cpu machine.  I see now that I
+*could* still put a dual box to good use (through scripting), but in the
+end economics decided the road I was to travel.  Like I said before, if
+I now buy a second single-cpu box, I essentially have the same
+functionality (to me) as a dual box, and I gain redundancy, for just a
+few more bucks.
+
+Maybe someday I'll need the dual for rpiece, but right now my models are
+pretty basic and I'm doing more with numbers than pixels, so...
+
+P.S.
+RHL8 install complete, installer didn't find my NIC.  Sigh.  So close...
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+
+From radiance-general@radiance-online.org  Fri Jan 24 21:55:42 2003
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Fri, 24 Jan 2003 13:55:42 -0800
+Subject: [Radiance-general] Re: multiprocessor systems, Radiance, and you
+In-Reply-To: <20030124110002.5926.93062.Mailman@darkside-animation.com>
+Message-ID: <9565D0A4-2FE6-11D7-B7EA-00306540F848@lmi.net>
+
+I'm a little confused as to which list to reply to on this subject, as 
+things have been sent to both lists.  So, I'll send my reply to both 
+places...
+
+I have been working on an ANSI-C version of Radiance, which is mostly 
+ready at this point.  The library files in src/common and the rendering 
+code in src/rt now uses prototypes for all its functions, and I have 
+collected the rendering code into a new library that may be linked to 
+other applications.  I have also added an interface to this library 
+that provides sequential and parallel (multiprocessor -- not 
+distributed) ray-tracing.  Using this interface, I have developed a new 
+animation program, called "ranimove", which in a single process 
+performs object and camera animation with image-based rendering 
+(similar to pinterp but without interpolating frames) and optimized, 
+progressive rendering of animations with task focus.  All rendering, 
+filtering, etc. is handled in a single process.  Only xform and oconv 
+are executed to update the scene octree at each frame.
+
+That's mostly an aside, but I wanted to mention it as background for 
+what I'm about to say on ambient value sharing.  The code in rholo 
+works similarly to the code in rpiece and ranimate, which use separate 
+invocations of rtrace or rpict to do their ray calculations.  The code 
+in the new ranimove program is different in the sense that the 
+rendering happens in the same process (or identical children of the 
+same process), but ambient value sharing is the same.
+
+The main issue I have with using Samba or MPI or PVM or whatever you 
+want to use is the difficulty of requiring or including a third-party 
+library with Radiance.  If you require that the user have this software 
+in order to install Radiance on their platform, that can be an 
+insurmountable burden for some people, and an inconvenience at the very 
+least for others.  If you include the library with Radiance, then you 
+invite at least three problems:
+
+	1) The user may already have a version of the same library.
+	2) The library may be updated asynchronously by its author, causing 
+incompatibilities.
+	3) The library may not be portable to all the systems Radiance is.
+
+For this reason, I have only made rare exceptions to the "no library 
+dependencies" rule in Radiance.  One is for TIFF import/export, where I 
+have the very well-established and stable TIFF library by Sam Leffler 
+to rely on.  Another is X11, which is almost ubiquitous on Unix.  The 
+third is for OpenGL, which is supported on most platforms, and may be 
+excluded from compilation without too much difficulty.  I do not 
+include an OpenGL library with Radiance.
+
+If we want to share ambient values without using the NFS lock manager, 
+we either have to employ some third-party library (Samba, MPI, PVM, 
+EIEIO, whatever), or we need to find a way to do it that is universally 
+supported on Unix.
+
+Unfortunately, the only universally supported interprocess 
+communication call for Unix (as far as I know) is the socketpair(2) 
+call.  This is just about as nasty as any system call I've ever 
+encountered, which is why I've avoided it.  It requires all sorts of 
+knowledge about the network to link up with another process somewhere, 
+and I've never been able to fathom the intracacies to making it work.  
+(If anyone has some simple example code, please share it with me.)  
+Also, there is no hope of porting this to Windows.
+
+This brings us back to my original question when this thread was 
+started sometime last Spring (I think) -- is there a stable, portable 
+library for sharing process data across the network.  I thought the 
+consensus was that Samba was the best.  Can it be distributed and 
+compiled, or is it readily available for all platforms?  How much of a 
+burden is it to users to install this along with Radiance?  Should we 
+offer it only as an option for people who want to do parallel rendering 
+on platforms with unreliable NFS lock managers, or should we make it a 
+requirement for everyone on every platform?
+
+-Greg
+
+
+From radiance-general@radiance-online.org  Mon Jan 27 08:41:34 2003
+From: radiance-general@radiance-online.org (Peter Apian-Bennewitz)
+Date: Mon, 27 Jan 2003 09:41:34 +0100
+Subject: [Radiance-general] photon-map test with geometrical optics / radiometrics
+Message-ID: <3E34F0BD.85ADFF4D@pab-opto.de>
+
+--------------42B32E258C60D26CE3E79116
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: base64
+
+Hi all,
+
+A little demo and test with the new photon-map (Roland's photon-map
+patch) is available at
+    http://www.radiance-online.org/examples/pm-pab/
+
+-Peter
+
+--
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+--------------42B32E258C60D26CE3E79116
+Content-Type: text/html; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+Hi all,
+<p>A little demo and test with the new photon-map (Roland's photon-map
+patch) is available at
+<br>&nbsp;&nbsp;&nbsp; <A HREF="http://www.radiance-online.org/examples/pm-pab/">http://www.radiance-online.org/examples/pm-pab/</A>
+<p>-Peter
+<pre>--&nbsp;
+&nbsp;pab-opto, Freiburg, Germany, www.pab-opto.de</pre>
+&nbsp;</html>
+
+--------------42B32E258C60D26CE3E79116--
+
+
+From radiance-general@radiance-online.org  Wed Jan 29 16:22:35 2003
+From: radiance-general@radiance-online.org (Thomas Seebohm)
+Date: Wed, 29 Jan 2003 11:22:35 -0500
+Subject: [Radiance-general] multi-processing on SGI Onyx
+References: <20030125110002.8225.57650.Mailman@darkside-animation.com>
+Message-ID: <3E37FFCA.483D3AC@fes.uwaterloo.ca>
+
+Here is an error message that appears when I am running Radiance on
+processors shared with other unix processes on our 16 processor SGI Onyx:
+
+"rpict inconsistency
+address not found in avlemi
+rpiece error reading from rpict"
+
+When this message appears one of the squares in the images is not rendered. If
+there are more such messages, more than one square is not rendered.
+Presumably, the processor responsible was not able to contribute its  share of
+the rendering because of a conflict with another process sharing the same
+processor. To avoid this problem I usually run the "top" command to see how
+many processors are currently running unix processes and then I choose a
+number of processors for my rpiece script that will be less than the number of
+unused processors. I wonder if someone has a more detailed explanation of the
+error and if there are ways to avoid the error when the processors share
+processes other than Radiance.
+
+Thomas
+
+
+From radiance-general@radiance-online.org  Wed Jan 29 17:19:15 2003
+From: radiance-general@radiance-online.org (Roland Schregle)
+Date: Wed, 29 Jan 2003 18:19:15 +0100
+Subject: [Radiance-general] multi-processing on SGI Onyx
+References: <20030125110002.8225.57650.Mailman@darkside-animation.com> <3E37FFCA.483D3AC@fes.uwaterloo.ca>
+Message-ID: <3E380D13.B14AE5DB@gmx.net>
+
+Thomas Seebohm wrote:
+> 
+> Here is an error message that appears when I am running Radiance on
+> processors shared with other unix processes on our 16 processor SGI Onyx:
+
+WOW!!! A predator rack!!! Somebody around here still uses *REAL*
+hardware! To hell with dual pentium boards! :^)
+
+> "rpict inconsistency
+> address not found in avlemi
+> rpiece error reading from rpict"
+
+Oh boy, it's the avlmemi curse once again... this is getting old. :^)
+
+In ray/src/rt/ambient.c you'll find and '#if 1' preceding the avlmemi()
+definition. Change that to an '#if 0' and she should be right, mate.
+
+I'll leave it to Greg to eggs-plain what avlmemi does wrong. Possibly a
+portability bug, but not peculiar to IRIX. Also pops up under Linux.
+Nuthin' wrong with your Onyx, that's for sure.
+
+Onyces rule!
+
+
+-- 
+END OF LINE. (MCP)
+
+From radiance-general@radiance-online.org  Wed Jan 29 17:54:54 2003
+From: radiance-general@radiance-online.org (Rob Guglielmetti)
+Date: Wed, 29 Jan 2003 12:54:54 -0500
+Subject: [Radiance-general] multi-processing on SGI Onyx
+References: <20030125110002.8225.57650.Mailman@darkside-animation.com> <3E37FFCA.483D3AC@fes.uwaterloo.ca> <3E380D13.B14AE5DB@gmx.net>
+Message-ID: <3E38156E.2010604@rumblestrip.org>
+
+Roland Schregle wrote:
+
+> WOW!!! A predator rack!!! Somebody around here still uses *REAL*
+> hardware! To hell with dual pentium boards! :^)
+
+Yes to hell with them.  Real (financially challenged) men run their 
+simulations on Athlon systems.  =8-)
+
+> I'll leave it to Greg to eggs-plain what avlmemi does wrong. Possibly a
+> portability bug, but not peculiar to IRIX. Also pops up under Linux.
+> Nuthin' wrong with your Onyx, that's for sure.
+
+Sometimes it pays to be an email pack-rat.  Here's a snippet from an old 
+email exchange between Greg & I:
+
+" ... I got very annoyed about the avlmemi bug after the workshop, 
+thinking about these things that have been dogging me for so many years, 
+so I did a little investigation on the OS X version, where to my horror 
+the same problem had come up, again.  Fortunately, I had an easily 
+reproduced error, so I was able to do a little experimentation.  All 
+these years, I thought it was a bug in the qsort(3) library routine, but 
+on further testing, I couldn't get it to fail, so I started to look 
+elsewhere.  As it turned out, it wasn't the qsort() function itself, 
+rather it was the comparison function I was giving it in ambient.c.  I 
+was comparing two pointers using pointer arithmetic, using an expression 
+that works with most compilers, but apparently not GNU-C!  In the end, 
+it was a single word that needed to be changed to rid me of this bug 
+that's been hanging on for at least 6 years, since the first Linux 
+systems came into widespread use."
+
+There you go.  Maybe I saved Greg some typing.
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+
+From radiance-general@radiance-online.org  Wed Jan 29 18:21:49 2003
+From: radiance-general@radiance-online.org (Roland Schregle)
+Date: Wed, 29 Jan 2003 19:21:49 +0100
+Subject: [Radiance-general] multi-processing on SGI Onyx
+References: <20030125110002.8225.57650.Mailman@darkside-animation.com> <3E37FFCA.483D3AC@fes.uwaterloo.ca> <3E380D13.B14AE5DB@gmx.net> <3E38156E.2010604@rumblestrip.org>
+Message-ID: <3E381BBD.14D6FE31@gmx.net>
+
+Rob Guglielmetti wrote:
+> 
+> Roland Schregle wrote:
+> 
+> > WOW!!! A predator rack!!! Somebody around here still uses *REAL*
+> > hardware! To hell with dual pentium boards! :^)
+> 
+> Yes to hell with them.  Real (financially challenged) men run their
+> simulations on Athlon systems.  =8-)
+
+... and code in binary (www.kaniamania.com/html/1190.html)? :^)
+
+> I was comparing two pointers using pointer arithmetic, using an expression
+> that works with most compilers, but apparently not GNU-C!
+
+Way to go, Greg. Never did trust gcc. Also have some apalling memories
+of its early C++ handling. I prefer the native compilers, if they're
+available, because it also tests your code for portability. I assume
+Tom's Onyx runs IRIX 6.5 which requires a license for the compiler, in
+which case gcc becomes an attractive option after all.
+
+> There you go.  Maybe I saved Greg some typing.
+
+Yep. Also spared Greg's keyboard some unnecessary depreciation. :^)
+
+
+-- 
+END OF LINE. (MCP)
+
+From radiance-general@radiance-online.org  Thu Jan 30 15:16:41 2003
+From: radiance-general@radiance-online.org (Greg Ward)
+Date: Thu, 30 Jan 2003 07:16:41 -0800
+Subject: [Radiance-general] Re:  multi-processing on SGI Onyx
+In-Reply-To: <20030130110002.19403.9053.Mailman@darkside-animation.com>
+Message-ID: <D5999EF9-3465-11D7-8982-00306540F848@lmi.net>
+
+The magic word to change is in src/rt/ambient.c, in the function 
+aposcmp(avp1, avp2), which should be corrected to read:
+
+/* GW NOTE 2002/10/3:
+  * I used to compare AMBVAL pointers, but found that this was the
+  * cause of a serious consistency error with gcc, since the optimizer
+  * uses some dangerous trick in pointer subtraction that
+  * assumes pointers differ by exact struct size increments.
+  */
+static int
+aposcmp(avp1, avp2)                     /* compare ambient value 
+positions */
+char    **avp1, **avp2;
+{
+         return(*avp1 - *avp2);
+}
+
+----------
+On another note, I have been following with interest the discussion on 
+parallel rendering solutions and alternatives to a working NFS lock 
+manager.  I haven't responded because I haven't had anything 
+intelligent to add...  It's sounding like the consensus is headed the 
+direction of a socket-based client/server solution.  A dreadful pain to 
+implement from all I've seen, but perhaps it's best in the long run.
+
+-Greg
+
+
+From radiance-general@radiance-online.org  Thu Jan 30 17:08:54 2003
+From: radiance-general@radiance-online.org (Georg Mischler)
+Date: Thu, 30 Jan 2003 12:08:54 -0500 (EST)
+Subject: [Radiance-general] Re:  multi-processing on SGI Onyx
+In-Reply-To: <D5999EF9-3465-11D7-8982-00306540F848@lmi.net>
+Message-ID: <Pine.BSF.4.44.0301301200070.10440-100000@emancholl.pair.com>
+
+Greg Ward wrote:
+
+
+> char    **avp1, **avp2;
+
+I hope you're using pointers to void in the ANSI version... ;)
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+

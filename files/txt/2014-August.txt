@@ -1,0 +1,3349 @@
+From rob.guglielmetti at gmail.com  Fri Aug  1 13:52:18 2014
+From: rob.guglielmetti at gmail.com (Rob Guglielmetti)
+Date: Fri, 1 Aug 2014 22:52:18 +0200
+Subject: [Radiance-general] Rendering a single image with multiprocessor
+	in Windows
+In-Reply-To: <1B436814-C46E-487C-94D1-359DCEAAADCD@lmi.net>
+References: <CAAd_PgQMRg9T33kQkOv6c3osK4ivqqHFWsdNVfTzRbeiEEpAQA@mail.gmail.com>
+	<CAAd_PgSJ0fFKboA+NuCtgoV7hFY6K+2DrEQEXY_VSUTYA5hmaA@mail.gmail.com>
+	<1B436814-C46E-487C-94D1-359DCEAAADCD@lmi.net>
+Message-ID: <FF77C91D-3A02-4F9C-8B06-2CD4EC187FCE@gmail.com>
+
+Hey Mo, I can share my results with you on this when I get back from vacation; I made a spreadsheet to calculate the views based on that code but as I recall I got some funky results. 
+
+Also thanks for the heads up on rpiece in the windows packages, I'll make sure that's not included in the future! Oops...
+
+> On Jul 31, 2014, at 11:59 PM, Greg Ward <gregoryjward at gmail.com> wrote:
+> 
+> It's possible, but not at all straightforward.  You basically have to use the attached code (taken from rpiece) to adjust the -vh and -vv options to rpict, then use the -vs and -vl options to determine which part of the picture you want to render.
+> 
+> Best,
+> -Greg
+> 
+> 	switch (ourview.type) {
+> 	case VT_PER:
+> 		pview.horiz = (2.*180./PI)*atan(
+> 				tan((PI/180./2.)*ourview.horiz)/hmult );
+> 		pview.vert = (2.*180./PI)*atan(
+> 				tan((PI/180./2.)*ourview.vert)/vmult );
+> 		break;
+> 	case VT_PAR:
+> 	case VT_ANG:
+> 		pview.horiz = ourview.horiz / hmult;
+> 		pview.vert = ourview.vert / vmult;
+> 		break;
+> 	case VT_CYL:
+> 		pview.horiz = ourview.horiz / hmult;
+> 		pview.vert = (2.*180./PI)*atan(
+> 				tan((PI/180./2.)*ourview.vert)/vmult );
+> 		break;
+> 	case VT_HEM:
+> 		pview.horiz = (2.*180./PI)*asin(
+> 				sin((PI/180./2.)*ourview.horiz)/hmult );
+> 		pview.vert = (2.*180./PI)*asin(
+> 				sin((PI/180./2.)*ourview.vert)/vmult );
+> 		break;
+> 	case VT_PLS:
+> 		pview.horiz = sin((PI/180./2.)*ourview.horiz) /
+> 				(1.0 + cos((PI/180./2.)*ourview.horiz)) / hmult;
+> 		pview.horiz *= pview.horiz;
+> 		pview.horiz = (2.*180./PI)*acos((1. - pview.horiz) /
+> 						(1. + pview.horiz));
+> 		pview.vert = sin((PI/180./2.)*ourview.vert) /
+> 				(1.0 + cos((PI/180./2.)*ourview.vert)) / vmult;
+> 		pview.vert *= pview.vert;
+> 		pview.vert = (2.*180./PI)*acos((1. - pview.vert) /
+> 						(1. + pview.vert));
+> 		break;
+> 	default:
+> 		fprintf(stderr, "%s: unknown view type '-vt%c'\n",
+> 				progname, ourview.type);
+> 		exit(cleanup(1));
+> 	}
+> 
+> 
+>> From: Mostapha Sadeghipour <sadeghipour at gmail.com>
+>> Subject: Re: [Radiance-general] Rendering a single image with multiprocessor in Windows
+>> Date: July 31, 2014 2:43:17 PM PDT
+>> 
+>> I just read that rpiece is not supposed to be part of the Windows package for some reason so I probably should change the question to is it possible to render a segment of a view based on -X -Y pixels?
+>> 
+>> I can take care of running them in parallel and putting them back together separately.
+>> 
+>> Thanks,
+>> Mostapha
+>> 
+>> 
+>>> On Thu, Jul 31, 2014 at 4:28 PM, Mostapha Sadeghipour <sadeghipour at gmail.com> wrote:
+>>> Hi all,
+>>> 
+>>> I wonder is anyone has successfully rendered a single image in parallel using rpict -PP and/or rpiece in Windows.
+>>> 
+>>> I have a hard time to understand both the process and the syntax.
+>>> 
+>>> Thanks,
+>>> Mostapha 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140801/accfd3e7/attachment.html>
+
+From mmartinez at integralgroup.com  Fri Aug  1 14:19:34 2014
+From: mmartinez at integralgroup.com (Mike Martinez)
+Date: Fri, 1 Aug 2014 14:19:34 -0700
+Subject: [Radiance-general] optics2rad
+Message-ID: <CAMrvT8cWiLvdiT0JN4OPmiYDQhSc6c0Q17kvXHeh8Fc2umBkHQ@mail.gmail.com>
+
+Hi folks,
+
+I'm having trouble with an optics2rad conversion. When I run the conversion
+script, it simply spits back the glass description instead of nice cleaned
+up BRTDfunc. It works fine with other glass assemblies, so I think it's
+specific to this description (copied below).
+
+If the front and back reflectance values are close, as in this example,
+does optics2rad simply say "don't worry about it, the RGB glass default is
+close enough"?
+
+Thanks for any insights - here's the export from Optics 6:
+
+#
+# FileName= GlzSys.usr
+# Product Name=
+# NFRC ID= 30000
+# Manufacturer Name= User
+# Glazing Type= Glazing system
+# Coated Side= Neither
+# Transmittance= 0.592
+# Front Reflectance= 0.160
+# Back Reflectance= 0.162
+# Thickness(mm)= 23.715
+# Appearance=
+#
+
+
+void  glass       CLEX_glass
+0
+0
+3     0.571     0.677     0.628
+
+void  BRTDfunc    CLEX_front
+10
+      0.134     0.168     0.174
+      0.524     0.621     0.576
+      0 0 0
+      .
+0
+9 0 0 0 0 0 0 0 0 0
+
+void  BRTDfunc    CLEX_back
+10
+      0.136     0.168     0.206
+      0.524     0.621     0.576
+      0 0 0
+      .
+0
+9 0 0 0 0 0 0 0 0 0
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140801/a4fa8a1c/attachment-0001.html>
+
+From mmartinez at integralgroup.com  Fri Aug  1 14:35:50 2014
+From: mmartinez at integralgroup.com (Mike Martinez)
+Date: Fri, 1 Aug 2014 14:35:50 -0700
+Subject: [Radiance-general] optics2rad
+In-Reply-To: <CAMrvT8cWiLvdiT0JN4OPmiYDQhSc6c0Q17kvXHeh8Fc2umBkHQ@mail.gmail.com>
+References: <CAMrvT8cWiLvdiT0JN4OPmiYDQhSc6c0Q17kvXHeh8Fc2umBkHQ@mail.gmail.com>
+Message-ID: <CAMrvT8fM2ZXZ21vLMBpq72X8id_nJiPMedkOc1eYkrh5AUumwQ@mail.gmail.com>
+
+Law of the universe - once you decide to email the list, you'll figure it
+out, and it will likely be a rookie mistake.
+
+The outside pane of glass was flipped in Optics, and the low-e coating was
+on surface 1. optics2rad didn't like that, and thankfully refused to make a
+bad material description.
+
+
+
+*Mike Martinez* | LEED AP
+Associate |  Daylighting Group Lead
+*Integral Group *| 427 13th Street | Oakland CA USA 94612
+T 510.663.2070 x207
+integralgroup.com <http://www.integralgroup.com/> |
+mmartinez*@integralgroup.com
+<mmartinez at integralgroup.com>*
+
+*Trust* | *Nurture* | *Inspire*
+
+
+On Fri, Aug 1, 2014 at 2:19 PM, Mike Martinez <mmartinez at integralgroup.com>
+wrote:
+
+> Hi folks,
+>
+> I'm having trouble with an optics2rad conversion. When I run the
+> conversion script, it simply spits back the glass description instead of
+> nice cleaned up BRTDfunc. It works fine with other glass assemblies, so I
+> think it's specific to this description (copied below).
+>
+> If the front and back reflectance values are close, as in this example,
+> does optics2rad simply say "don't worry about it, the RGB glass default is
+> close enough"?
+>
+> Thanks for any insights - here's the export from Optics 6:
+>
+> #
+> # FileName= GlzSys.usr
+> # Product Name=
+> # NFRC ID= 30000
+> # Manufacturer Name= User
+> # Glazing Type= Glazing system
+> # Coated Side= Neither
+> # Transmittance= 0.592
+> # Front Reflectance= 0.160
+> # Back Reflectance= 0.162
+> # Thickness(mm)= 23.715
+> # Appearance=
+> #
+>
+>
+> void  glass       CLEX_glass
+> 0
+> 0
+> 3     0.571     0.677     0.628
+>
+> void  BRTDfunc    CLEX_front
+> 10
+>       0.134     0.168     0.174
+>       0.524     0.621     0.576
+>       0 0 0
+>       .
+> 0
+> 9 0 0 0 0 0 0 0 0 0
+>
+> void  BRTDfunc    CLEX_back
+> 10
+>       0.136     0.168     0.206
+>       0.524     0.621     0.576
+>       0 0 0
+>       .
+> 0
+> 9 0 0 0 0 0 0 0 0 0
+>
+>
+>
+>
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140801/79d83120/attachment.html>
+
+From sadeghipour at gmail.com  Tue Aug  5 19:04:57 2014
+From: sadeghipour at gmail.com (Mostapha Sadeghipour)
+Date: Tue, 5 Aug 2014 22:04:57 -0400
+Subject: [Radiance-general] Rendering a single image with multiprocessor
+ in Windows
+In-Reply-To: <FF77C91D-3A02-4F9C-8B06-2CD4EC187FCE@gmail.com>
+References: <CAAd_PgQMRg9T33kQkOv6c3osK4ivqqHFWsdNVfTzRbeiEEpAQA@mail.gmail.com>
+	<CAAd_PgSJ0fFKboA+NuCtgoV7hFY6K+2DrEQEXY_VSUTYA5hmaA@mail.gmail.com>
+	<1B436814-C46E-487C-94D1-359DCEAAADCD@lmi.net>
+	<FF77C91D-3A02-4F9C-8B06-2CD4EC187FCE@gmail.com>
+Message-ID: <CAAd_PgRQHsJ9+1vDZFTKPNDmHoYWErgOXKCExdjUZFyLQV09Vw@mail.gmail.com>
+
+Hi Greg and Rob,
+
+Thanks Greg. I did a test and it works like a charm for perspective views.
+I haven't tested it for other types of views yet.
+
+Rob, rpiece is not actually included in the recent Windows packages. I have
+it there from an old release! Oops... ;)
+
+Let me know when you are back so we can check the results. It works perfect
+on my side. Maybe I should test more cases.
+
+Mostapha
+
+
+
+On Fri, Aug 1, 2014 at 4:52 PM, Rob Guglielmetti <rob.guglielmetti at gmail.com
+> wrote:
+
+> Hey Mo, I can share my results with you on this when I get back from
+> vacation; I made a spreadsheet to calculate the views based on that code
+> but as I recall I got some funky results.
+>
+> Also thanks for the heads up on rpiece in the windows packages, I'll make
+> sure that's not included in the future! Oops...
+>
+> On Jul 31, 2014, at 11:59 PM, Greg Ward <gregoryjward at gmail.com> wrote:
+>
+> It's possible, but not at all straightforward.  You basically have to use
+> the attached code (taken from rpiece) to adjust the -vh and -vv options to
+> rpict, then use the -vs and -vl options to determine which part of the
+> picture you want to render.
+>
+> Best,
+> -Greg
+>
+> switch (ourview.type) {
+>  case VT_PER:
+>  pview.horiz = (2.*180./PI)*atan(
+>  tan((PI/180./2.)*ourview.horiz)/hmult );
+>  pview.vert = (2.*180./PI)*atan(
+>  tan((PI/180./2.)*ourview.vert)/vmult );
+>  break;
+>  case VT_PAR:
+> case VT_ANG:
+>  pview.horiz = ourview.horiz / hmult;
+>  pview.vert = ourview.vert / vmult;
+>  break;
+>  case VT_CYL:
+> pview.horiz = ourview.horiz / hmult;
+>  pview.vert = (2.*180./PI)*atan(
+>  tan((PI/180./2.)*ourview.vert)/vmult );
+>  break;
+>  case VT_HEM:
+>  pview.horiz = (2.*180./PI)*asin(
+>  sin((PI/180./2.)*ourview.horiz)/hmult );
+>  pview.vert = (2.*180./PI)*asin(
+>  sin((PI/180./2.)*ourview.vert)/vmult );
+>  break;
+>  case VT_PLS:
+> pview.horiz = sin((PI/180./2.)*ourview.horiz) /
+>  (1.0 + cos((PI/180./2.)*ourview.horiz)) / hmult;
+>  pview.horiz *= pview.horiz;
+>  pview.horiz = (2.*180./PI)*acos((1. - pview.horiz) /
+>  (1. + pview.horiz));
+>  pview.vert = sin((PI/180./2.)*ourview.vert) /
+>  (1.0 + cos((PI/180./2.)*ourview.vert)) / vmult;
+>  pview.vert *= pview.vert;
+> pview.vert = (2.*180./PI)*acos((1. - pview.vert) /
+>  (1. + pview.vert));
+>  break;
+>  default:
+>  fprintf(stderr, "%s: unknown view type '-vt%c'\n",
+>  progname, ourview.type);
+>  exit(cleanup(1));
+>  }
+>
+>
+> *From: *Mostapha Sadeghipour <sadeghipour at gmail.com>
+>
+> *Subject: *Re: [Radiance-general] Rendering a single image with
+> multiprocessor in Windows
+>
+> *Date: *July 31, 2014 2:43:17 PM PDT
+>
+>
+>  I just read that rpiece is not supposed to be part of the Windows
+> package for some reason so I probably should change the question to is it
+> possible to render a segment of a view based on -X -Y pixels?
+>
+> I can take care of running them in parallel and putting them back together
+> separately.
+>
+> Thanks,
+> Mostapha
+>
+>
+> On Thu, Jul 31, 2014 at 4:28 PM, Mostapha Sadeghipour <
+> sadeghipour at gmail.com> wrote:
+>
+>> Hi all,
+>>
+>> I wonder is anyone has successfully rendered a single image in parallel
+>> using rpict -PP and/or rpiece in Windows.
+>>
+>> I have a hard time to understand both the process and the syntax.
+>>
+>> Thanks,
+>> Mostapha
+>>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140805/16e28b94/attachment.html>
+
+From gregoryjward at gmail.com  Tue Aug  5 19:22:40 2014
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue, 5 Aug 2014 19:22:40 -0700
+Subject: [Radiance-general] Rendering a single image with multiprocessor
+	in Windows
+In-Reply-To: <CAAd_PgRQHsJ9+1vDZFTKPNDmHoYWErgOXKCExdjUZFyLQV09Vw@mail.gmail.com>
+References: <CAAd_PgQMRg9T33kQkOv6c3osK4ivqqHFWsdNVfTzRbeiEEpAQA@mail.gmail.com>
+	<CAAd_PgSJ0fFKboA+NuCtgoV7hFY6K+2DrEQEXY_VSUTYA5hmaA@mail.gmail.com>
+	<1B436814-C46E-487C-94D1-359DCEAAADCD@lmi.net>
+	<FF77C91D-3A02-4F9C-8B06-2CD4EC187FCE@gmail.com>
+	<CAAd_PgRQHsJ9+1vDZFTKPNDmHoYWErgOXKCExdjUZFyLQV09Vw@mail.gmail.com>
+Message-ID: <930DBD82-D76A-4D41-BAD2-D737309C90E4@lmi.net>
+
+Good work, Mostapha!
+
+This is really something that should be implemented in a .cal file.  I've just never found the time.
+
+Cheers,
+-Greg
+
+> From: Mostapha Sadeghipour <sadeghipour at gmail.com>
+> Subject: Re: [Radiance-general] Rendering a single image with multiprocessor in Windows
+> Date: August 5, 2014 7:04:57 PM PDT
+> 
+> Hi Greg and Rob,
+> 
+> Thanks Greg. I did a test and it works like a charm for perspective views. I haven't tested it for other types of views yet.
+> 
+> Rob, rpiece is not actually included in the recent Windows packages. I have it there from an old release! Oops... ;)
+> 
+> Let me know when you are back so we can check the results. It works perfect on my side. Maybe I should test more cases.
+> 
+> Mostapha
+> 
+> 
+> 
+> On Fri, Aug 1, 2014 at 4:52 PM, Rob Guglielmetti <rob.guglielmetti at gmail.com> wrote:
+> Hey Mo, I can share my results with you on this when I get back from vacation; I made a spreadsheet to calculate the views based on that code but as I recall I got some funky results. 
+> 
+> Also thanks for the heads up on rpiece in the windows packages, I'll make sure that's not included in the future! Oops...
+> 
+> On Jul 31, 2014, at 11:59 PM, Greg Ward <gregoryjward at gmail.com> wrote:
+> 
+>> It's possible, but not at all straightforward.  You basically have to use the attached code (taken from rpiece) to adjust the -vh and -vv options to rpict, then use the -vs and -vl options to determine which part of the picture you want to render.
+>> 
+>> Best,
+>> -Greg
+>> 
+>> 	switch (ourview.type) {
+>> 	case VT_PER:
+>> 		pview.horiz = (2.*180./PI)*atan(
+>> 				tan((PI/180./2.)*ourview.horiz)/hmult );
+>> 		pview.vert = (2.*180./PI)*atan(
+>> 				tan((PI/180./2.)*ourview.vert)/vmult );
+>> 		break;
+>> 	case VT_PAR:
+>> 	case VT_ANG:
+>> 		pview.horiz = ourview.horiz / hmult;
+>> 		pview.vert = ourview.vert / vmult;
+>> 		break;
+>> 	case VT_CYL:
+>> 		pview.horiz = ourview.horiz / hmult;
+>> 		pview.vert = (2.*180./PI)*atan(
+>> 				tan((PI/180./2.)*ourview.vert)/vmult );
+>> 		break;
+>> 	case VT_HEM:
+>> 		pview.horiz = (2.*180./PI)*asin(
+>> 				sin((PI/180./2.)*ourview.horiz)/hmult );
+>> 		pview.vert = (2.*180./PI)*asin(
+>> 				sin((PI/180./2.)*ourview.vert)/vmult );
+>> 		break;
+>> 	case VT_PLS:
+>> 		pview.horiz = sin((PI/180./2.)*ourview.horiz) /
+>> 				(1.0 + cos((PI/180./2.)*ourview.horiz)) / hmult;
+>> 		pview.horiz *= pview.horiz;
+>> 		pview.horiz = (2.*180./PI)*acos((1. - pview.horiz) /
+>> 						(1. + pview.horiz));
+>> 		pview.vert = sin((PI/180./2.)*ourview.vert) /
+>> 				(1.0 + cos((PI/180./2.)*ourview.vert)) / vmult;
+>> 		pview.vert *= pview.vert;
+>> 		pview.vert = (2.*180./PI)*acos((1. - pview.vert) /
+>> 						(1. + pview.vert));
+>> 		break;
+>> 	default:
+>> 		fprintf(stderr, "%s: unknown view type '-vt%c'\n",
+>> 				progname, ourview.type);
+>> 		exit(cleanup(1));
+>> 	}
+>> 
+>> 
+>>> From: Mostapha Sadeghipour <sadeghipour at gmail.com>
+>>> Subject: Re: [Radiance-general] Rendering a single image with multiprocessor in Windows
+>>> Date: July 31, 2014 2:43:17 PM PDT
+>>> 
+>>> I just read that rpiece is not supposed to be part of the Windows package for some reason so I probably should change the question to is it possible to render a segment of a view based on -X -Y pixels?
+>>> 
+>>> I can take care of running them in parallel and putting them back together separately.
+>>> 
+>>> Thanks,
+>>> Mostapha
+>>> 
+>>> 
+>>> On Thu, Jul 31, 2014 at 4:28 PM, Mostapha Sadeghipour <sadeghipour at gmail.com> wrote:
+>>> Hi all,
+>>> 
+>>> I wonder is anyone has successfully rendered a single image in parallel using rpict -PP and/or rpiece in Windows.
+>>> 
+>>> I have a hard time to understand both the process and the syntax.
+>>> 
+>>> Thanks,
+>>> Mostapha 
+> 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140805/de86663a/attachment-0001.html>
+
+From shrikarbhave at gmail.com  Thu Aug  7 15:13:38 2014
+From: shrikarbhave at gmail.com (Shrikar Bhave)
+Date: Thu, 7 Aug 2014 18:13:38 -0400
+Subject: [Radiance-general] Trans material - tspec value
+Message-ID: <CABL0RjfEbWVW9mx6QkrJ3EmfzaDS7D=+0xik80xaqrDy=-MRzw@mail.gmail.com>
+
+Hello All,
+
+I am trying to compare diffusion properties of a glazing assembly by
+rendering an exact same scene but changing only the 'tspec' value from 0
+(ideal diffuser) to 0.9 (almost clear). I have a room with clerestory
+windows which consist of 2 layers of translucent panels. Exterior glazing
+is 60% VLT and interior glazing is 30% VLT with about a 30cm of cavity in
+between.
+
+*Simulation 1*
+void trans panelext60
+0 0 7 0.978494624 0.978494624 0.978494624 0.07 0 0.65934066 0
+
+void trans panelint30
+0 0 7 0.978494624 0.978494624 0.978494624 0.07 0 0.32967033 0
+
+
+*Simulation 2*
+void trans panelext60
+0 0 7 0.978494624 0.978494624 0.978494624 0.07 0 0.65934066 0.9
+
+void trans panelint30
+0 0 7 0.978494624 0.978494624 0.978494624 0.07 0 0.32967033 0.9
+
+rpict command is as follows,
+
+rpict -vtv -vp 0.1 7.3 1.8 -vd 1 0 0 -vu 0 0 1 -vh 130 -vv 90 -x 3000 -y
+1400 -ab 4 -aa 0.08 -ar 512 -ad 2048 -as 512 -ds .01 -dj .6 -t 60 sunny.oct
+> lookeast_june21_noon.pic
+
+I was expecting a significant difference in renderings for 2 scenes. The
+second simulation should have resulted in more defined bright patches.
+Though that's not the case. Am I missing something obvious here?
+Unfortunately I cannot attach the complete renderings due to confidential
+nature of the project. I have attached screenshots of the area of interest.
+
+Any help is much appreciated,
+
+Thanks,
+
+Shri
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140807/f8cf2f6c/attachment-0001.html>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: sim1_tspec_0point0.JPG
+Type: image/jpeg
+Size: 13249 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140807/f8cf2f6c/attachment-0002.jpe>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: sim2_tspec_0point9.JPG
+Type: image/jpeg
+Size: 13023 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140807/f8cf2f6c/attachment-0003.jpe>
+
+From amcneil at lbl.gov  Thu Aug  7 16:18:24 2014
+From: amcneil at lbl.gov (Andrew McNeil)
+Date: Thu, 7 Aug 2014 16:18:24 -0700
+Subject: [Radiance-general] Trans material - tspec value
+In-Reply-To: <CABL0RjfEbWVW9mx6QkrJ3EmfzaDS7D=+0xik80xaqrDy=-MRzw@mail.gmail.com>
+References: <CABL0RjfEbWVW9mx6QkrJ3EmfzaDS7D=+0xik80xaqrDy=-MRzw@mail.gmail.com>
+Message-ID: <CAOG+NixLmm3CtSaUqG0v=HOe53DUon2bh-Wd-v3Lk-D2xUagjg@mail.gmail.com>
+
+Shri,
+Have you checked to confirm that the sun shines onto the window in your
+rendering? If not, then you wont see much of difference when diffusing what
+is already mostly diffuse.
+Andy
+
+
+On Thu, Aug 7, 2014 at 3:13 PM, Shrikar Bhave <shrikarbhave at gmail.com>
+wrote:
+
+> Hello All,
+>
+> I am trying to compare diffusion properties of a glazing assembly by
+> rendering an exact same scene but changing only the 'tspec' value from 0
+> (ideal diffuser) to 0.9 (almost clear). I have a room with clerestory
+> windows which consist of 2 layers of translucent panels. Exterior glazing
+> is 60% VLT and interior glazing is 30% VLT with about a 30cm of cavity in
+> between.
+>
+> *Simulation 1*
+> void trans panelext60
+> 0 0 7 0.978494624 0.978494624 0.978494624 0.07 0 0.65934066 0
+>
+> void trans panelint30
+> 0 0 7 0.978494624 0.978494624 0.978494624 0.07 0 0.32967033 0
+>
+>
+> *Simulation 2*
+> void trans panelext60
+> 0 0 7 0.978494624 0.978494624 0.978494624 0.07 0 0.65934066 0.9
+>
+> void trans panelint30
+> 0 0 7 0.978494624 0.978494624 0.978494624 0.07 0 0.32967033 0.9
+>
+> rpict command is as follows,
+>
+> rpict -vtv -vp 0.1 7.3 1.8 -vd 1 0 0 -vu 0 0 1 -vh 130 -vv 90 -x 3000 -y
+> 1400 -ab 4 -aa 0.08 -ar 512 -ad 2048 -as 512 -ds .01 -dj .6 -t 60 sunny.oct
+> > lookeast_june21_noon.pic
+>
+> I was expecting a significant difference in renderings for 2 scenes. The
+> second simulation should have resulted in more defined bright patches.
+> Though that's not the case. Am I missing something obvious here?
+> Unfortunately I cannot attach the complete renderings due to confidential
+> nature of the project. I have attached screenshots of the area of interest.
+>
+> Any help is much appreciated,
+>
+> Thanks,
+>
+> Shri
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140807/ee106772/attachment.html>
+
+From Bruno.Bueno at ise.fraunhofer.de  Thu Aug  7 19:03:12 2014
+From: Bruno.Bueno at ise.fraunhofer.de (Bruno.Bueno at ise.fraunhofer.de)
+Date: Fri, 8 Aug 2014 04:03:12 +0200
+Subject: [Radiance-general] =?iso-8859-1?q?AUTO=3A_Bruno_Bueno_ist_au=DFer?=
+ =?iso-8859-1?q?_Haus_=28R=FCckkehr_am_19/08/2014=29?=
+Message-ID: <OFCA5479AB.4D373067-ONC1257D2E.000B47BE-C1257D2E.000B47BE@ise.fhg.de>
+
+
+Ich bin bis 19/08/2014 abwesend.
+
+
+
+
+Hinweis: Dies ist eine automatische Antwort auf Ihre Nachricht
+"Radiance-general Digest, Vol 126, Issue 5" gesendet am 08.08.2014 00:13:46
+.
+
+Diese ist die einzige Benachrichtigung, die Sie empfangen werden, w?hrend
+diese Person abwesend ist.
+
+
+
+From shrikarbhave at gmail.com  Fri Aug  8 12:00:45 2014
+From: shrikarbhave at gmail.com (Shrikar Bhave)
+Date: Fri, 8 Aug 2014 15:00:45 -0400
+Subject: [Radiance-general] Trans material - tspec value
+In-Reply-To: <CAOG+NixLmm3CtSaUqG0v=HOe53DUon2bh-Wd-v3Lk-D2xUagjg@mail.gmail.com>
+References: <CABL0RjfEbWVW9mx6QkrJ3EmfzaDS7D=+0xik80xaqrDy=-MRzw@mail.gmail.com>
+	<CAOG+NixLmm3CtSaUqG0v=HOe53DUon2bh-Wd-v3Lk-D2xUagjg@mail.gmail.com>
+Message-ID: <CABL0Rje--Z5YF8eL1i+0Y7-Em8oXe+9vnc79EE_OtSstA4-daQ@mail.gmail.com>
+
+You were spot on Andy! Tried a different time and it all makes sense now.
+
+Thanks,
+
+Shri
+
+
+On Thu, Aug 7, 2014 at 7:18 PM, Andrew McNeil <amcneil at lbl.gov> wrote:
+
+> Shri,
+> Have you checked to confirm that the sun shines onto the window in your
+> rendering? If not, then you wont see much of difference when diffusing what
+> is already mostly diffuse.
+> Andy
+>
+>
+> On Thu, Aug 7, 2014 at 3:13 PM, Shrikar Bhave <shrikarbhave at gmail.com>
+> wrote:
+>
+>> Hello All,
+>>
+>> I am trying to compare diffusion properties of a glazing assembly by
+>> rendering an exact same scene but changing only the 'tspec' value from 0
+>> (ideal diffuser) to 0.9 (almost clear). I have a room with clerestory
+>> windows which consist of 2 layers of translucent panels. Exterior glazing
+>> is 60% VLT and interior glazing is 30% VLT with about a 30cm of cavity in
+>> between.
+>>
+>> *Simulation 1*
+>> void trans panelext60
+>> 0 0 7 0.978494624 0.978494624 0.978494624 0.07 0 0.65934066 0
+>>
+>> void trans panelint30
+>> 0 0 7 0.978494624 0.978494624 0.978494624 0.07 0 0.32967033 0
+>>
+>>
+>> *Simulation 2*
+>> void trans panelext60
+>> 0 0 7 0.978494624 0.978494624 0.978494624 0.07 0 0.65934066 0.9
+>>
+>> void trans panelint30
+>> 0 0 7 0.978494624 0.978494624 0.978494624 0.07 0 0.32967033 0.9
+>>
+>> rpict command is as follows,
+>>
+>> rpict -vtv -vp 0.1 7.3 1.8 -vd 1 0 0 -vu 0 0 1 -vh 130 -vv 90 -x 3000 -y
+>> 1400 -ab 4 -aa 0.08 -ar 512 -ad 2048 -as 512 -ds .01 -dj .6 -t 60 sunny.oct
+>> > lookeast_june21_noon.pic
+>>
+>> I was expecting a significant difference in renderings for 2 scenes. The
+>> second simulation should have resulted in more defined bright patches.
+>> Though that's not the case. Am I missing something obvious here?
+>> Unfortunately I cannot attach the complete renderings due to confidential
+>> nature of the project. I have attached screenshots of the area of interest.
+>>
+>> Any help is much appreciated,
+>>
+>> Thanks,
+>>
+>> Shri
+>>
+>>
+>>
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>
+>>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140808/0872ec14/attachment.html>
+
+From Wendelin.Sprenger at ise.fraunhofer.de  Fri Aug  8 19:04:22 2014
+From: Wendelin.Sprenger at ise.fraunhofer.de (Wendelin.Sprenger at ise.fraunhofer.de)
+Date: Sat, 9 Aug 2014 04:04:22 +0200
+Subject: [Radiance-general] AUTO: AUTO: Wendelin Sprenger is not in the
+	office
+Message-ID: <OF052303BE.5F69DA48-ONC1257D2F.000B62F8-C1257D2F.000B62F8@ise.fhg.de>
+
+
+Ich bin bis 03.09.2014 abwesend.
+
+I am absent until September 3rd, 2014.
+Only in urgent cases, please call our secretary: +49-761/4588-5816 (or
+-5908 or - 5143)
+
+
+
+
+Hinweis: Dies ist eine automatische Antwort auf Ihre Nachricht  "Re:
+[Radiance-general] Trans material - tspec value" gesendet am 08.08.2014
+21:00:45.
+
+Diese ist die einzige Benachrichtigung, die Sie empfangen werden, w?hrend
+diese Person abwesend ist.
+
+
+
+From trygve.wastvedt at gmail.com  Sun Aug 10 17:52:44 2014
+From: trygve.wastvedt at gmail.com (Trygve Wastvedt)
+Date: Sun, 10 Aug 2014 20:52:44 -0400
+Subject: [Radiance-general] Texture Baking?
+Message-ID: <CA+BymkajDdGwKtU-FwV-1Wf5wVY+bqApbD1p0_Oy9Vu99LaVAQ@mail.gmail.com>
+
+Hello,
+Has anyone done any work with texture baking in Radiance? I'm looking for a
+way to create a rendered, hopefully eventually animated, texture of a space
+for use in a walkthrough video game. I found a couple references to
+something like this in the archives, but only fragments. The best example
+is this, which looks like it would work just fine if only I were Arup:
+http://www.radiance-online.org/community/workshops/2008-fribourg/Content/Guilio/Lightmaps_Radiance_Arup_GA_2008.pdf.
+Any thoughts?
+
+Thanks,
+Trygve
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140810/96f0565d/attachment.html>
+
+From keralagios at gmail.com  Sun Aug 10 19:57:32 2014
+From: keralagios at gmail.com (Kera Lagios)
+Date: Sun, 10 Aug 2014 22:57:32 -0400
+Subject: [Radiance-general] Fwd: Announcing the DIVA Day Student Competition!
+In-Reply-To: <155956917.154023183.1407503819266.JavaMail.xncore@z101b25.ningops.com>
+References: <155956917.154023183.1407503819266.JavaMail.xncore@z101b25.ningops.com>
+Message-ID: <CAP0o02+7Pn=ZY6Atm8-BQMUiNOZQp3Fg3ZixWcDK=WCi0DVLxA@mail.gmail.com>
+
+Hi Everyone,
+
+For DIVA Day this year, we are hosting a student competition! Please pass
+along if you know any students who might be interested!  Announcement below
+and more info at: http://diva4rhino.com/diva-day-2014/student-comp
+
+Thanks!
+Kera
+
+
+<http://diva4rhino.com/diva-day-2014/student-comp?xg_source=msg_mes_network>
+
+ *Announcing the 1st DIVA Day Student Competition!
+<http://diva4rhino.com/diva-day-2014/student-comp?xg_source=msg_mes_network>*
+
+*Deadline September 6th, 2014!*
+
+*One $750 Award! *
+
+*
+<http://api.ning.com/files/Iumatxx-0jwrpnV5kTA-S4t-p*D1j4gEQZgzoCtPMd*r9COEv01-O7NvLIpiyRHm0oJg3BqcbeBCK27gQ2N3T8XCDKG2YAsl/DIVADayBanner20141student.jpg>*
+
+Students, we want to see how you are using DIVA!
+
+The selected individual or group will receive a $750 stipend to cover
+travel costs to DIVA Day, free conference registration, and will have their
+poster displayed during DIVA Day 2014 in Seattle, WA!
+
+
+<http://api.ning.com/files/Iumatxx-0jwrpnV5kTA-S4t-p*D1j4gEQZgzoCtPMd*r9COEv01-O7NvLIpiyRHm0oJg3BqcbeBCK27gQ2N3T8XCDKG2YAsl/DIVADayBanner20141student.jpg>
+
+*Eligibility*
+
+Undergraduate and graduate students
+
+*Schedule*
+
+Submissions due:  September 6, 2014 @ 12:00am PDT (3:00am EDT)
+
+Submit via email to: kera at solemma.net
+
+*Submission Requirements*
+
+   1. Application - one form per project. For group projects, list all
+   applicants and full contact information on an additional sheet and
+   submit it with the application
+   Click here for the application form.
+   <http://api.ning.com/files/Iumatxx-0jyE5SGuNk8tbm8ci4rSOz2FZDTJYs7a5uD2avJapgbGyaJse3VaL9zEFkdUfnQA4lcYHN2gZmzl4-nWfMZf278D/DIVADay2014StudentCompetitionApplication.pdf>
+    2. (1) ARCH D (24? x 36?) poster (portrait or landscape) including
+   images and text describing your project. File size limit: 5MB.
+
+
+*Award*
+
+1 award of  $750 +
+
+free registration to DIVA Day 2014 in Seattle, WA
+
+In the case of group projects, all applicants will receive free
+registration to DIVA Day, and the stipend will be divided equally among all
+team members.
+
+
+We are looking for projects that clearly show how DIVA is  or was used to
+impact design decisions. Submissions will also be judged on innovative or
+creative use of the software, sophistication of simulations, and overall
+narrative and graphical presentation.
+
+
+For more information please contact:
+
+DIVA Day Student Competition
+<http://diva4rhino.com/diva-day-2014/student-comp?xg_source=msg_mes_network>
+
+or
+
+Kera Lagios
+
+kera at solemma.net
+
+www.diva4rhino.com
+
+Visit DIVA for Rhino at: http://diva4rhino.com/?xg_source=msg_mes_network
+
+
+ To control which emails you receive on DIVA for Rhino, click here
+<http://diva4rhino.com/?xgo=gLx-VuoBqJxbUuGv7i6mlmUieB7K7Olw57pIVZTBfPZ5UMzMI9-Z7A&xg_source=msg_mes_network>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140810/d7dc3934/attachment.html>
+
+From grobe at gmx.net  Mon Aug 11 02:01:16 2014
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Mon, 11 Aug 2014 11:01:16 +0200
+Subject: [Radiance-general] Texture Baking?
+In-Reply-To: <CA+BymkajDdGwKtU-FwV-1Wf5wVY+bqApbD1p0_Oy9Vu99LaVAQ@mail.gmail.com>
+References: <CA+BymkajDdGwKtU-FwV-1Wf5wVY+bqApbD1p0_Oy9Vu99LaVAQ@mail.gmail.com>
+Message-ID: <53E8865C.50104@gmx.net>
+
+Hi Trygve,
+
+you can do it... :) Greg demonstrated an example where he used something 
+similar to render caustics on the inside walls of a swimming pool. For 
+each surface, create locations on it to achieve a sufficient resolution 
+and render the illuminance at each location. Alternatively, for simple 
+geometry, you may find the location and extents of the surface, place a 
+vtl-type camera just in front of it, and render an image (clipping all 
+pixels not belonging to the surface using the rtrace object id output).
+
+It is a bit of work though... :D
+
+Cheers, Lars.
+>
+>
+> Hello,
+> Has anyone done any work with texture baking in Radiance? I'm looking 
+> for a way to create a rendered, hopefully eventually animated, texture 
+> of a space for use in a walkthrough video game. I found a couple 
+> references to something like this in the archives, but only fragments. 
+> The best example is this, which looks like it would work just fine if 
+> only I were Arup: 
+> http://www.radiance-online.org/community/workshops/2008-fribourg/Content/Guilio/Lightmaps_Radiance_Arup_GA_2008.pdf. 
+> Any thoughts?
+>
+> Thanks,
+> Trygve
+
+
+From gregoryjward at gmail.com  Mon Aug 11 08:51:51 2014
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon, 11 Aug 2014 08:51:51 -0700
+Subject: [Radiance-general] Texture Baking?
+In-Reply-To: <53E8865C.50104@gmx.net>
+References: <CA+BymkajDdGwKtU-FwV-1Wf5wVY+bqApbD1p0_Oy9Vu99LaVAQ@mail.gmail.com>
+	<53E8865C.50104@gmx.net>
+Message-ID: <73218BA6-18DD-4633-A082-EB7020FAFB6D@lmi.net>
+
+Hello Trygve,
+
+To create an "illumination map," which is really just a map of (u,v) texture pixels that correspond to RGB irradiance values, you need to generate the (X,Y,Z) Cartesian world coordinates and (Nx,Ny,Nz) world surface normal direction vectors for each pixel in your map.
+
+Feed these values to rtrace as ASCII (-fac) or raw floating-point (-ffc) to create your illumination map like so:
+
+	rtrace -I -fac -x $xres -y $yres -n $nproc $render_options scene.oct < surface_positions.txt > illumination_map.hdr
+
+The first option, upper-case "-I", tells rtrace to compute irradiance rather than radiance, and to expect surface positions and normals rather than ray origins and directions.  Your input file (surface_positions.txt) might start like this for a wall parallel to the X-Z plane:
+
+10.0	3.70	1.51	0	1	0
+10.1	3.70	1.51	0	1	0
+10.2	3.70	1.51	0	1	0
+...
+10.0	3.70	1.61	0	1	0
+10.1	3.70	1.61	0	1	0
+...
+
+I think you get the idea.  You need to specify the -x and -y options to rtrace to get it to generate a valid Radiance picture, which you may then convert to another format if you like.  The -n option allows you to run rtrace on multiple processors to speed the calculation up.  If you are computing interreflections, be sure to specify an ambient file (-af option) in that case.
+
+I hope this is enough to get you started.
+
+> From: "Lars O. Grobe" <grobe at gmx.net>
+> Subject: Re: [Radiance-general] Texture Baking?
+> Date: August 11, 2014 2:01:16 AM PDT
+> 
+> Hi Trygve,
+> 
+> you can do it... :) Greg demonstrated an example where he used something similar to render caustics on the inside walls of a swimming pool. For each surface, create locations on it to achieve a sufficient resolution and render the illuminance at each location. Alternatively, for simple geometry, you may find the location and extents of the surface, place a vtl-type camera just in front of it, and render an image (clipping all pixels not belonging to the surface using the rtrace object id output).
+> 
+> It is a bit of work though... :D
+> 
+> Cheers, Lars.
+>> 
+>> 
+>> Hello,
+>> Has anyone done any work with texture baking in Radiance? I'm looking for a way to create a rendered, hopefully eventually animated, texture of a space for use in a walkthrough video game. I found a couple references to something like this in the archives, but only fragments. The best example is this, which looks like it would work just fine if only I were Arup: http://www.radiance-online.org/community/workshops/2008-fribourg/Content/Guilio/Lightmaps_Radiance_Arup_GA_2008.pdf. Any thoughts?
+>> 
+>> Thanks,
+>> Trygve
+
+
+From geotrupes at me.com  Mon Aug 11 00:24:22 2014
+From: geotrupes at me.com (giulioandrea antonutto foi)
+Date: Mon, 11 Aug 2014 08:24:22 +0100
+Subject: [Radiance-general] Texture Baking?
+In-Reply-To: <CA+BymkajDdGwKtU-FwV-1Wf5wVY+bqApbD1p0_Oy9Vu99LaVAQ@mail.gmail.com>
+References: <CA+BymkajDdGwKtU-FwV-1Wf5wVY+bqApbD1p0_Oy9Vu99LaVAQ@mail.gmail.com>
+Message-ID: <B3F3DA09-AF2C-4858-B04A-976BF7E1B045@me.com>
+
+I will release the code for uv baking at next workshop in a month.
+with the promise that anybody using it and modifying it will share with the others.
+No let?s focus on holiday time!
+:-)
+G
+
+PS if you need this straight away let me know and will PM
+
+
+On 11 Aug 2014, at 01:52, Trygve Wastvedt <trygve.wastvedt at gmail.com> wrote:
+
+> Hello,
+> Has anyone done any work with texture baking in Radiance? I'm looking for a way to create a rendered, hopefully eventually animated, texture of a space for use in a walkthrough video game. I found a couple references to something like this in the archives, but only fragments. The best example is this, which looks like it would work just fine if only I were Arup: http://www.radiance-online.org/community/workshops/2008-fribourg/Content/Guilio/Lightmaps_Radiance_Arup_GA_2008.pdf. Any thoughts?
+> 
+> Thanks,
+> Trygve
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140811/16c174f8/attachment-0001.html>
+
+From Robert.Guglielmetti at nrel.gov  Tue Aug 12 14:10:11 2014
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Tue, 12 Aug 2014 15:10:11 -0600
+Subject: [Radiance-general] Radiance Official 4.2 Release
+Message-ID: <D00FDED3.E9A7%Robert.Guglielmetti@nrel.gov>
+
+--------
+WARNING: At least one of the links in the message below goes to an .exe file, 
+which could be malicious. To learn how to protect yourself, please go here:
+https://commons.lbl.gov/x/_591B
+--------
+
+Following a long alpha/beta period, Radiance 4.2 is official. NREL has created a release tag and binary packages on our git mirror of the Radiance source repository. Some noteworthy items:
+* This is the second NREL release based on core RT code revision 4.2.b, and includes new Hessian-based error control in ambient cache.
+* gendaymtx has changed to include a header on output, which causes an incompatibility with OpenStudio's Radiance-based daylighting routines. A fix will be included in the next iteration release of OpenStudio.
+* This version includes the new rfluxmtx utility,  which should ease the pain of using rcontrib for 3- and 5-phase calculations, as well as a host of other novel applications.
+
+Linkage:
+
+Main Radiance source repository (cvs), hosted at LBL:
+http://radiance-online.org/cgi-bin/viewcvs.cgi/ray/?pathrev=MAIN
+
+NREL's git mirror of the cvs:
+https://github.com/NREL/Radiance/tree/combined
+
+Source code snapshot for official Radiance release 4.2:
+https://github.com/NREL/Radiance/tree/4.2
+
+Current Radiance Release (4.2):
+https://github.com/NREL/Radiance/releases/tag/4.2
+
+Windows installer:
+https://github.com/NREL/Radiance/releases/download/4.2/radiance-4.2-win32.exe
+
+Mac installer (Universal, 10.8 or greater)
+https://github.com/NREL/Radiance/releases/download/4.2/radiance-4.2-Darwin.dmg
+
+Linux binary archives (32/64bit, include library files):
+https://github.com/NREL/Radiance/releases/download/4.2/radiance-4.2-Linux32.tar.gz
+https://github.com/NREL/Radiance/releases/download/4.2/radiance-4.2-Linux64.tar.gz
+
+As ever, a tremendous debt of gratitude is owed to Greg Ward, LBL, and DOE for the continued work on and funding for Radiance. So, thanks.
+
+- Rob G. / NREL
+
+P.S. True to form, Greg is already hard at work on the next version. Look for Radiance v4.3a on the NREL git mirror soon?
+
+
+
+
+
+From shrikarbhave at gmail.com  Tue Aug 12 15:51:59 2014
+From: shrikarbhave at gmail.com (Shrikar Bhave)
+Date: Tue, 12 Aug 2014 18:51:59 -0400
+Subject: [Radiance-general] trans material - tspec comparison
+Message-ID: <CABL0Rjd7xZCcP1czEmKR1+b=_SzKEgrw6jBFkdCz+WfZMnonUA@mail.gmail.com>
+
+Hello All,
+
+For tspec comparison,  I rendered the same scene for four different tspec
+values of 10%, 50%, 90% and 100% (ideal diffuser).
+
+I was expecting varying amount of diffusion, but I am getting puzzling
+results. only 100% (ideal diffuse) value returns no direct sun-patch. All
+the other values show a clear sun-patch in the space.
+
+Any clue why this is happening? Would you expect such results? Everything
+else is constant in the model. (images are attached)
+
+Thanks,
+
+Shri
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140812/c64c8f46/attachment-0001.html>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 10_diff.JPG
+Type: image/jpeg
+Size: 14846 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140812/c64c8f46/attachment-0004.jpe>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 50_diff.JPG
+Type: image/jpeg
+Size: 15259 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140812/c64c8f46/attachment-0005.jpe>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 90_diff.JPG
+Type: image/jpeg
+Size: 15221 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140812/c64c8f46/attachment-0006.jpe>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 100_diff.JPG
+Type: image/jpeg
+Size: 13939 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140812/c64c8f46/attachment-0007.jpe>
+
+From amcneil at lbl.gov  Tue Aug 12 16:26:27 2014
+From: amcneil at lbl.gov (Andrew McNeil)
+Date: Tue, 12 Aug 2014 16:26:27 -0700
+Subject: [Radiance-general] trans material - tspec comparison
+In-Reply-To: <CABL0Rjd7xZCcP1czEmKR1+b=_SzKEgrw6jBFkdCz+WfZMnonUA@mail.gmail.com>
+References: <CABL0Rjd7xZCcP1czEmKR1+b=_SzKEgrw6jBFkdCz+WfZMnonUA@mail.gmail.com>
+Message-ID: <CAOG+Niya74D1mrc2C_3dzBV2H9_rdYo7Ua=iKv3-YSFscrfBiA@mail.gmail.com>
+
+Shri,
+
+In the images you sent I suspect that the sunpatch is over exposed, so it
+appears white in all three renderings. If you create a falsecolor rendering
+you'll likely see that the sunpatch has different luminance values (make
+sure to set the scale sufficently high).
+
+One of the drawbacks of using Radiance's trans material to model
+translucent fenestration materials is that the transmission is divided into
+strictly specular and diffuse. The specular component is not scattered at
+all, and the diffuse component is completely lambertian. You might have
+expected the sunpatch to soften and broaden as the diffusion increases, but
+with the trans material the shape of the sunpatch doesn't change as
+diffusion increases, it just reduces in intensity.
+
+To study diffusion like this, you'll really want to use a BSDF. Probably
+also a tensor tree BSDF so you get sufficient accuracy in the sun patch.
+And unfortunately LBNL hasn't measured BSDFs for diffusing glazing, so I
+can't offer an immediate solution.
+
+Best,
+Andy
+
+
+
+
+On Tue, Aug 12, 2014 at 3:51 PM, Shrikar Bhave <shrikarbhave at gmail.com>
+wrote:
+
+> Hello All,
+>
+> For tspec comparison,  I rendered the same scene for four different tspec
+> values of 10%, 50%, 90% and 100% (ideal diffuser).
+>
+> I was expecting varying amount of diffusion, but I am getting puzzling
+> results. only 100% (ideal diffuse) value returns no direct sun-patch. All
+> the other values show a clear sun-patch in the space.
+>
+> Any clue why this is happening? Would you expect such results? Everything
+> else is constant in the model. (images are attached)
+>
+> Thanks,
+>
+> Shri
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140812/34012eb0/attachment.html>
+
+From jan.wienold at epfl.ch  Wed Aug 13 04:38:46 2014
+From: jan.wienold at epfl.ch (Jan Wienold)
+Date: Wed, 13 Aug 2014 13:38:46 +0200
+Subject: [Radiance-general] trans material - tspec comparison
+In-Reply-To: <CAOG+Niya74D1mrc2C_3dzBV2H9_rdYo7Ua=iKv3-YSFscrfBiA@mail.gmail.com>
+References: <CABL0Rjd7xZCcP1czEmKR1+b=_SzKEgrw6jBFkdCz+WfZMnonUA@mail.gmail.com>
+	<CAOG+Niya74D1mrc2C_3dzBV2H9_rdYo7Ua=iKv3-YSFscrfBiA@mail.gmail.com>
+Message-ID: <53EB4E46.5040702@epfl.ch>
+
+Hi Shri and Andy,
+
+I think you can "spread" the "direct" component when applying a 
+roughness to the trans material. Then, the scattered light is not 
+lambertian any more. You can control the scattering "width" by the 
+roughness.
+You can see the difference then if you look directly onto the material 
+(smaller or larger spot towards sun direction).  Getting different 
+patches on the wall etc. is quite hard I guess. The reason for this is , 
+that as soon as the "direct part" is scattered (when applying 
+roughness), it is handled by the ambient calculation and it is not part 
+of the direct calculation any more.
+
+Using a BSDF with a fine resolution is in fact the best way to handle this.
+
+good luck,
+
+Jan
+
+On 08/13/2014 01:26 AM, Andrew McNeil wrote:
+> Shri,
+>
+> In the images you sent I suspect that the sunpatch is over exposed, so 
+> it appears white in all three renderings. If you create a falsecolor 
+> rendering you'll likely see that the sunpatch has different luminance 
+> values (make sure to set the scale sufficently high).
+>
+> One of the drawbacks of using Radiance's trans material to model 
+> translucent fenestration materials is that the transmission is divided 
+> into strictly specular and diffuse. The specular component is not 
+> scattered at all, and the diffuse component is completely lambertian. 
+> You might have expected the sunpatch to soften and broaden as the 
+> diffusion increases, but with the trans material the shape of the 
+> sunpatch doesn't change as diffusion increases, it just reduces in 
+> intensity.
+>
+> To study diffusion like this, you'll really want to use a BSDF. 
+> Probably also a tensor tree BSDF so you get sufficient accuracy in the 
+> sun patch. And unfortunately LBNL hasn't measured BSDFs for diffusing 
+> glazing, so I can't offer an immediate solution.
+>
+> Best,
+> Andy
+>
+>
+>
+>
+> On Tue, Aug 12, 2014 at 3:51 PM, Shrikar Bhave <shrikarbhave at gmail.com 
+> <mailto:shrikarbhave at gmail.com>> wrote:
+>
+>     Hello All,
+>
+>     For tspec comparison,  I rendered the same scene for four
+>     different tspec values of 10%, 50%, 90% and 100% (ideal diffuser).
+>
+>     I was expecting varying amount of diffusion, but I am getting
+>     puzzling results. only 100% (ideal diffuse) value returns no
+>     direct sun-patch. All the other values show a clear sun-patch in
+>     the space.
+>
+>     Any clue why this is happening? Would you expect such results?
+>     Everything else is constant in the model. (images are attached)
+>
+>     Thanks,
+>
+>     Shri
+>
+>     _______________________________________________
+>     Radiance-general mailing list
+>     Radiance-general at radiance-online.org
+>     <mailto:Radiance-general at radiance-online.org>
+>     http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140813/3e830739/attachment.html>
+
+From amcneil at lbl.gov  Wed Aug 13 16:37:00 2014
+From: amcneil at lbl.gov (Andrew McNeil)
+Date: Wed, 13 Aug 2014 16:37:00 -0700
+Subject: [Radiance-general] trans material - tspec comparison
+In-Reply-To: <53EB4E46.5040702@epfl.ch>
+References: <CABL0Rjd7xZCcP1czEmKR1+b=_SzKEgrw6jBFkdCz+WfZMnonUA@mail.gmail.com>
+	<CAOG+Niya74D1mrc2C_3dzBV2H9_rdYo7Ua=iKv3-YSFscrfBiA@mail.gmail.com>
+	<53EB4E46.5040702@epfl.ch>
+Message-ID: <CAOG+NixfJ_eRmJDecTK0Kr_StGW1iNKTGSpBwGZh04DKO3RE+g@mail.gmail.com>
+
+Ah, good point with the roughness. The only way I know how to get a good
+value for the roughness parameter is trial and error it until it looks
+about right in a rendering - which is probably why I avoid using it. If
+anyone has an good method for setting roughness please share!
+
+Andy
+
+
+On Wed, Aug 13, 2014 at 4:38 AM, Jan Wienold <jan.wienold at epfl.ch> wrote:
+
+>  Hi Shri and Andy,
+>
+> I think you can "spread" the "direct" component when applying a roughness
+> to the trans material. Then, the scattered light is not lambertian any
+> more. You can control the scattering "width" by the roughness.
+> You can see the difference then if you look directly onto the material
+> (smaller or larger spot towards sun direction).  Getting different patches
+> on the wall etc. is quite hard I guess. The reason for this is , that as
+> soon as the "direct part" is scattered (when applying roughness), it is
+> handled by the ambient calculation and it is not part of the direct
+> calculation any more.
+>
+> Using a BSDF with a fine resolution is in fact the best way to handle this.
+>
+> good luck,
+>
+> Jan
+>
+>
+> On 08/13/2014 01:26 AM, Andrew McNeil wrote:
+>
+> Shri,
+>
+>  In the images you sent I suspect that the sunpatch is over exposed, so
+> it appears white in all three renderings. If you create a falsecolor
+> rendering you'll likely see that the sunpatch has different luminance
+> values (make sure to set the scale sufficently high).
+>
+>  One of the drawbacks of using Radiance's trans material to model
+> translucent fenestration materials is that the transmission is divided into
+> strictly specular and diffuse. The specular component is not scattered at
+> all, and the diffuse component is completely lambertian. You might have
+> expected the sunpatch to soften and broaden as the diffusion increases, but
+> with the trans material the shape of the sunpatch doesn't change as
+> diffusion increases, it just reduces in intensity.
+>
+>  To study diffusion like this, you'll really want to use a BSDF. Probably
+> also a tensor tree BSDF so you get sufficient accuracy in the sun patch.
+> And unfortunately LBNL hasn't measured BSDFs for diffusing glazing, so I
+> can't offer an immediate solution.
+>
+>  Best,
+> Andy
+>
+>
+>
+>
+> On Tue, Aug 12, 2014 at 3:51 PM, Shrikar Bhave <shrikarbhave at gmail.com>
+> wrote:
+>
+>>   Hello All,
+>>
+>>  For tspec comparison,  I rendered the same scene for four different
+>> tspec values of 10%, 50%, 90% and 100% (ideal diffuser).
+>>
+>>  I was expecting varying amount of diffusion, but I am getting puzzling
+>> results. only 100% (ideal diffuse) value returns no direct sun-patch. All
+>> the other values show a clear sun-patch in the space.
+>>
+>>  Any clue why this is happening? Would you expect such results?
+>> Everything else is constant in the model. (images are attached)
+>>
+>> Thanks,
+>>
+>> Shri
+>>
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>
+>>
+>
+>
+> _______________________________________________
+> Radiance-general mailing listRadiance-general at radiance-online.orghttp://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140813/bc4f2c2e/attachment.html>
+
+From Robert.Guglielmetti at nrel.gov  Thu Aug 14 06:53:25 2014
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Thu, 14 Aug 2014 07:53:25 -0600
+Subject: [Radiance-general] trans material - tspec comparison
+In-Reply-To: <CAOG+NixfJ_eRmJDecTK0Kr_StGW1iNKTGSpBwGZh04DKO3RE+g@mail.gmail.com>
+References: <CABL0Rjd7xZCcP1czEmKR1+b=_SzKEgrw6jBFkdCz+WfZMnonUA@mail.gmail.com>
+	<CAOG+Niya74D1mrc2C_3dzBV2H9_rdYo7Ua=iKv3-YSFscrfBiA@mail.gmail.com>
+	<53EB4E46.5040702@epfl.ch>
+	<CAOG+NixfJ_eRmJDecTK0Kr_StGW1iNKTGSpBwGZh04DKO3RE+g@mail.gmail.com>
+Message-ID: <D0121B57.EA68%Robert.Guglielmetti@nrel.gov>
+
+T&E's how I've always done it. =/
+
+On 8/13/14, 5:37 PM, "Andrew McNeil" <amcneil at lbl.gov<mailto:amcneil at lbl.gov>> wrote:
+
+Ah, good point with the roughness. The only way I know how to get a good value for the roughness parameter is trial and error it until it looks about right in a rendering - which is probably why I avoid using it. If anyone has an good method for setting roughness please share!
+
+Andy
+
+
+On Wed, Aug 13, 2014 at 4:38 AM, Jan Wienold <jan.wienold at epfl.ch<mailto:jan.wienold at epfl.ch>> wrote:
+Hi Shri and Andy,
+
+I think you can "spread" the "direct" component when applying a roughness to the trans material. Then, the scattered light is not lambertian any more. You can control the scattering "width" by the roughness.
+You can see the difference then if you look directly onto the material (smaller or larger spot towards sun direction).  Getting different patches on the wall etc. is quite hard I guess. The reason for this is , that as soon as the "direct part" is scattered (when applying roughness), it is handled by the ambient calculation and it is not part of the direct calculation any more.
+
+Using a BSDF with a fine resolution is in fact the best way to handle this.
+
+good luck,
+
+Jan
+
+
+On 08/13/2014 01:26 AM, Andrew McNeil wrote:
+Shri,
+
+In the images you sent I suspect that the sunpatch is over exposed, so it appears white in all three renderings. If you create a falsecolor rendering you'll likely see that the sunpatch has different luminance values (make sure to set the scale sufficently high).
+
+One of the drawbacks of using Radiance's trans material to model translucent fenestration materials is that the transmission is divided into strictly specular and diffuse. The specular component is not scattered at all, and the diffuse component is completely lambertian. You might have expected the sunpatch to soften and broaden as the diffusion increases, but with the trans material the shape of the sunpatch doesn't change as diffusion increases, it just reduces in intensity.
+
+To study diffusion like this, you'll really want to use a BSDF. Probably also a tensor tree BSDF so you get sufficient accuracy in the sun patch. And unfortunately LBNL hasn't measured BSDFs for diffusing glazing, so I can't offer an immediate solution.
+
+Best,
+Andy
+
+
+
+
+On Tue, Aug 12, 2014 at 3:51 PM, Shrikar Bhave <shrikarbhave at gmail.com<mailto:shrikarbhave at gmail.com>> wrote:
+Hello All,
+
+For tspec comparison,  I rendered the same scene for four different tspec values of 10%, 50%, 90% and 100% (ideal diffuser).
+
+I was expecting varying amount of diffusion, but I am getting puzzling results. only 100% (ideal diffuse) value returns no direct sun-patch. All the other values show a clear sun-patch in the space.
+
+Any clue why this is happening? Would you expect such results? Everything else is constant in the model. (images are attached)
+
+Thanks,
+
+Shri
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general at radiance-online.org<mailto:Radiance-general at radiance-online.org>
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+
+
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general at radiance-online.org<mailto:Radiance-general at radiance-online.org>http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general at radiance-online.org<mailto:Radiance-general at radiance-online.org>
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+
+
+From shrikarbhave at gmail.com  Thu Aug 14 08:26:28 2014
+From: shrikarbhave at gmail.com (Shrikar Bhave)
+Date: Thu, 14 Aug 2014 11:26:28 -0400
+Subject: [Radiance-general] trans material - tspec comparison
+In-Reply-To: <D0121B57.EA68%Robert.Guglielmetti@nrel.gov>
+References: <CABL0Rjd7xZCcP1czEmKR1+b=_SzKEgrw6jBFkdCz+WfZMnonUA@mail.gmail.com>
+	<CAOG+Niya74D1mrc2C_3dzBV2H9_rdYo7Ua=iKv3-YSFscrfBiA@mail.gmail.com>
+	<53EB4E46.5040702@epfl.ch>
+	<CAOG+NixfJ_eRmJDecTK0Kr_StGW1iNKTGSpBwGZh04DKO3RE+g@mail.gmail.com>
+	<D0121B57.EA68%Robert.Guglielmetti@nrel.gov>
+Message-ID: <CABL0RjesEOg+tSDvTPj0AqWtRMATVH9ORypsHDAydcA9_OQADA@mail.gmail.com>
+
+Thanks a lot Andy, Jan et all, you guys make this list amazing!
+
+It was indeed trial and error. Unfortunately, I don't think I can offer a
+decent method for setting the roughness yet - Only good news is that it
+does change proportionally as expected.
+Just out of curiosity, how much of an effort would it be (re time and money
+both) for translucent glazing manufacturers to get the testing done from
+LBNL?
+
+Thanks again,
+
+Shri
+
+
+On Thu, Aug 14, 2014 at 9:53 AM, Guglielmetti, Robert <
+Robert.Guglielmetti at nrel.gov> wrote:
+
+> T&E's how I've always done it. =/
+>
+> On 8/13/14, 5:37 PM, "Andrew McNeil" <amcneil at lbl.gov<mailto:
+> amcneil at lbl.gov>> wrote:
+>
+> Ah, good point with the roughness. The only way I know how to get a good
+> value for the roughness parameter is trial and error it until it looks
+> about right in a rendering - which is probably why I avoid using it. If
+> anyone has an good method for setting roughness please share!
+>
+> Andy
+>
+>
+> On Wed, Aug 13, 2014 at 4:38 AM, Jan Wienold <jan.wienold at epfl.ch<mailto:
+> jan.wienold at epfl.ch>> wrote:
+> Hi Shri and Andy,
+>
+> I think you can "spread" the "direct" component when applying a roughness
+> to the trans material. Then, the scattered light is not lambertian any
+> more. You can control the scattering "width" by the roughness.
+> You can see the difference then if you look directly onto the material
+> (smaller or larger spot towards sun direction).  Getting different patches
+> on the wall etc. is quite hard I guess. The reason for this is , that as
+> soon as the "direct part" is scattered (when applying roughness), it is
+> handled by the ambient calculation and it is not part of the direct
+> calculation any more.
+>
+> Using a BSDF with a fine resolution is in fact the best way to handle this.
+>
+> good luck,
+>
+> Jan
+>
+>
+> On 08/13/2014 01:26 AM, Andrew McNeil wrote:
+> Shri,
+>
+> In the images you sent I suspect that the sunpatch is over exposed, so it
+> appears white in all three renderings. If you create a falsecolor rendering
+> you'll likely see that the sunpatch has different luminance values (make
+> sure to set the scale sufficently high).
+>
+> One of the drawbacks of using Radiance's trans material to model
+> translucent fenestration materials is that the transmission is divided into
+> strictly specular and diffuse. The specular component is not scattered at
+> all, and the diffuse component is completely lambertian. You might have
+> expected the sunpatch to soften and broaden as the diffusion increases, but
+> with the trans material the shape of the sunpatch doesn't change as
+> diffusion increases, it just reduces in intensity.
+>
+> To study diffusion like this, you'll really want to use a BSDF. Probably
+> also a tensor tree BSDF so you get sufficient accuracy in the sun patch.
+> And unfortunately LBNL hasn't measured BSDFs for diffusing glazing, so I
+> can't offer an immediate solution.
+>
+> Best,
+> Andy
+>
+>
+>
+>
+> On Tue, Aug 12, 2014 at 3:51 PM, Shrikar Bhave <shrikarbhave at gmail.com
+> <mailto:shrikarbhave at gmail.com>> wrote:
+> Hello All,
+>
+> For tspec comparison,  I rendered the same scene for four different tspec
+> values of 10%, 50%, 90% and 100% (ideal diffuser).
+>
+> I was expecting varying amount of diffusion, but I am getting puzzling
+> results. only 100% (ideal diffuse) value returns no direct sun-patch. All
+> the other values show a clear sun-patch in the space.
+>
+> Any clue why this is happening? Would you expect such results? Everything
+> else is constant in the model. (images are attached)
+>
+> Thanks,
+>
+> Shri
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org<mailto:
+> Radiance-general at radiance-online.org>
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org<mailto:
+> Radiance-general at radiance-online.org>
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org<mailto:
+> Radiance-general at radiance-online.org>
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140814/f5431185/attachment-0001.html>
+
+From stanleyshc at yahoo.com  Thu Aug 14 12:10:56 2014
+From: stanleyshc at yahoo.com (StanleyCheung)
+Date: Fri, 15 Aug 2014 03:10:56 +0800
+Subject: [Radiance-general] Sun shading device in atrium
+Message-ID: <7DDF4252-7226-4F43-882F-8389573114E7@yahoo.com>
+
+Dear Sir/Madam,
+
+Using Radiance, I would like to evaluate daylighting in adjoint areas in an atrium.
+
+I could only find genblind that simulate Venetian blind. Would you please tell me commands that can simulate roller blind(diffuse reflection) and solar film blind(speculation reflection)
+
+Is it possible to have a solar sensor to trigger Up/Down motions of motorised roller blind and motorised solar film?
+
+Where can I find examples of Atrium?
+
+
+Thanks a lot!
+Stanley
+
+From Robert.Guglielmetti at nrel.gov  Mon Aug 18 09:06:43 2014
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Mon, 18 Aug 2014 10:06:43 -0600
+Subject: [Radiance-general] Sun shading device in atrium
+In-Reply-To: <7DDF4252-7226-4F43-882F-8389573114E7@yahoo.com>
+References: <7DDF4252-7226-4F43-882F-8389573114E7@yahoo.com>
+Message-ID: <D0177E8E.EC94%Robert.Guglielmetti@nrel.gov>
+
+Hi Stanley,
+
+Your problem can be studied with Radiance and either a BSDF or
+approximated with a "trans" material. It's not as simple as giving you a
+command or two, unfortunately. As for the solar trigger, this too is
+totally possible in Radiance ? but again, Radiance alone needs some help
+to make this a painless and efficient process. I would look at SPOT,
+Ladybug, Daysim, and DIVA for Rhino for said help. In the shameless plug
+department, NREL is currently working on modifications to OpenStudio that
+will also allow you to do exactly what you are talking about, applying
+shade controls to different window groups in your model, and controlling
+them -- as one of several options -- by solar setpoint trigger, and
+integrating the contributions from several spaces to "shared" daylit
+spaces such as atria.
+
+- Rob
+
+On 8/14/14, 1:10 PM, "StanleyCheung" <stanleyshc at yahoo.com> wrote:
+
+>Dear Sir/Madam,
+>
+>Using Radiance, I would like to evaluate daylighting in adjoint areas in
+>an atrium.
+>
+>I could only find genblind that simulate Venetian blind. Would you please
+>tell me commands that can simulate roller blind(diffuse reflection) and
+>solar film blind(speculation reflection)
+>
+>Is it possible to have a solar sensor to trigger Up/Down motions of
+>motorised roller blind and motorised solar film?
+>
+>Where can I find examples of Atrium?
+>
+>
+>Thanks a lot!
+>Stanley
+>_______________________________________________
+>Radiance-general mailing list
+>Radiance-general at radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+
+From weiss at stahl-sonnenenergie.de  Mon Aug 18 12:05:07 2014
+From: weiss at stahl-sonnenenergie.de (weiss at stahl-sonnenenergie.de)
+Date: Mon, 18 Aug 2014 19:05:07 +0000
+Subject: [Radiance-general] AUTOREPLY Radiance-general Digest, Vol 126,
+	Issue 13
+Message-ID: <00001353.53F26A7F@smtprelaypool.ispgateway.de>
+
+
+Sehr geehrte Damen und Herren,
+
+vielen Dank fr Ihre Nachricht.
+In der Zeit von 17.8-01.09.2014 bin ich in Ferien, in dieser Zeit werden Mails nicht bearbeitet oder weitergeleitet.
+
+Mit freundlichen Gren
+
+Volker Wei
+
+Stahl+Wei
+Basler Strae 55
+D-79100 Freiburg
+
+Tel.   +49-(0)761-38909-32
+Zentrale                     -30
+Fax.  +49-(0)761-38909-39
+
+weiss at stahl-weiss.de
+www.stahl-weiss.de
+
+.
+Send Radiance-general mailing list submissions to
+	radiance-general at radiance-online.org
+
+To subscribe or unsubscribe via the World Wide Web, visit
+	http://www.radiance-online.org/mailman/listinfo/radiance-general
+or, via email, send a message with subject or body 'help' to
+	radiance-general-request at radiance-online.org
+
+You can reach the person managing the list at
+	radiance-general-owner at radiance-online.org
+
+When replying, please edit your Subject line so it is more specific
+than "Re: Contents of Radiance-general digest..."
+
+
+Today's Topics:
+
+   1. Re: Sun shading device in atrium (Guglielmetti, Robert)
+
+
+----------------------------------------------------------------------
+
+Message: 1
+Date: Mon, 18 Aug 2014 10:06:43 -0600
+From: "Guglielmetti, Robert" <Robert.Guglielmetti at nrel.gov>
+To: Radiance general discussion <radiance-general at radiance-online.org>
+Subject: Re: [Radiance-general] Sun shading device in atrium
+Message-ID: <D0177E8E.EC94%Robert.Guglielmetti at nrel.gov>
+Content-Type: text/plain; charset="Windows-1252"
+
+Hi Stanley,
+
+Your problem can be studied with Radiance and either a BSDF or
+approximated with a "trans" material. It's not as simple as giving you a
+command or two, unfortunately. As for the solar trigger, this too is
+totally possible in Radiance ? but again, Radiance alone needs some help
+to make this a painless and efficient process. I would look at SPOT,
+Ladybug, Daysim, and DIVA for Rhino for said help. In the shameless plug
+department, NREL is currently working on modifications to OpenStudio that
+will also allow you to do exactly what you are talking about, applying
+shade controls to different window groups in your model, and controlling
+them -- as one of several options -- by solar setpoint trigger, and
+integrating the contributions from several spaces to "shared" daylit
+spaces such as atria.
+
+- Rob
+
+On 8/14/14, 1:10 PM, "StanleyCheung" <stanleyshc at yahoo.com> wrote:
+
+>Dear Sir/Madam,
+>
+>Using Radiance, I would like to evaluate daylighting in adjoint areas in
+>an atrium.
+>
+>I could only find genblind that simulate Venetian blind. Would you please
+>tell me commands that can simulate roller blind(diffuse reflection) and
+>solar film blind(speculation reflection)
+>
+>Is it possible to have a solar sensor to trigger Up/Down motions of
+>motorised roller blind and motorised solar film?
+>
+>Where can I find examples of Atrium?
+>
+>
+>Thanks a lot!
+>Stanley
+>_______________________________________________
+>Radiance-general mailing list
+>Radiance-general at radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+
+
+------------------------------
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+End of Radiance-general Digest, Vol 126, Issue 13
+*************************************************
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140818/15b14fee/attachment.html>
+
+From vaia13 at msn.com  Wed Aug 20 04:46:34 2014
+From: vaia13 at msn.com (Vayia V)
+Date: Wed, 20 Aug 2014 14:46:34 +0300
+Subject: [Radiance-general] Three phase method
+Message-ID: <DUB127-W79A32AF59EDC762614C7DBD8D20@phx.gbl>
+
+
+
+
+Hello all,
+I have some more questions regarding the three phase method,
+I understand that I cannot simulate bending pipes with the genbsdf. However I also need to simulate straight pipes that I think is able to be done. 
+My question is if I need to specify the depth of the pipe somehow in any of the steps at the three phase method and how to do that. 
+The way I create the geometry used at the daylight matrix and view matrix (meaning the two ends of the pipe) are in the "proper distance". But is this the correct way to do it (?) or the "entrance" of the pipe at the view matrix should be at the same position as the "exit" of the pipe at the daylight matrix (?) and then I specify the length of the pipe (that the "light" will travel through the pipe) between the "entrance" and "exit"? I suppose that maybe this way I could generate one bsdf of a long pipe and then use it for different length of pipes? 
+Another question that I have is if I can use two different parallel BSDFs on one simulation.
+Thank you in advance,
+Vayia  
+ 		 	   		  
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140820/28bcd8f9/attachment.html>
+
+From mario.geiger at epfl.ch  Wed Aug 20 05:22:26 2014
+From: mario.geiger at epfl.ch (Mario Geiger)
+Date: Wed, 20 Aug 2014 14:22:26 +0200
+Subject: [Radiance-general] cross check with rcontrib -V+ -I
+Message-ID: <CAJ3JcAPoALPEZoeRg8NSadLNAOgzFfhY8Abcb93H+g5zSYavxQ@mail.gmail.com>
+
+Hi
+
+I did a simple test to know if I understood correctly what "rcontrib -V+
+-I" computes.
+
+I created a scene with a light, the shape of a ring of radius *r*.
+void light windowglow 0 0 3 1 1 1
+windowglow ring window_0
+0 0 8
+0 0 0
+0 1 0
+0 *r*
+
+oconv scene.rad > scene.oct
+
+And I run the following command :
+echo 0 *y* 0   0 -1 0 | rcontrib -V+ -I -st 0.15 -dj 0.7 -ds 0.15 -dt 0.05
+-dc 0.5 -dr 3 -dp 512 -ab 2 -ad 4096 -ar 128 -aa 0.15 -av 0 0 0 -as 1024
+-lw 1e-9 -m windowglow -n 4 scene.oct
+
+By hand I computed that the resulting coefficient to transform the constant
+radiance of the source (1 W/m2/sr) to the irradiance at the point (looking
+towards the source) should be *pi * sin(a).^2* where *a = atan(r/y)*
+
+So I do a variation of the angle *a*. I keep *y* constant (10m) and I get
+this results for 2000 points.
+
+What is wrong with the simulation or my calculus ? Why do the points spread
+out at large angle ? Why do  the coefficients becomes small at very large
+angle ? Does the source follow the Lambert's cosine law ?
+
+Thanks in advance,
+
+Sorry for my english,
+
+Mario Geiger
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140820/e19773bc/attachment-0001.html>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: result.jpeg
+Type: image/jpeg
+Size: 89127 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140820/e19773bc/attachment-0001.jpeg>
+
+From antonutto at yahoo.it  Wed Aug 20 13:30:18 2014
+From: antonutto at yahoo.it (G)
+Date: Wed, 20 Aug 2014 22:30:18 +0200
+Subject: [Radiance-general] cross check with rcontrib -V+ -I
+In-Reply-To: <CAJ3JcAPoALPEZoeRg8NSadLNAOgzFfhY8Abcb93H+g5zSYavxQ@mail.gmail.com>
+References: <CAJ3JcAPoALPEZoeRg8NSadLNAOgzFfhY8Abcb93H+g5zSYavxQ@mail.gmail.com>
+Message-ID: <224DFCBD-4D58-4700-8B5F-4777A4056109@yahoo.it>
+
+try -dj 0
+it may be that
+G
+
+On 20 Aug 2014, at 14:22, Mario Geiger <mario.geiger at epfl.ch> wrote:
+
+> 0.7 
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140820/b9c018b5/attachment.html>
+
+From amcneil at lbl.gov  Wed Aug 20 14:18:11 2014
+From: amcneil at lbl.gov (Andrew McNeil)
+Date: Wed, 20 Aug 2014 14:18:11 -0700
+Subject: [Radiance-general] cross check with rcontrib -V+ -I
+In-Reply-To: <224DFCBD-4D58-4700-8B5F-4777A4056109@yahoo.it>
+References: <CAJ3JcAPoALPEZoeRg8NSadLNAOgzFfhY8Abcb93H+g5zSYavxQ@mail.gmail.com>
+	<224DFCBD-4D58-4700-8B5F-4777A4056109@yahoo.it>
+Message-ID: <CAOG+Niw_EvUGNRQXvg+cHCEbfVCZr9eY5JCwFMNUBsooOmmpJw@mail.gmail.com>
+
+Mario,
+I think 'G' is right, -dj 0 should fix it.
+Also, for large area sources it is better to use the glow instead of light
+material partly because of the same sampling problems you're experiencing.
+But also because if there was any geometry between your sampling point and
+large area light source the results would be crazy unstable.
+Andy
+
+
+
+On Wed, Aug 20, 2014 at 1:30 PM, G <antonutto at yahoo.it> wrote:
+
+> try -dj 0
+> it may be that
+> G
+>
+> On 20 Aug 2014, at 14:22, Mario Geiger <mario.geiger at epfl.ch> wrote:
+>
+> 0.7
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140820/47392a2d/attachment.html>
+
+From amcneil at lbl.gov  Wed Aug 20 18:14:43 2014
+From: amcneil at lbl.gov (Andrew McNeil)
+Date: Wed, 20 Aug 2014 18:14:43 -0700
+Subject: [Radiance-general] Three phase method
+In-Reply-To: <DUB127-W79A32AF59EDC762614C7DBD8D20@phx.gbl>
+References: <DUB127-W79A32AF59EDC762614C7DBD8D20@phx.gbl>
+Message-ID: <CAOG+NiwmTKeHpkyX1gqpguzC_a1RRYQUE=bPtHG7ri+piNXMJw@mail.gmail.com>
+
+Hi Vayia,
+
+You should consider using the new rfluxmtx to generate a transmission
+matrix for your lightpipe the resulting matrix won't be in a BSDF XML file
+format, but I don't think you need that format anyway. One benefit is you
+can specify any geometry for the entrance and exit (genBSDF requires
+parallel, rectangular ports).
+
+A general (untested) approach is below.
+
+Finally, I'm not sure what you mean by two different parallel BSDFs. Can
+you elaborate?
+
+Best,
+Andy
+
+
+insideport.rad:
+#@rfluxmtx h=fk u=Y
+materials & geometry
+
+outsideport.rad:
+#@rfluxmtx h=fk u=Y
+materials & geometry
+
+sky.rad:
+#@rfluxmtx h=u u=Y
+ground hemisphere
+#@rfluxmtx h=r1 uY
+sky hemisphere
+
+
+cat sensorpoints.txt | \
+rfluxmtx -faa -ab 12 -ad 50000 -lw 2e-5  -I \
+ -y `wc -l < numeric/Space_1.map` \
+ -  insideport.rad \
+ materials.rad model.rad > view.mtx
+
+rfluxmtx -ab 12 -ad 5000 -lw 2e-5 insideport.rad outsideport.rad \
+ materials.rad model.rad > lightpipe.mtx
+
+rfulxmtx -ab 2 -ad 1000 -lw 1e-3 outsideport.rad sky.rad \
+ materials.rad model.rad > daylight.mtx
+
+rmtxop view.mtx lightpipe.mtx daylight.mtx > dcoef.mtx
+
+dctimestep dcoef.mtx sky.mtx > illuminance.txt
+
+
+
+
+
+On Wed, Aug 20, 2014 at 4:46 AM, Vayia V <vaia13 at msn.com> wrote:
+
+>  Hello all,
+>
+> I have some more questions regarding the three phase method,
+>
+> I understand that I cannot simulate bending pipes with the genbsdf.
+> However I also need to simulate straight pipes that I think is able to be
+> done.
+>
+> My question is if I need to specify the depth of the pipe somehow in any
+> of the steps at the three phase method and how to do that.
+>
+> The way I create the geometry used at the daylight matrix and view matrix
+> (meaning the two ends of the pipe) are in the "proper distance". But is
+> this the correct way to do it (?) or the "entrance" of the pipe at the view
+> matrix should be at the same position as the "exit" of the pipe at the
+> daylight matrix (?) and then I specify the length of the pipe (that the
+> "light" will travel through the pipe) between the "entrance" and "exit"? I
+> suppose that maybe this way I could generate one bsdf of a long pipe and
+> then use it for different length of pipes?
+>
+> Another question that I have is if I can use two different parallel BSDFs
+> on one simulation.
+>
+> Thank you in advance,
+>
+> Vayia
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140820/b8aae941/attachment.html>
+
+From vaia13 at msn.com  Thu Aug 21 03:34:09 2014
+From: vaia13 at msn.com (Vayia V)
+Date: Thu, 21 Aug 2014 13:34:09 +0300
+Subject: [Radiance-general] Three phase method
+In-Reply-To: <CAOG+NiwmTKeHpkyX1gqpguzC_a1RRYQUE=bPtHG7ri+piNXMJw@mail.gmail.com>
+References: <DUB127-W79A32AF59EDC762614C7DBD8D20@phx.gbl>,
+	<CAOG+NiwmTKeHpkyX1gqpguzC_a1RRYQUE=bPtHG7ri+piNXMJw@mail.gmail.com>
+Message-ID: <DUB127-W430ADA2EB2D8C62BF962ACD8D30@phx.gbl>
+
+Hello,
+Thank you for the reply and the help,
+About the two BSDF, I have for example a BSDF for the pipe and then I have one more BSDF for the top (or bottom) part of the pipe. Can I somehow merge them and use them both?
+As for the rfluxmtx, is there any tutorial available? 
+Kind regards
+Vayia
+From: amcneil at lbl.gov
+Date: Wed, 20 Aug 2014 18:14:43 -0700
+To: radiance-general at radiance-online.org
+Subject: Re: [Radiance-general] Three phase method
+
+Hi Vayia,
+You should consider using the new rfluxmtx to generate a transmission matrix for your lightpipe the resulting matrix won't be in a BSDF XML file format, but I don't think you need that format anyway. One benefit is you can specify any geometry for the entrance and exit (genBSDF requires parallel, rectangular ports).  
+
+
+A general (untested) approach is below.
+Finally, I'm not sure what you mean by two different parallel BSDFs. Can you elaborate?
+Best,Andy
+
+
+
+
+
+insideport.rad:#@rfluxmtx h=fk u=Ymaterials & geometry
+outsideport.rad:#@rfluxmtx h=fk u=Ymaterials & geometry
+
+
+
+
+sky.rad:#@rfluxmtx h=u u=Yground hemisphere#@rfluxmtx h=r1 uYsky hemisphere 
+
+cat sensorpoints.txt | \	rfluxmtx -faa -ab 12 -ad 50000 -lw 2e-5	 -I \
+
+
+		-y `wc -l < numeric/Space_1.map` \
+
+		-  insideport.rad \
+		materials.rad model.rad > view.mtx
+rfluxmtx -ab 12 -ad 5000 -lw 2e-5 insideport.rad outsideport.rad \
+
+	materials.rad model.rad > lightpipe.mtx
+
+rfulxmtx -ab 2 -ad 1000 -lw 1e-3 outsideport.rad sky.rad \
+
+	materials.rad model.rad > daylight.mtx
+
+
+
+
+
+
+
+
+
+rmtxop view.mtx lightpipe.mtx daylight.mtx > dcoef.mtx
+dctimestep dcoef.mtx sky.mtx > illuminance.txt
+
+
+
+
+
+
+
+
+On Wed, Aug 20, 2014 at 4:46 AM, Vayia V <vaia13 at msn.com> wrote:
+
+
+
+
+
+
+
+
+Hello all,
+I have some more questions regarding the three phase method,
+I understand that I cannot simulate bending pipes with the genbsdf. However I also need to simulate straight pipes that I think is able to be done. 
+
+
+My question is if I need to specify the depth of the pipe somehow in any of the steps at the three phase method and how to do that. 
+The way I create the geometry used at the daylight matrix and view matrix (meaning the two ends of the pipe) are in the "proper distance". But is this the correct way to do it (?) or the "entrance" of the pipe at the view matrix should be at the same position as the "exit" of the pipe at the daylight matrix (?) and then I specify the length of the pipe (that the "light" will travel through the pipe) between the "entrance" and "exit"? I suppose that maybe this way I could generate one bsdf of a long pipe and then use it for different length of pipes? 
+
+
+Another question that I have is if I can use two different parallel BSDFs on one simulation.
+Thank you in advance,
+
+
+Vayia  
+ 		 	   		  
+
+_______________________________________________
+
+Radiance-general mailing list
+
+Radiance-general at radiance-online.org
+
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+
+
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general 		 	   		  
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140821/49054e66/attachment-0001.html>
+
+From gmolina at hdlao.com  Thu Aug 21 05:23:31 2014
+From: gmolina at hdlao.com (CHI-German Molina)
+Date: Thu, 21 Aug 2014 08:23:31 -0400
+Subject: [Radiance-general] Three phase method
+In-Reply-To: <DUB127-W430ADA2EB2D8C62BF962ACD8D30@phx.gbl>
+References: <DUB127-W79A32AF59EDC762614C7DBD8D20@phx.gbl>
+	<CAOG+NiwmTKeHpkyX1gqpguzC_a1RRYQUE=bPtHG7ri+piNXMJw@mail.gmail.com>
+	<DUB127-W430ADA2EB2D8C62BF962ACD8D30@phx.gbl>
+Message-ID: <CAK+g53DEAcYJBw6P7+UAr1Q3oUKEe+sYy2X4=fcvjdoQN=yohg@mail.gmail.com>
+
+This program seems pretty useful. Is there any manpage or something?
+
+Also, is it possible to do something like this by modifying/re-writing
+genBSDF script? I am not quite sure what was the motivation of writing a
+whole new program. Could you elaborate a little bit, Andy?
+
+THANKS A LOT
+
+Germ?n
+
+
+2014-08-21 6:34 GMT-04:00 Vayia V <vaia13 at msn.com>:
+
+> Hello,
+>
+> Thank you for the reply and the help,
+>
+> About the two BSDF, I have for example a BSDF for the pipe and then I have
+> one more BSDF for the top (or bottom) part of the pipe. Can I somehow merge
+> them and use them both?
+>
+> As for the rfluxmtx, is there any tutorial available?
+>
+> Kind regards
+>
+> Vayia
+>
+> ------------------------------
+> From: amcneil at lbl.gov
+> Date: Wed, 20 Aug 2014 18:14:43 -0700
+> To: radiance-general at radiance-online.org
+> Subject: Re: [Radiance-general] Three phase method
+>
+>
+> Hi Vayia,
+>
+> You should consider using the new rfluxmtx to generate a transmission
+> matrix for your lightpipe the resulting matrix won't be in a BSDF XML file
+> format, but I don't think you need that format anyway. One benefit is you
+> can specify any geometry for the entrance and exit (genBSDF requires
+> parallel, rectangular ports).
+>
+> A general (untested) approach is below.
+>
+> Finally, I'm not sure what you mean by two different parallel BSDFs. Can
+> you elaborate?
+>
+> Best,
+> Andy
+>
+>
+> insideport.rad:
+> #@rfluxmtx h=fk u=Y
+> materials & geometry
+>
+> outsideport.rad:
+> #@rfluxmtx h=fk u=Y
+> materials & geometry
+>
+> sky.rad:
+> #@rfluxmtx h=u u=Y
+> ground hemisphere
+> #@rfluxmtx h=r1 uY
+> sky hemisphere
+>
+>
+> cat sensorpoints.txt | \
+> rfluxmtx -faa -ab 12 -ad 50000 -lw 2e-5  -I \
+>  -y `wc -l < numeric/Space_1.map` \
+>  -  insideport.rad \
+>  materials.rad model.rad > view.mtx
+>
+> rfluxmtx -ab 12 -ad 5000 -lw 2e-5 insideport.rad outsideport.rad \
+>  materials.rad model.rad > lightpipe.mtx
+>
+> rfulxmtx -ab 2 -ad 1000 -lw 1e-3 outsideport.rad sky.rad \
+>  materials.rad model.rad > daylight.mtx
+>
+> rmtxop view.mtx lightpipe.mtx daylight.mtx > dcoef.mtx
+> dctimestep dcoef.mtx sky.mtx > illuminance.txt
+>
+>
+>
+>
+>
+>
+> On Wed, Aug 20, 2014 at 4:46 AM, Vayia V <vaia13 at msn.com> wrote:
+>
+>  Hello all,
+>
+> I have some more questions regarding the three phase method,
+>
+> I understand that I cannot simulate bending pipes with the genbsdf.
+> However I also need to simulate straight pipes that I think is able to be
+> done.
+>
+> My question is if I need to specify the depth of the pipe somehow in any
+> of the steps at the three phase method and how to do that.
+>
+> The way I create the geometry used at the daylight matrix and view matrix
+> (meaning the two ends of the pipe) are in the "proper distance". But is
+> this the correct way to do it (?) or the "entrance" of the pipe at the view
+> matrix should be at the same position as the "exit" of the pipe at the
+> daylight matrix (?) and then I specify the length of the pipe (that the
+> "light" will travel through the pipe) between the "entrance" and "exit"? I
+> suppose that maybe this way I could generate one bsdf of a long pipe and
+> then use it for different length of pipes?
+>
+> Another question that I have is if I can use two different parallel BSDFs
+> on one simulation.
+>
+> Thank you in advance,
+>
+> Vayia
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>
+> _______________________________________________ Radiance-general mailing
+> list Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+
+-- 
+*Germ?n Molina L.*
+Ingeniero Trainee
+Hunter Douglas Chile S.A.
+Celular +569 89224445
+
+-- 
+
+
+*Nota de Confidencialidad:* Este mensaje inclu?do los archivos adjuntos son 
+confidenciales y pueden contener informacion privilegiada protegida por 
+ley. Si Ud. no es el destinatario, deberia abstenerse de copiarlo, 
+distribuirlo, divulgarlo o usar la informacion contenida. Por favor, avise 
+inmediatamente al emisor y borre este mensaje de su sistema. Los mensajes 
+electronicos son susceptibles de ser cambiados, infectados o adulterados 
+sin autorizacion. No asumimos responsabilidad alguna por ninguna clase de 
+cambios o sus consecuencias. Usted debe estar informado que la compania 
+puede hacer un seguimiento de sus mensajes electronicos y su contenido, 
+gracias.
+
+*Confidentiality Notice:* The information contained in this email message, 
+including any attachment, is confidential and is intended only for the 
+person or entity to which it is addressed. If you are neither the intended 
+recipient nor the employee or agent responsible for delivering this message 
+to the intended recipient, you are hereby notified that you may not review, 
+retransmit, convert to hard copy, copy, use or distribute this email 
+message or any attachments to it. If you have received this email in error, 
+please contact the sender immediately and delete this message from any 
+computer or other data bank, Thank you.
+
+A informa??o transmitida ? confidencial e para conhecimento exclusivo do 
+destinat?rio. Sua utiliza??o, n?o autorizada, constitui crime pass?vel de 
+pris?o. Todas as precau??es poss?veis foram tomadas para garantir que este 
+e-mail n?o contenha v?rus. Uma vez que nossa empresa n?o pode assumir 
+responsabilidade por nenhuma perda ou dano causado por este e-mail ou de 
+seus anexos, recomendamos que o destinat?rio utilize seus procedimentos de 
+antiv?rus antes de qualquer uso.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140821/aef7ecf0/attachment.html>
+
+From gregoryjward at gmail.com  Thu Aug 21 05:49:40 2014
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu, 21 Aug 2014 14:49:40 +0200
+Subject: [Radiance-general] Three phase method
+In-Reply-To: <CAK+g53DEAcYJBw6P7+UAr1Q3oUKEe+sYy2X4=fcvjdoQN=yohg@mail.gmail.com>
+References: <DUB127-W79A32AF59EDC762614C7DBD8D20@phx.gbl>
+	<CAOG+NiwmTKeHpkyX1gqpguzC_a1RRYQUE=bPtHG7ri+piNXMJw@mail.gmail.com>
+	<DUB127-W430ADA2EB2D8C62BF962ACD8D30@phx.gbl>
+	<CAK+g53DEAcYJBw6P7+UAr1Q3oUKEe+sYy2X4=fcvjdoQN=yohg@mail.gmail.com>
+Message-ID: <A9430F17-C820-4FDA-95E7-ABE922BBCA65@lmi.net>
+
+Hi Germ?n,
+
+There is a man page for rfluxmtx, but that's about all we have at this point.  I sent Vayia some slides I plan to present at the workshop in London, and I can send this to others who are interested.  (I'm following my own recommendation not to include attachments in radiance-general posts, and my website is inaccessible at the moment for unknown reasons.)
+
+Rfluxmtx was created to simplify common sampling operations used with rcontrib, and will ultimately be used to simplify the internals of the genBSDF script, which is a less general tool.  The only program rfluxmtx completely replaces is genklemsamp.
+
+Cheers,
+-Greg
+	
+
+> From: CHI-German Molina <gmolina at hdlao.com>
+> Subject: Re: [Radiance-general] Three phase method
+> Date: August 21, 2014 2:23:31 PM GMT+02:00
+> 
+> This program seems pretty useful. Is there any manpage or something? 
+> 
+> Also, is it possible to do something like this by modifying/re-writing genBSDF script? I am not quite sure what was the motivation of writing a whole new program. Could you elaborate a little bit, Andy? 
+> 
+> THANKS A LOT
+> 
+> Germ?n
+> 
+> 
+> 2014-08-21 6:34 GMT-04:00 Vayia V <vaia13 at msn.com>:
+> Hello,
+> 
+> Thank you for the reply and the help,
+> 
+> About the two BSDF, I have for example a BSDF for the pipe and then I have one more BSDF for the top (or bottom) part of the pipe. Can I somehow merge them and use them both?
+> 
+> As for the rfluxmtx, is there any tutorial available? 
+> 
+> Kind regards
+> 
+> Vayia
+> 
+> From: amcneil at lbl.gov
+> Date: Wed, 20 Aug 2014 18:14:43 -0700
+> To: radiance-general at radiance-online.org
+> 
+> 
+> Hi Vayia,
+> 
+> You should consider using the new rfluxmtx to generate a transmission matrix for your lightpipe the resulting matrix won't be in a BSDF XML file format, but I don't think you need that format anyway. One benefit is you can specify any geometry for the entrance and exit (genBSDF requires parallel, rectangular ports).  
+> 
+> A general (untested) approach is below.
+> 
+> Finally, I'm not sure what you mean by two different parallel BSDFs. Can you elaborate?
+> 
+> Best,
+> Andy
+> 
+> 
+> insideport.rad:
+> #@rfluxmtx h=fk u=Y
+> materials & geometry
+> 
+> outsideport.rad:
+> #@rfluxmtx h=fk u=Y
+> materials & geometry
+> 
+> sky.rad:
+> #@rfluxmtx h=u u=Y
+> ground hemisphere
+> #@rfluxmtx h=r1 uY
+> sky hemisphere 
+> 
+> 
+> cat sensorpoints.txt | \
+> 	rfluxmtx -faa -ab 12 -ad 50000 -lw 2e-5	 -I \
+> 		-y `wc -l < numeric/Space_1.map` \
+> 		-  insideport.rad \
+> 		materials.rad model.rad > view.mtx
+> 
+> rfluxmtx -ab 12 -ad 5000 -lw 2e-5 insideport.rad outsideport.rad \
+> 	materials.rad model.rad > lightpipe.mtx
+> 
+> rfulxmtx -ab 2 -ad 1000 -lw 1e-3 outsideport.rad sky.rad \
+> 	materials.rad model.rad > daylight.mtx
+> 
+> rmtxop view.mtx lightpipe.mtx daylight.mtx > dcoef.mtx
+> dctimestep dcoef.mtx sky.mtx > illuminance.txt
+> 
+> 
+> 
+> 
+> 
+> 
+> On Wed, Aug 20, 2014 at 4:46 AM, Vayia V <vaia13 at msn.com> wrote:
+> Hello all,
+> 
+> I have some more questions regarding the three phase method,
+> 
+> I understand that I cannot simulate bending pipes with the genbsdf. However I also need to simulate straight pipes that I think is able to be done. 
+> 
+> My question is if I need to specify the depth of the pipe somehow in any of the steps at the three phase method and how to do that. 
+> 
+> The way I create the geometry used at the daylight matrix and view matrix (meaning the two ends of the pipe) are in the "proper distance". But is this the correct way to do it (?) or the "entrance" of the pipe at the view matrix should be at the same position as the "exit" of the pipe at the daylight matrix (?) and then I specify the length of the pipe (that the "light" will travel through the pipe) between the "entrance" and "exit"? I suppose that maybe this way I could generate one bsdf of a long pipe and then use it for different length of pipes? 
+> 
+> Another question that I have is if I can use two different parallel BSDFs on one simulation.
+> 
+> Thank you in advance,
+> 
+> Vayia
+> 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140821/2c230db3/attachment-0001.html>
+
+From gmolina at hdlao.com  Thu Aug 21 06:00:32 2014
+From: gmolina at hdlao.com (CHI-German Molina)
+Date: Thu, 21 Aug 2014 09:00:32 -0400
+Subject: [Radiance-general] Three phase method
+In-Reply-To: <A9430F17-C820-4FDA-95E7-ABE922BBCA65@lmi.net>
+References: <DUB127-W79A32AF59EDC762614C7DBD8D20@phx.gbl>
+	<CAOG+NiwmTKeHpkyX1gqpguzC_a1RRYQUE=bPtHG7ri+piNXMJw@mail.gmail.com>
+	<DUB127-W430ADA2EB2D8C62BF962ACD8D30@phx.gbl>
+	<CAK+g53DEAcYJBw6P7+UAr1Q3oUKEe+sYy2X4=fcvjdoQN=yohg@mail.gmail.com>
+	<A9430F17-C820-4FDA-95E7-ABE922BBCA65@lmi.net>
+Message-ID: <CAK+g53DoLg_a3BjRCCOv+wFUW-RFTk9jF5Escq60BsevUpt+hQ@mail.gmail.com>
+
+Thanks Greg! I will have a look and check it out when I have time.
+
+Will the presentations be recorded and published this year? I will not go,
+but I would like to keep myself up to date.
+
+THANKS
+
+Germ?n
+
+
+2014-08-21 8:49 GMT-04:00 Greg Ward <gregoryjward at gmail.com>:
+
+> Hi Germ?n,
+>
+> There is a man page for rfluxmtx, but that's about all we have at this
+> point.  I sent Vayia some slides I plan to present at the workshop in
+> London, and I can send this to others who are interested.  (I'm following
+> my own recommendation not to include attachments in radiance-general posts,
+> and my website is inaccessible at the moment for unknown reasons.)
+>
+> Rfluxmtx was created to simplify common sampling operations used with
+> rcontrib, and will ultimately be used to simplify the internals of the
+> genBSDF script, which is a less general tool.  The only program rfluxmtx
+> completely replaces is genklemsamp.
+>
+> Cheers,
+> -Greg
+>
+> *From: *CHI-German Molina <gmolina at hdlao.com>
+>
+> *Subject: *Re: [Radiance-general] Three phase method
+>
+> *Date: *August 21, 2014 2:23:31 PM GMT+02:00
+>
+>
+>  This program seems pretty useful. Is there any manpage or something?
+>
+> Also, is it possible to do something like this by modifying/re-writing
+> genBSDF script? I am not quite sure what was the motivation of writing a
+> whole new program. Could you elaborate a little bit, Andy?
+>
+> THANKS A LOT
+>
+> Germ?n
+>
+>
+> 2014-08-21 6:34 GMT-04:00 Vayia V <vaia13 at msn.com>:
+>
+>> Hello,
+>>
+>> Thank you for the reply and the help,
+>>
+>> About the two BSDF, I have for example a BSDF for the pipe and then I
+>> have one more BSDF for the top (or bottom) part of the pipe. Can I somehow
+>> merge them and use them both?
+>>
+>> As for the rfluxmtx, is there any tutorial available?
+>>
+>> Kind regards
+>>
+>> Vayia
+>>
+>> ------------------------------
+>> From: amcneil at lbl.gov
+>> Date: Wed, 20 Aug 2014 18:14:43 -0700
+>> To: radiance-general at radiance-online.org
+>>
+>>
+>> Hi Vayia,
+>>
+>> You should consider using the new rfluxmtx to generate a transmission
+>> matrix for your lightpipe the resulting matrix won't be in a BSDF XML file
+>> format, but I don't think you need that format anyway. One benefit is you
+>> can specify any geometry for the entrance and exit (genBSDF requires
+>> parallel, rectangular ports).
+>>
+>> A general (untested) approach is below.
+>>
+>> Finally, I'm not sure what you mean by two different parallel BSDFs. Can
+>> you elaborate?
+>>
+>> Best,
+>> Andy
+>>
+>>
+>> insideport.rad:
+>> #@rfluxmtx h=fk u=Y
+>> materials & geometry
+>>
+>> outsideport.rad:
+>> #@rfluxmtx h=fk u=Y
+>> materials & geometry
+>>
+>> sky.rad:
+>> #@rfluxmtx h=u u=Y
+>> ground hemisphere
+>> #@rfluxmtx h=r1 uY
+>> sky hemisphere
+>>
+>>
+>> cat sensorpoints.txt | \
+>> rfluxmtx -faa -ab 12 -ad 50000 -lw 2e-5  -I \
+>>  -y `wc -l < numeric/Space_1.map` \
+>>  -  insideport.rad \
+>>  materials.rad model.rad > view.mtx
+>>
+>> rfluxmtx -ab 12 -ad 5000 -lw 2e-5 insideport.rad outsideport.rad \
+>>  materials.rad model.rad > lightpipe.mtx
+>>
+>> rfulxmtx -ab 2 -ad 1000 -lw 1e-3 outsideport.rad sky.rad \
+>>  materials.rad model.rad > daylight.mtx
+>>
+>> rmtxop view.mtx lightpipe.mtx daylight.mtx > dcoef.mtx
+>> dctimestep dcoef.mtx sky.mtx > illuminance.txt
+>>
+>>
+>>
+>>
+>>
+>>
+>> On Wed, Aug 20, 2014 at 4:46 AM, Vayia V <vaia13 at msn.com> wrote:
+>>
+>>  Hello all,
+>>
+>> I have some more questions regarding the three phase method,
+>>
+>> I understand that I cannot simulate bending pipes with the genbsdf.
+>> However I also need to simulate straight pipes that I think is able to be
+>> done.
+>>
+>> My question is if I need to specify the depth of the pipe somehow in any
+>> of the steps at the three phase method and how to do that.
+>>
+>> The way I create the geometry used at the daylight matrix and view matrix
+>> (meaning the two ends of the pipe) are in the "proper distance". But is
+>> this the correct way to do it (?) or the "entrance" of the pipe at the view
+>> matrix should be at the same position as the "exit" of the pipe at the
+>> daylight matrix (?) and then I specify the length of the pipe (that the
+>> "light" will travel through the pipe) between the "entrance" and "exit"? I
+>> suppose that maybe this way I could generate one bsdf of a long pipe and
+>> then use it for different length of pipes?
+>>
+>> Another question that I have is if I can use two different parallel BSDFs
+>> on one simulation.
+>>
+>> Thank you in advance,
+>>
+>> Vayia
+>>
+>>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+
+-- 
+*Germ?n Molina L.*
+Ingeniero Trainee
+Hunter Douglas Chile S.A.
+Celular +569 89224445
+
+-- 
+
+
+*Nota de Confidencialidad:* Este mensaje inclu?do los archivos adjuntos son 
+confidenciales y pueden contener informacion privilegiada protegida por 
+ley. Si Ud. no es el destinatario, deberia abstenerse de copiarlo, 
+distribuirlo, divulgarlo o usar la informacion contenida. Por favor, avise 
+inmediatamente al emisor y borre este mensaje de su sistema. Los mensajes 
+electronicos son susceptibles de ser cambiados, infectados o adulterados 
+sin autorizacion. No asumimos responsabilidad alguna por ninguna clase de 
+cambios o sus consecuencias. Usted debe estar informado que la compania 
+puede hacer un seguimiento de sus mensajes electronicos y su contenido, 
+gracias.
+
+*Confidentiality Notice:* The information contained in this email message, 
+including any attachment, is confidential and is intended only for the 
+person or entity to which it is addressed. If you are neither the intended 
+recipient nor the employee or agent responsible for delivering this message 
+to the intended recipient, you are hereby notified that you may not review, 
+retransmit, convert to hard copy, copy, use or distribute this email 
+message or any attachments to it. If you have received this email in error, 
+please contact the sender immediately and delete this message from any 
+computer or other data bank, Thank you.
+
+A informa??o transmitida ? confidencial e para conhecimento exclusivo do 
+destinat?rio. Sua utiliza??o, n?o autorizada, constitui crime pass?vel de 
+pris?o. Todas as precau??es poss?veis foram tomadas para garantir que este 
+e-mail n?o contenha v?rus. Uma vez que nossa empresa n?o pode assumir 
+responsabilidade por nenhuma perda ou dano causado por este e-mail ou de 
+seus anexos, recomendamos que o destinat?rio utilize seus procedimentos de 
+antiv?rus antes de qualquer uso.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140821/f91ca36d/attachment.html>
+
+From gregoryjward at gmail.com  Thu Aug 21 06:28:10 2014
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu, 21 Aug 2014 15:28:10 +0200
+Subject: [Radiance-general] Three phase method
+In-Reply-To: <CAK+g53DoLg_a3BjRCCOv+wFUW-RFTk9jF5Escq60BsevUpt+hQ@mail.gmail.com>
+References: <DUB127-W79A32AF59EDC762614C7DBD8D20@phx.gbl>
+	<CAOG+NiwmTKeHpkyX1gqpguzC_a1RRYQUE=bPtHG7ri+piNXMJw@mail.gmail.com>
+	<DUB127-W430ADA2EB2D8C62BF962ACD8D30@phx.gbl>
+	<CAK+g53DEAcYJBw6P7+UAr1Q3oUKEe+sYy2X4=fcvjdoQN=yohg@mail.gmail.com>
+	<A9430F17-C820-4FDA-95E7-ABE922BBCA65@lmi.net>
+	<CAK+g53DoLg_a3BjRCCOv+wFUW-RFTk9jF5Escq60BsevUpt+hQ@mail.gmail.com>
+Message-ID: <D4DF1F1D-4C6E-4311-B113-9C564EAD3F66@lmi.net>
+
+Yes, we are planning to record and possibly webcast the workshop.  People are working on it, and we'll make an announcement if there is the possibility to follow the talks live.
+
+Best,
+-Greg
+
+> From: CHI-German Molina <gmolina at hdlao.com>
+> Subject: Re: [Radiance-general] Three phase method
+> Date: August 21, 2014 3:00:32 PM GMT+02:00
+> 
+> Thanks Greg! I will have a look and check it out when I have time.
+> 
+> Will the presentations be recorded and published this year? I will not go, but I would like to keep myself up to date.
+> 
+> THANKS
+> 
+> Germ?n
+> 
+> 
+> 2014-08-21 8:49 GMT-04:00 Greg Ward <gregoryjward at gmail.com>:
+> Hi Germ?n,
+> 
+> There is a man page for rfluxmtx, but that's about all we have at this point.  I sent Vayia some slides I plan to present at the workshop in London, and I can send this to others who are interested.  (I'm following my own recommendation not to include attachments in radiance-general posts, and my website is inaccessible at the moment for unknown reasons.)
+> 
+> Rfluxmtx was created to simplify common sampling operations used with rcontrib, and will ultimately be used to simplify the internals of the genBSDF script, which is a less general tool.  The only program rfluxmtx completely replaces is genklemsamp.
+> 
+> Cheers,
+> -Greg
+> 	
+> 
+>> From: CHI-German Molina <gmolina at hdlao.com>
+>> Subject: Re: [Radiance-general] Three phase method
+>> Date: August 21, 2014 2:23:31 PM GMT+02:00
+>> 
+>> This program seems pretty useful. Is there any manpage or something? 
+>> 
+>> Also, is it possible to do something like this by modifying/re-writing genBSDF script? I am not quite sure what was the motivation of writing a whole new program. Could you elaborate a little bit, Andy? 
+>> 
+>> THANKS A LOT
+>> 
+>> Germ?n
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140821/8fa9bc40/attachment-0001.html>
+
+From sadeghipour at gmail.com  Fri Aug 22 11:58:38 2014
+From: sadeghipour at gmail.com (Mostapha Sadeghipour)
+Date: Fri, 22 Aug 2014 14:58:38 -0400
+Subject: [Radiance-general] Mapping issue with HDR files generated from TIFF
+Message-ID: <CAAd_PgTCCH7hAJvOWRZ+eARd69d4KtSkvwXgj_FqkP+7MKBbHA@mail.gmail.com>
+
+Hello Radiance community,
+
+I'm doing a series of experiments for using a 3rd party 3D software (in
+this case Rhino) to generate the map and render them with Radiance.
+
+I made a workflow based on Giulio's suggestion (
+http://www.radiance-online.org/pipermail/radiance-general/2005-July/002851.html),
+and it works fine when I use Radiance example .hdr files, however when I
+use a custom pattern ( generated as a tiff image) and convert it to hdr
+(ra_tiff -r) it doesn't map correctly. Looks like hdr mapping is scaled.
+
+Is there some consideration in generating the tiff file or converting it to
+hdr that I am missing. I tried to use pfilt and re-size the image to make
+sure the size is fixed but it didn't help.
+
+Here is a slide that shows the problem:
+https://www.dropbox.com/s/eklns2rv5bv6tyj/RhinoVSRadiance.jpg?dl=0
+
+Also the hdr file generated from tiff image in case it can help:
+https://www.dropbox.com/s/o293dqh04ack1hb/random_pattern_1.HDR?dl=0
+
+Thanks in advance,
+Mostapha
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140822/e779307c/attachment.html>
+
+From gregoryjward at gmail.com  Fri Aug 22 13:42:17 2014
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri, 22 Aug 2014 22:42:17 +0200
+Subject: [Radiance-general] Mapping issue with HDR files generated from
+	TIFF
+In-Reply-To: <CAAd_PgTCCH7hAJvOWRZ+eARd69d4KtSkvwXgj_FqkP+7MKBbHA@mail.gmail.com>
+References: <CAAd_PgTCCH7hAJvOWRZ+eARd69d4KtSkvwXgj_FqkP+7MKBbHA@mail.gmail.com>
+Message-ID: <E7463C58-28B7-4154-8761-66919296669B@lmi.net>
+
+Are both your images square (same number of X and Y pixels)?  Radiance has a somewhat peculiar way of handling rectangular images, which could cause scaling discrepancies.  See p. 259 of "Rendering with Radiance" for details.
+
+Cheers,
+-Greg
+
+
+> From: Mostapha Sadeghipour <sadeghipour at gmail.com>
+> Subject: [Radiance-general] Mapping issue with HDR files generated from TIFF
+> Date: August 22, 2014 8:58:38 PM GMT+02:00
+> 
+> Hello Radiance community,
+> 
+> I'm doing a series of experiments for using a 3rd party 3D software (in this case Rhino) to generate the map and render them with Radiance.
+> 
+> I made a workflow based on Giulio's suggestion (http://www.radiance-online.org/pipermail/radiance-general/2005-July/002851.html), and it works fine when I use Radiance example .hdr files, however when I use a custom pattern ( generated as a tiff image) and convert it to hdr (ra_tiff -r) it doesn't map correctly. Looks like hdr mapping is scaled.
+> 
+> Is there some consideration in generating the tiff file or converting it to hdr that I am missing. I tried to use pfilt and re-size the image to make sure the size is fixed but it didn't help.
+> 
+> Here is a slide that shows the problem:
+> https://www.dropbox.com/s/eklns2rv5bv6tyj/RhinoVSRadiance.jpg?dl=0
+> 
+> Also the hdr file generated from tiff image in case it can help:
+> https://www.dropbox.com/s/o293dqh04ack1hb/random_pattern_1.HDR?dl=0
+> 
+> Thanks in advance,
+> Mostapha
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140822/81f3078c/attachment.html>
+
+From sadeghipour at gmail.com  Fri Aug 22 15:09:39 2014
+From: sadeghipour at gmail.com (Mostapha Sadeghipour)
+Date: Fri, 22 Aug 2014 18:09:39 -0400
+Subject: [Radiance-general] Mapping issue with HDR files generated from
+	TIFF
+In-Reply-To: <E7463C58-28B7-4154-8761-66919296669B@lmi.net>
+References: <CAAd_PgTCCH7hAJvOWRZ+eARd69d4KtSkvwXgj_FqkP+7MKBbHA@mail.gmail.com>
+	<E7463C58-28B7-4154-8761-66919296669B@lmi.net>
+Message-ID: <CAAd_PgR-XGM5D2t_LqAuPv+jkgiH2JV9NupPwk-VZbu8T-jJnQ@mail.gmail.com>
+
+Hi Greg,
+
+That was it. Just rotated the image and it is fixed now! I should have used
+a less random pattern to debug. I will update the workflow to mimic
+Radiance's approach for coordinates.
+
+Best,
+Mostapha
+
+
+
+On Fri, Aug 22, 2014 at 4:42 PM, Greg Ward <gregoryjward at gmail.com> wrote:
+
+> Are both your images square (same number of X and Y pixels)?  Radiance has
+> a somewhat peculiar way of handling rectangular images, which could cause
+> scaling discrepancies.  See p. 259 of "Rendering with Radiance" for details.
+>
+> Cheers,
+> -Greg
+>
+>
+> *From: *Mostapha Sadeghipour <sadeghipour at gmail.com>
+>
+> *Subject: *[Radiance-general] Mapping issue with HDR files generated from
+> TIFF
+>
+> *Date: *August 22, 2014 8:58:38 PM GMT+02:00
+>
+>
+>  Hello Radiance community,
+>
+> I'm doing a series of experiments for using a 3rd party 3D software (in
+> this case Rhino) to generate the map and render them with Radiance.
+>
+> I made a workflow based on Giulio's suggestion (
+> http://www.radiance-online.org/pipermail/radiance-general/2005-July/002851.html),
+> and it works fine when I use Radiance example .hdr files, however when I
+> use a custom pattern ( generated as a tiff image) and convert it to hdr
+> (ra_tiff -r) it doesn't map correctly. Looks like hdr mapping is scaled.
+>
+> Is there some consideration in generating the tiff file or converting it
+> to hdr that I am missing. I tried to use pfilt and re-size the image to
+> make sure the size is fixed but it didn't help.
+>
+> Here is a slide that shows the problem:
+> https://www.dropbox.com/s/eklns2rv5bv6tyj/RhinoVSRadiance.jpg?dl=0
+>
+> Also the hdr file generated from tiff image in case it can help:
+> https://www.dropbox.com/s/o293dqh04ack1hb/random_pattern_1.HDR?dl=0
+>
+> Thanks in advance,
+> Mostapha
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140822/8d76dfae/attachment.html>
+
+From francesco.anselmo at gmail.com  Mon Aug 25 02:10:27 2014
+From: francesco.anselmo at gmail.com (Francesco Anselmo)
+Date: Mon, 25 Aug 2014 10:10:27 +0100
+Subject: [Radiance-general] Webcast of Radiance Workshop 2014
+Message-ID: <CAE0vHbxg5sJksOHmW4=qS6ir_ARpB_gkPyAr9ZS0TWpkWfcr0g@mail.gmail.com>
+
+Hi all,
+
+As anticipated by Greg, we've planned to webcast the workshop presentations.
+
+I am running a test tomorrow (26th August) at 6PM BST
+
+http://www.timeanddate.com/worldclock/fixedtime.html?msg=Radiance+Workshop+2014+-+Live+Webcast+Test&iso=20140826T18&p1=136&am=30
+
+
+Please join me using the following links:
+
+Google Hangout:
+https://plus.google.com/hangouts/_/gzewylk6crb4e7rclknogcocuqa
+
+Webcast: http://www.ustream.tv/channel/radiance2014
+
+Give yourself at least 1/2 hour before the webcast to sign in into Ustream
+and Google+ if you haven't already.
+
+If this works, I'll use the same links on the 1st, 2nd and 3rd September to
+broadcast the workshop.
+
+See you!
+Francesco
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140825/7e15f422/attachment.html>
+
+From kjstotoro at naver.com  Thu Aug 28 09:27:09 2014
+From: kjstotoro at naver.com (jinsook kang)
+Date: Fri, 29 Aug 2014 01:27:09 +0900 (KST)
+Subject: [Radiance-general] =?utf-8?q?Three-phase_Method_dctimestep?=
+Message-ID: <569b51d05f7b3e7b2ad6444aaeec9c9@cweb18.nm.nhnsystem.com>
+
+Hi everyone.
+ 
+Is there anybody who knows how dctimestep works in three phase method?
+When I tried to multiply as a normal matrix (with python language), the illuminance result is not matched with dctimestep result.
+So, I wonder if dctimestep doesn't use normal matrix multiplication.
+If there is a specific method in dctimestep, please teach me. 
+ 
+* let you know, 
+1. I picked up one column out of the every RGB(view matrix and daylight matrix), so that I made a simple matrix multiplication.
+2. I created daylight matrix as a ASCII data instead of binary.
+ 
+Thank you. 
+Jinsook
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140829/8639b9ab/attachment.html>
+
+From gmolina at hdlao.com  Thu Aug 28 09:39:20 2014
+From: gmolina at hdlao.com (CHI-German Molina)
+Date: Thu, 28 Aug 2014 12:39:20 -0400
+Subject: [Radiance-general] Three-phase Method dctimestep
+In-Reply-To: <569b51d05f7b3e7b2ad6444aaeec9c9@cweb18.nm.nhnsystem.com>
+References: <569b51d05f7b3e7b2ad6444aaeec9c9@cweb18.nm.nhnsystem.com>
+Message-ID: <CAK+g53DivBrRXQmzm=He3+7E5HO-71A9URvk4D8=ZvMoBuDrEw@mail.gmail.com>
+
+Jinsook,
+
+DCTIMESTEP does multiply matrices, a pretty naive method, actually. I have
+no idea what might be causing the dismatch between your results and
+DCTIMESTEP's.
+
+Nothing too helpful... sorry.
+
+Bye!
+
+
+
+
+
+2014-08-28 12:27 GMT-04:00 jinsook kang <kjstotoro at naver.com>:
+
+> Hi everyone.
+>
+>
+>
+> Is there anybody who knows how dctimestep works in three phase method?
+>
+> When I tried to multiply as a normal matrix (with python language), the
+> illuminance result is not matched with dctimestep result.
+>
+> So, I wonder if dctimestep doesn't use normal matrix multiplication.
+>
+> If there is a specific method in dctimestep, please teach me.
+>
+>
+>
+> * let you know,
+>
+> 1. I picked up one column out of the every RGB(view matrix and daylight
+> matrix), so that I made a simple matrix multiplication.
+>
+> 2. I created daylight matrix as a ASCII data instead of binary.
+>
+>
+>
+> Thank you.
+>
+> Jinsook
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+
+-- 
+*Germ?n Molina L.*
+Ingeniero Trainee
+Hunter Douglas Chile S.A.
+Celular +569 89224445
+
+-- 
+
+
+*Nota de Confidencialidad:* Este mensaje inclu?do los archivos adjuntos son 
+confidenciales y pueden contener informacion privilegiada protegida por 
+ley. Si Ud. no es el destinatario, deberia abstenerse de copiarlo, 
+distribuirlo, divulgarlo o usar la informacion contenida. Por favor, avise 
+inmediatamente al emisor y borre este mensaje de su sistema. Los mensajes 
+electronicos son susceptibles de ser cambiados, infectados o adulterados 
+sin autorizacion. No asumimos responsabilidad alguna por ninguna clase de 
+cambios o sus consecuencias. Usted debe estar informado que la compania 
+puede hacer un seguimiento de sus mensajes electronicos y su contenido, 
+gracias.
+
+*Confidentiality Notice:* The information contained in this email message, 
+including any attachment, is confidential and is intended only for the 
+person or entity to which it is addressed. If you are neither the intended 
+recipient nor the employee or agent responsible for delivering this message 
+to the intended recipient, you are hereby notified that you may not review, 
+retransmit, convert to hard copy, copy, use or distribute this email 
+message or any attachments to it. If you have received this email in error, 
+please contact the sender immediately and delete this message from any 
+computer or other data bank, Thank you.
+
+A informa??o transmitida ? confidencial e para conhecimento exclusivo do 
+destinat?rio. Sua utiliza??o, n?o autorizada, constitui crime pass?vel de 
+pris?o. Todas as precau??es poss?veis foram tomadas para garantir que este 
+e-mail n?o contenha v?rus. Uma vez que nossa empresa n?o pode assumir 
+responsabilidade por nenhuma perda ou dano causado por este e-mail ou de 
+seus anexos, recomendamos que o destinat?rio utilize seus procedimentos de 
+antiv?rus antes de qualquer uso.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140828/fbaaddda/attachment.html>
+
+From gregoryjward at gmail.com  Thu Aug 28 09:42:59 2014
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu, 28 Aug 2014 18:42:59 +0200
+Subject: [Radiance-general] Three-phase Method dctimestep
+In-Reply-To: <569b51d05f7b3e7b2ad6444aaeec9c9@cweb18.nm.nhnsystem.com>
+References: <569b51d05f7b3e7b2ad6444aaeec9c9@cweb18.nm.nhnsystem.com>
+Message-ID: <38BC85E6-9494-4B36-A875-071EEACB021C@lmi.net>
+
+Hi Jinsook,
+
+Are you aware that dctimestep is multiplying RGB triples as though they are 3 independent matrices?
+
+-Greg
+
+> From: jinsook kang <kjstotoro at naver.com>
+> Subject: [Radiance-general] Three-phase Method dctimestep
+> Date: August 28, 2014 6:27:09 PM GMT+02:00
+> 
+> Hi everyone.
+> 
+>  
+> 
+> Is there anybody who knows how dctimestep works in three phase method?
+> 
+> When I tried to multiply as a normal matrix (with python language), the illuminance result is not matched with dctimestep result.
+> 
+> So, I wonder if dctimestep doesn't use normal matrix multiplication.
+> 
+> If there is a specific method in dctimestep, please teach me. 
+> 
+>  
+> 
+> * let you know, 
+> 
+> 1. I picked up one column out of the every RGB(view matrix and daylight matrix), so that I made a simple matrix multiplication.
+> 
+> 2. I created daylight matrix as a ASCII data instead of binary.
+> 
+>  
+> 
+> Thank you. 
+> 
+> Jinsook
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140828/84219040/attachment.html>
+
+From amcneil at lbl.gov  Thu Aug 28 11:26:22 2014
+From: amcneil at lbl.gov (Andrew McNeil)
+Date: Thu, 28 Aug 2014 11:26:22 -0700
+Subject: [Radiance-general] Three-phase Method dctimestep
+In-Reply-To: <CAK+g53DivBrRXQmzm=He3+7E5HO-71A9URvk4D8=ZvMoBuDrEw@mail.gmail.com>
+References: <569b51d05f7b3e7b2ad6444aaeec9c9@cweb18.nm.nhnsystem.com>
+	<CAK+g53DivBrRXQmzm=He3+7E5HO-71A9URvk4D8=ZvMoBuDrEw@mail.gmail.com>
+Message-ID: <CAOG+NixbDh5Wp4j_BD0B7JQa1M5=ZOJLY4nQPuD8fwFmG5=YMw@mail.gmail.com>
+
+When dctimestep reads the BSDF xml, there is a conversion required for it
+to be a true coefficient matrix. If you're giving it a BSDF, I suspect this
+might be one of the causes of the discrepency you're observing.
+Andy
+
+
+On Thu, Aug 28, 2014 at 9:39 AM, CHI-German Molina <gmolina at hdlao.com>
+wrote:
+
+> Jinsook,
+>
+> DCTIMESTEP does multiply matrices, a pretty naive method, actually. I have
+> no idea what might be causing the dismatch between your results and
+> DCTIMESTEP's.
+>
+> Nothing too helpful... sorry.
+>
+> Bye!
+>
+>
+>
+>
+>
+> 2014-08-28 12:27 GMT-04:00 jinsook kang <kjstotoro at naver.com>:
+>
+>> Hi everyone.
+>>
+>>
+>>
+>> Is there anybody who knows how dctimestep works in three phase method?
+>>
+>> When I tried to multiply as a normal matrix (with python language), the
+>> illuminance result is not matched with dctimestep result.
+>>
+>> So, I wonder if dctimestep doesn't use normal matrix multiplication.
+>>
+>> If there is a specific method in dctimestep, please teach me.
+>>
+>>
+>>
+>> * let you know,
+>>
+>> 1. I picked up one column out of the every RGB(view matrix and daylight
+>> matrix), so that I made a simple matrix multiplication.
+>>
+>> 2. I created daylight matrix as a ASCII data instead of binary.
+>>
+>>
+>>
+>> Thank you.
+>>
+>> Jinsook
+>>
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>
+>>
+>
+>
+> --
+> *Germ?n Molina L.*
+> Ingeniero Trainee
+> Hunter Douglas Chile S.A.
+> Celular +569 89224445
+>
+> *Nota de Confidencialidad:* Este mensaje inclu?do los archivos adjuntos
+> son confidenciales y pueden contener informacion privilegiada protegida por
+> ley. Si Ud. no es el destinatario, deberia abstenerse de copiarlo,
+> distribuirlo, divulgarlo o usar la informacion contenida. Por favor, avise
+> inmediatamente al emisor y borre este mensaje de su sistema. Los mensajes
+> electronicos son susceptibles de ser cambiados, infectados o adulterados
+> sin autorizacion. No asumimos responsabilidad alguna por ninguna clase de
+> cambios o sus consecuencias. Usted debe estar informado que la compania
+> puede hacer un seguimiento de sus mensajes electronicos y su contenido,
+> gracias.
+>
+> *Confidentiality Notice:* The information contained in this email
+> message, including any attachment, is confidential and is intended only for
+> the person or entity to which it is addressed. If you are neither the
+> intended recipient nor the employee or agent responsible for delivering
+> this message to the intended recipient, you are hereby notified that you
+> may not review, retransmit, convert to hard copy, copy, use or distribute
+> this email message or any attachments to it. If you have received this
+> email in error, please contact the sender immediately and delete this
+> message from any computer or other data bank, Thank you.
+>
+> A informa??o transmitida ? confidencial e para conhecimento exclusivo do
+> destinat?rio. Sua utiliza??o, n?o autorizada, constitui crime pass?vel de
+> pris?o. Todas as precau??es poss?veis foram tomadas para garantir que este
+> e-mail n?o contenha v?rus. Uma vez que nossa empresa n?o pode assumir
+> responsabilidade por nenhuma perda ou dano causado por este e-mail ou de
+> seus anexos, recomendamos que o destinat?rio utilize seus procedimentos de
+> antiv?rus antes de qualquer uso.
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140828/688120b9/attachment-0001.html>
+
+From shrikarbhave at gmail.com  Thu Aug 28 13:20:10 2014
+From: shrikarbhave at gmail.com (Shrikar Bhave)
+Date: Thu, 28 Aug 2014 16:20:10 -0400
+Subject: [Radiance-general] Can you change the default colors in falsecolor
+	images
+Message-ID: <CABL0RjcFm0oeorEf6ivfS4B-vvwvZP=VYpEkYp-pV31O-B2jDA@mail.gmail.com>
+
+Hello All,
+
+Got this unusual request. I am not sure how I can change that. Any
+pointers?
+Can I set custom colors based on say min/max and number of desired steps in
+between?
+I am looking at both Luminance and Illuminance falsecolor images.
+Has anyone attempted that before, if yes, any examples?
+
+Thanks,
+
+Shri
+
+P.S> Apologies for my past emails with attachments, I promise I will be
+diligent next time!
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140828/480b3c72/attachment.html>
+
+From jacobs.axel at gmail.com  Thu Aug 28 13:32:30 2014
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Thu, 28 Aug 2014 21:32:30 +0100
+Subject: [Radiance-general] Can you change the default colors in
+ falsecolor images
+In-Reply-To: <CABL0RjcFm0oeorEf6ivfS4B-vvwvZP=VYpEkYp-pV31O-B2jDA@mail.gmail.com>
+References: <CABL0RjcFm0oeorEf6ivfS4B-vvwvZP=VYpEkYp-pV31O-B2jDA@mail.gmail.com>
+Message-ID: <53FF91DE.5030604@gmail.com>
+
+Hi Shrikar,
+
+I suppose you have discovered the -pal and -palettes options, but this 
+still doesn't give you what you want?
+
+You can create custom scales using the -r, -g and -b options.  Here is 
+an example for a 3-step blue-yellow-white scale:
+
+falsecolor ?ip picture.hdr ?s 5000 ?r ?if(v-0.3,1,0)? \
+?g ?if(v-0.3,1,0)? ?b ?if(v-0.3,if(v-0.7,1,0)1)? > picture_fc.hdr
+
+It requires a bit of cal magic.  You may also look at the falsecolor 
+code for inspiration.
+
+Best
+
+Axel
+
+
+On 28/08/14 21:20, Shrikar Bhave wrote:
+> Hello All,
+>
+> Got this unusual request. I am not sure how I can change that. Any
+> pointers?
+> Can I set custom colors based on say min/max and number of desired steps
+> in between?
+> I am looking at both Luminance and Illuminance falsecolor images.
+> Has anyone attempted that before, if yes, any examples?
+>
+> Thanks,
+>
+> Shri
+>
+> P.S> Apologies for my past emails with attachments, I promise I will be
+> diligent next time!
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+
+
+From shrikarbhave at gmail.com  Thu Aug 28 13:53:39 2014
+From: shrikarbhave at gmail.com (Shrikar Bhave)
+Date: Thu, 28 Aug 2014 16:53:39 -0400
+Subject: [Radiance-general] Can you change the default colors in
+ falsecolor images
+In-Reply-To: <53FF91DE.5030604@gmail.com>
+References: <CABL0RjcFm0oeorEf6ivfS4B-vvwvZP=VYpEkYp-pV31O-B2jDA@mail.gmail.com>
+	<53FF91DE.5030604@gmail.com>
+Message-ID: <CABL0RjeNkKy9zURp_UxLXLsMLArPF3dRGZ9f+0dJZfJY6bEU2g@mail.gmail.com>
+
+HI Axel,
+
+So far, I had not come across -pal and -palettes options! I will look into
+it. Thanks for the command for the custom scales, that looks promising. My
+initial reaction was I will need to tweak/play with the code for
+falsecolor, but this looks like something I can actually do :)
+
+Thanks a lot!
+
+Shri
+
+
+On Thu, Aug 28, 2014 at 4:32 PM, Axel Jacobs <jacobs.axel at gmail.com> wrote:
+
+> Hi Shrikar,
+>
+> I suppose you have discovered the -pal and -palettes options, but this
+> still doesn't give you what you want?
+>
+> You can create custom scales using the -r, -g and -b options.  Here is an
+> example for a 3-step blue-yellow-white scale:
+>
+> falsecolor ?ip picture.hdr ?s 5000 ?r ?if(v-0.3,1,0)? \
+> ?g ?if(v-0.3,1,0)? ?b ?if(v-0.3,if(v-0.7,1,0)1)? > picture_fc.hdr
+>
+> It requires a bit of cal magic.  You may also look at the falsecolor code
+> for inspiration.
+>
+> Best
+>
+> Axel
+>
+>
+>
+> On 28/08/14 21:20, Shrikar Bhave wrote:
+>
+>> Hello All,
+>>
+>> Got this unusual request. I am not sure how I can change that. Any
+>> pointers?
+>> Can I set custom colors based on say min/max and number of desired steps
+>> in between?
+>> I am looking at both Luminance and Illuminance falsecolor images.
+>> Has anyone attempted that before, if yes, any examples?
+>>
+>> Thanks,
+>>
+>> Shri
+>>
+>> P.S> Apologies for my past emails with attachments, I promise I will be
+>> diligent next time!
+>>
+>>
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>
+>>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20140828/0d9a24dc/attachment.html>
+

@@ -1,0 +1,2760 @@
+From atelier at iebele.nl  Sat Oct  1 01:16:52 2005
+From: atelier at iebele.nl (atelier iebele abel)
+Date: Sat Oct  1 01:14:49 2005
+Subject: [Radiance-general] Calculating diffuse component in a BRTDfunc
+In-Reply-To: <DDE6AB1F-FE5D-4383-98B2-E8F2732ECBD5@gmail.com>
+References: <07fa01c5c5a7$c52e3fc0$0c01a8c0@JELLE> <433D4749.5010302@iebele.nl>
+	<DDE6AB1F-FE5D-4383-98B2-E8F2732ECBD5@gmail.com>
+Message-ID: <433DC764.909@iebele.nl>
+
+Hi Greg,
+
+Thanks for your response. So, what I tried does not work with BRTDfunc 
+at all... I used more or less the same cal file in combination with 
+colorfunc and brightfunc, which works  fine for the moment.
+Just for understanding more of it: according to the documentation args 
+7-9 are functions. Are there any examples of how to use a function in 
+BRTDfunc ?
+
+-Iebele
+
+
+
+
+Greg Ward wrote:
+
+> Hi Iebele,
+>
+> You are correct that the real arguments cannot be expressions.  The  
+> definition of a diffuse component is one that does not change with  
+> angle, so there should be no need to define these parameters as  
+> variables.  If you have some varying portion to your BRDF, then put  
+> this in the directional-diffuse component, which are string arguments  
+> 7-9 for BRTDfunc.
+>
+> -Greg
+>
+> P.S.  On my mailer, the first message came through better than the  
+> second.
+>
+>> From: atelier iebele abel <atelier@iebele.nl>
+>> Date: September 30, 2005 7:10:17 AM PDT
+>>
+>> Hi all,
+>>
+>> I am writing a BRTD material which I want to use to change the  
+>> diffuse component of a surface, related to a certain direction an  
+>> the surface normal.
+>> Radiance reports: error bad arguments for BRTDfunc
+>> What am I doing wrong here?
+>>
+>> I get the impression that the rfdif, gfdif, bfdif, rbdif, gbdif and  
+>> bbdif are not variables ???
+>> If these are not variables, how can I change/calculate/define the  
+>> diffuse component in a BRTDfunc?
+>> See the bold lines of the example in my cal file.
+>>
+>> I appreciate any suggestions !
+>>
+>> Iebele
+>>
+>>
+>> <--- snip  ---->
+>>
+>>
+>> {
+>>    directional.cal
+>>
+>>    arg10 red diffuse
+>>    arg11 green diffuse
+>>    arg12 blue diffuse
+>>    arg13 direction x    arg14 direction y
+>>    arg15 direction z
+>> }
+>>
+>> { RGB values for the reflection  }
+>> valr  = arg(10);
+>> valg  = arg(11);
+>> valb  = arg(12);
+>> xdir = arg(13);
+>> ydir = arg(14);
+>> zdir = arg(15);
+>>
+>> { dot product direction and normal }
+>> DdN = (xdir*Nx)+(ydir*Ny)+(zdir*Nz);
+>>
+>> { always return a positive value }
+>> multi = if(DdN, DdN, -DdN) ;
+>>
+>> *reflr = CrP + (multi*valr)  ;
+>> reflg = CgP + (multi*valg)  ;
+>> reflb = CbP + (multi*valb)  ;*
+>>
+>>
+>> {
+>>    example usage:
+>>        void BRTDfunc LAYER114
+>>        10
+>>        0 0 0                          / reflection
+>>        0 0 0                          / specular
+>>        0 0 0                 directional.cal
+>>        0
+>>        15
+>>       * reflr reflg reflb              */ diffuse front*
+>>        reflr reflg reflb  *            / diffuse back
+>>        0 0 0                          / trans
+>>        0.8 0.7 0.6                    / color of surface
+>>        0.57735 0.57735 0.57735        / vector defining bright side  
+>> of surface
+>> }
+>>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+From gregoryjward at gmail.com  Sat Oct  1 01:20:56 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Sat Oct  1 01:21:50 2005
+Subject: [Radiance-general] Calculating diffuse component in a BRTDfunc
+In-Reply-To: <433DC764.909@iebele.nl>
+References: <07fa01c5c5a7$c52e3fc0$0c01a8c0@JELLE> <433D4749.5010302@iebele.nl>
+	<DDE6AB1F-FE5D-4383-98B2-E8F2732ECBD5@gmail.com>
+	<433DC764.909@iebele.nl>
+Message-ID: <E3A50E5E-8E0C-49EA-9B2E-4E84603AA187@gmail.com>
+
+Sure, just go to where the Radiance libraries live (ray/lib in the   
+distribution) and run "grep BRTDfunc *.cal"
+
+There are a few different examples.
+
+-Greg
+
+> From: atelier iebele abel <atelier@iebele.nl>
+> Date: September 30, 2005 4:16:52 PM PDT
+>
+> Hi Greg,
+>
+> Thanks for your response. So, what I tried does not work with  
+> BRTDfunc at all... I used more or less the same cal file in  
+> combination with colorfunc and brightfunc, which works  fine for  
+> the moment.
+> Just for understanding more of it: according to the documentation  
+> args 7-9 are functions. Are there any examples of how to use a  
+> function in BRTDfunc ?
+>
+> -Iebele
+
+From iain at esru.strath.ac.uk  Tue Oct  4 14:41:57 2005
+From: iain at esru.strath.ac.uk (Iain Macdonald)
+Date: Tue Oct  4 14:51:37 2005
+Subject: [Radiance-general] rtcontrib & daylight coefficients
+In-Reply-To: <CB711BD6-16B9-4F40-B806-8A034E9C958B@gmail.com>
+References: <43340242.5090500@esru.strath.ac.uk>	<69FC71D6-0F7E-4197-AC8C-EB1F4E93133F@gmail.com>	<433D6469.20401@esru.strath.ac.uk>
+	<CB711BD6-16B9-4F40-B806-8A034E9C958B@gmail.com>
+Message-ID: <43427895.4090604@esru.strath.ac.uk>
+
+Greg et all,
+
+I've done a few more tests and with -ad set to 10000 and -lw set to 
+0.0001 the results are much more consistent (and all previous issues are 
+no longer applicable).  This seems a bit extreme but it works.
+
+Iain
+
+Gregory J. Ward wrote:
+
+> Hi Iain,
+>
+> I'm not sure what your rtcontrib command was as you didn't include it  
+> in your e-mail, but you can expect a degree of randomness in the  
+> results as you would see in any Monte Carlo calculation.  Try  
+> increasing -ad and decreasing the -lw value to see if you get  
+> convergence.
+>
+> -Greg
+>
+>> From: Iain Macdonald <iain@esru.strath.ac.uk>
+>> Date: September 30, 2005 9:14:33 AM PDT
+>>
+>> Greg,
+>>
+>> I'm now using version 1.28 of rtcontrib and its much better, but  
+>> still not 100% I think.  Here is my model:
+>> # gensky 4 2 10.00 +s -g 0.25 -a 51.7 -o -0.5 -m -0.5
+>> # Local solar time: 9.94
+>> # Solar altitude and azimuth: 36.2 -39.4
+>> # Ground ambient level: 16.6
+>>
+>> void light solar
+>> 0
+>> 0
+>> 3 6.47e+06 6.47e+06 6.47e+06
+>>
+>> solar source sun
+>> 0
+>> 0
+>> 4 0.512417 -0.623930 0.590034 0.5
+>>
+>> void brightfunc skyfunc
+>> 2 skybr skybright.cal
+>> 0
+>> 7 1 8.98e+00 2.24e+01 4.56e-01 0.512417 -0.623930 0.590034
+>>
+>> skyfunc glow sky_glow
+>> 0 0 4 .986 .986 1.202  0
+>> sky_glow source sky
+>> 0 0 4 0 0 1 180 # define ground...
+>> skyfunc glow ground_glow
+>> 0 0 4 1.276 .957 .319  0
+>> ground_glow source ground
+>> 0 0 4 0 0 -1 180
+>> Which is about as simple as you can get I think ;-)
+>>
+>> rtcontrib command as below with the following test points (in  
+>> test.dat):
+>> 0 0 1 0 1 0
+>> 0 0 1 0 -1 0
+>> 0 0 1 0 -1 0
+>> 0 0 1 0 1 0
+>>
+>> I would expect to get the same data for point one and four and for  
+>> points two and three.  However the data for the last few points is  
+>> (I've transposed the numbers and the data in the first column is  the 
+>> field from the rtcontrib output):
+>> 421 7.479982e-03 0.000000e+00 0.000000e+00 4.986655e-03       422  
+>> 7.479982e-03 0.000000e+00 0.000000e+00 4.986655e-03       423  
+>> 7.479982e-03 0.000000e+00 0.000000e+00 4.986655e-03       424  
+>> 0.000000e+00 2.493327e-03 2.493327e-03 0.000000e+00       425  
+>> 0.000000e+00 2.493327e-03 2.493327e-03 0.000000e+00       426  
+>> 0.000000e+00 2.493327e-03 2.493327e-03 0.000000e+00       427  
+>> 0.000000e+00 1.246664e-02 1.246664e-02 0.000000e+00   428 0.000000e 
+>> +00 1.246664e-02 1.246664e-02 0.000000e+00       429 0.000000e+00  
+>> 1.246664e-02 1.246664e-02 0.000000e+00       430 0.000000e+00  
+>> 4.986655e-03 2.493327e-03 0.000000e+00       431 0.000000e+00  
+>> 4.986655e-03 2.493327e-03 0.000000e+00       432 0.000000e+00  
+>> 4.986655e-03 2.493327e-03 0.000000e+00       433 4.986655e-03  
+>> 0.000000e+00 0.000000e+00 4.986655e-03       434 4.986655e-03  
+>> 0.000000e+00 0.000000e+00 4.986655e-03   435 4.986655e-03 0.000000e 
+>> +00 0.000000e+00 4.986655e-03       436 2.493327e-03 0.000000e+00  
+>> 2.493327e-03 2.493327e-03       437 2.493327e-03 0.000000e+00  
+>> 2.493327e-03 2.493327e-03       438 2.493327e-03 0.000000e+00  
+>> 2.493327e-03 2.493327e-03
+>> First of all do you get the same results?  Or am I doing something  
+>> wrong.
+>>
+>> regards,
+>>
+>> Iain
+>>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+-- 
+****************************
+Dr Iain A Macdonald
+Energy Systems Research Unit
+University of Strathclyde
+Glasgow, UK
++44 141 548 3747
+http://www.esru.strath.ac.uk
+****************************
+
+
+
+
+From j.vesterbaek at cs.ucl.ac.uk  Wed Oct  5 19:21:19 2005
+From: j.vesterbaek at cs.ucl.ac.uk (Jeppe Vesterbaek)
+Date: Wed Oct  5 19:22:26 2005
+Subject: [Radiance-general] Using BRDF measurement representations with
+	Radiance
+Message-ID: <43440B8F.6020206@cs.ucl.ac.uk>
+
+Hi
+
+I'm currently working on how to use measured BRDF data, e.g. represented 
+using a wavelet parameterization, with Radiance. I'm struggling at bit 
+with this, as documentation on using Radiance with measured BRDF data 
+seems not to exist? Can someone give me directions, links to previous 
+work on this, documentation or advice on this?
+
+Thanks,
+Jeppe Vesterbaek
+Univesity College London
+
+From gregoryjward at gmail.com  Wed Oct  5 19:54:08 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed Oct  5 19:55:24 2005
+Subject: [Radiance-general] Using BRDF measurement representations with
+	Radiance
+In-Reply-To: <43440B8F.6020206@cs.ucl.ac.uk>
+References: <43440B8F.6020206@cs.ucl.ac.uk>
+Message-ID: <D74EA448-31EA-4972-B26E-D7468A4B880D@gmail.com>
+
+Hi Jeppe,
+
+Check out "He.cal" in the ray/lib directory of the standard  
+distribution.  It's a bit complicated, but you'll probably end up  
+with something similar if you're building a parametric BRDF model.
+
+You should be aware that Radiance doesn't do all it should with BRDF  
+materials, in that the indirect component is approximated as  
+diffuse.  Only highlights use the BRDF, not secondary rays, for  
+efficiency.
+
+-Greg
+
+> From: Jeppe Vesterbaek <j.vesterbaek@cs.ucl.ac.uk>
+> Date: October 5, 2005 10:21:19 AM PDT
+>
+> Hi
+>
+> I'm currently working on how to use measured BRDF data, e.g.  
+> represented using a wavelet parameterization, with Radiance. I'm  
+> struggling at bit with this, as documentation on using Radiance  
+> with measured BRDF data seems not to exist? Can someone give me  
+> directions, links to previous work on this, documentation or advice  
+> on this?
+>
+> Thanks,
+> Jeppe Vesterbaek
+> Univesity College London
+>
+
+From j.vesterbaek at cs.ucl.ac.uk  Wed Oct  5 20:12:03 2005
+From: j.vesterbaek at cs.ucl.ac.uk (Jeppe Vesterbaek)
+Date: Wed Oct  5 20:13:12 2005
+Subject: [Radiance-general] Using BRDF measurement representations with 
+	Radiance
+In-Reply-To: <D74EA448-31EA-4972-B26E-D7468A4B880D@gmail.com>
+References: <43440B8F.6020206@cs.ucl.ac.uk>
+	<D74EA448-31EA-4972-B26E-D7468A4B880D@gmail.com>
+Message-ID: <43441773.3000505@cs.ucl.ac.uk>
+
+Hi Greg
+
+Thanks for the quick reply. I'll have a look at "He.cal" tomorrow (been 
+staring too long at this monitor by now :p).
+
+With respect to Radiance's handling of BRDF materials: is there no way 
+(around) to change how Radiance calculates the indirect component? I'll 
+be using Radiance for rendering (relighted) real scenes (in 
+collaboration with Katrien Jacobs) and would like the rendering to be as 
+realistic as possible (no efficiency concerns atm.).
+
+Thanks,
+/Jeppe
+
+Greg Ward wrote:
+
+> Hi Jeppe,
+>
+> Check out "He.cal" in the ray/lib directory of the standard  
+> distribution.  It's a bit complicated, but you'll probably end up  
+> with something similar if you're building a parametric BRDF model.
+>
+> You should be aware that Radiance doesn't do all it should with BRDF  
+> materials, in that the indirect component is approximated as  
+> diffuse.  Only highlights use the BRDF, not secondary rays, for  
+> efficiency.
+>
+> -Greg
+>
+>> From: Jeppe Vesterbaek <j.vesterbaek@cs.ucl.ac.uk>
+>> Date: October 5, 2005 10:21:19 AM PDT
+>>
+>> Hi
+>>
+>> I'm currently working on how to use measured BRDF data, e.g.  
+>> represented using a wavelet parameterization, with Radiance. I'm  
+>> struggling at bit with this, as documentation on using Radiance  with 
+>> measured BRDF data seems not to exist? Can someone give me  
+>> directions, links to previous work on this, documentation or advice  
+>> on this?
+>>
+>> Thanks,
+>> Jeppe Vesterbaek
+>> Univesity College London
+>>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+
+From gregoryjward at gmail.com  Wed Oct  5 20:19:29 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed Oct  5 20:20:39 2005
+Subject: [Radiance-general] Using BRDF measurement representations with
+	Radiance
+In-Reply-To: <43441773.3000505@cs.ucl.ac.uk>
+References: <43440B8F.6020206@cs.ucl.ac.uk>
+	<D74EA448-31EA-4972-B26E-D7468A4B880D@gmail.com>
+	<43441773.3000505@cs.ucl.ac.uk>
+Message-ID: <20F07C3E-B7DC-4CC6-BA4C-88D8E08CBCA8@gmail.com>
+
+Sorry, but this is one of those design decisions that is built into  
+the code.  Of course, the C source is all there if you want to modify  
+it, but there's quite a lot to figure out along the way, like how to  
+sample the hemisphere for an arbitrary BRDF.  This is a difficult  
+problem, and one that has been tackled by various people over the  
+years, so there are some precedents.
+
+If I were to do it myself, I would investigate something like a  
+median cut algorithm or kd-tree on the hemisphere, which would  
+require presampling the BRDF or performing lazy evaluation.  For  
+something like the He-Torrance model, you would likely spend hours  
+and hours (perhaps days) just computing the BRDF before you ended up  
+tracing your first ray.  This is why Radiance doesn't make the attempt.
+
+-Greg
+
+> From: Jeppe Vesterbaek <j.vesterbaek@cs.ucl.ac.uk>
+> Date: October 5, 2005 11:12:03 AM PDT
+>
+> Hi Greg
+>
+> Thanks for the quick reply. I'll have a look at "He.cal" tomorrow  
+> (been staring too long at this monitor by now :p).
+>
+> With respect to Radiance's handling of BRDF materials: is there no  
+> way (around) to change how Radiance calculates the indirect  
+> component? I'll be using Radiance for rendering (relighted) real  
+> scenes (in collaboration with Katrien Jacobs) and would like the  
+> rendering to be as realistic as possible (no efficiency concerns  
+> atm.).
+>
+> Thanks,
+> /Jeppe
+>
+
+From grobe at gmx.net  Fri Oct  7 17:16:15 2005
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Fri Oct  7 17:17:54 2005
+Subject: [Radiance-general] mkillum to produce zero radiance (sealing
+	geometry)
+Message-ID: <c34d45c063fe71fe8d11131646e1f77e@gmx.net>
+
+Hi List!
+
+I have a scene containing to modifiers that should be converted to 
+illums by mkillum. The first, called illum, should be the actual light 
+source for indirect calculation. That is well documented with mkillum. 
+The second is to "seal" geometry only. That means, the modified 
+surfaces are so small, that I can neglect them to reduce the number of 
+light sources in the indirect calculation. RwR chapter 13.1 suggests to 
+seal such geometry with zero-radiance illums, but doesn't propose how 
+to set them. So that is the point where I am, can I somehow give this 
+zero-radiance as an option to mkillum?
+
+Thank You, CU Lars.
+
+
+From jedev at visarc.com  Fri Oct  7 17:47:10 2005
+From: jedev at visarc.com (Jack de Valpine)
+Date: Fri Oct  7 17:50:14 2005
+Subject: [Radiance-general] mkillum to produce zero radiance (sealing
+	geometry)
+In-Reply-To: <c34d45c063fe71fe8d11131646e1f77e@gmx.net>
+References: <c34d45c063fe71fe8d11131646e1f77e@gmx.net>
+Message-ID: <4346987E.9090903@visarc.com>
+
+Hi Lars,
+
+You should have a separate material as follows:
+
+void illum seal.illum
+0
+0
+3 0 0 0
+
+Apply this to seal illum geometry. The only illums you should need to 
+send to mkillum are that actual ones to be used for secondary sources.
+
+-Jack
+
+Lars O. Grobe wrote:
+
+> Hi List!
+>
+> I have a scene containing to modifiers that should be converted to 
+> illums by mkillum. The first, called illum, should be the actual light 
+> source for indirect calculation. That is well documented with mkillum. 
+> The second is to "seal" geometry only. That means, the modified 
+> surfaces are so small, that I can neglect them to reduce the number of 
+> light sources in the indirect calculation. RwR chapter 13.1 suggests 
+> to seal such geometry with zero-radiance illums, but doesn't propose 
+> how to set them. So that is the point where I am, can I somehow give 
+> this zero-radiance as an option to mkillum?
+>
+> Thank You, CU Lars.
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+
+
+From grobe at gmx.net  Fri Oct  7 17:54:36 2005
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Fri Oct  7 17:55:56 2005
+Subject: [Radiance-general] mkillum to produce zero radiance (sealing
+	geometry)
+In-Reply-To: <c34d45c063fe71fe8d11131646e1f77e@gmx.net>
+References: <c34d45c063fe71fe8d11131646e1f77e@gmx.net>
+Message-ID: <528d9079dd05bacf46a5ab75ff62e825@gmx.net>
+
+Hi... please ignore that previous message, the solution is too 
+simple... I just exclude every modifier but the necessary ones and 
+simply define a zero-radiance illum for the sealing manually, so 
+mkillum doesn't touch this at all... CU Lars.
+
+
+From marcdevon at hotmail.com  Sat Oct  8 05:21:47 2005
+From: marcdevon at hotmail.com (Marcus Jacobs)
+Date: Sat Oct  8 05:23:15 2005
+Subject: [Radiance-general] Compamb Problems
+In-Reply-To: <MC8-F1AVIBsOPd8sIg10079f2db@mc8-f1.hotmail.com>
+Message-ID: <BAY102-F37B1B2BFFB0FD520017B90A4870@phx.gbl>
+
+Dear Group
+
+I have recently tried using compamb to determine the proper -av values. This 
+is my first time trying it. After setting things up and running it, all that 
+was appended to the rad files was:
+
+render= -av Inf Inf Inf
+
+'Inf' is not a valid value for -av. What's going wrong here?
+
+
+Marcus
+
+
+
+From gregoryjward at gmail.com  Sat Oct  8 06:21:21 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Sat Oct  8 06:22:36 2005
+Subject: [Radiance-general] Compamb Problems
+In-Reply-To: <BAY102-F37B1B2BFFB0FD520017B90A4870@phx.gbl>
+References: <BAY102-F37B1B2BFFB0FD520017B90A4870@phx.gbl>
+Message-ID: <FA52FF20-9408-441D-A2FF-9FBA85D7CF8B@gmail.com>
+
+Hi Marcus,
+
+Mea culpa.  It seems I introduced a bug in the total command when I  
+added the ability to read binary data back in June, and didn't notice  
+it because it only happens when the -p and -m options are combined,  
+as they are in compamb.
+
+Download and compile the latest total.c from CVS by following the  
+link below:
+
+     http://www.radiance-online.org/cgi-bin/viewcvs.cgi/*checkout*/ 
+ray/src/cal/total.c?rev=1.5&content-type=text/plain
+
+Put it in the ray/src/cal directory and rerun "rmake install" there.
+
+Sorry about that, but thanks very much for finding this bug.
+
+-Greg
+
+> From: "Marcus Jacobs" <marcdevon@hotmail.com>
+> Date: October 7, 2005 8:21:47 PM PDT
+>
+> Dear Group
+>
+> I have recently tried using compamb to determine the proper -av  
+> values. This is my first time trying it. After setting things up  
+> and running it, all that was appended to the rad files was:
+>
+> render= -av Inf Inf Inf
+>
+> 'Inf' is not a valid value for -av. What's going wrong here?
+>
+> Marcus
+>
+
+From pisuke at blueyonder.co.uk  Sat Oct  8 18:50:40 2005
+From: pisuke at blueyonder.co.uk (pisuke@blueyonder.co.uk)
+Date: Sat Oct  8 18:51:47 2005
+Subject: [Radiance-general] new Radiance binaries for Windows
+Message-ID: <22956.195.188.213.35.1128790240.squirrel@195.188.213.35>
+
+Hi all!
+
+For those of you who are interested in using Radiance with
+the Micro$oft OS, I've put some fresh binaries here:
+http://www.bozzograo.net/radiance/modules.php?op=modload&name=Downloads&file=index&req=viewdownload&cid=4
+
+They've _not_ been compiled within cygwin, so only the
+non-graphical programs are included. The c-shell scripts
+are missing too (no falsecolor, sorry).
+
+Francesco
+
+
+
+From grobe at gmx.net  Sat Oct  8 22:06:17 2005
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Sat Oct  8 22:07:37 2005
+Subject: [Radiance-general] mkillum with 400 sources?
+Message-ID: <1033d54fb5c3c435824698279a74d7c1@gmx.net>
+
+Hi!
+
+I am using mkillum on a scene with a lot of faces converted to illums 
+(about 400). This is rather fine-grained and results in longe times 
+spent on mkillum. Now I wonder if I should tweak the rtrace-settings a 
+bit to get quicker and still not too bad results, so far I use 
+defaults. Background: the sources represent glass panes in windows, so 
+each window is allready divided into multiple faces. This is one of the 
+causes for the many illums that are calculated.
+
+What are the settings you use with mkillum, in a daylight-scene, with 
+rather small openings (because of the divided windows)?
+
+TIA+CU Lars.
+
+P.S.: I have been waiting 2 hours for 40 illums, so I am a bit worried 
+about this now ;-)
+
+
+From jelleferinga at gmail.com  Sun Oct  9 13:11:43 2005
+From: jelleferinga at gmail.com (Jelle Feringa / EZCT Architecture & Design Research)
+Date: Sun Oct  9 13:12:58 2005
+Subject: [Radiance-general] windows binaries
+Message-ID: <37fac3b90510090411t30cbd85ep6bf79cdc498ce846@mail.gmail.com>
+
+Dear Francesco,
+
+The new binaries made my day!
+Thanks so much!
+It's really terrific to be able to run RTcontrib on wintel!
+
+Cheers,
+
+-jelle
+
+From grobe at gmx.net  Sun Oct  9 18:22:57 2005
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Sun Oct  9 18:24:20 2005
+Subject: [Radiance-general] mkillum with 400 sources?
+In-Reply-To: <1033d54fb5c3c435824698279a74d7c1@gmx.net>
+References: <1033d54fb5c3c435824698279a74d7c1@gmx.net>
+Message-ID: <f8f01cff620221b261a4f8bbb2b90710@gmx.net>
+
+Hello again.
+
+I have to ask this in a more general way. I have used mkillum to add 
+some illum planes in front of the windows of my scene, and sealed the 
+sides using zero-radiance illums. I am rendering the illums with -s=8 
+-d=8, and in total there are about 400 calculated illums (and many more 
+zero-radiance illums).
+
+Now, I am experiencing even slower calculation with rpict. I guess it 
+is because of all the illum sources. I think that I can reduce the -ab 
+bounces because of the illum useage, which will give faster rendering 
+times. But still I wonder if there is some kind of a magic limit of the 
+number of illums to use. I mean, is there a number of illums where 
+rendering speed decreases instead of increasing by the useage of the 
+mkillum-tool ?
+
+Are there any other ambient-parameters that I can change now that I 
+have illums? I am thinking of ad, ar, aa, as the light environment is 
+quite different now?
+
+You see, I am still quite a beginner in this mkillum stuff, and a bit 
+worried. Thanks for any help and hints, CU
+
+Lars.
+
+
+From gregoryjward at gmail.com  Sun Oct  9 18:45:48 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Sun Oct  9 18:47:02 2005
+Subject: [Radiance-general] mkillum with 400 sources?
+In-Reply-To: <f8f01cff620221b261a4f8bbb2b90710@gmx.net>
+References: <1033d54fb5c3c435824698279a74d7c1@gmx.net>
+	<f8f01cff620221b261a4f8bbb2b90710@gmx.net>
+Message-ID: <5CCE4547-C5A0-4393-BF21-7A4A4864F837@gmail.com>
+
+Hi Lars,
+
+Putting illum surfaces inside of your windows rather than using a  
+separate surface for each window pane is one way to reduce  
+calculation times if your mullions are not particularly large or  
+prominent.
+
+All else being equal, you can reduce -ab by 1 and decrease -ad and - 
+as (by a factor of 2 or so) and even increase -aa by 50% and still  
+get similar results.  However, you may also have to set -dj .8 and - 
+ps 1, which will undermine the calculation speeds a bit.  Overall,  
+illum's pay off most when you have smaller windows or skylights and/ 
+or complex goings on outside.
+
+-Greg
+
+> From: "Lars O. Grobe" <grobe@gmx.net>
+> Date: October 9, 2005 9:22:57 AM PDT
+>
+> Hello again.
+>
+> I have to ask this in a more general way. I have used mkillum to  
+> add some illum planes in front of the windows of my scene, and  
+> sealed the sides using zero-radiance illums. I am rendering the  
+> illums with -s=8 -d=8, and in total there are about 400 calculated  
+> illums (and many more zero-radiance illums).
+>
+> Now, I am experiencing even slower calculation with rpict. I guess  
+> it is because of all the illum sources. I think that I can reduce  
+> the -ab bounces because of the illum useage, which will give faster  
+> rendering times. But still I wonder if there is some kind of a  
+> magic limit of the number of illums to use. I mean, is there a  
+> number of illums where rendering speed decreases instead of  
+> increasing by the useage of the mkillum-tool ?
+>
+> Are there any other ambient-parameters that I can change now that I  
+> have illums? I am thinking of ad, ar, aa, as the light environment  
+> is quite different now?
+>
+> You see, I am still quite a beginner in this mkillum stuff, and a  
+> bit worried. Thanks for any help and hints, CU
+>
+> Lars.
+>
+
+From grobe at gmx.net  Mon Oct 10 11:57:20 2005
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Mon Oct 10 11:58:42 2005
+Subject: [Radiance-general] mkillum with 400 sources?
+In-Reply-To: <5CCE4547-C5A0-4393-BF21-7A4A4864F837@gmail.com>
+References: <1033d54fb5c3c435824698279a74d7c1@gmx.net>
+	<f8f01cff620221b261a4f8bbb2b90710@gmx.net>
+	<5CCE4547-C5A0-4393-BF21-7A4A4864F837@gmail.com>
+Message-ID: <3053a3e6835955e819bdd129dab90d03@gmx.net>
+
+Hi Greg,
+
+thanks for your reply.  In fact, I am using surfaces not for each pane, 
+but for each opening now, so that is why I have "only" these 400 faces 
+;-) I tried reducing -ab, -ad and -as, but rendering times are *really* 
+slow now. I have all these zero-radiance illums (sealings), do they 
+have an effect on the rendering speed, even when zero?
+
+You know the scene, it is this church scene I showed you, so it has a 
+lot of these small windows, and as the fenestration is rather complex, 
+I hoped that using illum "coffers" around the windows would improve 
+rendering speed as well as accuracy. However, so far the speed is 
+really disastrous. Outside the building, there is not much detail. I 
+even tried to apply skyfunc to the window panes, but as I have to apply 
+it to *every* small pane than (because I can't use the coffer trick to 
+integrate the whole window than), I get so many hundreds of light 
+sources that calculation is almost impossible.
+
+TIA+CU Lars.
+
+> Putting illum surfaces inside of your windows rather than using a 
+> separate surface for each window pane is one way to reduce calculation 
+> times if your mullions are not particularly large or prominent.
+>
+> All else being equal, you can reduce -ab by 1 and decrease -ad and -as 
+> (by a factor of 2 or so) and even increase -aa by 50% and still get 
+> similar results.  However, you may also have to set -dj .8 and -ps 1, 
+> which will undermine the calculation speeds a bit.  Overall, illum's 
+> pay off most when you have smaller windows or skylights and/or complex 
+> goings on outside.
+
+
+From MdelaFuente at wmtao.com  Mon Oct 10 17:51:50 2005
+From: MdelaFuente at wmtao.com (Mark de la Fuente)
+Date: Mon Oct 10 17:53:40 2005
+Subject: [Radiance-general] mkillum with 400 sources?
+Message-ID: <s34a47d8.040@wmtao.com>
+
+One small trick I use (during the mkillum source creation) to speed up the process is to exclude interior geometry that does not affect the light coming into the space.  Also, if there is no exterior geometry, I've created arrays of processed illum planes rather than create many identical illums.
+ 
+Hope that helps.
+ 
+Mark
+
+Message: 2
+Date: Sun, 9 Oct 2005 18:22:57 +0200
+From: "Lars O. Grobe" <grobe@gmx.net>
+Subject: Re: [Radiance-general] mkillum with 400 sources?
+To: Radiance general discussion <radiance-general@radiance-online.org>
+Message-ID: <f8f01cff620221b261a4f8bbb2b90710@gmx.net>
+Content-Type: text/plain; charset=US-ASCII; format=flowed
+
+Hello again.
+
+I have to ask this in a more general way. I have used mkillum to add 
+some illum planes in front of the windows of my scene, and sealed the 
+sides using zero-radiance illums. I am rendering the illums with -s=8 
+-d=8, and in total there are about 400 calculated illums (and many more 
+zero-radiance illums).
+
+Now, I am experiencing even slower calculation with rpict. I guess it 
+is because of all the illum sources. I think that I can reduce the -ab 
+bounces because of the illum useage, which will give faster rendering 
+times. But still I wonder if there is some kind of a magic limit of the 
+number of illums to use. I mean, is there a number of illums where 
+rendering speed decreases instead of increasing by the useage of the 
+mkillum-tool ?
+
+Are there any other ambient-parameters that I can change now that I 
+have illums? I am thinking of ad, ar, aa, as the light environment is 
+quite different now?
+
+You see, I am still quite a beginner in this mkillum stuff, and a bit 
+worried. Thanks for any help and hints, CU
+
+Lars.
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20051010/e6ec3356/attachment.htm
+From grobe at gmx.net  Mon Oct 10 17:57:44 2005
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Mon Oct 10 17:59:03 2005
+Subject: [Radiance-general] mkillum with 400 sources?
+In-Reply-To: <s34a47d8.040@wmtao.com>
+References: <s34a47d8.040@wmtao.com>
+Message-ID: <a76b2ad46387a31d098b4de54f08c0b4@gmx.net>
+
+Hi,
+
+ok, I found the problem, not the solution. I have a cad model for the 
+faces, and they are all polygons. Now, if I use obj and obj2rad, they 
+are all triangulated. And if I use dxf and dxf2rad, only 3- or 4-sided 
+polygons are possible. One way would be to use polylines (closed) with 
+dxf2rad, but somehow, this gives me just an empty rad file. At the 
+moment I have really no idea how to get my illum surfaces (=polygons) 
+from cad to radiance...
+
+CU Lars.
+
+
+From schorsch at schorsch.com  Mon Oct 10 18:04:38 2005
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Mon Oct 10 18:05:49 2005
+Subject: [Radiance-general] mkillum with 400 sources?
+In-Reply-To: <a76b2ad46387a31d098b4de54f08c0b4@gmx.net>
+References: <s34a47d8.040@wmtao.com> <a76b2ad46387a31d098b4de54f08c0b4@gmx.net>
+Message-ID: <Pine.BSF.4.58.0510101201110.45317@emancholl.pair.com>
+
+Lars O. Grobe wrote:
+
+> Hi,
+>
+> ok, I found the problem, not the solution. I have a cad model for the
+> faces, and they are all polygons. Now, if I use obj and obj2rad, they
+> are all triangulated. And if I use dxf and dxf2rad, only 3- or 4-sided
+> polygons are possible. One way would be to use polylines (closed) with
+> dxf2rad, but somehow, this gives me just an empty rad file.
+
+Make sure that you're using 2D-Polylines. 3DPolys will be ignored,
+even if they are actually planar (it would be too much work for
+dxf2rad to check that). Also make sure that they are really closed
+with the "closed flag". It is not enough to just place the last
+vertex on top of the first one.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From grobe at gmx.net  Mon Oct 10 18:19:30 2005
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Mon Oct 10 18:20:52 2005
+Subject: [Radiance-general] mkillum with 400 sources?
+In-Reply-To: <Pine.BSF.4.58.0510101201110.45317@emancholl.pair.com>
+References: <s34a47d8.040@wmtao.com> <a76b2ad46387a31d098b4de54f08c0b4@gmx.net>
+	<Pine.BSF.4.58.0510101201110.45317@emancholl.pair.com>
+Message-ID: <387c2df8cfc3a9176d38cf90ba018070@gmx.net>
+
+> Make sure that you're using 2D-Polylines. 3DPolys will be ignored,
+> even if they are actually planar (it would be too much work for
+> dxf2rad to check that). Also make sure that they are really closed
+> with the "closed flag". It is not enough to just place the last
+> vertex on top of the first one.
+
+Hi Schorsch,
+
+thank you for the hint, for someone not that familiar in Autocadland 
+this is really hard... especially as I am currently working in formZ 
+and have to get the geometry (dxf) from there.
+
+I did it a bit different now. I read again the obj2rad manpage, and 
+found out that the obj geometry is triangulated ONLY if not planar OR 
+if there is surface normal information included in the file. So I 
+switched off the normals - et voil?, I got the polygons!
+
+I have just started the next run of mkillum now, which is much more 
+promising, cause there is really nothing worse to feed to mkillum than 
+triangulated faces. I hope the normals will still be right, as the 
+faces were editet correctly, but you never know what cad / modelling 
+software is doing to your scene...
+
+So thank You, and sorry for some of my questions which were a bit 
+misleading cause the problem was completely different than I had 
+guessed, but I am just getting crazy with that mkillum step in my scene 
+at the moment ;-)
+
+CU, greetings to Munich, Lars.
+
+
+From MdelaFuente at wmtao.com  Tue Oct 11 16:04:07 2005
+From: MdelaFuente at wmtao.com (Mark de la Fuente)
+Date: Tue Oct 11 16:06:04 2005
+Subject: [Radiance-general] mkillum with 400 sources?
+Message-ID: <s34b8018.008@wmtao.com>
+
+If you are using AutoCAD, then you might try Georg Mischler's radout.  It's much better than torad.  Never used dxf2rad, but I always make sure and use 3d faces to draw illum sources (and most others for that matter).  That way you can shade and/or turn the back face off within cad and check to make sure the faces are drawn in the right orientation.  What I have not been able to figure out (and perhaps someone knows) is how to check to make sure all 3D face points are coplanar. I've run into problems before where objects are not coplanar, but with hundreds of planes, who knows which one is drawn incorrectly!  The only quick fix to that is to triangulate.....
+ 
+Mark
+
+Date: Mon, 10 Oct 2005 17:57:44 +0200
+From: "Lars O. Grobe" <grobe@gmx.net>
+Subject: Re: [Radiance-general] mkillum with 400 sources?
+To: Radiance general discussion <radiance-general@radiance-online.org>
+Message-ID: <a76b2ad46387a31d098b4de54f08c0b4@gmx.net>
+Content-Type: text/plain; charset=US-ASCII; format=flowed
+
+Hi,
+
+ok, I found the problem, not the solution. I have a cad model for the 
+faces, and they are all polygons. Now, if I use obj and obj2rad, they 
+are all triangulated. And if I use dxf and dxf2rad, only 3- or 4-sided 
+polygons are possible. One way would be to use polylines (closed) with 
+dxf2rad, but somehow, this gives me just an empty rad file. At the 
+moment I have really no idea how to get my illum surfaces (=polygons) 
+from cad to radiance...
+
+CU Lars.
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20051011/e36f6201/attachment.html
+From grobe at gmx.net  Tue Oct 11 20:51:29 2005
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Tue Oct 11 20:52:57 2005
+Subject: [Radiance-general] mkillum with 400 sources?
+In-Reply-To: <s34b8018.008@wmtao.com>
+References: <s34b8018.008@wmtao.com>
+Message-ID: <8867b30cbdbeaa8b487526262b7332fd@gmx.net>
+
+> Never used dxf2rad, but I always make sure and use 3d faces to draw 
+> illum sources (and most others for that matter).
+
+Hi,
+
+yes, I guess for most this is ok. But if you have polygonal surfaces 
+(which means that there may be more than 4 vertices), 3dfaces cannot 
+represent these any more without first splitting them to triangular or 
+quadrangular faces, if I understood the dxf-faces right. Am I wrong 
+here? And triangular faces are the worst to use for mkillum.
+
+Closed polylines might work, but as you can see from Schorsch's mail, 
+there is again a difference between 2d and 3d polylines. And here, if 
+you are not working with Autocad, it is really difficult to find out 
+what kind of polylines are written to your dxf...
+
+CU Lars.
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: not available
+Type: text/enriched
+Size: 783 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20051011/189b68f2/attachment.bin
+From g.jehli at mettiergredig.ch  Wed Oct 12 15:15:28 2005
+From: g.jehli at mettiergredig.ch (Jehli, Gaudenz)
+Date: Wed Oct 12 15:13:07 2005
+Subject: [Radiance-general] satel-light.com
+Message-ID: <F2EFB62BFAA6734A88BEBF5F9C0E5E51062185@FANZUNMAIL.fanzun.ch>
+
+does anybody know what happend to www.satel-light.com?
+it's offline since more than a week now.
+
+-gaudenz
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20051012/ca0d9419/attachment.html
+From jelleferinga at gmail.com  Fri Oct 14 00:19:22 2005
+From: jelleferinga at gmail.com (Jelle Feringa / EZCT Architecture & Design Research)
+Date: Fri Oct 14 00:20:37 2005
+Subject: [Radiance-general] wintel binaries
+Message-ID: <37fac3b90510131519l1db24060x2e81f93b7ec2a653@mail.gmail.com>
+
+Francesco,
+
+After having had a couple of test runs on your wintel binaries, I have
+to admit that I'm duly impressed, you wouldn't believe what a relief
+this is after having run the radiance wintel binaries that came along
+with dtp-rad for quite a while... thanks so much for these excellent
+binaries!
+
+-jelle
+
+From francesco.anselmo at arup.com  Fri Oct 14 01:40:41 2005
+From: francesco.anselmo at arup.com (Francesco Anselmo)
+Date: Fri Oct 14 01:41:55 2005
+Subject: R: [Radiance-general] wintel binaries
+Message-ID: <2C0020B9EB71CE4281B292F0E16A6DDE09A71A@ldcexc02.global.arup.com>
+
+Hi Jelle,
+
+Thanks for your feedback and support, but I've done really very little,
+and think we all need to thank both Greg for keeping adding new features
+to Radiance, Georg for having set up Scons and fixed all the windows 
+compatibility issues, and both of them for still maintaining the
+precious Radiance code without compromising stability and reliability
+of results.
+
+Mh, as a Linux addict, I still feel a bit guilty for making more 
+accessible Radiance to the "lazy" windows users, especially after 
+Greg's "wrap-up & outlook" presentation at the Radiance Workshop in Montreal ;)
+I'm so sorry I've missed it ...
+
+Francesco
+
+-----Messaggio originale-----
+Da: radiance-general-bounces@radiance-online.org per conto di Jelle Feringa / EZCT Architecture & Design Research
+Inviato: gio 10/13/2005 11:19
+A: radiance-general@radiance-online.org
+Oggetto: [Radiance-general] wintel binaries
+ 
+Francesco,
+
+After having had a couple of test runs on your wintel binaries, I have
+to admit that I'm duly impressed, you wouldn't believe what a relief
+this is after having run the radiance wintel binaries that came along
+with dtp-rad for quite a while... thanks so much for these excellent
+binaries!
+
+-jelle
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: not available
+Type: application/ms-tnef
+Size: 3358 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20051014/74335a67/attachment.bin
+From rpg at rumblestrip.org  Fri Oct 14 01:58:51 2005
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Fri Oct 14 02:00:04 2005
+Subject: R: [Radiance-general] wintel binaries
+In-Reply-To: <2C0020B9EB71CE4281B292F0E16A6DDE09A71A@ldcexc02.global.arup.com>
+References: <2C0020B9EB71CE4281B292F0E16A6DDE09A71A@ldcexc02.global.arup.com>
+Message-ID: <434EF4BB.3040002@rumblestrip.org>
+
+Francesco Anselmo wrote:
+
+>Hi Jelle,
+>
+>Thanks for your feedback and support, but I've done really very little,
+>and think we all need to thank both Greg for keeping adding new features
+>to Radiance, Georg for having set up Scons and fixed all the windows 
+>compatibility issues, and both of them for still maintaining the
+>precious Radiance code without compromising stability and reliability
+>of results.
+>
+>Mh, as a Linux addict, I still feel a bit guilty for making more 
+>accessible Radiance to the "lazy" windows users, especially after 
+>Greg's "wrap-up & outlook" presentation at the Radiance Workshop in Montreal ;)
+>I'm so sorry I've missed it ...
+>  
+>
+Hi Francesco,
+
+As you were writing this email, I was struggling with making some 
+in-house scripts operate on either wintel or linux, and I don't know if 
+you should feel guilty or not.  Certainly having windows binaries of the 
+latest code is a big help for people who can't or won't deal with 
+linux.  As for me, I *like* linux (but *love* OSX) =8-), and so here I'm 
+happy to report that just today I got one of our scripts going on both 
+windows and linux (gotta love Python, which takes care of 95% of that 
+problem all by itself).  The availability of new windows binaries for 
+3.7 will just make this setup even more uniform, and I'll have to have a 
+look at those.  (Hey Schorsch, could these binaries be "dropped in" to 
+an existing Rayfront installation?) 
+
+And yeah, we missed you in Montreal too!  (and Schorsch, and Jack, and 
+Pillo, and PaB, and John M, and everyone else who make this list so useful!)
+
+- Rob Guglielmetti
+www.rumblestrip.org
+
+From schorsch at schorsch.com  Fri Oct 14 11:08:47 2005
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Fri Oct 14 11:09:58 2005
+Subject: [Radiance-general] wintel binaries
+In-Reply-To: <434EF4BB.3040002@rumblestrip.org>
+References: <2C0020B9EB71CE4281B292F0E16A6DDE09A71A@ldcexc02.global.arup.com>
+	<434EF4BB.3040002@rumblestrip.org>
+Message-ID: <Pine.BSF.4.58.0510140503150.68469@emancholl.pair.com>
+
+Rob Guglielmetti wrote:
+
+> Francesco Anselmo wrote:
+> >
+> >and think we all need to thank both Greg for keeping adding new features
+> >to Radiance, Georg for having set up Scons and fixed all the windows
+> >compatibility issues
+
+Unfortunately, some of the big obstacles are still around.
+Just because things compile doesn't necessarily mean they will
+also work the same way on Windows.
+
+
+>   (Hey Schorsch, could these binaries be "dropped in" to
+> an existing Rayfront installation?)
+
+You'll have to check the release notes. Several programs have seen
+incompatible changes in the effects of certain arguments, and even
+more of them have changed their default behaviour.
+
+You'd have to make a systematic comparison to decide which ones
+are "save enough" to just replace the old versions.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From grobe at gmx.net  Fri Oct 14 14:59:00 2005
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Fri Oct 14 15:00:22 2005
+Subject: [Radiance-general] ranimat HOST setting
+Message-ID: <c4bc607b678fef42badf367ee6a60019@gmx.net>
+
+Hi,
+
+I am wondering what exactly happens if I give a host-setting like this 
+to ranimate:
+host=localhost 2 ~/example lars
+
+Will this start rpict three times (so that there are three independent 
+processes), or will they share memory?
+
+The background: I am using openmosix to cluster, and this doesn't 
+support the shared memory feature, so I usually simply start rpict 
+three times. The processes are migrated than to other hosts.
+
+A, yes, I have the same question for rad -N ...
+
+TIA*CU, Lars.
+
+
+From jedev at visarc.com  Fri Oct 14 16:10:15 2005
+From: jedev at visarc.com (Jack de Valpine)
+Date: Fri Oct 14 16:13:28 2005
+Subject: [Radiance-general] ranimat HOST setting
+In-Reply-To: <c4bc607b678fef42badf367ee6a60019@gmx.net>
+References: <c4bc607b678fef42badf367ee6a60019@gmx.net>
+Message-ID: <434FBC47.1080606@visarc.com>
+
+Hi Lars,
+
+The case you give below will start 2 processes on localhost from the 
+directory ~/example for the user name lars. On a normal system (eg non 
+openmosix) this would start rpict processes with the -PP option enabled 
+to share memory (as indicated in the man page). However in your case 
+this is a problem with openmosix. Not sure what a good solution is. You 
+could try breaking your animation down into a set of separate sequences 
+and have sepearte ranimate files for each. Then you might be able to use 
+the "runon" command from openmosix. to specify where (what node number 
+in the cluster) each job should be started. I cannot remember though if 
+runon locks the processes to the indicated node in the cluster or still 
+allows for migration from the node. You may need to figure out how to 
+force the processes not to migrate.
+
+-Jack
+
+
+Lars O. Grobe wrote:
+
+> Hi,
+>
+> I am wondering what exactly happens if I give a host-setting like this 
+> to ranimate:
+> host=localhost 2 ~/example lars
+>
+> Will this start rpict three times (so that there are three independent 
+> processes), or will they share memory?
+>
+> The background: I am using openmosix to cluster, and this doesn't 
+> support the shared memory feature, so I usually simply start rpict 
+> three times. The processes are migrated than to other hosts.
+>
+> A, yes, I have the same question for rad -N ...
+>
+> TIA*CU, Lars.
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+
+
+From grobe at gmx.net  Fri Oct 14 17:26:15 2005
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Fri Oct 14 17:27:34 2005
+Subject: [Radiance-general] ranimat HOST setting
+In-Reply-To: <434FBC47.1080606@visarc.com>
+References: <c4bc607b678fef42badf367ee6a60019@gmx.net>
+	<434FBC47.1080606@visarc.com>
+Message-ID: <51b88075d92f8f5440d892ef6cd52b12@gmx.net>
+
+Hi,
+
+thank you for the reply. I will try to use more than one host-line per 
+machine, I guess that ranimate won't catch that and will start one 
+process per host-line, without giving -PP to rpiece. So the processes 
+will be started via ssh on the localhost. Hope this works... I am 
+desperatly needing a way to speed up rendering times at the moment... 
+;-)
+
+CU Lars.
+
+
+From grobe at gmx.net  Sat Oct 15 18:59:06 2005
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Sat Oct 15 19:00:35 2005
+Subject: [Radiance-general] starting rpict -S 1 -P pfile
+Message-ID: <efa31ea2fb8438f5b13bf5929f55c9dc@gmx.net>
+
+Hi!
+
+I am currently changing my Makefile that is doing some rendering. So 
+far, the views had been in the Makefile itself, each as one target. Now 
+I wanted to change this and use a viewfile together with the -P option 
+of rpict for multi-processing.
+
+I am wondering now how to understand the manual. I used a line like 
+that:
+
+rpict -S 1 -P pics.pfile -o pic%02d.pic scene.oct < scene.vf &
+
+Because I thought that the rpict process must go to the background, so 
+that I can start the other processes with
+
+rpict -P pics.pfile &
+
+However, I did not get any output. So was the & after the first rpict 
+the problem? Will it read the scene and send itself to the background, 
+waiting for more processes? Or do I simply have to wait before starting 
+the second rpict, until the first one has read the entire scene?
+
+TIA + CU, this multi-processor radiance stuff is really not easy... 
+Lars.
+
+from my Makeile:
+
+pics: scene.oct scene.vf
+	rpict -S 1 -P pics.pfile -o pic%02d.pic scene.oct < scene.vf & \
+	rpict -P pics.pfile & \
+	rpict -P pics.pfile &
+
+
+From gregoryjward at gmail.com  Sat Oct 15 20:35:11 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Sat Oct 15 20:36:23 2005
+Subject: [Radiance-general] starting rpict -S 1 -P pfile
+In-Reply-To: <efa31ea2fb8438f5b13bf5929f55c9dc@gmx.net>
+References: <efa31ea2fb8438f5b13bf5929f55c9dc@gmx.net>
+Message-ID: <3DB978F7-9914-4A2C-8FB8-D56704D5CD2E@gmail.com>
+
+Hi Lars,
+
+It may just be that you need to use the -PP option rather than -P,  
+which doesn't do parallel processing.  (The -P "persist mode" is a  
+relatively little-used option that permits serial execution without  
+the associated startup costs -- it's more valuable for rtrace than  
+rpict.)
+
+Also, each of your rpict -PP commands should be handed the same set  
+of views on the standard input.  Otherwise, nothing will happen.
+
+-Greg
+
+> From: "Lars O. Grobe" <grobe@gmx.net>
+> Date: October 15, 2005 9:59:06 AM PDT
+>
+> Hi!
+>
+> I am currently changing my Makefile that is doing some rendering.  
+> So far, the views had been in the Makefile itself, each as one  
+> target. Now I wanted to change this and use a viewfile together  
+> with the -P option of rpict for multi-processing.
+>
+> I am wondering now how to understand the manual. I used a line like  
+> that:
+>
+> rpict -S 1 -P pics.pfile -o pic%02d.pic scene.oct < scene.vf &
+>
+> Because I thought that the rpict process must go to the background,  
+> so that I can start the other processes with
+>
+> rpict -P pics.pfile &
+>
+> However, I did not get any output. So was the & after the first  
+> rpict the problem? Will it read the scene and send itself to the  
+> background, waiting for more processes? Or do I simply have to wait  
+> before starting the second rpict, until the first one has read the  
+> entire scene?
+>
+> TIA + CU, this multi-processor radiance stuff is really not easy...  
+> Lars.
+>
+> from my Makeile:
+>
+> pics: scene.oct scene.vf
+>     rpict -S 1 -P pics.pfile -o pic%02d.pic scene.oct < scene.vf & \
+>     rpict -P pics.pfile & \
+>     rpict -P pics.pfile &
+
+From grobe at gmx.net  Sat Oct 15 20:50:29 2005
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Sat Oct 15 20:51:54 2005
+Subject: [Radiance-general] starting rpict -S 1 -P pfile
+In-Reply-To: <3DB978F7-9914-4A2C-8FB8-D56704D5CD2E@gmail.com>
+References: <efa31ea2fb8438f5b13bf5929f55c9dc@gmx.net>
+	<3DB978F7-9914-4A2C-8FB8-D56704D5CD2E@gmail.com>
+Message-ID: <e9960bbd24acc2da78fcc7cf2d6daae4@gmx.net>
+
+> It may just be that you need to use the -PP option rather than -P, 
+> which doesn't do parallel processing.  (The -P "persist mode" is a 
+> relatively little-used option that permits serial execution without 
+> the associated startup costs -- it's more valuable for rtrace than 
+> rpict.)
+>
+> Also, each of your rpict -PP commands should be handed the same set of 
+> views on the standard input.  Otherwise, nothing will happen.
+
+I cannot use -PP because my openmosix doesn't support shared memory. I 
+forgot to pass the view file, as I read that command line parameters 
+don't have to be passed. Of course, I don't pass views as command line 
+parameters, but from stdin, so I have to feed the view file for each 
+process, right? ;-)
+
+I think that if I start more than one -P process, they WILL run 
+parallel (even if they use much more memory than the shared -PP 
+processes), right?
+
+Thank You, CU Lars.
+
+
+From gregoryjward at gmail.com  Sun Oct 16 04:11:28 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Sun Oct 16 04:12:37 2005
+Subject: [Radiance-general] starting rpict -S 1 -P pfile
+In-Reply-To: <e9960bbd24acc2da78fcc7cf2d6daae4@gmx.net>
+References: <efa31ea2fb8438f5b13bf5929f55c9dc@gmx.net>
+	<3DB978F7-9914-4A2C-8FB8-D56704D5CD2E@gmail.com>
+	<e9960bbd24acc2da78fcc7cf2d6daae4@gmx.net>
+Message-ID: <B1869EFB-46A7-4030-B4EF-7EA333CAC2CC@gmail.com>
+
+There's no sense in using the -P option if you're after parallel  
+runs, because -P insists on serial runs -- it's a mechanism to  
+connect sequential invocations to the same process.  It's exactly the  
+opposite of what you need.  Just use multiple rpicts if OpenMosix  
+doesn't support shared memory.  It will be the same as using -PP in  
+that case, since there's nothing about the -PP option that *requires*  
+shared memory.  It just ends up using it if it's available.
+
+-Greg
+
+> From: "Lars O. Grobe" <grobe@gmx.net>
+> Date: October 15, 2005 11:50:29 AM PDT
+>
+>> It may just be that you need to use the -PP option rather than -P,  
+>> which doesn't do parallel processing.  (The -P "persist mode" is a  
+>> relatively little-used option that permits serial execution  
+>> without the associated startup costs -- it's more valuable for  
+>> rtrace than rpict.)
+>>
+>> Also, each of your rpict -PP commands should be handed the same  
+>> set of views on the standard input.  Otherwise, nothing will happen.
+>>
+>
+> I cannot use -PP because my openmosix doesn't support shared  
+> memory. I forgot to pass the view file, as I read that command line  
+> parameters don't have to be passed. Of course, I don't pass views  
+> as command line parameters, but from stdin, so I have to feed the  
+> view file for each process, right? ;-)
+>
+> I think that if I start more than one -P process, they WILL run  
+> parallel (even if they use much more memory than the shared -PP  
+> processes), right?
+>
+> Thank You, CU Lars.
+>
+
+From grobe at gmx.net  Sun Oct 16 12:44:58 2005
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Sun Oct 16 12:46:18 2005
+Subject: [Radiance-general] starting rpict -S 1 -P pfile
+In-Reply-To: <B1869EFB-46A7-4030-B4EF-7EA333CAC2CC@gmail.com>
+References: <efa31ea2fb8438f5b13bf5929f55c9dc@gmx.net>
+	<3DB978F7-9914-4A2C-8FB8-D56704D5CD2E@gmail.com>
+	<e9960bbd24acc2da78fcc7cf2d6daae4@gmx.net>
+	<B1869EFB-46A7-4030-B4EF-7EA333CAC2CC@gmail.com>
+Message-ID: <87360b04f527235e759d0948ef2f3956@gmx.net>
+
+Hi Greg!
+
+> There's no sense in using the -P option if you're after parallel runs, 
+> because -P insists on serial runs -- it's a mechanism to connect 
+> sequential invocations to the same process.  It's exactly the opposite 
+> of what you need.  Just use multiple rpicts if OpenMosix doesn't 
+> support shared memory.  It will be the same as using -PP in that case, 
+> since there's nothing about the -PP option that *requires* shared 
+> memory.  It just ends up using it if it's available.
+
+Well, the reason why I wanted to use -P is that I need some way to make 
+the processes render just the missing frames. So they need to be 
+synced. If I use just several rpict's without -PP, I will have to split 
+my view files, and that means that I have to regroup the views in the 
+view files each time that the cluster configuration changes.
+
+The problem with using rpict with -PP is that rpict will share memory, 
+and than openmosix will not allow the processes to migrata any more. So 
+if the -PP option is the only way to make multiple rpict processes 
+sync, I will have to go back and use a target for each view in my 
+Makefile. Than I can use make -j # with # being the number of machines, 
+the most generic way to distribute the processes. I am not too happy 
+with that because I will have the problem with the viewfiles sooner or 
+later when starting animations - I cannot have one target per frame, so 
+I will have to find a way to render ONE viewfile's views in parallel 
+without that "shared memory".
+
+In fact I am seriously considering using ranimate for my stills now, as 
+this allows me to distribute processes from ONE viewfile. I could 
+simply add HOST-lines pointing to localhost, which is a bit silly, but 
+should work fine.
+
+Thank you for all the help, and have a nice week-end, we have a nice 
+sunny autumn day here and it is a pity to stay in the lab ;-)
+
+CU Lars.
+
+
+From grobe at gmx.net  Sun Oct 16 16:40:32 2005
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Sun Oct 16 16:41:54 2005
+Subject: [Radiance-general] rpict: fatal cannot hit center for polygon
+	"xxxxx.yyy"
+Message-ID: <4d3c5ebfad0005ae9e68f6d6bb836ac2@gmx.net>
+
+Hi,
+
+I get this error since I am using the new HEAD. In 3.6, the same scene 
+rendered. Is there some new error checking in the new code, or is this 
+related to the fact that I control the rendering through ranimate now 
+instead of directly starting rpict?
+
+TIA+CU Lars.
+
+
+From gregoryjward at gmail.com  Sun Oct 16 17:19:10 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Sun Oct 16 17:20:12 2005
+Subject: [Radiance-general] rpict: fatal cannot hit center for polygon
+	"xxxxx.yyy"
+In-Reply-To: <4d3c5ebfad0005ae9e68f6d6bb836ac2@gmx.net>
+References: <4d3c5ebfad0005ae9e68f6d6bb836ac2@gmx.net>
+Message-ID: <6C173B95-7AC0-4062-8118-D726507188FD@gmail.com>
+
+Hi Lars,
+
+> rpict: fatal cannot hit center for polygon "xxxxx.yyy"
+
+This error means you are using a concave polygon as a source, which  
+is illegal.  I'm not sure now when I put this test in, but your  
+polygon needs to be corrected, not the  source code.
+
+-Greg
+
+> From: "Lars O. Grobe" <grobe@gmx.net>
+> Date: October 16, 2005 7:40:32 AM PDT
+>
+> Hi,
+>
+> I get this error since I am using the new HEAD. In 3.6, the same  
+> scene rendered. Is there some new error checking in the new code,  
+> or is this related to the fact that I control the rendering through  
+> ranimate now instead of directly starting rpict?
+>
+> TIA+CU Lars.
+>
+
+From gregoryjward at gmail.com  Sun Oct 16 17:21:09 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Sun Oct 16 17:22:10 2005
+Subject: [Radiance-general] starting rpict -S 1 -P pfile
+In-Reply-To: <87360b04f527235e759d0948ef2f3956@gmx.net>
+References: <efa31ea2fb8438f5b13bf5929f55c9dc@gmx.net>
+	<3DB978F7-9914-4A2C-8FB8-D56704D5CD2E@gmail.com>
+	<e9960bbd24acc2da78fcc7cf2d6daae4@gmx.net>
+	<B1869EFB-46A7-4030-B4EF-7EA333CAC2CC@gmail.com>
+	<87360b04f527235e759d0948ef2f3956@gmx.net>
+Message-ID: <3130BB7D-EC31-48D3-89F1-22586233157C@gmail.com>
+
+Hi Lars,
+
+You don't need the -P or -PP option to synchronize rpict using -o.   
+If you read the man page carefully, you'll see that the coordination  
+happens simply because rpict -S skips -o outputs that are already  
+started.  This is the same way -PP works, so the two functions are  
+orthogonal.
+
+-Greg
+
+P.S.  You could use ranimate for this purpose, but there's no real  
+advantage, and you would have to turn frame interpolation off.
+
+> From: "Lars O. Grobe" <grobe@gmx.net>
+> Date: October 16, 2005 3:44:58 AM PDT
+>
+> Hi Greg!
+>
+>
+>> There's no sense in using the -P option if you're after parallel  
+>> runs, because -P insists on serial runs -- it's a mechanism to  
+>> connect sequential invocations to the same process.  It's exactly  
+>> the opposite of what you need.  Just use multiple rpicts if  
+>> OpenMosix doesn't support shared memory.  It will be the same as  
+>> using -PP in that case, since there's nothing about the -PP option  
+>> that *requires* shared memory.  It just ends up using it if it's  
+>> available.
+>>
+>
+> Well, the reason why I wanted to use -P is that I need some way to  
+> make the processes render just the missing frames. So they need to  
+> be synced. If I use just several rpict's without -PP, I will have  
+> to split my view files, and that means that I have to regroup the  
+> views in the view files each time that the cluster configuration  
+> changes.
+>
+> The problem with using rpict with -PP is that rpict will share  
+> memory, and than openmosix will not allow the processes to migrata  
+> any more. So if the -PP option is the only way to make multiple  
+> rpict processes sync, I will have to go back and use a target for  
+> each view in my Makefile. Than I can use make -j # with # being the  
+> number of machines, the most generic way to distribute the  
+> processes. I am not too happy with that because I will have the  
+> problem with the viewfiles sooner or later when starting animations  
+> - I cannot have one target per frame, so I will have to find a way  
+> to render ONE viewfile's views in parallel without that "shared  
+> memory".
+>
+> In fact I am seriously considering using ranimate for my stills  
+> now, as this allows me to distribute processes from ONE viewfile. I  
+> could simply add HOST-lines pointing to localhost, which is a bit  
+> silly, but should work fine.
+>
+> Thank you for all the help, and have a nice week-end, we have a  
+> nice sunny autumn day here and it is a pity to stay in the lab ;-)
+>
+> CU Lars.
+>
+
+From T.McMinn at curtin.edu.au  Mon Oct 17 06:28:09 2005
+From: T.McMinn at curtin.edu.au (Terrance McMinn)
+Date: Mon Oct 17 06:29:45 2005
+Subject: [Radiance-general] Mkillum Question
+Message-ID: <092BF7A1BC389E489A69DC764F23CD8704065D10@exmsp2.perth.ad.curtin.edu.au>
+
+Why is the visible light transmittance used with the glass primitive while the visible light transmission value is used in the illum primitive? See below example from chapter 1 pp 29 & 32 of RWR
+
+For Pilkington Optifloat Clear 3mm glass the Visible Light Transmission is 89% (http://www.pilkington.com.au/resources/pilkingtonperformancedatasingleglazing.pdf)
+
+The transmissivity is calculated using: 
+	icalc /usr/local/lib/ray/src/cal/cal/trans.cal
+	Tn=0.89
+	tn
+	$1=0.969269687
+
+Therefore for a glass definition you would use something like:
+	mod glass window_glass
+        0
+        0
+        3 0.97 0.97 0.97
+
+But when you use mkillum (Rwr chapter 1, page 32 with alteration of the transmission value from 0.88 to 0.89 and transmittance from 0.96 to 0.97) the illum uses the visible light transmission value.
+	mod glass window_glass
+        0
+        0
+        3 0.97 0.97 0.97
+
+	skyfunc brightfunc window_dist
+	2 winxmit winxmit.cal
+	0
+	0
+
+	window_dist illum window_illum
+	1 window_glass
+	0
+	3 0.89 0.89 0.89
+
+	window_illum polygon window
+	0
+	0
+	12 ...
+
+Regards 
+
+Terry Mc Minn
+Faculty of Built Environment, Art and Design Curtin University of Technology GPO Box U 1987 Perth 6845 Western Australia
+Email: T.Mcminn@curtin.edu.au
+CRICOS Provider Code: 00301J  
+
+From gregoryjward at gmail.com  Mon Oct 17 07:21:58 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon Oct 17 07:23:19 2005
+Subject: [Radiance-general] Mkillum Question
+In-Reply-To: <092BF7A1BC389E489A69DC764F23CD8704065D10@exmsp2.perth.ad.curtin.edu.au>
+References: <092BF7A1BC389E489A69DC764F23CD8704065D10@exmsp2.perth.ad.curtin.edu.au>
+Message-ID: <624859CE-F391-4414-A093-2995450F3EA7@gmail.com>
+
+Hi Terry,
+
+The reason for the change is because the glass primitive takes into  
+account internal reflections, which use the transmission value to  
+compute transmittance as a function of angle.  In contrast, the illum  
+primitive doesn't account for these, which are reintroduced using the  
+winxmit.cal pattern.  This pattern is normalized to 100%  
+transmittance, and must have normal transmittance as a multiplier on  
+the material.
+
+I don't know how to make it clearer than that -- I realize it's a bit  
+confused, but it is correct.
+
+-Greg
+
+> From: "Terrance McMinn" <T.McMinn@curtin.edu.au>
+> Date: October 16, 2005 9:28:09 PM PDT
+>
+> Why is the visible light transmittance used with the glass  
+> primitive while the visible light transmission value is used in the  
+> illum primitive? See below example from chapter 1 pp 29 & 32 of RWR
+>
+> For Pilkington Optifloat Clear 3mm glass the Visible Light  
+> Transmission is 89% (http://www.pilkington.com.au/resources/ 
+> pilkingtonperformancedatasingleglazing.pdf)
+>
+> The transmissivity is calculated using:
+>     icalc /usr/local/lib/ray/src/cal/cal/trans.cal
+>     Tn=0.89
+>     tn
+>     $1=0.969269687
+>
+> Therefore for a glass definition you would use something like:
+>     mod glass window_glass
+>         0
+>         0
+>         3 0.97 0.97 0.97
+>
+> But when you use mkillum (Rwr chapter 1, page 32 with alteration of  
+> the transmission value from 0.88 to 0.89 and transmittance from  
+> 0.96 to 0.97) the illum uses the visible light transmission value.
+>     mod glass window_glass
+>         0
+>         0
+>         3 0.97 0.97 0.97
+>
+>     skyfunc brightfunc window_dist
+>     2 winxmit winxmit.cal
+>     0
+>     0
+>
+>     window_dist illum window_illum
+>     1 window_glass
+>     0
+>     3 0.89 0.89 0.89
+>
+>     window_illum polygon window
+>     0
+>     0
+>     12 ...
+>
+> Regards
+>
+> Terry Mc Minn
+>
+
+From T.McMinn at curtin.edu.au  Mon Oct 17 08:26:38 2005
+From: T.McMinn at curtin.edu.au (Terrance McMinn)
+Date: Mon Oct 17 08:28:09 2005
+Subject: [Radiance-general] Mkillum Question
+Message-ID: <092BF7A1BC389E489A69DC764F23CD8704065D35@exmsp2.perth.ad.curtin.edu.au>
+
+Hello Greg,
+
+>The reason for the change is because the glass primitive takes into  
+>account internal reflections, which use the transmission value to  
+>compute transmittance as a function of angle.  In contrast, the illum  
+>primitive doesn't account for these, which are reintroduced using the  
+>winxmit.cal pattern.  This pattern is normalized to 100%  
+>transmittance, and must have normal transmittance as a multiplier on  
+>the material.
+
+>I don't know how to make it clearer than that -- I realize it's a bit  
+>confused, but it is correct.
+
+The missing link in the documentation! Quite clear!
+
+Many thanks.
+
+Regards 
+
+Terry Mc Minn
+Faculty of Built Environment, Art and Design
+Curtin University of Technology
+GPO Box U 1987 Perth 6845
+Western Australia
+Email: T.Mcminn@curtin.edu.au
+CRICOS Provider Code: 00301J  
+
+From zrogers at archenergy.com  Tue Oct 18 17:21:07 2005
+From: zrogers at archenergy.com (Zack Rogers)
+Date: Tue Oct 18 17:22:32 2005
+Subject: [Radiance-general] OT: Daylight Designer/Engineer Wanted
+Message-ID: <435512E3.40503@archenergy.com>
+
+Dear Colleagues,
+
+We (Architectural Energy Corporation) are looking to add another 
+daylighting engineer to our staff.  Understanding of lighting 
+engineering and Radiance knowledge/experience are key skills, hence the 
+post here.  See the ad below.
+
+Engineer / Daylighting Designer -- National building energy research and 
+consulting firm seeks F/T engineer in the Daylighting Design Group .  
+Required: solid understanding of lighting engineering concepts; lighting 
+analysis software expertise; communication and writing skills.  
+Preferred: engineering degree; programming, daylighting, and Radiance 
+experience; familiarity with LEED.  For more information, see 
+_www.archenergy.com_.  Resume / salary requirements to: 
+_zrogers@archenergy.com_ or fax to Zack / 303-444-4304.
+
+Feel free to contact me with any questions.  The position is for the 
+Boulder, Colorado office.
+
+
+Regards,
+Zack
+
+-- 
+Zack Rogers
+Engineer / Daylighting Designer
+Architectural Energy Corporation
+2540 Frontier Avenue, Suite 201
+Boulder, CO 80301 USA
+
+tel (303)444-4149 ext.235
+fax (303)444-4304
+http://www.archenergy.com
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20051018/900b67b8/attachment.html
+From marcdevon at hotmail.com  Tue Oct 18 21:04:52 2005
+From: marcdevon at hotmail.com (Marcus Jacobs)
+Date: Tue Oct 18 21:06:54 2005
+Subject: [Radiance-general] CIE xyY to Radiance rgb Conversion
+In-Reply-To: <MC7-F6nJbZpM2Sg5Xi100335b95@mc7-f6.hotmail.com>
+Message-ID: <BAY102-F32D589C9A99E79AD0A0A25A4710@phx.gbl>
+
+Dear Group
+
+I have come across an issue regarding converting colors from CIE xyY color 
+space to Radiance's rgb. From the post:
+
+http://www.radiance-online.org/pipermail/radiance-general/2005-June/002783.html
+
+and from RWR, the conversion is as follows:
+
+X=x*Y/y;
+Z=(1-x-y)*Y/y;
+r=  2.565*X -1.167*Y -0.398*Z;
+g= -1.022*X +1.978*Y +0.044*Z;
+b=  0.075*X -0.252*Y +1.177*Z;
+
+However, when I attempt a conversion the color seems way off. For example, 
+the color x =  0.3304 , y = 0.3582 , Y = 0.9822 which I expect to be a faint 
+yellow converts to rgb = 0.838, 1.05, 0.825, which is more of a faint green. 
+I have used another script found in the following paper:
+
+http://aesl.hanyang.ac.kr/resource/radiance/rstds.pdf
+
+The rgb.cal script in this paper list the following for xyY to rgb 
+conversion:
+
+X=x*Y/y;
+Z=(1-x-y)*Y/y;
+r= 2.739*X -1.145*Y -0.424*Z;
+g= -1.119*X +2.029*Y +0.033*Z;
+b= 0.138*X -0.333*Y +1.105*Z;
+
+
+Although not always spot on, its much closer to the aforementioned (the 
+previous example converts to rgb = 0.995,1.01,0.74 which is a faint yellow 
+with a slight green tint). Thanks for any help and/or advice. As a note I 
+should mention that I use the following online calculator to convert from 
+0-255 rgb color space to CIE xyY color space:
+
+http://www.easyrgb.com/calculator.php
+
+
+
+Regards,
+
+Marcus
+
+
+
+From marcdevon at hotmail.com  Tue Oct 18 21:20:13 2005
+From: marcdevon at hotmail.com (Marcus Jacobs)
+Date: Tue Oct 18 21:21:55 2005
+Subject: [Radiance-general] Macbethcal Reflectances
+In-Reply-To: <MC7-F6nJbZpM2Sg5Xi100335b95@mc7-f6.hotmail.com>
+Message-ID: <BAY102-F40AB647021D8056BF646BA4710@phx.gbl>
+
+Dear Group,
+
+I am using macbethcal/pcomb to determine the color and reflectance of 
+various scanned paint swatches. One thing that has come to my attention is 
+that the overall reflectance seems out of range. For example, a creamy white 
+color once calibrated has an overall reflectance (determined by ximage and 
+grey(r,g,b)) equal to .93. From RWR I think it was mentioned that a 
+reflectance of greater than 80% may be unrealistic. Although I have had some 
+colors out of gamut, particularly Cyan,(noticed by looking at the debug.pic 
+from macbethcal), there seems to have been no apparent issues with the 
+white, neutral 8, neutral 6.5, neutral 5, neutral 3.5, black (I am assuming 
+that these patches are used to calibrate the reflectance) during the 
+generation of the calibration file. Has anyone else encountered this issue?
+
+Regards,
+
+Marcus
+
+
+
+From a.jacobs at londonmet.ac.uk  Tue Oct 18 22:11:40 2005
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Tue Oct 18 22:16:50 2005
+Subject: [Radiance-general] CIE xyY to Radiance rgb Conversion
+In-Reply-To: <BAY102-F32D589C9A99E79AD0A0A25A4710@phx.gbl>
+References: <MC7-F6nJbZpM2Sg5Xi100335b95@mc7-f6.hotmail.com>
+	<BAY102-F32D589C9A99E79AD0A0A25A4710@phx.gbl>
+Message-ID: <10006.213.58.97.40.1129666300.squirrel@webmail1.londonmet.ac.uk>
+
+I am not much help at the moment, as I have just swapped over my graphics
+card in anticipation of a new computer, so 'faint' colours are all white
+on my screen.
+
+Please give
+http://www.learn.londonmet.ac.uk/student/resources/radiance/colourcalc.shtml
+a try. It's been some time since I wrote it, but the range of Y that I
+used (references are within the JS source code) is 0..100, which seemed to
+be most commonly used, not 0..1. I realise that Y should only change the
+brightness, not the hue, but anyhow--so far it has worked for me... kinda
+rightish...
+
+Having said that, don't knock the easyrgb crowd. All formulae are
+published on their site. Well done.
+> http://www.easyrgb.com/calculator.php
+
+Just my 2 pence.
+
+Axel
+
+
+
+From gregoryjward at gmail.com  Tue Oct 18 23:31:11 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue Oct 18 23:32:31 2005
+Subject: [Radiance-general] CIE xyY to Radiance rgb Conversion
+In-Reply-To: <BAY102-F32D589C9A99E79AD0A0A25A4710@phx.gbl>
+References: <BAY102-F32D589C9A99E79AD0A0A25A4710@phx.gbl>
+Message-ID: <494BFAF2-C435-4001-B42A-F92665CFEBA8@gmail.com>
+
+Hi Marcus,
+
+The formula you pulled out of the archive, which was a reply by  
+Raphael, is correct.  I don't know why you expect a color with an  
+(x,y) of (.3304,.3582) to be more red than green, since (.3333,.3333)  
+is neutral and you have slightly decreased red and increased green.   
+A slight green is what I would expect to see, not a slight yellow.
+
+I'm not sure where the slight difference between the color  you  
+obtain with the Radiance matrix and the one you obtained from the  
+tutorial arose, but the first matrix you have below is the correct one.
+
+There are subtle issues having to do with white point as well, which  
+you may not be taking into account.
+
+-Greg
+
+> From: "Marcus Jacobs" <marcdevon@hotmail.com>
+> Date: October 18, 2005 12:04:52 PM PDT
+>
+> Dear Group
+>
+> I have come across an issue regarding converting colors from CIE  
+> xyY color space to Radiance's rgb. From the post:
+>
+> http://www.radiance-online.org/pipermail/radiance-general/2005-June/ 
+> 002783.html
+>
+> and from RWR, the conversion is as follows:
+>
+> X=x*Y/y;
+> Z=(1-x-y)*Y/y;
+> r=  2.565*X -1.167*Y -0.398*Z;
+> g= -1.022*X +1.978*Y +0.044*Z;
+> b=  0.075*X -0.252*Y +1.177*Z;
+>
+> However, when I attempt a conversion the color seems way off. For  
+> example, the color x =  0.3304 , y = 0.3582 , Y = 0.9822 which I  
+> expect to be a faint yellow converts to rgb = 0.838, 1.05, 0.825,  
+> which is more of a faint green. I have used another script found in  
+> the following paper:
+>
+> http://aesl.hanyang.ac.kr/resource/radiance/rstds.pdf
+>
+> The rgb.cal script in this paper list the following for xyY to rgb  
+> conversion:
+>
+> X=x*Y/y;
+> Z=(1-x-y)*Y/y;
+> r= 2.739*X -1.145*Y -0.424*Z;
+> g= -1.119*X +2.029*Y +0.033*Z;
+> b= 0.138*X -0.333*Y +1.105*Z;
+>
+>
+> Although not always spot on, its much closer to the aforementioned  
+> (the previous example converts to rgb = 0.995,1.01,0.74 which is a  
+> faint yellow with a slight green tint). Thanks for any help and/or  
+> advice. As a note I should mention that I use the following online  
+> calculator to convert from 0-255 rgb color space to CIE xyY color  
+> space:
+>
+> http://www.easyrgb.com/calculator.php
+>
+> Regards,
+>
+> Marcus
+>
+
+From gregoryjward at gmail.com  Tue Oct 18 23:40:18 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue Oct 18 23:41:36 2005
+Subject: [Radiance-general] Macbethcal Reflectances
+In-Reply-To: <BAY102-F40AB647021D8056BF646BA4710@phx.gbl>
+References: <BAY102-F40AB647021D8056BF646BA4710@phx.gbl>
+Message-ID: <BEBE352B-4F4F-45C3-BC37-D4449E96BBBA@gmail.com>
+
+Hi Marcus,
+
+You must ensure that there are no lighting or gain changes between  
+the scanning or capture of the Macbeth chart and the swatches,  
+otherwise you will have an absolute calibration error.  If you are  
+using a flatbed scanner, set the exposure to manual and fix it at a  
+single value.  If you are using a camera, set it on manual mode and  
+use a constant illumination with the chart in the same position as  
+the swatches in your two photographs.  I often shoot outdoors to  
+assure even illumination.
+
+This is the most likely culprit.
+
+-Greg
+
+> From: "Marcus Jacobs" <marcdevon@hotmail.com>
+> Date: October 18, 2005 12:20:13 PM PDT
+>
+> Dear Group,
+>
+> I am using macbethcal/pcomb to determine the color and reflectance  
+> of various scanned paint swatches. One thing that has come to my  
+> attention is that the overall reflectance seems out of range. For  
+> example, a creamy white color once calibrated has an overall  
+> reflectance (determined by ximage and grey(r,g,b)) equal to .93.  
+> From RWR I think it was mentioned that a reflectance of greater  
+> than 80% may be unrealistic. Although I have had some colors out of  
+> gamut, particularly Cyan,(noticed by looking at the debug.pic from  
+> macbethcal), there seems to have been no apparent issues with the  
+> white, neutral 8, neutral 6.5, neutral 5, neutral 3.5, black (I am  
+> assuming that these patches are used to calibrate the reflectance)  
+> during the generation of the calibration file. Has anyone else  
+> encountered this issue?
+>
+> Regards,
+>
+> Marcus
+>
+
+From grobe at gmx.net  Wed Oct 19 10:57:17 2005
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Wed Oct 19 10:58:50 2005
+Subject: [Radiance-general] rtarce: "missing triangle vertices in mesh_hit"
+Message-ID: <b3b0a961293fa2d478ed537c8278b1f5@gmx.net>
+
+Hi,
+
+got an error message again, this time "missing triangle vertices in 
+mesh_hit" from rtrace (which is called from mkillum), which seams to be 
+from o_mesh.c. I'm using radiance 3.6 at the moment.
+
+The strange about it: I sucessfully rendered the scene before, and now, 
+after changing some setting, I get this error. In fact, the geometry 
+had been changed, but not the object that is reported to cause the 
+problem.
+
+I use oconv with -r 4096 -n 12. Is it possible that this problem occurs 
+as a result of a low -r oconv resolution?
+
+TIA+CU Lars.
+
+
+From gregoryjward at gmail.com  Wed Oct 19 18:43:35 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed Oct 19 18:44:48 2005
+Subject: [Radiance-general] rtarce: "missing triangle vertices in mesh_hit"
+In-Reply-To: <b3b0a961293fa2d478ed537c8278b1f5@gmx.net>
+References: <b3b0a961293fa2d478ed537c8278b1f5@gmx.net>
+Message-ID: <463128E3-473B-47E4-8D89-2DC895728789@gmail.com>
+
+Hi Lars,
+
+This is one of those nasty internal errors you should never see,  
+because it means something is wrong with the code.  I spent a couple  
+hours just now pouring over it, and I can't figure out how or why it  
+might be happening.  I think I need you to send me your scene to try  
+to debug this.
+
+I assume your octree is up-to-date with respect to your scene files,  
+right?  I don't see how that could cause this error, but just wanted  
+to be sure.
+
+You might try upgrading to 3.7 just to check that it's not something  
+I fixed before without knowing it.
+
+-Greg
+
+> From: "Lars O. Grobe" <grobe@gmx.net>
+> Date: October 19, 2005 1:57:17 AM PDT
+>
+> Hi,
+>
+> got an error message again, this time "missing triangle vertices in  
+> mesh_hit" from rtrace (which is called from mkillum), which seams  
+> to be from o_mesh.c. I'm using radiance 3.6 at the moment.
+>
+> The strange about it: I sucessfully rendered the scene before, and  
+> now, after changing some setting, I get this error. In fact, the  
+> geometry had been changed, but not the object that is reported to  
+> cause the problem.
+>
+> I use oconv with -r 4096 -n 12. Is it possible that this problem  
+> occurs as a result of a low -r oconv resolution?
+>
+> TIA+CU Lars.
+>
+
+From cveleglg at bankerinter.net  Fri Oct 21 15:16:24 2005
+From: cveleglg at bankerinter.net (Marija Cvetkovic)
+Date: Fri Oct 21 15:17:49 2005
+Subject: [Radiance-general] Import from Optics5
+Message-ID: <00b601c5d641$a47fe2b0$0100a8c0@mallah>
+
+Hi,
+I am trying to use actual data for glazing materials, and I've found that
+Optics5 has a good database. Since it has exporter to Radiance, single or
+multi layer glazings can be easily converted to Radiance format.
+Resulting file has a form like:
+
+void  glass       GlzSys_glass
+0
+0
+3     0.807     0.875     0.849
+
+void  BRTDfunc    GlzSys_front
+10
+      0.134     0.147     0.147
+      0.740     0.803     0.779
+      0 0 0
+      .
+0
+9 0 0 0 0 0 0 0 0 0
+
+void  BRTDfunc    GlzSys_back
+10
+      0.134     0.147     0.147
+      0.740     0.803     0.779
+      0 0 0
+      .
+0
+9 0 0 0 0 0 0 0 0 0
+
+My question is how should I use these data in Radiance scene description.
+ I suppose that idea is to define window glass with 3 layers:
+GlzSys_front  GlzSys_glass  GlzSys_back
+
+Am I right?
+
+One more question: does anyone know how this BRTD parameters are calculated 
+from Optic5 data?
+
+Thanks,
+marija
+
+
+From jedev at visarc.com  Fri Oct 21 16:10:13 2005
+From: jedev at visarc.com (Jack de Valpine)
+Date: Fri Oct 21 16:13:22 2005
+Subject: [Radiance-general] Import from Optics5
+In-Reply-To: <00b601c5d641$a47fe2b0$0100a8c0@mallah>
+References: <00b601c5d641$a47fe2b0$0100a8c0@mallah>
+Message-ID: <4358F6C5.2060008@visarc.com>
+
+Hi Marija,
+
+Although Optics5 is a great resource for glazing information. The 
+radiance materials that get exported are perhaps too simplistic 
+depending on how they are to be used. The three definitions that are 
+output are 3 options to be chosen from, you do not use them all at the 
+same time.
+
+The glass definition (GlzSys_glass) really only represents the correct 
+transmittance for the exported glazing system, the front and backside 
+reflectance are equal and relatively low, ~7% (I do not remember for 
+sure, so Greg will have to provide the authoritative answer on this one).
+
+The two BRTDfunc definitions are really only useful for the selected 
+condition (eg if you are inside or if you are outside). These two 
+materials are dependent on the geometry being built with the surface 
+normal pointing the correct way and uniformly for that class of 
+geometry. A simpler way  to combine these two materials into one 
+definition is as follows:
+
+void BRTDfunc GlzSys_front_and_back
+10
+    if(Rdot, 0.134, 0.134) if(Rdot, 0.147, 0.147) if(Rdot, 0.147, 0.147)
+    0.740 0.803 0.779
+    0   0   0
+    .
+0
+9 0 0 0 0 0 0 0 0 0
+
+In the case of your exported example, it looks like the front and 
+backside reflectances are the same. Here is how to interpret this 
+definition:
+
+void BRTDfunc GlzSys_front_and_back
+10
+    if(Rdot, <r_front_refl>, <r_back_ref>l) if(Rdot, <g_front_refl>, 
+<g_back_refl>) if(Rdot, <b_front_refl>, <b_back_refl>)
+    <r_trans> <g_trans> <b_trans>
+    0   0   0
+    .
+0
+9 0 0 0 0 0 0 0 0 0
+
+The "if" statement determines if the ray hits the front or back of the 
+geometry, if it is positive then it takes the first value, if negative 
+it takes the second value. You need to determine what front/back means 
+though (eg front==exterior and back==interior).
+
+NOTE that these BRTDfunc definitions do NOT account for angular 
+dependencies of transmittance/reflectance of the material.
+
+Another options is to take the transmittances and reflectances for the 
+various surfaces (eg s1 through s4) and use them with the "glaze" script 
+found in radiance. This creates a more sophisticated material 
+representation for single and double pane type of glazing systems. To do 
+this though you need to export radiance files from Optic5 not for the 
+final assembly of the glazing system but for the individual sub layers.
+
+Regards,
+
+-Jack de Valpine
+
+Marija Cvetkovic wrote:
+
+> Hi,
+> I am trying to use actual data for glazing materials, and I've found that
+> Optics5 has a good database. Since it has exporter to Radiance, single or
+> multi layer glazings can be easily converted to Radiance format.
+> Resulting file has a form like:
+>
+> void  glass       GlzSys_glass
+> 0
+> 0
+> 3     0.807     0.875     0.849
+>
+> void  BRTDfunc    GlzSys_front
+> 10
+>      0.134     0.147     0.147
+>      0.740     0.803     0.779
+>      0 0 0
+>      .
+> 0
+> 9 0 0 0 0 0 0 0 0 0
+>
+> void  BRTDfunc    GlzSys_back
+> 10
+>      0.134     0.147     0.147
+>      0.740     0.803     0.779
+>      0 0 0
+>      .
+> 0
+> 9 0 0 0 0 0 0 0 0 0
+>
+> My question is how should I use these data in Radiance scene description.
+> I suppose that idea is to define window glass with 3 layers:
+> GlzSys_front  GlzSys_glass  GlzSys_back
+>
+> Am I right?
+>
+> One more question: does anyone know how this BRTD parameters are 
+> calculated from Optic5 data?
+>
+> Thanks,
+> marija
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+-- 
+# Jack de Valpine
+# president
+#
+# visarc incorporated
+# http://www.visarc.com
+#
+# channeling technology for superior design and construction
+
+
+
+From a.jacobs at londonmet.ac.uk  Mon Oct 24 16:12:18 2005
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Mon Oct 24 16:18:00 2005
+Subject: [Radiance-general] rtrace -o adds direction to origin
+In-Reply-To: <20050801204811.GA4884@zwielich.escape.de>
+References: <001001c58cce$8878b1d0$1f7af90a@hwx>
+	<20050801204811.GA4884@zwielich.escape.de>
+Message-ID: <10178.213.58.97.64.1130163138.squirrel@webmail1.londonmet.ac.uk>
+
+Confusing, I know
+
+I am using 3.7.2.
+
+I am trying something like:
+
+cnt 2 3| rcalc -e '$1=$1;$2=$2;$3=1;$4=0;$5=0;$6=1'| rtrace -I -ab 1 -ad
+64 -h -w -oov axel.oct| rcalc -e '$1=$1;$2=$2;$3=$3'
+0       0       2
+0       1       2
+0       2       2
+1       0       2
+1       1       2
+1       2       2
+
+Compare this to:
+
+cnt 2 3| rcalc -e '$1=$1;$2=$2;$3=1;$4=0;$5=1;$6=0'| rtrace -I -ab 1 -ad
+64 -h -w -oov axel.oct| rcalc -e '$1=$1;$2=$2;$3=$3'
+0       1       1
+0       2       1
+0       3       1
+1       1       1
+1       2       1
+1       3       1
+
+radiance 3.7.2 seems to add the direction vector to the ray's origin at
+its -oo output.
+
+Now try:
+
+cnt 2 3| rcalc -e '$1=$1;$2=$2;$3=1;$4=0;$5=3;$6=0'| rtrace -I -ab 1 -ad
+64 -h -w -oov axel.oct| rcalc -e '$1=$1;$2=$2;$3=$3'
+0       1       1
+0       2       1
+0       3       1
+1       1       1
+1       2       1
+1       3       1
+
+Aha! It is in fact the _normalised_ direction vector which it adds.
+
+I've done similar rtrace jobs lots of times before, but this behavious
+seems to be newly introduced in a recent release. -oo always used to spit
+out exactly the input, not (input+direction).
+
+Please advise.
+
+Axel
+
+
+
+From a.jacobs at londonmet.ac.uk  Mon Oct 24 16:27:00 2005
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Mon Oct 24 16:32:20 2005
+Subject: [Radiance-general] rtrace -oo adds direction to origin
+Message-ID: <10223.213.58.97.64.1130164020.squirrel@webmail1.londonmet.ac.uk>
+
+Confusing, I know
+
+I am using 3.7.2.
+
+I am trying something like:
+
+cnt 2 3| rcalc -e '$1=$1;$2=$2;$3=1;$4=0;$5=0;$6=1'| rtrace -I -ab 1 -ad
+64 -h -w -oov axel.oct| rcalc -e '$1=$1;$2=$2;$3=$3'
+0       0       2
+0       1       2
+0       2       2
+1       0       2
+1       1       2
+1       2       2
+
+Compare this to:
+
+cnt 2 3| rcalc -e '$1=$1;$2=$2;$3=1;$4=0;$5=1;$6=0'| rtrace -I -ab 1 -ad
+64 -h -w -oov axel.oct| rcalc -e '$1=$1;$2=$2;$3=$3'
+0       1       1
+0       2       1
+0       3       1
+1       1       1
+1       2       1
+1       3       1
+
+radiance 3.7.2 seems to add the direction vector to the ray's origin at
+its -oo output.
+
+Now try:
+
+cnt 2 3| rcalc -e '$1=$1;$2=$2;$3=1;$4=0;$5=3;$6=0'| rtrace -I -ab 1 -ad
+64 -h -w -oov axel.oct| rcalc -e '$1=$1;$2=$2;$3=$3'
+0       1       1
+0       2       1
+0       3       1
+1       1       1
+1       2       1
+1       3       1
+
+Aha! It is in fact the _normalised_ direction vector which it adds.
+
+I've done similar rtrace jobs lots of times before, but this behavious
+seems to be newly introduced in a recent release. -oo always used to spit
+out exactly the input, not (input+direction).
+
+Please advise.
+
+Axel
+
+
+
+From gregoryjward at gmail.com  Mon Oct 24 17:50:58 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon Oct 24 17:52:16 2005
+Subject: [Radiance-general] rtrace -oo adds direction to origin
+In-Reply-To: <10223.213.58.97.64.1130164020.squirrel@webmail1.londonmet.ac.uk>
+References: <10223.213.58.97.64.1130164020.squirrel@webmail1.londonmet.ac.uk>
+Message-ID: <2AE0F1DD-8D4E-4915-B809-7E80ECEE650B@gmail.com>
+
+Hi Axel,
+
+The -oo option and -od option report the origin and normalized ray  
+direction (respectively), but only with -I-.  When you set -I+, then  
+rtrace fudges the calculation by creating a ray 1 unit above an  
+imaginary Lambertian surface, and this is why the origin (and  
+direction if you check) do not match your input.  Instead, the  
+intersection point (-op) and surface normal (-on or -oN) will match  
+the origin and direction given.
+
+This is not a new bug in 3.7, but something that's been there since I  
+enabled reports of parameters besides ray value with -I+ in the 2.3  
+release.  Perhaps you weren't using the -I+ setting in your previous  
+scripts.
+
+I think I could fix this behavior if it's really screwing you up.  I  
+agree that it's confusing to have the -oo and -od options change  
+their apparent reporting depending on the -I setting, but they are  
+reporting the values on the ray actually traced.  You don't start out  
+at the surface and direct the ray straight up in order to compute  
+irradiance.  That wouldn't work.
+
+-Greg
+
+> From: "Axel Jacobs" <a.jacobs@londonmet.ac.uk>
+> Date: October 24, 2005 7:27:00 AM PDT
+>
+> Confusing, I know
+>
+> I am using 3.7.2.
+>
+> I am trying something like:
+>
+> cnt 2 3| rcalc -e '$1=$1;$2=$2;$3=1;$4=0;$5=0;$6=1'| rtrace -I -ab  
+> 1 -ad
+> 64 -h -w -oov axel.oct| rcalc -e '$1=$1;$2=$2;$3=$3'
+> 0       0       2
+> 0       1       2
+> 0       2       2
+> 1       0       2
+> 1       1       2
+> 1       2       2
+>
+> Compare this to:
+>
+> cnt 2 3| rcalc -e '$1=$1;$2=$2;$3=1;$4=0;$5=1;$6=0'| rtrace -I -ab  
+> 1 -ad
+> 64 -h -w -oov axel.oct| rcalc -e '$1=$1;$2=$2;$3=$3'
+> 0       1       1
+> 0       2       1
+> 0       3       1
+> 1       1       1
+> 1       2       1
+> 1       3       1
+>
+> radiance 3.7.2 seems to add the direction vector to the ray's  
+> origin at
+> its -oo output.
+>
+> Now try:
+>
+> cnt 2 3| rcalc -e '$1=$1;$2=$2;$3=1;$4=0;$5=3;$6=0'| rtrace -I -ab  
+> 1 -ad
+> 64 -h -w -oov axel.oct| rcalc -e '$1=$1;$2=$2;$3=$3'
+> 0       1       1
+> 0       2       1
+> 0       3       1
+> 1       1       1
+> 1       2       1
+> 1       3       1
+>
+> Aha! It is in fact the _normalised_ direction vector which it adds.
+>
+> I've done similar rtrace jobs lots of times before, but this behavious
+> seems to be newly introduced in a recent release. -oo always used  
+> to spit
+> out exactly the input, not (input+direction).
+>
+> Please advise.
+>
+> Axel
+>
+
+From a.jacobs at londonmet.ac.uk  Mon Oct 24 18:18:48 2005
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Mon Oct 24 18:24:11 2005
+Subject: [Radiance-general] rtrace -oo adds direction to origin
+In-Reply-To: <2AE0F1DD-8D4E-4915-B809-7E80ECEE650B@gmail.com>
+References: <10223.213.58.97.64.1130164020.squirrel@webmail1.londonmet.ac.uk>
+	<2AE0F1DD-8D4E-4915-B809-7E80ECEE650B@gmail.com>
+Message-ID: <10109.213.58.97.64.1130170728.squirrel@webmail1.londonmet.ac.uk>
+
+Hi Greg,
+
+> The -oo option and -od option report the origin and normalized ray
+> direction (respectively), but only with -I-.  When you set -I+, then
+> rtrace fudges the calculation by creating a ray 1 unit above an
+> imaginary Lambertian surface, and this is why the origin (and
+> direction if you check) do not match your input.  Instead, the
+> intersection point (-op) and surface normal (-on or -oN) will match
+> the origin and direction given.
+
+This is baffling. I always used just plain -I, without +/-, and it worked.
+I am indeed after illuminance.
+
+Let me repeat this:
+- rtrace -defaults: -i- (so illuminance is off, hence luminance)
+- -i/-I is a boolean switch (or are they two independent boolean switches?)
+- I have -I in my rtrace command line. This toggles the default, turning
+it on.
+- with i/I set to on, the origin should be set to the input, no?
+
+> This is not a new bug in 3.7, but something that's been there since I
+> enabled reports of parameters besides ray value with -I+ in the 2.3
+> release.  Perhaps you weren't using the -I+ setting in your previous
+> scripts.
+
+No, just -I
+
+> I think I could fix this behavior if it's really screwing you up.  I
+> agree that it's confusing to have the -oo and -od options change
+> their apparent reporting depending on the -I setting, but they are
+> reporting the values on the ray actually traced.  You don't start out
+> at the surface and direct the ray straight up in order to compute
+> irradiance.  That wouldn't work.
+
+I think I understand the subtlety of measuring luminance vs. illuminance,
+so the added '1' and the inversed direction doesn't worry me. The
+'toggling' is, though.
+
+Thanks for your reply, anyhow.
+
+Cheers
+
+Axel
+
+
+
+
+From a.jacobs at londonmet.ac.uk  Mon Oct 24 18:34:38 2005
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Mon Oct 24 18:39:58 2005
+Subject: [Radiance-general] rtrace -oo adds direction to origin
+In-Reply-To: <10109.213.58.97.64.1130170728.squirrel@webmail1.londonmet.ac.uk>
+References: <10223.213.58.97.64.1130164020.squirrel@webmail1.londonmet.ac.uk>
+	<2AE0F1DD-8D4E-4915-B809-7E80ECEE650B@gmail.com>
+	<10109.213.58.97.64.1130170728.squirrel@webmail1.londonmet.ac.uk>
+Message-ID: <10145.213.58.97.64.1130171678.squirrel@webmail1.londonmet.ac.uk>
+
+I'm still not over this.
+
+Just tried all possible combinations of 'I':
+
+none: fine, no added 1
+-I-: fine, no added 1
+-I+: fine, added one, but expectedly
+-I: not fine, added one but unexpectedly (should toggle)
+
+Can I assume that the 'i' is for 'i'lluminance, not 'i'nversed?
+
+Also: I think the man page to rtrace used to say under -I something like
+"like -i, but..."
+
+Axel
+
+
+
+
+From gregoryjward at gmail.com  Mon Oct 24 19:11:46 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon Oct 24 19:13:10 2005
+Subject: [Radiance-general] rtrace -oo adds direction to origin
+In-Reply-To: <10109.213.58.97.64.1130170728.squirrel@webmail1.londonmet.ac.uk>
+References: <10223.213.58.97.64.1130164020.squirrel@webmail1.londonmet.ac.uk>
+	<2AE0F1DD-8D4E-4915-B809-7E80ECEE650B@gmail.com>
+	<10109.213.58.97.64.1130170728.squirrel@webmail1.londonmet.ac.uk>
+Message-ID: <A276A4A8-2D82-4C0C-A944-FCF5C826879C@gmail.com>
+
+> Let me repeat this:
+> - rtrace -defaults: -i- (so illuminance is off, hence luminance)
+
+Also defaults to -I-.  These are separate options, and need to be  
+considered independently, though their behavior is somewhat similar.
+
+> - -i/-I is a boolean switch (or are they two independent boolean  
+> switches?)
+
+Independent.
+
+> - I have -I in my rtrace command line. This toggles the default,  
+> turning
+> it on.
+
+That's right.  Two -I options would turn it off again.
+
+> - with i/I set to on, the origin should be set to the input, no?
+
+WIth -i the origin will match the input, as the rays are traced from  
+there.  With -I, the origin will not match the input, as I said.
+
+> I think I understand the subtlety of measuring luminance vs.  
+> illuminance,
+> so the added '1' and the inversed direction doesn't worry me. The
+> 'toggling' is, though.
+
+Again, -i and -I do not toggle each other.  With -I+ set (either  
+using -I alone or -I+), the -i setting become irrelevant.  Think of - 
+I as superseding the -i setting.
+
+-Greg
+
+From MdelaFuente at wmtao.com  Fri Oct 28 00:43:30 2005
+From: MdelaFuente at wmtao.com (Mark de la Fuente)
+Date: Fri Oct 28 00:45:31 2005
+Subject: [Radiance-general] new Radiance binaries for Windows
+Message-ID: <s36111cd.008@wmtao.com>
+
+Francesco,
+ 
+I too was very happy to see some windows binaries!  It would certainly make life easier to have these, working in a Windows environment.
+ 
+Have you been able to get mkillum to run correctly?  I'm having some PATH issues and it seems the only way for mkillum to work properly is to go in and manually add the full path to the dat files referenced in mkillum's output rad file.  This is very strange.  Has anyone tried to use mkillum with the windows binaries?  Any problems?
+ 
+I appreciate any feedback.
+ 
+Thanks!
+ 
+Mark
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20051027/dc5f8a58/attachment.html
+From jelleferinga at gmail.com  Fri Oct 28 12:17:56 2005
+From: jelleferinga at gmail.com (Jelle Feringa / EZCT Architecture & Design Research)
+Date: Fri Oct 28 12:19:11 2005
+Subject: [Radiance-general] Re: Radiance-general Digest, Vol 20, Issue 18
+In-Reply-To: <20051028095915.18644.qmail@mailbox.hrnoc.net>
+References: <20051028095915.18644.qmail@mailbox.hrnoc.net>
+Message-ID: <37fac3b90510280317k341609ccl21c7e05d56c6da2d@mail.gmail.com>
+
+Mark, if mkillum is your sole problemm what could be a solution is to
+take the binaries supplied with desktop radiance, and use partly those
+in addition to Francesco's binaries. I have been mixing these without
+problems. I ran into some issues (I'll see if i can define that more
+prceisly Francesco) with for instance the oconv.exe of Francesco's
+binaries. My hunch is that this oconv is not able to spit out the
+error messages that the ol' dtp-rad binaries do. Something that need
+looking into. For the rest Francesco's binaries are just _wonderful_ !
+
+From tiago at tkh.att.ne.jp  Sun Oct 30 23:21:32 2005
+From: tiago at tkh.att.ne.jp (Santiago Torres)
+Date: Sun Oct 30 23:23:00 2005
+Subject: [Radiance-general] rtcontrib
+In-Reply-To: <s36111cd.008@wmtao.com>
+References: <s36111cd.008@wmtao.com>
+Message-ID: <E174F409-51B7-466A-B34E-34834C20810F@tkh.att.ne.jp>
+
+Hello,
+
+I've been trying to use daylight coefficients with rtcontrib and I  
+have a couple of questions.
+I made images with the contribution of each sky patch, but the images  
+look quite noisy, and if I combine them I don`t get the same as if I  
+was rendering the scene altogether.
+The command I used is like this:
+
+vwrays -ff -x 500 -y 500 -vf vint.vf | rtcontrib -ffc `vwrays -d -x  
+500 -y 500 -vf vint.vf` -ab 5 -ad 2048 -as 1024 -b tbin -o c_%d.pic - 
+m skyglow -f tregenza_h.cal scene.oct
+
+If necessary I can post some images, but probably it`s something  
+obvious I`m missing here...
+
+My second question is regarding the calculation of model skies (like  
+Perez) with the rtcontrib results. Perez sky gives the luminance  
+value at a certain point, but I guess in order to multiply the  
+contribution of a certain section of the sky, I need to integrate the  
+luminance values inside that section. Is this correct? Can anyone  
+point me to any reference where this might be explained more? Any  
+ideas about how to implement this in a script?
+Thank you in advance. Best regards,
+
+Santiago
+
+
+From gregoryjward at gmail.com  Mon Oct 31 03:59:07 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Mon Oct 31 04:01:11 2005
+Subject: [Radiance-general] rtcontrib
+In-Reply-To: <E174F409-51B7-466A-B34E-34834C20810F@tkh.att.ne.jp>
+References: <s36111cd.008@wmtao.com>
+	<E174F409-51B7-466A-B34E-34834C20810F@tkh.att.ne.jp>
+Message-ID: <0BE05895-C5E8-4563-AF24-478EAF2C007D@gmail.com>
+
+Hi Santiago,
+
+I wish I could offer you some words of encouragement, because I  
+appreciate the difficulty you face applying rtcontrib to daylight  
+coefficients.  The truth is, you really need some scripts to help out  
+with the task, and I haven't yet had a chance to write a general set  
+of scripts or an executive program for DC analysis.  I am working on  
+this project currently, as a matter of fact.
+
+All I have at this point is a few test scripts I assembled for a  
+daylight simulation study, and I can make these available for you if  
+you need an early start on this.  If you can wait a few weeks, I will  
+have something much better, I hope.
+
+Just to answer your question, adding together the rtcontrib outputs  
+directly gives you the result for a uniform sky.  To get a particular  
+sky, you must multiply each image by the average radiance of the  
+corresponding sky patch.  To compute this, a simple rtrace  
+calculation using the desired sky model and a set of randomly  
+distributed rays over the hemisphere will do the trick.  Such a set  
+of rays is given in the file "ray/lib/tregsamp.dat", where there are  
+64 rays per sky patch.  The command to compute pcomb arguments from  
+this file is:
+
+rtrace -h skymodel.oct < tregsamp.dat \
+         | total -64 -m \
+         | rcalc -o '-s ${$2} c_${recno-1}.pic'
+
+I realize this is just a clue, but if you wait a few weeks, hopefully  
+I can provide a complete solution.
+
+-Greg
+
+> From: Santiago Torres <tiago@tkh.att.ne.jp>
+> Date: October 30, 2005 2:21:32 PM PST
+>
+> Hello,
+>
+> I've been trying to use daylight coefficients with rtcontrib and I  
+> have a couple of questions.
+> I made images with the contribution of each sky patch, but the  
+> images look quite noisy, and if I combine them I don`t get the same  
+> as if I was rendering the scene altogether.
+> The command I used is like this:
+>
+> vwrays -ff -x 500 -y 500 -vf vint.vf | rtcontrib -ffc `vwrays -d -x  
+> 500 -y 500 -vf vint.vf` -ab 5 -ad 2048 -as 1024 -b tbin -o c_%d.pic  
+> -m skyglow -f tregenza_h.cal scene.oct
+>
+> If necessary I can post some images, but probably it`s something  
+> obvious I`m missing here...
+>
+> My second question is regarding the calculation of model skies  
+> (like Perez) with the rtcontrib results. Perez sky gives the  
+> luminance value at a certain point, but I guess in order to  
+> multiply the contribution of a certain section of the sky, I need  
+> to integrate the luminance values inside that section. Is this  
+> correct? Can anyone point me to any reference where this might be  
+> explained more? Any ideas about how to implement this in a script?
+> Thank you in advance. Best regards,
+>
+> Santiago
+

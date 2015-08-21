@@ -1,0 +1,2730 @@
+From njlander at yahoo.com.au  Wed Dec  6 09:30:40 2006
+From: njlander at yahoo.com.au (Nicholas Lander)
+Date: Wed Dec  6 09:30:47 2006
+Subject: [Radiance-general] Dialux
+Message-ID: <724143.69742.qm@web54607.mail.yahoo.com>
+
+Hi All,
+Does anyone know about Dialux and whether it models
+daylight accurately?
+Cheers
+Nick L
+
+
+		
+___________________________________________________________ 
+All New Yahoo! Mail ? Tired of Vi@gr@! come-ons? Let our SpamGuard protect you. http://uk.docs.yahoo.com/nowyoucan.html
+
+From T-Bleicher at bdp.co.uk  Wed Dec  6 11:02:11 2006
+From: T-Bleicher at bdp.co.uk (Bleicher, Thomas)
+Date: Wed Dec  6 11:02:05 2006
+Subject: [Radiance-general] Dialux
+Message-ID: <FCCB55B3313F2341AB3C91810FE1166B029B3D27@ln-s3xch1.bdp.holdings.network>
+
+
+Hi Nicholas.
+
+Define 'accurate'.
+
+We have done a small evaluation with a reference
+modell which could be calculated following formulas
+published in various BS (British Standard) papers.
+
+The results for Dialux where around 10% over the
+paper-and-pen calculations the Radiance results where
+2-3% below, depending on the setting for ambient bounces.
+
+Given that everything is reduced to ADF anyway you
+can go with Dialux if the space is simple enough
+to be modelled in Dialux. The images Dialux creates
+are nice but not worth much if you want to evaluate
+the appearance of the space.
+
+The bigger problem with Dialux is that you realy
+don't know what it's doing internally and you don't
+have much controll over the rendering parameters
+to test the effects. I'd say that it is crucial for
+renderings where you have to rely on the accuracy
+to know how the parameters affect the result. In
+Radiance you'd do a few renderings with different
+settings first to find a good compromise between
+accuracy and rendering time. In Dialux you can only
+click 'go' and accept what's dropping out at the end.
+
+Nevertheless, it's a simple tool for simple jobs.
+
+Cheers, 
+Thomas
+
+
+> -----Original Message-----
+> From: radiance-general-bounces@radiance-online.org 
+> [mailto:radiance-general-bounces@radiance-online.org] On 
+> Behalf Of Nicholas Lander
+> Sent: 06 December 2006 08:31
+> To: radiance-general@radiance-online.org
+> Subject: [Radiance-general] Dialux
+> 
+> Hi All,
+> Does anyone know about Dialux and whether it models daylight 
+> accurately?
+> Cheers
+> Nick L
+> 
+> 
+> 		
+> ___________________________________________________________
+> All New Yahoo! Mail - Tired of Vi@gr@! come-ons? Let our 
+> SpamGuard protect you. http://uk.docs.yahoo.com/nowyoucan.html
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+
+***********************************************************************************
+This e-mail, (and any attachments) is confidential and may be privileged.  It may be read, copied and used by the intended addressee only.  If you have received this in error please contact BDP immediately. 
+
+If you have any queries, please contact the sender.
+***********************************************************************************
+Building Design Partnership
+Registered in England No 2207415:
+Registered Office: Building Design Partnership Ltd, Sunlight House, PO Box 85, Quay Street, Manchester, M60 3JA, http://www.bdp.co.uk
+***********************************************************************************
+
+From andy.stone at bdsp.com  Wed Dec  6 14:24:01 2006
+From: andy.stone at bdsp.com (Andy Stone)
+Date: Wed Dec  6 14:24:11 2006
+Subject: [Radiance-general] Deriving mist parameters
+Message-ID: <49DA5CB5F3540C4BB9B3A41200253F5BB239D9@bdspserver04.BDSPUK02.local>
+
+Hi all,
+
+I am trying to use radiance to simulate a room filled with a fine water
+droplet mist.  If I know a little about the composition of the mist
+(e.g. droplet size and density), is there a way to derive the extinction
+coefficient (-me), scattering albedo (-ma) and eccentricity parameter
+(-mg)?  
+
+Also, the beginning of chapter 14 of Rendering With Radiance suggests
+that the single scatter approximation used is only appropriate for thin
+mists - is there a guideline for how thin "thin" should be?  I want to
+try several different thicknesses including some cases where visibility
+might be less than one metre...
+
+Thanks,
+
+Andy Stone
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20061206/52da82e3/attachment.html
+From gregoryjward at gmail.com  Thu Dec  7 07:55:03 2006
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu Dec  7 07:55:16 2006
+Subject: [Radiance-general] Deriving mist parameters
+In-Reply-To: <49DA5CB5F3540C4BB9B3A41200253F5BB239D9@bdspserver04.BDSPUK02.local>
+References: <49DA5CB5F3540C4BB9B3A41200253F5BB239D9@bdspserver04.BDSPUK02.local>
+Message-ID: <7546DE6D-3423-4B98-A70B-D984C0EA0CE2@gmail.com>
+
+Tough questions, Andy.
+
+If you know the droplet size and density, you should be able to  
+compute the likelihood of striking a particle in one unit's distance  
+(e.g., in a world coordinate system of meters: 1 unit == 1 meter).   
+To take a real example, let's say you assume spherical droplets of  
+100 microns in diameter at a density of 10^5 drops per cubic meter.   
+That means that one droplet (on average) can be found in every 10^-5  
+of a cubic meter.  More importantly, looking through one meter's  
+distance in this volume, your chance of encountering a droplet equals  
+the combined cross-sectional area of all the droplets in the volume  
+divided by the volume.  That is:
+
+	10^5 * pi*(50e-6 meter)^2 / 1 meter^3
+
+or a 0.000785 (0.075%) probability. This is safely in the range of a  
+single-scattering medium for an interior space, since a photon would  
+need to travel nearly a kilometer to have a 50% chance of  
+encountering a droplet.
+
+Your extinction coefficient is approximately equal to the above  
+probability, i.e., the average fraction of rays scattered per unit  
+distance.  The value needs to be computed more carefully as the  
+density*size gets larger, since we really should be computing the  
+probability of a ray *not* encountering a droplet after a unit's  
+distance, and one minus that is the extinction coefficient.  I was  
+trying to work out the exact formula, but it gets into ODE's, which  
+was one of my worst subjects in math, right after complex number  
+analysis...  It's only a problem when you get into the multiple  
+scattering regime, where Radiance isn't really well-suited anymore.
+
+The albedo for water droplets is quite high, somewhere around 0.999,  
+and the H-G is about 0.84 (values taken from "Rendering with  
+Radiance," p. 595).  These values do not change with drop size or  
+density.
+
+I am not sure how visibility length relates to extinction.  I did a  
+quick Google search and found the following tidbit at  
+<www.envirotechsensors.com>:
+> Conversion from extinction coefficient to visibility involves  
+> different algorithms, one for daytime and one for night. Daytime  
+> visibility is related to the viewing of dark objects against a  
+> light sky as previously mentioned. For measurement of visibility in  
+> the daytime, Koschmieder?s Law is used:
+>
+> V = 3/?
+>
+>  Where V is the visibility and ? is the extinction coefficient
+>
+>  Nighttime visibility is related to the distance at which a point  
+> source of light of known intensity can be seen. For measurement of  
+> visibility at night, Allard?s Law is used:
+>
+>  V = e-?*V/0.00336
+>
+>  Where V is the visibility and ? is the extinction coefficient.
+>
+>  Most applications will use only the Koschmieder?s (V = 3/?)  
+> formula. The aviation community typically uses a photometer to  
+> measure the day/night condition and applies both formulas depending  
+> on the ambient background light.
+So, a daytime visibility of 0.8 meters corresponds to an extinction  
+coefficient of 3.75 m^-1, which of course is nonsense because  
+extinction must be < 1.  I assume this approximation doesn't really  
+apply below a certain visibility distance, >> 3 in whatever units you  
+have.  Again, this relates to the problem mentioned above with  
+multiple scattering, and you need to make sure your in a single- 
+scattering regime for any of this to make sense.
+
+I hope this helps.  It sure got me confused!
+-Greg
+
+> From: "Andy Stone" <andy.stone@bdsp.com>
+> Date: December 6, 2006 5:24:01 AM PST
+> Hi all,
+>
+> I am trying to use radiance to simulate a room filled with a fine  
+> water droplet mist.  If I know a little about the composition of  
+> the mist (e.g. droplet size and density), is there a way to derive  
+> the extinction coefficient (-me), scattering albedo (-ma) and  
+> eccentricity parameter (-mg)?
+>
+> Also, the beginning of chapter 14 of Rendering With Radiance  
+> suggests that the single scatter approximation used is only  
+> appropriate for thin mists ? is there a guideline for how thin  
+> ?thin? should be?  I want to try several different thicknesses  
+> including some cases where visibility might be less than one metre?
+>
+> Thanks,
+>
+> Andy Stone
+>
+
+From andy.stone at bdsp.com  Thu Dec  7 13:51:51 2006
+From: andy.stone at bdsp.com (Andy Stone)
+Date: Thu Dec  7 13:52:12 2006
+Subject: [Radiance-general] Re: Deriving mist parameters
+In-Reply-To: <BDSPSERVER04pGR881N000000f8@bdsp.com>
+Message-ID: <49DA5CB5F3540C4BB9B3A41200253F5BB23A42@bdspserver04.BDSPUK02.local>
+
+Thanks Greg, that's what I needed to know.
+
+I?m pretty sure now that the density of water droplet that I am interested in is going to result in multiple scattering so maybe Radiance is not the right tool for the job.  Does anyone know if the photon mapping patch to Radiance handles multiple scatter in mists?
+
+Thanks,
+
+Andy
+
+
+> Tough questions, Andy.
+> 
+> If you know the droplet size and density, you should be able to
+> compute the likelihood of striking a particle in one unit's distance
+> (e.g., in a world coordinate system of meters: 1 unit == 1 meter).
+> To take a real example, let's say you assume spherical droplets of
+> 100 microns in diameter at a density of 10^5 drops per cubic meter.
+> That means that one droplet (on average) can be found in every 10^-5
+> of a cubic meter.  More importantly, looking through one meter's
+> distance in this volume, your chance of encountering a droplet equals
+> the combined cross-sectional area of all the droplets in the volume
+> divided by the volume.  That is:
+> 
+> 	10^5 * pi*(50e-6 meter)^2 / 1 meter^3
+> 
+> or a 0.000785 (0.075%) probability. This is safely in the range of a
+> single-scattering medium for an interior space, since a photon would
+> need to travel nearly a kilometer to have a 50% chance of
+> encountering a droplet.
+> 
+> Your extinction coefficient is approximately equal to the above
+> probability, i.e., the average fraction of rays scattered per unit
+> distance.  The value needs to be computed more carefully as the
+> density*size gets larger, since we really should be computing the
+> probability of a ray *not* encountering a droplet after a unit's
+> distance, and one minus that is the extinction coefficient.  I was
+> trying to work out the exact formula, but it gets into ODE's, which
+> was one of my worst subjects in math, right after complex number
+> analysis...  It's only a problem when you get into the multiple
+> scattering regime, where Radiance isn't really well-suited anymore.
+> 
+> The albedo for water droplets is quite high, somewhere around 0.999,
+> and the H-G is about 0.84 (values taken from "Rendering with
+> Radiance," p. 595).  These values do not change with drop size or
+> density.
+> 
+> I am not sure how visibility length relates to extinction.  I did a
+> quick Google search and found the following tidbit at
+> <www.envirotechsensors.com>:
+> > Conversion from extinction coefficient to visibility involves
+> > different algorithms, one for daytime and one for night. Daytime
+> > visibility is related to the viewing of dark objects against a
+> > light sky as previously mentioned. For measurement of visibility in
+> > the daytime, Koschmieder???s Law is used:
+> >
+> > V = 3/??
+> >
+> >  Where V is the visibility and ?? is the extinction coefficient
+> >
+> >  Nighttime visibility is related to the distance at which a point
+> > source of light of known intensity can be seen. For measurement of
+> > visibility at night, Allard???s Law is used:
+> >
+> >  V = e-??*V/0.00336
+> >
+> >  Where V is the visibility and ?? is the extinction coefficient.
+> >
+> >  Most applications will use only the Koschmieder???s (V = 3/??)
+> > formula. The aviation community typically uses a photometer to
+> > measure the day/night condition and applies both formulas depending
+> > on the ambient background light.
+> So, a daytime visibility of 0.8 meters corresponds to an extinction
+> coefficient of 3.75 m^-1, which of course is nonsense because
+> extinction must be < 1.  I assume this approximation doesn't really
+> apply below a certain visibility distance, >> 3 in whatever units you
+> have.  Again, this relates to the problem mentioned above with
+> multiple scattering, and you need to make sure your in a single-
+> scattering regime for any of this to make sense.
+> 
+> I hope this helps.  It sure got me confused!
+> -Greg
+> 
+
+From MShewfelt at enermodal.com  Thu Dec  7 22:25:21 2006
+From: MShewfelt at enermodal.com (Mark Shewfelt)
+Date: Thu Dec  7 22:26:16 2006
+Subject: [Radiance-general] Understanding illum correctly?
+In-Reply-To: <49DA5CB5F3540C4BB9B3A41200253F5BB23A42@bdspserver04.BDSPUK02.local>
+Message-ID: <EB65303B6C7EBA4996382AA5E0806BF47DBDF4@soleil.EEL.local>
+
+Hello All,
+
+I hoping someone can help me with my understanding of illum sources.
+I've read RwR, done the tutorials, etc., and I think I'm OK with the
+concept of secondary sources. All of the examples I've seen make illums
+around windows and skylights. My situation is slightly different - I
+have a skylight that is not flush with the interior of the space (i.e.
+there is a well, the insides of which are painted white).
+
+
+  -----------   <-- skylight glass
+  |         |
+  |         |   <-- well
+  |         |
+  |         |
+--	 __    ---------------  <-- ceiling of room
+        \
+         \
+	    -------------------- illum
+
+   <- room ->
+
+
+My intention is to make an illum at the ceiling of the room, which
+incorporates the bounces that the light takes to get into the room.
+Using the files below I've been able to simulate the skylight and the
+results look pretty reasonable. However, when I run the simulation using
+rad, I get the error message 'warning - no light sources found'. From
+reading Axel Jacobs' excellent tutorials I was imagining that this
+message would go away with the illums. 
+
+Any comments/tips/pointers would be great.
+
+Cheers,
+
+Mark Shewfelt
+Enermodal Engineering Ltd.
+Kitchener Ontario Canada
+
+
+skylight.rif:
+------------------------------
+scene = sky.rad 
+scene = material.mat
+scene = room3.rad
+illum = skylight.rad
+# The file in which to store indirect values
+AMB= simple.amb
+INDIRECT = 2
+mkillum= -ab 2
+
+
+material.mat:
+------------------------------
+skyfunc brightfunc window_dist
+2 winxmit winxmit.cal
+0
+0
+
+window_dist glass skylight_glass
+0
+0
+3	0.8	0.8	0.8
+
+# light is emitted from this but is invisible.
+void illum skylight_illum
+0
+0
+3	0	0	0
+
+skylight.rad
+------------------------------
+# light enters skylight well from here
+skylight_glass polygon skylight_window
+0
+0
+12
+ 	5.491076	 6.503552	 3.400000
+
+	 4.201076	 6.503552	 3.400000
+
+	 4.201076	 5.213552	 3.400000
+
+	 5.491076	 5.213552	 3.400000
+
+# light is emitted from this "surface" into the room
+skylight_illum polygon face.65
+0 
+0 
+12
+	 5.491076	 6.503552	 3.00000
+
+	 4.201076	 6.503552	 3.00000
+
+	 4.201076	 5.213552	 3.00000
+
+	 5.491076	 5.213552	 3.00000
+
+
+From captainb at cb-d.de  Thu Dec  7 22:55:17 2006
+From: captainb at cb-d.de (Carsten Bauer)
+Date: Thu Dec  7 22:55:20 2006
+Subject: [Radiance-general] Understanding illum correctly?
+In-Reply-To: <EB65303B6C7EBA4996382AA5E0806BF47DBDF4@soleil.EEL.local>
+References: <EB65303B6C7EBA4996382AA5E0806BF47DBDF4@soleil.EEL.local>
+Message-ID: <45788DC1.6070104@cb-d.de>
+
+Hi Mark,
+
+re-order the vertices of your illum polygon so that its surface normal
+(right-hand rule) points into the room.
+
+-cb
+
+From captainb at cb-d.de  Thu Dec  7 23:01:11 2006
+From: captainb at cb-d.de (Carsten Bauer)
+Date: Thu Dec  7 23:01:14 2006
+Subject: [Radiance-general] Understanding illum correctly?
+In-Reply-To: <EB65303B6C7EBA4996382AA5E0806BF47DBDF4@soleil.EEL.local>
+References: <EB65303B6C7EBA4996382AA5E0806BF47DBDF4@soleil.EEL.local>
+Message-ID: <45788F2B.2080004@cb-d.de>
+
+... and set the radiance vals of the illum source to sth. greater than zero,
+(preferrably 1,1,1 if used with a modifer function)
+... and use the light intensity distribution function calculated by mkillum
+as modifier instead of 'void'
+
+-cb
+
+From gregoryjward at gmail.com  Fri Dec  8 00:07:38 2006
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri Dec  8 00:07:42 2006
+Subject: [Radiance-general] Understanding illum correctly?
+In-Reply-To: <EB65303B6C7EBA4996382AA5E0806BF47DBDF4@soleil.EEL.local>
+References: <EB65303B6C7EBA4996382AA5E0806BF47DBDF4@soleil.EEL.local>
+Message-ID: <7D485242-F44A-421D-A34B-06304E5B1DE9@gmail.com>
+
+Hi Mark,
+
+I realize this is confusing, but basically you want to put a "void"  
+polygon in front of your opening.  Carsten is correct that the  
+polygon needs to point into the room, but some other slight  
+modifications are necessary as well to work with rad, as identified  
+below.  It is probably better just to use a pane of glass instead of  
+an illum initially.
+
+> From: Mark Shewfelt <MShewfelt@enermodal.com>
+> Date: December 7, 2006 1:25:21 PM PST
+>
+> Hello All,
+>
+> I hoping someone can help me with my understanding of illum sources.
+> I've read RwR, done the tutorials, etc., and I think I'm OK with the
+> concept of secondary sources. All of the examples I've seen make  
+> illums
+> around windows and skylights. My situation is slightly different - I
+> have a skylight that is not flush with the interior of the space (i.e.
+> there is a well, the insides of which are painted white).
+>
+>
+>   -----------   <-- skylight glass
+>   |         |
+>   |         |   <-- well
+>   |         |
+>   |         |
+> --	 __    ---------------  <-- ceiling of room
+>         \
+>          \
+> 	    -------------------- illum
+>
+>    <- room ->
+>
+>
+> My intention is to make an illum at the ceiling of the room, which
+> incorporates the bounces that the light takes to get into the room.
+> Using the files below I've been able to simulate the skylight and the
+> results look pretty reasonable. However, when I run the simulation  
+> using
+> rad, I get the error message 'warning - no light sources found'. From
+> reading Axel Jacobs' excellent tutorials I was imagining that this
+> message would go away with the illums.
+>
+> Any comments/tips/pointers would be great.
+>
+> Cheers,
+>
+> Mark Shewfelt
+> Enermodal Engineering Ltd.
+> Kitchener Ontario Canada
+>
+>
+> skylight.rif:
+> ------------------------------
+> scene = sky.rad
+> scene = material.mat
+> scene = room3.rad
+> illum = skylight.rad
+> # The file in which to store indirect values
+> AMB= simple.amb
+> INDIRECT = 2
+> mkillum= -ab 2
+>
+>
+> material.mat:
+> ------------------------------
+> skyfunc brightfunc window_dist
+> 2 winxmit winxmit.cal
+> 0
+> 0
+>
+> window_dist glass skylight_glass
+> 0
+> 0
+> 3	0.8	0.8	0.8
+
+Replace the above with simple, clear glass type:
+
+void glass skylight_glass
+0
+0
+3 0.96 0.96 0.96
+
+> # light is emitted from this but is invisible.
+> void illum skylight_illum
+> 0
+> 0
+> 3	0	0	0
+
+You can take the illum out, as we won't need it (and the zeroes  
+shouldn't be there, as Carsten mentioned).
+
+> skylight.rad
+> ------------------------------
+> # light enters skylight well from here
+> skylight_glass polygon skylight_window
+> 0
+> 0
+> 12
+>  	5.491076	 6.503552	 3.400000
+>
+> 	 4.201076	 6.503552	 3.400000
+>
+> 	 4.201076	 5.213552	 3.400000
+>
+> 	 5.491076	 5.213552	 3.400000
+
+Take the above and put it into room3.rad, as you won't be making it  
+into an illum with mkillum.  The "illum=" line in your rad input file  
+is for surfaces to be made into illum's, only.  Orientation doesn't  
+matter in this case.
+
+> # light is emitted from this "surface" into the room
+> skylight_illum polygon face.65
+> 0
+> 0
+> 12
+> 	 5.491076	 6.503552	 3.00000
+>
+> 	 4.201076	 6.503552	 3.00000
+>
+> 	 4.201076	 5.213552	 3.00000
+>
+> 	 5.491076	 5.213552	 3.00000
+
+As Carsten points out, you need to reverse your vertex order:
+
+# light is emitted from this "surface" into the room
+void polygon face.65
+0
+0
+12
+	 5.491076	 5.213552	 3.00000
+	 4.201076	 5.213552	 3.00000
+	 4.201076	 6.503552	 3.00000
+	 5.491076	 6.503552	 3.00000
+
+---------------
+Notice that I replaced the modifier with "void."  Mkillum will take  
+this file and compute an appropriate output distribution based on the  
+light entering the space and up to 2 indirect bounces.  (This may be  
+modified by setting the "mkillum=" variable in rad.)
+
+-Greg
+
+From MShewfelt at enermodal.com  Fri Dec  8 17:24:09 2006
+From: MShewfelt at enermodal.com (Mark Shewfelt)
+Date: Fri Dec  8 17:25:07 2006
+Subject: [Radiance-general] Understanding illum 
+	correctly?
+In-Reply-To: <7D485242-F44A-421D-A34B-06304E5B1DE9@gmail.com>
+Message-ID: <EB65303B6C7EBA4996382AA5E0806BF47DBDF9@soleil.EEL.local>
+
+Greg, Carsten - thanks for your help. I really appreciate it. I just
+wanted to make sure I was understanding things correctly, so forgive
+these two questions:
+
+As I understand it now, there are three ways to wind up with illum
+sources in your .oct file:
+1. Use the illum material type. Run 'oconv' as normal.
+2. Use rad and place all of the 'illums' (using whatever secondary
+material) into a separate file. This runs mkillum automatically.
+3. Use mkillum manually. (This is the same as 2 above?)
+As I type this out it makes perfect sense. Perhaps I have a tendency to
+overthink things. 
+
+One thing I noticed is that the window_dist type is replaced with a
+simple glass type. Is this because the reflectance/appearance of the
+skylight doesn't matter due to it being mostly hidden? Is it correct to
+assume that if I had a sidelight window in my final scene, I would
+include the "skyfunc brightfunc window_dist 2 winxmit winxmit.cal 0 0"
+bit to make the window appear as a real window?
+
+Cheers,
+
+Mark Shewfelt
+Enermodal Engineering Ltd.
+Kitchener Ontario Canada
+
+
+
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of
+Gregory J. Ward
+Sent: December 7, 2006 6:08 PM
+To: Radiance general discussion
+Subject: Re: [Radiance-general] Understanding illum correctly?
+
+Hi Mark,
+
+I realize this is confusing, but basically you want to put a "void"  
+polygon in front of your opening.  Carsten is correct that the polygon
+needs to point into the room, but some other slight modifications are
+necessary as well to work with rad, as identified below.  It is probably
+better just to use a pane of glass instead of an illum initially.
+
+> From: Mark Shewfelt <MShewfelt@enermodal.com>
+> Date: December 7, 2006 1:25:21 PM PST
+>
+> Hello All,
+>
+> I hoping someone can help me with my understanding of illum sources.
+> I've read RwR, done the tutorials, etc., and I think I'm OK with the 
+> concept of secondary sources. All of the examples I've seen make 
+> illums around windows and skylights. My situation is slightly 
+> different - I have a skylight that is not flush with the interior of 
+> the space (i.e.
+> there is a well, the insides of which are painted white).
+>
+>
+>   -----------   <-- skylight glass
+>   |         |
+>   |         |   <-- well
+>   |         |
+>   |         |
+> --	 __    ---------------  <-- ceiling of room
+>         \
+>          \
+> 	    -------------------- illum
+>
+>    <- room ->
+>
+>
+> My intention is to make an illum at the ceiling of the room, which 
+> incorporates the bounces that the light takes to get into the room.
+> Using the files below I've been able to simulate the skylight and the 
+> results look pretty reasonable. However, when I run the simulation 
+> using rad, I get the error message 'warning - no light sources found'.
+
+> From reading Axel Jacobs' excellent tutorials I was imagining that 
+> this message would go away with the illums.
+>
+> Any comments/tips/pointers would be great.
+>
+> Cheers,
+>
+> Mark Shewfelt
+> Enermodal Engineering Ltd.
+> Kitchener Ontario Canada
+>
+>
+> skylight.rif:
+> ------------------------------
+> scene = sky.rad
+> scene = material.mat
+> scene = room3.rad
+> illum = skylight.rad
+> # The file in which to store indirect values AMB= simple.amb INDIRECT 
+> = 2 mkillum= -ab 2
+>
+>
+> material.mat:
+> ------------------------------
+> skyfunc brightfunc window_dist
+> 2 winxmit winxmit.cal
+> 0
+> 0
+>
+> window_dist glass skylight_glass
+> 0
+> 0
+> 3	0.8	0.8	0.8
+
+Replace the above with simple, clear glass type:
+
+void glass skylight_glass
+0
+0
+3 0.96 0.96 0.96
+
+> # light is emitted from this but is invisible.
+> void illum skylight_illum
+> 0
+> 0
+> 3	0	0	0
+
+You can take the illum out, as we won't need it (and the zeroes
+shouldn't be there, as Carsten mentioned).
+
+> skylight.rad
+> ------------------------------
+> # light enters skylight well from here skylight_glass polygon 
+> skylight_window 0 0
+> 12
+>  	5.491076	 6.503552	 3.400000
+>
+> 	 4.201076	 6.503552	 3.400000
+>
+> 	 4.201076	 5.213552	 3.400000
+>
+> 	 5.491076	 5.213552	 3.400000
+
+Take the above and put it into room3.rad, as you won't be making it into
+an illum with mkillum.  The "illum=" line in your rad input file is for
+surfaces to be made into illum's, only.  Orientation doesn't matter in
+this case.
+
+> # light is emitted from this "surface" into the room skylight_illum 
+> polygon face.65 0 0
+> 12
+> 	 5.491076	 6.503552	 3.00000
+>
+> 	 4.201076	 6.503552	 3.00000
+>
+> 	 4.201076	 5.213552	 3.00000
+>
+> 	 5.491076	 5.213552	 3.00000
+
+As Carsten points out, you need to reverse your vertex order:
+
+# light is emitted from this "surface" into the room void polygon
+face.65 0 0
+12
+	 5.491076	 5.213552	 3.00000
+	 4.201076	 5.213552	 3.00000
+	 4.201076	 6.503552	 3.00000
+	 5.491076	 6.503552	 3.00000
+
+---------------
+Notice that I replaced the modifier with "void."  Mkillum will take this
+file and compute an appropriate output distribution based on the light
+entering the space and up to 2 indirect bounces.  (This may be modified
+by setting the "mkillum=" variable in rad.)
+
+-Greg
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+From gregoryjward at gmail.com  Fri Dec  8 17:49:23 2006
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri Dec  8 17:49:27 2006
+Subject: [Radiance-general] Understanding illum  correctly?
+In-Reply-To: <EB65303B6C7EBA4996382AA5E0806BF47DBDF9@soleil.EEL.local>
+References: <EB65303B6C7EBA4996382AA5E0806BF47DBDF9@soleil.EEL.local>
+Message-ID: <01E9A088-F9CC-47A4-AC1B-8ABC4F073B8A@gmail.com>
+
+Hi Mark,
+
+Yes to your first question -- this is a correct summary.
+
+Yes also to your second question.  You didn't really need an illum  
+going into mkillum, though you could have used one.  It would only  
+speed up the mkillum calculation slightly, while actually making the  
+subsequent rendering take longer, since rays would always be sent to  
+an illum source which is forever obscured.
+
+If you had a side-light window not computed with mkillum, then an  
+illum would be appropriate there.  However, you would have to follow  
+more closely the template offered in the Scene 0 Tutorial.  (See  
+"Rendering with Radiance" p. 32.)  The scene description you sent was  
+missing the appropriate "illum" statement for the top window.
+
+-Greg
+
+> From: Mark Shewfelt <MShewfelt@enermodal.com>
+> Date: December 8, 2006 8:24:09 AM PST
+>
+> Greg, Carsten - thanks for your help. I really appreciate it. I just
+> wanted to make sure I was understanding things correctly, so forgive
+> these two questions:
+>
+> As I understand it now, there are three ways to wind up with illum
+> sources in your .oct file:
+> 1. Use the illum material type. Run 'oconv' as normal.
+> 2. Use rad and place all of the 'illums' (using whatever secondary
+> material) into a separate file. This runs mkillum automatically.
+> 3. Use mkillum manually. (This is the same as 2 above?)
+> As I type this out it makes perfect sense. Perhaps I have a  
+> tendency to
+> overthink things.
+>
+> One thing I noticed is that the window_dist type is replaced with a
+> simple glass type. Is this because the reflectance/appearance of the
+> skylight doesn't matter due to it being mostly hidden? Is it  
+> correct to
+> assume that if I had a sidelight window in my final scene, I would
+> include the "skyfunc brightfunc window_dist 2 winxmit winxmit.cal 0 0"
+> bit to make the window appear as a real window?
+>
+> Cheers,
+>
+> Mark Shewfelt
+> Enermodal Engineering Ltd.
+> Kitchener Ontario Canada
+
+From Martin.Moeck at asu.edu  Sat Dec  9 01:21:43 2006
+From: Martin.Moeck at asu.edu (Martin Moeck)
+Date: Sat Dec  9 01:22:40 2006
+Subject: [Radiance-general] RAYPATH variable in Windows
+References: <EB65303B6C7EBA4996382AA5E0806BF47DBDF9@soleil.EEL.local>
+	<01E9A088-F9CC-47A4-AC1B-8ABC4F073B8A@gmail.com>
+Message-ID: <A4C91D7F128DEB4B954509D5D26FC3C202ED631C@EX03.asurite.ad.asu.edu>
+
+I have a problem getting Windows XP to find the RAYPATH variable on a Mac Pro Powerbook with the Intel processor under Windows XP. Both DRADPATH and RAYPATH are defined and set in the environment variables (Control Panel - System - Advanced - Environment Variables) . It still complains that it cannot find rayinit.cal. Both DRADPATH and RAYPATH are defined under user variables as well as environment variables.
+
+Martin Moeck, ASU
+
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: not available
+Type: application/ms-tnef
+Size: 2660 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20061208/ed09d279/attachment.bin
+From info at aisarquitectura.com  Sat Dec  9 01:30:34 2006
+From: info at aisarquitectura.com (Ignacio Munarriz)
+Date: Sat Dec  9 01:30:43 2006
+Subject: [Radiance-general] RAYPATH variable in Windows
+In-Reply-To: <A4C91D7F128DEB4B954509D5D26FC3C202ED631C@EX03.asurite.ad.asu.edu>
+References: <EB65303B6C7EBA4996382AA5E0806BF47DBDF9@soleil.EEL.local>	<01E9A088-F9CC-47A4-AC1B-8ABC4F073B8A@gmail.com>
+	<A4C91D7F128DEB4B954509D5D26FC3C202ED631C@EX03.asurite.ad.asu.edu>
+Message-ID: <457A03AA.3010101@aisarquitectura.com>
+
+tried with both directory separators "\" and "/" ?
+i've defined RAYPATH on winxp as .;c:/radiance8/ray/lib
+
+Ignacio
+
+Martin Moeck escribi?:
+> I have a problem getting Windows XP to find the RAYPATH variable on a Mac Pro Powerbook with the Intel processor under Windows XP. Both DRADPATH and RAYPATH are defined and set in the environment variables (Control Panel - System - Advanced - Environment Variables) . It still complains that it cannot find rayinit.cal. Both DRADPATH and RAYPATH are defined under user variables as well as environment variables.
+>
+> Martin Moeck, ASU
+>
+>
+>   
+> ------------------------------------------------------------------------
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>   
+
+
+From gregoryjward at gmail.com  Thu Dec 14 22:42:29 2006
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu Dec 14 22:42:30 2006
+Subject: [Radiance-general] MIT 3D meshes with textures
+References: <457FFE77.4050000@csail.mit.edu>
+Message-ID: <285C5C6C-3945-46D9-A45E-A021D7DEB931@lmi.net>
+
+Tom Merten of MIT has generously shared some textured triangle meshes  
+to the rendering community.  I have taken 6 of these and converted  
+them to Radiance triangle meshes, and bundled them together for  
+interested parties at:
+
+		http://radsite.lbl.gov/radiance/pub/objects/CSAILobj1.tar.gz
+
+The README includes directions for how to convert additional CSAIL  
+models for those who are interested.  If you include any of these  
+models in published work, be sure to include the following  
+acknowledgment:
+
+	 "(textured) 3D model from the MIT CSAIL database"
+
+Cheers,
+-Greg
+
+Begin forwarded message:
+
+> From: Fredo Durand <fredo@csail.mit.edu>
+> Date: December 13, 2006 5:21:59 AM PST
+> To: globillum@imag.fr
+> Subject: 3D meshes with textures
+>
+We have just put online some pretty high-quality 3D meshes with  
+parameterization and texture atlases
+
+	http://people.csail.mit.edu/tmertens/textransfer/data/index.html
+
+corresponding to our EGSR paper
+
+	http://people.csail.mit.edu/tmertens/textransfer/index.html
+
+Enjoy.
+
+Fredo
+
+-- 
+Fredo Durand,  MIT CSAIL
+
+From cveleglg at bankerinter.net  Tue Dec 26 10:30:46 2006
+From: cveleglg at bankerinter.net (Marija Cvetkovic)
+Date: Tue Dec 26 10:32:02 2006
+Subject: [Radiance-general] ambient accuracy parameter
+Message-ID: <4590EBC6.8060900@bankerinter.net>
+
+Hi,
+
+I've been reading some previous posts related to ambient parameters 
+settings and I have some questions.
+
+When it is recommendable to use -aa 0 value? If I understand this 
+parameter well, 0 value turns off irradiance caching, so we can use it 
+when caching isn't needed (mkillum calculation for venetian blinds or 
+rtcontrib).
+When we set -aa 0, does -ar have influence on minimum sampling distance, 
+since: min sampling distance = max scene dimension* aa/ar.
+
+When I run a rtrace calculation with -aa 0, calculation time is much 
+shorter than with -aa 0.1. Why?
+
+
+Have a nice holidays :)
+Marija.
+
+
+
+
+From Martin.Moeck at asu.edu  Tue Dec 26 22:40:56 2006
+From: Martin.Moeck at asu.edu (Martin Moeck)
+Date: Tue Dec 26 22:44:12 2006
+Subject: [Radiance-general] ambient accuracy parameter
+References: <4590EBC6.8060900@bankerinter.net>
+Message-ID: <A4C91D7F128DEB4B954509D5D26FC3C202ED6407@EX03.asurite.ad.asu.edu>
+
+I use the -aa setting to get a smoother indirect calculation. This is especially important if the -ad parameter is low, i.e., <=512. A high -aa parameter, such as 5000 or whatever, creates a dense grid of indirect/reflected values. You can check that by making two images, one with a low setting of ad and aa, and one with a low setting of ad and a high setting of aa. That will show you immediately what the ambient accuracy parameter is about. The image contains less blotches. 
+
+Martin Moeck
+
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org on behalf of Marija Cvetkovic
+Sent: Tue 12/26/2006 2:30 AM
+To: Radiance general
+Subject: [Radiance-general] ambient accuracy parameter
+ 
+Hi,
+
+I've been reading some previous posts related to ambient parameters 
+settings and I have some questions.
+
+When it is recommendable to use -aa 0 value? If I understand this 
+parameter well, 0 value turns off irradiance caching, so we can use it 
+when caching isn't needed (mkillum calculation for venetian blinds or 
+rtcontrib).
+When we set -aa 0, does -ar have influence on minimum sampling distance, 
+since: min sampling distance = max scene dimension* aa/ar.
+
+When I run a rtrace calculation with -aa 0, calculation time is much 
+shorter than with -aa 0.1. Why?
+
+
+Have a nice holidays :)
+Marija.
+
+
+
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: not available
+Type: application/ms-tnef
+Size: 3446 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20061226/cc686d12/attachment.bin
+From Martin.Moeck at asu.edu  Wed Dec 27 00:28:32 2006
+From: Martin.Moeck at asu.edu (Martin Moeck)
+Date: Wed Dec 27 00:38:28 2006
+Subject: [Radiance-general] Raypath in windows
+References: <A4C91D7F128DEB4B954509D5D26FC3C202ED6407@EX03.asurite.ad.asu.edu>
+Message-ID: <A4C91D7F128DEB4B954509D5D26FC3C202ED640D@EX03.asurite.ad.asu.edu>
+
+Hello,
+
+I am still having no success to set a RAYPATh variable in Windows XP. The slash options \ or / don't make a difference. I also defined both DRADPATH and RAYPATH as environment variables. 
+
+I saw Christoph Reinhardt renderings from his students. Do they use textures? How is the RAYPATH variable set in DAYSIM? 
+
+
+Martin Moeck
+
+
+P.S. 
+
+Is a radregistry  file necessary, such as 
+
+_____________________________________
+
+REGEDIT4
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory]
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance]
+
+"MAIN LIBRARY PATH"="C:\\Program Files\\Desktop Radiance\\Database\\"
+
+"DRADPATH"="C:\\Program Files\\Desktop Radiance\\"
+
+"OLD PROJECT PATH"="C:\\Program Files\\Desktop Radiance\\"
+
+"PROJECT PATH"="C:\\Program Files\\Desktop Radiance\\"
+
+"DISPLAY_GAMMA"="2.3"
+
+"RADEXECS PATH"="C:\\Radiance\\bin"
+
+"TCSH PATH"="/usr/local/bin/"
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance\Library Browser]
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance\Library Browser\Furnishing]
+
+"Sort"="4"
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance\Library Browser\Glazing]
+
+"Sort"="6"
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance\Library Browser\Luminaire]
+
+"Sort"="5"
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance\Library Browser\Material]
+
+"Sort"="4"
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance 1.0]
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance 1.0\1.02.00]
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance]
+
+"RAYPATH"=".;C:\\Radiance\\lib"
+
+"BINPATH"="C:\\Radiance\\bin"
+
+"DISPLAY_GAMMA"="2.3"
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview]
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar0]
+
+"BarID"=dword:0000e801
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar1]
+
+"BarID"=dword:0000e81b
+
+"Bars"=dword:00000004
+
+"Bar#0"=dword:00000000
+
+"Bar#1"=dword:0000e800
+
+"Bar#2"=dword:00000074
+
+"Bar#3"=dword:00000000
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar2]
+
+"BarID"=dword:0000e81e
+
+"Bars"=dword:00000003
+
+"Bar#0"=dword:00000000
+
+"Bar#1"=dword:00000076
+
+"Bar#2"=dword:00000000
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar3]
+
+"BarID"=dword:0000e81d
+
+"Bars"=dword:00000003
+
+"Bar#0"=dword:00000000
+
+"Bar#1"=dword:00000075
+
+"Bar#2"=dword:00000000
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar4]
+
+"BarID"=dword:0000e800
+
+"XPos"=dword:fffffffe
+
+"YPos"=dword:fffffffe
+
+"Docking"=dword:00000001
+
+"MRUDockID"=dword:00000000
+
+"MRUDockLeftPos"=dword:fffffffe
+
+"MRUDockTopPos"=dword:fffffffe
+
+"MRUDockRightPos"=dword:00000088
+
+"MRUDockBottomPos"=dword:00000018
+
+"MRUFloatStyle"=dword:00002004
+
+"MRUFloatXPos"=dword:80000000
+
+"MRUFloatYPos"=dword:00000340
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar5]
+
+"BarID"=dword:00000074
+
+"XPos"=dword:00000087
+
+"YPos"=dword:fffffffe
+
+"Docking"=dword:00000001
+
+"MRUDockID"=dword:0000e81b
+
+"MRUDockLeftPos"=dword:00000087
+
+"MRUDockTopPos"=dword:fffffffe
+
+"MRUDockRightPos"=dword:000001aa
+
+"MRUDockBottomPos"=dword:00000016
+
+"MRUFloatStyle"=dword:00002004
+
+"MRUFloatXPos"=dword:80000000
+
+"MRUFloatYPos"=dword:00000000
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar6]
+
+"BarID"=dword:00000075
+
+"Visible"=dword:00000000
+
+"XPos"=dword:fffffffe
+
+"YPos"=dword:fffffffe
+
+"Docking"=dword:00000001
+
+"MRUDockID"=dword:00000000
+
+"MRUDockLeftPos"=dword:fffffffe
+
+"MRUDockTopPos"=dword:fffffffe
+
+"MRUDockRightPos"=dword:0000005a
+
+"MRUDockBottomPos"=dword:0000011a
+
+"MRUFloatStyle"=dword:00000004
+
+"MRUFloatXPos"=dword:80000000
+
+"MRUFloatYPos"=dword:00000000
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar7]
+
+"BarID"=dword:00000076
+
+"Visible"=dword:00000000
+
+"XPos"=dword:fffffffe
+
+"YPos"=dword:fffffffe
+
+"Docking"=dword:00000001
+
+"MRUDockID"=dword:00000000
+
+"MRUDockLeftPos"=dword:fffffffe
+
+"MRUDockTopPos"=dword:fffffffe
+
+"MRUDockRightPos"=dword:00000166
+
+"MRUDockBottomPos"=dword:00000061
+
+"MRUFloatStyle"=dword:00000004
+
+"MRUFloatXPos"=dword:80000000
+
+"MRUFloatYPos"=dword:00000000
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Summary]
+
+"Bars"=dword:00000008
+
+"ScreenCX"=dword:00000480
+
+"ScreenCY"=dword:00000360
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: not available
+Type: application/ms-tnef
+Size: 3815 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20061226/1705a8fc/attachment.bin
+From cveleglg at bankerinter.net  Wed Dec 27 10:16:25 2006
+From: cveleglg at bankerinter.net (Marija Cvetkovic)
+Date: Wed Dec 27 10:18:08 2006
+Subject: [Radiance-general] ambient accuracy parameter
+In-Reply-To: <A4C91D7F128DEB4B954509D5D26FC3C202ED6407@EX03.asurite.ad.asu.edu>
+References: <4590EBC6.8060900@bankerinter.net>
+	<A4C91D7F128DEB4B954509D5D26FC3C202ED6407@EX03.asurite.ad.asu.edu>
+Message-ID: <459239E9.5040709@bankerinter.net>
+
+Hi Martin,
+
+You are talking about ambient resolution (-ar) parameter. For -aa images 
+  are better with lower settings of -aa, and maximum recommended value 
+is 0.3.
+I know what this parameter means for rendering, but my question is when 
+value -aa 0 should be used and when not?
+
+Marija
+
+Martin Moeck wrote:
+> I use the -aa setting to get a smoother indirect calculation. This is especially important if the -ad parameter is low, i.e., <=512. A high -aa parameter, such as 5000 or whatever, creates a dense grid of indirect/reflected values. You can check that by making two images, one with a low setting of ad and aa, and one with a low setting of ad and a high setting of aa. That will show you immediately what the ambient accuracy parameter is about. The image contains less blotches. 
+> 
+> Martin Moeck
+> 
+> 
+> -----Original Message-----
+> From: radiance-general-bounces@radiance-online.org on behalf of Marija Cvetkovic
+> Sent: Tue 12/26/2006 2:30 AM
+> To: Radiance general
+> Subject: [Radiance-general] ambient accuracy parameter
+>  
+> Hi,
+> 
+> I've been reading some previous posts related to ambient parameters 
+> settings and I have some questions.
+> 
+> When it is recommendable to use -aa 0 value? If I understand this 
+> parameter well, 0 value turns off irradiance caching, so we can use it 
+> when caching isn't needed (mkillum calculation for venetian blinds or 
+> rtcontrib).
+> When we set -aa 0, does -ar have influence on minimum sampling distance, 
+> since: min sampling distance = max scene dimension* aa/ar.
+> 
+> When I run a rtrace calculation with -aa 0, calculation time is much 
+> shorter than with -aa 0.1. Why?
+> 
+
+
+From ashudang at yahoo.com  Wed Dec 27 17:11:34 2006
+From: ashudang at yahoo.com (Arvinder Dang)
+Date: Wed Dec 27 17:11:41 2006
+Subject: [Radiance-general] Modeling reflective glazing and glazing with
+	ceramic frit
+Message-ID: <20061227161135.53543.qmail@web52306.mail.yahoo.com>
+
+Hello Everyone,
+  Its after a long time that I am posting a message on this list as I haven?t been using Radiance much, so in a way I?m starting from scratch and seeking help for some hopefully simple questions.  Recently I have been working on some daylighting calculations where I have to do studies for a few daylighting options for a laboratory building where they are proposing to use light shelves and external vertical fins for shading. 
+  I am using radiance from within Ecotect however am refining the simulation parameter settings as well as the material definitions based on what I think would somewhat accurately reflect the material properties. 
+
+
+  The architectural team wants to try out a couple of options for the light shelf material (metal, reflective glass, glass with a reflective ceramic frit coating.  Since the ceramic frit cannot be exposed to the outside environment this would actually be a sandwiched panel with the coating on the inner surface). I am actually facing difficulty defining the properties of the glass material which would be used as a light shelf. 
+   
+  I have read through the archives and have understood the following from it. Please correct me if I have misinterpreted any information
+   
+  Convert glazing data from Optics 5 to Radiance.  However since this does not account for transmittance/reflectance dependence of incident angle use the BRTD definition and glazing.cal file to define the angular dependence of transmittance/reflectance values. (Since I have been using Radiance from within Ecotect, I really don?t know how I should be doing this). I do not have cygwin installed on my computer and can only change the material definition files within Ecotect.  I know the definition should look like this.
+   
+  mod BRTDfunc my_glazing
+  10         rrho       grho      brho
+              rtau       gtau      btau
+              0          0          0
+                          glazing.cal
+  0
+  18         0          0          0
+              0          0          0
+              0          0          0
+              FRRHO FGRHO FBRHO
+              BRRHO BGRHO            BBRHO
+              RTAU    GTAU   BTAU
+   
+              where:
+                          FRRHO FGRHO FBRHO is front normal spectral reflectance
+                          BRRHO BGRHO BBRHO is back normal spectral reflectance
+                          RTAU    GTAU   BTAU    is normal spectral transmittance
+   
+  Radiance material file from optics looks like this
+   
+   
+  # FileName= HMHPR18.SWT
+  # Product Name= Heat Mirror? HPR 18 Suspended Film
+  # NFRC ID= 1507
+  # Manufacturer Name= Southwall Technologies, Inc.
+  # Glazing Type= Coated
+  # Coated Side= Front
+  # Transmittance= 0.189
+  # Front Reflectance= 0.649
+  # Back Reflectance= 0.116
+  # Thickness(mm)= 0.076
+  # Appearance= Reflective
+  #
+   
+   
+  void  glass       HMHPR18_glass
+  0
+  0
+  3     0.143     0.215     0.371
+   
+  void  BRTDfunc    HMHPR18_front
+  10
+        0.745     0.636     0.400
+        0.131     0.197     0.341
+        0 0 0
+        .
+  0
+  9 0 0 0 0 0 0 0 0 0
+   
+  void  BRTDfunc    HMHPR18_back
+  10
+        0.163     0.100     0.092
+        0.131     0.197     0.341
+        0 0 0
+        .
+  0
+  9 0 0 0 0 0 0 0 0 0
+   
+  Can someone walk me step by step as to how I can convert this and define my final material file which I should be using. I have to try a couple of options for glass types so will have to do this time and again, so I am interested in the process and not the final outcome only. I know it should be fairly simple but somehow not having worked in linux doesn?t make it seem simple.
+   
+  Also for modeling the ceramic frit coating I read I need to use the glaze.csh script. How can I model a glass which is a sandwiched panel with the ceramic coating on the inside.
+   
+  Thanks
+  ARVINDER DANG, LEED? AP
+  SUSTAINABILITY SPECIALIST   
+   
+  SKIDMORE, OWINGS & MERRILL LLP 
+  224 SOUTH MICHIGAN
+  CHICAGO, IL 60604 
+  T: 312.360.4633  F: 312.360.4910 
+  ARVINDER.DANG@SOM.COM
+   
+
+ __________________________________________________
+Do You Yahoo!?
+Tired of spam?  Yahoo! Mail has the best spam protection around 
+http://mail.yahoo.com 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20061227/9a1ef73f/attachment-0001.html
+From mstock at umich.edu  Wed Dec 27 18:45:28 2006
+From: mstock at umich.edu (Mark Stock)
+Date: Wed Dec 27 18:45:36 2006
+Subject: [Radiance-general] ambient accuracy parameter
+In-Reply-To: <459239E9.5040709@bankerinter.net>
+References: <4590EBC6.8060900@bankerinter.net>
+	<A4C91D7F128DEB4B954509D5D26FC3C202ED6407@EX03.asurite.ad.asu.edu>
+	<459239E9.5040709@bankerinter.net>
+Message-ID: <Pine.LNX.4.64.0612271242010.5654@zaxxon.gpcc.itd.umich.edu>
+
+Marija,
+
+I use -aa 0 for models which contain massive amounts of detail 
+and for which computing and storing enough ambient points would 
+quickly run me out of memory. The first scene to require this was
+
+http://mark.technolope.org/image/p36.html
+
+but I have used it on most of my work since then.
+
+I did a little work with -aa 0 before this and found that 
+oversampling combined with low -ad could produce good images. I 
+made a page showing the results:
+
+http://mark.technolope.org/radmisc/aa0_ps1_test/final.html
+
+I hope this helps you.
+
+Mark
+mstock@umich.edu
+
+On Wed, 27 Dec 2006, Marija Cvetkovic wrote:
+
+> Hi Martin,
+>
+> You are talking about ambient resolution (-ar) parameter. For -aa images  are 
+> better with lower settings of -aa, and maximum recommended value is 0.3.
+> I know what this parameter means for rendering, but my question is when value 
+> -aa 0 should be used and when not?
+>
+> Marija
+>
+> Martin Moeck wrote:
+>> I use the -aa setting to get a smoother indirect calculation. This is 
+>> especially important if the -ad parameter is low, i.e., <=512. A high -aa 
+>> parameter, such as 5000 or whatever, creates a dense grid of 
+>> indirect/reflected values. You can check that by making two images, one 
+>> with a low setting of ad and aa, and one with a low setting of ad and a 
+>> high setting of aa. That will show you immediately what the ambient 
+>> accuracy parameter is about. The image contains less blotches. 
+>> Martin Moeck
+>> 
+>> 
+>> -----Original Message-----
+>> From: radiance-general-bounces@radiance-online.org on behalf of Marija 
+>> Cvetkovic
+>> Sent: Tue 12/26/2006 2:30 AM
+>> To: Radiance general
+>> Subject: [Radiance-general] ambient accuracy parameter
+>>  Hi,
+>> 
+>> I've been reading some previous posts related to ambient parameters 
+>> settings and I have some questions.
+>> 
+>> When it is recommendable to use -aa 0 value? If I understand this parameter 
+>> well, 0 value turns off irradiance caching, so we can use it when caching 
+>> isn't needed (mkillum calculation for venetian blinds or rtcontrib).
+>> When we set -aa 0, does -ar have influence on minimum sampling distance, 
+>> since: min sampling distance = max scene dimension* aa/ar.
+>> 
+>> When I run a rtrace calculation with -aa 0, calculation time is much 
+>> shorter than with -aa 0.1. Why?
+>> 
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>
+
+From Christoph.Reinhart at nrc-cnrc.gc.ca  Wed Dec 27 21:06:32 2006
+From: Christoph.Reinhart at nrc-cnrc.gc.ca (Reinhart, Christoph)
+Date: Wed Dec 27 21:06:44 2006
+Subject: [Radiance-general] RE: Raypath in windows
+References: <A4C91D7F128DEB4B954509D5D26FC3C202ED6407@EX03.asurite.ad.asu.edu>
+	<A4C91D7F128DEB4B954509D5D26FC3C202ED640D@EX03.asurite.ad.asu.edu>
+Message-ID: <5910A0754536EA4AAD411AE8221C3962013659CB@nrccenexb1.nrc.ca>
+
+Hi Martin:
+ 
+I am not sure what causes your difficulties but I would recommend that you use the MINGW Radiance binaries  from http://www.bozzograo.net/radiance/modules.php?op=modload&name=Downloads&file=index&req=viewdownload&cid=4 instead of Desktop Radiance. The binaries are up-to-date and truly stand alone under WIndows (no CYGWIN required).  I recomend to my students to copy the files under C:\Radiance. Since the students use Radiance via Ecotect, the Raypath variable gets reset by Ecotect any time one runs Radiance since each RADIANCE batch file generated by Ecotect starts with:
+ 
+SET RAYPATH=.;C:\RADIANCE\LIB
+PATH=C:\RADIANCE\BIN;$PATH
+
+In Daysim I hardwired the LIBDIR varialbe to c:\DAYSIM\lib which is why Daysim has to be installed under C:\Daysim. This causes a limitation for individuals that do not want to or cannot install programs on their c:\ drive but I have not found a way around this. 
+ 
+One student group used Radiance textures this year but it is pretty painful using the Ecotect GUI. Last year some students used the Radiance plugin into 3D Studio Max from Lichtplaner and the results were very convincing http://www.arch.mcgill.ca/prof/reinhart/arch447/fall2005/StudentWork/06CountryInn_Presentation.pdf).
+ 
+Christoph 
+ 
+
+________________________________
+
+From: radiance-general-bounces@radiance-online.org on behalf of Martin Moeck
+Sent: Tue 12/26/2006 6:28 PM
+To: Radiance general discussion
+Subject: Raypath in windows
+
+
+
+Hello, 
+
+I am still having no success to set a RAYPATh variable in Windows XP. The slash options \ or / don't make a difference. I also defined both DRADPATH and RAYPATH as environment variables. 
+
+I saw Christoph Reinhardt renderings from his students. Do they use textures? How is the RAYPATH variable set in DAYSIM? 
+
+
+Martin Moeck 
+
+
+P.S. 
+
+Is a radregistry  file necessary, such as 
+
+_____________________________________ 
+
+REGEDIT4 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory] 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance] 
+
+"MAIN LIBRARY PATH"="C:\\Program Files\\Desktop Radiance\\Database\\" 
+
+"DRADPATH"="C:\\Program Files\\Desktop Radiance\\" 
+
+"OLD PROJECT PATH"="C:\\Program Files\\Desktop Radiance\\" 
+
+"PROJECT PATH"="C:\\Program Files\\Desktop Radiance\\" 
+
+"DISPLAY_GAMMA"="2.3" 
+
+"RADEXECS PATH"="C:\\Radiance\\bin" 
+
+"TCSH PATH"="/usr/local/bin/" 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance\Library Browser] 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance\Library Browser\Furnishing] 
+
+"Sort"="4" 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance\Library Browser\Glazing] 
+
+"Sort"="6" 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance\Library Browser\Luminaire] 
+
+"Sort"="5" 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance\Library Browser\Material] 
+
+"Sort"="4" 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance 1.0] 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance 1.0\1.02.00] 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance] 
+
+"RAYPATH"=".;C:\\Radiance\\lib" 
+
+"BINPATH"="C:\\Radiance\\bin" 
+
+"DISPLAY_GAMMA"="2.3" 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview] 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar0] 
+
+"BarID"=dword:0000e801 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar1] 
+
+"BarID"=dword:0000e81b 
+
+"Bars"=dword:00000004 
+
+"Bar#0"=dword:00000000 
+
+"Bar#1"=dword:0000e800 
+
+"Bar#2"=dword:00000074 
+
+"Bar#3"=dword:00000000 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar2] 
+
+"BarID"=dword:0000e81e 
+
+"Bars"=dword:00000003 
+
+"Bar#0"=dword:00000000 
+
+"Bar#1"=dword:00000076 
+
+"Bar#2"=dword:00000000 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar3] 
+
+"BarID"=dword:0000e81d 
+
+"Bars"=dword:00000003 
+
+"Bar#0"=dword:00000000 
+
+"Bar#1"=dword:00000075 
+
+"Bar#2"=dword:00000000 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar4] 
+
+"BarID"=dword:0000e800 
+
+"XPos"=dword:fffffffe 
+
+"YPos"=dword:fffffffe 
+
+"Docking"=dword:00000001 
+
+"MRUDockID"=dword:00000000 
+
+"MRUDockLeftPos"=dword:fffffffe 
+
+"MRUDockTopPos"=dword:fffffffe 
+
+"MRUDockRightPos"=dword:00000088 
+
+"MRUDockBottomPos"=dword:00000018 
+
+"MRUFloatStyle"=dword:00002004 
+
+"MRUFloatXPos"=dword:80000000 
+
+"MRUFloatYPos"=dword:00000340 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar5] 
+
+"BarID"=dword:00000074 
+
+"XPos"=dword:00000087 
+
+"YPos"=dword:fffffffe 
+
+"Docking"=dword:00000001 
+
+"MRUDockID"=dword:0000e81b 
+
+"MRUDockLeftPos"=dword:00000087 
+
+"MRUDockTopPos"=dword:fffffffe 
+
+"MRUDockRightPos"=dword:000001aa 
+
+"MRUDockBottomPos"=dword:00000016 
+
+"MRUFloatStyle"=dword:00002004 
+
+"MRUFloatXPos"=dword:80000000 
+
+"MRUFloatYPos"=dword:00000000 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar6] 
+
+"BarID"=dword:00000075 
+
+"Visible"=dword:00000000 
+
+"XPos"=dword:fffffffe 
+
+"YPos"=dword:fffffffe 
+
+"Docking"=dword:00000001 
+
+"MRUDockID"=dword:00000000 
+
+"MRUDockLeftPos"=dword:fffffffe 
+
+"MRUDockTopPos"=dword:fffffffe 
+
+"MRUDockRightPos"=dword:0000005a 
+
+"MRUDockBottomPos"=dword:0000011a 
+
+"MRUFloatStyle"=dword:00000004 
+
+"MRUFloatXPos"=dword:80000000 
+
+"MRUFloatYPos"=dword:00000000 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar7] 
+
+"BarID"=dword:00000076 
+
+"Visible"=dword:00000000 
+
+"XPos"=dword:fffffffe 
+
+"YPos"=dword:fffffffe 
+
+"Docking"=dword:00000001 
+
+"MRUDockID"=dword:00000000 
+
+"MRUDockLeftPos"=dword:fffffffe 
+
+"MRUDockTopPos"=dword:fffffffe 
+
+"MRUDockRightPos"=dword:00000166 
+
+"MRUDockBottomPos"=dword:00000061 
+
+"MRUFloatStyle"=dword:00000004 
+
+"MRUFloatXPos"=dword:80000000 
+
+"MRUFloatYPos"=dword:00000000 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Summary] 
+
+"Bars"=dword:00000008 
+
+"ScreenCX"=dword:00000480 
+
+"ScreenCY"=dword:00000360 
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: not available
+Type: application/ms-tnef
+Size: 9623 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20061227/48b3d0a7/attachment.bin
+From Martin.Moeck at asu.edu  Thu Dec 28 00:37:24 2006
+From: Martin.Moeck at asu.edu (Martin Moeck)
+Date: Thu Dec 28 01:02:46 2006
+Subject: [Radiance-general] RE: Raypath in windows
+References: <A4C91D7F128DEB4B954509D5D26FC3C202ED6407@EX03.asurite.ad.asu.edu>
+	<A4C91D7F128DEB4B954509D5D26FC3C202ED640D@EX03.asurite.ad.asu.edu>
+	<5910A0754536EA4AAD411AE8221C3962013659CB@nrccenexb1.nrc.ca>
+Message-ID: <A4C91D7F128DEB4B954509D5D26FC3C202ED6413@EX03.asurite.ad.asu.edu>
+
+
+Christoph:
+
+The MINGW binaries fixed it. Thank you!
+
+Martin
+
+ ----Original Message-----
+From: radiance-general-bounces@radiance-online.org on behalf of Reinhart, Christoph
+Sent: Wed 12/27/2006 1:06 PM
+To: Radiance general discussion
+Subject: RE: Raypath in windows
+ 
+Hi Martin:
+ 
+I am not sure what causes your difficulties but I would recommend that you use the MINGW Radiance binaries  from http://www.bozzograo.net/radiance/modules.php?op=modload <http://www.bozzograo.net/radiance/modules.php?op=modload&name=Downloads&file=index&req=viewdownload&cid=4> &name=Downloads&file=index&req=viewdownload&cid=4 instead of Desktop Radiance. The binaries are up-to-date and truly stand alone under WIndows (no CYGWIN required).  I recomend to my students to copy the files under C:\Radiance. Since the students use Radiance via Ecotect, the Raypath variable gets reset by Ecotect any time one runs Radiance since each RADIANCE batch file generated by Ecotect starts with:
+ 
+SET RAYPATH=.;C:\RADIANCE\LIB
+PATH=C:\RADIANCE\BIN;$PATH
+
+In Daysim I hardwired the LIBDIR varialbe to c:\DAYSIM\lib which is why Daysim has to be installed under C:\Daysim. This causes a limitation for individuals that do not want to or cannot install programs on their c:\ drive but I have not found a way around this. 
+ 
+One student group used Radiance textures this year but it is pretty painful using the Ecotect GUI. Last year some students used the Radiance plugin into 3D Studio Max from Lichtplaner and the results were very convincing http://www.arch.mcgill.ca/prof/reinhart/arch447/fall2005/StudentWork/06CountryInn_Presentation.pdf).
+ 
+Christoph 
+ 
+
+  _____  
+
+From: radiance-general-bounces@radiance-online.org on behalf of Martin Moeck
+Sent: Tue 12/26/2006 6:28 PM
+To: Radiance general discussion
+Subject: Raypath in windows
+
+
+
+Hello, 
+
+I am still having no success to set a RAYPATh variable in Windows XP. The slash options \ or / don't make a difference. I also defined both DRADPATH and RAYPATH as environment variables. 
+
+I saw Christoph Reinhardt renderings from his students. Do they use textures? How is the RAYPATH variable set in DAYSIM? 
+
+
+Martin Moeck 
+
+
+P.S. 
+
+Is a radregistry  file necessary, such as 
+
+_____________________________________ 
+
+REGEDIT4 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory] 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance] 
+
+"MAIN LIBRARY PATH"="C:\\Program Files\\Desktop Radiance\\Database\\" 
+
+"DRADPATH"="C:\\Program Files\\Desktop Radiance\\" 
+
+"OLD PROJECT PATH"="C:\\Program Files\\Desktop Radiance\\" 
+
+"PROJECT PATH"="C:\\Program Files\\Desktop Radiance\\" 
+
+"DISPLAY_GAMMA"="2.3" 
+
+"RADEXECS PATH"="C:\\Radiance\\bin" 
+
+"TCSH PATH"="/usr/local/bin/" 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance\Library Browser] 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance\Library Browser\Furnishing] 
+
+"Sort"="4" 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance\Library Browser\Glazing] 
+
+"Sort"="6" 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance\Library Browser\Luminaire] 
+
+"Sort"="5" 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance\Library Browser\Material] 
+
+"Sort"="4" 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance 1.0] 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Desktop Radiance 1.0\1.02.00] 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance] 
+
+"RAYPATH"=".;C:\\Radiance\\lib" 
+
+"BINPATH"="C:\\Radiance\\bin" 
+
+"DISPLAY_GAMMA"="2.3" 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview] 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar0] 
+
+"BarID"=dword:0000e801 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar1] 
+
+"BarID"=dword:0000e81b 
+
+"Bars"=dword:00000004 
+
+"Bar#0"=dword:00000000 
+
+"Bar#1"=dword:0000e800 
+
+"Bar#2"=dword:00000074 
+
+"Bar#3"=dword:00000000 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar2] 
+
+"BarID"=dword:0000e81e 
+
+"Bars"=dword:00000003 
+
+"Bar#0"=dword:00000000 
+
+"Bar#1"=dword:00000076 
+
+"Bar#2"=dword:00000000 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar3] 
+
+"BarID"=dword:0000e81d 
+
+"Bars"=dword:00000003 
+
+"Bar#0"=dword:00000000 
+
+"Bar#1"=dword:00000075 
+
+"Bar#2"=dword:00000000 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar4] 
+
+"BarID"=dword:0000e800 
+
+"XPos"=dword:fffffffe 
+
+"YPos"=dword:fffffffe 
+
+"Docking"=dword:00000001 
+
+"MRUDockID"=dword:00000000 
+
+"MRUDockLeftPos"=dword:fffffffe 
+
+"MRUDockTopPos"=dword:fffffffe 
+
+"MRUDockRightPos"=dword:00000088 
+
+"MRUDockBottomPos"=dword:00000018 
+
+"MRUFloatStyle"=dword:00002004 
+
+"MRUFloatXPos"=dword:80000000 
+
+"MRUFloatYPos"=dword:00000340 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar5] 
+
+"BarID"=dword:00000074 
+
+"XPos"=dword:00000087 
+
+"YPos"=dword:fffffffe 
+
+"Docking"=dword:00000001 
+
+"MRUDockID"=dword:0000e81b 
+
+"MRUDockLeftPos"=dword:00000087 
+
+"MRUDockTopPos"=dword:fffffffe 
+
+"MRUDockRightPos"=dword:000001aa 
+
+"MRUDockBottomPos"=dword:00000016 
+
+"MRUFloatStyle"=dword:00002004 
+
+"MRUFloatXPos"=dword:80000000 
+
+"MRUFloatYPos"=dword:00000000 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar6] 
+
+"BarID"=dword:00000075 
+
+"Visible"=dword:00000000 
+
+"XPos"=dword:fffffffe 
+
+"YPos"=dword:fffffffe 
+
+"Docking"=dword:00000001 
+
+"MRUDockID"=dword:00000000 
+
+"MRUDockLeftPos"=dword:fffffffe 
+
+"MRUDockTopPos"=dword:fffffffe 
+
+"MRUDockRightPos"=dword:0000005a 
+
+"MRUDockBottomPos"=dword:0000011a 
+
+"MRUFloatStyle"=dword:00000004 
+
+"MRUFloatXPos"=dword:80000000 
+
+"MRUFloatYPos"=dword:00000000 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Bar7] 
+
+"BarID"=dword:00000076 
+
+"Visible"=dword:00000000 
+
+"XPos"=dword:fffffffe 
+
+"YPos"=dword:fffffffe 
+
+"Docking"=dword:00000001 
+
+"MRUDockID"=dword:00000000 
+
+"MRUDockLeftPos"=dword:fffffffe 
+
+"MRUDockTopPos"=dword:fffffffe 
+
+"MRUDockRightPos"=dword:00000166 
+
+"MRUDockBottomPos"=dword:00000061 
+
+"MRUFloatStyle"=dword:00000004 
+
+"MRUFloatXPos"=dword:80000000 
+
+"MRUFloatYPos"=dword:00000000 
+
+
+
+[HKEY_CURRENT_USER\SOFTWARE\Lawrence Berkeley National Laboratory\Radiance\rview\BarState-Summary] 
+
+"Bars"=dword:00000008 
+
+"ScreenCX"=dword:00000480 
+
+"ScreenCY"=dword:00000360 
+
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: not available
+Type: application/ms-tnef
+Size: 5139 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20061227/4803e7b2/attachment-0001.bin
+From rpg at rumblestrip.org  Thu Dec 28 07:26:42 2006
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Thu Dec 28 07:28:17 2006
+Subject: [Radiance-general] Modeling reflective glazing and glazing with
+	ceramic frit
+In-Reply-To: <20061227161135.53543.qmail@web52306.mail.yahoo.com>
+References: <20061227161135.53543.qmail@web52306.mail.yahoo.com>
+Message-ID: <C285E143-3BA7-44E0-9E65-4D45F2636BDE@rumblestrip.org>
+
+
+On Dec 27, 2006, at 9:11 AM, Arvinder Dang wrote:
+
+> Hello Everyone,
+> Its after a long time that I am posting a message on this list as I  
+> haven?t been using Radiance much, so in a way I?m starting from  
+> scratch and seeking help for some hopefully simple questions.
+
+Hi Arvinder,
+
+Welcome back to the Radiance world!
+
+>
+> I have read through the archives and have understood the following  
+> from it. Please correct me if I have misinterpreted any information
+>
+> Convert glazing data from Optics 5 to Radiance.  However since this  
+> does not account for transmittance/reflectance dependence of  
+> incident angle use the BRTD definition and glazing.cal file to  
+> define the angular dependence of transmittance/reflectance values.  
+> (Since I have been using Radiance from within Ecotect, I really  
+> don?t know how I should be doing this).
+
+> Radiance material file from optics looks like this
+>
+>
+> # FileName= HMHPR18.SWT
+> # Product Name= Heat Mirror? HPR 18 Suspended Film
+> # NFRC ID= 1507
+> # Manufacturer Name= Southwall Technologies, Inc.
+> # Glazing Type= Coated
+> # Coated Side= Front
+> # Transmittance= 0.189
+> # Front Reflectance= 0.649
+> # Back Reflectance= 0.116
+> # Thickness(mm)= 0.076
+> # Appearance= Reflective
+> #
+>
+>
+> void  glass       HMHPR18_glass
+> 0
+> 0
+> 3     0.143     0.215     0.371
+>
+> void  BRTDfunc    HMHPR18_front
+> 10
+>       0.745     0.636     0.400
+>       0.131     0.197     0.341
+>       0 0 0
+>       .
+> 0
+> 9 0 0 0 0 0 0 0 0 0
+>
+> void  BRTDfunc    HMHPR18_back
+> 10
+>       0.163     0.100     0.092
+>       0.131     0.197     0.341
+>       0 0 0
+>       .
+> 0
+> 9 0 0 0 0 0 0 0 0 0
+>
+> Can someone walk me step by step as to how I can convert this and  
+> define my final material file which I should be using. I have to  
+> try a couple of options for glass types so will have to do this  
+> time and again, so I am interested in the process and not the final  
+> outcome only. I know it should be fairly simple but somehow not  
+> having worked in linux doesn?t make it seem simple.
+
+The output from Optics5 is essentially "two in one", both a simple  
+glass description of the material and the more accurate BRTDfunc  
+description.  Honestly, I don't know which one of the BRTDfuncs would  
+be the correct one to use in your lightshelf application.  You could  
+try the glass description instead...
+
+If all of these descriptions are in a single materials file (let's  
+call it materials.rad) you can then call them and apply them to your  
+lightshelf polygons.  You just have to make sure you define a  
+material before it's applied to a piece of geometry.  When working on  
+a project I typically have one file with all my materials definitions  
+in it, and then I just make sure that that file gets listed first in  
+any oconv command, to ensure that materials I have assigned will  
+already "exist" when the actual scene files get fed to oconv.
+
+>
+> Also for modeling the ceramic frit coating I read I need to use the  
+> glaze.csh script. How can I model a glass which is a sandwiched  
+> panel with the ceramic coating on the inside.
+
+
+The glaze script will give you a definition of a material that mimics  
+the overall transmittance change resulting from the frit, but not the  
+appearance of the frit.  As I recall, the script has a library of  
+materials you can select from, but it's not extensive. You could also  
+simulate this with a trans material; most glazing manufacturers  
+publish the clear glass transmittance resulting from the application  
+of various frit densities, you could use that as part of your trans  
+material definition.
+
+In both of these responses I realize I have suggested a gross  
+simplification for the simulation of these materials.  But sometimes  
+this is the best medicine, especially starting out.  I'm sure some  
+folks on the list can offer more info on using the more fanciful  
+material primitives, but my experience doesn't really go beyond trans  
+just yet.
+
+Good  luck, keep asking questions and post results as well.  And  
+happy holidays, everyone!
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20061227/6ebe3889/attachment.htm
+From cveleglg at bankerinter.net  Thu Dec 28 14:43:56 2006
+From: cveleglg at bankerinter.net (Marija Cvetkovic)
+Date: Thu Dec 28 14:50:55 2006
+Subject: [Radiance-general] ambient accuracy parameter
+In-Reply-To: <Pine.LNX.4.64.0612271242010.5654@zaxxon.gpcc.itd.umich.edu>
+References: <4590EBC6.8060900@bankerinter.net>	<A4C91D7F128DEB4B954509D5D26FC3C202ED6407@EX03.asurite.ad.asu.edu>	<459239E9.5040709@bankerinter.net>
+	<Pine.LNX.4.64.0612271242010.5654@zaxxon.gpcc.itd.umich.edu>
+Message-ID: <4593CA1C.4090402@bankerinter.net>
+
+Hi Mark,
+
+Thanks for the links.
+The results for -aa 0, low -ad and oversampling can be really useful.
+
+BTW your site is really great :)
+
+Marija.
+
+Mark Stock wrote:
+> Marija,
+> 
+> I use -aa 0 for models which contain massive amounts of detail and for 
+> which computing and storing enough ambient points would quickly run me 
+> out of memory. The first scene to require this was
+> 
+> http://mark.technolope.org/image/p36.html
+> 
+> but I have used it on most of my work since then.
+> 
+> I did a little work with -aa 0 before this and found that oversampling 
+> combined with low -ad could produce good images. I made a page showing 
+> the results:
+> 
+> http://mark.technolope.org/radmisc/aa0_ps1_test/final.html
+> 
+> I hope this helps you.
+> 
+> Mark
+> mstock@umich.edu
+> 
+
+
+
+From MdelaFuente at wmtao.com  Thu Dec 28 16:59:14 2006
+From: MdelaFuente at wmtao.com (Mark de la Fuente)
+Date: Thu Dec 28 17:00:25 2006
+Subject: [Radiance-general] ambient accuracy parameter
+Message-ID: <45939571.B450.0049.0@wmtao.com>
+
+Mark,
+ 
+Awesome pictures.  What are the limitations of your low -ad and high over sampling approach?  When is appropriate and when is it not appropriate?
+ 
+Probably not something you are concerned about in your work, but when you use such a low -ad setting and such a high over sampling rate, I'd like to know what effect there is on overall light level accuracy in a typical interior space with daylighting and/or electric lighting?
+ 
+I guess there is no over sampling on an rtrace calculation, but for an irradiance calculation image, my -ad setting is usually in the thousands and my ambient bounces are at 4 or so (depending on the results of a parameter test)  I'm guessing the -ab and -ad parameters can't be reduced if light level accuracy is important.  Maybe I'm wrong?  Sure would be nice to slash some of those crazy calculation times.
+ 
+Mark
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20061228/983a4aba/attachment.html
+From mstock at umich.edu  Thu Dec 28 21:25:40 2006
+From: mstock at umich.edu (Mark Stock)
+Date: Thu Dec 28 21:25:47 2006
+Subject: [Radiance-general] ambient accuracy parameter
+In-Reply-To: <45939571.B450.0049.0@wmtao.com>
+References: <45939571.B450.0049.0@wmtao.com>
+Message-ID: <Pine.LNX.4.64.0612281508550.1157@joust.gpcc.itd.umich.edu>
+
+On Thu, 28 Dec 2006, Mark de la Fuente wrote:
+> Mark,
+>
+> Awesome pictures.  What are the limitations of your low -ad and 
+> high over sampling approach?  When is appropriate and when is 
+> it not appropriate?
+
+Mark,
+
+One disadvantage is hard drive space: how many 3 GB images can I 
+keep around? Another problem that occurs more with some pieces 
+then others is speckles caused by particularly bright pixels. 
+Since pfilt works on the full dynamic range, a single 
+super-bright pixel in the full-res image can cause a 
+significant bright spot in the final reduced-res image. Note the 
+speckles in this image:
+
+http://mark.technolope.org/image/p54.html
+http://mark.technolope.org/image/img54_detail_900.png
+
+That second image is at print resolution, and was filtered down 
+from a 4x or 6x resolution original. That scene is very 
+contrasty. Some of my more recent work mitigates the speckling by 
+rendering in a closed room: allowing enough bounces to provide a 
+more even background.
+
+I find that "-aa 0" is appropriate when the octree for a scene 
+with little overlapping geometry takes more than a few hundred MB 
+to create. Or for scenes in which I want detailed interreflection 
+among a great number of very tiny surfaces (probably the same 
+thing). It seems to me to be an easy way to get rid of the 
+splotches that plagued some of my earlier renderings.
+
+> Probably not something you are concerned about in your work, 
+> but when you use such a low -ad setting and such a high over 
+> sampling rate, I'd like to know what effect there is on overall 
+> light level accuracy in a typical interior space with 
+> daylighting and/or electric lighting?
+
+I have not studied this at all. I could posit that the low -ad 
+with high oversampling rate allows me to bias the interreflection 
+toward the first (and most important) bounce. Shooting 36 rays 
+into a final image pixel (what 6x oversampling does) but letting 
+each of those only spawn 8 child rays (-ad 8) at the second and 
+deeper levels effectively means that I'm doing a more accurate 
+1st bounce.
+
+> I guess there is no over sampling on an rtrace calculation, but 
+> for an irradiance calculation image, my -ad setting is usually 
+> in the thousands and my ambient bounces are at 4 or so 
+> (depending on the results of a parameter test)  I'm guessing 
+> the -ab and -ad parameters can't be reduced if light level 
+> accuracy is important.  Maybe I'm wrong?  Sure would be nice to 
+> slash some of those crazy calculation times.
+
+My impetus was to slash the computation times and fit the problem 
+in memory. Of course, back then I had 2 GB of RAM *at most* and 
+no access to anything better than a dual-proc machine. Now I am 
+blessed with access to a 32 GB monster 8-core intel box and a 
+number of medium-sized clusters.
+
+One other advantage of "-aa 0" is that one pixel trace does not 
+depend on another, so parallelization is trivial. I use rpiece 
+almost exclusively for my big jobs now. OpenMP or pthreads 
+anyone?
+
+Mark
+
+From gregoryjward at gmail.com  Thu Dec 28 22:04:38 2006
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu Dec 28 22:04:42 2006
+Subject: [Radiance-general] ambient accuracy parameter
+In-Reply-To: <4590EBC6.8060900@bankerinter.net>
+References: <4590EBC6.8060900@bankerinter.net>
+Message-ID: <EA4320BD-0BE7-4656-BC25-671660FB6B0D@gmail.com>
+
+Just wanted to chime in on this thread.  The -aa 0 setting is  
+appropriate when you have a lot of small geometry that isn't safe to  
+leave out of the ambient calculation (using the -ae or -aE options),  
+or for special applications such as mkillum or rtcontrib.  Turning  
+off the ambient cache is NOT a good idea when what you care about is  
+individual ray accuracy, such as when you are using rtrace to  
+evaluate radiance or irradiance values in a space.  It can be done  
+with -aa 0, but you have to pay close attention to your other  
+parameter settings (such as -ad, -as, -lw, and -lr) and alter them  
+appropriately.  The -ar setting has no effect with -aa 0.  Ditto for - 
+aw.
+
+-Greg
+
+> From: Marija Cvetkovic <cveleglg@bankerinter.net>
+> Date: December 26, 2006 1:30:46 AM PST
+>
+> Hi,
+>
+> I've been reading some previous posts related to ambient parameters  
+> settings and I have some questions.
+>
+> When it is recommendable to use -aa 0 value? If I understand this  
+> parameter well, 0 value turns off irradiance caching, so we can use  
+> it when caching isn't needed (mkillum calculation for venetian  
+> blinds or rtcontrib).
+> When we set -aa 0, does -ar have influence on minimum sampling  
+> distance, since: min sampling distance = max scene dimension* aa/ar.
+>
+> When I run a rtrace calculation with -aa 0, calculation time is  
+> much shorter than with -aa 0.1. Why?
+>
+> Have a nice holidays :)
+> Marija.
+
+From gregoryjward at gmail.com  Thu Dec 28 22:14:31 2006
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu Dec 28 22:14:39 2006
+Subject: [Radiance-general] Modeling reflective glazing and glazing with
+	ceramic frit
+In-Reply-To: <C285E143-3BA7-44E0-9E65-4D45F2636BDE@rumblestrip.org>
+References: <20061227161135.53543.qmail@web52306.mail.yahoo.com>
+	<C285E143-3BA7-44E0-9E65-4D45F2636BDE@rumblestrip.org>
+Message-ID: <8ED36571-D13B-42D0-84F1-40D797A32D0F@gmail.com>
+
+Hi Arvinder,
+
+I haven't read through this post thoroughly or Rob's reply, but just  
+wanted to mention the optics2rad script that's included in Radiance  
+3.8.  That takes your Optics5 output and produces:
+
+# Output generated by /usr/local/ray/optics2rad from /tmp/t.mat
+# Product Name= Heat Mirror? HPR 18 Suspended Film
+# NFRC ID= 1507
+# Manufacturer Name= Southwall Technologies, Inc.
+# Glazing Type= Coated
+# Coated Side= Front
+# Transmittance= 0.189
+# Front Reflectance= 0.649
+# Back Reflectance= 0.116
+# Thickness(mm)= 0.076
+# Appearance= Reflective
+#
+
+void BRTDfunc HMHPR18
+10
+         rR_bronze rG_bronze rB_bronze
+         0.131*tR_bronze   0.197*tG_bronze   0.341*tB_bronze
+      0 0 0
+      window.cal
+0
+15 0 0 0 0 0 0 0 0 0
+         0.745       0.636      0.4
+         0.163         0.1    0.092
+-----------
+
+Obviously, you need the new window.cal file as well, which is  
+corrected from the original glazing.cal.  I have attached it here  
+just in case you don't have vers. 3.8:
+
+{ RCSid $Id: window.cal,v 2.1 2006/05/19 03:50:13 greg Exp $ }
+{
+         The following calculation uses the BRTDfunc type to  
+reproduce the
+         calculation used by LBL's Optics 5 program for the  
+transmittance
+         and reflectance of coated glazings.  This calculation is based
+         on fits for the angular dependence for clear and bronze-coated
+         glazing, and is not terribly accurate.  The variables ??_clear
+         below should be replaced by ??_bronze in the case of the bronze
+         glazing model.  Used with optics2rad script.
+
+         5/18/2006       Greg Ward
+
+         Arguments used for this material should look like:
+
+         mod BRTDfunc my_glazing
+         10      rR_clear        rG_clear        rB_clear
+                 RTAU*tR_clear   GTAU*tG_clear   BTAU*tB_clear
+                 0       0       0
+                 window.cal
+         0
+         15      0       0       0
+                 0       0       0
+                 0       0       0
+                 FRRHO   FGRHO   FBRHO
+                 BRRHO   BGRHO   BBRHO
+
+         where:
+                 FRRHO   FGRHO   FBRHO   is front normal spectral  
+reflectance
+                 BRRHO   BGRHO   BBRHO   is back normal spectral  
+reflectance
+                 RTAU    GTAU    BTAU    is normal spectral  
+transmittance
+}
+                                 { get normal reflectance }
+rbase = if(Rdot,10,13);                 { different front and back }
+Rred = arg(rbase)*CrP;
+Rgrn = arg(rbase+1)*CgP;
+Rblu = arg(rbase+2)*CbP;
+                                 { transmittance coefficients }
+Tclear = clip(-.0015 + RdotP*(3.355 + RdotP*(-3.840 +
+                         RdotP*(1.460 + RdotP*.0288))));
+
+Tbronze = clip(-.002 + RdotP*(2.813 + RdotP*(-2.341 +
+                         RdotP*(-.05725 + RdotP*.599))));
+
+                                 { reflectance coefficients }
+Rclear = clip(.999 + RdotP*(-.563 + RdotP*(2.043 +
+                         RdotP*(-2.532 + RdotP*1.054))) - Tclear);
+
+Rbronze = clip(.997 + RdotP*(-1.868 + RdotP*(6.513 +
+                         RdotP*(-7.862 + RdotP*3.225))) - Tbronze);
+
+                                 { returned spectral transmittance }
+tR_clear = CrP*Tclear;
+tG_clear = CgP*Tclear;
+tB_clear = CbP*Tclear;
+
+tR_bronze = CrP*Tbronze;
+tG_bronze = CgP*Tbronze;
+tB_bronze = CbP*Tbronze;
+                                 { returned spectral reflectance }
+rR_clear = Rred*(1 - Rclear) + Rclear;
+rG_clear = Rgrn*(1 - Rclear) + Rclear;
+rB_clear = Rblu*(1 - Rclear) + Rclear;
+
+rR_bronze = Rred*(1 - Rbronze) + Rbronze;
+rG_bronze = Rgrn*(1 - Rbronze) + Rbronze;
+rB_bronze = Rblu*(1 - Rbronze) + Rbronze;
+-------------------------
+
+Hope this helps.
+-Greg
+From MdelaFuente at wmtao.com  Thu Dec 28 22:16:42 2006
+From: MdelaFuente at wmtao.com (Mark de la Fuente)
+Date: Thu Dec 28 22:17:15 2006
+Subject: [Radiance-general] falsecolor update?
+Message-ID: <4593DFD8.B450.0049.0@wmtao.com>
+
+Did the "-s auto" ever make it into the official falsecolor?  Just downloaded a fresh copy and it's not there.
+ 
+http://www.radiance-online.org/pipermail/radiance-general/2006-November/004101.html 
+ 
+Mark
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20061228/0982b96d/attachment.htm
+From rpg at rumblestrip.org  Thu Dec 28 23:32:44 2006
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Thu Dec 28 23:34:12 2006
+Subject: [Radiance-general] falsecolor update?
+In-Reply-To: <4593DFD8.B450.0049.0@wmtao.com>
+References: <4593DFD8.B450.0049.0@wmtao.com>
+Message-ID: <61B74B36-DF91-4302-B283-1A9FAB75AC8D@rumblestrip.org>
+
+
+On Dec 28, 2006, at 2:16 PM, Mark de la Fuente wrote:
+
+> Did the "-s auto" ever make it into the official falsecolor?  Just  
+> downloaded a fresh copy and it's not there.
+>
+> http://www.radiance-online.org/pipermail/radiance-general/2006- 
+> November/004101.html
+>
+
+Yep, the latest version (2.17) from the CVS site has it in there, as  
+well as that -spec option to revert to the older color scale.
+
+- Rob
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20061228/2d67147e/attachment.html
+From cveleglg at bankerinter.net  Fri Dec 29 14:08:41 2006
+From: cveleglg at bankerinter.net (Marija Cvetkovic)
+Date: Fri Dec 29 14:12:00 2006
+Subject: [Radiance-general] Modeling reflective glazing and glazing with
+	ceramic frit
+In-Reply-To: <8ED36571-D13B-42D0-84F1-40D797A32D0F@gmail.com>
+References: <20061227161135.53543.qmail@web52306.mail.yahoo.com>	<C285E143-3BA7-44E0-9E65-4D45F2636BDE@rumblestrip.org>
+	<8ED36571-D13B-42D0-84F1-40D797A32D0F@gmail.com>
+Message-ID: <45951359.7070900@bankerinter.net>
+
+Hi Greg,
+
+I've just tried this new script and if I understood it well, it 
+determines whether output material should be glass or BRTDfunc using 
+next conditions:
+abs(back_reflectance - front_reflectance)<0.05 -> glass material
+transmittance>0.645 and abs(back_reflectance - front_reflectance)>0.05 
+-> BRTFfunc with '*clear' functions
+transmittance<0.645 and abs(back_reflectance - front_reflectance)>0.05 
+-> BRTFfunc with '*bronze' functions
+Right?
+
+Few questions:
+- For Plexiglas? MC (NFRC ID= 2604), glass material parameters are >1 ( 
+1.002 1.004 1.001). I think glass transmissivity should be <=1 ?!
+- For materials that are exported from OPTICS5 and have name like 
+"abc_def" (with "_"), optics2rad doesn't define output radiance 
+materials, because it doesn't recognize the format.
+-Is window.cal relevant only for one-layer glazings? I suppose for 
+double layer we should use glaze.csh script as before.
+
+Marija.
+
+Gregory J. Ward wrote:
+> Hi Arvinder,
+> 
+> I haven't read through this post thoroughly or Rob's reply, but just 
+> wanted to mention the optics2rad script that's included in Radiance 
+> 3.8.  That takes your Optics5 output and produces:
+> 
+
+
+
+
+From gregoryjward at gmail.com  Fri Dec 29 19:04:08 2006
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri Dec 29 19:04:28 2006
+Subject: [Radiance-general] Modeling reflective glazing and glazing with
+	ceramic frit
+In-Reply-To: <45951359.7070900@bankerinter.net>
+References: <20061227161135.53543.qmail@web52306.mail.yahoo.com>	<C285E143-3BA7-44E0-9E65-4D45F2636BDE@rumblestrip.org>
+	<8ED36571-D13B-42D0-84F1-40D797A32D0F@gmail.com>
+	<45951359.7070900@bankerinter.net>
+Message-ID: <A685DE96-3752-4763-8514-2624E213397D@gmail.com>
+
+Hi Marija,
+
+> I've just tried this new script and if I understood it well, it  
+> determines whether output material should be glass or BRTDfunc  
+> using next conditions:
+> abs(back_reflectance - front_reflectance)<0.05 -> glass material
+> transmittance>0.645 and abs(back_reflectance - front_reflectance) 
+> >0.05 -> BRTFfunc with '*clear' functions
+> transmittance<0.645 and abs(back_reflectance - front_reflectance) 
+> >0.05 -> BRTFfunc with '*bronze' functions
+> Right?
+
+Yes, that looks about right, except that the threshold between front  
+and back reflectance is 0.005 (0.5%), rather than 0.05.
+
+> Few questions:
+> - For Plexiglas? MC (NFRC ID= 2604), glass material parameters are  
+> >1 ( 1.002 1.004 1.001). I think glass transmissivity should be <=1 ?!
+
+Does sound strange.  You wouldn't happen to have the Optics5 output  
+on hand you could send me?
+
+> - For materials that are exported from OPTICS5 and have name like  
+> "abc_def" (with "_"), optics2rad doesn't define output radiance  
+> materials, because it doesn't recognize the format.
+
+Hmmm.  I see the problem, but there's not much I can do to fix it,  
+because rcalc uses the underscore character to find the end of the  
+name.  I guess you just have to manually edit the Optics5 output to  
+eliminate the underscores in the middle of names.  I could probably  
+come up with a sed script to do it if it's really a problem.
+
+> -Is window.cal relevant only for one-layer glazings? I suppose for  
+> double layer we should use glaze.csh script as before.
+
+Yes, the basic model is only really valid for single-layer glazings.   
+The glaze.csh script sponsored by Visarc is more flexible (and  
+accurate).
+
+-Greg
+From vangelis at unb.br  Sun Dec 31 16:10:29 2006
+From: vangelis at unb.br (Evangelos Christakou)
+Date: Sun Dec 31 15:59:52 2006
+Subject: [Radiance-general] 2007
+In-Reply-To: <20061230110503.6DE50F1835@mx.unb.br>
+References: <20061230110503.6DE50F1835@mx.unb.br>
+Message-ID: <1167577829.4745.1.camel@linux-sxbu.site>
+
+Hi all,
+
+All the best wishes for a happy,
+healthy
+and successfull 2007.
+
+from
+
+vangelis
+
+

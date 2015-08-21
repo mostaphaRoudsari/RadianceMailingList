@@ -1,0 +1,3809 @@
+From npearson at halsall.com  Tue Nov  4 06:49:09 2008
+From: npearson at halsall.com (Pearson, Nastassja)
+Date: Tue Nov  4 06:50:55 2008
+Subject: [Radiance-general] Determining Specularity Values - Spandrel
+	Panels: Marble vs Fritted Glass
+Message-ID: <3EC944427F87D84793DBBC4137A2B5AD4CD82E@to1exc02wp.halsall.com>
+
+Hello All,
+
+ 
+
+I am trying to compare the difference in glare given off a building
+after a cladding retrofit (from the perspective of occupants in
+neighboring buildings). The original curtain wall cladding is a
+white/grey marble and glass spandrel panels with a white patterned frit
+are proposed for the retrofit. This is my first time using the software
+and I am using Radiance in IES' Virtual Environment Program. 
+
+ 
+
+I have some questions about determining/selecting material properties,
+specifically deciding what material type (plastic/metal) and secularity
+to use for the two cladding options. 
+
+ 
+
+ 
+
+My assumptions:
+
+ 
+
+Marble - Originally white, but panels have become grey with dirt over
+time, not polished, dull finish
+
+Type:                Plastic
+
+Colour:             (0.91, 0.91, 0.83) 
+
+Specularity:       ?????? (I think this may be low because it is not
+polished marble)
+
+Roughness:      0.05 (???) 
+
+ 
+
+ 
+
+ 
+
+Glass Frit - Composed of: Clear glass, 60% coverage white frit, clear
+glass, 100% coverage white frit. From Window 6, I estimate the solar
+reflectance of the system to be around 25-35%. 
+
+ 
+
+Typle:               Metal ??? (Does the frit have specular and diffuse
+reflection of light?)
+
+Colour:             (1.0,1.0, 1.0)
+
+Specularity:       ????? (Clean polished glass)
+
+Roughness:      0.00
+
+ 
+
+ 
+
+If anyone has information from doing a similar simulation or has any
+suggestion on what specularity values I should use to model these
+materials it would be very much appreciated.
+
+ 
+
+ 
+
+Thanks, 
+
+ 
+
+Nastassja
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20081104/c11fb4fe/attachment.html
+From dbs176 at gmail.com  Tue Nov  4 08:27:24 2008
+From: dbs176 at gmail.com (David Smith)
+Date: Tue Nov  4 08:27:26 2008
+Subject: [Radiance-general] Clipping in a parallel view?
+Message-ID: <694e132c0811040827l36c100afsf28cb6c44939e035@mail.gmail.com>
+
+Hello raytracers,
+
+I've occasionally come across object clipping in some parallel views
+without setting any clipping plane. I've always assumed that the
+camera for parallel views was at infinity and everything in the scene
+was visible to it. I've included an example below that clips the
+corner of a rectangle. Is there a workaround to this, say, a simple
+conversion to a parallel view from very far away? Am I overlooking
+something? I'm using Radiance 3.8, by the way.
+
+Thanks in advance. Cheers,
+--Dave
+
+
+
+View file:------------------
+rview -vtl -vp 33.4282 -12.544 6.49047 -vd -0.813537 0.363387 -0.45399
+-vu -0.489383 -0.00613896 0.872047 -vh 100 -vv 100 -vo 0 -va 0 -vs 0
+-vl 0
+----------------------------
+
+
+Rad file:-------------------
+!gensky 4 1 12
+
+void plastic white
+0
+0
+5 1 1 1 0 0
+
+white polygon plane
+0
+0
+12
+   45   -15  0
+   45   15   0
+   -45  15   0
+   -45  -15  0
+----------------------------
+
+From rpg at rumblestrip.org  Tue Nov  4 08:39:03 2008
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Tue Nov  4 08:39:00 2008
+Subject: [Radiance-general] Clipping in a parallel view?
+In-Reply-To: <694e132c0811040827l36c100afsf28cb6c44939e035@mail.gmail.com>
+References: <694e132c0811040827l36c100afsf28cb6c44939e035@mail.gmail.com>
+Message-ID: <49107AA7.1060801@rumblestrip.org>
+
+David Smith wrote:
+> Hello raytracers,
+>
+> I've occasionally come across object clipping in some parallel views
+> without setting any clipping plane. I've always assumed that the
+> camera for parallel views was at infinity and everything in the scene
+> was visible to it. I've included an example below that clips the
+> corner of a rectangle. 
+your viewpoint is inside the box, which is why you're experiencing 
+clipping even with no clipping plane specified.  Just "back up" a little 
+bit in your -vp specification, and you should be all good! 
+
+From tbleicher at arcor.de  Tue Nov  4 08:54:52 2008
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Tue Nov  4 08:55:02 2008
+Subject: [Radiance-general] Clipping in a parallel view?
+In-Reply-To: <694e132c0811040827l36c100afsf28cb6c44939e035@mail.gmail.com>
+References: <694e132c0811040827l36c100afsf28cb6c44939e035@mail.gmail.com>
+Message-ID: <7A72B889-F5E9-4CBF-9530-1A422697B103@arcor.de>
+
+
+On 4 Nov 2008, at 16:27, David Smith wrote:
+
+> Hello raytracers,
+>
+> I've occasionally come across object clipping in some parallel views
+> without setting any clipping plane. I've always assumed that the
+> camera for parallel views was at infinity and everything in the scene
+> was visible to it.
+
+Everything in front of the camera, yes. The camera plane cuts through
+the rectangle and only the parts in front of the plane are shown.
+
+> I've included an example below that clips the corner of a rectangle.
+> Is there a workaround to this, say, a simple conversion to a parallel
+> view from very far away?
+
+The simple solution is to set the -o clipping plane to a negative value.
+In your example '-o -8' is enough to show all of the rectangle.
+
+For a view spec without clippings you have to add the inverse of your
+view direction to your view point until everything is shown. Basically
+you're moving the camera backwards but for a parallel view there is
+no difference.
+
+Regards,
+Thomas
+
+
+
+From rfritz at u.washington.edu  Tue Nov  4 11:00:16 2008
+From: rfritz at u.washington.edu (R Fritz)
+Date: Tue Nov  4 11:00:46 2008
+Subject: [Radiance-general] Determining Specularity Values - Spandrel
+	Panels: Marble vs Fritted Glass
+In-Reply-To: <3EC944427F87D84793DBBC4137A2B5AD4CD82E@to1exc02wp.halsall.com>
+References: <3EC944427F87D84793DBBC4137A2B5AD4CD82E@to1exc02wp.halsall.com>
+Message-ID: <58E8EC4A-AF3F-4440-BC84-AB73785A8266@u.washington.edu>
+
+Nastassja,
+> Marble ? Originally white, but panels have become grey with dirt  
+> over time, not polished, dull finish
+> Type:                Plastic
+> Colour:             (0.91, 0.91, 0.83)
+> Specularity:       ?????? (I think this may be low because it is not  
+> polished marble)
+> Roughness:      0.05 (???)
+
+Probably much darker than that, perhaps as low as 0.5.  You can  
+estimate its reflectance with a camera with a telephoto lens (or a  
+spot meter) and an 18% grey card; procedure at <http://www.kodak.com/global/en/consumer/products/techInfo/am105/am105kic.shtml 
+ >. Use a tripod and stand far enough off so that your shadow doesn't  
+affect the measurement.
+
+I don't have any good ideas for frit glass--perhaps the manufacturer  
+has some information?
+
+Randolph
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20081104/3a81af8f/attachment.htm
+From dbs176 at gmail.com  Tue Nov  4 12:45:30 2008
+From: dbs176 at gmail.com (David Smith)
+Date: Tue Nov  4 12:45:39 2008
+Subject: [Radiance-general] Clipping in a parallel view?
+Message-ID: <694e132c0811041245w5d5b1fbch19b0573350f86d43@mail.gmail.com>
+
+Rob and Thomas,
+
+Ah, I was visualizing a sphere at infinity, centered on -vp with a
+camera on the sphere pointed in the direction of -vd as opposed to a
+plane within the model at -vp, with a normal of -vd that casts out
+parallel rays. I misinterpreted the phrase "center of a parallel
+projection" in the rpict man page for -vp. I guess the plane version
+makes more sense when you start to throw clipping planes into the mix.
+A negative -vo clipping plane an interesting concept, I hadn't
+considered that.
+
+I was looking at views from the sun, so I just subtracted a huge
+multiple of the -vd vector from the -vp position and everything worked
+out well.
+
+Thank you very much,
+
+--Dave
+
+From tbleicher at arcor.de  Tue Nov  4 15:34:00 2008
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Tue Nov  4 15:34:11 2008
+Subject: [Radiance-general] Determining Specularity Values - Spandrel
+	Panels: Marble vs Fritted Glass
+In-Reply-To: <3EC944427F87D84793DBBC4137A2B5AD4CD82E@to1exc02wp.halsall.com>
+References: <3EC944427F87D84793DBBC4137A2B5AD4CD82E@to1exc02wp.halsall.com>
+Message-ID: <7A4280B3-8824-4C2D-9E6B-802A450D4072@arcor.de>
+
+
+On 4 Nov 2008, at 14:49, Pearson, Nastassja wrote:
+
+> I have some questions about determining/selecting material  
+> properties, specifically deciding what material type (plastic/ 
+> metal) and secularity to use for the two cladding options.
+>
+> My assumptions:
+>
+> Marble ? Originally white, but panels have become grey with dirt  
+> over time, not polished, dull finish
+>
+> Type:                Plastic
+>
+> Colour:             (0.91, 0.91, 0.83)
+>
+
+As Randolph wrote this is far too 'white' for a typical white material,
+especially if it's a bit dirty.
+
+0.75 throughout would be the colour of white wallpaint, so dirty marble
+might be in the range of 0.6 to 0.65 (just a guess).
+
+> Specularity:       ?????? (I think this may be low because it is  
+> not polished marble)
+>
+> Roughness:      0.05 (???)
+>
+Specularity and roughness have an impact on the visual appearance
+but have no effect on glare in the Radiance model.
+
+> Glass Frit ? Composed of: Clear glass, 60% coverage white frit,  
+> clear glass, 100% coverage white frit. From Window 6, I estimate  
+> the solar reflectance of the system to be around 25-35%.
+>
+> Typle:               Metal ??? (Does the frit have specular and  
+> diffuse reflection of light?)
+>
+Why don't you start with a glass material? If the frit is on the inside
+you have at least one surface that will produce specular reflections
+and might cause glare. A glass material would simulate that to some
+degree. You can simulate the colour and transmittance with a trans
+material behind the glass.
+> Colour:             (1.0,1.0, 1.0)
+>
+> Specularity:       ????? (Clean polished glass)
+>
+> Roughness:      0.00
+>
+
+If you are interested in glare from reflected sunlight you should also
+consider a 'mirror' material to trace the sun position more accurately.
+
+
+Regards,
+Thomas
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20081104/143c3ea3/attachment.html
+From solomoncw76 at gmail.com  Tue Nov  4 23:27:55 2008
+From: solomoncw76 at gmail.com (chang cw)
+Date: Tue Nov  4 23:28:00 2008
+Subject: [Radiance-general] Radiance Pvalue
+Message-ID: <da2acf910811042327y7443e319ob35a73aa2fd44dca@mail.gmail.com>
+
+HI experts for radiance
+a quick question for pvalue
+
+i am using pvalue -o -df +n sample.hdr >sample.dat
+
+For the image sample.dat 1. How are the bands interleaved ?
+
+a. RGB RGB RGB....
+
+for each pixel
+or
+
+a. RRRRRRRRRRRRRRRRRR
+BBBBBBBBBBBBBB
+GGGGGGGGGGG
+
+cheers!
+
+Cw
+
+From jedev at visarc.com  Wed Nov  5 06:11:15 2008
+From: jedev at visarc.com (Jack de Valpine)
+Date: Wed Nov  5 06:11:23 2008
+Subject: [Radiance-general] Radiance Pvalue
+In-Reply-To: <da2acf910811042327y7443e319ob35a73aa2fd44dca@mail.gmail.com>
+References: <da2acf910811042327y7443e319ob35a73aa2fd44dca@mail.gmail.com>
+Message-ID: <4911A983.3070806@visarc.com>
+
+Hi Cw,
+
+The default behavior is output of one pixel value per line, that is 
+"interleaved" rgb value:
+
+rgb
+rgb
+rgb
+.....
+
+ The +n switch merely explicitly specifies interleaved output.
+
+-Jack
+
+chang cw wrote:
+> HI experts for radiance
+> a quick question for pvalue
+>
+> i am using pvalue -o -df +n sample.hdr >sample.dat
+>
+> For the image sample.dat 1. How are the bands interleaved ?
+>
+> a. RGB RGB RGB....
+>
+> for each pixel
+> or
+>
+> a. RRRRRRRRRRRRRRRRRR
+> BBBBBBBBBBBBBB
+> GGGGGGGGGGG
+>
+> cheers!
+>
+> Cw
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>   
+
+-- 
+# Jack de Valpine
+# president
+#
+# visarc incorporated
+# http://www.visarc.com
+#
+# channeling technology for superior design and construction
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: jedev.vcf
+Type: text/x-vcard
+Size: 251 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20081105/771208ad/jedev.vcf
+From solomoncw76 at gmail.com  Wed Nov  5 06:14:51 2008
+From: solomoncw76 at gmail.com (chang cw)
+Date: Wed Nov  5 06:14:54 2008
+Subject: [Radiance-general] Radiance Pvalue
+In-Reply-To: <4911A983.3070806@visarc.com>
+References: <da2acf910811042327y7443e319ob35a73aa2fd44dca@mail.gmail.com>
+	<4911A983.3070806@visarc.com>
+Message-ID: <da2acf910811050614j4e268e34s37a679619c6c9e96@mail.gmail.com>
+
+HI jack
+wanted to confirm the interleaving
+Thanks :)
+cw
+
+
+2008/11/5 Jack de Valpine <jedev@visarc.com>:
+> Hi Cw,
+>
+> The default behavior is output of one pixel value per line, that is
+> "interleaved" rgb value:
+>
+> rgb
+> rgb
+> rgb
+> .....
+>
+> The +n switch merely explicitly specifies interleaved output.
+>
+> -Jack
+>
+> chang cw wrote:
+>>
+>> HI experts for radiance
+>> a quick question for pvalue
+>>
+>> i am using pvalue -o -df +n sample.hdr >sample.dat
+>>
+>> For the image sample.dat 1. How are the bands interleaved ?
+>>
+>> a. RGB RGB RGB....
+>>
+>> for each pixel
+>> or
+>>
+>> a. RRRRRRRRRRRRRRRRRR
+>> BBBBBBBBBBBBBB
+>> GGGGGGGGGGG
+>>
+>> cheers!
+>>
+>> Cw
+>>
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general@radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>
+>>
+>
+> --
+> # Jack de Valpine
+> # president
+> #
+> # visarc incorporated
+> # http://www.visarc.com
+> #
+> # channeling technology for superior design and construction
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+From deepak.gv at ufl.edu  Wed Nov  5 08:14:09 2008
+From: deepak.gv at ufl.edu (G V DEEPAK)
+Date: Wed Nov  5 08:14:14 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+Message-ID: <257470772.53151225901649375.JavaMail.osg@osgjas02.cns.ufl.edu>
+
+Hello Everyone,
+
+I would like to know if there is any specific way to find the 
+reflectance of red, green and blue in order to obtain a specific 
+color desired.
+
+Secondly is there any library of materials to choose from ..?
+
+Thank you
+
+
+From npearson at halsall.com  Wed Nov  5 08:18:14 2008
+From: npearson at halsall.com (Pearson, Nastassja)
+Date: Wed Nov  5 08:19:47 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+References: <257470772.53151225901649375.JavaMail.osg@osgjas02.cns.ufl.edu>
+Message-ID: <3EC944427F87D84793DBBC4137A2B5AD4CD83B@to1exc02wp.halsall.com>
+
+GV,
+
+This website can help you pick a colour:
+http://www.luxal.eu/resources/radiance/cp4r.shtml
+
+I don't know of a library of specific materials... but if there's one
+I'd definitely like to know about it.
+
+
+N. 
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of G V
+DEEPAK
+Sent: Wednesday, November 05, 2008 11:14 AM
+To: Radiance general discussion
+Subject: [Radiance-general] Color reflectance values and materials..
+
+Hello Everyone,
+
+I would like to know if there is any specific way to find the 
+reflectance of red, green and blue in order to obtain a specific 
+color desired.
+
+Secondly is there any library of materials to choose from ..?
+
+Thank you
+
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+From grobe at gmx.net  Wed Nov  5 08:22:58 2008
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Wed Nov  5 08:23:10 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+In-Reply-To: <3EC944427F87D84793DBBC4137A2B5AD4CD83B@to1exc02wp.halsall.com>
+References: <257470772.53151225901649375.JavaMail.osg@osgjas02.cns.ufl.edu>
+	<3EC944427F87D84793DBBC4137A2B5AD4CD83B@to1exc02wp.halsall.com>
+Message-ID: <4911C862.6000902@gmx.net>
+
+
+> I don't know of a library of specific materials... but if there's one
+> I'd definitely like to know about it.
+>   
+There is one small library file distributed with radiance 
+(materials.rad), and there are some on the radsite ftp server.
+
+Still - in most cases you will not be able to use generic material 
+values but need information from a specific sample!
+
+CU Lars.
+
+From grobe at gmx.net  Wed Nov  5 08:32:43 2008
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Wed Nov  5 08:32:56 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+In-Reply-To: <257470772.53151225901649375.JavaMail.osg@osgjas02.cns.ufl.edu>
+References: <257470772.53151225901649375.JavaMail.osg@osgjas02.cns.ufl.edu>
+Message-ID: <4911CAAB.4010903@gmx.net>
+
+G V DEEPAK yazm??:
+> Hello Everyone,
+>
+> I would like to know if there is any specific way to find the 
+> reflectance of red, green and blue in order to obtain a specific color 
+> desired.
+>
+> Secondly is there any library of materials to choose from ..?
+
+Hi,
+
+there are several ways, most of them described in Detail in the book 
+"Rendering with Radiance" which dedicates one chapter to the topic. 
+There are more or less three ways, first guess and compare, second 
+calibrated exposures, third specialized measurement devices. The choice 
+depends on both required accuracy (in many applications, the overall 
+brightness is much more important then color) and, of course, budget ;-)
+
+CU Lars.
+
+From rfritz at u.washington.edu  Wed Nov  5 10:49:20 2008
+From: rfritz at u.washington.edu (R Fritz)
+Date: Wed Nov  5 10:49:24 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+In-Reply-To: <257470772.53151225901649375.JavaMail.osg@osgjas02.cns.ufl.edu>
+References: <257470772.53151225901649375.JavaMail.osg@osgjas02.cns.ufl.edu>
+Message-ID: <8E2A18AA-8297-40E7-8631-91C55E7019A6@u.washington.edu>
+
+>
+> I would like to know if there is any specific way to find the  
+> reflectance of red, green and blue in order to obtain a specific  
+> color desired.
+
+If you've got a sample of the color, sure--you do colorimetry and  
+convert the values from the colorimeter's color space to the Radiance  
+color space. It takes some care to choose the sample, however.
+
+> Secondly is there any library of materials to choose from ..?
+
+We wish! Developing one, or tools to generate them from other data is  
+a project that so far has not been addressed.
+
+Randolph
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20081105/9088ffbb/attachment.html
+From gregoryjward at gmail.com  Wed Nov  5 04:53:21 2008
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed Nov  5 12:56:18 2008
+Subject: [Radiance-general] Re: Determining Specularity Values - Spandrel
+	Panels: Marble vs Fritted Glass
+In-Reply-To: <3EC944427F87D84793DBBC4137A2B5AD4CD82E@to1exc02wp.halsall.com>
+References: <3EC944427F87D84793DBBC4137A2B5AD4CD82E@to1exc02wp.halsall.com>
+Message-ID: <787859DF-8A25-4B18-9E05-C5F330C2D89C@lmi.net>
+
+Hello Nastassja,
+
+> Marble ? Originally white, but panels have become grey with dirt  
+> over time, not polished, dull finish
+>
+> Type:                Plastic
+>
+> Colour:             (0.91, 0.91, 0.83)
+>
+> Specularity:       ?????? (I think this may be low because it is  
+> not polished marble)
+>
+> Roughness:      0.05 (???)
+>
+
+I concur with the others that this reflectance is too high for any  
+surface that has been exposed to the exterior for a period of time.   
+My experience is that dirt & grime reduce reflectance values by a  
+significant amount.  I would suggest a reflectance of 50-60% for  
+white marble.  The specularity is probably around 0.01 and a  
+roughness of 0.08 for an unpolished surface is a reasonable guess.
+> Glass Frit ? Composed of: Clear glass, 60% coverage white frit,  
+> clear glass, 100% coverage white frit. From Window 6, I estimate  
+> the solar reflectance of the system to be around 25-35%.
+>
+>  Typle:               Metal ??? (Does the frit have specular and  
+> diffuse reflection of light?)
+>
+> Colour:             (1.0,1.0, 1.0)
+>
+> Specularity:       ????? (Clean polished glass)
+>
+> Roughness:      0.00
+>
+I would start using the "glaze" script, entering the above  
+parameters.  This should give you good results.  Attached is what I  
+used for your 60% fritted glass and the output produced.
+
+Best,
+-Greg
+
+% glaze
+Enter the number of panes in the system: 1
+
+Window normal faces interior
+
+   | |
+   | |
+   | |
+   | |-->
+   | |
+   | |
+   | |
+  s1 s2
+
+Supported surface types are:
+    1 - clear glass
+    2 - VE1-2M low-E coating
+    3 - PVB laminated
+    4 - V-175 white frit
+    5 - V-933 warm gray frit
+
+What is the type of s1? 1
+What is the type of s2? 4
+Enter fraction coverage for s2 (0-1): .6
+
+############################################
+# Glazing produced by Radiance glaze script
+# $Revision: 2.7 $
+# Material surface normal points to interior
+# Number of panes in system: 1
+# Exterior surface s1 type: clear glass
+# Interior surface s2 type: V-175 white frit
+# s2 coating coverage: .6
+# Exterior normal hemispherical reflectance: 0.228534
+# Interior normal hemispherical reflectance: 0.384534
+# Normal hemispherical transmittance: 0.478928
+#
+void BRTDfunc glaze1_unnamed
+10
+         sr_frit_r sr_frit_g sr_frit_b
+         st_frit_r st_frit_g st_frit_b
+         0 0 0
+         glaze1.cal
+0
+11
+0.354
+0.354
+0.354
+0.1536
+0.1518
+0.1506
+0.126
+0.126
+0.126
+         -1      .6
+
+---------
+P.S.  Apologies if these answers are redundant with others, as I am  
+composing this on a plane w/o internet access.
+From radiance at rendigo.com  Wed Nov  5 23:19:43 2008
+From: radiance at rendigo.com (Erwin Zierler)
+Date: Wed Nov  5 23:26:58 2008
+Subject: Re-2: [Radiance-general] Color reflectance values and materials..
+Message-ID: <0003A3FE.4912A89E@192.168.0.81>
+
+I have been thinking about a material library/editor for a while too. For many  needs it would be probably sufficient to have a basic database with the simpler materials (plastic, metal, glass,...) but as soon as it comes to more complex/combined materials the task of providing a useful interface becomes more of a challenge. Schorsch has addressed this with his material editor in Rayfront but this is not targeting beginners. I think that for many users it would be just fine to have something similar to the colorpicker tool (http://www.luxal.eu/resources/radiance/cp4r.shtml), maybe extended with the functionality of adding at least your own custom textures (image uplaod) to basic materials. 
+Anyway, as a start it might be worth thinking about a central web based material depository where we all can share our own creations. The display format can be a simple list with mat, cal, pic files and a little preview.
+Anyone interested in starting that? 
+
+Regards,
+ Erwin
+
+
+> Original Message        processed by David.InfoCenter 
+> Subject: Re: [Radiance-general] Color reflectance values and materials.. (05-Nov-2008 19:50)
+> From:    R Fritz <rfritz@u.washington.edu>
+> To:      radiance@rendigo.com
+
+>> I would like to know if there is any specific way to find the 
+>> reflectance > of red, green and blue in order to obtain a specific 
+>> color desired.
+
+> If you've got a sample of the color, sure--you do colorimetry and convert > the values from the colorimeter's color space to the Radiance color 
+> space. It takes some care to choose the sample, however.
+
+> Secondly is there any library of materials to choose from ..?
+
+> We wish! Developing one, or tools to generate them from other data is a 
+> project that so far has not been addressed.
+
+> Randolph
+
+
+
+From grobe at gmx.net  Thu Nov  6 00:17:22 2008
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Thu Nov  6 00:17:36 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+In-Reply-To: <0003A3FE.4912A89E@192.168.0.81>
+References: <0003A3FE.4912A89E@192.168.0.81>
+Message-ID: <4912A812.40800@gmx.net>
+
+
+> Anyway, as a start it might be worth thinking about a central web based material depository where we all can share our own creations. The display format can be a simple list with mat, cal, pic files and a little preview.
+> Anyone interested in starting that? 
+>   
+Maybe one should first consider a database of measured values. Based on 
+this, one could implement a material editor that could query that 
+database and give a radiance material definition as a result. The 
+advantage is that I could compile the material data available into a 
+description fitting the needs of my specific application. It is 
+important to keep in mind that our measurements and simulations not only 
+have a degree of accuracy but also a scale. A material for a wall of 
+bricks is not only depending on exterior influences (dirt, humidity, 
+vegetation) but also on the scale we look at it - from far a way it will 
+be sufficient to define it as one uniform color, sampled e.g. over 
+2mx2m, from a close point of view I would want to have a brick texture 
+including the different colors of brick and mortar, and for a detail 
+view I would need the color and structure of only the brick itself, as 
+the mortar would be a different material. Just one very simple example, 
+other materials are much more difficult. Still sharing the measured 
+values (including very detailed descriptions of object and set-up) would 
+be very useful for the secondary materials, those that a simulation not 
+really focuses on and could be approximated. Think I would be interested 
+in contributing.
+
+CU Lars.
+
+From jacobs.axel at gmail.com  Thu Nov  6 13:51:59 2008
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Thu Nov  6 13:52:04 2008
+Subject: [Radiance-general] Re: Radiance-general Digest, Vol 57, Issue 4
+In-Reply-To: <49134d72.1f068e0a.3fdd.5e29SMTPIN_ADDED@mx.google.com>
+References: <49134d72.1f068e0a.3fdd.5e29SMTPIN_ADDED@mx.google.com>
+Message-ID: <100441490811061351u32b92acbkc3644534577aa36e@mail.gmail.com>
+
+Erwin,
+
+> Anyway, as a start it might be worth thinking about a central web based material depository where we all can share our own creations. The display format can be a simple list with mat, cal, pic files and a little preview.
+> Anyone interested in starting that?
+
+There is a site in Japan doing something rather similar:
+http://arch.xtr.jp/radiance/mat_database.htm
+Just pipe it through an on-line translator. There are a handful of
+different pages. It seems that all examples are from freely available
+example models and mailing list posts.
+
+Axel
+
+From jacobs.axel at gmail.com  Thu Nov  6 13:53:27 2008
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Thu Nov  6 13:53:32 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+Message-ID: <100441490811061353q461dad77se6a9c466da651dee@mail.gmail.com>
+
+Sorry about the messed-up subject line in my last post...
+
+---------- Forwarded message ----------
+From: Axel Jacobs <jacobs.axel@gmail.com>
+Date: 2008/11/6
+Subject: Re: Radiance-general Digest, Vol 57, Issue 4
+To: radiance-general@radiance-online.org
+
+
+Erwin,
+
+> Anyway, as a start it might be worth thinking about a central web based material depository where we all can share our own creations. The display format can be a simple list with mat, cal, pic files and a little preview.
+> Anyone interested in starting that?
+
+There is a site in Japan doing something rather similar:
+http://arch.xtr.jp/radiance/mat_database.htm
+Just pipe it through an on-line translator. There are a handful of
+different pages. It seems that all examples are from freely available
+example models and mailing list posts.
+
+Axel
+
+From jedev at visarc.com  Thu Nov  6 14:24:03 2008
+From: jedev at visarc.com (Jack de Valpine)
+Date: Thu Nov  6 14:24:14 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+In-Reply-To: <100441490811061353q461dad77se6a9c466da651dee@mail.gmail.com>
+References: <100441490811061353q461dad77se6a9c466da651dee@mail.gmail.com>
+Message-ID: <49136E83.1020006@visarc.com>
+
+Skipped content of type multipart/alternative-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: jedev.vcf
+Type: text/x-vcard
+Size: 251 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20081106/c367f277/jedev.vcf
+From rpg at rumblestrip.org  Thu Nov  6 14:42:57 2008
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Thu Nov  6 14:42:48 2008
+Subject: [Radiance-general] Re: Radiance-general Digest, Vol 57, Issue
+ 4
+In-Reply-To: <100441490811061351u32b92acbkc3644534577aa36e@mail.gmail.com>
+References: <49134d72.1f068e0a.3fdd.5e29SMTPIN_ADDED@mx.google.com>
+	<100441490811061351u32b92acbkc3644534577aa36e@mail.gmail.com>
+Message-ID: <491372F1.8040508@rumblestrip.org>
+
+Axel Jacobs wrote:
+> There is a site in Japan doing something rather similar:
+> http://arch.xtr.jp/radiance/mat_database.htm
+> Just pipe it through an on-line translator. There are a handful of
+> different pages. It seems that all examples are from freely available
+> example models and mailing list posts.
+>   
+
+Hey Axel,
+
+Thanks for this, some of these look nice, but rely on non-standard .cal 
+files.  Do you happen to have those?  I can't find a link to them on 
+that site. 
+
+- Rob G.
+
+From mstock at umich.edu  Thu Nov  6 14:45:18 2008
+From: mstock at umich.edu (Mark Stock)
+Date: Thu Nov  6 14:45:22 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+In-Reply-To: <49136E83.1020006@visarc.com>
+References: <100441490811061353q461dad77se6a9c466da651dee@mail.gmail.com>
+	<49136E83.1020006@visarc.com>
+Message-ID: <Pine.LNX.4.64.0811061742290.30863@rygar.gpcc.itd.umich.edu>
+
+Jack,
+
+Forgive my ignorance on the topic, but how do you convert those 
+values to something that looks right in Radiance? I've tried just 
+using RGB values like the ones from the site, but everything is 
+simply too bright. And scaling them down uniformly seems to 
+change the hue.
+
+Mark
+
+On Thu, 6 Nov 2008, Jack de Valpine wrote:
+
+> Hi,
+>
+> Another resource is:
+>
+>   www.easyrgb.com
+>
+> The focus is on paint colors. But they supply all kinds of color values 
+> including XYZ.
+>
+> -Jack
+>
+>
+>
+> Axel Jacobs wrote:
+>> Sorry about the messed-up subject line in my last post...
+>> 
+>> ---------- Forwarded message ----------
+>> From: Axel Jacobs <jacobs.axel@gmail.com>
+>> Date: 2008/11/6
+>> Subject: Re: Radiance-general Digest, Vol 57, Issue 4
+>> To: radiance-general@radiance-online.org
+>> 
+>> 
+>> Erwin,
+>>
+>> 
+>>> Anyway, as a start it might be worth thinking about a central web based 
+>>> material depository where we all can share our own creations. The display 
+>>> format can be a simple list with mat, cal, pic files and a little preview.
+>>> Anyone interested in starting that?
+>>> 
+>> 
+>> There is a site in Japan doing something rather similar:
+>> http://arch.xtr.jp/radiance/mat_database.htm
+>> Just pipe it through an on-line translator. There are a handful of
+>> different pages. It seems that all examples are from freely available
+>> example models and mailing list posts.
+>> 
+>> Axel
+>> 
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general@radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>
+>> 
+>
+> -- 
+> # Jack de Valpine
+> # president
+> #
+> # visarc incorporated
+> # http://www.visarc.com
+> #
+> # channeling technology for superior design and construction
+>
+>
+
+From dbs176 at gmail.com  Thu Nov  6 14:57:37 2008
+From: dbs176 at gmail.com (David Smith)
+Date: Thu Nov  6 14:57:41 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+Message-ID: <694e132c0811061457h201ee2d2m6b81d9393cd71f5@mail.gmail.com>
+
+Mark,
+
+That's where gamma values come in. Let's say the RGB values of a paint
+sample from EasyRGB are (125,150,175), a blue gray. Take each channel,
+divide by 256, take the result to the power of 2.2 (monitor gamma) and
+then multiply by 256.
+
+R = (125/256)^2.2 * 256 = 52.9
+G = (150/256)^2.2 * 256 = 79.0
+B = (175/256)^2.2 * 256 = 110.9
+
+If you put the resulting values (52.9,79.0,110.9) in as the R G and B
+material colors, you should get the correct paint color in your
+simulation that matches the physical paint color.
+
+--Dave
+
+From info at iebele.nl  Fri Nov  7 00:57:24 2008
+From: info at iebele.nl (iebele)
+Date: Fri Nov  7 00:51:17 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+In-Reply-To: <694e132c0811061457h201ee2d2m6b81d9393cd71f5@mail.gmail.com>
+References: <694e132c0811061457h201ee2d2m6b81d9393cd71f5@mail.gmail.com>
+Message-ID: <491402F4.8000109@iebele.nl>
+
+Hi Dave,
+
+As Mark already said, these values seem very bright to me also.
+
+Once I did some measurements on a Kodak grayscale chart (from the good 
+old Q-14 color separation guide) using a photospectrometer from Kodak, 
+which results were all below 1.0 for each Radiance RGB triplet (see the 
+attachment, which contain the conversions of the measured xyz-values to 
+radiance rgb ). Since then my idea has been that rgb triplet values for 
+diffuse reflectances above 1.0 are invalid. Reading your mail I get 
+confused a bit.
+
+Another point I don't understand is why you suggest to use gamma 
+correction within a material description. I always think of gamma to be 
+applied after the simulation has been done. In other words, I think of 
+gamma to correct an image for a certain output device. So, why should we 
+correct reflection values with a gamma _before_ a simulation?
+
+The idea of a public database for materials, paints etc. dedicated to 
+Radiance would be very usefull. Imho such a database would be very 
+valuable as a part of the Radiance distribution also. This instead of 
+pointing to websites, which might confuse users. Measured samples from 
+commercial color charts (like RAL, Pantone and other paints and 
+materials) would extend the direct useability of Radiance a lot. It 
+might be an idea to plan measurements using a photospectrometer on such 
+standard commercial color charts, and discuss the conversion of the 
+results within this group. Or has this already be done in such an 
+extensive way?
+
+-Iebele
+
+
+
+David Smith wrote:
+
+>Mark,
+>
+>That's where gamma values come in. Let's say the RGB values of a paint
+>sample from EasyRGB are (125,150,175), a blue gray. Take each channel,
+>divide by 256, take the result to the power of 2.2 (monitor gamma) and
+>then multiply by 256.
+>
+>R = (125/256)^2.2 * 256 = 52.9
+>G = (150/256)^2.2 * 256 = 79.0
+>B = (175/256)^2.2 * 256 = 110.9
+>
+>If you put the resulting values (52.9,79.0,110.9) in as the R G and B
+>material colors, you should get the correct paint color in your
+>simulation that matches the physical paint color.
+>
+>--Dave
+>
+>_______________________________________________
+>Radiance-general mailing list
+>Radiance-general@radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>  
+>
+
+-------------- next part --------------
+void plastic q14-00
+	0 0 5
+	0.900027 0.903103 0.87232
+ 	0 0 
+
+void plastic q14-01
+	0 0 5
+	0.710661 0.70014 0.675669
+	0 0 
+
+void plastic q14-02
+	0 0 5
+	0.563523 0.553469 0.538185
+	0 0 
+
+void plastic q14-03
+	0 0 5
+	0.463037 0.456579 0.451882
+	0 0 
+
+void plastic q14-04
+	0 0 5
+	0.371992 0.364836 0.360939
+	0 0
+
+void plastic q14-05
+	0 0 5
+	0.30166 0.299283 0.299083
+	0 0 
+
+void plastic q14-06
+	0 0 5
+	0.244086 0.240686 0.23836
+	0 0 
+
+void plastic q14-07
+	0 0 5
+	0.20182 0.200693 0.200597
+	0 0
+
+void plastic q14-08
+	0 0 5
+	0.170233 0.167431 0.16488
+
+void plastic q14-09
+	0 0 5
+	0.140813 0.138192 0.137439
+	0 0 5
+
+void plastic q14-10
+	0 0 5
+	0.119806 0.119137 0.118008
+	0 0 
+
+void plastic q14-11
+	0 0 5
+	0.103236 0.101224 0.101281
+	0 0 
+
+void plastic q14-12
+	0 0 5
+	0.0889687 0.0887752 0.0898407
+	0 0 
+
+void plastic q14-13
+	0 0 5
+ 	0.0790787 0.0796912 0.0801454
+	0 0 
+
+void plastic q14-14
+	0 0 5
+	0.0698937 0.0695366 0.0699314
+	0 0 
+
+void plastic q14-15
+	0 0 5
+ 	0.0652575 0.0654734 0.0652362
+	0 0 
+
+void plastic q14-16
+	0 0 5
+	0.0562611 0.056142 0.0564436
+	0 0 
+
+void plastic q14-17
+	0 0 5
+	0.0528268 0.052474 0.0523321	
+	0 0 
+
+void plastic q14-18
+	0 0 5
+	0.0465261 0.0465976 0.047407
+	0 0 
+
+void plastic q14-19
+	0 0 5
+	0.0422973 0.0433932 0.0448362
+	0 0 
+				
+From smichel_designer at hotmail.com  Fri Nov  7 01:17:17 2008
+From: smichel_designer at hotmail.com (steve michel)
+Date: Fri Nov  7 01:17:20 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+In-Reply-To: <491402F4.8000109@iebele.nl>
+References: <694e132c0811061457h201ee2d2m6b81d9393cd71f5@mail.gmail.com>
+	<491402F4.8000109@iebele.nl>
+Message-ID: <BAY143-W9E36BA7FE3385B42C2051E0190@phx.gbl>
+
+
+I am 100% in agreement with idea of using  photospectrometer validated readings of 'standard' color charts. Let me add that perhaps paint manufacturers may already have this data ready or be keen on the approach. I've been waiting for such an effort for a while and often have had to rely on Axel's color chart by default and that other construction material chart from the folks at design lab :http://www.designlaboratory.com/computing/tools/radiance/radmatlib.htmlregardssteve> Date: Fri, 7 Nov 2008 09:57:24 +0100> From: info@iebele.nl> Subject: Re: [Radiance-general] Color reflectance values and materials..> To: radiance-general@radiance-online.org> > Hi Dave,> > As Mark already said, these values seem very bright to me also.> > Once I did some measurements on a Kodak grayscale chart (from the good > old Q-14 color separation guide) using a photospectrometer from Kodak, > which results were all below 1.0 for each Radiance RGB triplet (see the > attachment, which contain the conversions of the measured xyz-values to > radiance rgb ). Since then my idea has been that rgb triplet values for > diffuse reflectances above 1.0 are invalid. Reading your mail I get > confused a bit.> > Another point I don't understand is why you suggest to use gamma > correction within a material description. I always think of gamma to be > applied after the simulation has been done. In other words, I think of > gamma to correct an image for a certain output device. So, why should we > correct reflection values with a gamma _before_ a simulation?> > The idea of a public database for materials, paints etc. dedicated to > Radiance would be very usefull. Imho such a database would be very > valuable as a part of the Radiance distribution also. This instead of > pointing to websites, which might confuse users. Measured samples from > commercial color charts (like RAL, Pantone and other paints and > materials) would extend the direct useability of Radiance a lot. It > might be an idea to plan measurements using a photospectrometer on such > standard commercial color charts, and discuss the conversion of the > results within this group. Or has this already be done in such an > extensive way?> > -Iebele> > > > David Smith wrote:> >>Mark,>>>>That's where gamma values come in. Let's say the RGB values of a paint>>sample from EasyRGB are (125,150,175), a blue gray. Take each channel,>>divide by 256, take the result to the power of 2.2 (monitor gamma) and>>then multiply by 256.>>>>R = (125/256)^2.2 * 256 = 52.9>>G = (150/256)^2.2 * 256 = 79.0>>B = (175/256)^2.2 * 256 = 110.9>>>>If you put the resulting values (52.9,79.0,110.9) in as the R G and B>>material colors, you should get the correct paint color in your>>simulation that matches the physical paint color.>>>>--Dave>>>>_______________________________________________>>Radiance-general mailing list>>Radiance-general@radiance-online.org>>http://www.radiance-online.org/mailman/listinfo/radiance-general>>>>  >>> 
+_________________________________________________________________
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20081107/20b44034/attachment.htm
+From grobe at gmx.net  Fri Nov  7 01:37:02 2008
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Fri Nov  7 01:37:14 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+In-Reply-To: <BAY143-W9E36BA7FE3385B42C2051E0190@phx.gbl>
+References: <694e132c0811061457h201ee2d2m6b81d9393cd71f5@mail.gmail.com>	<491402F4.8000109@iebele.nl>
+	<BAY143-W9E36BA7FE3385B42C2051E0190@phx.gbl>
+Message-ID: <49140C3E.3020403@gmx.net>
+
+While I agree that extending the material file in the radiance 
+distribution would be useful for viz, I'd like to encourage those who 
+did not try yet to use their digital cameras and a calibration tool such 
+as macbethcal and the not too expensive chart as a measurement device. 
+Today as almost everyone has the equipment for digital photography, this 
+should be not too difficult. While one can certainly discuss the 
+accuracy, obtaining an "inaccurate" sample of the material that is 
+actually to be simulated should still be better then an accurate sample 
+of a generic material.
+
+That said, the most important feature of a new material database must be 
+detailed documentation of the samples, measurement equipment, conditions.
+
+CU Lars.
+
+From tbleicher at arcor.de  Fri Nov  7 02:21:22 2008
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Fri Nov  7 02:21:32 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+In-Reply-To: <BAY143-W9E36BA7FE3385B42C2051E0190@phx.gbl>
+References: <694e132c0811061457h201ee2d2m6b81d9393cd71f5@mail.gmail.com>
+	<491402F4.8000109@iebele.nl>
+	<BAY143-W9E36BA7FE3385B42C2051E0190@phx.gbl>
+Message-ID: <3E122C36-3118-4518-BF56-655DF88E42B4@arcor.de>
+
+
+On 7 Nov 2008, at 09:17, steve michel wrote:
+
+> I am 100% in agreement with idea of using  photospectrometer  
+> validated readings of 'standard' color charts. Let me add that  
+> perhaps paint manufacturers may already have this data ready or be  
+> keen on the approach.
+
+I have here a list of 50+ RAL and xKxxx (like 2K216) colors.
+I don't remember where I got those from and if I'm allowed
+to share them in public. I also do not know if the Radiance
+RGB values are validated or 'just' calculated.
+
+On the subject of material conversion in general I have
+to confess that my own attempts to use the equations on
+easyrgb.org failed and I really don't know how it should
+be done. I was only concerned about the monitor RGB
+to Radiance RGB bit (for Sketchup exports) but even here
+I felt that a simple linear scale by 0.85 gave better results
+than jumping from colour space to colour space. I finally
+found a mail from Greg or Axel stating that these two RGB
+spaces are so close that a big convoluted conversion is
+often not necessary. And so I left it at that.
+
+The library idea sounds appealing at first but i think the
+practical value of validated colour charts is just as big as
+a good conversion from the published RGB values. The
+real world problem I see is that the colour changes it's
+properties depending on the material it's painted on.
+Take wall paint on plaster for example and compare this
+with the same paint on a dense wood fibre board (HDF
+or whatever you call it). The texture of the material will
+change the properties of the paint.
+
+So instead of a big honking official library a nice and
+small peer-reviewed  HOWTO on the conversion from
+manufacturer's RGB data (and colour space) to
+Radiance values would have more practical value.
+I assume that there is such a conversion procedure.
+If we have to measure before we get any realistic
+values then a library seems to be the thing to do.
+Nice job for a student in the need of a thesis ...
+
+
+Yours humbly,
+
+Thomas
+
+
+
+From Raphael.Compagnon at hefr.ch  Fri Nov  7 02:46:31 2008
+From: Raphael.Compagnon at hefr.ch (=?iso-8859-1?Q?Compagnon_Rapha=EBl?=)
+Date: Fri Nov  7 02:46:47 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+In-Reply-To: <3E122C36-3118-4518-BF56-655DF88E42B4@arcor.de>
+References: <694e132c0811061457h201ee2d2m6b81d9393cd71f5@mail.gmail.com>
+	<491402F4.8000109@iebele.nl>	<BAY143-W9E36BA7FE3385B42C2051E0190@phx.gbl>
+	<3E122C36-3118-4518-BF56-655DF88E42B4@arcor.de>
+Message-ID: <70DD3A1408BDA8498790E8D553B7D253C26228A66E@HEFRMAIL.sofr.hefr.lan>
+
+Hi
+
+This RAL and xKxxx paints colors list is probably the same as the list appearing in the annex of my Radiance tutorial http://home.hefr.ch/compag/ref/RADIANCE_tutorial_E.pdf
+where their reflected Yxy values (measured under the standard illuminant D65) are given.
+
+These values were measured in years ~1991-1993 with a colorimeter at LESO-PB EPFL Lausanne (where I was working at that time) on paper paints samples. The xKxxx or xExxx color names are coming from a Swiss standard notation defined by the paints manufacturers association VSLF http://www.vslf.ch/
+This tiny database was built for the ADELINE package http://www.ibp.fhg.de/wt/adeline/index.html
+
+Raphael Compagnon
+
+
+-----Message d'origine-----
+De : radiance-general-bounces@radiance-online.org [mailto:radiance-general-bounces@radiance-online.org] De la part de Thomas Bleicher
+Envoy? : vendredi, 7. novembre 2008 11:21
+? : Radiance general discussion
+Objet : Re: [Radiance-general] Color reflectance values and materials..
+
+I have here a list of 50+ RAL and xKxxx (like 2K216) colors.
+I don't remember where I got those from and if I'm allowed
+to share them in public. I also do not know if the Radiance
+RGB values are validated or 'just' calculated.
+
+
+
+From tbleicher at arcor.de  Fri Nov  7 02:56:16 2008
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Fri Nov  7 02:56:35 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+In-Reply-To: <3E122C36-3118-4518-BF56-655DF88E42B4@arcor.de>
+References: <694e132c0811061457h201ee2d2m6b81d9393cd71f5@mail.gmail.com>
+	<491402F4.8000109@iebele.nl>
+	<BAY143-W9E36BA7FE3385B42C2051E0190@phx.gbl>
+	<3E122C36-3118-4518-BF56-655DF88E42B4@arcor.de>
+Message-ID: <0C00325F-E74B-4047-8E61-2322197907F5@arcor.de>
+
+
+On 7 Nov 2008, at 10:21, Thomas Bleicher wrote:
+
+> I have here a list of 50+ RAL and xKxxx (like 2K216) colors.
+> I don't remember where I got those from and if I'm allowed
+> to share them in public. I also do not know if the Radiance
+> RGB values are validated or 'just' calculated.
+
+Turns out these are the materials from the materials.rad in
+the standard distribution. So everybody has them already
+and they seem not to be that interesting ...
+
+
+Thomas
+
+
+
+From info at iebele.nl  Fri Nov  7 03:42:11 2008
+From: info at iebele.nl (iebele)
+Date: Fri Nov  7 03:36:02 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+In-Reply-To: <0C00325F-E74B-4047-8E61-2322197907F5@arcor.de>
+References: <694e132c0811061457h201ee2d2m6b81d9393cd71f5@mail.gmail.com>
+	<491402F4.8000109@iebele.nl>
+	<BAY143-W9E36BA7FE3385B42C2051E0190@phx.gbl>
+	<3E122C36-3118-4518-BF56-655DF88E42B4@arcor.de>
+	<0C00325F-E74B-4047-8E61-2322197907F5@arcor.de>
+Message-ID: <49142993.1020100@iebele.nl>
+
+Hi Thomas,
+
+It would be very interesting if this list was complete.  As far as I 
+know 210 ral colors are in use for architectural applications.
+
+-Iebele
+
+>
+> On 7 Nov 2008, at 10:21, Thomas Bleicher wrote:
+>
+>> I have here a list of 50+ RAL and xKxxx (like 2K216) colors.
+>> I don't remember where I got those from and if I'm allowed
+>> to share them in public. I also do not know if the Radiance
+>> RGB values are validated or 'just' calculated.
+>
+>
+> Turns out these are the materials from the materials.rad in
+> the standard distribution. So everybody has them already
+> and they seem not to be that interesting ...
+>
+>
+> Thomas
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+
+From jacobs.axel at gmail.com  Fri Nov  7 04:22:28 2008
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Fri Nov  7 04:22:32 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+Message-ID: <100441490811070422y585d1b64p9b6b96178cc6784b@mail.gmail.com>
+
+Hi Rob,
+
+> Thanks for this, some of these look nice, but rely on non-standard .cal
+> files.  Do you happen to have those?  I can't find a link to them on
+> that site.
+
+They are not linked. My impression is that some .cal files might be
+from the old ConRad. I'm sending you Takayuki Otomo's e-mail address
+off-list, so you can get in touch with him.
+
+Regards
+
+Axel
+
+From jacobs.axel at gmail.com  Fri Nov  7 05:03:02 2008
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Fri Nov  7 05:03:09 2008
+Subject: [Radiance-general] Re: Radiance-general Digest, Vol 57, Issue 6
+In-Reply-To: <4914339a.16078e0a.53ad.ffffc38aSMTPIN_ADDED@mx.google.com>
+References: <4914339a.16078e0a.53ad.ffffc38aSMTPIN_ADDED@mx.google.com>
+Message-ID: <100441490811070503h355bb4aar600590ee863ea9f7@mail.gmail.com>
+
+> I have here a list of 50+ RAL and xKxxx (like 2K216) colors.
+> I don't remember where I got those from and if I'm allowed
+> to share them in public. I also do not know if the Radiance
+> RGB values are validated or 'just' calculated.
+
+Jan Diepens of University of Technologie Eindhoven sent me a complete
+list of RAL colours some time ago. I have to admit that they are still
+not in the ColourPicker. I've put them up for your perusal:
+
+http://luminance.londonmet.ac.uk/pickup/ral_mat.tgz
+
+From jacobs.axel at gmail.com  Fri Nov  7 05:08:56 2008
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Fri Nov  7 05:09:01 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+Message-ID: <100441490811070508v7b7a6d9emb612b60d49b3ad6a@mail.gmail.com>
+
+Sorry, I keep forgetting that I'm replying to the digest. Re-posted
+with proper Subject line...
+
+> I have here a list of 50+ RAL and xKxxx (like 2K216) colors.
+> I don't remember where I got those from and if I'm allowed
+> to share them in public. I also do not know if the Radiance
+> RGB values are validated or 'just' calculated.
+
+Jan Diepens of University of Technologie Eindhoven sent me a complete
+list of RAL colours some time ago. I have to admit that they are still
+not in the ColourPicker. I've put them up for your perusal:
+
+http://luminance.londonmet.ac.uk/pickup/ral_mat.tgz
+
+If anybody is going to translate the names to English, please bounce
+the changes back to me for inclusion in the ColourPicker. The values
+were measured with a Minolta chroma meter from samples. YXZ was then
+converted to Radiance RGB with a Radiance .cal file, so the values
+should be accurate.
+
+Axel
+
+From dbs176 at gmail.com  Fri Nov  7 06:52:12 2008
+From: dbs176 at gmail.com (David Smith)
+Date: Fri Nov  7 06:52:17 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+Message-ID: <694e132c0811070652t1077a518w16c333c4527309d5@mail.gmail.com>
+
+Iebele,
+
+I'm about as far removed from being a color expert as one can get. I
+got the method from a thread in the forums for AGi32, and the method
+has worked reasonably well for me (some tweaking required). I'm not
+sure if the method is just a hack, but Ian Ashdown was the person who
+suggested it, as well as some further reading on color science. Here's
+the link, free registration required:
+http://www.agi32.com/forums/view_topic.php?id=585&forum_id=4
+
+Also, Konica-Minolta makes a luminance meter, CS-100A, that will give
+you the XYZE values of what it's looking at, but I'm sure it costs a
+small fortune. I think it's the one that Axel had just mentioned.
+
+--Dave
+
+From solomoncw76 at gmail.com  Fri Nov  7 07:05:53 2008
+From: solomoncw76 at gmail.com (chang cw)
+Date: Fri Nov  7 07:05:58 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+In-Reply-To: <694e132c0811070652t1077a518w16c333c4527309d5@mail.gmail.com>
+References: <694e132c0811070652t1077a518w16c333c4527309d5@mail.gmail.com>
+Message-ID: <da2acf910811070705x4ad100fbl1909ac3877b3c34c@mail.gmail.com>
+
+Hi guys,
+
+I am not an expert with the radiance and i do not know if i am
+repeating any simple stuff here.
+
+Colour is a function of both the reflectivity and incident light.
+
+Reflectivity itself is an intrinsic function and in this case i think
+we are assuming lambertain( equal reflectance in all direction)
+materials.
+
+The amount of light that is reflected off a surface would be dependent
+on the spectral shape of the incident light and the reflectance.
+
+So in order to talk about the color properties of different object we
+need to measure its reflectance ( use of a spectrophotometer).
+
+Perhaps we can also include the type of incident light sources (
+tungsten / sunlight) if we want to talk about reflectivity
+
+Cheers
+cw
+
+
+
+On Fri, Nov 7, 2008 at 10:52 PM, David Smith <dbs176@gmail.com> wrote:
+> Iebele,
+>
+> I'm about as far removed from being a color expert as one can get. I
+> got the method from a thread in the forums for AGi32, and the method
+> has worked reasonably well for me (some tweaking required). I'm not
+> sure if the method is just a hack, but Ian Ashdown was the person who
+> suggested it, as well as some further reading on color science. Here's
+> the link, free registration required:
+> http://www.agi32.com/forums/view_topic.php?id=585&forum_id=4
+>
+> Also, Konica-Minolta makes a luminance meter, CS-100A, that will give
+> you the XYZE values of what it's looking at, but I'm sure it costs a
+> small fortune. I think it's the one that Axel had just mentioned.
+>
+> --Dave
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+From jacobs.axel at gmail.com  Fri Nov  7 09:28:04 2008
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Fri Nov  7 09:28:13 2008
+Subject: [Radiance-general] Material database - taking measurements
+Message-ID: <100441490811070928web4563bs198d9343e81e4b60@mail.gmail.com>
+
+Dear all,
+
+I was thinking to myself and talking to my boss about this material
+database. You will know that the ColourPicker on LUXAL.eu has
+somewhere between 20,000 and 30,000 entries, the majority of which are
+screen scraped from various web sites. Since I have now idea how the
+RGB values for those colours were determined (measured, guessed, gamma
+etc), they can't really be relied upon.
+
+This leaves us with Jan's RAL materials (I'll put them up soon), and
+the Building Materials which are taken from Adeline and are hopefully
+correctish, although I have no idea just how good they are. Moreover,
+I am potentially infringing on somebody's copyright by putting them up
+on a web site. Need to check this. Who owns the Adeline intellectual
+property now? Does somebody have a contact into Fraunhofer Bauphysik?
+
+Anyhow. We in LEARN have one of these:
+http://www.atecorp.com/Equipment/Minolta/CR300.asp
+I also made up an RS232 cable, have some LabView code, and know the
+serial protocol. So here is an offer to those of you who are based in
+or around London:
+
+You may borrow the meter for one week free of charge, provided that:
+
+a) Your company will assure us in writing that if anything should
+happen to the instrument, we will receive a replacement. No pay-off.
+An actual instrument.
+b) You will share all your measurements with the Radiance community.
+c) I have a small collection of about 3000-4000 colour samples from
+various paint manufacturers here (the ones you find at your local
+builder's merchant). You agree to input some of them too, so they can
+be added to the database. Once the software is cobbled together, which
+should not be too hard, the actual measurement takes about one second
+for each sample. What is somewhat more time consuming is the input of
+colour names, codes, swatch numbers etc, although this could
+potentially be semi-automated with some scanning/OCR scripts.
+
+You are also welcome to come and visit us in Holloway Road and do some
+colour measurements there. We'll find a desk for you.
+
+If you think you can contribute with writing the software, scanning,
+OCR or anything else, please do get in touch. It's a rather laborious
+exercise...
+
+Oh, one last thing: We won't be able lend the instrument before
+January because of the scheduling of the academic year and the student
+projects.
+
+Cheers
+
+Axel
+
+From jedev at visarc.com  Fri Nov  7 10:17:06 2008
+From: jedev at visarc.com (Jack de Valpine)
+Date: Fri Nov  7 10:17:40 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+In-Reply-To: <Pine.LNX.4.64.0811061742290.30863@rygar.gpcc.itd.umich.edu>
+References: <100441490811061353q461dad77se6a9c466da651dee@mail.gmail.com>	<49136E83.1020006@visarc.com>
+	<Pine.LNX.4.64.0811061742290.30863@rygar.gpcc.itd.umich.edu>
+Message-ID: <49148622.8040403@visarc.com>
+
+Skipped content of type multipart/alternative-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: jedev.vcf
+Type: text/x-vcard
+Size: 251 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20081107/6553cf39/jedev-0001.vcf
+From jedev at visarc.com  Fri Nov  7 10:41:23 2008
+From: jedev at visarc.com (Jack de Valpine)
+Date: Fri Nov  7 10:41:34 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+In-Reply-To: <49148622.8040403@visarc.com>
+References: <100441490811061353q461dad77se6a9c466da651dee@mail.gmail.com>	<49136E83.1020006@visarc.com>	<Pine.LNX.4.64.0811061742290.30863@rygar.gpcc.itd.umich.edu>
+	<49148622.8040403@visarc.com>
+Message-ID: <49148BD3.4040709@visarc.com>
+
+Skipped content of type multipart/alternative-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: jedev.vcf
+Type: text/x-vcard
+Size: 251 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20081107/1049aa2f/jedev.vcf
+From bernd at bzed.de  Sat Nov  8 06:56:39 2008
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Sat Nov  8 06:55:50 2008
+Subject: [Radiance-general] Material database - taking measurements
+In-Reply-To: <100441490811070928web4563bs198d9343e81e4b60@mail.gmail.com>
+References: <100441490811070928web4563bs198d9343e81e4b60@mail.gmail.com>
+Message-ID: <4915A8A7.7000505@bzed.de>
+
+Hi,
+
+> b) You will share all your measurements with the Radiance community.
+
+If you'd add something like 'under the same license as Radiance is
+published' or 'and publish them under the MIT or BSD license', then the
+results could be published and distributed together with radiance and
+could be used for whatever people need to use them. Only 'sharing' does
+not mean you're allowed to use them in (commercial) projects later.
+
+Cheers,
+
+Bernd
+
+-- 
+ Bernd Zeimetz                           Debian GNU/Linux Developer
+ GPG Fingerprint: 06C8 C9A2 EAAD E37E 5B2C BE93 067A AD04 C93B FF79
+
+From jiangtao.du at yahoo.co.uk  Sat Nov  8 09:45:48 2008
+From: jiangtao.du at yahoo.co.uk (Jiangtao Du)
+Date: Sat Nov  8 09:46:15 2008
+Subject: [Radiance-general] Higher surface reflectance simulation in
+	buildings
+Message-ID: <556218.67507.qm@web28104.mail.ukl.yahoo.com>
+
+Dear All,
+?
+I am doing Radiance simulations?in atrium well with higher surface reflectances ( 0.6 ~ 0.8 ~ 1, diffuse surface). 
+But according to?? "Aizlewood M, Butt J, Isaac K & Littlefair P. Daylight in atria: a comparison of measurement, theory and simulation: ?Proceedings Lux Europa. Amsterdam, 1997."?? and??? "Littlefair P. Daylight prediction in atrium buildings. Solar Energy, 2002; 73: 105-109.",??? Radiance underestimated the reflected light (Internal reflected component) in atria with high reflectance (some measurements in the paper used a reflectance 0.85 and got the biggest discrepancy in IRC?was 4.87). My some simulations? got the similar results: simulations underestimated the measurement with reflectance 0.6 and 0.8 and? the higher of surface reflectance the bigger is the discrepancy. All the studies used overcast sky model and set a higher ambient parameter setting.
+?
+Could you help me explain the?divergence from high reflectance simulation using Radiance. Also, if these demonstrate Radiance simulation could bring some bigger errors to the dayligthing simulation in high reflectance environment?
+?
+BTW, I will appreciate it very much if you could share some experience or knowledge? and give some suggestion about higher reflectance simulations.
+?
+Cheers
+?
+Jiangtao
+?
+PhD student in University of Sheffield
+
+
+      
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20081108/61bfb34f/attachment.html
+From germain.augsburger at epfl.ch  Mon Nov 10 01:26:56 2008
+From: germain.augsburger at epfl.ch (Germain Augsburger)
+Date: Mon Nov 10 01:27:06 2008
+Subject: [Radiance-general] rtcontrib - rad3R9_linux
+Message-ID: <1226309216.4917fe6021a3b@webmail.epfl.ch>
+
+Hi Greg,
+
+I just updated my Radiance version by installing the latest one available on
+radsite.lbl.gov/radiance (rad3R9). I tried to run rtcontrib, but nothing
+happened. Neither an error nor a result, and no processor activity. I didn't
+see anything discussing this issue in the archives, so I would be grateful for
+your help! Here are a couple of lines describing my attempts:
+
+1) Does my terminal know rtcontrib...:
+
+IN:
+augsburg@lenipc24:~$ rtcontrib
+OUT:
+Usage: rtcontrib [-n nprocs][-V][-r][-e expr][-f source][-o ospec][-b binv] {-m
+mod | -M file} [rtrace options] octree
+
+Yes!
+
+2) Is rtcontrib able to compute the contribution of the "mirrorfull_mat"
+secundary sources in my scene...:
+
+IN:(Pathnames are cut for clarity)
+augsburg@lenipc24:~$ rtcontrib -m mirrorfull_mat -o mirror.dat field.oct <
+cavcylmeshgrid.dat
+OUT:
+rtrace: warning - too many modifiers in trace list
+
+OK, so let's try with less modifiers...
+
+3) Is rtcontrib able to compute the contribution of the "solar" source in my
+scene...:
+
+IN:
+augsburg@lenipc24:~$ rtcontrib -m solar -o solar.dat field.oct <
+cavcylmeshgrid.dat
+OUT:
+Nothing! No error, no results (no outfile) & no processor activity.
+
+I hope this comes from a stupid error of mine...
+
+Regards,
+
+Germain
+-------------------------------------------------------------------------------
+Germain Augsburger
+
+At EPFL:
+Room ME A2 391
+Tel.: (+41) 21 693 59 68
+
+Physical addresses:
+ch. du Carroz 5                         |  17, ch. de la Ruaz
+Chez St?phane Carrupt                   |  Chez St?phane & Catherine Augsburger
+CH-1020 Renens (Switzerland)            |  FR-74140 Yvoire (France)
+(Tel.: (+41) 21 634 61 60               |  Tel.: (+33) 4 50 72 85 29
+ - matter of urgency)                   |
+
+Internet adresses:
+MSN Messenger: germain.augsburger@epfl.ch
+Skype pseudonym: germainaugsburger
+-------------------------------------------------------------------------------
+
+From A.I.Ruppertsberg at Bradford.ac.uk  Mon Nov 10 01:29:43 2008
+From: A.I.Ruppertsberg at Bradford.ac.uk (A Ruppertsberg)
+Date: Mon Nov 10 01:30:13 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+In-Reply-To: <49140C3E.3020403@gmx.net>
+Message-ID: <1226309383.4917ff075c4ac@webmail.brad.ac.uk>
+
+Hi,
+
+for converting spectral or XYZ data to RGB see Appendix in:
+Ruppertsberg, A, and Bloj, M (2006) Rendering complex scenes for psychophysics
+using RADIANCE: How accurate can you get?, J. Opt. Soc. Am. A, 23, 759-768
+
+download pdf at:
+http://www.brad.ac.uk/acad/lifesci/optometry/uploads/Publications/2006xJOPTSOCAMAx23x4x759.pdf
+
+In that paper we also used spectral data from a data base (ref 47) of Munsell
+chips and natural materials:
+47. See http://spectral.joensuu.fi/databases/index.html.
+
+What I suspect you are after are surface reflectance descriptor RGB values. The
+XYZ values provided by eg the macbeth color checker are colour signal data (ie
+the product of surface reflectance with illumination). The illumination is most
+probably D65, which is white, so it's not far off to correspond to the surface
+reflectance. But a lot of people forget the distinction between colour signal
+and surface reflectance.
+Also remember that there are no generically valid RGB values. RGB values are
+always only valid for a particular display device. In that paper up there we
+have used the transformation matrix based on RADIANCE's 'built-in' primaries.
+It is true that you can obtain RGB values beyond the [0 1] range when you
+convert XYZ to RGB and that simply tells you that the gamut of your RGB-space
+does not include that colour. Then, you have to do something, either clip it or
+tone-map it....
+
+happy colouring!
+
+alexa
+
+
+Quoting "Lars O. Grobe" <grobe@gmx.net>:
+
+> While I agree that extending the material file in the radiance
+> distribution would be useful for viz, I'd like to encourage those who
+> did not try yet to use their digital cameras and a calibration tool such
+> as macbethcal and the not too expensive chart as a measurement device.
+> Today as almost everyone has the equipment for digital photography, this
+> should be not too difficult. While one can certainly discuss the
+> accuracy, obtaining an "inaccurate" sample of the material that is
+> actually to be simulated should still be better then an accurate sample
+> of a generic material.
+>
+> That said, the most important feature of a new material database must be
+> detailed documentation of the samples, measurement equipment, conditions.
+>
+> CU Lars.
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+
+-- 
+Dr. Alexa Ruppertsberg
+Bradford School of Optometry and Vision Science
+University of Bradford
+Bradford, BD7 1DP
+UK
+
+Tel. ++44 1274 235378
+
+------------------------------------------------------------
+This mail sent through IMP: http://webmail.brad.ac.uk
+To report misuse from this email address forward the message
+and full headers to misuse@bradford.ac.uk
+------------------------------------------------------------
+
+
+From info at iebele.nl  Mon Nov 10 01:58:22 2008
+From: info at iebele.nl (iebele)
+Date: Mon Nov 10 01:52:14 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+In-Reply-To: <100441490811070508v7b7a6d9emb612b60d49b3ad6a@mail.gmail.com>
+References: <100441490811070508v7b7a6d9emb612b60d49b3ad6a@mail.gmail.com>
+Message-ID: <491805BE.8070508@iebele.nl>
+
+Hi Axel,
+
+Thank you so much for posting this file. I think both your RAL file as 
+the Kodak grayscale chart measurements I send in my earlier mail are 
+very usefull for Radiance.
+
+In my previous mail I mistakenly wrote that we used a Kodak 
+photospectrometer for the grayscale chart from Kodak's Q-14 color 
+separation guide. That chart was also measured with a Minolta device, I 
+don't remember exactly wich model it was -  but it was a pretty advanced 
+one that we hired for two weeks, so the file wich the greyscale 
+measurements should be accurate also (which are YXZ values converted to 
+Radiance RGB with a Radiance .cal file).
+
+A list of all RAL colors in English (and other languages) can be found at:
+http://www.ral.de/en/ral_farben/anwender/farbnamen_classic.php
+I will be happy to translate it and send it back.
+
+Maybe we can discuss a little bit more about the issue if such accurate 
+measurements could be part of the Radiance distribution? I like to hear 
+more about the pros and conts. My idea is that it would help users a lot.
+
+-Iebele
+
+
+
+Axel Jacobs wrote:
+
+>
+>Jan Diepens of University of Technologie Eindhoven sent me a complete
+>list of RAL colours some time ago. I have to admit that they are still
+>not in the ColourPicker. I've put them up for your perusal:
+>
+>http://luminance.londonmet.ac.uk/pickup/ral_mat.tgz
+>
+>If anybody is going to translate the names to English, please bounce
+>the changes back to me for inclusion in the ColourPicker. The values
+>were measured with a Minolta chroma meter from samples. YXZ was then
+>converted to Radiance RGB with a Radiance .cal file, so the values
+>should be accurate.
+>
+>Axel
+>
+>_______________________________________________
+>Radiance-general mailing list
+>Radiance-general@radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>  
+>
+
+
+From gregoryjward at gmail.com  Mon Nov 10 11:06:18 2008
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon Nov 10 11:06:29 2008
+Subject: [Radiance-general] Color reflectance values and materials..
+In-Reply-To: <49148BD3.4040709@visarc.com>
+References: <100441490811061353q461dad77se6a9c466da651dee@mail.gmail.com>	<49136E83.1020006@visarc.com>	<Pine.LNX.4.64.0811061742290.30863@rygar.gpcc.itd.umich.edu>
+	<49148622.8040403@visarc.com> <49148BD3.4040709@visarc.com>
+Message-ID: <CA18842B-878C-4BD2-95BE-CF374DDE35DB@lmi.net>
+
+Radiance uses slightly different color primaries and a different  
+(neutral) white point than the CCIR709 set that is the basis for sRGB  
+(and other RGB) standards.  This is historical, but not without  
+reason, which is why you should stick with the xyz_rgb.cal file for  
+back-and-forth conversions.
+
+Best,
+-Greg
+
+> From: Jack de Valpine <jedev@visarc.com>
+> Date: November 7, 2008 10:41:23 AM PST
+>
+> Hi All,
+>
+> It looks like luxal is using a different formula for converting XYZ  
+> to RGB. I am not sure what the difference is but the values are  
+> quite different than the technique outlined in my previous post.
+>
+> -Jack
+>
+
+From gregoryjward at gmail.com  Mon Nov 10 11:16:17 2008
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon Nov 10 11:16:23 2008
+Subject: [Radiance-general] Higher surface reflectance simulation in
+	buildings
+In-Reply-To: <556218.67507.qm@web28104.mail.ukl.yahoo.com>
+References: <556218.67507.qm@web28104.mail.ukl.yahoo.com>
+Message-ID: <9292105A-62D9-40BB-8C09-03FCA38C7FAE@lmi.net>
+
+The higher the surface reflectances, the more bounces you need to  
+compute.  In pathological cases where you have all white surfaces  
+facing each other in a closed environment, you may need to disable  
+the ambient cache (-aa 0) and rely on Russian roulette sampling (-lr  
+-20 or so).  To get a large -ab setting to work (-ab 20 or whatever),  
+you will also need to decrease the -ad setting to make this tractable  
+(-ad 64 or so with -as 0).
+
+-Greg
+
+> From: Jiangtao Du <jiangtao.du@yahoo.co.uk>
+> Date: November 8, 2008 9:45:48 AM PST
+>
+> Dear All,
+>
+> I am doing Radiance simulations in atrium well with higher surface  
+> reflectances ( 0.6 ~ 0.8 ~ 1, diffuse surface).
+> But according to   "Aizlewood M, Butt J, Isaac K & Littlefair P.  
+> Daylight in atria: a comparison of measurement, theory and  
+> simulation:  Proceedings Lux Europa. Amsterdam, 1997."   and     
+> "Littlefair P. Daylight prediction in atrium buildings. Solar  
+> Energy, 2002; 73: 105-109.",    Radiance underestimated the  
+> reflected light (Internal reflected component) in atria with high  
+> reflectance (some measurements in the paper used a reflectance 0.85  
+> and got the biggest discrepancy in IRC was 4.87). My some  
+> simulations  got the similar results: simulations underestimated  
+> the measurement with reflectance 0.6 and 0.8 and  the higher of  
+> surface reflectance the bigger is the discrepancy. All the studies  
+> used overcast sky model and set a higher ambient parameter setting.
+>
+> Could you help me explain the divergence from high reflectance  
+> simulation using Radiance. Also, if these demonstrate Radiance  
+> simulation could bring some bigger errors to the dayligthing  
+> simulation in high reflectance environment?
+>
+> BTW, I will appreciate it very much if you could share some  
+> experience or knowledge  and give some suggestion about higher  
+> reflectance simulations.
+>
+> Cheers
+>
+> Jiangtao
+>
+> PhD student in University of Sheffield
+
+From gregoryjward at gmail.com  Mon Nov 10 11:49:12 2008
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon Nov 10 11:49:19 2008
+Subject: [Radiance-general] rtcontrib - rad3R9_linux
+In-Reply-To: <1226309216.4917fe6021a3b@webmail.epfl.ch>
+References: <1226309216.4917fe6021a3b@webmail.epfl.ch>
+Message-ID: <E34A6C68-20C5-40A2-A4A5-9705EFF889AE@lmi.net>
+
+Hi Germain,
+
+The "too many modifiers" probably means that the mirrorfull_mat is  
+being reused many times in your file.  You should define the material  
+once somewhere and reuse it in our your included scene files.
+
+As for the nothing output, this is of course suspicious, but without  
+seeing your input files, quite impossible to diagnose.  Perhaps you  
+could send those my way in an off-list e-mail and I'll take a look.
+
+Best,
+-Greg
+
+> From: Germain Augsburger <germain.augsburger@epfl.ch>
+> Date: November 10, 2008 1:26:56 AM PST
+>
+> Hi Greg,
+>
+> I just updated my Radiance version by installing the latest one  
+> available on
+> radsite.lbl.gov/radiance (rad3R9). I tried to run rtcontrib, but  
+> nothing
+> happened. Neither an error nor a result, and no processor activity.  
+> I didn't
+> see anything discussing this issue in the archives, so I would be  
+> grateful for
+> your help! Here are a couple of lines describing my attempts:
+>
+> 1) Does my terminal know rtcontrib...:
+>
+> IN:
+> augsburg@lenipc24:~$ rtcontrib
+> OUT:
+> Usage: rtcontrib [-n nprocs][-V][-r][-e expr][-f source][-o ospec][- 
+> b binv] {-m
+> mod | -M file} [rtrace options] octree
+>
+> Yes!
+>
+> 2) Is rtcontrib able to compute the contribution of the  
+> "mirrorfull_mat"
+> secundary sources in my scene...:
+>
+> IN:(Pathnames are cut for clarity)
+> augsburg@lenipc24:~$ rtcontrib -m mirrorfull_mat -o mirror.dat  
+> field.oct < cavcylmeshgrid.dat
+> OUT:
+> rtrace: warning - too many modifiers in trace list
+>
+> OK, so let's try with less modifiers...
+>
+> 3) Is rtcontrib able to compute the contribution of the "solar"  
+> source in my scene...:
+>
+> IN:
+> augsburg@lenipc24:~$ rtcontrib -m solar -o solar.dat field.oct <  
+> cavcylmeshgrid.dat
+> OUT:
+> Nothing! No error, no results (no outfile) & no processor activity.
+>
+> I hope this comes from a stupid error of mine...
+>
+> Regards,
+>
+> Germain
+
+From jacobs.axel at gmail.com  Mon Nov 10 13:00:30 2008
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Mon Nov 10 13:00:41 2008
+Subject: [Radiance-general] Re: Color reflectance values and materials..
+Message-ID: <100441490811101300m3bfab8fei2d586551f3fc322f@mail.gmail.com>
+
+Hi Iebele,
+
+> Thank you so much for posting this file.
+
+It's Jan Diepens who deserves our thank you.
+
+> A list of all RAL colors in English (and other languages) can be found at:
+> http://www.ral.de/en/ral_farben/anwender/farbnamen_classic.php
+> I will be happy to translate it and send it back.
+
+It's already translated and integrated in the development version of
+the Colour Picker. The link is in the main body of:
+http://www.luxal.eu/resources/radiance/index.shtml
+(don't use the navigation panel)
+
+Cheers
+
+Axel
+
+From jedev at visarc.com  Mon Nov 10 13:55:50 2008
+From: jedev at visarc.com (Jack de Valpine)
+Date: Mon Nov 10 13:56:09 2008
+Subject: [Radiance-general] Re: Color reflectance values and materials..
+In-Reply-To: <100441490811101300m3bfab8fei2d586551f3fc322f@mail.gmail.com>
+References: <100441490811101300m3bfab8fei2d586551f3fc322f@mail.gmail.com>
+Message-ID: <4918ADE6.1030809@visarc.com>
+
+Hi Axel,
+
+The updates to the Colour Picker are great! I see that you updated the 
+conversion of XYZ to Radiance rgb. This is a big help. I also like the 
+addition of the instant reflectance value when using the sliders.
+
+Thanks for all the work on this and all the other tools and information 
+on the site.
+
+Best,
+
+-Jack
+
+> It's already translated and integrated in the development version of
+> the Colour Picker. The link is in the main body of:
+> http://www.luxal.eu/resources/radiance/index.shtml
+> (don't use the navigation panel)
+>   
+
+-- 
+# Jack de Valpine
+# president
+#
+# visarc incorporated
+# http://www.visarc.com
+#
+# channeling technology for superior design and construction
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: jedev.vcf
+Type: text/x-vcard
+Size: 251 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20081110/fb0224ee/jedev.vcf
+From inanici at u.washington.edu  Tue Nov 11 17:22:49 2008
+From: inanici at u.washington.edu (Mehlika Inanici)
+Date: Tue Nov 11 17:22:53 2008
+Subject: [Radiance-general] 7th radiance workshop
+Message-ID: <Pine.LNX.4.43.0811111722490.11609@hymn33.u.washington.edu>
+
+
+Hi. Is there a plan to post the workshop contents in the Radiance online website for those of us who could not make it to Fribourg?
+
+Thanks,
+Mehlika
+
+
+
+
+From gregoryjward at gmail.com  Tue Nov 11 19:08:12 2008
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue Nov 11 19:47:00 2008
+Subject: [Radiance-general] 7th radiance workshop
+In-Reply-To: <Pine.LNX.4.43.0811111722490.11609@hymn33.u.washington.edu>
+References: <Pine.LNX.4.43.0811111722490.11609@hymn33.u.washington.edu>
+Message-ID: <EAECF9E9-AFA7-4E53-91D9-C97DBBC73E85@lmi.net>
+
+Hi Mehlika,
+
+Yes, I plan to post the final workshop contents when I'm home long  
+enough to do so.  I've been traveling quite a bit, and will upload  
+the 900 MBytes of data when I get back next Monday.
+
+-Greg
+
+> From: Mehlika Inanici <inanici@u.washington.edu>
+> Date: November 11, 2008 5:22:49 PM PST
+>
+> Hi. Is there a plan to post the workshop contents in the Radiance  
+> online website for those of us who could not make it to Fribourg?
+>
+> Thanks,
+> Mehlika
+
+From inanici at u.washington.edu  Tue Nov 11 19:53:23 2008
+From: inanici at u.washington.edu (Mehlika Inanici)
+Date: Tue Nov 11 19:53:31 2008
+Subject: [Radiance-general] 7th radiance workshop
+In-Reply-To: <EAECF9E9-AFA7-4E53-91D9-C97DBBC73E85@lmi.net>
+Message-ID: <Pine.LNX.4.43.0811111953230.11527@hymn33.u.washington.edu>
+
+
+Hi Greg,
+
+Thanks. Looking forward to it.
+
+Mehlika
+
+On Tue, 11 Nov 2008, Greg Ward wrote:
+
+> Hi Mehlika,
+>
+> Yes, I plan to post the final workshop contents when I'm home long enough to do 
+> so.  I've been traveling quite a bit, and will upload the 900 MBytes of data 
+> when I get back next Monday.
+>
+> -Greg
+>
+>> From: Mehlika Inanici <inanici@u.washington.edu>
+>> Date: November 11, 2008 5:22:49 PM PST
+>> 
+>> Hi. Is there a plan to post the workshop contents in the Radiance online 
+>> website for those of us who could not make it to Fribourg?
+>> 
+>> Thanks,
+>> Mehlika
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+
+
+From gregoryjward at gmail.com  Thu Nov 13 11:34:45 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu Nov 13 11:35:00 2008
+Subject: [Radiance-general] Re: rtcontrib - rad3R9_linux
+In-Reply-To: <E34A6C68-20C5-40A2-A4A5-9705EFF889AE@lmi.net>
+References: <1226309216.4917fe6021a3b@webmail.epfl.ch>
+	<E34A6C68-20C5-40A2-A4A5-9705EFF889AE@lmi.net>
+Message-ID: <869A8988-7219-4649-B78D-01ACF87DA845@gmail.com>
+
+Just to let everyone else know, this issue was resolved off-list.   
+Germain was inadvertently accessing version 3.5 of rtcontrib, which  
+had a bug under Linux that was fixed long ago.
+
+-Greg
+
+> From: Greg Ward <gward@lmi.net>
+> Date: November 10, 2008 11:49:12 AM PST
+>
+> Hi Germain,
+>
+> The "too many modifiers" probably means that the mirrorfull_mat is  
+> being reused many times in your file.  You should define the  
+> material once somewhere and reuse it in our your included scene files.
+>
+> As for the nothing output, this is of course suspicious, but  
+> without seeing your input files, quite impossible to diagnose.   
+> Perhaps you could send those my way in an off-list e-mail and I'll  
+> take a look.
+>
+> Best,
+> -Greg
+>
+>> From: Germain Augsburger <germain.augsburger@epfl.ch>
+>> Date: November 10, 2008 1:26:56 AM PST
+>>
+>> Hi Greg,
+>>
+>> I just updated my Radiance version by installing the latest one  
+>> available on
+>> radsite.lbl.gov/radiance (rad3R9). I tried to run rtcontrib, but  
+>> nothing
+>> happened. Neither an error nor a result, and no processor  
+>> activity. I didn't
+>> see anything discussing this issue in the archives, so I would be  
+>> grateful for
+>> your help! Here are a couple of lines describing my attempts:
+>> ...
+
+From deepak.gv at ufl.edu  Mon Nov 17 03:16:41 2008
+From: deepak.gv at ufl.edu (G V DEEPAK)
+Date: Mon Nov 17 03:16:48 2008
+Subject: [Radiance-general] Negative Glareindex
+Message-ID: <208641840.12521226920601229.JavaMail.osg@osgjas02.cns.ufl.edu>
+
+Hello Everyone,
+
+I was calculating Daylight Glare Index (DGI) for Different View 
+points in an office room. I am getting Negative Glare Index values 
+at some points which are placed away from the window..  Can we get 
+negative values ..?
+
+Thank you
+
+
+From gregoryjward at gmail.com  Mon Nov 17 19:49:26 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Mon Nov 17 19:49:34 2008
+Subject: [Radiance-general] Workshop CD online
+Message-ID: <901EE392-E418-4A81-A192-7DD741A3E8F8@gmail.com>
+
+Hi All,
+
+It took me a few hours to upload it, and another hour to tweak it,  
+but I've finally put the 2008 Radiance workshop CD online:
+
+	http://www.radiance-online.org/radiance-workshop7/
+
+I've also linked it into the main radiance-online web page with the  
+others.
+
+Let me know if you spot any issues.
+
+Cheers,
+-Greg
+
+From t.mcminn at curtin.edu.au  Tue Nov 18 18:45:33 2008
+From: t.mcminn at curtin.edu.au (Terrance Mc Minn)
+Date: Tue Nov 18 18:45:35 2008
+Subject: [Radiance-general] RE: Workshop CD online
+In-Reply-To: <EXFE2c9GHe52s95xAJH0016f1df@email.curtin.edu.au>
+References: <EXFE2c9GHe52s95xAJH0016f1df@email.curtin.edu.au>
+Message-ID: <000d01c949f0$e4fa7e10$0d01a8c0@nest1>
+
+Well done on getting the 2008 workshop CD online. Is there also a copy of
+the ISO image of the workshop CD to facilitate offline viewing available?
+
+Regards 
+
+Terrance Mc Minn
+
+No virus found in this outgoing message.
+Checked by AVG - http://www.avg.com 
+Version: 8.0.175 / Virus Database: 270.9.7/1798 - Release Date: 18/11/2008
+8:59 PM
+
+
+From gregoryjward at gmail.com  Wed Nov 19 09:07:02 2008
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed Nov 19 09:07:04 2008
+Subject: [Radiance-general] RE: Workshop CD online
+In-Reply-To: <000d01c949f0$e4fa7e10$0d01a8c0@nest1>
+References: <EXFE2c9GHe52s95xAJH0016f1df@email.curtin.edu.au>
+	<000d01c949f0$e4fa7e10$0d01a8c0@nest1>
+Message-ID: <C1EA5CCC-3E2A-4766-93B8-E38B9D0F73CF@lmi.net>
+
+Hi Terrance,
+
+I don't really know how to make an ISO image -- any hints?  I can  
+provide a compressed tar file, if that helps.
+
+-Greg
+
+> From: "Terrance Mc Minn" <t.mcminn@curtin.edu.au>
+> Date: November 18, 2008 6:45:33 PM PST
+>
+> Well done on getting the 2008 workshop CD online. Is there also a  
+> copy of
+> the ISO image of the workshop CD to facilitate offline viewing  
+> available?
+>
+> Regards
+>
+> Terrance Mc Minn
+
+From grobe at gmx.net  Wed Nov 19 09:12:21 2008
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Wed Nov 19 09:12:31 2008
+Subject: [Radiance-general] RE: Workshop CD online
+In-Reply-To: <C1EA5CCC-3E2A-4766-93B8-E38B9D0F73CF@lmi.net>
+References: <EXFE2c9GHe52s95xAJH0016f1df@email.curtin.edu.au>	<000d01c949f0$e4fa7e10$0d01a8c0@nest1>
+	<C1EA5CCC-3E2A-4766-93B8-E38B9D0F73CF@lmi.net>
+Message-ID: <492448F5.6080403@gmx.net>
+
+Hi Greg,
+
+on linux mkisofs should do the job, on Mac you might try disk utility. 
+But - a compressed tar would be better. It also gives an one-file 
+download, but I can just untar it, in the likely case that I do not want 
+to burn it to a CD (I am working hard to get rid of these silly medias 
+that tend to break or get lost as soon as I get them into my hands ;-) )...
+
+CU Lars.
+
+-- 
+Dipl.-Ing. Architekt / Y. Mimar  Lars O. Grobe
+Susam Sk. 11/1,  Cihangir,  ?stanbul,  T?rkiye
+grobe@gmx.net www.larsgrobe.de +90-535-8579960
+
+
+From gregoryjward at gmail.com  Wed Nov 19 09:56:53 2008
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed Nov 19 09:59:28 2008
+Subject: [Radiance-general] RE: Workshop CD online
+In-Reply-To: <492448F5.6080403@gmx.net>
+References: <EXFE2c9GHe52s95xAJH0016f1df@email.curtin.edu.au>	<000d01c949f0$e4fa7e10$0d01a8c0@nest1>
+	<C1EA5CCC-3E2A-4766-93B8-E38B9D0F73CF@lmi.net>
+	<492448F5.6080403@gmx.net>
+Message-ID: <69382725-BFC8-4CCD-86BE-3790F32DF1B5@lmi.net>
+
+Wish granted.  Check out new link under "Programme".
+
+-Greg
+
+> From: "Lars O. Grobe" <grobe@gmx.net>
+> Date: November 19, 2008 9:12:21 AM PST
+>
+> Hi Greg,
+>
+> on linux mkisofs should do the job, on Mac you might try disk  
+> utility. But - a compressed tar would be better. It also gives an  
+> one-file download, but I can just untar it, in the likely case that  
+> I do not want to burn it to a CD (I am working hard to get rid of  
+> these silly medias that tend to break or get lost as soon as I get  
+> them into my hands ;-) )...
+>
+> CU Lars.
+>
+
+From rpg at rumblestrip.org  Thu Nov 20 15:34:02 2008
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Thu Nov 20 15:34:07 2008
+Subject: [Radiance-general] objview & rvu -n
+Message-ID: <4925F3EA.5030807@rumblestrip.org>
+
+Hi Greg, et al.,
+
+I have been playing with the new -n (#proc) switch you added to rvu.  
+That is really, really nice.  I use objview all the time to preview 
+scenes, set views and check geometry, and the speedup on our quad core 
+machines is really great!  I thought I might be able to hack objview to 
+support this new switch, but it looks like objview relies on rad to 
+create the scene and defaults to x11 as the output, spawning rvu.  Is 
+there a way to pass the number of processors available to the new rvu, 
+via an objview command? 
+
+I see you can also pass one of the standard rad views in lieu of the 
+default XYZ; is there a way to specify a saved view, or is this a 
+limitation of the way the script is all pipelined through rad?  This is 
+the first time I've really looked at the objview script, and I don't 
+immediately see a way to get the desired options sent to rvu.
+
+From gregoryjward at gmail.com  Thu Nov 20 17:30:25 2008
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu Nov 20 17:32:13 2008
+Subject: [Radiance-general] objview & rvu -n
+In-Reply-To: <4925F3EA.5030807@rumblestrip.org>
+References: <4925F3EA.5030807@rumblestrip.org>
+Message-ID: <4716CE0F-7F59-44D4-ACDC-D6242A649B37@lmi.net>
+
+Sure, Rob.
+
+Just add "-N 4" to the "set opts=" line near the top of objview.  The  
+rad program passes whatever is set with -N to the new rvu -n option.
+
+As for using a saved view, the syntax:
+
+	objview -v "-vf myview.vf" octree
+
+should work, but it doesn't because I forgot to put quotes around the  
+argument to the -v option.  On line 35 of objview, fix it to:
+
+	set vw="$argv[1]"
+
+Hopefully, that will work.  (I'll fix this for the next release and  
+add a -N option as well.)
+
+-Greg
+
+> From: Rob Guglielmetti <rpg@rumblestrip.org>
+> Date: November 20, 2008 3:34:02 PM PST
+>
+> Hi Greg, et al.,
+>
+> I have been playing with the new -n (#proc) switch you added to  
+> rvu.  That is really, really nice.  I use objview all the time to  
+> preview scenes, set views and check geometry, and the speedup on  
+> our quad core machines is really great!  I thought I might be able  
+> to hack objview to support this new switch, but it looks like  
+> objview relies on rad to create the scene and defaults to x11 as  
+> the output, spawning rvu.  Is there a way to pass the number of  
+> processors available to the new rvu, via an objview command?
+> I see you can also pass one of the standard rad views in lieu of  
+> the default XYZ; is there a way to specify a saved view, or is this  
+> a limitation of the way the script is all pipelined through rad?   
+> This is the first time I've really looked at the objview script,  
+> and I don't immediately see a way to get the desired options sent  
+> to rvu.
+
+From rpg at rumblestrip.org  Fri Nov 21 09:22:19 2008
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Fri Nov 21 09:22:21 2008
+Subject: [Radiance-general] objview & rvu -n
+In-Reply-To: <4716CE0F-7F59-44D4-ACDC-D6242A649B37@lmi.net>
+References: <4925F3EA.5030807@rumblestrip.org>
+	<4716CE0F-7F59-44D4-ACDC-D6242A649B37@lmi.net>
+Message-ID: <4926EE4B.7040907@rumblestrip.org>
+
+Greg Ward wrote:
+> Sure, Rob.
+>
+> Just add "-N 4" to the "set opts=" line near the top of objview.  The 
+> rad program passes whatever is set with -N to the new rvu -n option.
+
+Worked great...
+
+> As for using a saved view, the syntax:
+>
+>     objview -v "-vf myview.vf" octree
+>
+> should work, but it doesn't because I forgot to put quotes around the 
+> argument to the -v option.  On line 35 of objview, fix it to:
+>
+>     set vw="$argv[1]"
+
+This worked a treat as well!  thanks Greg!  This will get confusing; for 
+setting processors number you will use -N for objview and -n when 
+calling rvu directly, but I'll live.  =8-)  You've made my day.
+
+- Rob
+
+From gregoryjward at gmail.com  Fri Nov 21 09:39:55 2008
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri Nov 21 09:39:55 2008
+Subject: [Radiance-general] objview & rvu -n
+In-Reply-To: <4926EE4B.7040907@rumblestrip.org>
+References: <4925F3EA.5030807@rumblestrip.org>
+	<4716CE0F-7F59-44D4-ACDC-D6242A649B37@lmi.net>
+	<4926EE4B.7040907@rumblestrip.org>
+Message-ID: <7AE0D23E-30B8-4A7B-A84C-17C512F1A5FB@lmi.net>
+
+Yes, I would have used '-n' for rad as well, but that option was  
+already taken.
+
+-Greg
+
+> From: Rob Guglielmetti <rpg@rumblestrip.org>
+> Date: November 21, 2008 9:22:19 AM PST
+>
+> Greg Ward wrote:
+>> Sure, Rob.
+>>
+>> Just add "-N 4" to the "set opts=" line near the top of objview.   
+>> The rad program passes whatever is set with -N to the new rvu -n  
+>> option.
+>
+> Worked great...
+>
+>> As for using a saved view, the syntax:
+>>
+>>     objview -v "-vf myview.vf" octree
+>>
+>> should work, but it doesn't because I forgot to put quotes around  
+>> the argument to the -v option.  On line 35 of objview, fix it to:
+>>
+>>     set vw="$argv[1]"
+>
+> This worked a treat as well!  thanks Greg!  This will get  
+> confusing; for setting processors number you will use -N for  
+> objview and -n when calling rvu directly, but I'll live.  =8-)   
+> You've made my day.
+>
+> - Rob
+
+From rfritz at u.washington.edu  Fri Nov 21 19:42:51 2008
+From: rfritz at u.washington.edu (R Fritz)
+Date: Fri Nov 21 19:52:13 2008
+Subject: [Radiance-general] RE: Workshop CD online
+In-Reply-To: <69382725-BFC8-4CCD-86BE-3790F32DF1B5@lmi.net>
+References: <EXFE2c9GHe52s95xAJH0016f1df@email.curtin.edu.au>	<000d01c949f0$e4fa7e10$0d01a8c0@nest1>
+	<C1EA5CCC-3E2A-4766-93B8-E38B9D0F73CF@lmi.net>
+	<492448F5.6080403@gmx.net>
+	<69382725-BFC8-4CCD-86BE-3790F32DF1B5@lmi.net>
+Message-ID: <4752BF5C-91F3-45AC-AE2C-578ED9D0D768@u.washington.edu>
+
+Much appreciated!
+
+Randolph
+
+On Nov 19, 2008, at 9:56 AM, Greg Ward wrote:
+
+> Wish granted.  Check out new link under "Programme".
+>
+> -Greg
+>
+>> From: "Lars O. Grobe" <grobe@gmx.net>
+>> Date: November 19, 2008 9:12:21 AM PST
+>>
+>> Hi Greg,
+>>
+>> on linux mkisofs should do the job, on Mac you might try disk  
+>> utility. But - a compressed tar would be better. It also gives an  
+>> one-file download, but I can just untar it, in the likely case that  
+>> I do not want to burn it to a CD (I am working hard to get rid of  
+>> these silly medias that tend to break or get lost as soon as I get  
+>> them into my hands ;-) )...
+>>
+>> CU Lars.
+>>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From deepak.gv at ufl.edu  Sun Nov 23 18:03:41 2008
+From: deepak.gv at ufl.edu (G V DEEPAK)
+Date: Sun Nov 23 18:03:46 2008
+Subject: [Radiance-general] Illuminance and Glare Index.
+Message-ID: <1267897917.63261227492221059.JavaMail.osg@osgjas03.cns.ufl.edu>
+
+Hello Everyone,
+
+I am Performing simulations for a 18'X12" office room with one 
+6'X6' window facing the south side, with blinds attached on the 
+interior side. I am calculation Illuminance values and Daylight 
+Glare Index values (DGI) values at different reference points 
+starting from close to the window to the back wall.
+
+I am getting Illuminance values ranging from 4500 lux to 600 lux, 
+but the glare Index values are coming out to be zero for all 
+points. I don't know if these are normal values or not. I am 
+attaching the output file along. I would like to know your 
+comments,
+
+Thank you.
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: January.out
+Type: application/octet-stream
+Size: 16272 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20081123/254f3ee6/January.obj
+From bei.xiao at gmail.com  Tue Nov 25 08:49:19 2008
+From: bei.xiao at gmail.com (bei.xiao@gmail.com)
+Date: Tue Nov 25 08:52:18 2008
+Subject: [Radiance-general] ambient light
+Message-ID: <a38244780811250849k7b84340bmb16e37abd24984b4@mail.gmail.com>
+
+Hello,
+
+I am trying to render an image using only ambient light.  I noticed that the
+reflected light appears to be non-uniform across the objects in the scene.
+The scene is a open box with the open part facing the viewer and only
+surfaces inside the box are lit (outside of the box is dark).  It appears
+that the light has some directionality to it.  I'm guessing that there is a
+setting value that I have not appropriately set or something.  I wondered if
+anyone had an idea what might be problem. The rpict parameters are listed as
+the following:
+
+rpict -t 12 -vf view_files/rightview.vf -x 1600 -y 1600 -ps 3 -pt .08 -dp
+512 -ar 48 -ms 0.71 -ds .2 -dj .5 -dt .1 -dc .5 -dr 1 -sj .7 -st .1 -ab 1
+-aa .15 -ad 800 -as 128 -av 0.5 0.5 0.5 -lr 8 -lw .002 -dj 0.6 -dt 0.01 -dr
+3 -ds 0.1 -sj 0.7 -st 0.15 -dc 0.5 -lr 1 -aw 0 -av 0.02317 0.02317 0.02317
+
+Any ideas would be appreciated.
+
+Thank you,
+
+Bei
+
+-- 
+
+
+Bei Xiao
+Room 330 C
+3401 Walnut Street C Wing
+Department of Neuroscience
+University of Pennsylvania
+Philadelphia, PA 19104, USA
+Web: www.psych.upenn.edu/~beixiao
+flickr:www.flickr.com/photos/slowtempo
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20081125/0af8f649/attachment.htm
+From Christopher.Rush at arup.com  Tue Nov 25 09:12:13 2008
+From: Christopher.Rush at arup.com (Christopher Rush)
+Date: Tue Nov 25 09:14:53 2008
+Subject: [Radiance-general] ambient light
+In-Reply-To: <a38244780811250849k7b84340bmb16e37abd24984b4@mail.gmail.com>
+References: <a38244780811250849k7b84340bmb16e37abd24984b4@mail.gmail.com>
+Message-ID: <EB124710ADB8554C930FADF760BB2BE70434FA5A@n-yexc01.global.arup.com>
+
+When you say that you are rendering using only ambient light, do you
+mean that there are no sources in your scene (no sky definition, no
+surfaces with materials such as light, glow, source) and only the
+contribution due to -av 0.02317? If so, your directionality might be due
+to the ambient bounce, which is not uniformly distributing light because
+of the one open side of the box. Try again with -ab 0 instead of -ab 1
+and see if that gives what you had wanted. It seems you are only trying
+to render a purely theoretical scene?
+
+...
+
+I am trying to render an image using only ambient light.  I noticed that
+the reflected light appears to be non-uniform across the objects in the
+scene.  The scene is a open box with the open part facing the viewer and
+only surfaces inside the box are lit (outside of the box is dark).  It
+appears that the light has some directionality to it.  I'm guessing that
+there is a setting value that I have not appropriately set or something.
+I wondered if anyone had an idea what might be problem. The rpict
+parameters are listed as the following:
+
+rpict -t 12 -vf view_files/rightview.vf -x 1600 -y 1600 -ps 3 -pt .08
+-dp 512 -ar 48 -ms 0.71 -ds .2 -dj .5 -dt .1 -dc .5 -dr 1 -sj .7 -st .1
+-ab 1 -aa .15 -ad 800 -as 128 -av 0.5 0.5 0.5 -lr 8 -lw .002 -dj 0.6 -dt
+0.01 -dr 3 -ds 0.1 -sj 0.7 -st 0.15 -dc 0.5 -lr 1 -aw 0 -av 0.02317
+0.02317 0.02317
+
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+
+
+From rob.fitzsimmons at Summit.Fiserv.com  Tue Nov 25 09:24:27 2008
+From: rob.fitzsimmons at Summit.Fiserv.com (Fitzsimmons, Rob)
+Date: Tue Nov 25 09:25:44 2008
+Subject: [Radiance-general] ambient light
+References: <a38244780811250849k7b84340bmb16e37abd24984b4@mail.gmail.com>
+Message-ID: <B564F6CD0114A44E816C0D68AE8C6E69032AFEA5@MKEXCHVS2.Mail.Fiserv.net>
+
+What is your light source? Even an ambient light has to begin somewhere. Maybe an overcast sky without a sun?  
+Are you using rad with a rif file? If so, increase the quality...
+Your -ad and -as settings are pretty small
+QUALITY=h
+DETAIL= h
+VARIABILITY= m
+
+Rob
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org on behalf of bei.xiao@gmail.com
+Sent: Tue 11/25/2008 8:49 AM
+To: Radiance-general@radiance-online.org
+Subject: [Radiance-general] ambient light
+ 
+Hello,
+
+I am trying to render an image using only ambient light.  I noticed that the
+reflected light appears to be non-uniform across the objects in the scene.
+The scene is a open box with the open part facing the viewer and only
+surfaces inside the box are lit (outside of the box is dark).  It appears
+that the light has some directionality to it.  I'm guessing that there is a
+setting value that I have not appropriately set or something.  I wondered if
+anyone had an idea what might be problem. The rpict parameters are listed as
+the following:
+
+rpict -t 12 -vf view_files/rightview.vf -x 1600 -y 1600 -ps 3 -pt .08 -dp
+512 -ar 48 -ms 0.71 -ds .2 -dj .5 -dt .1 -dc .5 -dr 1 -sj .7 -st .1 -ab 1
+-aa .15 -ad 800 -as 128 -av 0.5 0.5 0.5 -lr 8 -lw .002 -dj 0.6 -dt 0.01 -dr
+3 -ds 0.1 -sj 0.7 -st 0.15 -dc 0.5 -lr 1 -aw 0 -av 0.02317 0.02317 0.02317
+
+Any ideas would be appreciated.
+
+Thank you,
+
+Bei
+
+-- 
+
+
+Bei Xiao
+Room 330 C
+3401 Walnut Street C Wing
+Department of Neuroscience
+University of Pennsylvania
+Philadelphia, PA 19104, USA
+Web: www.psych.upenn.edu/~beixiao
+flickr:www.flickr.com/photos/slowtempo
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20081125/cf100631/attachment.html
+From tbleicher at arcor.de  Tue Nov 25 09:55:11 2008
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Tue Nov 25 09:55:20 2008
+Subject: [Radiance-general] ambient light
+In-Reply-To: <a38244780811250849k7b84340bmb16e37abd24984b4@mail.gmail.com>
+References: <a38244780811250849k7b84340bmb16e37abd24984b4@mail.gmail.com>
+Message-ID: <E0FBE352-147F-42AC-8A0B-739ED83936A0@arcor.de>
+
+Hello Bei.
+
+On 25 Nov 2008, at 16:49, bei.xiao@gmail.com wrote:
+
+> Hello,
+>
+> I am trying to render an image using only ambient light.  I noticed  
+> that the reflected light appears to be non-uniform across the  
+> objects in the scene.  The scene is a open box with the open part  
+> facing the viewer and only surfaces inside the box are lit (outside  
+> of the box is dark).  It appears that the light has some  
+> directionality to it.
+
+The ambient light setting in Radiance is different to other renderers
+- or maybe it's not if I think about it. Anyway, it's not supposed to  
+replace
+a proper light source in your scene (a 'light' or 'source' material for
+example). It's just there to 'take over' when the proper ray tracing
+does not produce a light source in an acceptable time. That means
+it's only applied it the renderer has not found a light source after
+tracing a ray for '-ab' bounces through the scene.
+
+In your case with a box open to the dark void every ray that leaves
+the box adds nothing to the illuminance level of a point. The closer
+you are to the (front) edge the more rays escape the box and the
+darker this point will be in the image.
+
+The points at the back of the box are only 'bright' because the
+renderer assigns an artificial brightness to the ray after the first
+bounce (-ab 1). You can probably achieve a smoother gradient
+in your image by increasing the -ab value.
+
+If you enclose your open box and the camera with another
+closed box you will probably see that there is no directionality
+to the ambient light and everything will be uniformly grey (if
+there is only one material). Every ray not hits a surface and
+the brightness is only modified by the reflectance of the
+material.
+
+Regards,
+Thomas
+
+
+From bei.xiao at gmail.com  Tue Nov 25 11:02:12 2008
+From: bei.xiao at gmail.com (bei.xiao@gmail.com)
+Date: Tue Nov 25 11:02:17 2008
+Subject: [Radiance-general] ambient light
+In-Reply-To: <E0FBE352-147F-42AC-8A0B-739ED83936A0@arcor.de>
+References: <a38244780811250849k7b84340bmb16e37abd24984b4@mail.gmail.com>
+	<E0FBE352-147F-42AC-8A0B-739ED83936A0@arcor.de>
+Message-ID: <a38244780811251102w48769e1x2cbbbe77dde3116f@mail.gmail.com>
+
+Thank you very much! I will try this and get back to you about the result.
+
+Bei
+
+On Tue, Nov 25, 2008 at 12:55 PM, Thomas Bleicher <tbleicher@arcor.de>wrote:
+
+> Hello Bei.
+>
+> On 25 Nov 2008, at 16:49, bei.xiao@gmail.com wrote:
+>
+>  Hello,
+>>
+>> I am trying to render an image using only ambient light.  I noticed that
+>> the reflected light appears to be non-uniform across the objects in the
+>> scene.  The scene is a open box with the open part facing the viewer and
+>> only surfaces inside the box are lit (outside of the box is dark).  It
+>> appears that the light has some directionality to it.
+>>
+>
+> The ambient light setting in Radiance is different to other renderers
+> - or maybe it's not if I think about it. Anyway, it's not supposed to
+> replace
+> a proper light source in your scene (a 'light' or 'source' material for
+> example). It's just there to 'take over' when the proper ray tracing
+> does not produce a light source in an acceptable time. That means
+> it's only applied it the renderer has not found a light source after
+> tracing a ray for '-ab' bounces through the scene.
+>
+> In your case with a box open to the dark void every ray that leaves
+> the box adds nothing to the illuminance level of a point. The closer
+> you are to the (front) edge the more rays escape the box and the
+> darker this point will be in the image.
+>
+> The points at the back of the box are only 'bright' because the
+> renderer assigns an artificial brightness to the ray after the first
+> bounce (-ab 1). You can probably achieve a smoother gradient
+> in your image by increasing the -ab value.
+>
+> If you enclose your open box and the camera with another
+> closed box you will probably see that there is no directionality
+> to the ambient light and everything will be uniformly grey (if
+> there is only one material). Every ray not hits a surface and
+> the brightness is only modified by the reflectance of the
+> material.
+>
+> Regards,
+> Thomas
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+
+
+-- 
+Quote of the Day
+
+Writing your PHD thesis is one chance that you can be bold at your arguments
+ because it will receive no reviews!
+
+-David Brainard (my advisor)
+
+Bei Xiao
+Room 330 C
+3401 Walnut Street C Wing
+Department of Neuroscience
+University of Pennsylvania
+Philadelphia, PA 19104, USA
+Web: www.psych.upenn.edu/~beixiao
+flickr:www.flickr.com/photos/slowtempo
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20081125/b404ca6e/attachment-0001.htm
+From bei.xiao at gmail.com  Tue Nov 25 13:25:17 2008
+From: bei.xiao at gmail.com (bei.xiao@gmail.com)
+Date: Tue Nov 25 13:25:19 2008
+Subject: [Radiance-general] ambient light
+In-Reply-To: <a38244780811251102w48769e1x2cbbbe77dde3116f@mail.gmail.com>
+References: <a38244780811250849k7b84340bmb16e37abd24984b4@mail.gmail.com>
+	<E0FBE352-147F-42AC-8A0B-739ED83936A0@arcor.de>
+	<a38244780811251102w48769e1x2cbbbe77dde3116f@mail.gmail.com>
+Message-ID: <a38244780811251325r35bf09a3l86af70d0854395e8@mail.gmail.com>
+
+We tried placing the scene and camera within the context of a larger box and
+this seemed to solve the problem that we were having.  Thank you everyone
+for all your help.
+-Bei
+
+On Tue, Nov 25, 2008 at 2:02 PM, <bei.xiao@gmail.com> wrote:
+
+> Thank you very much! I will try this and get back to you about the result.
+>
+> Bei
+>
+> On Tue, Nov 25, 2008 at 12:55 PM, Thomas Bleicher <tbleicher@arcor.de>wrote:
+>
+>> Hello Bei.
+>>
+>> On 25 Nov 2008, at 16:49, bei.xiao@gmail.com wrote:
+>>
+>>  Hello,
+>>>
+>>> I am trying to render an image using only ambient light.  I noticed that
+>>> the reflected light appears to be non-uniform across the objects in the
+>>> scene.  The scene is a open box with the open part facing the viewer and
+>>> only surfaces inside the box are lit (outside of the box is dark).  It
+>>> appears that the light has some directionality to it.
+>>>
+>>
+>> The ambient light setting in Radiance is different to other renderers
+>> - or maybe it's not if I think about it. Anyway, it's not supposed to
+>> replace
+>> a proper light source in your scene (a 'light' or 'source' material for
+>> example). It's just there to 'take over' when the proper ray tracing
+>> does not produce a light source in an acceptable time. That means
+>> it's only applied it the renderer has not found a light source after
+>> tracing a ray for '-ab' bounces through the scene.
+>>
+>> In your case with a box open to the dark void every ray that leaves
+>> the box adds nothing to the illuminance level of a point. The closer
+>> you are to the (front) edge the more rays escape the box and the
+>> darker this point will be in the image.
+>>
+>> The points at the back of the box are only 'bright' because the
+>> renderer assigns an artificial brightness to the ray after the first
+>> bounce (-ab 1). You can probably achieve a smoother gradient
+>> in your image by increasing the -ab value.
+>>
+>> If you enclose your open box and the camera with another
+>> closed box you will probably see that there is no directionality
+>> to the ambient light and everything will be uniformly grey (if
+>> there is only one material). Every ray not hits a surface and
+>> the brightness is only modified by the reflectance of the
+>> material.
+>>
+>> Regards,
+>> Thomas
+>>
+>>
+>>
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general@radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>
+>
+>
+>
+> --
+> Quote of the Day
+>
+> Writing your PHD thesis is one chance that you can be bold at your
+> arguments  because it will receive no reviews!
+>
+> -David Brainard (my advisor)
+>
+> Bei Xiao
+> Room 330 C
+> 3401 Walnut Street C Wing
+> Department of Neuroscience
+> University of Pennsylvania
+> Philadelphia, PA 19104, USA
+> Web: www.psych.upenn.edu/~beixiao
+> flickr:www.flickr.com/photos/slowtempo
+>
+
+
+
+-- 
+Quote of the Day
+
+Writing your PHD thesis is one chance that you can be bold at your arguments
+ because it will receive no reviews!
+
+-David Brainard (my advisor)
+
+Bei Xiao
+Room 330 C
+3401 Walnut Street C Wing
+Department of Neuroscience
+University of Pennsylvania
+Philadelphia, PA 19104, USA
+Web: www.psych.upenn.edu/~beixiao
+flickr:www.flickr.com/photos/slowtempo
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20081125/62544826/attachment.html
+From webmaster at audice.com  Wed Nov 26 07:44:09 2008
+From: webmaster at audice.com (Ilya A. Zimnovich)
+Date: Wed Nov 26 07:44:14 2008
+Subject: [Radiance-general] CIE TC 3.33
+In-Reply-To: <a38244780811251325r35bf09a3l86af70d0854395e8@mail.gmail.com>
+References: <a38244780811250849k7b84340bmb16e37abd24984b4@mail.gmail.com>	<E0FBE352-147F-42AC-8A0B-739ED83936A0@arcor.de>	<a38244780811251102w48769e1x2cbbbe77dde3116f@mail.gmail.com>
+	<a38244780811251325r35bf09a3l86af70d0854395e8@mail.gmail.com>
+Message-ID: <492D6EC9.4080804@audice.com>
+
+Hello,
+
+I am completing my PhD on daylighting simulation and I need any of CIE
+performed validations of the Radiance in order to satisfy bureaucratic
+procedures.
+
+Has the Radiance been tested against CIE TC 3.33 test cases?
+
+Best Regards,
+Ilya
+
+From deepak.gv at ufl.edu  Wed Nov 26 20:52:19 2008
+From: deepak.gv at ufl.edu (G V DEEPAK)
+Date: Wed Nov 26 20:52:29 2008
+Subject: [Radiance-general] Fwd: radiance
+Message-ID: <574365471.202681227761539544.JavaMail.osg@osgjas02.cns.ufl.edu>
+
+Hello Everyone,
+
+I am involved in the simulations of interior Venetian blinds in a 
+10' wide, 18' long and 10' high
+office room with one 6 ' by 6 ' window placed on the south 
+oriented wall. The window sill height is 3'.
+
+I am observing that the illuminance levels inside the room (at the 
+sensor point close to the window) are higher with the interior 
+Venetian blinds placed in the model (4500? lux) as compared to the 
+model without the blinds (3000 ?lux).
+Also even though the illuminance levels are much higher (at the 
+level of 4500 lux close to the window) there is no glare index 
+observed (that is value of Daylight glare index DGI is equal to 
+zero).
+
+I am attaching a compressed file folder containing all the input 
+files and the octree files. I might sound very naive to you, 
+please excuse me for any ignorance on my part, I am very new to 
+the Radiance as well as UNIX. I have used the PICO text editor as 
+vi text editor was having some problems in my system. There is a 
+file named command, in the folder attached, it has all the 
+commands that I have used in compiling and generating different 
+components of the model. finalmultiplesim1.csh is the shell script 
+used and January.out is the output file.
+
+I would appreciate some suggestions as to where I might be going 
+wrong with the simulations.
+
+Thank you.
+
+-------------- next part --------------
+Skipped content of type multipart/mixed-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: room.rad
+Type: application/octet-stream
+Size: 1987 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20081126/d0188e64/room-0001.obj
+From deepak.gv at ufl.edu  Wed Nov 26 21:00:54 2008
+From: deepak.gv at ufl.edu (G V DEEPAK)
+Date: Wed Nov 26 21:00:57 2008
+Subject: [Radiance-general] Venetian blinds Simulation
+Message-ID: <921345904.202821227762054288.JavaMail.osg@osgjas02.cns.ufl.edu>
+
+Hello Everyone,
+
+I am involved in the simulations of interior Venetian blinds in a 
+10' wide, 18' long and 10' high
+office room with one 6 ' by 6 ' window placed on the south 
+oriented wall. The window sill height is 3'.
+
+I am observing that the illuminance levels inside the room (at the 
+sensor point close to the window) are higher with the interior 
+Venetian blinds placed in the model (4500 lux) as compared to the 
+model without the blinds (3000 lux).
+Also even though the illuminance levels are much higher (at the 
+level of 4500 lux close to the window) there is no glare index 
+observed (that is value of Daylight glare index DGI is equal to 
+zero).
+
+I am attaching all the  files related to he modeling along with 
+the input files and the octree files. I might sound very naive to 
+you, please excuse me for any ignorance on my part, I am very new 
+to the Radiance as well as UNIX. I have used the PICO text editor 
+as vi text editor was having some problems in my system. There is 
+a file named command, in the folder attached, it has all the 
+commands that I have used in compiling and generating different 
+components of the model. finalmultiplesim1.csh is the shell script 
+used and January.out is the output file.
+
+I would appreciate some suggestions as to where I might be going 
+wrong with the simulations.
+
+Thank you.
+
+
+
+G V DEEPAK
+Graduate student and Research Assistant
+M.E. Rinker, Sr. School of Building Construction.
+University Of Florida.
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: room.rad
+Type: application/octet-stream
+Size: 1987 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20081127/08e66e64/room.obj
+From David.Geisler-Moroder at uibk.ac.at  Thu Nov 27 00:28:01 2008
+From: David.Geisler-Moroder at uibk.ac.at (David Geisler-Moroder)
+Date: Thu Nov 27 00:28:07 2008
+Subject: [Radiance-general] CIE TC 3.33
+In-Reply-To: <492D6EC9.4080804@audice.com>
+References: <a38244780811250849k7b84340bmb16e37abd24984b4@mail.gmail.com>	<E0FBE352-147F-42AC-8A0B-739ED83936A0@arcor.de>	<a38244780811251102w48769e1x2cbbbe77dde3116f@mail.gmail.com>	<a38244780811251325r35bf09a3l86af70d0854395e8@mail.gmail.com>
+	<492D6EC9.4080804@audice.com>
+Message-ID: <492E5A11.2060207@uibk.ac.at>
+
+Hi,
+
+I did some validations of Radiance against these CIE test scenes, but 
+only for the
+experimental test cases (chapter 4) and a few test cases with analytical 
+references
+(chapter 5, TC 5.6, 5.7, 5.8). You can find the results in my 
+presentation from this
+year's Radiance workshop. Unfortunately I did not use the test cases, 
+which are
+dealing with daylight (I guess they would be more important for you).
+
+Kind regards,
+David
+
+Ilya A. Zimnovich wrote:
+> Hello,
+>
+> I am completing my PhD on daylighting simulation and I need any of CIE
+> performed validations of the Radiance in order to satisfy bureaucratic
+> procedures.
+>
+> Has the Radiance been tested against CIE TC 3.33 test cases?
+>
+> Best Regards,
+> Ilya
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>   
+-- 
+
+david geisler-moroder
+department of mathematics
+university of innsbruck
+technikerstr. 13/7, 6020 innsbruck
+austria
+tel. +43/(0)512 507-6092
+david.geisler-moroder@uibk.ac.at 
+
+
+From radiance at rendigo.com  Thu Nov 27 01:08:05 2008
+From: radiance at rendigo.com (Erwin Zierler)
+Date: Thu Nov 27 01:08:04 2008
+Subject: Re-2: [Radiance-general] CIE TC 3.33
+Message-ID: <0003B2BB.492E7185@192.168.0.81>
+
+Hi,
+
+I read the PDF file of your presentation yesterday and wondered if there are any plans to merge your code changes into the main Radiance distrubution at some point. Did you discuss this with Greg already? Seems to me it would improve the accuracy especially with circular light sources quite noticably.
+We too did some work on Radiance together with Arne Duer in 2003/2004 so I was happy to see there is still interest in improving Radiance at the University of Innsbruck.
+Regards,
+ Erwin Zierler
+
+-------- Original Message --------
+Subject: Re: [Radiance-general] CIE TC 3.33 (27-Nov-2008 9:29)
+From:    David Geisler-Moroder <David.Geisler-Moroder@uibk.ac.at>
+To:      radiance@rendigo.com
+
+> Hi,
+> 
+> I did some validations of Radiance against these CIE test scenes, but 
+> only for the
+> experimental test cases (chapter 4) and a few test cases with analytical 
+> references
+> (chapter 5, TC 5.6, 5.7, 5.8). You can find the results in my 
+> presentation from this
+> year's Radiance workshop. Unfortunately I did not use the test cases, 
+> which are
+> dealing with daylight (I guess they would be more important for you).
+> 
+> Kind regards,
+> David
+> 
+> Ilya A. Zimnovich wrote:
+> > Hello,
+> >
+> > I am completing my PhD on daylighting simulation and I need any of CIE
+> > performed validations of the Radiance in order to satisfy bureaucratic
+> > procedures.
+> >
+> > Has the Radiance been tested against CIE TC 3.33 test cases?
+> >
+> > Best Regards,
+> > Ilya
+> >
+> > _______________________________________________
+> > Radiance-general mailing list
+> > Radiance-general@radiance-online.org
+> > http://www.radiance-online.org/mailman/listinfo/radiance-general
+> >   
+> -- 
+> 
+> david geisler-moroder
+> department of mathematics
+> university of innsbruck
+> technikerstr. 13/7, 6020 innsbruck
+> austria
+> tel. +43/(0)512 507-6092
+> david.geisler-moroder@uibk.ac.at 
+> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+
+From David.Geisler-Moroder at uibk.ac.at  Thu Nov 27 01:31:01 2008
+From: David.Geisler-Moroder at uibk.ac.at (David Geisler-Moroder)
+Date: Thu Nov 27 01:31:06 2008
+Subject: Re-2: [Radiance-general] CIE TC 3.33
+In-Reply-To: <0003B2BB.492E7185@192.168.0.81>
+References: <0003B2BB.492E7185@192.168.0.81>
+Message-ID: <492E68D5.8080500@uibk.ac.at>
+
+Hi,
+
+I talked to Greg at the workshop in Fribourg and handed the code over to 
+him -- he wanted to have a look at it...
+
+Kind regards,
+David
+
+
+Erwin Zierler wrote:
+> Hi,
+>
+> I read the PDF file of your presentation yesterday and wondered if there are any plans to merge your code changes into the main Radiance distrubution at some point. Did you discuss this with Greg already? Seems to me it would improve the accuracy especially with circular light sources quite noticably.
+> We too did some work on Radiance together with Arne Duer in 2003/2004 so I was happy to see there is still interest in improving Radiance at the University of Innsbruck.
+> Regards,
+>  Erwin Zierler
+>
+> -------- Original Message --------
+> Subject: Re: [Radiance-general] CIE TC 3.33 (27-Nov-2008 9:29)
+> From:    David Geisler-Moroder <David.Geisler-Moroder@uibk.ac.at>
+> To:      radiance@rendigo.com
+>
+>   
+>> Hi,
+>>
+>> I did some validations of Radiance against these CIE test scenes, but 
+>> only for the
+>> experimental test cases (chapter 4) and a few test cases with analytical 
+>> references
+>> (chapter 5, TC 5.6, 5.7, 5.8). You can find the results in my 
+>> presentation from this
+>> year's Radiance workshop. Unfortunately I did not use the test cases, 
+>> which are
+>> dealing with daylight (I guess they would be more important for you).
+>>
+>> Kind regards,
+>> David
+>>
+>> Ilya A. Zimnovich wrote:
+>>     
+>>> Hello,
+>>>
+>>> I am completing my PhD on daylighting simulation and I need any of CIE
+>>> performed validations of the Radiance in order to satisfy bureaucratic
+>>> procedures.
+>>>
+>>> Has the Radiance been tested against CIE TC 3.33 test cases?
+>>>
+>>> Best Regards,
+>>> Ilya
+>>>
+>>> _______________________________________________
+>>> Radiance-general mailing list
+>>> Radiance-general@radiance-online.org
+>>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>>   
+>>>       
+>> -- 
+>>
+>> david geisler-moroder
+>> department of mathematics
+>> university of innsbruck
+>> technikerstr. 13/7, 6020 innsbruck
+>> austria
+>> tel. +43/(0)512 507-6092
+>> david.geisler-moroder@uibk.ac.at 
+>>
+>>
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general@radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>     
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>   
+
+
+-- 
+david geisler-moroder
+department of mathematics
+university of innsbruck
+technikerstr. 13/7, 6020 innsbruck
+austria
+tel. +43/(0)512 507-6092
+david.geisler-moroder@uibk.ac.at 
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20081127/4a0a55aa/attachment.htm
+From tbleicher at arcor.de  Thu Nov 27 04:15:36 2008
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Thu Nov 27 04:15:45 2008
+Subject: [Radiance-general] Fwd: radiance
+In-Reply-To: <574365471.202681227761539544.JavaMail.osg@osgjas02.cns.ufl.edu>
+References: <574365471.202681227761539544.JavaMail.osg@osgjas02.cns.ufl.edu>
+Message-ID: <D1B1C3F5-3611-447A-89C0-A1C63E717440@arcor.de>
+
+
+On 27 Nov 2008, at 04:52, G V DEEPAK wrote:
+
+> Hello Everyone,
+>
+> I am involved in the simulations of interior Venetian blinds in a
+> 10' wide, 18' long and 10' high
+> office room with one 6 ' by 6 ' window placed on the south
+> oriented wall. The window sill height is 3'.
+>
+> I am observing that the illuminance levels inside the room (at the
+> sensor point close to the window) are higher with the interior
+> Venetian blinds placed in the model (4500? lux) as compared to the
+> model without the blinds (3000 ?lux).
+
+I've just had a quick look at your files. At the sky condition that
+you've included in the files I'd say that the sunbeam through the
+window misses the sample point (therefore no direct component).
+If you have the blinds down you get some reflected sunlight at
+the sample point which increases the illuminance.
+
+I have to play around with your scene a bit to confirm this but
+from an initial rendering this seems to be the case.
+
+Can't comment on the glare issue.
+
+
+Regards,
+Thomas
+
+From tbleicher at arcor.de  Thu Nov 27 06:38:04 2008
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Thu Nov 27 06:38:15 2008
+Subject: [Radiance-general] Fwd: radiance
+In-Reply-To: <574365471.202681227761539544.JavaMail.osg@osgjas02.cns.ufl.edu>
+References: <574365471.202681227761539544.JavaMail.osg@osgjas02.cns.ufl.edu>
+Message-ID: <3A5428BF-04A8-4794-8DBB-9D06A34766C8@arcor.de>
+
+
+On 27 Nov 2008, at 04:52, G V DEEPAK wrote:
+
+> Also even though the illuminance levels are much higher (at the
+> level of 4500 lux close to the window) there is no glare index
+> observed (that is value of Daylight glare index DGI is equal to
+> zero).
+
+I've noticed that you have boxes ('tables') in your room that are
+exactly the same height as your sample points (0.75m). Please
+lift your sample points (or lower the desks) by a small amount
+(0.01m is enough). When a point for rtrace calculation is located
+on a surface (as in your case) the results are not predictable.
+
+Raising the points slightly above the surface will not influence
+your illuminance values but it will provide reliable results.
+
+I'd say it is quite unusual to do an illuminance calculation with
+a horizontal orientation directly on a surface. Effectively you are
+blocking half of the hemisphere with your table surface. I would
+run all the calculations without the desks in the scene to see if
+that makes a difference.
+
+Regards,
+Thomas
+
+
+From gregoryjward at gmail.com  Thu Nov 27 10:03:04 2008
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu Nov 27 10:03:21 2008
+Subject: Re-2: [Radiance-general] CIE TC 3.33
+In-Reply-To: <492E68D5.8080500@uibk.ac.at>
+References: <0003B2BB.492E7185@192.168.0.81> <492E68D5.8080500@uibk.ac.at>
+Message-ID: <172B4AB8-7409-4184-8C2A-C8433C435389@lmi.net>
+
+I'm still looking at this.  My main hesitation is that the changes,  
+while improving the accuracy for disk sources at close quarters, will  
+increase the number of samples by a factor of six for distant disk  
+sources.  That's a trade-off I'd rather not make, so I'm thinking of  
+how we might get around it.
+
+Best,
+-Greg
+
+> From: David Geisler-Moroder <David.Geisler-Moroder@uibk.ac.at>
+> Date: November 27, 2008 2:31:01 AM MST
+>
+> Hi,
+>
+> I talked to Greg at the workshop in Fribourg and handed the code  
+> over to him -- he wanted to have a look at it...
+>
+> Kind regards,
+> David
+>
+>
+> Erwin Zierler wrote:
+>>
+>> Hi,
+>>
+>> I read the PDF file of your presentation yesterday and wondered if  
+>> there are any plans to merge your code changes into the main  
+>> Radiance distrubution at some point. Did you discuss this with  
+>> Greg already? Seems to me it would improve the accuracy especially  
+>> with circular light sources quite noticably.
+>> We too did some work on Radiance together with Arne Duer in  
+>> 2003/2004 so I was happy to see there is still interest in  
+>> improving Radiance at the University of Innsbruck.
+>> Regards,
+>>  Erwin Zierler
+>>
+>> -------- Original Message --------
+>> Subject: Re: [Radiance-general] CIE TC 3.33 (27-Nov-2008 9:29)
+>> From:    David Geisler-Moroder <David.Geisler-Moroder@uibk.ac.at>
+>>
+>>> Hi,
+>>>
+>>> I did some validations of Radiance against these CIE test scenes,  
+>>> but
+>>> only for the
+>>> experimental test cases (chapter 4) and a few test cases with  
+>>> analytical
+>>> references
+>>> (chapter 5, TC 5.6, 5.7, 5.8). You can find the results in my
+>>> presentation from this
+>>> year's Radiance workshop. Unfortunately I did not use the test  
+>>> cases,
+>>> which are
+>>> dealing with daylight (I guess they would be more important for  
+>>> you).
+>>>
+>>> Kind regards,
+>>> David
+>>>
+>>> Ilya A. Zimnovich wrote:
+>>>
+>>>> Hello,
+>>>>
+>>>> I am completing my PhD on daylighting simulation and I need any  
+>>>> of CIE
+>>>> performed validations of the Radiance in order to satisfy  
+>>>> bureaucratic
+>>>> procedures.
+>>>>
+>>>> Has the Radiance been tested against CIE TC 3.33 test cases?
+>>>>
+>>>> Best Regards,
+>>>> Ilya
+>>>>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20081127/e287a9db/attachment.html
+From deepak.gv at ufl.edu  Thu Nov 27 11:31:43 2008
+From: deepak.gv at ufl.edu (G V DEEPAK)
+Date: Thu Nov 27 11:31:59 2008
+Subject: [Radiance-general] Fwd: radiance
+Message-ID: <1215551280.257501227814303257.JavaMail.osg@osgjas03.cns.ufl.edu>
+
+Hello Thanks for you prompt reply.. I tried the simulations by 
+removing the desks placed.. but it does not seem to make much of a 
+difference.
+
+About the sky condition, Is there something wrong with the sky 
+condition, I mean do I need to change anything in it ?
+
+Thank you
+On Thu Nov 27 07:15:36 EST 2008, Thomas Bleicher 
+<tbleicher@arcor.de> wrote:
+
+> 
+> On 27 Nov 2008, at 04:52, G V DEEPAK wrote:
+> 
+>> Hello Everyone,
+>> 
+>> I am involved in the simulations of interior Venetian blinds in a
+>> 10' wide, 18' long and 10' high
+>> office room with one 6 ' by 6 ' window placed on the south
+>> oriented wall. The window sill height is 3'.
+>> 
+>> I am observing that the illuminance levels inside the room (at 
+>> the
+>> sensor point close to the window) are higher with the interior
+>> Venetian blinds placed in the model (4500? lux) as compared to 
+>> the
+>> model without the blinds (3000 ?lux).
+> 
+> I've just had a quick look at your files. At the sky condition 
+> that
+> you've included in the files I'd say that the sunbeam through the
+> window misses the sample point (therefore no direct component).
+> If you have the blinds down you get some reflected sunlight at
+> the sample point which increases the illuminance.
+> 
+> I have to play around with your scene a bit to confirm this but
+> from an initial rendering this seems to be the case.
+> 
+> Can't comment on the glare issue.
+> 
+> 
+> Regards,
+> Thomas
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+> 
+
+
+
+G V DEEPAK
+Graduate student and Research Assistant
+M.E. Rinker, Sr. School of Building Construction.
+University Of Florida.
+
+
+From tbleicher at arcor.de  Thu Nov 27 13:38:09 2008
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Thu Nov 27 13:42:16 2008
+Subject: [Radiance-general] Fwd: radiance
+In-Reply-To: <1215551280.257501227814303257.JavaMail.osg@osgjas03.cns.ufl.edu>
+References: <1215551280.257501227814303257.JavaMail.osg@osgjas03.cns.ufl.edu>
+Message-ID: <C27798CD-33AD-4F50-AAED-219474232367@arcor.de>
+
+
+On 27 Nov 2008, at 19:31, G V DEEPAK wrote:
+
+> About the sky condition, Is there something wrong with the sky  
+> condition, I mean do I need to change anything in it ?
+
+I don't think so. I was just explaining why you might see get higher
+illumination values with the blinds down.
+
+Regards,
+Thomas
+
+
+From deepak.gv at ufl.edu  Fri Nov 28 11:23:43 2008
+From: deepak.gv at ufl.edu (G V DEEPAK)
+Date: Fri Nov 28 11:23:47 2008
+Subject: [Radiance-general] Fwd: radiance
+Message-ID: <1231527773.224531227900223809.JavaMail.osg@osgjas02.cns.ufl.edu>
+
+Hello Everyone,
+
+Thanx again Dr Bleicher, Assuming that the blinds are used to 
+block the sunlight coming inside, then why is it that the blinds 
+in my model are not blocking the sunlight coming in ? is there any 
+problem with my model..? I would really appreciate if some one 
+could help me out with this problem.
+
+Thank you.
+
+On Thu Nov 27 16:38:09 EST 2008, Thomas Bleicher 
+<tbleicher@arcor.de> wrote:
+
+> 
+> On 27 Nov 2008, at 19:31, G V DEEPAK wrote:
+> 
+>> About the sky condition, Is there something wrong with the sky  
+>> condition, I mean do I need to change anything in it ?
+> 
+> I don't think so. I was just explaining why you might see get 
+> higher
+> illumination values with the blinds down.
+> 
+> Regards,
+> Thomas
+> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+> 
+
+
+
+G V DEEPAK
+Graduate student and Research Assistant
+M.E. Rinker, Sr. School of Building Construction.
+University Of Florida.
+
+
+From tbleicher at arcor.de  Sat Nov 29 02:18:58 2008
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Sat Nov 29 02:19:06 2008
+Subject: [Radiance-general] Fwd: radiance
+In-Reply-To: <1231527773.224531227900223809.JavaMail.osg@osgjas02.cns.ufl.edu>
+References: <1231527773.224531227900223809.JavaMail.osg@osgjas02.cns.ufl.edu>
+Message-ID: <987B4522-9423-421C-9301-096A21D4093D@arcor.de>
+
+
+On 28 Nov 2008, at 19:23, G V DEEPAK wrote:
+
+> Hello Everyone,
+>
+> Thanx again Dr Bleicher, Assuming that the blinds are used to block
+> the sunlight coming inside, then why is it that the blinds in my model
+> are not blocking the sunlight coming in ?
+
+It's just Mr me.
+
+Your blinds are fine but the bright material reflects a lot of the
+sun light (direct, very bright) to the ceiling. I've rendered an
+image of the scene here:
+
+http://sites.google.com/site/tbleicher/radiance
+
+The additional illumination is - I think - caused by the light
+reflected from the blinds to your sensor point. Without blinds
+there is just the part of the sky you can see from the sample
+point (no sun for the sky condition shown). With blinds the
+sunlight is reflected diffusely at the blinds and a lot of sun light
+is redirected to the sensor point that has not been there before.
+Because the blinds are bright white this exceeds the light of
+the sky dome so you get higher illumination values.
+
+I haven't had time yet to do a renderings without blinds to
+confirm this.
+
+This might also explain why you get negative values for your
+glare index. I'm no expert but AFAIK the glare index is calculated
+from local hot spots. With your blinds there are no hot spots because
+the whole window is uniformly bright. You can look into this year's
+workshop presentations on glare from daylight by Jan Wienold:
+
+http://www.radiance-online.org/radiance-workshop7/
+
+You have to contact him directly about a copy of 'evalglare'. The
+link in the presentation still does not work ...
+
+
+Regards,
+Thomas
+
+  
+
+From perhaugaard at yahoo.dk  Sun Nov 30 02:38:42 2008
+From: perhaugaard at yahoo.dk (Per Haugaard)
+Date: Sun Nov 30 02:38:50 2008
+Subject: [Radiance-general] Gendaylit
+Message-ID: <242207.16532.qm@web26608.mail.ukl.yahoo.com>
+
+Dear users,
+
+I know this question is not directly linked to using Radiance/ESP-r but more in installing and making the programmes work as standalone and in coupling. Therefore I hope this is the right forum to post such a question :)
+
+I am using Ubuntu v. 8.10.
+
+I have downloaded and installed Radiance and ESP-r. Both programmes seems to work but there might be missing some libaries to Ubuntu. In order to make the coupling between ESP-r and Radiance, Gendaylit needs to be installed. I have done so by changing the makefile in the Gendaylit package to:
+
+CCOPTS= -g
+#CCOPTS= -Ae -g ??? # HPUX
+
+CC=gcc
+#CC=cc
+
+and issued the command 'make'. I have copied the file 'Gendaylit' to '/opt/radiance/bin'? and 'coeff_perez.dat', 'defangle.dat' and 'perezlum.cal' to '/opt/radiance/lib'
+
+To test the Gendaylit file one can issue 'make skyview'. I have done so both as root and as PHA and I get the following errors:
+
+oconv -f sky.rad outside.rad > sky.oct
+/bin/sh: oconv: not found
+make: *** [skyview] Error 127
+
+or
+
+oconv -f sky.rad outside.rad > sky.oct
+/bin/sh: cannot create sky.oct: Permission denied
+make: *** [skyview] Error 2
+
+I must also say that I have added the following to both '.profile'-files in '/home/pha' and in '/root'
+
+#Set PATH for ESP-r and Radiance
+RAYPATH= .:/lib:/opt/radiance/lib:/opt/radiance/bin
+PATH=$PATH:/opt/esru/bin:/opt/esru/esp-r/bin:/opt/radiance/lib:/opt/radiance/bin
+
+export PATH RAYPATH
+unset USERNAME
+
+I suspect that there is something wrong with '/bin/sh' which is listed in Ubuntu 8.10 as symlink 'sh -> dash' and 'sh.distrib -> bash'.
+
+I am afried to make any changes to the linux destribution because I am not that familiar with linux.
+
+Can anybody spot a solution to my problem?
+
+Any help is appresiated. 
+
+
+
+Best regards
+
+Per Haugaard
+
+______________________
+
+
+
+Per Haugaard,
+
+Griffenfeldsgade 33, 2.tv
+
+2200 K?benhavn N
+
+Denmark
+
+
+
+mobil:  +45 26 39 06 40
+
+E-mail: perhaugaard@yahoo.dk
+
+
+      Tr?nger du til at se det store billede? Kelkoo giver dig gode tilbud p? LCD TV! Se her http://dk.yahoo.com/r/pat/lcd
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20081130/de51f3c2/attachment.htm
+From tbleicher at arcor.de  Sun Nov 30 05:08:40 2008
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Sun Nov 30 05:09:05 2008
+Subject: [Radiance-general] Gendaylit
+In-Reply-To: <242207.16532.qm@web26608.mail.ukl.yahoo.com>
+References: <242207.16532.qm@web26608.mail.ukl.yahoo.com>
+Message-ID: <FCA96C8E-1E7E-443A-97AB-C626B5112340@arcor.de>
+
+
+On 30 Nov 2008, at 10:38, Per Haugaard wrote:
+
+> To test the Gendaylit file one can issue 'make skyview'. I have  
+> done so both as root and as PHA and I get the following errors:
+>
+> oconv -f sky.rad outside.rad > sky.oct
+> /bin/sh: oconv: not found
+> make: *** [skyview] Error 127
+
+You can just run gendaylit from the command line to
+test if it's working. See the man page or the make file
+you are using for some invocations. That does not tell
+you whether the output is garbage, though. Perhaps
+the makefile tests that, too?
+
+Anyway, your error points to a problem with the environment:
+the makefile can not find oconv in your path. Can you
+run the command 'oconv' from the command line in the
+same directory where the makefile is?
+
+> or
+>
+> oconv -f sky.rad outside.rad > sky.oct
+> /bin/sh: cannot create sky.oct: Permission denied
+> make: *** [skyview] Error 2
+
+Now that means you are not allowed to create a file
+in the directory where you are. Do you have write permissions
+in this directory? If you are in the '/opt' branch you will
+have to use sudo to run these commands. It's better to
+copy the test files into your home directory and run
+the tests there.
+
+> I must also say that I have added the following to both '.profile'- 
+> files in '/home/pha' and in '/root'
+>
+> #Set PATH for ESP-r and Radiance
+> RAYPATH= .:/lib:/opt/radiance/lib:/opt/radiance/bin
+> PATH=$PATH:/opt/esru/bin:/opt/esru/esp-r/bin:/opt/radiance/lib:/opt/ 
+> radiance/bin
+>
+> export PATH RAYPATH
+> unset USERNAME
+>
+> I suspect that there is something wrong with '/bin/sh' which is  
+> listed in Ubuntu 8.10 as symlink 'sh -> dash' and 'sh.distrib ->  
+> bash'.
+
+
+'dash' is just another POSIX shell. There should only be
+a problem if one of the scripts uses 'bash' syntax and does
+not ask for bash explicitly in the first line. I don't know much
+about it (especially the startup procedure) so I can't tell if
+your $PATH settings are actually read in when you start
+a terminal window.
+
+To test your settings just type 'env' and search for
+the PATH and RAYPATH settings. If they are incomplete
+or not there at all your .profile is not read when you start
+a terminal session. There are some ways to solve this
+but I'd need to know more about your system for that.
+So see first if that is (part of) your problem.
+
+> I am afried to make any changes to the linux destribution because I  
+> am not that familiar with linux.
+
+You can always install other shells next to the system
+shell. In particular 'csh' (or 'tcsh') is required by some
+Radiance scripts but not installed by default. Just adding
+another one does not damage your system.
+The system scripts on Ubuntu should run on 'bash' just as
+well btw, only somewhat slower.
+
+Regards,
+Thomas
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20081130/f0843c83/attachment.html

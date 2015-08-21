@@ -1,0 +1,5207 @@
+From gward at lmi.net  Thu Oct  4 19:30:05 2007
+From: gward at lmi.net (Greg Ward)
+Date: Thu Oct  4 19:30:15 2007
+Subject: [Radiance-general] Re: IES2Rad questions
+In-Reply-To: <1249713113.8861190432374279.JavaMail.root@babel.archenergy.com>
+References: <1249713113.8861190432374279.JavaMail.root@babel.archenergy.com>
+Message-ID: <A153DBA0-C4DB-4558-864B-EAD31287911C@lmi.net>
+
+Hi Zack,
+
+Sorry for the late response, but as I mentioned at the workshop, I  
+was out of the country.
+
+Have a look at the following change, made back in 4/93:
+
+	http://www.radiance-online.org/cgi-bin/viewcvs.cgi/ray/src/cv/ 
+source.cal.diff?r1=2.5&r2=2.6
+
+When you say that Type C photometry is measured in the counter- 
+clockwise direction, do you mean as seen from below (looking in the  
+positive-Z direction)?  If so, then the comment at the top of  
+source.cal is correct, but it looks like I messed up on the actual  
+definition of phi, which should be:
+
+	src_phi = mod( atan2(-Dy, Dx) / DEGREE, 360 );  { 0-360 }
+
+rather than what it is, now.  I'm really confused, because this is  
+effectively what I had before I made the "correction," since I also  
+had a -my transform prior to 4/93.  I don't know where my copy of  
+LM-63 is, if I even still have it, so if the above line works for  
+you, perhaps I should just change source.cal to agree with its  
+comment...
+
+-Greg
+
+> From: Zack Rogers <zrogers@archenergy.com>
+> Date: September 21, 2007 8:39:34 PM PDT
+>
+> Hello,
+>
+> I am trying to simulate a window optical daylighting system  
+> (LightLouver) in Radiance and am seeing some weird behaviour.
+>
+> The IES file I am modeling is completely asymmetric and it appears  
+> as if Radiance treats the horizontal angles in a clockwise fashion  
+> whereas the IESNA standard is to treat the horizontal angles in a  
+> counter-clockwise fashion.  A photometric representation of the  
+> file can be seen here:
+>
+> http://home.comcast.net/~z.rogers/LiLo_photometric1.jpg
+>
+> and here:
+>
+> http://home.comcast.net/~z.rogers/LiLo_photometric2.jpg
+>
+> This is an IES file that I made for a daylighting system that sits  
+> vertically in a window using a forward ray-tracing program  
+> (TracePro).  I defined it with Type C photometry; the 0 vertical  
+> angle is perpendicular to the window pointing into the room and the  
+> 0 horizontal angle is up (+Z).  The window is roughly 5' wide by 2'  
+> high and can be seen in these images as the blue rectangle.  It is  
+> apparent that the main daylight distribution is entering the room,  
+> above the horizontal and angled to the left as it enters the  
+> space.  This is as expected as this is for a south-west facade at  
+> noon.  This illustrates that the IES file was defined with the  
+> horizontal angles proceeding in a counter-clockwise fashion  
+> according to a right-hand rule.  And the the 0 horizontal angle is  
+> defined as up or in the direction of the smaller window dimension.
+>
+> I then attempted to place this IES file into the room I am  
+> modeling, seen here:
+>
+> http://home.comcast.net/~z.rogers/Lilo_room.jpg
+>
+> which gives me this rendering (low quality but the distribution of  
+> light is apparent):
+>
+> http://home.comcast.net/~z.rogers/lilo_e12pm_bad.gif
+>
+> So my first question is relative to the 0 horizontal angle and  
+> which axis IES2RAD assumes for this.  It reads in the source.cal  
+> file that +x axis is the 0 horizontal angle and the -y is the 90  
+> deg angle.  However, to get the rendering shown above I had to have  
+> my replmarks marker with +y up which seems to disagree with the  
+> header of the source.cal file.  I also have to define the longer  
+> dimension as x and the shorter dimension as y, similarly in  
+> disagreement with the source.cal file header.  When I try rendering  
+> it with +x as up I get a strange and obviously incorrect  
+> rendering.  Is this a bug or am I mis-interpreting this?
+>
+> My second question is relative the progression of horizontal  
+> angles.  The rendering obviously disagrees with the photometric  
+> illustration as the light is entering the room to the right rather  
+> than to the left as it was in the photometric view and as it should  
+> be given my daylight conditions.  Does Radiance treat the  
+> horizontal angles in a clockwise (left-hand rule) fashion or am I  
+> mis-interpretting this?  IESNA does define the other way.
+>
+> The fix I figured out for this second issue is in the source.cal  
+> file.  Instead of this:
+>
+> src_phi = mod( Atan2(Dy, -Dx) / DEGREE, 360 );    { 0-360 }
+>
+> I made the -Dx a positive like this:
+>
+> src_phi = mod( Atan2(Dy, Dx) / DEGREE, 360 );    { 0-360 }
+>
+> and this gave me a rendering with the light going in the direction  
+> I was expecting.
+>
+> One final question; anybody have a way to get Type B photometry  
+> into Radiance?  It seems like IES2Rad does not like this type.
+>
+> I hope all that made sense.  Any help is much appreciated!  I hope  
+> to see some of you at the upcoming conference!
+>
+> Regards,
+> Zack
+>
+
+From gward at lmi.net  Fri Oct  5 14:23:57 2007
+From: gward at lmi.net (Greg Ward)
+Date: Fri Oct  5 14:24:07 2007
+Subject: [Radiance-general] 2007 Workshop talks online
+Message-ID: <9A1833F6-2927-40E7-AF4E-C23CF2E9D200@lmi.net>
+
+Hi All,
+
+Thanks to everyone who attended and presented for making this year's  
+workshop such a success!  Special thanks to Katja Doerschner and the  
+UMN Digital Technology Center for hosting us.
+
+Daniel Fuller has made the talks available on <www.radiance-online.org>:
+
+	http://www.radiance-online.org/radiance-workshop6
+
+The tar file of the entire CD of talks (about 650 MBytes) can be  
+downloaded for the moment from:
+
+	http://radsite.lbl.gov/greg/RadWorkshop2007.tar
+
+Under Unix, you can try using "curl":
+
+	curl http://radsite.lbl.gov/greg/RadWorkshop2007.tar | tar xf -
+
+Best,
+-Greg
+
+From bernd at bzed.de  Sat Oct  6 15:47:46 2007
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Sat Oct  6 15:48:01 2007
+Subject: [Radiance-general] Radiance in Debian!
+Message-ID: <47081092.1070404@bzed.de>
+
+Hi list,
+
+I'm happy to announce that Radiance was accepted in Debian's unstable on
+Thursday, it'll be shipped with the next release which is called Lenny.
+
+My thanks go to Gregory J. Ward for replying to all my emails and taking
+care of all problems I run into.
+
+At the moment Debian's version is '3R8+20070924.dfsg' - which mainly
+means it is the CVS HEAD from 2007-09-24. Unfortunately I had to remove
+some pdf files which are in the Radiance distribution without sources,
+therefore the .dfsg was added to the version - but I'm sure Gregory and
+me will find a way around that, too.
+
+The following packages are shipped in Debian:
+
+* radiance - containing the binaries and manpages
+* radiance-doc - containing all other documentation and the examples
+* radiance-materials - all material files
+* radiance-sse3 - SSE3 optimized versions of the renderers, this package
+is only available on i386, the amd64 binaries are automatically
+optimized for SSE4 (if I remember right, man gcc tells more ;))
+
+The overview in the package tracing system can be found at [1].
+
+/usr/share/radiace/doc/README.Debian provides additional details, it can
+ also be read online at [2]
+
+If the pacakges are not available on your favourite platform yet,
+they're probably just not built yet - some buildds seem to lag a bit
+behind - [3]. Please try again later :)
+
+I'd be happy about any kind of feedback, especially before Lenny will be
+released - which will take some more months for sure, but as soon as it
+is released, there's no way to fix minor bugs anymore.
+
+Also - if there's any interest - I'll make sure there will be backports
+for Etch available as soon as the package migrates from unstable to testing.
+
+If there's any interest I can also build and provide a Debian live cd
+with radiance pre-installed.
+
+For developers are probably the build logs interesting - they're
+provided at [4]. Patches I've added to build under Debian are listed at
+[5]. Mainly they remove the shipped libtiff in favor for Debian's
+libtiff and fix several implicit declarations, which are known to result
+in problems on several of Debian's architectures.
+
+Feel free to ask if you have any questions regarding the packages or Debian.
+
+
+Best regards,
+
+Bernd Zeimetz
+
+
+[1]:
+http://packages.debian.org/search?keywords=radiance&searchon=names&suite=unstable&section=all
+[2]:
+http://svn.recluse.de/filedetails.php?repname=debian&path=%2Ftrunk%2Fpackages%2Fradiance%2Fdebian%2FREADME.Debian&rev=0&sc=0
+[3]:
+http://people.debian.org/~igloo/status.php?packages=radiance
+[4]: http://buildd.debian.org/build.php?pkg=radiance
+[5]:
+http://svn.recluse.de/listing.php?repname=debian&path=%2Ftrunk%2Fpackages%2Fradiance%2Fdebian%2Fpatches%2F&rev=0&sc=0
+
+-- 
+Bernd Zeimetz
+<bernd@bzed.de>                         <http://bzed.de/>
+
+From pisuke at blueyonder.co.uk  Sun Oct  7 02:05:42 2007
+From: pisuke at blueyonder.co.uk (Francesco Anselmo)
+Date: Sun Oct  7 03:05:59 2007
+Subject: [Radiance-general] Radiance in Debian!
+In-Reply-To: <47081092.1070404@bzed.de>
+References: <47081092.1070404@bzed.de>
+Message-ID: <1191747942.4400.6.camel@leviathan>
+
+Hi Bernd,
+
+That's fantastic news!
+Thanks for all your efforts, installation of Radiance on GNU/Linux
+now is as easy as it can be :-)
+
+Ciao,
+
+Francesco
+
+
+
+
+
+
+From randolph at panix.com  Thu Oct 11 21:08:48 2007
+From: randolph at panix.com (Randolph Fritz)
+Date: Thu Oct 11 21:08:59 2007
+Subject: [Radiance-general] Radiance and LBL make the news
+Message-ID: <8F3765E9-5A42-4A49-9B64-FBBC68E7ACD5@panix.com>
+
+...at least if worldchanging.com is "the news".  They do, at least,  
+count as a large mammal in The Truth Laid Bear's ranking.
+
+<http://www.worldchanging.com/archives/007384.html>
+
+Randolph
+
+From jacobs.axel at gmail.com  Fri Oct 12 11:46:56 2007
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Fri Oct 12 11:47:03 2007
+Subject: [Radiance-general] Radiance workshop
+Message-ID: <100441490710121146q2f3ade5amae2dfe6a3ae7c78d@mail.gmail.com>
+
+Dear all,
+
+I've just been flicking through the presentations of this year's
+workshop, and I get the impression you did had a lot of fun. Dancing
+and all...
+
+Excuse me if I overlooked it, but I could not find a URL for Yu
+Sheng's software. Sounds interesting enough to give it a try. I
+particularly liked that LINUX is one of the supported platforms.
+That's quite a rarity these days, with all the 'serious' guys (unlike
+me) hacking their Radiance-add-ons on Windoze or MacOS...
+
+If you are into statistics, you will have noticed that the sheer
+amount of information/knowledge/wisdom delivered at this year's
+workshop has reached new heights. The largest presentation tops
+120MB!!! I certainly would have struggled with the intake of so much
+wisdom at such a short amount of time.
+
+Fulling knowing that I will be stepping on people's toes, I would like
+to point out the rogue (un-official) European mirror of workshop
+presentations. If you are located in Europe, you might save a few
+trees here and there
+http://hardware.slashdot.org/article.pl?sid=07/09/27/2157230
+by using:
+http://luminance.londonmet.ac.uk/radiance_workshops/
+The speed might not exactly make you dizzy. Our network guys are
+rather consistent in messing things up. Depends on the moon, I guess.
+I'm afraid it's out outside of my control.
+
+Background info:
+http://www.radiance-online.org/pipermail/radiance-dev/2006-June/000741.html
+
+Cheers
+
+Axel
+
+From Denis.Bourgeois at arc.ulaval.ca  Sat Oct 13 03:58:16 2007
+From: Denis.Bourgeois at arc.ulaval.ca (Denis J. Bourgeois)
+Date: Sat Oct 13 03:58:25 2007
+Subject: [Radiance-general] eSim 2008 - Call for software demos
+Message-ID: <DF36C80B7884EE4A86EB6FD397921C382BF26D@exch-be02.ulaval.ca>
+
+(apologies for cross-postings)
+
+ 
+
+Call for software demos - eSim 2008
+
+ 
+
+21-22 May 2008
+
+Qu?bec City, Canada
+
+www.esim.ca
+
+ 
+
+The bi-annual conference of IBPSA-Canada will be held in Qu?bec City, Canada on May 21 and 22, 2008 (pre-conference workshops May 20, 2008). The event will be hosted by l'?cole d'architecture de l'Universit? Laval, in collaboration with the National Research Council Canada.
+
+ 
+
+Software companies and individuals are invited to take part in special software demos sessions during the conference. Much like technical presentations, the software demos sessions will consist of presentations in front of an audience. However, these presentations will not be peer-reviewed and therefore not included in the conference proceedings - although the submission of a technical paper on the software that meets one of the conference themes is encouraged! To be eligible for a presentation during the software demo sessions, the software must be a commercial product or be freely available (on a web site for example). Furthermore, the presenter must be a registered participant. Please note that the scientific committee has the right to limit the number of software tools being presented.
+
+ 
+
+The deadline to submit a software is November 27, 2007. To submit your software, just click on the "Software Demo Submission" tab on www.esim.ca <http://www.esim.ca/> 
+
+ 
+
+Please also be reminded that the deadline for submitting a paper abstract is October 22 - less than 10 days from now!
+
+ 
+
+Conference Chair:
+
+Dr. Denis Bourgeois denis.bourgeois@arc.ulaval.ca 
+
+ 
+
+Chair of the Scientific Committee:
+
+Dr. Christoph Reinhart christoph.reinhart@nrc-cnrc.gc.ca 
+
+ 
+
+ 
+
+ 
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20071013/da54363a/attachment.htm
+From yunxian.ho at nyu.edu  Sat Oct 13 05:01:57 2007
+From: yunxian.ho at nyu.edu (Yun-Xian Ho)
+Date: Sat Oct 13 05:02:05 2007
+Subject: [Radiance-general] perlin noise
+Message-ID: <41AC3B84-B44C-49F6-A0D4-2CBB092E5CC1@nyu.edu>
+
+Hi,
+
+
+I am using the dirt.cal function to generate Perlin noise, but I  
+would like to make a different noise pattern for each image given the  
+same A1 parameter. How do I do this?
+
+Thanks!
+
+--xian
+
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20071013/99639494/attachment.html
+From jedev at visarc.com  Sat Oct 13 07:52:14 2007
+From: jedev at visarc.com (Jack de Valpine)
+Date: Sat Oct 13 07:52:23 2007
+Subject: [Radiance-general] perlin noise
+In-Reply-To: <41AC3B84-B44C-49F6-A0D4-2CBB092E5CC1@nyu.edu>
+References: <41AC3B84-B44C-49F6-A0D4-2CBB092E5CC1@nyu.edu>
+Message-ID: <4710DB9E.3050401@visarc.com>
+
+Hi Xian,
+
+Actually dirt.cal uses the fractal noise function: fnoise3(x,y,z). The 
+Perlin noise function is noise3(x,y,z). You can look in dirt.cal to see 
+how the function is used there and in rayinit.cal for library functions 
+that are available. There are also additional functions: noise3x(x,y,z), 
+noise3y(x,y,z) and noise3z(x,y,z). As I understand from RwR these 
+represent the partial derivative of the Perlin noise function at the 
+point (see RwR page 253).
+
+Regards,
+
+-Jack de Valpine
+
+Yun-Xian Ho wrote:
+> Hi,
+>
+>
+> I am using the dirt.cal function to generate Perlin noise, but I would 
+> like to make a different noise pattern for each image given the same 
+> A1 parameter. How do I do this?
+>
+> Thanks!
+>
+> --xian
+>
+>
+>
+> ------------------------------------------------------------------------
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>   
+
+-- 
+# Jack de Valpine
+# president
+#
+# visarc incorporated
+# http://www.visarc.com
+#
+# channeling technology for superior design and construction
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20071013/a57b06bb/attachment.htm
+From gward at lmi.net  Sat Oct 13 09:28:12 2007
+From: gward at lmi.net (Greg Ward)
+Date: Sat Oct 13 09:28:18 2007
+Subject: [Radiance-general] perlin noise
+In-Reply-To: <4710DB9E.3050401@visarc.com>
+References: <41AC3B84-B44C-49F6-A0D4-2CBB092E5CC1@nyu.edu>
+	<4710DB9E.3050401@visarc.com>
+Message-ID: <1CB641A5-F09E-44DD-87A0-FCC14155F262@lmi.net>
+
+Hi Xian,
+
+Jack is correct.  If you want the noise to appear different in  
+subsequent images, you must alter your scene description.  Probably  
+the easiest is to add some transform to the material, like so:
+
+void brightfunc random_dirt
+10 dirt dirt.cal -t ${rand_x} ${rand_y} ${rand_z} -rx ${rand_rx} -ry $ 
+{rand_ry}
+0
+1 0.5
+
+I am assuming an "A1" parameter of 0.5, but use whatever you like.   
+The above data may be passed in a file (say "dirt.fmt") to rcalc and  
+inserted in your scene like so:
+
+!date +%s | rcalc -e 'seed=$1/1000 - 1192290' \
+	-e 'rand_x=3000*rand(seed*1.901+3817)' \
+	-e 'rand_y=3000*rand(seed*-1.627-592)' \
+	-e 'rand_z=3000*rand(seed*9.67-5824)' \
+	-e 'rand_rx=180*rand(seed*2.083+964)' \
+	-e 'rand_ry=360*rand(seed*4.813+371)' -o dirt.fmt
+
+random_dirt plastic my_plastic
+(etc.)
+
+Since "date +%s" outputs a different number of seconds every time you  
+run it, this should give you a new transform unrelated to the last  
+one every time -- as long as you don't run them less than a second  
+apart.
+
+Why do you want to do this, out of curiosity?
+
+-Greg
+
+> From: Jack de Valpine <jedev@visarc.com>
+> Date: October 13, 2007 7:52:14 AM PDT
+>
+> Hi Xian,
+>
+> Actually dirt.cal uses the fractal noise function: fnoise3(x,y,z).  
+> The Perlin noise function is noise3(x,y,z). You can look in  
+> dirt.cal to see how the function is used there and in rayinit.cal  
+> for library functions that are available. There are also additional  
+> functions: noise3x(x,y,z), noise3y(x,y,z) and noise3z(x,y,z). As I  
+> understand from RwR these represent the partial derivative of the  
+> Perlin noise function at the point (see RwR page 253).
+>
+> Regards,
+>
+> -Jack de Valpine
+>
+> Yun-Xian Ho wrote:
+>> Hi,
+>>
+>>
+>> I am using the dirt.cal function to generate Perlin noise, but I  
+>> would like to make a different noise pattern for each image given  
+>> the same A1 parameter. How do I do this?
+>>
+>> Thanks!
+>>
+>> --xian
+
+From jedev at visarc.com  Sat Oct 13 10:39:43 2007
+From: jedev at visarc.com (Jack de Valpine)
+Date: Sat Oct 13 10:39:52 2007
+Subject: [Radiance-general] perlin noise
+In-Reply-To: <1CB641A5-F09E-44DD-87A0-FCC14155F262@lmi.net>
+References: <41AC3B84-B44C-49F6-A0D4-2CBB092E5CC1@nyu.edu>	<4710DB9E.3050401@visarc.com>
+	<1CB641A5-F09E-44DD-87A0-FCC14155F262@lmi.net>
+Message-ID: <471102DF.90207@visarc.com>
+
+Hi Greg,
+
+Well at least I was on the right track as I had recommended something 
+similar to Xian (transforms on the noise). (I guess this was offline 
+though as I just hit reply.) I could not figure out how to generate a 
+random value like this, so I was recommending that something could be 
+scripted where random values could be generated with some other 
+scripting language. This is much more elegant as it keeps it all 
+(relatively) native and in-line to boot.
+
+-Jack
+
+Greg Ward wrote:
+> Hi Xian,
+>
+> Jack is correct.  If you want the noise to appear different in 
+> subsequent images, you must alter your scene description.  Probably 
+> the easiest is to add some transform to the material, like so:
+>
+> void brightfunc random_dirt
+> 10 dirt dirt.cal -t ${rand_x} ${rand_y} ${rand_z} -rx ${rand_rx} -ry 
+> ${rand_ry}
+> 0
+> 1 0.5
+>
+> I am assuming an "A1" parameter of 0.5, but use whatever you like.  
+> The above data may be passed in a file (say "dirt.fmt") to rcalc and 
+> inserted in your scene like so:
+>
+> !date +%s | rcalc -e 'seed=$1/1000 - 1192290' \
+>     -e 'rand_x=3000*rand(seed*1.901+3817)' \
+>     -e 'rand_y=3000*rand(seed*-1.627-592)' \
+>     -e 'rand_z=3000*rand(seed*9.67-5824)' \
+>     -e 'rand_rx=180*rand(seed*2.083+964)' \
+>     -e 'rand_ry=360*rand(seed*4.813+371)' -o dirt.fmt
+>
+> random_dirt plastic my_plastic
+> (etc.)
+>
+> Since "date +%s" outputs a different number of seconds every time you 
+> run it, this should give you a new transform unrelated to the last one 
+> every time -- as long as you don't run them less than a second apart.
+>
+> Why do you want to do this, out of curiosity?
+>
+> -Greg
+>
+>> From: Jack de Valpine <jedev@visarc.com>
+>> Date: October 13, 2007 7:52:14 AM PDT
+>>
+>> Hi Xian,
+>>
+>> Actually dirt.cal uses the fractal noise function: fnoise3(x,y,z). 
+>> The Perlin noise function is noise3(x,y,z). You can look in dirt.cal 
+>> to see how the function is used there and in rayinit.cal for library 
+>> functions that are available. There are also additional functions: 
+>> noise3x(x,y,z), noise3y(x,y,z) and noise3z(x,y,z). As I understand 
+>> from RwR these represent the partial derivative of the Perlin noise 
+>> function at the point (see RwR page 253).
+>>
+>> Regards,
+>>
+>> -Jack de Valpine
+>>
+>> Yun-Xian Ho wrote:
+>>> Hi,
+>>>
+>>>
+>>> I am using the dirt.cal function to generate Perlin noise, but I 
+>>> would like to make a different noise pattern for each image given 
+>>> the same A1 parameter. How do I do this?
+>>>
+>>> Thanks!
+>>>
+>>> --xian
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+-- 
+# Jack de Valpine
+# president
+#
+# visarc incorporated
+# http://www.visarc.com
+#
+# channeling technology for superior design and construction
+
+From jacobs.axel at gmail.com  Sun Oct 14 07:25:34 2007
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Sun Oct 14 07:25:40 2007
+Subject: [Radiance-general] Radiance in Debian!
+Message-ID: <100441490710140725v22bd4ab7u2b550ba31c50bb84@mail.gmail.com>
+
+Hi Bernd,
+
+I've read your post to radiance-general, and am just installing a
+Debian-unstable in Qemu to give you some more feedback. This has been
+taking forever--my box isn't particularly fast, and is in dire need of
+some upgrading. Will get back to you...
+
+I have a few thoughts that I'd like to share with you, irrespective of
+the actual install. Please don't take them as rants, and feel free to
+completely ignore them if you feel they're out of place. I seem to
+have a talent of always striking the wrong string with people...
+
+Before I go on, let me mention that I have not actually packaged debs
+myself, but I did roll some Radiance RPMs many years ago, and know how
+you must have been suffering from the non-standard build/install of
+Radiance. I could never release my RPMs, since this was years before
+Radiance went OS, and my explicit request with LBL got turned down.
+
+a) I've been browsing the Debian pages for the best part of an hour
+now, but just can't find the relevant page. I might be completely
+wrong (this could well have come from the Fedora packaging
+guidelines), but something tells me that auxiliary data (such as the
+*-materials.deb) should actually go into *-data.deb. This is more
+general, e.g. some of the .cal files that you have in there could be
+for, let's say some fancy rtrace projection, rather than a parametric
+material definition. I believe the general idea behind the *-data is
+that it is not required to run the software--many games have extra
+characters/cars/worlds in *-data.
+
+b) Have you checked with debian-legal yet whether the Radiance license
+is ok for inclusion of the package in Debian proper, rather than
+non-free? I've been studying the DFSG and Software License FAQ
+(http://people.debian.org/~bap/dfsg-faq.html), and ended up having
+lots of scribble (=doubts) on my print-out.
+
+The Radiance license is not OSI approved, this is what the FAQ has
+this to say about self-made licenses:
+
+"But it is our strong and heartfelt advice that using a tried-and-true
+license is best for almost all purposes. Even large corporations with
+dozens of lawyers on staff itching to write their own license have
+found this out the hard way, as in the Mozilla license saga, or the
+Djvu license story, or the trouble Trolltech had with the Qt license."
+
+The point most relevant (and potentially hindering) seems to be this one:
+
+"# Q: Are clickwrap licenses okay? (Meaning licenses require anyone
+receiving the software to click on an I AGREE button indicating ascent
+to the terms.)
+
+"A: No, not unless the clickwrap stuff can be removed. Even aside from
+freeness, as a practical matter such a clickwrap requirement would be
+an unreasonable burden upon our users.
+
+"To be technical, in principle one could put the GPL in a clickwrap
+and the license would be perfectly fine. But once you add a
+requirement that the software must be distributed via the clickwrap,
+or that clickwrap code cannot be removed from the software, your
+license becomes non-free. Since clickwraps without such a requirement
+are a bit pointless, clickwrap licenses are almost always non-free."
+
+I understand that technically there would be no problem with throwing
+up an 'agree/decline' window upon install, but I think this would be
+not be solving the problem.
+
+What I do not know is whether this click-wrap is merely an artifact
+from the days when Radiance was non-free (in which case we might be
+able to lobby LBL as the copyright holder to get it removed), or if it
+has been left in there for a purpose.
+
+If you haven't done any legal checkup yet, I'd be more than happy to
+offer my help.
+
+c) This, again, is too long ago to remember: There used to be a
+Radiance RPM in Turbolinux, and I'm fairly convinced that a Debian
+package also existed. One of them actually packaged it into
+radiance-nox11 and radiance-x11. The idea was that to use Radiance in
+render farm, all the extra X11 requirements would not have to be
+installed. I'm not suggesting that you follow this approach, but do
+give it a thought.
+
+d) Your communication with Greg happened off-list. I feel that many
+Radiance developers (and users, too) would be very interested in
+reading though the thread. BTW, this is also the reason why I'm
+posting this to radiance-devel, rather than just to you personally. I
+strongly believe that the Radiance development process should be as
+transparent as possible. Anyhow -- is there any chance of you making
+this conversation available to the rest of us (with Greg's permission,
+of course)? I am particularly interested in what Greg has to say about
+libtiff. It seems you linked to the system one, not the one which
+comes with Radiance. Does that mean that the official one can be
+trusted now?
+
+e) There's more in the pipeline, but let me get my hands dirty first.
+
+So much for now
+
+Take care
+
+Axel
+
+From bernd at bzed.de  Sun Oct 14 08:21:15 2007
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Sun Oct 14 08:21:34 2007
+Subject: [Radiance-general] Radiance in Debian!
+In-Reply-To: <100441490710140725v22bd4ab7u2b550ba31c50bb84@mail.gmail.com>
+References: <100441490710140725v22bd4ab7u2b550ba31c50bb84@mail.gmail.com>
+Message-ID: <471233EB.700@bzed.de>
+
+Hi Axel,
+
+> I have a few thoughts that I'd like to share with you, irrespective of
+> the actual install. Please don't take them as rants, and feel free to
+> completely ignore them if you feel they're out of place. I seem to
+> have a talent of always striking the wrong string with people...
+
+any comments are welcome!
+
+> a) I've been browsing the Debian pages for the best part of an hour
+> now, but just can't find the relevant page. I might be completely
+> wrong (this could well have come from the Fedora packaging
+> guidelines), but something tells me that auxiliary data (such as the
+> *-materials.deb) should actually go into *-data.deb. This is more
+
+I've called it -materials now, I doubt that makes a big difference. I
+don't know any policy about packages having to use -data. I think most
+of the stuff are material definitions in the package, so I think it's fine.
+I don't want to split them again, Debian's ftp masters like to start to
+grumble if a package builds too many small packages.
+
+If you're facing such questions - the Debian policy is what you want to
+read: http://www.debian.org/doc/debian-policy/ch-binary.html#s3.1
+
+
+> b) Have you checked with debian-legal yet whether the Radiance license
+> is ok for inclusion of the package in Debian proper, rather than
+
+radiance is NOT in non-free. It is in Debian/main.
+Actually the license is a bit weird, it's similar to the php license
+with some name changes, but it's fine for main.
+You're probably thinking abut the .dfsg. in the version number - it just
+means I had to remove two pdf files which are shipped without source.
+Seems the source of one of them is lost, and Greg will ship the other
+files's source with 3R9, or they're removed both by him. THen the .dfsg.
+is gone, too. Nothing that stops a package from going into main, though.
+
+
+> c) This, again, is too long ago to remember: There used to be a
+> Radiance RPM in Turbolinux, and I'm fairly convinced that a Debian
+> package also existed. 
+
+If I remember right Lars build those packages. I know they exist, but
+usually it is faster for me to repackage things from ground of then
+trying to understand what other people did and doing things based on that.
+
+> One of them actually packaged it into
+> radiance-nox11 and radiance-x11. The idea was that to use Radiance in
+> render farm, all the extra X11 requirements would not have to be
+> installed. I'm not suggesting that you follow this approach, but do
+> give it a thought.
+
+I gave it a thought, too, but discarded that for now as the dependency
+to x11 only brings a few hundred k of extra libraries. I doubt that's
+worth the work. You don;t need to install X completely on Debian...
+
+
+
+> d) Your communication with Greg happened off-list. I feel that many
+> Radiance developers (and users, too) would be very interested in
+> reading though the thread. BTW, this is also the reason why I'm
+> posting this to radiance-devel, rather than just to you personally. I
+> strongly believe that the Radiance development process should be as
+> transparent as possible. Anyhow -- is there any chance of you making
+> this conversation available to the rest of us (with Greg's permission,
+> of course)? I am particularly interested in what Greg has to say about
+> libtiff. It seems you linked to the system one, not the one which
+> comes with Radiance. Does that mean that the official one can be
+> trusted now?
+
+I doubt it is worth to read trough the whole thread. But if it's ok for
+Greg I'll create a summary of the interesting parts of it.
+
+About libtiff: if I remember it right (without reading trough the 30
+mails again), the reason why there's one shipped in radiance is that the
+libtiff in BSD was broken, or so. Anyway I have no other chance then
+using Debian's libtiff, I'd get slapped by the ftp masters if I'd try to
+add the source of an old version of libtiff to Debian - it's a waste of
+space and another thing you need to patch if there's a security hole in
+libtiff.
+
+
+Cheers,
+
+Bernd
+
+-- 
+Bernd Zeimetz
+<bernd@bzed.de>                         <http://bzed.de/>
+
+From bernd at bzed.de  Sun Oct 14 08:24:03 2007
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Sun Oct 14 08:24:09 2007
+Subject: [Radiance-general] Radiance in Debian!
+In-Reply-To: <471233EB.700@bzed.de>
+References: <100441490710140725v22bd4ab7u2b550ba31c50bb84@mail.gmail.com>
+	<471233EB.700@bzed.de>
+Message-ID: <47123493.3080003@bzed.de>
+
+
+
+> any comments are welcome!
+--^ is there a difference between all and any here? This confuses me too
+often.
+Every comment is welcome of course.
+
+
+-- 
+Bernd Zeimetz
+<bernd@bzed.de>                         <http://bzed.de/>
+
+From jacobs.axel at gmail.com  Sun Oct 14 12:30:54 2007
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Sun Oct 14 12:30:59 2007
+Subject: [Radiance-general] Re: Radiance in Debian!
+Message-ID: <100441490710141230l4408ef68k9a76f83b78206d82@mail.gmail.com>
+
+f) If you compile with SPECIAL="ogl", you'll get OpenGL drivers for
+the holodeck stuff. This makes it much faster and nicer. There will be
+additional device files. Here are mine:
+
+glx1.hdi   ogl.hdi   oglo.hdi   ogls.hdi   oglso.hdi   x11.hdi
+glx1h.hdi  oglh.hdi  ogloh.hdi  oglsh.hdi  oglsoh.hdi  x11h.hdi
+
+Downside would be the additional dependency on the Mesa libs.
+
+b) (again). I did not mean to suggest that Radiance is not Free. What
+I simply do not know is whether it's Free Enough to be included in
+Debian proper. It certainly is free enough for me.
+
+I already pointed out the potential click-wrap problem, which you
+simply patched away.
+
+If the click-wrap is there for no reason at all, then a better
+solution would be to get it removed up-stream. Since I don't know what
+Greg has to say about this, I shall make no further assumptions.
+Generally speaking, however, you only need to agree if somebody takes
+something away from you (e.g. your right to distribute the software,
+like it was in those old days), not if somebody gives you something
+for absolutely and unconditionally free.
+
+Another interesting phrase is para 5 of the Radiance Software License:
+
+"5. Products derived from this software may not be called "Radiance",
+nor may "Radiance" appear in their name, without prior written
+permission of Lawrence Berkeley National Laboratory."
+
+No problem with me. However, what it would stop me from doing is to
+create something like radiance-ng (as in next-generation), or
+radiance-nt (as in new technology) or nu-radiance (as in new).
+
+You will be aware that there is syslog and syslog-ng, both GPLd, I
+believe, so this kind of naming is not unheard of.
+
+The question is whether this teeny weeny restriction of my freedom to
+name a derived package anything-radiance or radiance-anything is
+enough for the very strict rules of the DSC to render it non-free.
+Probably not, but I thought I'd throw in my 2 Escudos, anyhow.
+
+I trust that you as a seasoned Debian developer with >30 packages
+under your belt know all the ins and outs of all sorts licenses and
+Social Contracts, so having your assurance that Radiance is
+Free-as-in-Debian will make me sleep comfortably at night.
+
+Thanks for your time
+
+Axel
+
+From bernd at bzed.de  Sun Oct 14 12:48:56 2007
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Sun Oct 14 12:49:09 2007
+Subject: [Radiance-general] Re: Radiance in Debian!
+In-Reply-To: <100441490710141230l4408ef68k9a76f83b78206d82@mail.gmail.com>
+References: <100441490710141230l4408ef68k9a76f83b78206d82@mail.gmail.com>
+Message-ID: <471272A8.3050004@bzed.de>
+
+Axel Jacobs wrote:
+> f) If you compile with SPECIAL="ogl", you'll get OpenGL drivers for
+> the holodeck stuff. This makes it much faster and nicer. There will be
+> additional device files. Here are mine:
+
+broken on linux, at least with the current xorg. It builds, but the
+output is distorted. Probably this depends on the graphic hardware,
+though. Something to look a bit deeper into.
+
+
+> b) (again). I did not mean to suggest that Radiance is not Free. What
+> I simply do not know is whether it's Free Enough to be included in
+> Debian proper. It certainly is free enough for me.
+
+You can be sure the license is free enough to be included in Debian,
+otherwise
+- it would have been rejected by the ftp masters. They take such things
+_serious_.
+- there wouldn't be php in Debian.
+
+
+> I already pointed out the potential click-wrap problem, which you
+> simply patched away.
+
+The license does not require any kinds of click-wrap, it is the build
+system which asks me to accept the license. As the build system is
+shipped under that license I'm free to change it (I'm not using it at
+all btw, much more easy to do build without the build-system).
+
+
+> 
+> If the click-wrap is there for no reason at all, then a better
+> solution would be to get it removed up-stream. Since I don't know what
+> Greg has to say about this, I shall make no further assumptions.
+
+Still don;t see the problem here, as the click-wrap is not in the
+license but in the build system - but it would probably make people's
+life more easy if they wouldn't have to accept the license while using
+that build system.
+
+> Another interesting phrase is para 5 of the Radiance Software License:
+> 
+> "5. Products derived from this software may not be called "Radiance",
+> nor may "Radiance" appear in their name, without prior written
+> permission of Lawrence Berkeley National Laboratory."
+
+ugly, but ok.
+http://www.debian.org/social_contract#guidelines (4)
+
+> I trust that you as a seasoned Debian developer with >30 packages
+
+... still working on becoming an official Developer :)
+
+> under your belt know all the ins and outs of all sorts licenses and
+> Social Contracts, so having your assurance that Radiance is
+> Free-as-in-Debian will make me sleep comfortably at night.
+
+even if you couldn't trust me, you can trust the ftp master who checks
+the packages. He reads _every_ file and would simply reject a package if
+- debian/copyright (== /usr/share/doc/radiance/copyright) is not
+complete or if there're any problems with a license of a single file. Or
+because there're two pdfs without source included, which happened to me
+- I just missed to look for their source.
+
+
+Cheers,
+
+Bernd
+-- 
+Bernd Zeimetz
+<bernd@bzed.de>                         <http://bzed.de/>
+
+From gward at lmi.net  Sun Oct 14 13:14:35 2007
+From: gward at lmi.net (Greg Ward)
+Date: Sun Oct 14 13:14:40 2007
+Subject: [Radiance-general] Re: Radiance in Debian!
+In-Reply-To: <471272A8.3050004@bzed.de>
+References: <100441490710141230l4408ef68k9a76f83b78206d82@mail.gmail.com>
+	<471272A8.3050004@bzed.de>
+Message-ID: <9F41AF95-5593-4891-B442-8266896D10BE@lmi.net>
+
+Hi Bernd,
+
+You are welcome to share whatever portion you like from our e-mail  
+exchange.
+
+Thanks again for all your efforts!
+-Greg
+
+From bernd at bzed.de  Sun Oct 14 13:19:27 2007
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Sun Oct 14 13:19:38 2007
+Subject: [Radiance-general] Re: Radiance in Debian!
+In-Reply-To: <9F41AF95-5593-4891-B442-8266896D10BE@lmi.net>
+References: <100441490710141230l4408ef68k9a76f83b78206d82@mail.gmail.com>	<471272A8.3050004@bzed.de>
+	<9F41AF95-5593-4891-B442-8266896D10BE@lmi.net>
+Message-ID: <471279CF.5090100@bzed.de>
+
+Hi,
+
+> You are welcome to share whatever portion you like from our e-mail
+> exchange.
+
+ok, I think I'll compile a FAQ-like document, that's probably the best
+thing to do.
+
+> Thanks again for all your efforts!
+
+you're welcome!
+
+
+Bernd
+
+-- 
+Bernd Zeimetz
+<bernd@bzed.de>                         <http://bzed.de/>
+
+From bernd at bzed.de  Sun Oct 14 14:33:56 2007
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Sun Oct 14 14:34:05 2007
+Subject: [Radiance-general] Re: Radiance in Debian!
+In-Reply-To: <9F41AF95-5593-4891-B442-8266896D10BE@lmi.net>
+References: <100441490710141230l4408ef68k9a76f83b78206d82@mail.gmail.com>	<471272A8.3050004@bzed.de>
+	<9F41AF95-5593-4891-B442-8266896D10BE@lmi.net>
+Message-ID: <47128B44.4080606@bzed.de>
+
+Hi,
+
+here come the interesting parts of the mails between Greg and me (my stuff
+quoted, a few additional links added):
+
+------------------------------------------------------------------------------
+
+> The source distribution contains an older version of libtiff, was this
+> version modified to suit the needs of radiance, or is it replaceable by the
+> libtiff which is shipped by Debian?
+
+It probably works with the new version.  My problem was getting the newer
+version to compile on Macs and FreeBSD was proving problematic, and I didn't
+need any of its features so I was lazy and just fell back to one that worked.
+
+------------------------------------------------------------------------------
+
+> Where's the difference in the build process between using 'makeall' and  the
+> SConstruct file with scons? Except that building fails when it is done by
+> scons:
+> gcc -o bin/rhpict src/hd/rhpict.o src/hd/rhpict2.o src/rt/Version.o
+> src/hd/holofile.o src/hd/holo.o src/hd/viewbeams.o -Lsrc/lib -lrtpic
+> -lrtio -lrtproc -lrtargs -lrtmath -lrtmem -lrterror -lm
+> src/lib/librtargs.a(badarg.o): In function `badarg':
+> badarg.c:(.text+0x63): undefined reference to `isfltd'
+> badarg.c:(.text+0x98): undefined reference to `isintd'
+> collect2: ld returned 1 exit status
+> scons: *** [bin/rhpict] Error 1
+> scons: building terminated because of errors. </code>
+
+Georg Mischler <schorsch@schorsch.com> is responsible for the SCONS build
+system, which is there to make compiling under Windows less painful.  I don't
+know what its status is, and Schorsch has been pretty difficult to raise these
+days.
+
+------------------------------------------------------------------------------
+
+> If I'd provide a package with optimized binaries for i386/sse3, which programs
+> would you recommend to build in an optimized version?
+
+Definitely the renderers, "rpict," "rtrace," and "rvu" built in src/rt.  After
+that, maybe some of the libraries in src/common, especially the cal*.c routines.
+ I'd have to think about it after that....
+
+------------------------------------------------------------------------------
+
+
+> - There're some manpages missing:
+>
+> W: radiance: binary-without-manpage usr/bin/debugcal
+> W: radiance: binary-without-manpage usr/bin/genambpos
+> W: radiance: binary-without-manpage usr/bin/genrhgrid
+> W: radiance: binary-without-manpage usr/bin/glaze
+> W: radiance: binary-without-manpage usr/bin/mgf2inv
+> W: radiance: binary-without-manpage usr/bin/mgfilt
+> W: radiance: binary-without-manpage usr/bin/nff2rad
+> W: radiance: binary-without-manpage usr/bin/objpict
+> W: radiance: binary-without-manpage usr/bin/optics2rad
+> W: radiance: binary-without-manpage usr/bin/pcwarp
+> W: radiance: binary-without-manpage usr/bin/pdelta
+> W: radiance: binary-without-manpage usr/bin/pgblur
+> W: radiance: binary-without-manpage usr/bin/plot4
+> W: radiance: binary-without-manpage usr/bin/ra_hexbit
+> W: radiance: binary-without-manpage usr/bin/ra_pfm
+> W: radiance: binary-without-manpage usr/bin/rlux
+> W: radiance: binary-without-manpage usr/bin/rview
+> W: radiance: binary-without-manpage usr/bin/vinfo
+> W: radiance: binary-without-manpage usr/bin/xyzimage
+>
+> do you know if there're any manpages for those tools hidden somewhere, or if
+> somebody else is working on them? If not I'll go and write minimal manpages
+> for them.
+
+I never wrote man pages for these, as they are specialty programs used by
+experts, for the most part.  Some aren't used at all, and probably shouldn't be
+compiled (like pcwarp and plot4).  No one else has written man pages for
+anything, as far as I know.  You are welcome to give it a go if you have time,
+but I don't even have time at the moment to go through them, really.
+
+https://ssl.recluse.de/svn/debian/trunk/packages/radiance/debian/radiance-experttools.sgml
+
+------------------------------------------------------------------------------
+
+
+> there're some wish scripts in src/utils which were written for wish3.6, but
+> 8.4 or so is the actual version - are there any issues I could run into while
+> shipping them?
+
+I don't think the trad code works anymore, and I haven't had time to update it.
+ I imagine it would take some effort -- a day or two or three.
+
+(trad is not included in Debian therefore)
+
+
+------------------------------------------------------------------------------
+
+
+> Could you provide me with a list of tools which shouldn't be
+> compiled/distributed at all? For all others I'll write minimal manpages
+> as long as they have some useful output with --help, for all others I'll
+> write some default manpage.
+
+Actually, we did a build clean-up a while ago and pulled out all the completely
+useless programs.  The plot4 program actually serves a purpose, which I only
+remembered after I sent the e-mail.  The pcwarp program is more experimental,
+and should probably be pulled.
+
+
+------------------------------------------------------------------------------
+
+
+> Do you have any font converters,
+> or was the conversion of helvetica and verdana done manually?
+
+As I recall, Paul Haeberli had a really simple polygonal font format, similar to
+my own, and it was a snap to convert.  If you have something that already parses
+the foreign format, and it's not difficult to add a new output format, the one I
+use is quite simple.  It's described in:
+http://radsite.lbl.gov/radiance/refer/filefmts.pdf
+
+
+------------------------------------------------------------------------------
+
+
+> in my opinion you want to add
+>
+https://ssl.recluse.de/svn/debian/trunk/packages/radiance/debian/patches/rholo-missing-devpath-fix.dpatch
+> to the next version of radiance to make sure rholo finds its dev files even
+> when they're not living in a default directory. I'm not 100% sure what happens
+> if DEVDIR is not set, though, but I guess it will just take the default.
+
+If the DEVDIR is not set, and it usually isn't, rholo searches for its device
+drivers in subdirectories named dev/ in each of the executable PATH locations.
+In other words, installing the drivers in dev/ under the Radiance executable
+directory should always work.  I put DEVDIR in there as a precaution for strange
+systems that might cause a collision.  It's never happened.
+
+> according to the FHS such files have to go to /usr/lib, therefore I have to
+> change those paths. Btw, would it make sense to include rholo in the package
+> with the sse3 optimized binaries? It seems to be kinda cpu intensive, if I
+> understand the manpage right. Do you probably have some small example I could
+> use to test rholo? Unfortunately nobody here ever used it.
+
+The files you're putting in /usr/lib are executables if that makes any
+difference -- did you mean /usr/local/lib?  It seems odd to install things in
+the main system directory.  I wouldn't want them there if I were a user
+installing a third-party package.
+
+Rholo calls rtrace to do most of the CPU-intensive work, but you can compile it
+however you think best.
+
+To test, go to the ray/obj/cabin directory and trun "make nholo."  You might
+also alter the nholo target to set -n 2 to make sure multi-processing is working
+right, and "-o x11" rather than "-o ogl" to try out the quadtree driver.
+
+
+> The ogl driver just produces random weird pixels in linux - but x11 works
+> fine.
+> I have another question for you:
+> Does it make a difference if I build radiance with -ffast-math?
+> According to the gcc manpage this makes only a difference for programs
+> which depend on an exact implementation of IEEE or ISO
+> rules/specifications for math functions. Is this the case for radiance?
+
+
+I'm sorry but not surprised to hear the OGL driver doesn't work under Linux.
+They seem to have a pretty loose idea of this standard.  It works under Mac OS
+X, but then, that's where I'm able to test and debug it.
+
+As for -ffast-math, there shouldn't be a problem for Radiance.  It doesn't rely
+on exact trig calculations or the like.
+
+------------------------------------------------------------------------------
+
+
+> The only problem I run into now is that rview is a link to vim these
+> days, and something I can't overwrite or reuse. Is it a problem if I
+> remove the rview link, or do I have to patch anything?
+
+The rview program was renamed to rvu just to avoid the conflict with vim.  I put
+a soft link in for backwards-compatibility, but you can safely remove it if it
+causes problems.
+https://ssl.recluse.de/svn/debian/trunk/packages/radiance/debian/patches/no-rview-please.dpatch
+
+------------------------------------------------------------------------------
+
+And last but not least:
+
+bzed@hal:~$ wget -q -O - http://www.radiance-online.org/main.html |
+grep hemp
+<a href="hemp://radsite.lbl.gov" target="_top">LBNL</a>, <a
+href="hemp://www.epfl.ch" target="_top">EPFL</a>, then
+
+
+-- 
+Bernd Zeimetz
+<bernd@bzed.de>                         <http://bzed.de/>
+
+From jacobs.axel at gmail.com  Sun Oct 14 16:48:13 2007
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Sun Oct 14 16:48:18 2007
+Subject: [Radiance-general] Re: Radiance in Debian!
+Message-ID: <100441490710141648p12e76558ifab8eb7677d8bd98@mail.gmail.com>
+
+>> there're some wish scripts in src/utils which were written for wish3.6, but
+>> 8.4 or so is the actual version - are there any issues I could run into while
+>> shipping them?
+
+> I don't think the trad code works anymore, and I haven't had time to update it.
+> I imagine it would take some effort -- a day or two or three.
+
+> (trad is not included in Debian therefore)
+
+I use trad all the time. Still works flawlessly without hacking in:
+- F7
+- the latest LEARNIX, which is based on KNOPPIX 5.0.1, which is based
+on Debian unstable from about one year ago.
+
+Would be a shame not to include it. Why don't you just give it a try...
+
+Axel
+
+From bernd at bzed.de  Sun Oct 14 16:57:33 2007
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Sun Oct 14 16:57:45 2007
+Subject: [Radiance-general] Re: Radiance in Debian!
+In-Reply-To: <100441490710141648p12e76558ifab8eb7677d8bd98@mail.gmail.com>
+References: <100441490710141648p12e76558ifab8eb7677d8bd98@mail.gmail.com>
+Message-ID: <4712ACED.30308@bzed.de>
+
+
+> Would be a shame not to include it. Why don't you just give it a try...
+
+I gave it a try and it failed. Gave it another try today and it worked. Probably
+it was just too late in the night when I tried it the last time.... Will be
+included in the next revision/version of the package. Thanks for the hint.
+
+-- 
+Bernd Zeimetz
+<bernd@bzed.de>                         <http://bzed.de/>
+
+From t.mcminn at curtin.edu.au  Sun Oct 14 18:47:13 2007
+From: t.mcminn at curtin.edu.au (Terrance Mc Minn)
+Date: Sun Oct 14 18:48:04 2007
+Subject: [Radiance-general] Re: Radiance in Debian
+In-Reply-To: <EXFE2R5chK6m7swxvR30000ca51@email.curtin.edu.au>
+References: <EXFE2R5chK6m7swxvR30000ca51@email.curtin.edu.au>
+Message-ID: <000301c80ecd$4f776b50$0d01a8c0@nest1>
+
+Hello All,
+
+I have been using trad with my undergraduate students for a number of years.
+Last used with the KNOPPIX_V5.1.1CD-2007-01-04-EN.iso (debian) and built
+with the makeall script. Worked fine no issues.
+
+Would be sad not to see it in there as it is very valuable in weening the
+fancy gui/mouse generation into serious software.
+
+Regards 
+
+Terry Mc Minn
+Faculty of Built Environment, Art and Design
+Curtin University of Technology
+GPO Box U 1987 Perth 6845
+Western Australia
+Email: T.Mcminn@curtin.edu.au
+CRICOS Provider Code: 00301J 
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of
+radiance-general-request@radiance-online.org
+Sent: Monday, 15 October 2007 7:52 AM
+To: radiance-general@radiance-online.org
+Subject: Radiance-general Digest, Vol 44, Issue 7
+
+Send Radiance-general mailing list submissions to
+	radiance-general@radiance-online.org
+
+To subscribe or unsubscribe via the World Wide Web, visit
+	http://www.radiance-online.org/mailman/listinfo/radiance-general
+or, via email, send a message with subject or body 'help' to
+	radiance-general-request@radiance-online.org
+
+You can reach the person managing the list at
+	radiance-general-owner@radiance-online.org
+
+When replying, please edit your Subject line so it is more specific than
+"Re: Contents of Radiance-general digest..."
+
+
+Today's Topics:
+
+   1. Re: Radiance in Debian! (Axel Jacobs)
+   2. Re: Re: Radiance in Debian! (Bernd Zeimetz)
+   3. Re: Re: Radiance in Debian! (Greg Ward)
+   4. Re: Re: Radiance in Debian! (Bernd Zeimetz)
+   5. Re: Re: Radiance in Debian! (Bernd Zeimetz)
+   6. Re: Radiance in Debian! (Axel Jacobs)
+
+
+----------------------------------------------------------------------
+
+Message: 1
+Date: Sun, 14 Oct 2007 20:30:54 +0100
+From: "Axel Jacobs" <jacobs.axel@gmail.com>
+Subject: [Radiance-general] Re: Radiance in Debian!
+To: radiance-general@radiance-online.org
+Message-ID:
+	<100441490710141230l4408ef68k9a76f83b78206d82@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+
+f) If you compile with SPECIAL="ogl", you'll get OpenGL drivers for the
+holodeck stuff. This makes it much faster and nicer. There will be
+additional device files. Here are mine:
+
+glx1.hdi   ogl.hdi   oglo.hdi   ogls.hdi   oglso.hdi   x11.hdi
+glx1h.hdi  oglh.hdi  ogloh.hdi  oglsh.hdi  oglsoh.hdi  x11h.hdi
+
+Downside would be the additional dependency on the Mesa libs.
+
+b) (again). I did not mean to suggest that Radiance is not Free. What I
+simply do not know is whether it's Free Enough to be included in Debian
+proper. It certainly is free enough for me.
+
+I already pointed out the potential click-wrap problem, which you simply
+patched away.
+
+If the click-wrap is there for no reason at all, then a better solution
+would be to get it removed up-stream. Since I don't know what Greg has to
+say about this, I shall make no further assumptions.
+Generally speaking, however, you only need to agree if somebody takes
+something away from you (e.g. your right to distribute the software, like it
+was in those old days), not if somebody gives you something for absolutely
+and unconditionally free.
+
+Another interesting phrase is para 5 of the Radiance Software License:
+
+"5. Products derived from this software may not be called "Radiance", nor
+may "Radiance" appear in their name, without prior written permission of
+Lawrence Berkeley National Laboratory."
+
+No problem with me. However, what it would stop me from doing is to create
+something like radiance-ng (as in next-generation), or radiance-nt (as in
+new technology) or nu-radiance (as in new).
+
+You will be aware that there is syslog and syslog-ng, both GPLd, I believe,
+so this kind of naming is not unheard of.
+
+The question is whether this teeny weeny restriction of my freedom to name a
+derived package anything-radiance or radiance-anything is enough for the
+very strict rules of the DSC to render it non-free.
+Probably not, but I thought I'd throw in my 2 Escudos, anyhow.
+
+I trust that you as a seasoned Debian developer with >30 packages under your
+belt know all the ins and outs of all sorts licenses and Social Contracts,
+so having your assurance that Radiance is Free-as-in-Debian will make me
+sleep comfortably at night.
+
+Thanks for your time
+
+Axel
+
+
+
+------------------------------
+
+Message: 2
+Date: Sun, 14 Oct 2007 21:48:56 +0200
+From: Bernd Zeimetz <bernd@bzed.de>
+Subject: Re: [Radiance-general] Re: Radiance in Debian!
+To: Radiance general discussion <radiance-general@radiance-online.org>
+Message-ID: <471272A8.3050004@bzed.de>
+Content-Type: text/plain; charset=ISO-8859-1
+
+Axel Jacobs wrote:
+> f) If you compile with SPECIAL="ogl", you'll get OpenGL drivers for 
+> the holodeck stuff. This makes it much faster and nicer. There will be 
+> additional device files. Here are mine:
+
+broken on linux, at least with the current xorg. It builds, but the output
+is distorted. Probably this depends on the graphic hardware, though.
+Something to look a bit deeper into.
+
+
+> b) (again). I did not mean to suggest that Radiance is not Free. What 
+> I simply do not know is whether it's Free Enough to be included in 
+> Debian proper. It certainly is free enough for me.
+
+You can be sure the license is free enough to be included in Debian,
+otherwise
+- it would have been rejected by the ftp masters. They take such things
+_serious_.
+- there wouldn't be php in Debian.
+
+
+> I already pointed out the potential click-wrap problem, which you 
+> simply patched away.
+
+The license does not require any kinds of click-wrap, it is the build system
+which asks me to accept the license. As the build system is shipped under
+that license I'm free to change it (I'm not using it at all btw, much more
+easy to do build without the build-system).
+
+
+> 
+> If the click-wrap is there for no reason at all, then a better 
+> solution would be to get it removed up-stream. Since I don't know what 
+> Greg has to say about this, I shall make no further assumptions.
+
+Still don;t see the problem here, as the click-wrap is not in the license
+but in the build system - but it would probably make people's life more easy
+if they wouldn't have to accept the license while using that build system.
+
+> Another interesting phrase is para 5 of the Radiance Software License:
+> 
+> "5. Products derived from this software may not be called "Radiance", 
+> nor may "Radiance" appear in their name, without prior written 
+> permission of Lawrence Berkeley National Laboratory."
+
+ugly, but ok.
+http://www.debian.org/social_contract#guidelines (4)
+
+> I trust that you as a seasoned Debian developer with >30 packages
+
+... still working on becoming an official Developer :)
+
+> under your belt know all the ins and outs of all sorts licenses and 
+> Social Contracts, so having your assurance that Radiance is 
+> Free-as-in-Debian will make me sleep comfortably at night.
+
+even if you couldn't trust me, you can trust the ftp master who checks the
+packages. He reads _every_ file and would simply reject a package if
+- debian/copyright (== /usr/share/doc/radiance/copyright) is not complete or
+if there're any problems with a license of a single file. Or because
+there're two pdfs without source included, which happened to me
+- I just missed to look for their source.
+
+
+Cheers,
+
+Bernd
+--
+Bernd Zeimetz
+<bernd@bzed.de>                         <http://bzed.de/>
+
+
+
+------------------------------
+
+Message: 3
+Date: Sun, 14 Oct 2007 13:14:35 -0700
+From: Greg Ward <gward@lmi.net>
+Subject: Re: [Radiance-general] Re: Radiance in Debian!
+To: Radiance general discussion <radiance-general@radiance-online.org>
+Message-ID: <9F41AF95-5593-4891-B442-8266896D10BE@lmi.net>
+Content-Type: text/plain; charset=US-ASCII; delsp=yes; format=flowed
+
+Hi Bernd,
+
+You are welcome to share whatever portion you like from our e-mail  
+exchange.
+
+Thanks again for all your efforts!
+-Greg
+
+
+
+------------------------------
+
+Message: 4
+Date: Sun, 14 Oct 2007 22:19:27 +0200
+From: Bernd Zeimetz <bernd@bzed.de>
+Subject: Re: [Radiance-general] Re: Radiance in Debian!
+To: Radiance general discussion <radiance-general@radiance-online.org>
+Message-ID: <471279CF.5090100@bzed.de>
+Content-Type: text/plain; charset=ISO-8859-1
+
+Hi,
+
+> You are welcome to share whatever portion you like from our e-mail
+> exchange.
+
+ok, I think I'll compile a FAQ-like document, that's probably the best
+thing to do.
+
+> Thanks again for all your efforts!
+
+you're welcome!
+
+
+Bernd
+
+-- 
+Bernd Zeimetz
+<bernd@bzed.de>                         <http://bzed.de/>
+
+
+
+------------------------------
+
+Message: 5
+Date: Sun, 14 Oct 2007 23:33:56 +0200
+From: Bernd Zeimetz <bernd@bzed.de>
+Subject: Re: [Radiance-general] Re: Radiance in Debian!
+To: Radiance general discussion <radiance-general@radiance-online.org>
+Message-ID: <47128B44.4080606@bzed.de>
+Content-Type: text/plain; charset=ISO-8859-1
+
+Hi,
+
+here come the interesting parts of the mails between Greg and me (my stuff
+quoted, a few additional links added):
+
+----------------------------------------------------------------------------
+--
+
+> The source distribution contains an older version of libtiff, was this
+> version modified to suit the needs of radiance, or is it replaceable by
+the
+> libtiff which is shipped by Debian?
+
+It probably works with the new version.  My problem was getting the newer
+version to compile on Macs and FreeBSD was proving problematic, and I didn't
+need any of its features so I was lazy and just fell back to one that
+worked.
+
+----------------------------------------------------------------------------
+--
+
+> Where's the difference in the build process between using 'makeall' and
+the
+> SConstruct file with scons? Except that building fails when it is done by
+> scons:
+> gcc -o bin/rhpict src/hd/rhpict.o src/hd/rhpict2.o src/rt/Version.o
+> src/hd/holofile.o src/hd/holo.o src/hd/viewbeams.o -Lsrc/lib -lrtpic
+> -lrtio -lrtproc -lrtargs -lrtmath -lrtmem -lrterror -lm
+> src/lib/librtargs.a(badarg.o): In function `badarg':
+> badarg.c:(.text+0x63): undefined reference to `isfltd'
+> badarg.c:(.text+0x98): undefined reference to `isintd'
+> collect2: ld returned 1 exit status
+> scons: *** [bin/rhpict] Error 1
+> scons: building terminated because of errors. </code>
+
+Georg Mischler <schorsch@schorsch.com> is responsible for the SCONS build
+system, which is there to make compiling under Windows less painful.  I
+don't
+know what its status is, and Schorsch has been pretty difficult to raise
+these
+days.
+
+----------------------------------------------------------------------------
+--
+
+> If I'd provide a package with optimized binaries for i386/sse3, which
+programs
+> would you recommend to build in an optimized version?
+
+Definitely the renderers, "rpict," "rtrace," and "rvu" built in src/rt.
+After
+that, maybe some of the libraries in src/common, especially the cal*.c
+routines.
+ I'd have to think about it after that....
+
+----------------------------------------------------------------------------
+--
+
+
+> - There're some manpages missing:
+>
+> W: radiance: binary-without-manpage usr/bin/debugcal
+> W: radiance: binary-without-manpage usr/bin/genambpos
+> W: radiance: binary-without-manpage usr/bin/genrhgrid
+> W: radiance: binary-without-manpage usr/bin/glaze
+> W: radiance: binary-without-manpage usr/bin/mgf2inv
+> W: radiance: binary-without-manpage usr/bin/mgfilt
+> W: radiance: binary-without-manpage usr/bin/nff2rad
+> W: radiance: binary-without-manpage usr/bin/objpict
+> W: radiance: binary-without-manpage usr/bin/optics2rad
+> W: radiance: binary-without-manpage usr/bin/pcwarp
+> W: radiance: binary-without-manpage usr/bin/pdelta
+> W: radiance: binary-without-manpage usr/bin/pgblur
+> W: radiance: binary-without-manpage usr/bin/plot4
+> W: radiance: binary-without-manpage usr/bin/ra_hexbit
+> W: radiance: binary-without-manpage usr/bin/ra_pfm
+> W: radiance: binary-without-manpage usr/bin/rlux
+> W: radiance: binary-without-manpage usr/bin/rview
+> W: radiance: binary-without-manpage usr/bin/vinfo
+> W: radiance: binary-without-manpage usr/bin/xyzimage
+>
+> do you know if there're any manpages for those tools hidden somewhere, or
+if
+> somebody else is working on them? If not I'll go and write minimal
+manpages
+> for them.
+
+I never wrote man pages for these, as they are specialty programs used by
+experts, for the most part.  Some aren't used at all, and probably shouldn't
+be
+compiled (like pcwarp and plot4).  No one else has written man pages for
+anything, as far as I know.  You are welcome to give it a go if you have
+time,
+but I don't even have time at the moment to go through them, really.
+
+https://ssl.recluse.de/svn/debian/trunk/packages/radiance/debian/radiance-ex
+perttools.sgml
+
+----------------------------------------------------------------------------
+--
+
+
+> there're some wish scripts in src/utils which were written for wish3.6,
+but
+> 8.4 or so is the actual version - are there any issues I could run into
+while
+> shipping them?
+
+I don't think the trad code works anymore, and I haven't had time to update
+it.
+ I imagine it would take some effort -- a day or two or three.
+
+(trad is not included in Debian therefore)
+
+
+----------------------------------------------------------------------------
+--
+
+
+> Could you provide me with a list of tools which shouldn't be
+> compiled/distributed at all? For all others I'll write minimal manpages
+> as long as they have some useful output with --help, for all others I'll
+> write some default manpage.
+
+Actually, we did a build clean-up a while ago and pulled out all the
+completely
+useless programs.  The plot4 program actually serves a purpose, which I only
+remembered after I sent the e-mail.  The pcwarp program is more
+experimental,
+and should probably be pulled.
+
+
+----------------------------------------------------------------------------
+--
+
+
+> Do you have any font converters,
+> or was the conversion of helvetica and verdana done manually?
+
+As I recall, Paul Haeberli had a really simple polygonal font format,
+similar to
+my own, and it was a snap to convert.  If you have something that already
+parses
+the foreign format, and it's not difficult to add a new output format, the
+one I
+use is quite simple.  It's described in:
+http://radsite.lbl.gov/radiance/refer/filefmts.pdf
+
+
+----------------------------------------------------------------------------
+--
+
+
+> in my opinion you want to add
+>
+https://ssl.recluse.de/svn/debian/trunk/packages/radiance/debian/patches/rho
+lo-missing-devpath-fix.dpatch
+> to the next version of radiance to make sure rholo finds its dev files
+even
+> when they're not living in a default directory. I'm not 100% sure what
+happens
+> if DEVDIR is not set, though, but I guess it will just take the default.
+
+If the DEVDIR is not set, and it usually isn't, rholo searches for its
+device
+drivers in subdirectories named dev/ in each of the executable PATH
+locations.
+In other words, installing the drivers in dev/ under the Radiance executable
+directory should always work.  I put DEVDIR in there as a precaution for
+strange
+systems that might cause a collision.  It's never happened.
+
+> according to the FHS such files have to go to /usr/lib, therefore I have
+to
+> change those paths. Btw, would it make sense to include rholo in the
+package
+> with the sse3 optimized binaries? It seems to be kinda cpu intensive, if I
+> understand the manpage right. Do you probably have some small example I
+could
+> use to test rholo? Unfortunately nobody here ever used it.
+
+The files you're putting in /usr/lib are executables if that makes any
+difference -- did you mean /usr/local/lib?  It seems odd to install things
+in
+the main system directory.  I wouldn't want them there if I were a user
+installing a third-party package.
+
+Rholo calls rtrace to do most of the CPU-intensive work, but you can compile
+it
+however you think best.
+
+To test, go to the ray/obj/cabin directory and trun "make nholo."  You might
+also alter the nholo target to set -n 2 to make sure multi-processing is
+working
+right, and "-o x11" rather than "-o ogl" to try out the quadtree driver.
+
+
+> The ogl driver just produces random weird pixels in linux - but x11 works
+> fine.
+> I have another question for you:
+> Does it make a difference if I build radiance with -ffast-math?
+> According to the gcc manpage this makes only a difference for programs
+> which depend on an exact implementation of IEEE or ISO
+> rules/specifications for math functions. Is this the case for radiance?
+
+
+I'm sorry but not surprised to hear the OGL driver doesn't work under Linux.
+They seem to have a pretty loose idea of this standard.  It works under Mac
+OS
+X, but then, that's where I'm able to test and debug it.
+
+As for -ffast-math, there shouldn't be a problem for Radiance.  It doesn't
+rely
+on exact trig calculations or the like.
+
+----------------------------------------------------------------------------
+--
+
+
+> The only problem I run into now is that rview is a link to vim these
+> days, and something I can't overwrite or reuse. Is it a problem if I
+> remove the rview link, or do I have to patch anything?
+
+The rview program was renamed to rvu just to avoid the conflict with vim.  I
+put
+a soft link in for backwards-compatibility, but you can safely remove it if
+it
+causes problems.
+https://ssl.recluse.de/svn/debian/trunk/packages/radiance/debian/patches/no-
+rview-please.dpatch
+
+----------------------------------------------------------------------------
+--
+
+And last but not least:
+
+bzed@hal:~$ wget -q -O - http://www.radiance-online.org/main.html |
+grep hemp
+<a href="hemp://radsite.lbl.gov" target="_top">LBNL</a>, <a
+href="hemp://www.epfl.ch" target="_top">EPFL</a>, then
+
+
+-- 
+Bernd Zeimetz
+<bernd@bzed.de>                         <http://bzed.de/>
+
+
+
+------------------------------
+
+Message: 6
+Date: Mon, 15 Oct 2007 00:48:13 +0100
+From: "Axel Jacobs" <jacobs.axel@gmail.com>
+Subject: [Radiance-general] Re: Radiance in Debian!
+To: radiance-general@radiance-online.org
+Message-ID:
+	<100441490710141648p12e76558ifab8eb7677d8bd98@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+
+>> there're some wish scripts in src/utils which were written for wish3.6,
+but
+>> 8.4 or so is the actual version - are there any issues I could run into
+while
+>> shipping them?
+
+> I don't think the trad code works anymore, and I haven't had time to
+update it.
+> I imagine it would take some effort -- a day or two or three.
+
+> (trad is not included in Debian therefore)
+
+I use trad all the time. Still works flawlessly without hacking in:
+- F7
+- the latest LEARNIX, which is based on KNOPPIX 5.0.1, which is based
+on Debian unstable from about one year ago.
+
+Would be a shame not to include it. Why don't you just give it a try...
+
+Axel
+
+
+
+------------------------------
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+End of Radiance-general Digest, Vol 44, Issue 7
+***********************************************
+
+From t.mcminn at curtin.edu.au  Sun Oct 14 18:48:10 2007
+From: t.mcminn at curtin.edu.au (Terrance Mc Minn)
+Date: Sun Oct 14 18:48:55 2007
+Subject: [Radiance-general] Recall: Radiance in Debian
+Message-ID: <!&!GAAAAAAAAACq4wUgLTnxS4BToakPVrmewoAAABgAAAAAAAAAquMFIC058UuAU6GpD1a5noQHIQAAAAAAEAAAAEQQgWHD5hBAjYbjIX/EV+YXAAAAUmU6IFJhZGlhbmNlIGluIERlYmlhbgA=@curtin.edu.au>
+
+Terrance Mc Minn would like to recall the message, "Radiance in Debian".
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: winmail.dat
+Type: application/ms-tnef
+Size: 1105 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20071015/f9fe5366/winmail.bin
+From t.mcminn at curtin.edu.au  Sun Oct 14 18:48:24 2007
+From: t.mcminn at curtin.edu.au (Terrance Mc Minn)
+Date: Sun Oct 14 18:49:21 2007
+Subject: [Radiance-general] Re: Radiance in Debian
+In-Reply-To: <EXFE2R5chK6m7swxvR30000ca51@email.curtin.edu.au>
+References: <EXFE2R5chK6m7swxvR30000ca51@email.curtin.edu.au>
+Message-ID: <!&!GAAAAAAAAACq4wUgLTnxS4BToakPVrmewoAAABgAAAAAAAAAquMFIC058UuAU6GpD1a5noQHIQAAAAAAEAAAAEQQgWHD5hBAjYbjIX/EV+YXAAAAUmU6IFJhZGlhbmNlIGluIERlYmlhbgA=@curtin.edu.au>
+
+Hello All,
+
+I have been using trad with my undergraduate students for a number of years.
+Last used with the KNOPPIX_V5.1.1CD-2007-01-04-EN.iso (debian) and built
+with the makeall script. Worked fine no issues.
+
+Would be sad not to see it in there as it is very valuable in weening the
+fancy gui/mouse generation into serious software.
+
+Regards 
+
+Terry Mc Minn
+Faculty of Built Environment, Art and Design
+Curtin University of Technology
+GPO Box U 1987 Perth 6845
+Western Australia
+Email: T.Mcminn@curtin.edu.au
+CRICOS Provider Code: 00301J 
+
+
+From bernd at bzed.de  Sun Oct 14 23:47:34 2007
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Sun Oct 14 23:47:46 2007
+Subject: [Radiance-general] Re: Radiance in Debian
+In-Reply-To: <!&!GAAAAAAAAACq4wUgLTnxS4BToakPVrmewoAAABgAAAAAAAAAquMFIC058UuAU6GpD1a5noQHIQAAAAAAEAAAAEQQgWHD5hBAjYbjIX/EV+YXAAAAUmU6IFJhZGlhbmNlIGluIERlYmlhbgA=@curtin.edu.au>
+References: <EXFE2R5chK6m7swxvR30000ca51@email.curtin.edu.au>
+	<!&!GAAAAAAAAACq4wUgLTnxS4BToakPVrmewoAAABgAAAAAAAAAquMFIC058UuAU6GpD1a5noQHIQAAAAAAEAAAAEQQgWHD5hBAjYbjIX/EV+YXAAAAUmU6IFJhZGlhbmNlIGluIERlYmlhbgA=@curtin.edu.au>
+Message-ID: <47130D06.7020209@bzed.de>
+
+Hi,
+
+> I have been using trad with my undergraduate students for a number of years.
+> Last used with the KNOPPIX_V5.1.1CD-2007-01-04-EN.iso (debian) and built
+> with the makeall script. Worked fine no issues.
+
+should be easy to provide a Debian live CD with radiance. I'll look into
+that once radiance is migrated to testing, and all bugs/wishes/... are
+fixed.
+
+Cheers,
+
+Bernd
+
+-- 
+Bernd Zeimetz
+<bernd@bzed.de>                         <http://bzed.de/>
+
+From minki.sung at gmail.com  Mon Oct 15 04:15:53 2007
+From: minki.sung at gmail.com (Minki Sung)
+Date: Mon Oct 15 04:15:59 2007
+Subject: [Radiance-general] Questionaire on fluorescent lamp
+Message-ID: <3acd9e4a0710150415u34182188t8479bf8d78f54e51@mail.gmail.com>
+
+Hello Everybody,
+
+It's my first time to mail to the radiance mailing list.
+I'm using Radiance to calculate near field illuminance (in fact radiation)
+from bare fluorescent lamps.
+Before doing with real mode data, I tested one with a bare fluorescent lamp
+and a plan 20 centimeter away from the long and cylindrical lamp. But the
+result right under the lamp was strange, that is, the other values were as I
+expected but only in the area directly under the lamp the illuminance was
+highest at the center and decreased gradiently as went to the end of the
+lamp. For example, the illuminance was 5000 lux at the center right under
+the lamp, but it decreased to 15 lux at a quarter point of the lamp,
+though the two would be almost same.
+Maybe I am not understanding properly the lamp description. Can you anyone
+explain this to me? Or Radiance is not adequate for near field calculation
+with long cylindrical lamp?
+
+Best Regards
+
+Minki Sung
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20071015/87d38f76/attachment.htm
+From Giulio.Antonutto at arup.com  Mon Oct 15 04:26:23 2007
+From: Giulio.Antonutto at arup.com (Giulio Antonutto)
+Date: Mon Oct 15 04:26:34 2007
+Subject: [Radiance-general] Questionaire on fluorescent lamp
+Message-ID: <CC0B19F4C6132F4D9FDDEBF194200FB5042D8288@ldcexc02.global.arup.com>
+
+try to have a look for the -ds setting...
+
+ 
+
+if this still a problem for your application I'd investigate the use of
+'glow' (0 0 4 r g b 0) in conjunction with an indirect calculation (-ab
+n, n>0) 
+
+ 
+
+to avoid ambient cache problems you may switch to -aa 0 -u  but this
+will require over sampling of your grid to remove Montecarlo noise.
+
+ 
+
+hope this makes sense,
+
+ 
+
+ciao
+
+ 
+
+G.
+
+ 
+
+ 
+
+ 
+
+________________________________
+
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of Minki
+Sung
+Sent: 15 October 2007 12:16
+To: radiance-general@radiance-online.org
+Subject: [Radiance-general] Questionaire on fluorescent lamp
+
+ 
+
+Hello Everybody,
+
+ 
+
+It's my first time to mail to the radiance mailing list.
+
+I'm using Radiance to calculate near field illuminance (in fact
+radiation) from bare fluorescent lamps.
+
+Before doing with real mode data, I tested one with a bare fluorescent
+lamp and a plan 20 centimeter away from the long and cylindrical lamp.
+But the result right under the lamp was strange, that is, the other
+values were as I expected but only in the area directly under the lamp
+the illuminance was highest at the center and decreased gradiently as
+went to the end of the lamp. For example, the illuminance was 5000 lux
+at the center right under the lamp, but it decreased to 15 lux at a
+quarter point of the lamp, though the two would be almost same. 
+
+Maybe I am not understanding properly the lamp description. Can you
+anyone explain this to me? Or Radiance is not adequate for near field
+calculation with long cylindrical lamp?
+
+ 
+
+Best Regards
+
+ 
+
+Minki Sung
+
+ 
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20071015/d25ac151/attachment.html
+From bernd at bzed.de  Fri Oct 19 02:09:42 2007
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Fri Oct 19 02:09:59 2007
+Subject: [Radiance-general] Re: Radiance in Debian
+In-Reply-To: <47130D06.7020209@bzed.de>
+References: <EXFE2R5chK6m7swxvR30000ca51@email.curtin.edu.au>	<!&!GAAAAAAAAACq4wUgLTnxS4BToakPVrmewoAAABgAAAAAAAAAquMFIC058UuAU6GpD1a5noQHIQAAAAAAEAAAAEQQgWHD5hBAjYbjIX/EV+YXAAAAUmU6IFJhZGlhbmNlIGluIERlYmlhbgA=@curtin.edu.au>
+	<47130D06.7020209@bzed.de>
+Message-ID: <47187456.1000606@bzed.de>
+
+Hi,
+
+unfortunately the radiance package builds two programs in /usr/bin which
+have a name clash with other packages:
+
+- rcalc
+- genbox
+
+According to Debian's policy this is not allowed to have two programs
+with the same name and different functionality in different packages. If
+the package maintainer can't find a solution, the binaries of both
+packages have to be renamed.
+
+For rcalc the maintainer of the rcalc package agreed to rename the
+binary to grcalc, so this doesn't mean any change for us.
+
+After discussing the issue with the maintainers of the other package
+which provides the genbox binary I have agreed to rename genbox in
+Debian, as their package (gromacs, a molecular dynamics simulator) is in
+Debian since a long time and their genbox is also used in a lot of
+scripts which run it on large clusters. Imho agreeing here to rename
+genbox is the only right way to go, although this is a bit annoying for
+radiance users of course.
+
+My suggestion would be to rename genbox to genrbox, but I'm open for any
+other suggestion.
+The rename will be documented in /usr/share/doc/{README,NEWS}.Debian and
+of course nobody will be stopped to add a symlink on their system which
+points form genbox to genrbox - but I can't ship this link with Debian.
+
+
+Any suggestions and wishes are welcome.
+
+Cheers,
+
+Bernd
+
+-- 
+Bernd Zeimetz
+<bernd@bzed.de>                         <http://bzed.de/>
+
+From Denis.Bourgeois at arc.ulaval.ca  Fri Oct 19 04:42:17 2007
+From: Denis.Bourgeois at arc.ulaval.ca (Denis J. Bourgeois)
+Date: Fri Oct 19 04:42:23 2007
+Subject: [Radiance-general] Final call for abstracts - eSim 2008
+Message-ID: <DF36C80B7884EE4A86EB6FD397921C382BF2A0@exch-be02.ulaval.ca>
+
+(apologies for cross-postings)
+
+ 
+
+Final call for abstracts - eSim 2008
+
+ 
+
+21-22 May 2008
+
+Qu?bec City, Canada
+
+www.esim.ca
+
+ 
+
+A gentle reminder: the deadline for submitting a paper abstract for eSim 2008 is October 22 - 3 days from now! Just click on the "Call for Abstracts" tab on www.esim.ca <http://www.esim.ca/> 
+
+ 
+
+Looking forward to seeing you in Qu?bec!
+
+ 
+
+Conference Chair:
+
+Dr. Denis Bourgeois denis.bourgeois@arc.ulaval.ca 
+
+ 
+
+Chair of the Scientific Committee:
+
+Dr. Christoph Reinhart christoph.reinhart@nrc-cnrc.gc.ca 
+
+ 
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20071019/adaa35cb/attachment.htm
+From randolph at panix.com  Fri Oct 19 06:28:36 2007
+From: randolph at panix.com (Randolph Fritz)
+Date: Fri Oct 19 06:28:46 2007
+Subject: [Radiance-general] Re: Radiance in Debian
+In-Reply-To: <47187456.1000606@bzed.de>
+References: <EXFE2R5chK6m7swxvR30000ca51@email.curtin.edu.au>	<!&!GAAAAAAAAACq4wUgLTnxS4BToakPVrmewoAAABgAAAAAAAAAquMFIC058UuAU6GpD1a5noQHIQAAAAAAEAAAAEQQgWHD5hBAjYbjIX/EV+YXAAAAUmU6IFJhZGlhbmNlIGluIERlYmlhbgA=@curtin.edu.au>
+	<47130D06.7020209@bzed.de> <47187456.1000606@bzed.de>
+Message-ID: <298EB587-1B0D-4CD6-8F17-0A0265BB48E9@panix.com>
+
+"Genbox" is a name in a decades-old language, and I don't see that  
+most researchers are going change their scene descriptions to  
+accomodate it, let alone revise the docs.  Could it (and the other  
+scene generation primitives) perhaps be placed in a separate directory?
+
+Randolph
+
+On Oct 19, 2007, at 2:09 AM, Bernd Zeimetz wrote:
+
+>
+> My suggestion would be to rename genbox to genrbox, but I'm open  
+> for any
+> other suggestion.
+
+From mstock at umich.edu  Fri Oct 19 07:32:02 2007
+From: mstock at umich.edu (Mark Stock)
+Date: Fri Oct 19 07:32:10 2007
+Subject: [Radiance-general] Radiance-related talk slides
+Message-ID: <Pine.LNX.4.64.0710190926360.6999@rygar.gpcc.itd.umich.edu>
+
+Folks,
+
+I gave a talk yesterday to a group of science-y artists in Boston 
+about computational science and the making of one of my recent 
+Radiance-made SIGGRAPH images, Open House. In it, I categorize 
+computer simulation techiques and show lots of examples from my 
+own (Radiance-powered) visualizations.
+
+The PDF slides are here (4.6 MB):
+http://mark.technolope.org/image/talk_collusion/collision_talk_5.pdf
+
+And all of the animations are here:
+http://mark.technolope.org/image/talk_collusion/
+
+Mark
+
+From gward at lmi.net  Fri Oct 19 08:25:26 2007
+From: gward at lmi.net (Greg Ward)
+Date: Fri Oct 19 08:25:29 2007
+Subject: [Radiance-general] Re: Radiance in Debian
+In-Reply-To: <298EB587-1B0D-4CD6-8F17-0A0265BB48E9@panix.com>
+References: <EXFE2R5chK6m7swxvR30000ca51@email.curtin.edu.au>	<!&!GAAAAAAAAACq4wUgLTnxS4BToakPVrmewoAAABgAAAAAAAAAquMFIC058UuAU6GpD1a5noQHIQAAAAAAEAAAAEQQgWHD5hBAjYbjIX/EV+YXAAAAUmU6IFJhZGlhbmNlIGluIERlYmlhbgA=@curtin.edu.au>
+	<47130D06.7020209@bzed.de> <47187456.1000606@bzed.de>
+	<298EB587-1B0D-4CD6-8F17-0A0265BB48E9@panix.com>
+Message-ID: <7FA9B4E5-3E71-45EA-BD39-B3D4AEAB5649@lmi.net>
+
+Hi Bernd,
+
+I'm very grateful to the folks who are willing to rename rcalc, as  
+this would have been a lot of work to change in Radiance.  Even if  
+it's not one of the most common commands from a user's perspective,  
+it's applied in dozens of scripts, mine and others', which would have  
+been very tedious to track down and change.
+
+However, as Randolph says, genbox is also widely used, mostly in  
+scene descriptions.  While we cannot easily change the existing docs,  
+this didn't stop us from renaming "rview" to "rvu" to avoid the clash  
+with one of vi's half-dozen monikers.  As you noticed, I added a  
+symbolic link in the executable directory from rview -> rvu as a stop- 
+gap until people picked up the new name.  Would it be possible to do  
+this with genbox -> genrbox?
+
+Asking that packages not have any name collisions is a laudable but  
+not terribly realistic goal.  Surely, there are so many Debian  
+packages by now that name collisions must happen left and right.  No?
+
+If we aren't even allowed a symbolic link, one dastardly work-around  
+is to add a check for the "genbox" command when parsing scene input,  
+substituting "genrbox" and printing a warning of its deprecation.   
+Ugly, but it might work.
+
+-Greg
+
+> From: Randolph Fritz <randolph@panix.com>
+> Date: October 19, 2007 6:28:36 AM PDT
+>
+> "Genbox" is a name in a decades-old language, and I don't see that  
+> most researchers are going change their scene descriptions to  
+> accomodate it, let alone revise the docs.  Could it (and the other  
+> scene generation primitives) perhaps be placed in a separate  
+> directory?
+>
+> Randolph
+>
+> On Oct 19, 2007, at 2:09 AM, Bernd Zeimetz wrote:
+>
+>>
+>> My suggestion would be to rename genbox to genrbox, but I'm open  
+>> for any
+>> other suggestion.
+
+From gward at lmi.net  Fri Oct 19 08:53:47 2007
+From: gward at lmi.net (Greg Ward)
+Date: Fri Oct 19 08:53:51 2007
+Subject: [Radiance-general] Radiance-related talk slides
+In-Reply-To: <Pine.LNX.4.64.0710190926360.6999@rygar.gpcc.itd.umich.edu>
+References: <Pine.LNX.4.64.0710190926360.6999@rygar.gpcc.itd.umich.edu>
+Message-ID: <B31C0D84-867F-4865-925C-6CFE37D2D4FE@lmi.net>
+
+Hi Mark,
+
+Looks like a really cool talk -- wish I could have been there.  I  
+could spend all day watching the gravity simulation.  Did you do this  
+one?  Seems like it would take a small gaggle of supercomputers to  
+pull it off.
+
+-Greg
+
+> From: Mark Stock <mstock@umich.edu>
+> Date: October 19, 2007 7:32:02 AM PDT
+>
+> Folks,
+>
+> I gave a talk yesterday to a group of science-y artists in Boston  
+> about computational science and the making of one of my recent  
+> Radiance-made SIGGRAPH images, Open House. In it, I categorize  
+> computer simulation techiques and show lots of examples from my own  
+> (Radiance-powered) visualizations.
+>
+> The PDF slides are here (4.6 MB):
+> http://mark.technolope.org/image/talk_collusion/collision_talk_5.pdf
+>
+> And all of the animations are here:
+> http://mark.technolope.org/image/talk_collusion/
+>
+> Mark
+
+From mstock at umich.edu  Fri Oct 19 09:09:21 2007
+From: mstock at umich.edu (Mark Stock)
+Date: Fri Oct 19 09:09:27 2007
+Subject: [Radiance-general] Radiance-related talk slides
+In-Reply-To: <B31C0D84-867F-4865-925C-6CFE37D2D4FE@lmi.net>
+References: <Pine.LNX.4.64.0710190926360.6999@rygar.gpcc.itd.umich.edu>
+	<B31C0D84-867F-4865-925C-6CFE37D2D4FE@lmi.net>
+Message-ID: <Pine.LNX.4.64.0710191205570.6999@rygar.gpcc.itd.umich.edu>
+
+Greg,
+
+The gravitational sim was done on one Athlon XP over the course 
+of a day or two. It was only 100k particles, and the error was 
+somewhat high: about 1e-2 per time step. I could probably 
+recreate it on an NVIDIA 8800 GTX in an hour. The Unix-friendly 
+code is here:
+
+http://mark.technolope.org/part-nd/part-nd_v1.4.tar.gz
+
+and more animations are at:
+
+http://mark.technolope.org/part-nd/
+http://mark.technolope.org/part3d/
+
+If someone gave me a supercomputer to play with, you all wouldn't 
+see me for months.
+
+Mark
+
+On Fri, 19 Oct 2007, Greg Ward wrote:
+
+> Hi Mark,
+>
+> Looks like a really cool talk -- wish I could have been there. 
+> I could spend all day watching the gravity simulation.  Did you 
+> do this one?  Seems like it would take a small gaggle of 
+> supercomputers to pull it off.
+>
+> -Greg
+>
+>> From: Mark Stock <mstock@umich.edu>
+>> Date: October 19, 2007 7:32:02 AM PDT
+>> 
+>> Folks,
+>> 
+>> I gave a talk yesterday to a group of science-y artists in Boston about 
+>> computational science and the making of one of my recent Radiance-made 
+>> SIGGRAPH images, Open House. In it, I categorize computer simulation 
+>> techiques and show lots of examples from my own (Radiance-powered) 
+>> visualizations.
+>> 
+>> The PDF slides are here (4.6 MB):
+>> http://mark.technolope.org/image/talk_collusion/collision_talk_5.pdf
+>> 
+>> And all of the animations are here:
+>> http://mark.technolope.org/image/talk_collusion/
+>> 
+>> Mark
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+From bernd at bzed.de  Fri Oct 19 16:55:18 2007
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Fri Oct 19 16:55:34 2007
+Subject: [Radiance-general] Re: Radiance in Debian
+In-Reply-To: <7FA9B4E5-3E71-45EA-BD39-B3D4AEAB5649@lmi.net>
+References: <EXFE2R5chK6m7swxvR30000ca51@email.curtin.edu.au>	<!&!GAAAAAAAAACq4wUgLTnxS4BToakPVrmewoAAABgAAAAAAAAAquMFIC058UuAU6GpD1a5noQHIQAAAAAAEAAAAEQQgWHD5hBAjYbjIX/EV+YXAAAAUmU6IFJhZGlhbmNlIGluIERlYmlhbgA=@curtin.edu.au>	<47130D06.7020209@bzed.de>
+	<47187456.1000606@bzed.de>	<298EB587-1B0D-4CD6-8F17-0A0265BB48E9@panix.com>
+	<7FA9B4E5-3E71-45EA-BD39-B3D4AEAB5649@lmi.net>
+Message-ID: <471943E6.1040407@bzed.de>
+
+Hi Greg,
+
+> I'm very grateful to the folks who are willing to rename rcalc, as this
+> would have been a lot of work to change in Radiance.  Even if it's not
+> one of the most common commands from a user's perspective, it's applied
+> in dozens of scripts, mine and others', which would have been very
+> tedious to track down and change.
+
+I'll forward this to the maintainer of rcalc (which is our Debian
+Project leader ;))
+
+> However, as Randolph says, genbox is also widely used, mostly in scene
+> descriptions.  While we cannot easily change the existing docs, this
+> didn't stop us from renaming "rview" to "rvu" to avoid the clash with
+> one of vi's half-dozen monikers.  As you noticed, I added a symbolic
+> link in the executable directory from rview -> rvu as a stop-gap until
+> people picked up the new name.  Would it be possible to do this with
+> genbox -> genrbox?
+
+Unfortunately I can't ship the link (policy doesn't care of it's a link
+pointing to something or an actual binary), but everybody is free to add
+one. I could even ship a script to add links to /usr/local/bin for
+genbox and rview.
+
+
+> Asking that packages not have any name collisions is a laudable but not
+> terribly realistic goal.  Surely, there are so many Debian packages by
+> now that name collisions must happen left and right.  No?
+
+That was the first name clash since a longer time I've seen (and shame
+on me, I should have checked that before). Radiance ships so many utils
+that it is much more prone to such problems than packages shipping only
+one tool. I think in general using a common prefix for utils of one type
+are very useful and common to avoid such problems, like k*/g* for
+kde/gnome tools. Also our tech-ctte is pretty strict if people try to
+use too generic names. For example packages like libcommon or libconfig
+probably won't be accepted at all in Debian.
+
+
+> If we aren't even allowed a symbolic link, one dastardly work-around is
+> to add a check for the "genbox" command when parsing scene input,
+> substituting "genrbox" and printing a warning of its deprecation.  Ugly,
+> but it might work.
+
+Unfortunately I don;t see any other way yet.
+
+
+Best regards,
+
+Bernd
+
+-- 
+Bernd Zeimetz
+<bernd@bzed.de>                         <http://bzed.de/>
+
+From randolph at panix.com  Fri Oct 19 17:07:05 2007
+From: randolph at panix.com (Randolph Fritz)
+Date: Fri Oct 19 17:07:13 2007
+Subject: [Radiance-general] Re: Radiance in Debian
+In-Reply-To: <471943E6.1040407@bzed.de>
+References: <EXFE2R5chK6m7swxvR30000ca51@email.curtin.edu.au>	<!&!GAAAAAAAAACq4wUgLTnxS4BToakPVrmewoAAABgAAAAAAAAAquMFIC058UuAU6GpD1a5noQHIQAAAAAAEAAAAEQQgWHD5hBAjYbjIX/EV+YXAAAAUmU6IFJhZGlhbmNlIGluIERlYmlhbgA=@curtin.edu.au>	<47130D06.7020209@bzed.de>
+	<47187456.1000606@bzed.de>	<298EB587-1B0D-4CD6-8F17-0A0265BB48E9@panix.com>
+	<7FA9B4E5-3E71-45EA-BD39-B3D4AEAB5649@lmi.net>
+	<471943E6.1040407@bzed.de>
+Message-ID: <18804D46-013F-4A9C-AB18-AFFDCFFE0A74@panix.com>
+
+Bernd, Greg,
+
+Do these programs have to go in /usr/bin?  Could they go in, say, / 
+usr/libexec/radiance instead?  The main time they're run, after all,  
+is when oconv invokes them.  Would that work with Debian standards?
+
+Randolph
+
+
+From bernd at bzed.de  Sat Oct 20 01:38:46 2007
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Sat Oct 20 01:39:06 2007
+Subject: [Radiance-general] Re: Radiance in Debian
+In-Reply-To: <18804D46-013F-4A9C-AB18-AFFDCFFE0A74@panix.com>
+References: <EXFE2R5chK6m7swxvR30000ca51@email.curtin.edu.au>	<!&!GAAAAAAAAACq4wUgLTnxS4BToakPVrmewoAAABgAAAAAAAAAquMFIC058UuAU6GpD1a5noQHIQAAAAAAEAAAAEQQgWHD5hBAjYbjIX/EV+YXAAAAUmU6IFJhZGlhbmNlIGluIERlYmlhbgA=@curtin.edu.au>	<47130D06.7020209@bzed.de>	<47187456.1000606@bzed.de>	<298EB587-1B0D-4CD6-8F17-0A0265BB48E9@panix.com>	<7FA9B4E5-3E71-45EA-BD39-B3D4AEAB5649@lmi.net>	<471943E6.1040407@bzed.de>
+	<18804D46-013F-4A9C-AB18-AFFDCFFE0A74@panix.com>
+Message-ID: <4719BE96.1000808@bzed.de>
+
+Hi,
+
+> Do these programs have to go in /usr/bin?  Could they go in, say,
+> /usr/libexec/radiance instead?  The main time they're run, after all, is
+> when oconv invokes them.  Would that work with Debian standards?
+
+/usr/lib/radiance/bin would work fine, too.
+
+Although I can't install the manpage to the proper place then.
+Also I'm not sure if it makes sense to have some of the tools in
+/usr/bin and others at some other place. Not having them in $PATH is
+something I'd call annoying, too.
+
+I'm more in favor of leaving all executable programs somewhere in $PATH,
+as this is what a new user of radiance would expect - and I'm sure
+radiance will attract more users when it is distributed with Debian,
+which also means it'll be distributed with Ubuntu at some day. Working
+around the renamed binary is not very hard, in the worst case it means
+to create a symbolic link.
+
+Best regards,
+
+Bernd
+
+-- 
+Bernd Zeimetz
+<bernd@bzed.de>                         <http://bzed.de/>
+
+From jutoft at web.de  Mon Oct 22 00:34:22 2007
+From: jutoft at web.de (Johannes Christensen)
+Date: Mon Oct 22 00:34:31 2007
+Subject: [Radiance-general] sky luminance distribution
+Message-ID: <1899384865@web.de>
+
+
+Hi
+
+I am new to Radiance so I hope that you will be forgiving if my question has an obvious answer or if I am writing to the wrong list.
+
+I would like to use Radiance with my own (measured) sky luminance distribution rather than using gensky to create a standard sky luminance distribution.
+
+I have been looking at various manuals and userguides I have found online but seem unable to find any information relating specifically to this subject. Is it possible to do this? And if so how is it done?
+
+Thanks for your help
+
+Best Regards
+
+Johannes Utoft Christensen
+
+
+_______________________________________________________________________
+Jetzt neu! Sch?tzen Sie Ihren PC mit McAfee und WEB.DE. 3 Monate
+kostenlos testen. http://www.pc-sicherheit.web.de/startseite/?mc=022220
+
+From grobe at gmx.net  Mon Oct 22 01:17:05 2007
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Mon Oct 22 01:20:30 2007
+Subject: [Radiance-general] sky luminance distribution
+In-Reply-To: <1899384865@web.de>
+References: <1899384865@web.de>
+Message-ID: <471C5C81.80905@gmx.net>
+
+> I would like to use Radiance with my own (measured) sky luminance
+> distribution rather than using gensky to create a standard sky
+> luminance distribution.
+
+
+What format is the measurement data contained in, how did you measure?
+
+CU Lars.
+
+From jm at dmu.ac.uk  Mon Oct 22 01:34:11 2007
+From: jm at dmu.ac.uk (John Mardaljevic)
+Date: Mon Oct 22 01:34:25 2007
+Subject: [Radiance-general] sky luminance distribution
+Message-ID: <71F61B28-296A-4915-9743-28AC21F720DE@dmu.ac.uk>
+
+Hi Johannes,
+
+> I would like to use Radiance with my own (measured) sky luminance  
+> distribution rather than using gensky to create a standard sky  
+> luminance distribution.
+
+You need to use the brightdata format.  How to do it for the  
+Krochmann (145 patch) sky scanner is described in Chapter 3 found here:
+
+http://www.iesd.dmu.ac.uk/~jm/zxcv-thesis/
+
+Should be easy enough to adapt for other patch distributions.
+
+-John
+
+-----------------------------------------------
+Dr. John Mardaljevic
+Senior Research Fellow
+Institute of Energy and Sustainable Development
+De Montfort University
+The Gateway
+Leicester
+LE1 9BH, UK
++44 (0) 116 257 7972
++44 (0) 116 257 7981 (fax)
+
+jm@dmu.ac.uk
+http://www.iesd.dmu.ac.uk/~jm
+
+
+From jhkim94 at aesl.hanyang.ac.kr  Mon Oct 22 08:08:49 2007
+From: jhkim94 at aesl.hanyang.ac.kr (jhkim94@aesl.hanyang.ac.kr)
+Date: Mon Oct 22 08:09:00 2007
+Subject: [Radiance-general] Question regarding the BRTDFunc...
+Message-ID: <200710221516.l9MFGDsJ000644@aesl.hanyang.ac.kr>
+
+Dear Dr. Ward.
+Hello. My name is Ji-hyun Kim, majoring Architectural Visual Environment at
+the Hanyang graduate school in Korea.
+I hope this e-mail will not bother your busy time. 
+
+Now, I am analyzing solar specular reflection effect by buildings' coated
+glass with the RADIANCE program. 
+The purpose is to measure characteristics of coated glass materials which
+are considered in real design process and to make a simulation applying the
+data. 
+
+In order to figure out the characteristics of ordinary materials, I used
+Spectraphotometer to measure reflectance value and input the other data, 
+I could not see solar specular reflection effect clearly so I have tried to
+use BRTDfunc option to make a simulation of coated glass materials'BRDF
+characteristics.
+
+While I was looking for the research materials, I found out that the input
+data of BRTDFunc option is various as below.
+ 
+Mod BRTDfunc id
+10+ rrefl  grefl  brefl
+     rtrns  gtrns  btrns
+     rbrtd  gbrtd  bbrtd
+     funcfile   transform
+0
+9+  rfdif  gfdif  bfdif
+     rbdif  gbdif  bbdif
+     rtdif  gtdif  btdif
+     A10.
+
+I roughly understood the definition of input data. I tried to find out what
+method I can use to measure it but I could not find the suitable
+information. 
+So I would like to ask you some questions. 
+
+1. When I simulate materials, which I use in real, on RADIANCE, how I can
+measure the input data that is needed in RADIANCE, 
+and how I can divert the measured data to BRTDfunc input data such as rrefl,
+rfdif, rbdif. rtdif etc. in order to apply it? 
+
+2. Ordinarily BRDF is defined by intensity of the wavelength according to
+altitude angle of incident light and azimuth angle and altitude angle of
+reflected light and azimuth angle. 
+I figured out that the dat file by four values above is needed like IES file
+but I could not find the data about applied cases and composition of dat
+file. 
+Is there any method to use data in dat file form? If there is, I wonder how
+I can make dat file form.
+
+If it is possible, I am going to use gonioreflectometer, which we made, to
+measure and apply BRDF data in artificial sky-dome.
+
+3. In case of LBNL_glz\blue_refl.rad file in DATABASE of Desktop RADIANCE,
+BRTDfunc is defined as below.
+
+void 	glass 	blue_refl_glass	
+0 
+0 
+3	0.206104	0.194473	0.17589
+
+
+void 	BRTDfunc	blue_refl_front	
+10	
+	0.188941	0.178277	0.161239	
+	0.356133	0.400754	0.340173	
+	0 0 0 
+	.	
+0 
+9 0 0 0 0 0 0 0 0 0	
+
+void 	BRTDfunc	blue_refl_back	
+10	
+	0.188941	0.178277	0.161239	
+	0.084167	0.17056	0.175861	
+	0 0 0 
+	.	
+0 
+9 0 0 0 0 0 0 0 0 0	
+
+I think this case is a bit different. The part of void  BRTDfunc
+blue_refl_front, I think blue_refl_glass is suitable instead of void.
+I understood that when identifire is void it is defined as a new material so
+I wonder what kind of definition is made above. 
+Also, when it set up blue_refl glass material, all input data related to
+diffuse reflection have 0 values. It means that diffuse is not at all
+considered?
+In my opinion, when I simulate BRDF effect by coated glass the values
+related to diffuse reflection would be important. How about your opinion?
+
+4. While I was studying related materials, I found rayinit.cal file,
+glazing.cal file and glaze1.cal file. 
+In case of Glazing.cal file, reflectance and transmittance of coated glazing
+are measured by using window 4 programs. 
+In my opinion, the RADIANCE option we needed is using glazing.cal file and
+it depends on clear and bronze-coated glazing. 
+When I apply the glazing.cal file on various coated glasses, how can I set
+up the variables to simulate?
+
+Could you give me advice about the way of simulation or setting rendering
+option of rpict command 
+when I simulate glare due to the solar specular reflection?
+
+
+I am using RADIANCE program personally. I fully understand how to make basic
+image but 
+I have a trouble with understanding of making and revising cal file and
+Function File so it is difficult to use RADIANCE Program entirely. 
+
+I am waiting your advice to make the best use of RADIANCE. 
+
+Sincerely your,
+Ji-hyun Kim.
+
+
+From gward at lmi.net  Mon Oct 22 13:01:47 2007
+From: gward at lmi.net (Greg Ward)
+Date: Mon Oct 22 13:01:57 2007
+Subject: [Radiance-general] Re: Radiance in Debian
+In-Reply-To: <4719BE96.1000808@bzed.de>
+References: <EXFE2R5chK6m7swxvR30000ca51@email.curtin.edu.au>	<!&!GAAAAAAAAACq4wUgLTnxS4BToakPVrmewoAAABgAAAAAAAAAquMFIC058UuAU6GpD1a5noQHIQAAAAAAEAAAAEQQgWHD5hBAjYbjIX/EV+YXAAAAUmU6IFJhZGlhbmNlIGluIERlYmlhbgA=@curtin.edu.au>	<47130D06.7020209@bzed.de>	<47187456.1000606@bzed.de>	<298EB587-1B0D-4CD6-8F17-0A0265BB48E9@panix.com>	<7FA9B4E5-3E71-45EA-BD39-B3D4AEAB5649@lmi.net>	<471943E6.1040407@bzed.de>
+	<18804D46-013F-4A9C-AB18-AFFDCFFE0A74@panix.com>
+	<4719BE96.1000808@bzed.de>
+Message-ID: <29DC8A78-0313-4E87-8417-C68255C1889A@lmi.net>
+
+Hi Bernd,
+
+On closer inspection, my thought to check for "genbox" on inline  
+commands and print a deprecated warning isn't all that workable,  
+since there are so many places in Radiance where inline commands are  
+interpreted.  It would require a lot of ugly and temporary code  
+changes.  A better solution is to insert a "genbox" shell script that  
+prints out the deprecated message before calling "genrbox."  However,  
+this still leaves an executable in the Radiance binary directory with  
+the "genbox" name conflict, at least temporarily.  Unceremoniously  
+getting rid of genbox altogether would break 3/4 of the scene files  
+out there.  This is not just a command entered by users -- it's in  
+all our scene descriptions, and changing it means changing thousands  
+of user files.  Even if it's only a simple substitution, that's a lot  
+to ask for everyone to go in and change their data to accommodate a  
+molecular modeling system that in all likelihood hasn't yet caused a  
+conflict for any of us.
+
+I'm out of ideas.  Anyone else with a brainstorm on this?
+
+-Greg
+
+From bernd at bzed.de  Mon Oct 22 13:25:15 2007
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Mon Oct 22 13:25:29 2007
+Subject: [Radiance-general] Re: Radiance in Debian
+In-Reply-To: <29DC8A78-0313-4E87-8417-C68255C1889A@lmi.net>
+References: <EXFE2R5chK6m7swxvR30000ca51@email.curtin.edu.au>	<!&!GAAAAAAAAACq4wUgLTnxS4BToakPVrmewoAAABgAAAAAAAAAquMFIC058UuAU6GpD1a5noQHIQAAAAAAEAAAAEQQgWHD5hBAjYbjIX/EV+YXAAAAUmU6IFJhZGlhbmNlIGluIERlYmlhbgA=@curtin.edu.au>	<47130D06.7020209@bzed.de>	<47187456.1000606@bzed.de>	<298EB587-1B0D-4CD6-8F17-0A0265BB48E9@panix.com>	<7FA9B4E5-3E71-45EA-BD39-B3D4AEAB5649@lmi.net>	<471943E6.1040407@bzed.de>	<18804D46-013F-4A9C-AB18-AFFDCFFE0A74@panix.com>	<4719BE96.1000808@bzed.de>
+	<29DC8A78-0313-4E87-8417-C68255C1889A@lmi.net>
+Message-ID: <471D072B.3040804@bzed.de>
+
+Hi Greg,
+
+> On closer inspection, my thought to check for "genbox" on inline
+> commands and print a deprecated warning isn't all that workable, since
+> there are so many places in Radiance where inline commands are
+> interpreted.  It would require a lot of ugly and temporary code
+> changes.  A better solution is to insert a "genbox" shell script that
+> prints out the deprecated message before calling "genrbox."  However,
+> this still leaves an executable in the Radiance binary directory with
+> the "genbox" name conflict, at least temporarily.  Unceremoniously
+> getting rid of genbox altogether would break 3/4 of the scene files out
+> there.  This is not just a command entered by users -- it's in all our
+> scene descriptions, and changing it means changing thousands of user
+> files.  Even if it's only a simple substitution, that's a lot to ask for
+> everyone to go in and change their data to accommodate a molecular
+> modeling system that in all likelihood hasn't yet caused a conflict for
+> any of us.
+
+
+Yeah, but the same problem have the molecular guys with their scripts...
+Also instead of changing scripts I'd add a link, nothing really
+complicated imho.
+
+> I'm out of ideas.  Anyone else with a brainstorm on this?
+
+Question: Do the tools search in $RAYPATH for executables, too?
+
+One idea: While installing the package I could ask the user if he'd like
+to have compatibility links created and add those links. I'd have to
+check if something like that would be allowed by the policy, though.
+At least I can warn them.
+
+
+Cheers,
+
+Bernd
+
+-- 
+Bernd Zeimetz
+<bernd@bzed.de>                         <http://bzed.de/>
+
+From gward at lmi.net  Mon Oct 22 14:40:21 2007
+From: gward at lmi.net (Greg Ward)
+Date: Mon Oct 22 14:40:33 2007
+Subject: [Radiance-general] Re: Radiance in Debian
+In-Reply-To: <471D072B.3040804@bzed.de>
+References: <EXFE2R5chK6m7swxvR30000ca51@email.curtin.edu.au>	<!&!GAAAAAAAAACq4wUgLTnxS4BToakPVrmewoAAABgAAAAAAAAAquMFIC058UuAU6GpD1a5noQHIQAAAAAAEAAAAEQQgWHD5hBAjYbjIX/EV+YXAAAAUmU6IFJhZGlhbmNlIGluIERlYmlhbgA=@curtin.edu.au>	<47130D06.7020209@bzed.de>	<47187456.1000606@bzed.de>	<298EB587-1B0D-4CD6-8F17-0A0265BB48E9@panix.com>	<7FA9B4E5-3E71-45EA-BD39-B3D4AEAB5649@lmi.net>	<471943E6.1040407@bzed.de>	<18804D46-013F-4A9C-AB18-AFFDCFFE0A74@panix.com>	<4719BE96.1000808@bzed.de>
+	<29DC8A78-0313-4E87-8417-C68255C1889A@lmi.net>
+	<471D072B.3040804@bzed.de>
+Message-ID: <49499840-1300-4C18-A17E-46752DF37156@lmi.net>
+
+Hi Bernd,
+
+I'm moving this discussion to radiance-dev, since that's where it  
+really belongs.  (Feel free to subscribe if you aren't.)
+
+Having compatibility links as an option during installation is fine  
+with me if it defaults to "yes" or provides a clear explanation of  
+the pitfalls of not installing the links.  I guess we only need a  
+link for genbox at this point, though I would like to keep "rview" in  
+there as well for consistency with extant documentation.
+
+None of the tools look in the $RAYPATH directories for executables,  
+and I don't store any there.
+
+-Greg
+
+> From: Bernd Zeimetz <bernd@bzed.de>
+> Date: October 22, 2007 1:25:15 PM PDT
+>
+> Hi Greg,
+>
+>> On closer inspection, my thought to check for "genbox" on inline
+>> commands and print a deprecated warning isn't all that workable,  
+>> since
+>> there are so many places in Radiance where inline commands are
+>> interpreted.  It would require a lot of ugly and temporary code
+>> changes.  A better solution is to insert a "genbox" shell script that
+>> prints out the deprecated message before calling "genrbox."  However,
+>> this still leaves an executable in the Radiance binary directory with
+>> the "genbox" name conflict, at least temporarily.  Unceremoniously
+>> getting rid of genbox altogether would break 3/4 of the scene  
+>> files out
+>> there.  This is not just a command entered by users -- it's in all  
+>> our
+>> scene descriptions, and changing it means changing thousands of user
+>> files.  Even if it's only a simple substitution, that's a lot to  
+>> ask for
+>> everyone to go in and change their data to accommodate a molecular
+>> modeling system that in all likelihood hasn't yet caused a  
+>> conflict for
+>> any of us.
+>
+> Yeah, but the same problem have the molecular guys with their  
+> scripts...
+> Also instead of changing scripts I'd add a link, nothing really
+> complicated imho.
+>
+>> I'm out of ideas.  Anyone else with a brainstorm on this?
+>
+> Question: Do the tools search in $RAYPATH for executables, too?
+>
+> One idea: While installing the package I could ask the user if he'd  
+> like
+> to have compatibility links created and add those links. I'd have to
+> check if something like that would be allowed by the policy, though.
+> At least I can warn them.
+>
+> Cheers,
+>
+> Bernd
+
+From thdyoung at mac.com  Tue Oct 23 04:37:20 2007
+From: thdyoung at mac.com (Tom Young)
+Date: Tue Oct 23 04:37:29 2007
+Subject: [Radiance-general] dxf2rad
+Message-ID: <EFD3EEDB-1093-4825-9A05-C8EB6EAFC486@mac.com>
+
+hi
+
+is there a Mac OS X compilation of dxf2rad ?
+
+tom
+
+Tom Young Architects
+19 Bassett Street
+London
+NW5 4PG
+020 7482 6150
+07765 378 502
+thdyoung@mac.com
+http://homepage.mac.com/thdyoung/FileSharing1.html
+http://localstinker.blogspot.com/
+http://www.localstink.com/rktat/index.html
+
+
+
+
+
+From radiance at archvisu.at  Tue Oct 23 04:53:51 2007
+From: radiance at archvisu.at (Erwin Zierler)
+Date: Tue Oct 23 04:54:04 2007
+Subject: [Radiance-general] dxf2rad
+Message-ID: <DIIE.00001C26000268F1@192.168.0.81>
+
+Tom,
+if you ar refering to Gerog Mischlers dxf2rad I am afraid you are out of luck. Since the sourcecode is not available and Schorsch has obviously disapered you might want to try a differrent route. But maybe OSX can run Linux ELF binaries? That could be an option. 
+Where are your DXF files coming from? We just implemented a converter for certain types of DXF output (EliteCAD) that for instance produces only triangles with color codes. Workes fine for our purpose. 
+Feel free to contact me if you need more info.
+Regards,
+ Erwin
+
+-------- Original Message --------
+Subject: [Radiance-general] dxf2rad (23-Okt-2007 13:37)
+From:    Tom Young <thdyoung@mac.com>
+To:      radiance-general@radiance-online.org
+
+> hi
+> 
+> is there a Mac OS X compilation of dxf2rad ?
+> 
+> tom
+> 
+> Tom Young Architects
+> 19 Bassett Street
+> London
+> NW5 4PG
+> 020 7482 6150
+> 07765 378 502
+> thdyoung@mac.com
+> http://homepage.mac.com/thdyoung/FileSharing1.html
+> http://localstinker.blogspot.com/
+> http://www.localstink.com/rktat/index.html
+> 
+> 
+> 
+> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+> To: radiance-general@radiance-online.org
+
+
+From thdyoung at mac.com  Tue Oct 23 05:29:57 2007
+From: thdyoung at mac.com (Tom Young)
+Date: Tue Oct 23 05:30:08 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <DIIE.00001C26000268F1@192.168.0.81>
+References: <DIIE.00001C26000268F1@192.168.0.81>
+Message-ID: <DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>
+
+hi Erwin
+
+  i can't make anything useful out of the linux binary for mac osx so  
+far as I can see
+
+i'm using Vectorworks
+
+i don't think there can be a route from Vectorworks to a rad file.
+
+i assume the way to go is to make a dxf file of a Vectorworks model
+
+if you have a dxf converter which would work on a mac, that would be  
+terrific !
+
+is it a command line utility ?
+
+tom
+
+
+On 23 Oct 2007, at 12:53, Erwin Zierler wrote:
+
+> Tom,
+> if you ar refering to Gerog Mischlers dxf2rad I am afraid you are  
+> out of luck. Since the sourcecode is not available and Schorsch has  
+> obviously disapered you might want to try a differrent route. But  
+> maybe OSX can run Linux ELF binaries? That could be an option.
+> Where are your DXF files coming from? We just implemented a  
+> converter for certain types of DXF output (EliteCAD) that for  
+> instance produces only triangles with color codes. Workes fine for  
+> our purpose.
+> Feel free to contact me if you need more info.
+> Regards,
+>  Erwin
+
+Tom Young Architects
+19 Bassett Street
+London
+NW5 4PG
+020 7482 6150
+07765 378 502
+thdyoung@mac.com
+http://homepage.mac.com/thdyoung/FileSharing1.html
+http://localstinker.blogspot.com/
+http://www.localstink.com/rktat/index.html
+
+
+
+
+
+From jedev at visarc.com  Tue Oct 23 05:43:21 2007
+From: jedev at visarc.com (Jack de Valpine)
+Date: Tue Oct 23 05:43:42 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>
+References: <DIIE.00001C26000268F1@192.168.0.81>
+	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>
+Message-ID: <471DEC69.6090706@visarc.com>
+
+Hi Tom,
+
+One workflow option, much as I dislike suggesting it, is perhaps to use 
+Sketchup as an intermediate. It looks like Vectorworks will save out an 
+skp. Sketchup (commercial version) can then save out an obj format file, 
+which can be converted with obj2rad. I have very limited experience with 
+Sketchup, but in my few experiences, I have found that the models are 
+very very hefty. Another alternative is to save out as 3ds and use 
+3ds2rad, however there are limitations to this dealing with data sizing 
+for the file format.
+
+-Jack
+
+Tom Young wrote:
+> hi Erwin
+>
+>  i can't make anything useful out of the linux binary for mac osx so 
+> far as I can see
+>
+> i'm using Vectorworks
+>
+> i don't think there can be a route from Vectorworks to a rad file.
+>
+> i assume the way to go is to make a dxf file of a Vectorworks model
+>
+> if you have a dxf converter which would work on a mac, that would be 
+> terrific !
+>
+> is it a command line utility ?
+>
+> tom
+>
+>
+> On 23 Oct 2007, at 12:53, Erwin Zierler wrote:
+>
+>> Tom,
+>> if you ar refering to Gerog Mischlers dxf2rad I am afraid you are out 
+>> of luck. Since the sourcecode is not available and Schorsch has 
+>> obviously disapered you might want to try a differrent route. But 
+>> maybe OSX can run Linux ELF binaries? That could be an option.
+>> Where are your DXF files coming from? We just implemented a converter 
+>> for certain types of DXF output (EliteCAD) that for instance produces 
+>> only triangles with color codes. Workes fine for our purpose.
+>> Feel free to contact me if you need more info.
+>> Regards,
+>>  Erwin
+>
+> Tom Young Architects
+> 19 Bassett Street
+> London
+> NW5 4PG
+> 020 7482 6150
+> 07765 378 502
+> thdyoung@mac.com
+> http://homepage.mac.com/thdyoung/FileSharing1.html
+> http://localstinker.blogspot.com/
+> http://www.localstink.com/rktat/index.html
+>
+>
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+-- 
+# Jack de Valpine
+# president
+#
+# visarc incorporated
+# http://www.visarc.com
+#
+# channeling technology for superior design and construction
+
+From info at iebele.nl  Tue Oct 23 06:53:17 2007
+From: info at iebele.nl (iebele)
+Date: Tue Oct 23 06:49:07 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>
+References: <DIIE.00001C26000268F1@192.168.0.81>
+	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>
+Message-ID: <471DFCCD.3040001@iebele.nl>
+
+Hi Tom,
+
+I have a dxf2rad version available that we have developped for in-house 
+use.
+We use it almost every day on Linux.
+It should compile under osx also. Just dowload the files and run
+# gcc -o dxfimport dxfimport_so.cpp
+
+"dxfimport" is a c++ command line utility that reads triangle (face) 
+primitives from dxf files, and convert these into Radiance polygon 
+primitives, using the layernumber of each face as modifier (LAYER001, 
+LAYER002 etc.).
+
+The url is:
+http://www.toren.com/radiance/dxfimport_so.h
+http://www.toren.com/radiance/dxfimport_so.cpp
+
+Comments in the source files are a combination of dutch and english, as 
+I said it is an in-house tool - and I am dutch....  :)
+
+Good  luck,
+
+Iebele
+
+
+
+Tom Young wrote:
+
+> hi Erwin
+>
+>  i can't make anything useful out of the linux binary for mac osx so  
+> far as I can see
+>
+> i'm using Vectorworks
+>
+> i don't think there can be a route from Vectorworks to a rad file.
+>
+> i assume the way to go is to make a dxf file of a Vectorworks model
+>
+> if you have a dxf converter which would work on a mac, that would be  
+> terrific !
+>
+> is it a command line utility ?
+>
+> tom
+>
+>
+> On 23 Oct 2007, at 12:53, Erwin Zierler wrote:
+>
+>> Tom,
+>> if you ar refering to Gerog Mischlers dxf2rad I am afraid you are  
+>> out of luck. Since the sourcecode is not available and Schorsch has  
+>> obviously disapered you might want to try a differrent route. But  
+>> maybe OSX can run Linux ELF binaries? That could be an option.
+>> Where are your DXF files coming from? We just implemented a  
+>> converter for certain types of DXF output (EliteCAD) that for  
+>> instance produces only triangles with color codes. Workes fine for  
+>> our purpose.
+>> Feel free to contact me if you need more info.
+>> Regards,
+>>  Erwin
+>
+>
+> Tom Young Architects
+> 19 Bassett Street
+> London
+> NW5 4PG
+> 020 7482 6150
+> 07765 378 502
+> thdyoung@mac.com
+> http://homepage.mac.com/thdyoung/FileSharing1.html
+> http://localstinker.blogspot.com/
+> http://www.localstink.com/rktat/index.html
+>
+>
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+
+From grobe at gmx.net  Tue Oct 23 08:25:16 2007
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Tue Oct 23 08:28:51 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <471DFCCD.3040001@iebele.nl>
+References: <DIIE.00001C26000268F1@192.168.0.81>	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>
+	<471DFCCD.3040001@iebele.nl>
+Message-ID: <471E125C.6030906@gmx.net>
+
+Hope that this is not a secret - but there was a version for OS X that 
+never had been released. So - if you manage to contact Schorsch...
+
+I'm not sure about the export formats in recent releases of Vectorworks. 
+If you can export 3ds, you can import using a variety of tools. If you 
+can export IGES, you might get even better geometry when using brlcad to 
+convert to e.g. obj than rad.
+
+Good luck.
+
+Lars.
+
+From thdyoung at mac.com  Tue Oct 23 09:49:15 2007
+From: thdyoung at mac.com (Tom Young)
+Date: Tue Oct 23 09:49:24 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <471E125C.6030906@gmx.net>
+References: <DIIE.00001C26000268F1@192.168.0.81>
+	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>
+	<471DFCCD.3040001@iebele.nl> <471E125C.6030906@gmx.net>
+Message-ID: <AA2A0B0D-B2E1-4876-94C9-FA49CD012F6D@mac.com>
+
+IGES is a Vectorworks export option.
+
+I'm not clear what bricad is.
+
+thanks
+
+tom
+
+On 23 Oct 2007, at 16:25, Lars O. Grobe wrote:
+
+> If you can export IGES, you might get even better geometry when  
+> using brlcad to convert to e.g. obj than rad.
+
+Tom Young Architects
+19 Bassett Street
+London
+NW5 4PG
+020 7482 6150
+07765 378 502
+thdyoung@mac.com
+http://homepage.mac.com/thdyoung/FileSharing1.html
+http://localstinker.blogspot.com/
+http://www.localstink.com/rktat/index.html
+
+
+
+
+
+From thdyoung at mac.com  Tue Oct 23 09:54:53 2007
+From: thdyoung at mac.com (Tom Young)
+Date: Tue Oct 23 09:55:06 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <471DFCCD.3040001@iebele.nl>
+References: <DIIE.00001C26000268F1@192.168.0.81>
+	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>
+	<471DFCCD.3040001@iebele.nl>
+Message-ID: <267CCC55-D213-4A45-8802-8D1B1127FA87@mac.com>
+
+thanks Iebele
+
+<<gcc -o dxfimport dxfimport_so.cpp dxf1.dxf
+In file included from dxfimport_so.cpp:13:
+dxfimport_so.h:12:20: error: malloc.h: No such file or directory>>
+
+I should say that I'm no geek.
+
+I did man gcc and the page went on forever!
+
+I don't understand what the two arguments of this gcc app are doing.
+
+I appreciate your making them available but don't understand what's  
+to be done.
+
+Am I generating a usable OSX script to be shebanged or put into the  
+Path to use from Terminal ? If so where is that script ?
+
+Apologies for not getting it!
+
+
+
+tom
+
+On 23 Oct 2007, at 14:53, iebele wrote:
+
+> # gcc -o dxfimport dxfimport_so.cpp
+
+Tom Young Architects
+19 Bassett Street
+London
+NW5 4PG
+020 7482 6150
+07765 378 502
+thdyoung@mac.com
+http://homepage.mac.com/thdyoung/FileSharing1.html
+http://localstinker.blogspot.com/
+http://www.localstink.com/rktat/index.html
+
+
+
+
+
+From rpg at rumblestrip.org  Tue Oct 23 10:15:26 2007
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Tue Oct 23 10:15:29 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <267CCC55-D213-4A45-8802-8D1B1127FA87@mac.com>
+References: <DIIE.00001C26000268F1@192.168.0.81>	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>	<471DFCCD.3040001@iebele.nl>
+	<267CCC55-D213-4A45-8802-8D1B1127FA87@mac.com>
+Message-ID: <471E2C2E.4090308@rumblestrip.org>
+
+Tom Young wrote:
+> thanks Iebele
+>
+> <<gcc -o dxfimport dxfimport_so.cpp dxf1.dxf
+> In file included from dxfimport_so.cpp:13:
+> dxfimport_so.h:12:20: error: malloc.h: No such file or directory>>
+>
+> I should say that I'm no geek.
+>
+> I did man gcc and the page went on forever!
+>
+> I don't understand what the two arguments of this gcc app are doing.
+>
+> I appreciate your making them available but don't understand what's to 
+> be done.
+>
+> Am I generating a usable OSX script to be shebanged or put into the 
+> Path to use from Terminal ? If so where is that script ?
+That error makes me think you have gcc installed on your machine, but 
+not all of the libraries.  Have you done a full install of Xcode?  Make 
+sure that's been done first, then you may also need to run this as root 
+(do you know about the sudo command, which runs things as root?).  After 
+it's been compiled (yes, gcc is a compiler so it's not making a script 
+but an actual executable), you will move the binary to /usr/local/bin 
+with all the other Radiance binaries (you would do this with sudo too, 
+i.e. "sudo mv dxfimport /usr/local/bin").  sudo will ask you for the 
+administrative password, which you likely set up when you set up your 
+Mac initially.  Hope this helps (and does not hurt)!
+
+- Rob Guglielmetti
+www.rumblestrip.org
+
+From thdyoung at mac.com  Tue Oct 23 10:20:02 2007
+From: thdyoung at mac.com (Tom Young)
+Date: Tue Oct 23 10:20:11 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <471E2C2E.4090308@rumblestrip.org>
+References: <DIIE.00001C26000268F1@192.168.0.81>
+	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>
+	<471DFCCD.3040001@iebele.nl>
+	<267CCC55-D213-4A45-8802-8D1B1127FA87@mac.com>
+	<471E2C2E.4090308@rumblestrip.org>
+Message-ID: <2DF804E6-67A3-47C0-991C-BBBA99C920E2@mac.com>
+
+
+On 23 Oct 2007, at 18:15, Rob Guglielmetti wrote:
+
+> That error makes me think you have gcc installed on your machine,  
+> but not all of the libraries.  Have you done a full install of Xcode?
+
+no!
+
+>   Make sure that's been done first, then you may also need to run  
+> this as root (do you know about the sudo command, which runs things  
+> as root?).
+
+ok w root and that sort of stuff
+
+> After it's been compiled (yes, gcc is a compiler so it's not making  
+> a script but an actual executable), you will move the binary to / 
+> usr/local/bin with all the other Radiance binaries (you would do  
+> this with sudo too, i.e. "sudo mv dxfimport /usr/local/bin").  sudo  
+> will ask you for the administrative password, which you likely set  
+> up when you set up your Mac initially.  Hope this helps (and does  
+> not hurt)!
+
+nothing hurts yet
+
+thanks v much
+
+tom
+
+
+Tom Young Architects
+19 Bassett Street
+London
+NW5 4PG
+020 7482 6150
+07765 378 502
+thdyoung@mac.com
+http://homepage.mac.com/thdyoung/FileSharing1.html
+http://localstinker.blogspot.com/
+http://www.localstink.com/rktat/index.html
+
+
+
+
+
+From bernd at bzed.de  Tue Oct 23 10:24:37 2007
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Tue Oct 23 10:24:50 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <2DF804E6-67A3-47C0-991C-BBBA99C920E2@mac.com>
+References: <DIIE.00001C26000268F1@192.168.0.81>	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>	<471DFCCD.3040001@iebele.nl>	<267CCC55-D213-4A45-8802-8D1B1127FA87@mac.com>	<471E2C2E.4090308@rumblestrip.org>
+	<2DF804E6-67A3-47C0-991C-BBBA99C920E2@mac.com>
+Message-ID: <471E2E55.3010402@bzed.de>
+
+
+>>   Make sure that's been done first, then you may also need to run this
+>> as root (do you know about the sudo command, which runs things as root?).
+
+eww, never compile anything as root. Upstream's fancy build stuff may
+accidentally rm -rf / just because some variable went missing.
+
+-- 
+Bernd Zeimetz
+<bernd@bzed.de>                         <http://bzed.de/>
+
+From rpg at rumblestrip.org  Tue Oct 23 10:34:08 2007
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Tue Oct 23 10:34:14 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <471E2E55.3010402@bzed.de>
+References: <DIIE.00001C26000268F1@192.168.0.81>	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>	<471DFCCD.3040001@iebele.nl>	<267CCC55-D213-4A45-8802-8D1B1127FA87@mac.com>	<471E2C2E.4090308@rumblestrip.org>	<2DF804E6-67A3-47C0-991C-BBBA99C920E2@mac.com>
+	<471E2E55.3010402@bzed.de>
+Message-ID: <471E3090.6030506@rumblestrip.org>
+
+Bernd Zeimetz wrote:
+> eww, never compile anything as root. Upstream's fancy build stuff may
+> accidentally rm -rf / just because some variable went missing
+Ah, good point.  What Bernd said.  =8-)
+
+- Rob
+
+From info at iebele.nl  Tue Oct 23 11:28:20 2007
+From: info at iebele.nl (iebele)
+Date: Tue Oct 23 11:24:10 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <471E2C2E.4090308@rumblestrip.org>
+References: <DIIE.00001C26000268F1@192.168.0.81>	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>	<471DFCCD.3040001@iebele.nl>	<267CCC55-D213-4A45-8802-8D1B1127FA87@mac.com>
+	<471E2C2E.4090308@rumblestrip.org>
+Message-ID: <471E3D44.20407@iebele.nl>
+
+Hi Tom,
+
+I think Rob is right.
+If you don't solve it with Rob's suggestion, try these:
+
+http://www.toren.com/radiance/dxfimport_so_tom.h
+http://www.toren.com/radiance/dxfimport_so_tom.cpp
+
+Also you should use g++ instead of gcc, sorry for that, like this:
+
+# g++ -o tom dxfimport_so_tom.cpp
+
+And to test it:
+# ./tom
+
+Good luck,
+
+Iebele
+
+> Tom Young wrote:
+>
+>> thanks Iebele
+>>
+>> <<gcc -o dxfimport dxfimport_so.cpp dxf1.dxf
+>> In file included from dxfimport_so.cpp:13:
+>> dxfimport_so.h:12:20: error: malloc.h: No such file or directory>>
+>>
+>> I should say that I'm no geek.
+>>
+>> I did man gcc and the page went on forever!
+>>
+>> I don't understand what the two arguments of this gcc app are doing.
+>>
+>> I appreciate your making them available but don't understand what's 
+>> to be done.
+>>
+>> Am I generating a usable OSX script to be shebanged or put into the 
+>> Path to use from Terminal ? If so where is that script ?
+>
+> That error makes me think you have gcc installed on your machine, but 
+> not all of the libraries.  Have you done a full install of Xcode?  
+> Make sure that's been done first, then you may also need to run this 
+> as root (do you know about the sudo command, which runs things as 
+> root?).  After it's been compiled (yes, gcc is a compiler so it's not 
+> making a script but an actual executable), you will move the binary to 
+> /usr/local/bin with all the other Radiance binaries (you would do this 
+> with sudo too, i.e. "sudo mv dxfimport /usr/local/bin").  sudo will 
+> ask you for the administrative password, which you likely set up when 
+> you set up your Mac initially.  Hope this helps (and does not hurt)!
+>
+> - Rob Guglielmetti
+> www.rumblestrip.org
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+
+From tbleicher at arcor.de  Tue Oct 23 11:40:26 2007
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Tue Oct 23 11:42:14 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <471DEC69.6090706@visarc.com>
+References: <DIIE.00001C26000268F1@192.168.0.81>
+	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>
+	<471DEC69.6090706@visarc.com>
+Message-ID: <59F80A78-BBB8-412C-9F9B-6D8DC4042DA6@arcor.de>
+
+
+On 23 Oct 2007, at 13:43, Jack de Valpine wrote:
+
+> Hi Tom,
+>
+> One workflow option, much as I dislike suggesting it, is perhaps to  
+> use
+> Sketchup as an intermediate. It looks like Vectorworks will save  
+> out an skp.
+> Sketchup (commercial version) can then save out an obj format file,  
+> which can
+> be converted with obj2rad. I have very limited experience with  
+> Sketchup, but
+> in my few experiences, I have found that the models are very very  
+> hefty.
+
+Sketchup is no so bad. I have written a Ruby script to export  
+Sketchup models
+to Radiance and I'm about to finish and release it soon (I keep  
+saying that
+for 2 weeks now...). Sketchup has some nice features (like n-sided  
+polygons
+and a total lack of complex geometric primitives) that can be translated
+nicely into Radiance. It has not seen much testing (yet) and if Tom  
+needs
+a solution today I can only offer a work in progress.
+
+Anyway, Sketchup doesn't make the models 'hefty'; it's the users. If you
+have a messy model in Sketchup/Vectorworks/Autocad it will end in a  
+messy
+model in Radiance.
+
+I remember that there is another script around which was presented at  
+the
+first Radiance Workshop in Fribourgh years ago. That might have seen  
+some
+further development and be in a more user friendly state.
+
+Other options: does Vectorworks offer a scripting API? A very simple
+Radiance exporter should not be hard to do and can probably be derived
+from a sample script (access to the 3D faces is all that's required).
+
+You could use Blender and Francesco's or my own export scripts. The
+biggest problem is to find a format of the DXF file that Blender can
+understand. But that's the problem of all export-import-export tool
+chains (and ultimately of the DXF file format).
+
+Finally, I have written a partial DXF to Radiance converter in Python
+once. It was written with one particular DXF file in mind and I don't
+think I even added support for 3D faces. If you have a small DXF example
+I could see if it works and perhaps add bit to support the most basic
+files. I stopped playing around with that because I couldn't work out
+some problems with transformations. But if Vectorworks exports to a  
+plain
+3D space it should be fine.
+
+Regards,
+Thomas
+
+
+
+From rob.fitzsimmons at Summit.Fiserv.com  Tue Oct 23 11:47:31 2007
+From: rob.fitzsimmons at Summit.Fiserv.com (Fitzsimmons, Rob)
+Date: Tue Oct 23 11:48:43 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <471E3D44.20407@iebele.nl>
+References: <DIIE.00001C26000268F1@192.168.0.81>	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>	<471DFCCD.3040001@iebele.nl>	<267CCC55-D213-4A45-8802-8D1B1127FA87@mac.com><471E2C2E.4090308@rumblestrip.org>
+	<471E3D44.20407@iebele.nl>
+Message-ID: <B564F6CD0114A44E816C0D68AE8C6E69FD86DD@MKEXCHVS2.Mail.Fiserv.net>
+
+I'll chime in that strata2rad by Paul Bourke
+was built to convert Strata Studio Pro dxf files to Radiance - and it
+also works with Infini-D
+dxfs - so it may work with yours
+I have Mac binary and source - I don't see it on his site anymore
+http://local.wasp.uwa.edu.au/~pbourke
+
+Rob F
+
+
+
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of
+iebele
+Sent: Tuesday, October 23, 2007 11:28 AM
+To: Radiance general discussion
+Subject: Re: [Radiance-general] dxf2rad
+
+Hi Tom,
+
+I think Rob is right.
+If you don't solve it with Rob's suggestion, try these:
+
+http://www.toren.com/radiance/dxfimport_so_tom.h
+http://www.toren.com/radiance/dxfimport_so_tom.cpp
+
+Also you should use g++ instead of gcc, sorry for that, like this:
+
+# g++ -o tom dxfimport_so_tom.cpp
+
+And to test it:
+# ./tom
+
+Good luck,
+
+Iebele
+
+> Tom Young wrote:
+>
+>> thanks Iebele
+>>
+>> <<gcc -o dxfimport dxfimport_so.cpp dxf1.dxf In file included from 
+>> dxfimport_so.cpp:13:
+>> dxfimport_so.h:12:20: error: malloc.h: No such file or directory>>
+>>
+>> I should say that I'm no geek.
+>>
+>> I did man gcc and the page went on forever!
+>>
+>> I don't understand what the two arguments of this gcc app are doing.
+>>
+>> I appreciate your making them available but don't understand what's 
+>> to be done.
+>>
+>> Am I generating a usable OSX script to be shebanged or put into the 
+>> Path to use from Terminal ? If so where is that script ?
+>
+> That error makes me think you have gcc installed on your machine, but 
+> not all of the libraries.  Have you done a full install of Xcode?
+> Make sure that's been done first, then you may also need to run this 
+> as root (do you know about the sudo command, which runs things as 
+> root?).  After it's been compiled (yes, gcc is a compiler so it's not 
+> making a script but an actual executable), you will move the binary to
+
+> /usr/local/bin with all the other Radiance binaries (you would do this
+
+> with sudo too, i.e. "sudo mv dxfimport /usr/local/bin").  sudo will 
+> ask you for the administrative password, which you likely set up when 
+> you set up your Mac initially.  Hope this helps (and does not hurt)!
+>
+> - Rob Guglielmetti
+> www.rumblestrip.org
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+From jedev at visarc.com  Tue Oct 23 12:03:30 2007
+From: jedev at visarc.com (Jack de Valpine)
+Date: Tue Oct 23 12:03:54 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <59F80A78-BBB8-412C-9F9B-6D8DC4042DA6@arcor.de>
+References: <DIIE.00001C26000268F1@192.168.0.81>	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>	<471DEC69.6090706@visarc.com>
+	<59F80A78-BBB8-412C-9F9B-6D8DC4042DA6@arcor.de>
+Message-ID: <471E4582.7050304@visarc.com>
+
+Hi Thomas,
+
+Well that is interesting about Sketchup models. And to clarify, my 
+experience has really been in trying to take client built sketchup 
+models and get them into something useful. So my experience biased by 
+big not very well built/organized models provided by others. I guess the 
+thing that I am glad to hear is that like any modeling tool, if well 
+used and controlled, you can get something useful out of it. I would 
+certainly be interested in trying your translator if and when you feel 
+it is ready to share.
+
+Best,
+
+-Jack de Valpine
+
+Thomas Bleicher wrote:
+>
+> On 23 Oct 2007, at 13:43, Jack de Valpine wrote:
+>
+>> Hi Tom,
+>>
+>> One workflow option, much as I dislike suggesting it, is perhaps to use
+>> Sketchup as an intermediate. It looks like Vectorworks will save out 
+>> an skp.
+>> Sketchup (commercial version) can then save out an obj format file, 
+>> which can
+>> be converted with obj2rad. I have very limited experience with 
+>> Sketchup, but
+>> in my few experiences, I have found that the models are very very hefty.
+>
+> Sketchup is no so bad. I have written a Ruby script to export Sketchup 
+> models
+> to Radiance and I'm about to finish and release it soon (I keep saying 
+> that
+> for 2 weeks now...). Sketchup has some nice features (like n-sided 
+> polygons
+> and a total lack of complex geometric primitives) that can be translated
+> nicely into Radiance. It has not seen much testing (yet) and if Tom needs
+> a solution today I can only offer a work in progress.
+>
+> Anyway, Sketchup doesn't make the models 'hefty'; it's the users. If you
+> have a messy model in Sketchup/Vectorworks/Autocad it will end in a messy
+> model in Radiance.
+>
+> I remember that there is another script around which was presented at the
+> first Radiance Workshop in Fribourgh years ago. That might have seen some
+> further development and be in a more user friendly state.
+>
+> Other options: does Vectorworks offer a scripting API? A very simple
+> Radiance exporter should not be hard to do and can probably be derived
+> from a sample script (access to the 3D faces is all that's required).
+>
+> You could use Blender and Francesco's or my own export scripts. The
+> biggest problem is to find a format of the DXF file that Blender can
+> understand. But that's the problem of all export-import-export tool
+> chains (and ultimately of the DXF file format).
+>
+> Finally, I have written a partial DXF to Radiance converter in Python
+> once. It was written with one particular DXF file in mind and I don't
+> think I even added support for 3D faces. If you have a small DXF example
+> I could see if it works and perhaps add bit to support the most basic
+> files. I stopped playing around with that because I couldn't work out
+> some problems with transformations. But if Vectorworks exports to a plain
+> 3D space it should be fine.
+>
+> Regards,
+> Thomas
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+-- 
+# Jack de Valpine
+# president
+#
+# visarc incorporated
+# http://www.visarc.com
+#
+# channeling technology for superior design and construction
+
+From rpg at rumblestrip.org  Tue Oct 23 12:39:01 2007
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Tue Oct 23 12:39:23 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <471E4582.7050304@visarc.com>
+References: <DIIE.00001C26000268F1@192.168.0.81>	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>	<471DEC69.6090706@visarc.com>	<59F80A78-BBB8-412C-9F9B-6D8DC4042DA6@arcor.de>
+	<471E4582.7050304@visarc.com>
+Message-ID: <471E4DD5.3080106@rumblestrip.org>
+
+Jack de Valpine wrote:
+> Hi Thomas,
+>
+> Well that is interesting about Sketchup models. And to clarify, my 
+> experience has really been in trying to take client built sketchup 
+> models and get them into something useful. So my experience biased by 
+> big not very well built/organized models provided by others. I guess 
+> the thing that I am glad to hear is that like any modeling tool, if 
+> well used and controlled, you can get something useful out of it. 
+
+Yeah, I got two models recently, one built in SketchUp and the other in 
+Revit (same project, same model extents), and the Revit one was 
+literally unusable in AutoCAD, much less Radiance. 
+
+> I would certainly be interested in trying your translator if and when 
+> you feel it is ready to share.
+As a very recent licensee of SketchUp Pro, I too would be interested in 
+your translator, Thomas!  I'd also like to hear (maybe off-list) your 
+thoughts on how to model accurately in SketchUp, since it seems to still 
+lack direct coordinate input, UCSs, and the object snaps seem a little 
+lean compared to ACAD...
+
+- Rob
+
+From jedev at visarc.com  Tue Oct 23 12:54:04 2007
+From: jedev at visarc.com (Jack de Valpine)
+Date: Tue Oct 23 12:54:30 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <471E4DD5.3080106@rumblestrip.org>
+References: <DIIE.00001C26000268F1@192.168.0.81>	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>	<471DEC69.6090706@visarc.com>	<59F80A78-BBB8-412C-9F9B-6D8DC4042DA6@arcor.de>	<471E4582.7050304@visarc.com>
+	<471E4DD5.3080106@rumblestrip.org>
+Message-ID: <471E515C.1010208@visarc.com>
+
+Hey Rob,
+
+Would you be willing to share experience with Revit to Radiance? What 
+where the main problems that you encountered?
+
+-Jack
+
+Rob Guglielmetti wrote:
+> Jack de Valpine wrote:
+>> Hi Thomas,
+>>
+>> Well that is interesting about Sketchup models. And to clarify, my 
+>> experience has really been in trying to take client built sketchup 
+>> models and get them into something useful. So my experience biased by 
+>> big not very well built/organized models provided by others. I guess 
+>> the thing that I am glad to hear is that like any modeling tool, if 
+>> well used and controlled, you can get something useful out of it. 
+>
+> Yeah, I got two models recently, one built in SketchUp and the other 
+> in Revit (same project, same model extents), and the Revit one was 
+> literally unusable in AutoCAD, much less Radiance.
+>> I would certainly be interested in trying your translator if and when 
+>> you feel it is ready to share.
+> As a very recent licensee of SketchUp Pro, I too would be interested 
+> in your translator, Thomas!  I'd also like to hear (maybe off-list) 
+> your thoughts on how to model accurately in SketchUp, since it seems 
+> to still lack direct coordinate input, UCSs, and the object snaps seem 
+> a little lean compared to ACAD...
+>
+> - Rob
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+-- 
+# Jack de Valpine
+# president
+#
+# visarc incorporated
+# http://www.visarc.com
+#
+# channeling technology for superior design and construction
+
+From rpg at rumblestrip.org  Tue Oct 23 13:18:42 2007
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Tue Oct 23 13:18:46 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <471E515C.1010208@visarc.com>
+References: <DIIE.00001C26000268F1@192.168.0.81>	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>	<471DEC69.6090706@visarc.com>	<59F80A78-BBB8-412C-9F9B-6D8DC4042DA6@arcor.de>	<471E4582.7050304@visarc.com>
+	<471E4DD5.3080106@rumblestrip.org> <471E515C.1010208@visarc.com>
+Message-ID: <471E5722.7060402@rumblestrip.org>
+
+Jack de Valpine wrote:
+> Hey Rob,
+>
+> Would you be willing to share experience with Revit to Radiance? What 
+> where the main problems that you encountered?
+Oh, just the usual bs with Autodesk's so-called intelligent entities, 
+parametric building assemblies and the like, that get replaced with 
+"proxy objects" when saved down to early AutoCAD formats.  Things 
+disappear, objects behave strangely (such as not being able to be copied 
+and pasted into other drawings), etc.  This particular Revit model I was 
+talking about was simply too detailed for its own good and was bogging 
+down my system.   In general I find that 300MB drawings will do that.  
+;-)  It was so slow that weeding out the extraneous polygons was simply 
+taking too long.
+
+- Rob Guglielmetti
+
+From jedev at visarc.com  Tue Oct 23 13:30:55 2007
+From: jedev at visarc.com (Jack de Valpine)
+Date: Tue Oct 23 13:31:20 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <471E5722.7060402@rumblestrip.org>
+References: <DIIE.00001C26000268F1@192.168.0.81>	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>	<471DEC69.6090706@visarc.com>	<59F80A78-BBB8-412C-9F9B-6D8DC4042DA6@arcor.de>	<471E4582.7050304@visarc.com>
+	<471E4DD5.3080106@rumblestrip.org> <471E515C.1010208@visarc.com>
+	<471E5722.7060402@rumblestrip.org>
+Message-ID: <471E59FF.7030809@visarc.com>
+
+Hey Rob,
+
+Wow 300Mb, I start being highly suspicious at around 25MB for a CAD 
+model.  On the other hand, I think this BIM stuff is going to go 
+somewhere, so figuring out how to manage the data is going to be an 
+issue worth investigating. I suspect it is particularly nasty if you are 
+trying get data out for use in Autocad 2000. I wonder if would be any 
+more "inter-operable" going from Revit to 2008.
+
+As an aside, I really wish that the folks at Autodesk would provide a 
+method for exporting to obj format. Not that this helps with managing 
+gigantic 3D data sets, but it would at least provide good workflow from 
+Autodesk tools to other applications....
+
+-Jack
+
+Rob Guglielmetti wrote:
+> Jack de Valpine wrote:
+>> Hey Rob,
+>>
+>> Would you be willing to share experience with Revit to Radiance? What 
+>> where the main problems that you encountered?
+> Oh, just the usual bs with Autodesk's so-called intelligent entities, 
+> parametric building assemblies and the like, that get replaced with 
+> "proxy objects" when saved down to early AutoCAD formats.  Things 
+> disappear, objects behave strangely (such as not being able to be 
+> copied and pasted into other drawings), etc.  This particular Revit 
+> model I was talking about was simply too detailed for its own good and 
+> was bogging down my system.   In general I find that 300MB drawings 
+> will do that.  ;-)  It was so slow that weeding out the extraneous 
+> polygons was simply taking too long.
+>
+> - Rob Guglielmetti
+>
+
+-- 
+# Jack de Valpine
+# president
+#
+# visarc incorporated
+# http://www.visarc.com
+#
+# channeling technology for superior design and construction
+
+From randolph at panix.com  Tue Oct 23 13:40:25 2007
+From: randolph at panix.com (Randolph Fritz)
+Date: Tue Oct 23 13:40:31 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <59F80A78-BBB8-412C-9F9B-6D8DC4042DA6@arcor.de>
+References: <DIIE.00001C26000268F1@192.168.0.81>
+	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>
+	<471DEC69.6090706@visarc.com>
+	<59F80A78-BBB8-412C-9F9B-6D8DC4042DA6@arcor.de>
+Message-ID: <682FDA58-9E33-42B5-967A-3CE3F57100A8@panix.com>
+
+
+On Oct 23, 2007, at 11:40 AM, Thomas Bleicher wrote:
+
+>
+> On 23 Oct 2007, at 13:43, Jack de Valpine wrote:
+>
+>> Hi Tom,
+>>
+>> One workflow option, much as I dislike suggesting it, is perhaps  
+>> to use
+>> Sketchup as an intermediate. It looks like Vectorworks will save  
+>> out an skp.
+>> Sketchup (commercial version) can then save out an obj format  
+>> file, which can
+>> be converted with obj2rad. I have very limited experience with  
+>> Sketchup, but
+>> in my few experiences, I have found that the models are very very  
+>> hefty.
+>
+> Sketchup is no so bad. I have written a Ruby script to export  
+> Sketchup models
+> to Radiance and I'm about to finish and release it soon (I keep  
+> saying that
+> for 2 weeks now...). Sketchup has some nice features (like n-sided  
+> polygons
+> and a total lack of complex geometric primitives) that can be  
+> translated
+> nicely into Radiance. It has not seen much testing (yet) and if Tom  
+> needs
+> a solution today I can only offer a work in progress.
+
+I'd be interested in that script, too--I have a research project in  
+mind.  Do keep us up-to-date.
+
+Randolph
+
+From randolph at panix.com  Tue Oct 23 14:05:47 2007
+From: randolph at panix.com (Randolph Fritz)
+Date: Tue Oct 23 14:05:53 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <471E4DD5.3080106@rumblestrip.org>
+References: <DIIE.00001C26000268F1@192.168.0.81>	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>	<471DEC69.6090706@visarc.com>	<59F80A78-BBB8-412C-9F9B-6D8DC4042DA6@arcor.de>
+	<471E4582.7050304@visarc.com> <471E4DD5.3080106@rumblestrip.org>
+Message-ID: <08CAE225-C59F-4246-9743-DEFA7D871CC9@panix.com>
+
+
+On Oct 23, 2007, at 12:39 PM, Rob Guglielmetti wrote:
+
+
+> As a very recent licensee of SketchUp Pro, I too would be  
+> interested in your translator, Thomas!  I'd also like to hear  
+> (maybe off-list) your thoughts on how to model accurately in  
+> SketchUp, since it seems to still lack direct coordinate input,  
+> UCSs, and the object snaps seem a little lean compared to ACAD...
+
+It's perfectly good at relative co-ordinates (4'11.5" along the X- 
+axis from that point).
+
+Randolph
+
+Of course, it keeps everything in inches, which is weird, but there  
+are exact conversions to SI units.
+
+From rpg at rumblestrip.org  Tue Oct 23 14:17:55 2007
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Tue Oct 23 14:18:07 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <471E59FF.7030809@visarc.com>
+References: <DIIE.00001C26000268F1@192.168.0.81>	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>	<471DEC69.6090706@visarc.com>	<59F80A78-BBB8-412C-9F9B-6D8DC4042DA6@arcor.de>	<471E4582.7050304@visarc.com>
+	<471E4DD5.3080106@rumblestrip.org> <471E515C.1010208@visarc.com>
+	<471E5722.7060402@rumblestrip.org> <471E59FF.7030809@visarc.com>
+Message-ID: <471E6503.30105@rumblestrip.org>
+
+Jack de Valpine wrote:
+> Hey Rob,
+>
+> Wow 300Mb, I start being highly suspicious at around 25MB for a CAD 
+> model.  On the other hand, I think this BIM stuff is going to go 
+> somewhere, so figuring out how to manage the data is going to be an 
+> issue worth investigating. I suspect it is particularly nasty if you 
+> are trying get data out for use in Autocad 2000. I wonder if would be 
+> any more "inter-operable" going from Revit to 2008.
+Hi Jack,
+
+At the risk of sounding like a crusty old man, I've been hearing that 
+this is going somewhere for over a decade now.  But I do agree that 
+hardware and to a certain extent software is looking more than ever like 
+it's ready for this challenge.  I still would argue that the end users 
+are not.  Despite there being an AIA layer naming standard for ten 
+years, I have yet to get a couple of drawings from a couple of 
+architects that use the same "standard". 
+
+And yes, it does seem like the further you go back, version-wise, the 
+more problems you have.  The file size issue is related to this; each 
+progressive version downgrade caused the file to grow a bit more.  In 
+our case, this model was exported to AutoCAD 2008 format by the 
+architect, then converted by me to 2004 and 2000 format, just to see the 
+differences.
+
+> As an aside, I really wish that the folks at Autodesk would provide a 
+> method for exporting to obj format. Not that this helps with managing 
+> gigantic 3D data sets, but it would at least provide good workflow 
+> from Autodesk tools to other applications....
+Yeah, I agree.  This is one of the reasons for our office purchasing a 
+license of SketchUp Pro, is the export capability.
+
+- Rob
+
+From tbleicher at arcor.de  Tue Oct 23 14:29:09 2007
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Tue Oct 23 14:30:30 2007
+Subject: [Radiance-general] Sketchup to Radiance [was: dxf2rad]
+In-Reply-To: <471E4DD5.3080106@rumblestrip.org>
+References: <DIIE.00001C26000268F1@192.168.0.81>	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>	<471DEC69.6090706@visarc.com>	<59F80A78-BBB8-412C-9F9B-6D8DC4042DA6@arcor.de>
+	<471E4582.7050304@visarc.com> <471E4DD5.3080106@rumblestrip.org>
+Message-ID: <05143168-22BD-48D7-882E-A609388DAAD1@arcor.de>
+
+
+On 23 Oct 2007, at 20:39, Rob Guglielmetti wrote:
+
+> Yeah, I got two models recently, one built in SketchUp and the other
+> in Revit (same project, same model extents), and the Revit one was
+> literally unusable in AutoCAD, much less Radiance.
+>
+>> I would certainly be interested in trying your translator if and when
+>> you feel it is ready to share.
+>
+> As a very recent licensee of SketchUp Pro, I too would be interested
+> in your translator, Thomas!
+
+It should be said that the script works with the free version.
+I don't have a licence.
+
+> I'd also like to hear (maybe off-list) your thoughts on how to model
+> accurately in SketchUp, since it seems to still lack direct coordinate
+> input, UCSs, and the object snaps seem a little lean compared to  
+> ACAD...
+
+Well, I have to say that I personally don't use Sketchup a lot. But my
+colleagues in the office do and just about every computer trained  
+architect
+out there. I started the script because the export via OBJ wasn't  
+successful
+with our models (double entities, totally uncontrollable materials  
+etc.) and
+I wanted something with a bit more control.
+
+I share your opinion that Sketchup is the '6B pen' of CAD tools. And yet
+once someone has done all the work to create the model, I think it's not
+effective to do it again in another application. Changes are necessary
+to get meaningful results in Radiance but these changes can be done in
+Sketchup as well. For Radiance (and lighting in general) the model  
+doesn't
+have to be 100% accurate.
+
+It would be nice if the architects would pay more attention on the  
+accuracy
+of their models. But it's not their job to provide the consultants with
+usable models for their particular simulation tool. It's their job to do
+the fuzzy visual things and that's what Sketchup was design for. If  
+it would
+require more precision and accuracy it would not be as popular as it is.
+
+Everyone has a favourite and if you know how to use your tools I  
+don't see
+why it shouldn't be possible to create good Radiance models in Sketchup.
+
+I just can't get the hang of it.
+
+Thomas
+
+
+From jedev at visarc.com  Tue Oct 23 15:01:36 2007
+From: jedev at visarc.com (Jack de Valpine)
+Date: Tue Oct 23 15:02:03 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <471E6503.30105@rumblestrip.org>
+References: <DIIE.00001C26000268F1@192.168.0.81>	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>	<471DEC69.6090706@visarc.com>	<59F80A78-BBB8-412C-9F9B-6D8DC4042DA6@arcor.de>	<471E4582.7050304@visarc.com>	<471E4DD5.3080106@rumblestrip.org>
+	<471E515C.1010208@visarc.com>	<471E5722.7060402@rumblestrip.org>
+	<471E59FF.7030809@visarc.com> <471E6503.30105@rumblestrip.org>
+Message-ID: <471E6F40.30309@visarc.com>
+
+Hi Rob,
+
+Rob Guglielmetti wrote:
+> Hi Jack,
+>
+> At the risk of sounding like a crusty old man, I've been hearing that 
+> this is going somewhere for over a decade now.
+Well, I've been known to be a bit of a curmudgeon myself.... 
+particularly on this topic
+>   But I do agree that hardware and to a certain extent software is 
+> looking more than ever like it's ready for this challenge.  I still 
+> would argue that the end users are not.  
+No and I would suggest that real BIM is completely disruptive, so it 
+going to be interesting. And I am trying to consider how this technology 
+might be useful for us, not close to any answers at all though.
+> Despite there being an AIA layer naming standard for ten years, I have 
+> yet to get a couple of drawings from a couple of architects that use 
+> the same "standard".
+> And yes, it does seem like the further you go back, version-wise, the 
+> more problems you have.
+Yeah, I have never really understood the layering standards (not that I 
+ever paid much attention to them). We have always tried to be pretty 
+functional in terms of naming conventions (glass-vision, glass-frit, 
+int-wall, int-ceil ....), it just make the layers more intelligible at 
+least for our needs.
+> The file size issue is related to this; each progressive version 
+> downgrade caused the file to grow a bit more.  In our case, this model 
+> was exported to AutoCAD 2008 format by the architect, then converted 
+> by me to 2004 and 2000 format, just to see the differences.
+>
+>> As an aside, I really wish that the folks at Autodesk would provide a 
+>> method for exporting to obj format. Not that this helps with managing 
+>> gigantic 3D data sets, but it would at least provide good workflow 
+>> from Autodesk tools to other applications....
+> Yeah, I agree.  This is one of the reasons for our office purchasing a 
+> license of SketchUp Pro, is the export capability.
+>
+Hmm, well I will be interested to hear more about this. I guess my 
+recent experience with the tool make me feel like washing my hands (but 
+this has more to do with a big ugly model than anything else)... I still 
+have my evaluation going so I should do some experiments on real models.
+
+I think bigger picture though, the real intermediate file format for 
+better or worse is obj, the main problem with this in my mind is then 
+loosing out on selected Radiance primitives such as spheres, cylinders, 
+and polygons of vertices > 4... as well as having more potential issues 
+controlling tessellations of geometry that must NOT be tessellated such 
+as geometry being used in any illum source location.
+
+-- 
+# Jack de Valpine
+# president
+#
+# visarc incorporated
+# http://www.visarc.com
+#
+# channeling technology for superior design and construction
+
+From grobe at gmx.net  Wed Oct 24 00:39:45 2007
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Wed Oct 24 00:43:16 2007
+Subject: [Radiance-general] Vectorworks to Radiance (was: dxf2rad)
+In-Reply-To: <AA2A0B0D-B2E1-4876-94C9-FA49CD012F6D@mac.com>
+References: <DIIE.00001C26000268F1@192.168.0.81>	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>	<471DFCCD.3040001@iebele.nl>
+	<471E125C.6030906@gmx.net>
+	<AA2A0B0D-B2E1-4876-94C9-FA49CD012F6D@mac.com>
+Message-ID: <471EF6C1.5090704@gmx.net>
+
+> IGES is a Vectorworks export option.
+> 
+> I'm not clear what bricad is.
+
+IGES provides you with higher level geometry then the DXF-faces could. 
+brlcad is an open source cad package, coming with converters (im- and 
+export). You can convert IGES to brlcad to OBJ, which should produce 
+very clean OBJ files. Than you can enjoy the great OBJ-support in 
+Radiance, including smooth surfaces and all the neat stuff...
+
+You can script the whole procedure.
+
+CU Lars.
+
+From thdyoung at mac.com  Wed Oct 24 02:49:41 2007
+From: thdyoung at mac.com (Tom Young)
+Date: Wed Oct 24 02:49:51 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <471E3D44.20407@iebele.nl>
+References: <DIIE.00001C26000268F1@192.168.0.81>
+	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>
+	<471DFCCD.3040001@iebele.nl>
+	<267CCC55-D213-4A45-8802-8D1B1127FA87@mac.com>
+	<471E2C2E.4090308@rumblestrip.org> <471E3D44.20407@iebele.nl>
+Message-ID: <10E7A645-69AB-4F51-A4B2-FA643116281B@mac.com>
+
+hi Iebele
+
+That worked great.
+
+Very nice.
+
+big thanks.
+
+Tom
+
+On 23 Oct 2007, at 19:28, iebele wrote:
+
+> Hi Tom,
+>
+> I think Rob is right.
+> If you don't solve it with Rob's suggestion, try these:
+>
+> http://www.toren.com/radiance/dxfimport_so_tom.h
+> http://www.toren.com/radiance/dxfimport_so_tom.cpp
+>
+> Also you should use g++ instead of gcc, sorry for that, like this:
+>
+> # g++ -o tom dxfimport_so_tom.cpp
+>
+> And to test it:
+> # ./tom
+>
+> Good luck,
+>
+> Iebele
+>
+>> Tom Young wrote:
+>>
+>>> thanks Iebele
+>>>
+>>> <<gcc -o dxfimport dxfimport_so.cpp dxf1.dxf
+>>> In file included from dxfimport_so.cpp:13:
+>>> dxfimport_so.h:12:20: error: malloc.h: No such file or directory>>
+>>>
+>>> I should say that I'm no geek.
+>>>
+>>> I did man gcc and the page went on forever!
+>>>
+>>> I don't understand what the two arguments of this gcc app are doing.
+>>>
+>>> I appreciate your making them available but don't understand  
+>>> what's to be done.
+>>>
+>>> Am I generating a usable OSX script to be shebanged or put into  
+>>> the Path to use from Terminal ? If so where is that script ?
+>>
+>> That error makes me think you have gcc installed on your machine,  
+>> but not all of the libraries.  Have you done a full install of  
+>> Xcode?  Make sure that's been done first, then you may also need  
+>> to run this as root (do you know about the sudo command, which  
+>> runs things as root?).  After it's been compiled (yes, gcc is a  
+>> compiler so it's not making a script but an actual executable),  
+>> you will move the binary to /usr/local/bin with all the other  
+>> Radiance binaries (you would do this with sudo too, i.e. "sudo mv  
+>> dxfimport /usr/local/bin").  sudo will ask you for the  
+>> administrative password, which you likely set up when you set up  
+>> your Mac initially.  Hope this helps (and does not hurt)!
+>>
+>> - Rob Guglielmetti
+>> www.rumblestrip.org
+>>
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general@radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>
+>>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+Tom Young Architects
+19 Bassett Street
+London
+NW5 4PG
+020 7482 6150
+07765 378 502
+thdyoung@mac.com
+http://homepage.mac.com/thdyoung/FileSharing1.html
+http://localstinker.blogspot.com/
+http://www.localstink.com/rktat/index.html
+
+
+
+
+
+From MdelaFuente at wmtao.com  Wed Oct 24 06:48:49 2007
+From: MdelaFuente at wmtao.com (Mark de la Fuente)
+Date: Wed Oct 24 06:49:32 2007
+Subject: [Radiance-general] dxf2rad
+Message-ID: <471F06F1.B450.0049.0@wmtao.com>
+
+For what it's worth, 4 out of 5 3D models I get from architects these days seem to be generated in Sketch-Up and a couple of large clients are actually requiring that we generate sketch-up models of their spaces for approval by the end users (prior to construction).  Having a direct sketch-up to radiance translator would be really great.
+ 
+Mark
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20071024/ba9080a7/attachment.html
+From gward at lmi.net  Wed Oct 24 08:19:45 2007
+From: gward at lmi.net (Greg Ward)
+Date: Wed Oct 24 08:19:50 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <471F06F1.B450.0049.0@wmtao.com>
+References: <471F06F1.B450.0049.0@wmtao.com>
+Message-ID: <1BCBBB95-CA5B-4254-822F-7BE45C617921@lmi.net>
+
+Hi Mark,
+
+In general, unless a data representation is published and stable, it  
+doesn't make much sense to support it in a translator, as the next  
+version that comes out will likely break it.  If there is a published  
+standard for Sketchup files, or something closely related (a higher- 
+level output from Sketchup), that would be interesting to look at.   
+Otherwise, you can try lobbying the developers to put a Radiance or  
+MGF export option directly into their software, which is much easier  
+to write than a translator.
+
+-Greg
+
+> From: "Mark de la Fuente" <MdelaFuente@wmtao.com>
+> Date: October 24, 2007 6:48:49 AM PDT
+>
+> For what it's worth, 4 out of 5 3D models I get from architects  
+> these days seem to be generated in Sketch-Up and a couple of large  
+> clients are actually requiring that we generate sketch-up models of  
+> their spaces for approval by the end users (prior to  
+> construction).  Having a direct sketch-up to radiance translator  
+> would be really great.
+>
+> Mark
+
+From tbleicher at arcor.de  Wed Oct 24 11:02:46 2007
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Wed Oct 24 11:04:11 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <1BCBBB95-CA5B-4254-822F-7BE45C617921@lmi.net>
+References: <471F06F1.B450.0049.0@wmtao.com>
+	<1BCBBB95-CA5B-4254-822F-7BE45C617921@lmi.net>
+Message-ID: <9D8C6808-C3F0-4147-916D-7A40DF79A050@arcor.de>
+
+
+On 24 Oct 2007, at 16:19, Greg Ward wrote:
+
+> Hi Mark,
+>
+> In general, unless a data representation is published and stable,
+> it doesn't make much sense to support it in a translator, as the
+> next version that comes out will likely break it. If there is a
+> published standard for Sketchup files, or something closely related
+> (a higher-level output from Sketchup), that would be interesting to
+> look at.
+
+I don't think the format of the Sketchup files (*.skp) is published
+or would be useful as a converter basis. Sketchup (Pro and free) also
+support the Google Earth file format which I believe is actually the
+current everybody's darling Collada - don't remember where I got this
+information from, though. Collada is published and documented but not
+exactly easy to understand (at least for me).
+
+Sketchup's Ruby API is limited, badly documented and not officially
+supported by Google. Nevertheless I believe it will stay and won't
+be rewritten completely in the next release because the developers
+appear to test new features in Ruby before they get implemented in C
+('sketchy physics' is one example). Also I don't think Google has
+enough developers working on Sketchup to start a rewrite just for
+the fun of annoying the users.
+
+The API is sufficient to quickly come up with non-interactive scripts
+to access or manipulate the 3D scene. It takes a while to figure out
+how things are supposed to work but there are plenty of examples for
+trivial things like a polygon exporter. If you want a nice looking
+interface you can use DHTML - but then it gets rather messy.
+
+Well then, back to coding ...
+
+Thomas
+
+
+From randolph at panix.com  Wed Oct 24 11:02:00 2007
+From: randolph at panix.com (Randolph Fritz)
+Date: Wed Oct 24 11:06:12 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <1BCBBB95-CA5B-4254-822F-7BE45C617921@lmi.net>
+References: <471F06F1.B450.0049.0@wmtao.com>
+	<1BCBBB95-CA5B-4254-822F-7BE45C617921@lmi.net>
+Message-ID: <DF00EDF0-0EE7-4CF6-96AC-C22BA76E1C64@panix.com>
+
+Google has published an extensive SketchUp API; while as far as I  
+know the file format has not been published, the API is likely to  
+persist, so  user-written export scripts are possible.  I haven't dug  
+into it yet--I've actually been thinking about it for a while--, but  
+I gather Thomas Bleicher has, and has something "almost" working.
+
+Randolph
+
+On Oct 24, 2007, at 8:19 AM, Greg Ward wrote:
+
+> In general, unless a data representation is published and stable,  
+> it doesn't make much sense to support it in a translator, as the  
+> next version that comes out will likely break it.  If there is a  
+> published standard for Sketchup files, or something closely related  
+> (a higher-level output from Sketchup), that would be interesting to  
+> look at.  Otherwise, you can try lobbying the developers to put a  
+> Radiance or MGF export option directly into their software, which  
+> is much easier to write than a translator.
+
+From vangelis at unb.br  Wed Oct 24 12:42:45 2007
+From: vangelis at unb.br (Evangelos Christakou)
+Date: Wed Oct 24 12:42:52 2007
+Subject: [Radiance-general] Re: Radiance-general Digest, Vol 44, Issue 17
+In-Reply-To: <20071024181318.8DA36539BEF@C2B3-POP3.unb.br>
+References: <20071024181318.8DA36539BEF@C2B3-POP3.unb.br>
+Message-ID: <dc928a050710241242x14535dd1k7b16e260a0abdda@mail.gmail.com>
+
+>
+>
+> For what it's worth, 4 out of 5 3D models I get from architects these days
+> seem to be generated in Sketch-Up and a couple of large clients are actually
+> requiring that we generate sketch-up models of their spaces for approval by
+> the end users (prior to construction).  Having a direct sketch-up to
+> radiance translator would be really great.
+>
+> Mark
+> -------------- next part --------------
+> An HTML attachment was scrubbed...
+> URL: http://radiance-online.org/pipermail/radiance-general/attachments/20071024/ba9080a7/attachment.htm
+>
+>
+> ------------------------------
+>
+> Hi all,
+
+I know how to model 3D with SKETCHUP ver 5.5 but I prefer to to do it with
+ECOTEC 5.5, although it is not so powerful as SKP.
+
+Unless you expect to run SKETCHUP in Linux in the future, ECOTEC ver 5.5 +
+RADTOOLS  (Interface to RADIANCE) + RADIANCE 3.7 (compiled for Windows,
+thanks F. Anselmo) do the job very well and easily.
+
+ECOTECT in demo version gives you two hours free to work each time you open
+the software, RADTOOLS (thanks Marsh) it is not time controlled it is
+totally free!
+
+If you need more than 2 hours to model, I think it`s possible break the
+model in parts of the building, and then rebuild it in RADIANCE, but usually
+it is not necessary.
+
+It is also possible to import 3DS files exported from SKETCHUP, if you fell
+comfortable with it.
+
+I think that`s a very good  solution to model a architectonic space and
+simulate daylighting in Windows OS domain.
+
+
+regards,
+
+Vangelis
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20071024/493daa00/attachment.htm
+From toast at becausewecan.org  Thu Oct 25 10:56:59 2007
+From: toast at becausewecan.org (Jeffrey McGrew)
+Date: Thu Oct 25 10:57:16 2007
+Subject: [Radiance-general] dxf2rad
+In-Reply-To: <471E4DD5.3080106@rumblestrip.org>
+References: <DIIE.00001C26000268F1@192.168.0.81>	<DC5F0632-A893-4754-943A-DA681EB0B545@mac.com>	<471DEC69.6090706@visarc.com>	<59F80A78-BBB8-412C-9F9B-6D8DC4042DA6@arcor.de>
+	<471E4582.7050304@visarc.com> <471E4DD5.3080106@rumblestrip.org>
+Message-ID: <3B6D3239-8FC1-45E4-8F7E-F51A59368898@becausewecan.org>
+
+
+On Oct 23, 2007, at 12:39 PM, Rob Guglielmetti wrote:
+
+> Yeah, I got two models recently, one built in SketchUp and the  
+> other in Revit (same project, same model extents), and the Revit  
+> one was literally unusable in AutoCAD, much less Radiance.
+
+Best way to get a Revit model into Radiance is to use 3D Studio Max  
+or Viz.
+
+When you export a Revit model to DWG, the material information is  
+buried in there but not easily accessible to AutoCAD. This is because  
+99% of the exports to AutoCAD from Revit are meant for drafting  
+background to send off to other people. So it groups things by what  
+they are based upon the AIA layer standard by default. While you can  
+edit that, you can't make it do a 'by material' export to AutoCAD  
+layers. Well, at least not easily.
+
+If you file link the same DWG into Max or Viz, all the materials come  
+along, and you get a very usable model. You then in turn export that  
+to .OBJ, and then use OBJ2RAD to make it into a Radiance file. I've  
+done it several times with good results: http://www.becausewecan.org/ 
+node/190
+
+All in all the Revit models themselves tend to be very clean and  
+'watertight' so they work pretty well.
+
+Sucks that you have to use Max or Viz as a file converter to get from  
+Revit to Radiance. But I beleive that in the near future more file  
+export options will be included in Revit, so that might change soon.
+
+As for BIM being disruptive, I agree wholeheartedly. As someone who's  
+done a lot with it over the last six years, I see potential there for  
+it to change a lot of how our industry works.
+
+Hope this helps,
+
+Jeffrey McGrew
+www.becausewecan.org
+
+From pisuke at blueyonder.co.uk  Thu Oct 25 15:58:09 2007
+From: pisuke at blueyonder.co.uk (Francesco Anselmo)
+Date: Thu Oct 25 15:58:17 2007
+Subject: [Radiance-general] Radiance Knowledge Base: help needed
+Message-ID: <1193353089.10859.20.camel@leviathan>
+
+Hi Radiance folks,
+
+In August I started the Radiance Knowledge Base effort,
+based on discussions about documenting Radiance
+appeared on this list a while ago
+Until now I only have 7 users/writers in the system :-/
+
+We can do better than this, I think! :-)
+
+I have just added a "Unix installation/compile from source" page. 
+Can Apple lovers please review it and add MacOS X specific
+information? Thanks!
+
+Perhaps we could decide who writes what ... volunteers?
+
+Ciao,
+
+Francesco
+
+
+
+
+From danreetz at gmail.com  Thu Oct 25 16:03:44 2007
+From: danreetz at gmail.com (Daniel Reetz)
+Date: Thu Oct 25 16:03:48 2007
+Subject: [Radiance-general] Radiance Knowledge Base: help needed
+In-Reply-To: <1193353089.10859.20.camel@leviathan>
+References: <1193353089.10859.20.camel@leviathan>
+Message-ID: <aaa102d80710251603t605e80b5k1881415367da7c46@mail.gmail.com>
+
+Hi Francesco,
+
+For those of us new to the list, (though perhaps not new to Radiance)
+can you please give a little more information, like the location of
+the Radiance Knowledge Base?
+
+Regards,
+Daniel Reetz
+
+On 10/25/07, Francesco Anselmo <pisuke@blueyonder.co.uk> wrote:
+> Hi Radiance folks,
+>
+> In August I started the Radiance Knowledge Base effort,
+> based on discussions about documenting Radiance
+> appeared on this list a while ago
+> Until now I only have 7 users/writers in the system :-/
+>
+> We can do better than this, I think! :-)
+>
+> I have just added a "Unix installation/compile from source" page.
+> Can Apple lovers please review it and add MacOS X specific
+> information? Thanks!
+>
+> Perhaps we could decide who writes what ... volunteers?
+>
+> Ciao,
+>
+> Francesco
+>
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+From Francesco.Anselmo at arup.com  Thu Oct 25 16:13:48 2007
+From: Francesco.Anselmo at arup.com (Francesco Anselmo)
+Date: Thu Oct 25 16:13:55 2007
+Subject: R: [Radiance-general] Radiance Knowledge Base: help needed
+References: <1193353089.10859.20.camel@leviathan>
+	<aaa102d80710251603t605e80b5k1881415367da7c46@mail.gmail.com>
+Message-ID: <2C0020B9EB71CE4281B292F0E16A6DDE018EB2B2@ldcexc02.global.arup.com>
+
+Hi Daniel
+
+Oops, yes!
+I meant to add a couple of links to the previous message, 
+but they slipped away somehow.
+http://www.bozzograo.net/radiancewiki/doku.php/standard_unix_distribution
+
+Main link to the Radiance KB (wiki):
+http://www.bozzograo.net/radiancewiki/doku.php
+
+Thanks,
+
+F.
+
+
+-----Messaggio originale-----
+Da: radiance-general-bounces@radiance-online.org per conto di Daniel Reetz
+Inviato: ven 26/10/2007 00:03
+A: Radiance general discussion
+Oggetto: Re: [Radiance-general] Radiance Knowledge Base: help needed
+ 
+Hi Francesco,
+
+For those of us new to the list, (though perhaps not new to Radiance)
+can you please give a little more information, like the location of
+the Radiance Knowledge Base?
+
+Regards,
+Daniel Reetz
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: not available
+Type: application/ms-tnef
+Size: 3083 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20071026/190d56b7/attachment.bin
+From tbleicher at arcor.de  Sun Oct 28 11:15:53 2007
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Sun Oct 28 11:17:26 2007
+Subject: [Radiance-general] Sketchup exporter script
+Message-ID: <B12D39B5-A73D-4A0E-BC6C-67C8D0E4A04F@arcor.de>
+
+Hello all.
+
+I have cleaned up and tested my Sketchup export script over the weekend
+and put it up on Francesco's wiki for download:
+
+http://www.bozzograo.net/radiancewiki/doku.php/input:exporters:su2rad
+
+The wiki page contains all the documentation there is for the moment but
+since it does not offer a great number of options it's use should be  
+straight
+forward.
+
+Happy testing,
+
+Thomas
+
+From Francesco.Anselmo at arup.com  Sun Oct 28 15:49:59 2007
+From: Francesco.Anselmo at arup.com (Francesco Anselmo)
+Date: Sun Oct 28 15:53:53 2007
+Subject: R: [Radiance-general] Sketchup exporter script
+References: <B12D39B5-A73D-4A0E-BC6C-67C8D0E4A04F@arcor.de>
+Message-ID: <2C0020B9EB71CE4281B292F0E16A6DDE018EB2B7@ldcexc02.global.arup.com>
+
+Excellent Thomas,
+
+A very useful addition to the Radiance exporter toolset!
+It even worked on Linux, running SketchUp through Wine :-)
+
+And thanks for your great documentation page.
+
+F.
+
+-----Messaggio originale-----
+Da: radiance-general-bounces@radiance-online.org per conto di Thomas Bleicher
+Inviato: dom 28/10/2007 18:15
+A: Radiance general discussion
+Oggetto: [Radiance-general] Sketchup exporter script
+ 
+Hello all.
+
+I have cleaned up and tested my Sketchup export script over the weekend
+and put it up on Francesco's wiki for download:
+
+http://www.bozzograo.net/radiancewiki/doku.php/input:exporters:su2rad
+
+The wiki page contains all the documentation there is for the moment but
+since it does not offer a great number of options it's use should be  
+straight
+forward.
+
+Happy testing,
+
+Thomas
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: not available
+Type: application/ms-tnef
+Size: 3099 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-general/attachments/20071028/fdc28587/attachment.bin
+From randolph at panix.com  Sun Oct 28 19:15:55 2007
+From: randolph at panix.com (Randolph Fritz)
+Date: Sun Oct 28 19:16:02 2007
+Subject: [Radiance-general] Sketchup exporter script
+In-Reply-To: <B12D39B5-A73D-4A0E-BC6C-67C8D0E4A04F@arcor.de>
+References: <B12D39B5-A73D-4A0E-BC6C-67C8D0E4A04F@arcor.de>
+Message-ID: <291012F4-E724-48E9-AAE7-D15C162F67C2@panix.com>
+
+Cool!  When I find some time to breathe, I'll have to take a look at it!
+
+Randolph
+
+On Oct 28, 2007, at 11:15 AM, Thomas Bleicher wrote:
+
+> Hello all.
+>
+> I have cleaned up and tested my Sketchup export script over the  
+> weekend
+> and put it up on Francesco's wiki for download:
+>
+> http://www.bozzograo.net/radiancewiki/doku.php/input:exporters:su2rad
+>
+> The wiki page contains all the documentation there is for the  
+> moment but
+> since it does not offer a great number of options it's use should  
+> be straight
+> forward.
+>
+> Happy testing,
+>
+> Thomas
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+From loscotec at libero.it  Tue Oct 30 04:58:01 2007
+From: loscotec at libero.it (loscotec@libero.it)
+Date: Tue Oct 30 04:58:12 2007
+Subject: [Radiance-general] Looking for some pubblications for my thesys. 
+Message-ID: <JQQ3WP$EB6394470EABEBCCDE05A87FB53C0F6F@libero.it>
+
+Hello everybody!
+
+I'm Lucio Boscolo Mezzopan an itlaian student of electrical engeenering, new member of this mailinglist.
+
+I'm italian as I told, so, sorry for my bad english and feel free to correct me if you like.
+
+Now, my first question and a little more presentation.
+
+I'm doing my thesys project to quit with university. 
+
+The projects involves Radiance and it is not yet defined how it will be in the end, but for the moment, my task is to check Radiace precision.
+
+In other words, I have to find out if Radiance simulates well reality. I could it in two ways: building up a model and measuring real behaviour and simulating it and comparing the datas, or look for someone else who did the same.
+
+Can you help me? Do you know about some pubblication having done this already ? It would be better it to be free of charge, but also if I (actually my university) has to pay for it, it could be great!
+
+Many thanks in advance 
+
+Have good time :)
+
+Lucio
+
+From radiance at archvisu.at  Tue Oct 30 07:21:52 2007
+From: radiance at archvisu.at (Erwin Zierler)
+Date: Tue Oct 30 07:22:04 2007
+Subject: [Radiance-general] Looking for some pubblications for my thesys.
+Message-ID: <DIIE.00001BDE00026E0E@192.168.0.81>
+
+Hi Lucio,
+
+I am working with Radiance since 1993 and over the years I have collected quite a few documents that might be of interest to you. If you want I can send you a list or download links (or the actual documents since some of them have disappeard from the net in the meantime).
+
+In 2004/2005 I initiated a research project which was funded by the EU and the Tyrolean government and together with Bartenbach (a lighting designer and developer) and the University of Innsbruck, Department for Mathematics and Informatics we did a benchmark between the Radiance simulation package and conventional methods, i.e. building a 1/10 model of a real/existing room. The goal was to eveluate the strengths and weaknesses of both methods under different aspects. The benchmark included evaluating/comparing both visual and numerical results.
+
+Unfortunatly this publication is only available in German language but I guess it could be translated to English quite easily. On the other hand I can't promise that I would have time to do this myself any time soon.
+
+However, if you decide to go through a comparison process yourself I would advise you to use an existing room/building as a basis. This way you can measure real world data to use as a reference. Then you would build both, a conventional and a computer model and mesure the results again and compare them with your real world data. I hope I am making sense? There a many aspects which will come up (like how for instance you scale your luminaires or certain materials in a 1/10 model) but I dont want to take away all the fun - in the end it's your thesis ;-)
+
+What I dont quite understand is why your university would pay for an existing publication that already covers what you want to do? Or did I misunderstand that part completely?
+
+Regards,
+ Erwin
+
+-------- Original Message --------
+Subject: [Radiance-general] Looking for some pubblications for my thesys. (30-Okt-2007 12:58)
+From:    loscotec\@libero\.it <loscotec@libero.it>
+To:      radiance-general@radiance-online.org
+
+> Hello everybody!
+> 
+> I'm Lucio Boscolo Mezzopan an itlaian student of electrical engeenering, 
+> new member of this mailinglist.
+> 
+> I'm italian as I told, so, sorry for my bad english and feel free to 
+> correct me if you like.
+> 
+> Now, my first question and a little more presentation.
+> 
+> I'm doing my thesys project to quit with university.
+> 
+> The projects involves Radiance and it is not yet defined how it will be in 
+> the end, but for the moment, my task is to check Radiace precision.
+> 
+> In other words, I have to find out if Radiance simulates well reality. I 
+> could it in two ways: building up a model and measuring real behaviour and 
+> simulating it and comparing the datas, or look for someone else who did the 
+> same.
+> 
+> Can you help me? Do you know about some pubblication having done this 
+> already ? It would be better it to be free of charge, but also if I (
+> actually my university) has to pay for it, it could be great!
+> 
+> Many thanks in advance
+> 
+> Have good time :)
+> 
+> Lucio
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+> To: radiance-general@radiance-online.org
+
+
+From rpg at rumblestrip.org  Tue Oct 30 08:02:43 2007
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Tue Oct 30 08:02:53 2007
+Subject: [Radiance-general] Looking for some pubblications for my thesys.
+In-Reply-To: <JQQ3WP$EB6394470EABEBCCDE05A87FB53C0F6F@libero.it>
+References: <JQQ3WP$EB6394470EABEBCCDE05A87FB53C0F6F@libero.it>
+Message-ID: <47274793.2000908@rumblestrip.org>
+
+Hi Lucio,
+
+I would say John Mardaljevic's thesis is the masterwork of Radiance 
+validations.  Available by request, see this link for details:
+
+http://www.iesd.dmu.ac.uk/~jm/thesis.html
+
+- Rob Guglielmetti
+
+From grobe at gmx.net  Tue Oct 30 10:16:48 2007
+From: grobe at gmx.net (Lars Grobe)
+Date: Tue Oct 30 10:17:10 2007
+Subject: [Radiance-general] Looking for some pubblications for my thesys.
+In-Reply-To: <JQQ3WP$EB6394470EABEBCCDE05A87FB53C0F6F@libero.it>
+References: <JQQ3WP$EB6394470EABEBCCDE05A87FB53C0F6F@libero.it>
+Message-ID: <20071030171648.226010@gmx.net>
+
+Hi Lucio!
+
+I think it is necessary to give you a hint before you start this. Every simulation tries to approach the reality of a system. That means you must know the system you want to simulate before you can select a simulation technique.
+
+Radiance is a simulation application that was made with architectural / building models in mind. You can simulate lots of effects that are relevant in finding glare, getting the illumination levels (e.g. to decide if lighting is efficient for a given use of a space) etc. On the other hand, Radiance was not developed to e.g. model the effects of reflector or lense systems. It is a question of scale, materials, effects relevent for the application.
+
+So what I want to explain is - it does not make sense to find out "how accurate" Radiance is. If you have a problem to solve (e.g. simulating a given type of facade, or modeling a new material), it will be easy to find out if Radiance is a suiteable tool. And only than, people will be interested in accuracy (qualitive or/and quantitive).
+
+In other words, I am (and I guess others are, too) curious what system (building, solar system, christmas tree) you want to simulate, and what effects are important and determine accuracy for you...
+
+Good luck, CU Lars.
+
+From tbleicher at arcor.de  Tue Oct 30 14:19:34 2007
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Tue Oct 30 14:21:05 2007
+Subject: [Radiance-general] Sketchup exporter script
+In-Reply-To: <B12D39B5-A73D-4A0E-BC6C-67C8D0E4A04F@arcor.de>
+References: <B12D39B5-A73D-4A0E-BC6C-67C8D0E4A04F@arcor.de>
+Message-ID: <1B4F2494-85BD-4B8E-9874-14347A21EF60@arcor.de>
+
+
+On 28 Oct 2007, at 18:15, Thomas Bleicher wrote:
+
+> Hello all.
+>
+> I have cleaned up and tested my Sketchup export script over the  
+> weekend
+> and put it up on Francesco's wiki for download:
+>
+> http://www.bozzograo.net/radiancewiki/doku.php/input:exporters:su2rad
+>
+> The wiki page contains all the documentation there is for the  
+> moment but
+> since it does not offer a great number of options it's use should  
+> be straight
+> forward.
+>
+> Happy testing,
+
+Unfortunately some show stopper bugs were present in this version,
+especially for those using it on Windows. I've fixed a few things and
+uploaded a new version to the wiki site.
+
+If you plan to use the script on Windows please download the new  
+version!
+
+Even if you're not using Windows you should download the update because
+it now exports the north orientation of the scene correctly.
+
+Regards,
+Thomas
+
+From minki.sung at gmail.com  Tue Oct 30 19:45:40 2007
+From: minki.sung at gmail.com (Minki Sung)
+Date: Tue Oct 30 19:45:48 2007
+Subject: [Radiance-general] Questionaire on fluorescent lamp
+Message-ID: <3acd9e4a0710301945q2e74d79elbfb2923bbb3e164@mail.gmail.com>
+
+Thank you for your answer.
+
+I've checked it out as you mentioned, but I can't solve the problem yet.
+The situation is assumed to take place in the distance shorter than
+1.5times of cylinderical light source's diameter. I think there may
+need to
+some technique to model cylindrical light sources.
+
+Actually, I'm modeling UV lamp emitting only ultraviolet wavelength
+in small equipments.
+So the cylindrical black light source was defined to have only blue
+radiation (for an alternative to UV). Of course all the materials have
+reflectance values only for blue radiation.
+I want to find the UV intensity on some surfaces, and I think Radiance is
+well organized to calculate this value, but I'm not sure if
+there is anything to consider like that cylindrical light source is not good
+in Radiance.
+I really appreciate if I get some advices on my case.
+
+Minki, Sung
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20071031/31f767dd/attachment.htm
+From Christoph.Reinhart at nrc-cnrc.gc.ca  Wed Oct 31 05:28:41 2007
+From: Christoph.Reinhart at nrc-cnrc.gc.ca (Reinhart, Christoph)
+Date: Wed Oct 31 05:28:47 2007
+Subject: [Radiance-general] Sketchup exporter script
+In-Reply-To: <1B4F2494-85BD-4B8E-9874-14347A21EF60@arcor.de>
+Message-ID: <5910A0754536EA4AAD411AE8221C3962029D8DEE@nrccenexb1.nrc.ca>
+
+Thanks a lot Thomas for making the script Windows compatible.! It works
+really nicely on my laptop.
+
+Christoph 
+
+-----Original Message-----
+From: radiance-general-bounces@radiance-online.org
+[mailto:radiance-general-bounces@radiance-online.org] On Behalf Of
+Thomas Bleicher
+Sent: Tuesday, October 30, 2007 4:20 PM
+To: Radiance general discussion
+Subject: Re: [Radiance-general] Sketchup exporter script
+
+
+On 28 Oct 2007, at 18:15, Thomas Bleicher wrote:
+
+> Hello all.
+>
+> I have cleaned up and tested my Sketchup export script over the 
+> weekend and put it up on Francesco's wiki for download:
+>
+> http://www.bozzograo.net/radiancewiki/doku.php/input:exporters:su2rad
+>
+> The wiki page contains all the documentation there is for the moment 
+> but since it does not offer a great number of options it's use should 
+> be straight forward.
+>
+> Happy testing,
+
+Unfortunately some show stopper bugs were present in this version,
+especially for those using it on Windows. I've fixed a few things and
+uploaded a new version to the wiki site.
+
+If you plan to use the script on Windows please download the new
+version!
+
+Even if you're not using Windows you should download the update because
+it now exports the north orientation of the scene correctly.
+
+Regards,
+Thomas
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+From paupelinhuchard at gmail.com  Wed Oct 31 07:24:05 2007
+From: paupelinhuchard at gmail.com (=?ISO-8859-1?Q?Val=E8re_Paupelin-Huchard?=)
+Date: Wed Oct 31 07:24:12 2007
+Subject: [Radiance-general] Sketchup to Radiance for win users?
+Message-ID: <a504443a0710310724n9971202g6a0ae2794b69b0a8@mail.gmail.com>
+
+Hello everybody,
+I am trying to find a workflow tutorial of radiance after a sketchup export
+on windows...
+Do you have any idea?
+Someone could give me the main steps?
+
+Thanks.
+-- 
+Val?re Paupelin-Huchard
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-general/attachments/20071031/2f3168bc/attachment.html
+From chris.jessee at kingmill.com  Wed Oct 31 07:38:12 2007
+From: chris.jessee at kingmill.com (Chris Jessee)
+Date: Wed Oct 31 07:38:19 2007
+Subject: [Radiance-general] radiance on leopard?
+Message-ID: <B87144FE-0596-4B2E-AC67-C42EAC8F1E48@kingmill.com>
+
+Anyone running Radiance on Leopard (OSX 10.5)?
+
+If so, are there any setup problems or gotchas?
+
+Thanks,
+
+Chris Jessee
+
+
+From tbleicher at arcor.de  Wed Oct 31 12:50:37 2007
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Wed Oct 31 12:52:11 2007
+Subject: [Radiance-general] Sketchup to Radiance for win users?
+In-Reply-To: <a504443a0710310724n9971202g6a0ae2794b69b0a8@mail.gmail.com>
+References: <a504443a0710310724n9971202g6a0ae2794b69b0a8@mail.gmail.com>
+Message-ID: <108AB72E-6F19-4B5B-AD9D-97C4E74F8184@arcor.de>
+
+
+On 31 Oct 2007, at 14:24, Val?re Paupelin-Huchard wrote:
+
+> Hello everybody,
+> I am trying to find a workflow tutorial of radiance after a
+> sketchup export on windows...
+> Do you have any idea?
+> Someone could give me the main steps?
+
+If this is about Radiance in general buy the book
+
+     'Rendering with Radiance' by Ward/Shakespeare
+
+or see here:
+
+     http://luminance.londonmet.ac.uk/learnix/docs/radtutorial_basic.pdf
+
+
+If this is about my script to export from Sketchup, here's the idea:
+
+The script creates a common file structure of Radiance scene files
+where you have at the top level
+
+   - a materials.rad file with all material definitions
+   - a <scenename>.rad file with references to the geometry files
+   - a <scenename>.rif file as input for 'rad'
+   - the 'objects/' directory with the actual geometry
+   - the 'skies/' directory with the sky definition
+   - the 'views/' directory with one file per exported perspective
+   - a bunch of other directories
+
+Because the script is incomplete the first thing you have to do
+is to replace all the material definitions in the 'materials.rad'
+file with actual physical materials. You can find a number of
+materials in the Radiance distribution or on the internet. It's
+worth to reduce the number of materials in the model before exporting.
+
+The next thing you may want to do is to add some keywords to the
+<scenename>.rif file. There are some standard options which I forgot
+to add. You can use the free Radiance Control Panel to view and
+change the settings in a GUI:
+
+     http://squ1.com/download?radiancecp
+
+If you want to do actual daylight analysis check also the parameters
+of the sky description. In particular the meridian and skytype are
+more or less guesswork.
+
+If you have checked all the above, go to the directory of the '.rif'
+and '.rad' file. All references in the '.rad' file assume that your
+working directory is this directory when you start Radiance apps.
+
+To start an interactive preview with rvu (not available on Windows)
+type
+
+     rad -o x11 <scenename>.rif
+
+To render one perspective (as listed in the '.rif' file) type
+
+     rad -v <viewname> <scenename>.rif
+
+To render all pictures type
+
+     rad <scenename>.rif
+
+All these commands will work on Linux/OS X. I have not used Radiance
+on Windows yet (as cygwin or mingw) but I think the commands should
+behave similarly to the Unix versions.
+
+Once you have rendered the images you can download the Radiance image
+viewer from Square1 to view and analyse your images:
+
+     http://squ1.com/download?radianceiv
+
+The viewer that comes as part of Radzilla should also work on Windows.
+Everyone else uses ximage.
+
+
+One feature I have not mentioned yet is the feature to export points
+on a working plane for calculation with rtrace. You have to create
+a layer called 'numeric' in your SketchUp scene. All the polygons on
+this layer will be exported as a grid of points with 0.25m distance.
+The files will be exported to the 'numeric/' folder with a filename
+based on the group or scene name.
+
+Example:
+
+You have created a room with windows etc. Copy the 'floor' of the room,
+move it 0.75m up (Z-axis) and create an offset of 0.4m from the edge.
+You have now a plane floating in space. Move this plane to the layer
+'numeric' and create a group out of the plane only or the plane and
+the room geometry (recommended because you can move or copy the whole
+ensemble at once). Give the group a name (say 'room1' and when you
+export the scene make sure the 'numeric/' level is visible.
+
+This will create the file 'numeric/room1.fld' with one line for each
+point in the form 'x y z 0 0 1'. This format can easily be piped to
+rtrace for calculation:
+
+     rtrace -ab 3 -ov <scenename>.oct < numeric/room1.fld > numeric/ 
+room1.irr
+
+(provided that there is already a <scenename>.oct). Don't forget to
+check/edit the material for your window. It's very likely that your
+glass material is not at all transparent.
+
+If you modify this a bit and use '-oodv' as the output format you can
+use the 'Plugins/Radiance/numeric input' menu entry to create a 3D  
+surface
+from the calculated values.
+... perhaps. This is highly experimental. Use at your own risk.
+
+
+Have fun and report errors,
+Thomas
+
+--
+When I'm old I want to be a wiki page at
+http://www.bozzograo.net/radiancewiki/doku.php.
+			-- anonymous email
+From T.McMinn at curtin.edu.au  Wed Oct 31 22:10:35 2007
+From: T.McMinn at curtin.edu.au (Terrance McMinn)
+Date: Wed Oct 31 23:05:20 2007
+Subject: [Radiance-general] RE: Sketchup exporter script
+In-Reply-To: <EXFE1bIv1vDfrwV0JmF0001afab@email.curtin.edu.au>
+References: <EXFE1bIv1vDfrwV0JmF0001afab@email.curtin.edu.au>
+Message-ID: <092BF7A1BC389E489A69DC764F23CD870D5C7969@exmsp2.perth.ad.curtin.edu.au>
+
+Hello All,
+
+Thomas you have made an excellent contribution to the radiance community
+with your SketchUP exporter. I assume this script would also work with
+the free Google Version of SketchUP as well. That software was of
+limited use to radiance modelling as it did not have the 3DS converter
+available in the PRO version.
+
+A point here, for the Google SketchUP (free version) users would be for
+the user to manually modify the 'sky' file for location and orientation
+as that option works differently from the PRO version of SketchUP.
+
+To this effect a couple of extra comments in the 'sky' file for the
+novices would be useful.
+
+With regards to accuracy of modelling using SketchUP, simply use the
+mouse to indicate direction and then enter the distance with the
+keyboard. This allows wonderful unit conversions on the fly during data
+entry. For example say your units  are in metres and you want an offset
+of 50mm, type 50mm or 2" and SketchUP will do the rest! It even
+understands entries such as 2",100mm for a rectangle.
+
+
+Regards 
+
+Terry Mc Minn
+Faculty of Built Environment, Art and Design
+Curtin University of Technology
+GPO Box U 1987 Perth 6845 Western Australia
+Email: T.Mcminn@curtin.edu.au
+CRICOS Provider Code: 00301J
+
+From a.i.ruppertsberg at Bradford.ac.uk  Tue Oct 30 06:51:57 2007
+From: a.i.ruppertsberg at Bradford.ac.uk (Alexa I. Ruppertsberg)
+Date: Tue, 30 Oct 2007 13:51:57 -0000
+Subject: [Radiance-general] Looking for some pubblications for my
+ thesys. (fwd)
+In-Reply-To: <Pine.GSO.4.33.0710301317500.9858-100000@lithium.cen.brad.ac.uk>
+Message-ID: <4727336A.40004@bradford.ac.uk>
+
+Hi Lucio,
+
+find attached a paper we published last year in JOSA A about RADIANCE's 
+accuracy.
+If you are interested in the implementation of the spectral rendering 
+method, we have another paper in press that describes that method in 
+more detail.
+
+cheers,
+alexa
+
+
+> ---------- Forwarded message ----------
+> Date: Tue, 30 Oct 2007 12:58:01 +0100
+> From: "loscotec at libero.it" <loscotec at libero.it>
+> Reply-To: Radiance general discussion <radiance-general at radiance-online.org>
+> To: radiance-general <radiance-general at radiance-online.org>
+> Subject: [Radiance-general] Looking for some pubblications for my thesys.
+> 
+> Hello everybody!
+> 
+> I'm Lucio Boscolo Mezzopan an itlaian student of electrical engeenering, new member of this mailinglist.
+> 
+> I'm italian as I told, so, sorry for my bad english and feel free to correct me if you like.
+> 
+> Now, my first question and a little more presentation.
+> 
+> I'm doing my thesys project to quit with university.
+> 
+> The projects involves Radiance and it is not yet defined how it will be in the end, but for the moment, my task is to check Radiace precision.
+> 
+> In other words, I have to find out if Radiance simulates well reality. I could it in two ways: building up a model and measuring real behaviour and simulating it and comparing the datas, or look for someone else who did the same.
+> 
+> Can you help me? Do you know about some pubblication having done this already ? It would be better it to be free of charge, but also if I (actually my university) has to pay for it, it could be great!
+> 
+> Many thanks in advance
+> 
+> Have good time :)
+> 
+> Lucio
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+
+-- 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Dr. Alexa I. Ruppertsberg, AHEA
+Division of Optometry
+University of Bradford
+Bradford
+BD7 1DP
+UK
+
+Phone: 	++44 (0) 1274 - 23 53 78
+email: 	a.i.ruppertsberg at bradford.ac.uk
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: Final_published_version.pdf
+Type: application/pdf
+Size: 470706 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20071030/7abcb369/attachment-0001.pdf>
+
