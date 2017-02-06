@@ -1,0 +1,464 @@
+From esbenrugbjerg at gmail.com  Thu Jun  5 07:24:57 2008
+From: esbenrugbjerg at gmail.com (Esben Rugbjerg)
+Date: Thu Jun  5 07:25:03 2008
+Subject: [Radiance-dev] Errors when compiling 3R9 under Cygwin
+Message-ID: <8467405c0806050724s1461206bxecae8d50a181b575@mail.gmail.com>
+
+Hello,
+
+When helping my girlfriend (civil engineering PhD-student, CC on this
+mail) compilling Radiance 3R9 I encountered the following problems:
+
+When compiling I got the following errors:
+
+ezxml.c: In function `ezxml_parse_fd':
+ezxml.c:643: error: `MADV_SEQUENTIAL' undeclared (first use in this function)
+ezxml.c:643: error: (Each undeclared identifier is reported only once
+ezxml.c:643: error: for each function it appears in.)
+ezxml.c:645: error: `MADV_NORMAL' undeclared (first use in this function)
+make: *** [ezxml.o] Error 1
+make: Target `install' not remade because of errors.
+
+The errors are caused by the lack of a full set of definitions of the
+macros in the version of the header file 'sys/mman.h' supplied with
+the cygwin system (we are using the latest version available on
+cygwin.com). Therefore the macros MADV_SEQUENTIAL and MADV_NORMAL are
+not replaced by correct values by the preprocessor simply because no
+definitions of the macros exist in the included header file.
+
+As it can be seen this leads to a situation where the target 'install'
+is not remade completely by Make leading to all sorts of strange
+faults if the already built binaries are attempted used.
+
+I have no suggestions for a resolution to the fault at the moment
+since I have never developed anything for Cygwin and therefore I have
+no knowledge about the internals of Cygwin. I have however been able
+to identify a file in the cygwin tree where a definition of an
+enumeration containing the needed macros are given. I don't know if
+this is useful in any way.
+
+I have been unable to locate a bug reporting system on your homepage
+why I am writing this list instead. I hope this is all right.
+
+Best regards
+Esben Rugbjerg
+M.Sc. in engineering (software)
+-- 
+=================
+cand.polyt
+Esben Rugbjerg
+Guldborgvej 44, 3.th.
+2000 Frederiksberg
+Danmark
+email: esbenrugbjerg@gmail.com
+mobil-tlf.: +45 28715166
+=================
+
+From gregoryjward at gmail.com  Thu Jun  5 08:52:01 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu Jun  5 08:52:06 2008
+Subject: [Radiance-dev] Errors when compiling 3R9 under Cygwin
+In-Reply-To: <8467405c0806050724s1461206bxecae8d50a181b575@mail.gmail.com>
+References: <8467405c0806050724s1461206bxecae8d50a181b575@mail.gmail.com>
+Message-ID: <F8FF6D68-B5E5-422B-B02F-50062865EC38@gmail.com>
+
+Hi Esben,
+
+Try adding "-DEZXML_NOMMAP" to the rmake script and rerunning  
+"makeall install" in the main directory or "rmake install" in the src/ 
+gen directory.  Th ezxml.c module is new with this release and was  
+provided by a third party, so I'm not well familiar with its  
+portability issues.  So far, it seems quite robust.
+
+There isn't a bug reporting system for Radiance, so thanks for  
+alerting us to the problem.  Cygwin is not a properly supported  
+platform, so you're on the bleeding edge.
+
+Cheers,
+-Greg
+
+From bernd at bzed.de  Thu Jun  5 09:25:15 2008
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Thu Jun  5 09:25:33 2008
+Subject: [Radiance-dev] Errors when compiling 3R9 under Cygwin
+In-Reply-To: <8467405c0806050724s1461206bxecae8d50a181b575@mail.gmail.com>
+References: <8467405c0806050724s1461206bxecae8d50a181b575@mail.gmail.com>
+Message-ID: <4848136B.1010102@bzed.de>
+
+Hi,
+
+> ezxml.c: In function `ezxml_parse_fd':
+> ezxml.c:643: error: `MADV_SEQUENTIAL' undeclared (first use in this function)
+
+have a look if there's /usr/include/sys/mman.h and what is defined in
+there, if the file exists at all.
+If so you'll probably find POSIX_MADV_SEQUENTIAL and POSIX_MADV_NORMAL,
+try to replace MADV_SEQUENTIAL/MADV_NORMAL by them. Unfortunately I
+can't tell if it's save to replace them by default, but afaik it is.
+
+Hope that helps,
+
+Bernd
+
+-- 
+ Bernd Zeimetz                           Debian GNU/Linux Developer
+ GPG Fingerprint: 06C8 C9A2 EAAD E37E 5B2C BE93 067A AD04 C93B FF79
+
+From esbenrugbjerg at gmail.com  Thu Jun  5 13:36:24 2008
+From: esbenrugbjerg at gmail.com (Esben Rugbjerg)
+Date: Thu Jun  5 13:36:29 2008
+Subject: [Radiance-dev] Errors when compiling 3R9 under Cygwin
+In-Reply-To: <F8FF6D68-B5E5-422B-B02F-50062865EC38@gmail.com>
+References: <8467405c0806050724s1461206bxecae8d50a181b575@mail.gmail.com>
+	<F8FF6D68-B5E5-422B-B02F-50062865EC38@gmail.com>
+Message-ID: <8467405c0806051336n7f0f57c3h1334d5f0f7e98a51@mail.gmail.com>
+
+Hi Greg,
+
+Thank you for your quick answer.
+
+Your proposed solution seems to solve the problem as no errror are
+reported  by the compiler any more.
+
+I've found a code snippet from another project where they set
+EZXML_NOMMAP whenever the code is compiled for Cygwin:
+
+/* disable MMAP on CYGWIN, seems to cause problems... */
+#ifdef CYGWIN
+#define EZXML_NOMMAP
+#endif
+
+This could maybe be a solution for Radiance too. This will of course
+require some modifications of the build system but will provide a
+generic solution which can be extended if Cygwin causes other problems
+and therefore needs special treatment :-).
+
+Best regards
+Esben
+
+On Thu, Jun 5, 2008 at 5:52 PM, Gregory J. Ward <gregoryjward@gmail.com> wrote:
+> Hi Esben,
+>
+> Try adding "-DEZXML_NOMMAP" to the rmake script and rerunning "makeall
+> install" in the main directory or "rmake install" in the src/gen directory.
+>  Th ezxml.c module is new with this release and was provided by a third
+> party, so I'm not well familiar with its portability issues.  So far, it
+> seems quite robust.
+>
+> There isn't a bug reporting system for Radiance, so thanks for alerting us
+> to the problem.  Cygwin is not a properly supported platform, so you're on
+> the bleeding edge.
+>
+> Cheers,
+> -Greg
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+
+
+
+-- 
+=================
+cand.polyt
+Esben Rugbjerg
+Guldborgvej 44, 3.th.
+2000 Frederiksberg
+Danmark
+email: esbenrugbjerg@gmail.com
+mobil-tlf.: +45 28715166
+=================
+
+From esbenrugbjerg at gmail.com  Thu Jun  5 13:43:51 2008
+From: esbenrugbjerg at gmail.com (Esben Rugbjerg)
+Date: Thu Jun  5 13:44:28 2008
+Subject: [Radiance-dev] Errors when compiling 3R9 under Cygwin
+In-Reply-To: <4848136B.1010102@bzed.de>
+References: <8467405c0806050724s1461206bxecae8d50a181b575@mail.gmail.com>
+	<4848136B.1010102@bzed.de>
+Message-ID: <8467405c0806051343n65979645j5ef74a211fbabad7@mail.gmail.com>
+
+Hi Bernd,
+
+Thank you for your suggestion.
+
+I have grep'ed around in the include dirs of Cygwin but could not
+locate the Posix versions of the macros anywhere. In the file
+/usr/include/d/3.4.4/std/c/linux/linux.d however at least the
+MADV_SEQUENTIAL and ditto NORMAL are defined in an enumeration as
+mentioned in my first mail. Since I don't know the internals of Cygwin
+I don't know the purpose of this enumeration.
+
+Best regards
+Esben
+
+On Thu, Jun 5, 2008 at 6:25 PM, Bernd Zeimetz <bernd@bzed.de> wrote:
+> Hi,
+>
+>> ezxml.c: In function `ezxml_parse_fd':
+>> ezxml.c:643: error: `MADV_SEQUENTIAL' undeclared (first use in this function)
+>
+> have a look if there's /usr/include/sys/mman.h and what is defined in
+> there, if the file exists at all.
+> If so you'll probably find POSIX_MADV_SEQUENTIAL and POSIX_MADV_NORMAL,
+> try to replace MADV_SEQUENTIAL/MADV_NORMAL by them. Unfortunately I
+> can't tell if it's save to replace them by default, but afaik it is.
+>
+> Hope that helps,
+>
+> Bernd
+>
+> --
+>  Bernd Zeimetz                           Debian GNU/Linux Developer
+>  GPG Fingerprint: 06C8 C9A2 EAAD E37E 5B2C BE93 067A AD04 C93B FF79
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+
+
+
+-- 
+=================
+cand.polyt
+Esben Rugbjerg
+Guldborgvej 44, 3.th.
+2000 Frederiksberg
+Danmark
+email: esbenrugbjerg@gmail.com
+mobil-tlf.: +45 28715166
+=================
+
+From gregoryjward at gmail.com  Thu Jun  5 14:35:32 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu Jun  5 14:35:40 2008
+Subject: [Radiance-dev] Errors when compiling 3R9 under Cygwin
+In-Reply-To: <8467405c0806051336n7f0f57c3h1334d5f0f7e98a51@mail.gmail.com>
+References: <8467405c0806050724s1461206bxecae8d50a181b575@mail.gmail.com>
+	<F8FF6D68-B5E5-422B-B02F-50062865EC38@gmail.com>
+	<8467405c0806051336n7f0f57c3h1334d5f0f7e98a51@mail.gmail.com>
+Message-ID: <59AB9B8F-F727-40A0-AA16-296B4379A42C@gmail.com>
+
+Thanks, Esben.  This is an excellent suggestion -- I didn't know what  
+macros were predefined under Cygwin, so this is a big help.  I'll  
+check it into CVS for the next distribution.
+
+Cheers,
+-Greg
+
+> From: "Esben Rugbjerg" <esbenrugbjerg@gmail.com>
+> Date: June 5, 2008 1:36:24 PM PDT
+>
+> Hi Greg,
+>
+> Thank you for your quick answer.
+>
+> Your proposed solution seems to solve the problem as no errror are
+> reported  by the compiler any more.
+>
+> I've found a code snippet from another project where they set
+> EZXML_NOMMAP whenever the code is compiled for Cygwin:
+>
+> /* disable MMAP on CYGWIN, seems to cause problems... */
+> #ifdef CYGWIN
+> #define EZXML_NOMMAP
+> #endif
+>
+> This could maybe be a solution for Radiance too. This will of course
+> require some modifications of the build system but will provide a
+> generic solution which can be extended if Cygwin causes other problems
+> and therefore needs special treatment :-).
+>
+> Best regards
+> Esben
+
+From jacobs.axel at gmail.com  Tue Jun 10 14:20:45 2008
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Tue Jun 10 14:20:49 2008
+Subject: [Radiance-dev] RE: Material Properties
+Message-ID: <100441490806101420v1663218ex3493aa59cb64bd0@mail.gmail.com>
+
+Dear list,
+
+> You might try Axel's Color picker for Radiance
+> http://www.luxal.eu/resources/radiance/cp4r.shtml
+
+Oooh, ouh, steady on now. The CP4R is still purely experimental. I've
+not had enough feedback to release it to the big wide world. I have
+actually been breeding over a rather serious question which might
+potentially question the whole idea behind it. But do read on...
+
+Let's just say that somebody has gone through the exercise of
+measuring all RAL colours with a chroma meter, based on a set of
+colour swatches. The readings are presented in XYZ format. Let's
+further assume, just for the sake of the argument, that this somebody
+has written a little script to convert those XYZ readings to RGB,
+using Radiance's xyz_rgb.cal. Here is an example:
+
+-- this guy's ---
+#Radiance rgb values for RAL colors converted from X Y Z color coordinates
+#X Y Z values measured with Minolta CM-2600D Illuminant D65 observer 10 degree
+# RAL 8023  orangebraun
+# X=18.9 Y=14.6 Z=3.2
+# reflectance 0.1460
+ void plastic RAL8023
+ 0
+ 0
+ 5  0.3017 0.0971 0.0150 0 0
+
+-- from Radiance colour picker (data from the Internet, don't remember
+where from) --
+# RAL colour: 8023 Orange brown
+# Reflectance: rho=0.476
+void plastic identifier
+0
+0
+5  0.676 0.426 0.176  0 0
+
+-- from Radiance colour picker (converted from XYZ data) --
+# Imported from XYZ: ( 18.9, 14.6, 3.2 )
+# Reflectance: rho=0.404
+void plastic identifier
+0
+0
+5  0.644 0.335 0.126  0 0
+
+Checked against this web site:
+http://easyrgb.com/index.php?X=CALC
+which gives pretty much the same results: (0.64380, 0.33552, 0.12613)
+Also compare:
+http://www.brucelindbloom.com/index.html?Eqn_XYZ_to_RGB.html
+
+Your will appreciate that the measured values, converted to RGB are
+wayyyyyy off mark.
+
+I understand from this thread:
+http://radsite.lbl.gov/radiance/digests_html/v2n8_1b.html
+that the conversion algo is taken from:
+"Procedural Elements for Computer Graphics" by David Rodgers (McGraw Hill),
+which is sitting right next to me.
+
+I have not gone through it yet to check for typos in yxz_rgb.cal, but
+I find it unlikely that Greg has made such a mistake. It's far more
+likely that I'm missing something here. One possible explanation would
+be the primaries: xyz_rgb.cal uses the standard CRT primaries, whereas
+it's unclear as to what the others are assuming.
+
+Any enlightenment on the issue would be greatly appreciated.
+
+Thanks for your feedback on this issue
+
+Axel
+
+From gregoryjward at gmail.com  Tue Jun 10 16:17:57 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue Jun 10 16:18:01 2008
+Subject: [Radiance-dev] RE: Material Properties
+In-Reply-To: <100441490806101420v1663218ex3493aa59cb64bd0@mail.gmail.com>
+References: <100441490806101420v1663218ex3493aa59cb64bd0@mail.gmail.com>
+Message-ID: <6DC9B766-8378-4CE2-A0A6-AA6FF7FA6DB5@gmail.com>
+
+Hi Axel,
+
+Indeed, the RGB<->XYZ conversion in xyz_rgb.cal follows the  
+derivation in Roger's book, and it's been checked pretty thoroughly.   
+As you note, the actual results are determined by the choice of RGB  
+primaries and white point, and this transform assumes you are going  
+for absolute rather than perceptually white-adjusted values.  The  
+primaries chosen are the standard ones for Radiance, which are a near  
+miss to the CCIR-709 recommendation used for the sRGB color space and  
+most modern computer monitors, which is given in xyz_srgb.cal along  
+with a D65 (versus equal-energy) white point.
+
+What other people have used for their color conversions is anyone's  
+guess.
+
+By the way, did you mean to respond to the radiance-general posting  
+on radiance-dev as you did?  I'm not sure Nick and Steve are on this  
+list....
+
+Cheers,
+-Greg
+
+> From: "Axel Jacobs" <jacobs.axel@gmail.com>
+> Date: June 10, 2008 2:20:45 PM PDT
+>
+> Dear list,
+>
+>> You might try Axel's Color picker for Radiance
+>> http://www.luxal.eu/resources/radiance/cp4r.shtml
+>
+> Oooh, ouh, steady on now. The CP4R is still purely experimental. I've
+> not had enough feedback to release it to the big wide world. I have
+> actually been breeding over a rather serious question which might
+> potentially question the whole idea behind it. But do read on...
+>
+> Let's just say that somebody has gone through the exercise of
+> measuring all RAL colours with a chroma meter, based on a set of
+> colour swatches. The readings are presented in XYZ format. Let's
+> further assume, just for the sake of the argument, that this somebody
+> has written a little script to convert those XYZ readings to RGB,
+> using Radiance's xyz_rgb.cal. Here is an example:
+>
+> -- this guy's ---
+> #Radiance rgb values for RAL colors converted from X Y Z color  
+> coordinates
+> #X Y Z values measured with Minolta CM-2600D Illuminant D65  
+> observer 10 degree
+> # RAL 8023  orangebraun
+> # X=18.9 Y=14.6 Z=3.2
+> # reflectance 0.1460
+>  void plastic RAL8023
+>  0
+>  0
+>  5  0.3017 0.0971 0.0150 0 0
+>
+> -- from Radiance colour picker (data from the Internet, don't remember
+> where from) --
+> # RAL colour: 8023 Orange brown
+> # Reflectance: rho=0.476
+> void plastic identifier
+> 0
+> 0
+> 5  0.676 0.426 0.176  0 0
+>
+> -- from Radiance colour picker (converted from XYZ data) --
+> # Imported from XYZ: ( 18.9, 14.6, 3.2 )
+> # Reflectance: rho=0.404
+> void plastic identifier
+> 0
+> 0
+> 5  0.644 0.335 0.126  0 0
+>
+> Checked against this web site:
+> http://easyrgb.com/index.php?X=CALC
+> which gives pretty much the same results: (0.64380, 0.33552, 0.12613)
+> Also compare:
+> http://www.brucelindbloom.com/index.html?Eqn_XYZ_to_RGB.html
+>
+> Your will appreciate that the measured values, converted to RGB are
+> wayyyyyy off mark.
+>
+> I understand from this thread:
+> http://radsite.lbl.gov/radiance/digests_html/v2n8_1b.html
+> that the conversion algo is taken from:
+> "Procedural Elements for Computer Graphics" by David Rodgers  
+> (McGraw Hill),
+> which is sitting right next to me.
+>
+> I have not gone through it yet to check for typos in yxz_rgb.cal, but
+> I find it unlikely that Greg has made such a mistake. It's far more
+> likely that I'm missing something here. One possible explanation would
+> be the primaries: xyz_rgb.cal uses the standard CRT primaries, whereas
+> it's unclear as to what the others are assuming.
+>
+> Any enlightenment on the issue would be greatly appreciated.
+>
+> Thanks for your feedback on this issue
+>
+> Axel
+

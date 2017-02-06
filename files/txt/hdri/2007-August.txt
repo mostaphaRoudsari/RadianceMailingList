@@ -1,0 +1,187 @@
+From yimm at mac.com  Wed Aug 15 06:29:48 2007
+From: yimm at mac.com (L.Yimm)
+Date: Wed Aug 15 07:36:30 2007
+Subject: [HDRI] Stitcher 5.6 Unlimited Render bug
+In-Reply-To: <p0624080ec23ed5a1e6be@[192.168.0.5]>
+References: <p06240801c23cb488cf23@[192.168.0.5]>
+	<02a801c77a00$1fca9fb0$c880000a@bchls.ca>
+	<p0624080ec23ed5a1e6be@[192.168.0.5]>
+Message-ID: <p06240802c2e8aea466a4@[192.168.0.114]>
+
+Is anyone having trouble with HDR renders out of Stitcher 5.6Unlimited?
+
+We're seeing huge purple splotches in various places, which cannot be 
+cloned out using CS3 in 32-bit - there's something really screwy with 
+Stitcher's rendering of the radiance file.
+
+The cloned area does not match the sample...it's either too light or 
+too dark.  This isn't an issue with other .hdr  files rendered in 
+other applications, just the renders from 5.6U.
+
+Cheers,
+Lisa
+
+Lisa E Yimm
+HDR-VFX, LLC
+http://www.hdrvfx.com
+
+From doers003 at umn.edu  Wed Aug 15 09:48:57 2007
+From: doers003 at umn.edu (Katja Doerschner)
+Date: Wed Aug 15 22:00:20 2007
+Subject: [HDRI] [Fwd: [Radiance-general] Radiance 2007 Scientific Workshop]
+Message-ID: <46C32E79.7060303@umn.edu>
+
+
+-------------- next part --------------
+An embedded message was scrubbed...
+From: Katja Doerschner <doers003@umn.edu>
+Subject: [Radiance-general] Radiance 2007 Scientific Workshop
+Date: Mon, 13 Aug 2007 14:24:48 -0500
+Size: 12246
+Url: http://radiance-online.org/pipermail/hdri/attachments/20070815/78715d22/Radiance-generalRadiance2007ScientificWorkshop.mht
+From panickece at gmail.com  Fri Aug 17 09:52:05 2007
+From: panickece at gmail.com (panick)
+Date: Fri Aug 17 10:53:30 2007
+Subject: [HDRI] extraction of luminance values
+Message-ID: <5605ec640708170952v85b7efdid47479fac90a6360@mail.gmail.com>
+
+Hello all,
+
+1.How can I extract results of luminance from a .pic file that I have
+already rendered using a grid of points?
+(Because the rendering process lasts 2-3 hours)
+
+2.Is there any command that gives a 3D presentation of the values of a grid?
+
+Thanks,
+
+Nick
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/hdri/attachments/20070817/4ffe4282/attachment.htm
+From gregoryjward at gmail.com  Fri Aug 17 23:09:39 2007
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Sat Aug 18 00:11:07 2007
+Subject: [HDRI] Re: extraction of luminance values
+In-Reply-To: <5605ec640708170952v85b7efdid47479fac90a6360@mail.gmail.com>
+References: <5605ec640708170952v85b7efdid47479fac90a6360@mail.gmail.com>
+Message-ID: <F67F10F6-482C-480E-B7CC-B513455CDBE4@gmail.com>
+
+Hi Nick,
+
+Most people use a false color representation to look at luminance  
+values.  Assuming you have Radiance installed, the command looks like  
+so:
+
+	% falsecolor -i render.pic -s auto \
+		| ra_tiff -z - render_fc.tif
+
+If you have Photosphere, you can use the Command-N sequence to get a  
+false color display.  Regrettably, it won't save out with the legend  
+(scale).
+
+If you want to look at the values directly, the pvalue command will  
+give you radiances, which you can convert to luminance using the  
+appropriate efficacy value, e.g.:
+
+	% pvalue -h -H -b render.pic \
+		| rcalc -e '$1=$1;$2=$2;$3=179*$3'
+
+The first and second columns in the output are the x and y pixel  
+positions, measured from the lower-left corner of the image.
+
+I was curious to see what a 3-D rendering would look like, so I used  
+the command:
+
+	% pvalue -h -H -b -d render.pic \
+		| gensurf void picsurf t s - 254 172 -o \
+		| obj2mesh > render.rtm
+
+The 254 and 172 values are the horizontal and vertical dimensions of  
+my example image, respectively.  I then used objview to render the  
+following Radiance file:
+
+void plastic grey
+0
+0
+5 .5 .5 .5 0 0
+
+grey mesh picsurf
+1 picsurf.rtm
+0
+0
+
+-----------
+This produced a rather bland result, so I added a pattern  
+corresponding to the output of falsecolor:
+
+void colorpict colorful
+7 red green blue electric_x1y1fc.pic . 1.47398844*Py 1-Px
+0
+0
+
+colorful plastic colored
+0
+0
+5 .5 .5 .5 0 0
+
+colored mesh picsurf
+1 picsurf.rtm
+0
+0
+
+The 1.47398844 value is 254/172, as needed to fit the image into my  
+square area.  In retrospect, I probably should have used a wider base  
+in the gensurf command to get a rectangular plot.  I can send anyone  
+who wants to see the images I generated.
+
+-Greg
+
+> From: panick <panickece@gmail.com>
+> Date: August 17, 2007 9:52:05 AM PDT
+>
+> Hello all,
+>
+> 1.How can I extract results of luminance from a .pic file that I  
+> have already rendered using a grid of points?
+> (Because the rendering process lasts 2-3 hours)
+>
+> 2.Is there any command that gives a 3D presentation of the values  
+> of a grid?
+>
+> Thanks,
+>
+> Nick
+
+From doers003 at umn.edu  Wed Aug 22 04:30:38 2007
+From: doers003 at umn.edu (Katja Doerschner)
+Date: Wed Aug 22 05:32:04 2007
+Subject: [HDRI] 2007 Intl. Radiance Workshop Abstract Submission
+Message-ID: <1EA4DA33-6BE3-40CF-8A28-E485FED93A65@umn.edu>
+
+Radiance 2007 Scientific Workshop
+01-02 (Mon-Tues) October, Digital Technology Center, University of  
+Minnesota, Minneapolis, USA.
+
+
+The abstract submission form for the Radiance workshop is ready!  
+*Submission deadline is September 12*
+
+http://www.dtc.umn.edu/cgi-bin/seminars/symposia/radiance.php? 
+menu=abstract
+
+Please let me know if you run into problems or have questions,
+
+Katja Doerschner
+University of Minnesota
+Psychology Department
+218 Elliott Hall
+75 East River Road
+Minneapolis, MN 55455-0344
+Phone:+1 612 626-8551
+http://vision.psych.umn.edu/~doerschner
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/hdri/attachments/20070822/a816be11/attachment.html

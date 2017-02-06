@@ -1,0 +1,158 @@
+From grobe at gmx.net  Sun Apr 15 23:41:34 2007
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Sun Apr 15 23:41:48 2007
+Subject: [Radiance-dev] Version.c corrupt?
+In-Reply-To: <440F36F4.2080603@gmx.net>
+References: <440F36F4.2080603@gmx.net>
+Message-ID: <46229C0E.9050003@gmx.net>
+
+> I cannot compile, and it seams that in the Version.c file everything but
+> the variable content is gone...?
+
+I am still having the same problem with today's head when trying to
+compile on Solaris with gcc. The file rt/Version.c contains only the
+value, not the variable. char VersionID[]=" is simply missing. I am
+editing the file by hand now, but this is a bug in Solaris builds.
+
+CU Lars.
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: smime.p7s
+Type: application/x-pkcs7-signature
+Size: 3617 bytes
+Desc: S/MIME Cryptographic Signature
+Url : http://radiance-online.org/pipermail/radiance-dev/attachments/20070416/14f0c4ba/smime.bin
+From gregoryjward at gmail.com  Mon Apr 16 03:32:37 2007
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Mon Apr 16 03:32:48 2007
+Subject: [Radiance-dev] Version.c corrupt?
+In-Reply-To: <46229C0E.9050003@gmx.net>
+References: <440F36F4.2080603@gmx.net> <46229C0E.9050003@gmx.net>
+Message-ID: <0185B480-19FB-4F67-8FEA-94BCA5FE7368@gmail.com>
+
+Hi Lars,
+
+I don't have access to a Solaris system, so without any further  
+hints, I haven't much hope of fixing the problem...
+
+-G
+
+> From: "Lars O. Grobe" <grobe@gmx.net>
+> Date: April 15, 2007 2:41:34 PM PDT
+>
+>> I cannot compile, and it seams that in the Version.c file  
+>> everything but
+>> the variable content is gone...?
+>
+> I am still having the same problem with today's head when trying to
+> compile on Solaris with gcc. The file rt/Version.c contains only the
+> value, not the variable. char VersionID[]=" is simply missing. I am
+> editing the file by hand now, but this is a bug in Solaris builds.
+>
+> CU Lars.
+
+From list at asd.demon.co.uk  Mon Apr 16 10:33:39 2007
+From: list at asd.demon.co.uk (James Lee)
+Date: Mon Apr 16 10:33:46 2007
+Subject: [Radiance-dev] Version.c corrupt?
+In-Reply-To: <46229C0E.9050003@gmx.net>
+References: <440F36F4.2080603@gmx.net> <46229C0E.9050003@gmx.net>
+Message-ID: <20070416.8333900.498221858@gyor.asd.demon.co.uk>
+
+On 15/04/07, 22:41:34, Lars "O." Grobe <grobe@gmx.net> wrote regarding Re: 
+[Radiance-dev] Version.c corrupt?:
+
+> I am still having the same problem with today's head when trying to
+> compile on Solaris with gcc. The file rt/Version.c contains only the
+> value, not the variable. char VersionID[]=" is simply missing. I am
+> editing the file by hand now, but this is a bug in Solaris builds.
+
+$ cat src/rt/Version.c
+/*
+ * This file was created automatically during make.
+ */
+
+char VersionID[]="RADIANCE 3.8 lastmod Monday April 16 09:26:50 BST 2007 
+by james on gyor";
+
+$ uname -a
+SunOS gyor 5.8 Generic_117350-38 sun4u sparc SUNW,Ultra-60
+
+
+"today's head", whatever that really means, is the same as "yesterday's"
+going by the file time stamps.
+
+
+
+
+James.
+
+From grobe at gmx.net  Mon Apr 16 13:08:22 2007
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Mon Apr 16 13:08:46 2007
+Subject: [Radiance-dev] Version.c corrupt?
+In-Reply-To: <20070416.8333900.498221858@gyor.asd.demon.co.uk>
+References: <440F36F4.2080603@gmx.net> <46229C0E.9050003@gmx.net>
+	<20070416.8333900.498221858@gyor.asd.demon.co.uk>
+Message-ID: <46235926.6020207@gmx.net>
+
+Hm, that is really strange. I use the "makeall install" script, and add 
+an CC=gcc to the Makefile. That is all I modified. Do you use GCC or Sun 
+C? I am aware that just changing the compiler may break certain things. 
+Maybe I have to workout in detail the settings required for compiling 
+radiance on Solaris by GCC? Seams that the Version.c problem is the 
+result of something else, will have a closer look at this tonight.
+
+CU Lars.
+
+
+From list at asd.demon.co.uk  Mon Apr 16 13:25:18 2007
+From: list at asd.demon.co.uk (James Lee)
+Date: Mon Apr 16 13:25:40 2007
+Subject: [Radiance-dev] Version.c corrupt?
+In-Reply-To: <46235926.6020207@gmx.net>
+References: <440F36F4.2080603@gmx.net> <46229C0E.9050003@gmx.net>
+	<20070416.8333900.498221858@gyor.asd.demon.co.uk>
+	<46235926.6020207@gmx.net>
+Message-ID: <20070416.11251800.4153863046@gyor.asd.demon.co.uk>
+
+On 16/04/07, 12:08:22, Lars "O." Grobe <grobe@gmx.net> wrote regarding Re: 
+[Radiance-dev] Version.c corrupt?:
+
+> Hm, that is really strange. I use the "makeall install" script, and add
+> an CC=gcc to the Makefile. That is all I modified. Do you use GCC or Sun
+> C?
+
+Sun cc
+
+$ cc -V
+cc: Sun C 5.8 Patch 121015-04 2007/01/10
+usage: cc [ options] files.  Use 'cc -flags' for details
+
+
+> Maybe I have to workout in detail the settings required for compiling
+> radiance on Solaris by GCC? Seams that the Version.c problem is the
+> result of something else, will have a closer look at this tonight.
+
+Version.c comes from simple scripting in the makefile and not the
+compiler:
+
+$ gzcat ${SRC}/radiance/radiance-HEAD.tgz | tar xf -
+$ cd ray/src/rt
+$ make -f Rmakefile Version.c
+( cat VERSION ; date ; whoami ; hostname ) > Version.c
+ed - Version.c < verscript.ed
+$ cat Version.c
+/*
+ * This file was created automatically during make.
+ */
+
+char VersionID[]="RADIANCE 3.8 lastmod Monday April 16 12:17:48 BST 2007 
+by james on gyor";
+
+
+
+
+
+James.
+

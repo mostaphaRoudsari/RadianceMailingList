@@ -1,0 +1,273 @@
+From ganjatron at gmx.net  Fri May  7 22:04:27 2004
+From: ganjatron at gmx.net (Roland Schregle)
+Date: Fri May  7 22:06:31 2004
+Subject: [Radiance-dev] Re: [Radiance-general] Adding a new BRTDF /  BSDF
+In-Reply-To: <00d501c43448$e754f1d0$a4015882@kitkat>
+References: <00d501c43448$e754f1d0$a4015882@kitkat>
+Message-ID: <409BEBCB.7030803@gmx.net>
+
+(N.b.: Moved to RADIANCE Dev)
+
+David wrote:
+> Hi,
+> 
+> I am in the process of developing a new BRTDF / BSDF as a part of my PhD 
+> 
+> Does anyone have any advice or suggestions on how I go about 
+> incorporating the algorithms into Radiance, and especially how I go 
+> about incorporating Monte Carlo sampling into the BRTDF / BSDF within 
+> Radiance?
+
+Hi Dave,
+
+you might wanna check normal.c for a simpler example. There, m_normal() 
+does all the sampling, relegating calls to dirnorm() (via direct()), 
+gaussamp(), and ambient() to sample the direct, indirect specular, and 
+indirect diffuse components, respectively. You'll want to split your 
+BRDF into similar components, with stratified sampling for the diffuse 
+stuff and importance sampling for the specular (glossy?) stuff.
+
+Note that you'll need to enter the material and its sampling function in 
+the object function table in otypes.h and initotypes.c.
+
+Stratified sampling is cos-weighted and trivial; see Dutre's Globillum 
+Compendium (http://www.cs.kuleuven.ac.be/~phil/GI/) and Greg's 
+implementation (interpretation?) in divsample() in ambcomp.c.
+
+Importance sampling is a lot more involved. Basically you've got two 
+options:
+
+1) Perform the Monte Carlo inversion of your PDF (probability density 
+function, in this case proportional to your BRDF * cos(theta_out)) 
+analytically. On paper. By hand. Looking at your list of specs for the 
+BRDF, that should be *loads* of fun! :^)
+
+2) Invert the PDF numerically, the dumb and slow way, by uniformly 
+choosing intervals in a lookup table containing the CDF (cumulative 
+density function). This is insanely slow, because the table must be 
+constructed for *every* reflection. However, If your BRDF defies 
+analytic inversion, this is the only way to go. (This is also the reason 
+I never bothered to include support for user-defined BRDFs in the 
+RADIANCE photon map).
+
+Um... happy sampling, mate. :^)
+
+--Roland
+
+
+-- 
+Roland Schregle
+PhD candidate, Fraunhofer Institute for Solar Energy Systems
+RADIANCE Photon Map page: www.ise.fhg.de/radiance/photon-map
+
+END OF LINE. (MCP)
+
+
+From canoe at onetel.net.uk  Thu May 27 18:41:51 2004
+From: canoe at onetel.net.uk (James Lee)
+Date: Thu May 27 18:42:32 2004
+Subject: [Radiance-dev] obj2mesh and flat meshes
+Message-ID: <20040527.16415100.1947664528@landeck.jamesipoos.com>
+
+Hello,
+I have a problem with obj2mesh when processing meshing that are flat in
+one of the axis directions, eg:
+
+usemtl material
+v 0 0 0
+v 1 0 0
+v 1 1 0
+v 0 1 0
+f 1/0/0 3/0/0 4/0/0 2/0/0
+
+and obje2mesh reports:
+obj2mesh: fatal - no polygons in mesh
+
+The problem is at line 288 in ./src/ot/cvmesh.c, version 3.5.
+
+        for (i = 0; i < 3; i++) {
+                if (meshbounds[0][i] >= meshbounds[1][i])
+                        error(USER, "no polygons in mesh");
+
+If the range is zero then the meshbounds extents are equal. Perhaps this
+should be:
+
+        for (i = 0; i < 3; i++) {
+                if (meshbounds[0][i] > meshbounds[1][i])
+                        error(USER, "no polygons in mesh");
+
+The only way this could trigger is if no vertices were processed so I
+would think there is an easier way to tell if there were no polygons, ie,
+what does this check really do? Why not see if the count of polygons is
+greater than zero.
+
+
+
+James Lee.
+
+From gward at lmi.net  Thu May 27 22:03:19 2004
+From: gward at lmi.net (Greg Ward)
+Date: Thu May 27 22:03:37 2004
+Subject: [Radiance-dev] Re: obj2mesh and flat meshes
+In-Reply-To: <20040527.16415100.1947664528@landeck.jamesipoos.com>
+References: <20040527.16415100.1947664528@landeck.jamesipoos.com>
+Message-ID: <E5E5EABE-B018-11D8-B82E-000A95BB392A@lmi.net>
+
+This bug was fixed in the source tree over a year ago.  You really need 
+to download the HEAD release if you're working with meshes, as this is 
+a relatively new feature.  You can download it from 
+<http://www.radiance-online.org/>.  Follow the directions very 
+carefully!
+
+-Greg
+
+> From: James Lee <canoe@onetel.net.uk>
+> Date: May 27, 2004 9:41:51 AM PDT
+>
+> Hello,
+> I have a problem with obj2mesh when processing meshing that are flat in
+> one of the axis directions, eg:
+>
+> usemtl material
+> v 0 0 0
+> v 1 0 0
+> v 1 1 0
+> v 0 1 0
+> f 1/0/0 3/0/0 4/0/0 2/0/0
+>
+> and obje2mesh reports:
+> obj2mesh: fatal - no polygons in mesh
+>
+> The problem is at line 288 in ./src/ot/cvmesh.c, version 3.5.
+>
+>         for (i = 0; i < 3; i++) {
+>                 if (meshbounds[0][i] >= meshbounds[1][i])
+>                         error(USER, "no polygons in mesh");
+>
+> If the range is zero then the meshbounds extents are equal. Perhaps 
+> this
+> should be:
+>
+>         for (i = 0; i < 3; i++) {
+>                 if (meshbounds[0][i] > meshbounds[1][i])
+>                         error(USER, "no polygons in mesh");
+>
+> The only way this could trigger is if no vertices were processed so I
+> would think there is an easier way to tell if there were no polygons, 
+> ie,
+> what does this check really do? Why not see if the count of polygons is
+> greater than zero.
+>
+>
+>
+> James Lee.
+
+
+From canoe at onetel.net.uk  Fri May 28 10:45:45 2004
+From: canoe at onetel.net.uk (James Lee)
+Date: Fri May 28 10:46:11 2004
+Subject: [Radiance-dev] update to 3.6? was: obj2mesh and flat meshes
+In-Reply-To: <E5E5EABE-B018-11D8-B82E-000A95BB392A@lmi.net>
+References: <20040527.16415100.1947664528@landeck.jamesipoos.com>
+	<E5E5EABE-B018-11D8-B82E-000A95BB392A@lmi.net>
+Message-ID: <20040528.8454500.1270898197@landeck.jamesipoos.com>
+
+On 27/05/04, 21:03:19, Greg Ward <gward@lmi.net> wrote regarding 
+[Radiance-dev] Re: obj2mesh and flat meshes:
+
+> This bug was fixed in the source tree over a year ago.
+
+Good. Thank you.
+
+
+> You really need
+> to download the HEAD release if you're working with meshes, as this is
+> a relatively new feature.
+
+I'd prefer not to work from pre-release versions that keep changing. How 
+often is HEAD updated? Without a version I can't tell.
+
+If you recommend the HEAD then can we expect an update to 3.5.1 or 3.6 
+soon? 
+
+
+From gward at lmi.net  Fri May 28 17:47:30 2004
+From: gward at lmi.net (Greg Ward)
+Date: Fri May 28 17:47:49 2004
+Subject: [Radiance-dev] update to 3.6? was: obj2mesh and flat meshes
+In-Reply-To: <20040528.8454500.1270898197@landeck.jamesipoos.com>
+References: <20040527.16415100.1947664528@landeck.jamesipoos.com>
+	<E5E5EABE-B018-11D8-B82E-000A95BB392A@lmi.net>
+	<20040528.8454500.1270898197@landeck.jamesipoos.com>
+Message-ID: <53CE5C9A-B0BE-11D8-8CA5-000A95BB392A@lmi.net>
+
+As discussed in earlier postings, the HEAD release is a much better, 
+more solid starting point than the official release at this point.  We 
+really need to make a proper 3.6 release, but I've been waiting for 
+Georg Mischler to get settled with his many ANSI and Windows 
+improvements to the source tree.  Following that, we should have a 
+period of testing, where we encourage people to download and compile 
+the latest HEAD, and during which time we fix only compile problems and 
+bugs that are found before making an official release.  This would 
+hopefully be more solid than the scantily-tested 3.5 official release 
+of last year.
+
+Schorsch, what does your schedule look like?
+-Greg
+
+> From: James Lee <canoe@onetel.net.uk>
+> Date: May 28, 2004 1:45:45 AM PDT
+>
+> On 27/05/04, 21:03:19, Greg Ward <gward@lmi.net> wrote regarding
+> [Radiance-dev] Re: obj2mesh and flat meshes:
+>
+>> This bug was fixed in the source tree over a year ago.
+>
+> Good. Thank you.
+>
+>
+>> You really need
+>> to download the HEAD release if you're working with meshes, as this is
+>> a relatively new feature.
+>
+> I'd prefer not to work from pre-release versions that keep changing. 
+> How
+> often is HEAD updated? Without a version I can't tell.
+>
+> If you recommend the HEAD then can we expect an update to 3.5.1 or 3.6
+> soon?
+
+
+From apian at pab-opto.de  Mon May 31 10:19:42 2004
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Mon May 31 12:15:18 2004
+Subject: [Radiance-dev] Re: [Radiance-general] Radiance Vs Radiosity /
+	texturing
+In-Reply-To: <s0b39bfe.091@wmtao.com>
+References: <s0b39bfe.091@wmtao.com>
+Message-ID: <40BAEA9E.4050207@pab-opto.de>
+
+Mark de la Fuente wrote:
+
+> ....
+>  And last but not least, what is the trick on page 55?  Replicating 
+> image maps in a way that their pattern does not become repetitive.  
+> Are we talking about making sure the edges match-up and that the image 
+> is generally uniform?
+
+ Yes, the second example had low frequencies removed from the image to 
+be tiled. Radiance's "normpat" script does this within the Radiance 
+framework, as do other image processing packages (e.g. "gimp").  
+Efficient texturing is also helped by blending the texture to some 
+downsampled texture or uniform color if the observer is too far away to 
+resolve the fine texture. (note to devs: That brings up the request for 
+the angle-per-pixel issue again. Not to mention mip-mapping built into 
+Radiance's texturing, and therefor crossposted to the dev list.)
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+
+

@@ -1,0 +1,1179 @@
+From radiance-dev@radiance-online.org  Sat Feb  1 16:30:24 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Sat, 1 Feb 2003 08:30:24 -0800
+Subject: [Radiance-dev] Before we give up on lock files...
+In-Reply-To: <20030201110002.25025.46123.Mailman@darkside-animation.com>
+Message-ID: <76E9499D-3602-11D7-9AA8-00306540F848@lmi.net>
+
+Schorch wrote:
+>
+> And you think sockets are nasty?
+>
+> One of the few things that I know about lockfiles is that they're
+> not exactly simple to get right.
+>
+> - What happens if the lockfile owner gets killed?
+>   Will the others be able to figure out that the lock file is
+>   stale and override it? Or will that require human intervention?
+>   I think that NFS locks get purged when the owner dies, so we
+>   might lose quite some convenience here.
+>
+> - What happens process b checks for the file after process a
+>   does, but before process a actually creates the new file?
+>
+> There's no way to make checking and creating an atomic operation,
+> so that this situation must be handled explicitly and gracefully.
+> In a big simulation, it may well be that a dozen processes are
+> competing for the lock file several times a second for hours or
+> even days. Race conditions *will* happen.
+
+The open() call with the O_EXCL flag is supposed to be atomic with the 
+file system -- i.e., if the file exists, the call fails, so if 
+competing processes compete in a race, only one can win.  If the open() 
+call fails, then our process moves on as if the lock file were there 
+all along.  To avoid race problems, we use a random number of ambient 
+values between checks, which will gradually increase each time a lock 
+check fails.  This is the same method used to reduce packet collisions 
+on a network, and it works quite well at avoiding perpetual races.
+
+As for processes that die unexpectedly in the middle of an ambient sync 
+operation, we could either disregard this possibility as neither likely 
+nor disasterous -- it would just untie all the processes so their 
+values wouldn't get written out -- not a disaster.  Or, we could employ 
+some check on the file creation time and if a lock has been around more 
+than a certain period (a minute would be extremely generous), any of 
+the processes that's been failing to obtain it can remove it after 
+their Nth failure.
+
+The total code for the above procedure would not be much longer than 
+what is currently in ambient.c, and wouldn't require any network 
+transactions, which I'd rather avoid.  There's no such code currently 
+in Radiance, and it adds a whole set of dependencies I don't want to 
+deal with.
+
+Having said that, I'm willing to go along with Schorsch's suggestion of 
+implementing multiple methods.  I'll go ahead and give this one a shot, 
+and you guys can try yours as well if you like.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Sat Feb  1 23:10:57 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Sat, 1 Feb 2003 18:10:57 -0500 (EST)
+Subject: [Radiance-dev] Before we give up on lock files...
+In-Reply-To: <76E9499D-3602-11D7-9AA8-00306540F848@lmi.net>
+Message-ID: <Pine.BSF.4.44.0302011747270.21727-100000@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> The open() call with the O_EXCL flag is supposed to be atomic with the
+> file system -- i.e., if the file exists, the call fails, so if
+> competing processes compete in a race, only one can win.  If the open()
+> call fails, then our process moves on as if the lock file were there
+> all along.
+
+You almost convinced me with this one, until I checked the
+open(2) man page on my Linux box:
+
+  O_EXCL is broken on
+  NFS  file  systems,  programs  which  rely on it for performing
+  locking tasks will contain a race condition.  The solution  for
+  performing  atomic file locking using a lockfile is to create a
+  unique file on the same fs (e.g.,  incorporating  hostname  and
+  pid),  use  link(2)  to  make a link to the lockfile. If link()
+  returns 0, the lock is successful.  Otherwise, use  stat(2)  on
+  the  unique file to check if its link count has increased to 2,
+  in which case the lock is also successful.
+
+I don't know if this is specific to Linux, or if is just the only
+system where the documentation spells out the problem. The method
+with the hard link is what Mailman uses, btw., making reference to
+the above paragraph of the linux man page in the code.
+
+There's no link() on Windows, so we'll have to use open() there.
+Does anyone know if open() on Windows is supposed to be atomic?
+The worst case scenario I see there is someone running a Samba
+server on a Linux box, serving a file system that it has mounted
+from another unix host per NFS, which opens us to the above race
+condition again...
+
+
+> As for processes that die unexpectedly in the middle of an ambient sync
+> operation, we could either disregard this possibility as neither likely
+> nor disasterous -- it would just untie all the processes so their
+> values wouldn't get written out -- not a disaster.
+
+For a high quality production rendering that is taking lots of
+time, this *can* be a disaster. If we can figure out a reliable
+way to avoid this, then I think we should do so.
+
+
+> Or, we could employ
+> some check on the file creation time and if a lock has been around more
+> than a certain period (a minute would be extremely generous), any of
+> the processes that's been failing to obtain it can remove it after
+> their Nth failure.
+
+Relying on the ctime of the file makes us dependent on the system
+clocks being exactly snychronized. It is not uncommon for
+machines in the same network to by out of sync by several
+minutes. Maybe we just have to watch the file for at least a
+minute to decide it's expired.
+
+The other problem is that removing the file will create new race
+conditions. If two processes try this at nearly the same time,
+and a third one succeeds at creating a new lockfile in between,
+then we'll remove that one as well. There may have to be a
+secondary lockfile protecting the lock breaking process, with
+another minute of waiting after it is created. Any process trying
+to aquire the primary lock must check first to make sure that no
+secondary lock exists. Waiting a few minutes shouldn't be a
+problem, as it will only happen in an exceptional situation
+anyway. To make individual lock files identifiable, they can
+contain the hostname and PID of the creating process, and the
+creation time.
+
+Bad scenario:
+- A creates lock and dies
+- B and C both fail to create a lock several times,
+- B and C check and remember the ID of the lock
+- B and C make sure that they are still looking at the same
+  file after at least a minute
+- B removes the lockfile
+- D succeeds in creating a new lock
+- C removes the new lock, thinking it is still the old one
+
+Better (but still not perfect) scenario:
+- A creates lock and dies (or gets suspended)
+- B and C fail to create a lock several times,
+- B and C check and remember the ID of the lock
+- B and C make sure that they are still looking at the same
+  file after at least a minute
+- B creates a secondary lockfile
+- C tries to create a secondary lockfile, fails, and steps back
+- D wants to create a new lock, but sees the secondary lock
+  and steps back (similarly during all following steps)
+- B waits for another minute, to make sure that all other
+  processes interested in aquiring or breaking the original lock
+  have had time to notice the secondary lock
+- B finds that it still owns the secondary lockfile (this
+  eliminates the last chance for A to wake up and intercept the
+  breakage by removing the secondary lock)
+- B removes the original lock
+- B waits yet another minute to insure against A removing
+  someone elses lock if it wakes up again later
+- B removes the secondary lock
+- any process can try to aquire the lock again
+- If A wakes up now, we need to make sure that it doesn't
+  remove someone elses lock. This means that it will have to
+  check that it really owns the lockfile immeditatly before
+  removing it (hence the third wait above). If it still owns
+  the primary lock, and notices a secondary lock, it may first
+  remove the secondary lock.
+
+Well yeah, all this assuming that we have a reliable way to
+create the original lock in the first place...
+And if the file system (or network) is really bogged down, eg.
+because of excessive swapping or other disk activity, then
+writing a few ambient records *can* take more than a minute.
+
+To put this all into perspective: Do we have any data on the
+typical frequency of an ambient file getting locked/unlocked when
+a dozen processes share it in a largish simulation?
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Mon Feb  3 01:54:51 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Sun, 2 Feb 2003 17:54:51 -0800
+Subject: [Radiance-dev] Re: Before we give up on lock files...
+In-Reply-To: <20030202110002.27480.14664.Mailman@darkside-animation.com>
+Message-ID: <7B8C2B1B-371A-11D7-81CE-00306540F848@lmi.net>
+
+Schorsch wrote:
+> You almost convinced me with this one, until I checked the
+> open(2) man page on my Linux box:
+>
+>   O_EXCL is broken on
+>   NFS  file  systems,  programs  which  rely on it for performing
+>   locking tasks will contain a race condition.  The solution  for
+>   performing  atomic file locking using a lockfile is to create a
+>   unique file on the same fs (e.g.,  incorporating  hostname  and
+>   pid),  use  link(2)  to  make a link to the lockfile. If link()
+>   returns 0, the lock is successful.  Otherwise, use  stat(2)  on
+>   the  unique file to check if its link count has increased to 2,
+>   in which case the lock is also successful.
+>
+> I don't know if this is specific to Linux, or if is just the only
+> system where the documentation spells out the problem. The method
+> with the hard link is what Mailman uses, btw., making reference to
+> the above paragraph of the linux man page in the code.
+
+Hmmm...  Is Everything broken on Linux, or does it just seem that way?  
+The NFS lock manager doesn't work, O_EXCL doesn't work, what are they 
+going to throw in our path, next?  I found no such warning on my OS X 
+machine, though as you say, the bug could be there and just not be 
+documented...  Anyway, it's very nice that they included a workaround, 
+which isn't too awful, though I don't get the part about the link() 
+call failing but still succeeding.  Very strange.
+
+> Relying on the ctime of the file makes us dependent on the system
+> clocks being exactly snychronized. It is not uncommon for
+> machines in the same network to by out of sync by several
+> minutes. Maybe we just have to watch the file for at least a
+> minute to decide it's expired.
+
+I thought about this, and that's why I think it's best for the process 
+to simply keep track of when the lock file says it was created, and if 
+the date hasn't changed between checks that are a few minutes apart by 
+the local clock, it's safe to assume that the process died during an 
+update.
+
+I think your other scenarios are getting a bit far-fetched, especially 
+if we follow the strategy I recommended of removing the lock file in 
+one process, but not assuming then that we can claim the lock ourselves 
+-- just continuing to render until the next normal checkpoint.  Then, 
+your second-tier race condition would require the simultaneous lock 
+removal by two processes coincident with the lock-assertion of a third 
+process.  Unless we are really stupid about how often we check the lock 
+file, I don't think this scenario will play out in any of our 
+lifetimes.  The chance of a process dying in the middle of an update 
+alone is probably small, and you're multiplying this by the probability 
+of a three-way tie.  At some point, we have to say, "that's good 
+enough."  I don't want to implement a second lock file to remove the 
+first one in the event of a process dying mid-write.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Tue Feb  4 00:10:38 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Mon, 3 Feb 2003 19:10:38 -0500 (EST)
+Subject: [Radiance-dev] Re: Before we give up on lock files...
+In-Reply-To: <7B8C2B1B-371A-11D7-81CE-00306540F848@lmi.net>
+Message-ID: <Pine.BSF.4.44.0302031855030.404-100000@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> Is Everything broken on Linux, or does it just seem that way?
+
+The problem appears to come from the specification of the NFS
+protocol version 2, so it's not necessarily limited to Linux:
+http://www.linux.se/doc/HOWTO/Secure-Programs-HOWTO/avoid-race.html
+
+  | if the lock file may be on an NFS-mounted filesystem, then
+  | you have the problem that NFS version 2 doesn't completely
+  | support normal file semantics.
+  | ...
+  | NFS version 3 added support for O_EXCL mode in open(2); see
+  | IETF RFC 1813, in particular the "EXCLUSIVE" value to the
+  | "mode" argument of "CREATE". Sadly, not everyone has switched
+  | to NFS version 3 or higher at the time of this writing, so
+  | you can't depend on this yet in portable programs. Still,
+  | in the long run there's hope that this issue will go away.
+
+
+There's another idea that I ran into on my searches (as a reply
+to someone with a similar problem to ours):
+http://lists.linux.org.au/archives/linuxcprogramming/2002-July/msg00054.html
+
+  | Surely the simple solution is to write a network lock server
+  | (which would take a couple of hours) or grab one from
+  | somewhere (which might take even less time).  Then you can
+  | forget about special cases for different platforms and file
+  | systems.
+
+This is a less involved variation of what I was planning to try.
+I thought that once I have a server running, I can just as well
+feed all the data through it. The more lightweight implementation
+suggested here just establishes the lock, while the ambient data
+still goes directly to the file.
+
+An example implementation that we might even be able to use
+and/or modify can be found here:
+  http://sourceforge.net/projects/lockserver/
+This does a lot more than we need, as it also queues requests,
+stores locks to a file to survive a restart, and manages
+priorities and TTLs for both queued requests and granted locks.
+
+
+> > Maybe we just have to watch the file for at least a minute to
+> > decide it's expired.
+>
+> I thought about this, and that's why I think it's best for the
+> process to simply keep track of when the lock file says it was
+> created, and if the date hasn't changed between checks that are
+> a few minutes apart by the local clock, it's safe to assume
+> that the process died during an update.
+
+Same idea. Potential pitfall: We'll need to check out which of
+the timestamps we can rely on on Windows. I *think* ctime should
+be fine. One of the problems here is that Windows file systems
+don't use inodes, but store this kind of information with the
+file. If I remember correctly, then this means that eg. the atime
+gets modified just by looking at it (kind of logically inevitable,
+but still weird!).
+
+
+> Unless we are really stupid about how often we check the lock
+> file, I don't think this scenario will play out in any of our
+> lifetimes.
+
+Maybe, maybe not. All I know for sure is that it *can* happen.
+That was the reason I asked for data (or even just a reasonable
+estimation) on the frequency that the lock might typically get
+aquired during a large simulation. Maybe we can add a way to log
+this information, to get a better idea about the risks involved.
+
+I agree that there will be a point of being "good enough" (my
+convoluted scenario isn't 100% safe either), but I would feel
+much better if we could decide on this point based on solid data.
+If the data shows that it might happen once during my lifetime,
+then I'd gladly accept that. If I were to see it twice, I might
+have second thoughts...
+
+
+Ok, independently of the specific implementation details, I see
+the following strategies that we could test:
+
+ System lock (as implemented for unix)
+ * direct read access to ambient file
+ * direct write access to ambient file
+ * locking through fcntl() (resp. the standard Windows locking
+   mechanisms, translated through Samba when needed)
+
+ Simple lock file
+ * direct read access to ambient file
+ * direct write access to ambient file
+ * locking through lock file, broken after a TTL of n minutes
+
+ Complex lock file
+ * direct read access to ambient file
+ * direct write access to ambient file
+ * locking through lock file, broken under protection of a
+   secondary lock
+
+ Locking server
+ * direct read access to ambient file
+ * direct write access to ambient file
+ * locking through a seperate server process
+
+ Unidirectional data server
+ * direct read access to ambient file
+ * ambient data written through server process
+ * server may use one of the above locking mechanisms if file
+   writing is still shared with other processes, or none if it
+   has exclusive access
+
+ Bidirectional data server
+ * ambient data read through server process
+ * ambient data written through server process
+ * server may use one of the above locking mechanisms if file
+   writing is still shared with other processes, or none if it
+   has exclusive access
+
+
+Lots of toys to play with...
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Tue Feb  4 00:20:28 2003
+From: radiance-dev@radiance-online.org (Randolph Fritz)
+Date: Mon, 3 Feb 2003 16:20:28 -0800
+Subject: [Radiance-dev] Re: Before we give up on lock files...
+In-Reply-To: <Pine.BSF.4.44.0302031855030.404-100000@emancholl.pair.com>
+Message-ID: <76EF9702-37D6-11D7-8F08-0030658EA95E@panix.com>
+
+On Monday, February 3, 2003, at 04:10  PM, Georg Mischler wrote:
+
+> Greg Ward wrote:
+>
+>> Is Everything broken on Linux, or does it just seem that way?
+>
+> The problem appears to come from the specification of the NFS
+> protocol version 2, so it's not necessarily limited to Linux:
+> http://www.linux.se/doc/HOWTO/Secure-Programs-HOWTO/avoid-race.html
+
+The problem occurred in Solaris when I was in Sun tech support, lo this 
+many years ago.  I don't know if it's cleared up yet or not--it has 
+been fixed in Linux.
+
+Thing is, NFS file locking just wasn't very important to the NFS 
+designers, so it didn't work very well.  I don't think that's changed, 
+unfortunately.
+
+Randolph
+
+
+From radiance-dev@radiance-online.org  Tue Feb  4 00:20:28 2003
+From: radiance-dev@radiance-online.org (Randolph Fritz)
+Date: Mon, 3 Feb 2003 16:20:28 -0800
+Subject: [Radiance-dev] Re: Before we give up on lock files...
+In-Reply-To: <Pine.BSF.4.44.0302031855030.404-100000@emancholl.pair.com>
+Message-ID: <76EF9702-37D6-11D7-8F08-0030658EA95E@panix.com>
+
+On Monday, February 3, 2003, at 04:10  PM, Georg Mischler wrote:
+
+> Greg Ward wrote:
+>
+>> Is Everything broken on Linux, or does it just seem that way?
+>
+> The problem appears to come from the specification of the NFS
+> protocol version 2, so it's not necessarily limited to Linux:
+> http://www.linux.se/doc/HOWTO/Secure-Programs-HOWTO/avoid-race.html
+
+The problem occurred in Solaris when I was in Sun tech support, lo this 
+many years ago.  I don't know if it's cleared up yet or not--it has 
+been fixed in Linux.
+
+Thing is, NFS file locking just wasn't very important to the NFS 
+designers, so it didn't work very well.  I don't think that's changed, 
+unfortunately.
+
+Randolph
+
+
+From radiance-dev@radiance-online.org  Tue Feb  4 16:30:48 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Tue, 4 Feb 2003 08:30:48 -0800
+Subject: [Radiance-dev] Re: Radiance-dev digest, Vol 1 #19 - 3 msgs
+In-Reply-To: <20030204110002.31660.83628.Mailman@darkside-animation.com>
+Message-ID: <047453D0-385E-11D7-885E-00306540F848@lmi.net>
+
+Schorsch writes:
+
+> Ok, independently of the specific implementation details, I see
+> the following strategies that we could test:
+
+Of these, I like the following solutions the best:
+
+>  System lock (as implemented for unix)
+>  * direct read access to ambient file
+>  * direct write access to ambient file
+>  * locking through fcntl() (resp. the standard Windows locking
+>    mechanisms, translated through Samba when needed)
+>
+>  Simple lock file
+>  * direct read access to ambient file
+>  * direct write access to ambient file
+>  * locking through lock file, broken after a TTL of n minutes
+>
+>  Unidirectional data server
+>  * direct read access to ambient file
+>  * ambient data written through server process
+>  * server may use one of the above locking mechanisms if file
+>    writing is still shared with other processes, or none if it
+>    has exclusive access
+
+I presume by the "system lock" you mean the one we have now, and I'd 
+like to keep this around (or some variant of it) for systems with 
+working lock managers, or for a fantastic future when NFS finally gets 
+its act together and fixes their lockd implementation.
+
+Of the various servers suggested, the unidirectional data server makes 
+the most sense to me, particularly if it can be run on the file server 
+machine.  That way, the network traffic is no worse than it was, and 
+since most of the ambient file i/o is read calls, the server has much 
+less chance of being overwhelmed than a bidirectional server would.
+
+However, there is another advantage to the locking mechanisim approach, 
+which is that we need it also for rpiece, which we haven't talked 
+about.  Having one solution we could put in the library for making and 
+breaking file locks would be great!
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Wed Feb  5 01:47:29 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Tue, 4 Feb 2003 17:47:29 -0800
+Subject: [Radiance-dev] CVS and the next Unix release
+Message-ID: <C9160049-38AB-11D7-8825-00306540F848@lmi.net>
+
+I just got back from a meeting with Steve Selkowitz and Kostas 
+Papamichael at LBNL, and I'll summarize the plans we're making in a 
+post to radiance-general in a few days.  One of the subjects we 
+discussed was the next Unix Radiance release, which we'd like to 
+schedule for the beginning of March.  I suggested that we make this 
+release coincide with OpenSource code availability via CVS.  I have a 
+few questions related to this:
+
+1) Is this release date doable?
+2) Has Peter A-B got his site ready, or will it be ready by the end of 
+the month to hold the source tree?
+3) What changes do I need to make on my end for this to work?  (E.g., 
+eliminate symbolic links, change build procedure, etc.?)
+4) Are we going to have mirror sites at radsite.lbl.gov and 
+radiance-online.org?  Mirroring what?
+
+I would prefer to make as few source tree changes as possible prior to 
+the release, to facilitate the reincorporation of code modifications 
+other developers might wish to contribute to the new release.  It also 
+seems that a single CVS site is the way to go, with mirrors set up for 
+the official release and binary tarballs.
+
+Thoughts on these issues?
+-Greg
+
+
+From radiance-dev@radiance-online.org  Wed Feb  5 07:40:05 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Wed, 05 Feb 2003 08:40:05 +0100
+Subject: [Radiance-dev] CVS and the next Unix release
+References: <C9160049-38AB-11D7-8825-00306540F848@lmi.net>
+Message-ID: <3E40BFD5.EB8428C1@pab-opto.de>
+
+Greg Ward wrote:
+> 
+> I just got back from a meeting with Steve Selkowitz and Kostas
+> Papamichael at LBNL, and I'll summarize the plans we're making in a
+> post to radiance-general in a few days.  One of the subjects we
+..
+That's very good news!
+
+> 1) Is this release date doable?
+> 2) Has Peter A-B got his site ready, or will it be ready by the end of
+> the month to hold the source tree?
+Yeap. will be mid Feb.
+
+> 3) What changes do I need to make on my end for this to work?  (E.g.,
+> eliminate symbolic links, change build procedure, etc.?)
+As far as I see, none directly related to the new source side or its
+mechanisms. 
+ 
+> I would prefer to make as few source tree changes as possible prior to
+> the release, to facilitate the reincorporation of code modifications
+> other developers might wish to contribute to the new release.
+Y
+
+> seems that a single CVS site is the way to go, with mirrors set up for
+> the official release and binary tarballs.
+maybe we want to start with a single CVS and set up a mirror at radsite
+as second step, maybe around May this year.
+
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+From radiance-dev@radiance-online.org  Wed Feb  5 17:08:16 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Wed, 5 Feb 2003 12:08:16 -0500 (EST)
+Subject: [Radiance-dev] CVS and the next Unix release
+In-Reply-To: <C9160049-38AB-11D7-8825-00306540F848@lmi.net>
+Message-ID: <Pine.BSF.4.44.0302051204140.67502-100000@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> 3) What changes do I need to make on my end for this to work?  (E.g.,
+> eliminate symbolic links, change build procedure, etc.?)
+
+Eliminating symbolic links would be a simple step towards Windows
+portability, without any detrimental side effects that I can see.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Thu Feb  6 21:55:28 2003
+From: radiance-dev@radiance-online.org (Charles Ehrlich)
+Date: Thu, 6 Feb 2003 13:55:28 -0800 (PST)
+Subject: [Radiance-dev] Re: Before we give up on lock files...
+In-Reply-To: <Pine.BSF.4.44.0302031855030.404-100000@emancholl.pair.com>
+Message-ID: <20030206215528.53889.qmail@web80009.mail.yahoo.com>
+
+--0-1823404658-1044568528=:53774
+Content-Type: text/plain; charset=us-ascii
+
+
+What about a process that works with the ambient file and, either in real-time, or as a batch process, distills the ambient data points.  At a minimum, it should cull duplicate points, and preferably, could do some gaussian (or other) smoothing on the data.  The culling would reduce child process startup times for large datasets and the smoothing would possibly reduce wierdness in the ambient data, or at least make the wierdness less obvious.
+I mention it now not only because I've been frustrated with long startup times in the past, but also because if this mechanism is to work in real time, then the design of the ambient data file server should keep this capability in mind.
+-Chas
+
+--0-1823404658-1044568528=:53774
+Content-Type: text/html; charset=us-ascii
+
+<P>What about a process that works with the ambient file and, either in real-time, or as a batch process, distills the ambient data points.&nbsp; At a minimum, it should cull duplicate points, and preferably, could do some gaussian (or other)&nbsp;smoothing on the data.&nbsp; The culling would reduce child process startup times for large datasets and the smoothing would possibly reduce wierdness in the ambient data, or at least make the wierdness less obvious.
+<P>I mention it now not only because I've been frustrated with long startup times in the past, but also because if this mechanism is to work in real time, then the design of the ambient data file server should keep this capability in mind.
+<P>-Chas</P>
+--0-1823404658-1044568528=:53774--
+
+From radiance-dev@radiance-online.org  Tue Feb 11 12:14:41 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Tue, 11 Feb 2003 07:14:41 -0500 (EST)
+Subject: [Radiance-dev] Re: [Radiance-general] Porting to Windows
+In-Reply-To: <BAY2-F17T0D7GHzbwaV000201de@hotmail.com>
+Message-ID: <Pine.BSF.4.44.0302110623390.910-100000@emancholl.pair.com>
+
+Marcus Jacobs wrote:
+
+> Hello
+>
+> I am currently making an attempt to port Radiance 3.4 into Windows 2000. I
+> have a question concerning the aux.h header file. As some of you already
+> know, the header file aux.h is reserved exclusively for Windows. I was able
+> to get the file onto my hard drive by renaming it aux2.h. What I am curious
+> is to know which files (*.c) are associated with this header file. I did a
+> text search for "aux.h" to see if it was listed as an <include> directive in
+> any files but nothing turned up. I know this file is used somewhere and
+> somehow but I don't know where. Please help.
+
+
+You know that there is a radiance-dev mailing list on the same
+site here? That's where we're discussing non-user topics, and the
+issues involved with the imminent porting of 3.4 to Windows are
+an important topic of those discussions.  If you haven't
+subscribed there yet, I's suggest you do so and also consult the
+recent archives, so you can avoid doing any duplicate work, or
+going off on a tangent that conflicts with other plans.
+
+Please note specifically, that the most recent version of 3.4
+will be made available on public CVS soon. It has also seen a
+number of changes since the version that you're probably working
+with. Specifically, Greg has started with the ANSIfication of the
+code, which will make porting much easier. You might want to wait
+with any of your changes until you can apply them to the cutting
+edge, so that they can be merged back into the official code base
+with less effort.
+
+It currently looks like I might become responsible for
+coordinating the Windows porting efforts, but I'm sure nobody
+will object to other people doing at least part of the work.
+I also hope that LBNL will allow me to use code from the Windows
+version 3.2 as included in Desktop Radiance and Rayfront (the
+latter with some improvements of my own).  We won't be able to
+just copy those sources, as they are based on a Radiance version
+that was forked off the main code base earlier on, but there are
+some parts that might reduce the amount of work we'll have to do.
+
+As to the actual question, the header file aux.h seems to be a
+part of the OpenGL/X11 API, and is sometimes named glaux.h.
+I don't see it actually in use anywhere, so you're probably save
+to just leave it away.
+
+
+-schorsch
+
+PS:
+Crossposting to radiance-dev, please reply there.
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+From radiance-dev@radiance-online.org  Thu Feb 13 18:42:43 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Thu, 13 Feb 2003 10:42:43 -0800
+Subject: [Radiance-dev] Re: Perez and gendaylit compared to actual data
+In-Reply-To: <E2488D465533A243B318BEF8A424052824FB80@NRCVANEX2.nrc.ca>
+Message-ID: <F0241BF6-3F82-11D7-A860-00306540F848@lmi.net>
+
+Hi Christoph,
+
+I feel like I'm in a bit of an awkward spot, as I seem to have some 
+power to decide what should and should not be put into the main 
+Radiance distribution, and yet, not having tested these variations 
+myself, I have very little information to go on.  I know what criteria 
+I would apply to such a decision, namely:
+
+1) The modification should not adversely affect calculations it has 
+nothing to do with.
+2) The modification should be deemed an improvement by a majority of 
+users.
+3) The modification should compile readily on all supported platforms 
+without requiring third-party libraries.
+4) The modification should do what it claims to do, and should converge 
+to the correct solution.
+5) The modification should have minimal impact on standard Radiance 
+file formats.
+
+In the past, I put the things into Radiance based on user requests and 
+my own aesthetics.  Now that we are opening up the source tree to 
+development, we need to come up with a process for including 
+enhancements.  One idea is to offer modified versions for download, and 
+solicit feedback from users who try it as to what worked and what 
+didn't work about it.  This is sort of what we have now, but without a 
+formal feedback channel.  Getting others to validate new methods would 
+be best of all, but this usually takes time.  Provided the changes 
+aren't too extensive or obnoxious, we could release new versions with 
+the modifications in as conditional-compiles, and take away each 
+condition once there is general agreement that the new calculation is 
+doing the right thing.
+
+I'm posting this to the Radiance developer's group, since that seems to 
+be the proper forum for it.
+
+-Greg
+
+> From: "Reinhart, Christoph" <Christoph.Reinhart@nrc-cnrc.gc.ca>
+> Date: Thu Feb 13, 2003  9:08:59  AM US/Pacific
+> To: "'Greg Ward'" <gward@lmi.net>
+> Cc: "'apian@pab-opto.de'" <apian@pab-opto.de>, "'ganjatron@gmx.net'" 
+> <ganjatron@gmx.net>, "'wienold@ise.fhg.de'" <wienold@ise.fhg.de>, 
+> "'herkel@ise.fhg.de'" <herkel@ise.fhg.de>
+> Subject: RE: Perez and gendaylit compared to actual data
+>
+> Hi Greg,
+>
+> Thanks for the information. The new RADIANCE license agreement from 
+> LBNL is
+> a really positive development and I am confident that it will trigger 
+> a wave
+> of activities and different RADIANCE front ends. That is good. As 
+> mentioned
+> by numerous of our colleagues, we will all have to discipline 
+> ourselves,
+> that there won't be multiple RADIANCEs floating around. The Fraunhofer 
+> ISE
+> is planning to marry Roland Schregle's RADIANCE forward raytracer with 
+> the
+> few changes I implemented for the DAYSIM model in rtrace to calculate
+> daylight coefficients.
+>
+> I think that it would make sense if we could bring our contributions 
+> somehow
+> into the mainstream RADIANCE. Maybe with an option in the makefile to 
+> switch
+> it on or off. The ISE has actually hired a real programmer to do the 
+> trick
+> (not a beginner like me). He could probably implement the changes so 
+> that
+> they are not disruptive to the rest of the program. And of course Peter
+> would always be around:)
+>
+> This is just a suggestion. Love it or leave it. I do not want to make 
+> any
+> changes to RADIANCE any more as I am now working on lighting control 
+> models
+> etc.. I am happy with the modified rtrace as it is.
+>
+> Greetings from Ottawa,
+>
+> Christoph
+
+
+From radiance-dev@radiance-online.org  Tue Feb 25 06:13:46 2003
+From: radiance-dev@radiance-online.org (Charles Ehrlich)
+Date: Mon, 24 Feb 2003 22:13:46 -0800 (PST)
+Subject: [Radiance-dev] Re: Perez and gendaylit compared to actual data
+In-Reply-To: <F0241BF6-3F82-11D7-A860-00306540F848@lmi.net>
+Message-ID: <20030225061346.14399.qmail@web80310.mail.yahoo.com>
+
+--0-433595283-1046153626=:12321
+Content-Type: text/plain; charset=us-ascii
+
+
+Greg,
+Has there been any more chatter about this topic?
+-Chas
+ Greg Ward <gward@lmi.net> wrote:Hi Christoph,
+
+I feel like I'm in a bit of an awkward spot, as I seem to have some 
+power to decide what should and should not be put into the main 
+Radiance distribution, and yet, not having tested these variations 
+myself, I have very little information to go on. I know what criteria 
+I would apply to such a decision, namely:
+
+1) The modification should not adversely affect calculations it has 
+nothing to do with.
+2) The modification should be deemed an improvement by a majority of 
+users.
+3) The modification should compile readily on all supported platforms 
+without requiring third-party libraries.
+4) The modification should do what it claims to do, and should converge 
+to the correct solution.
+5) The modification should have minimal impact on standard Radiance 
+file formats.
+
+In the past, I put the things into Radiance based on user requests and 
+my own aesthetics. Now that we are opening up the source tree to 
+development, we need to come up with a process for including 
+enhancements. One idea is to offer modified versions for download, and 
+solicit feedback from users who try it as to what worked and what 
+didn't work about it. This is sort of what we have now, but without a 
+formal feedback channel. Getting others to validate new methods would 
+be best of all, but this usually takes time. Provided the changes 
+aren't too extensive or obnoxious, we could release new versions with 
+the modifications in as conditional-compiles, and take away each 
+condition once there is general agreement that the new calculation is 
+doing the right thing.
+
+I'm posting this to the Radiance developer's group, since that seems to 
+be the proper forum for it.
+
+-Greg
+
+> From: "Reinhart, Christoph" 
+> Date: Thu Feb 13, 2003 9:08:59 AM US/Pacific
+> To: "'Greg Ward'" 
+> Cc: "'apian@pab-opto.de'" , "'ganjatron@gmx.net'" 
+> , "'wienold@ise.fhg.de'" , 
+> "'herkel@ise.fhg.de'" 
+> Subject: RE: Perez and gendaylit compared to actual data
+>
+> Hi Greg,
+>
+> Thanks for the information. The new RADIANCE license agreement from 
+> LBNL is
+> a really positive development and I am confident that it will trigger 
+> a wave
+> of activities and different RADIANCE front ends. That is good. As 
+> mentioned
+> by numerous of our colleagues, we will all have to discipline 
+> ourselves,
+> that there won't be multiple RADIANCEs floating around. The Fraunhofer 
+> ISE
+> is planning to marry Roland Schregle's RADIANCE forward raytracer with 
+> the
+> few changes I implemented for the DAYSIM model in rtrace to calculate
+> daylight coefficients.
+>
+> I think that it would make sense if we could bring our contributions 
+> somehow
+> into the mainstream RADIANCE. Maybe with an option in the makefile to 
+> switch
+> it on or off. The ISE has actually hired a real programmer to do the 
+> trick
+> (not a beginner like me). He could probably implement the changes so 
+> that
+> they are not disruptive to the rest of the program. And of course Peter
+> would always be around:)
+>
+> This is just a suggestion. Love it or leave it. I do not want to make 
+> any
+> changes to RADIANCE any more as I am now working on lighting control 
+> models
+> etc.. I am happy with the modified rtrace as it is.
+>
+> Greetings from Ottawa,
+>
+> Christoph
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+--0-433595283-1046153626=:12321
+Content-Type: text/html; charset=us-ascii
+
+<P>Greg,
+<P>Has there been any more chatter about this topic?
+<P>-Chas
+<P>&nbsp;<B><I>Greg Ward &lt;gward@lmi.net&gt;</I></B> wrote:
+<BLOCKQUOTE style="PADDING-LEFT: 5px; MARGIN-LEFT: 5px; BORDER-LEFT: #1010ff 2px solid">Hi Christoph,<BR><BR>I feel like I'm in a bit of an awkward spot, as I seem to have some <BR>power to decide what should and should not be put into the main <BR>Radiance distribution, and yet, not having tested these variations <BR>myself, I have very little information to go on. I know what criteria <BR>I would apply to such a decision, namely:<BR><BR>1) The modification should not adversely affect calculations it has <BR>nothing to do with.<BR>2) The modification should be deemed an improvement by a majority of <BR>users.<BR>3) The modification should compile readily on all supported platforms <BR>without requiring third-party libraries.<BR>4) The modification should do what it claims to do, and should converge <BR>to the correct solution.<BR>5) The modification should have minimal impact on standard Radiance <BR>file formats.<BR><BR>In the past, I put the things into Radiance based on user requests and <BR>my own aesthetics. Now that we are opening up the source tree to <BR>development, we need to come up with a process for including <BR>enhancements. One idea is to offer modified versions for download, and <BR>solicit feedback from users who try it as to what worked and what <BR>didn't work about it. This is sort of what we have now, but without a <BR>formal feedback channel. Getting others to validate new methods would <BR>be best of all, but this usually takes time. Provided the changes <BR>aren't too extensive or obnoxious, we could release new versions with <BR>the modifications in as conditional-compiles, and take away each <BR>condition once there is general agreement that the new calculation is <BR>doing the right thing.<BR><BR>I'm posting this to the Radiance developer's group, since that seems to <BR>be the proper forum for it.<BR><BR>-Greg<BR><BR>&gt; From: "Reinhart, Christoph" <CHRISTOPH.REINHART@NRC-CNRC.GC.CA><BR>&gt; Date: Thu Feb 13, 2003 9:08:59 AM US/Pacific<BR>&gt; To: "'Greg Ward'" <GWARD@LMI.NET><BR>&gt; Cc: "'apian@pab-opto.de'" <APIAN@PAB-OPTO.DE>, "'ganjatron@gmx.net'" <BR>&gt; <GANJATRON@GMX.NET>, "'wienold@ise.fhg.de'" <WIENOLD@ISE.FHG.DE>, <BR>&gt; "'herkel@ise.fhg.de'" <HERKEL@ISE.FHG.DE><BR>&gt; Subject: RE: Perez and gendaylit compared to actual data<BR>&gt;<BR>&gt; Hi Greg,<BR>&gt;<BR>&gt; Thanks for the information. The new RADIANCE license agreement from <BR>&gt; LBNL is<BR>&gt; a really positive development and I am confident that it will trigger <BR>&gt; a wave<BR>&gt; of activities and different RADIANCE front ends. That is good. As <BR>&gt; mentioned<BR>&gt; by numerous of our colleagues, we will all have to discipline <BR>&gt; ourselves,<BR>&gt; that there won't be multiple RADIANCEs floating around. The Fraunhofer <BR>&gt; ISE<BR>&gt; is planning to marry Roland Schregle's RADIANCE forward raytracer with <BR>&gt; the<BR>&gt; few changes I implemented for the DAYSIM model in rtrace to calculate<BR>&gt; daylight coefficients.<BR>&gt;<BR>&gt; I think that it would make sense if we could bring our contributions <BR>&gt; somehow<BR>&gt; into the mainstream RADIANCE. Maybe with an option in the makefile to <BR>&gt; switch<BR>&gt; it on or off. The ISE has actually hired a real programmer to do the <BR>&gt; trick<BR>&gt; (not a beginner like me). He could probably implement the changes so <BR>&gt; that<BR>&gt; they are not disruptive to the rest of the program. And of course Peter<BR>&gt; would always be around:)<BR>&gt;<BR>&gt; This is just a suggestion. Love it or leave it. I do not want to make <BR>&gt; any<BR>&gt; changes to RADIANCE any more as I am now working on lighting control <BR>&gt; models<BR>&gt; etc.. I am happy with the modified rtrace as it is.<BR>&gt;<BR>&gt; Greetings from Ottawa,<BR>&gt;<BR>&gt; Christoph<BR><BR>_______________________________________________<BR>Radiance-dev mailing list<BR>Radiance-dev@radiance-online.org<BR>http://www.radiance-online.org/mailman/listinfo/radiance-dev</BLOCKQUOTE>
+--0-433595283-1046153626=:12321--
+
+From radiance-dev@radiance-online.org  Fri Feb 28 15:51:42 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Fri, 28 Feb 2003 07:51:42 -0800
+Subject: [Radiance-dev] primitive plan for meshes
+Message-ID: <8851A590-4B34-11D7-A7D1-00306540F848@lmi.net>
+
+I am thinking about adding a "mesh" primitive to Radiance, which would 
+be the first new geometric primitive since the system's inception.  The 
+purpose is to facilitate arbitrary shapes that are inherently complex, 
+minimize the associated memory costs, and improve rendering quality and 
+efficiency.  Currently, meshes are represented in memory as individual 
+polygons, each of which incurs an overhead of 76 bytes, plus the space 
+required by N double-precision 3-points, which is 76+3*3*8, or 124 
+bytes in the typical case of a triangle.
+
+In a well-constructed t-mesh, each non-boundary vertex has a valence of 
+6, which means that we can save a lot of memory by sharing vertices 
+rather than repeating them in individual triangles.  Furthermore, mesh 
+vertices can be constrained to fit within a bounding box, permitting 
+them to be represented by 32-bit integers rather than 64-bit doubles, 
+which saves another factor of two.  We have to add back in some 
+overhead for vertex indexing, but I think I can reduce this to one byte 
+per reference using face grouping -- I'll have to think about it some 
+more.  The biggest memory savings, though, comes when we specify vertex 
+normals, which currently requires a separate texfunc primitive with 13 
+real arguments for each face (132 bytes with overhead).
+
+Adding it all together, a smoothed t-mesh with 10,000 vertices (small 
+by today's standards) occupies about 5 Mbytes of memory.  Moving to a 
+mesh primitive, I should be able to fit the same mesh into about 150K, 
+including acceleration data structures.  This means we should be able 
+to render objects over 30 times as complex as before.
+
+One of the main reasons I never implemented meshes in Radiance is that 
+doing so makes it nearly impossible to leverage the existing ray 
+intersection machinery.  With the current arrangement, all the mesh 
+triangles end up in the scene octree (or a local octree if the mesh is 
+instanced), so rays find mesh polygons the same way they find other 
+scene geometry, by traversing an octree.  Introducing meshes means 
+instead of encountering of a polygon in the octree, we encounter a mesh 
+comprised of many, many polygons, and we have no idea which of these 
+triangles to test for intersection.  Testing them all would is a really 
+bad idea from an efficiency standpoint.
+
+I've given this a little thought, and I think I've come up with an 
+efficient acceleration structure that I can compute quickly on object 
+load that will enable both mesh/octree and mesh/ray intersection 
+testing.  All I need to store is 3 orthonormal images on the mesh 
+bounding box, where each image pixel contains the set of triangles that 
+project onto that position (without hidden surface removal).  We 
+traverse the mesh bounding box with a ray using a 3DDA (3-diminetional 
+differential analyzer), computing the intersection of the three 
+orthonormal pixel sets at each 3-D voxel.  If a triangle is in all 
+three sets, that means we are within its local bounding box, and should 
+test it for intersection with the ray.
+
+Another bonus we'll get with this implementation is something Radiance 
+has never had -- local (u,v) coordinates!  These can be stored wtih our 
+vertices and made available for patterns and textures through the 
+function language as new variables, Lu and Lv.  Their values will be 
+set in the mesh input file, for which I plan to use Wavefront .OBJ, 
+since it already contains pretty much everything we need to specify a 
+mesh without a lot of fluff.  Here's the primitive specification I have 
+in mind:
+
+mod mesh id
+1+ mesh_file.obj [xf ..]
+0
+0+ [smoothing_angle]
+
+The same mesh file may be used by multiple primitives, and all data 
+will be shared as it is with the instance primitive that bears close 
+resemblance.  The optional smoothing_angle parameter sets the angle 
+below which faces with unspecified normals will be automatically 
+smoothed.  The default value of 0 means that faces will not be 
+smoothed.  A value of 5 would smooth faces with initial surface normals 
+less than 5 degrees apart.  Values of 90 or greater would even smooth 
+over sharp corners, which probably isn't a good idea.
+
+So, why am I writing all this?  Well, mostly because I wanted to get 
+some feedback from people before I went to all this trouble.  Do we 
+need meshes or not?  Is what we have perfectly adequate, or has it been 
+a nuisance all along?  Am I going about it all wrong -- e.g., should I 
+be using subdivision surfaces instead of t-meshes?  Smoothed meshes are 
+notorious for creating reflection and refraction problems due to 
+inconsistent normals, which was my other excuse for avoiding them all 
+these years.
+
+Please share your thoughts.  I almost posted this to the general 
+mailing list, but thought better of it.  If you think it would benefit 
+from a larger forum, I'll reconsider.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Fri Feb 28 21:18:49 2003
+From: radiance-dev@radiance-online.org (Charles Ehrlich)
+Date: Fri, 28 Feb 2003 13:18:49 -0800 (PST)
+Subject: [Radiance-dev] primitive plan for meshes
+In-Reply-To: <8851A590-4B34-11D7-A7D1-00306540F848@lmi.net>
+Message-ID: <20030228211849.64344.qmail@web80314.mail.yahoo.com>
+
+--0-638891907-1046467129=:61292
+Content-Type: text/plain; charset=us-ascii
+
+
+Two thoughts.  Firstly, whatever approach (TMESH or subdivision surfaces) will be a fantastic improvement.  I remember our work on the SFO Air Traffic Control tower and the inordinate amount of work I had to go through to simplify the USGS DEM geometry just to fit it into the model.
+Secondly, back when I first requested this feature twelve years ago, I never realized that it was the ray intersection algorithm causing the problem.  Although my suggestion sounds like throwing the baby out with the bath water, would it be reasonable to overhaul the entire ray intersection algorithm and use path tracing instead?  I'm sure path tracing will have different requirements upon the implementation of a complex surface mesh primitive, and considering that path tracing has already been implemented, this might be a good excuse to take a look at it and see how it works.
+-Chas
+
+--0-638891907-1046467129=:61292
+Content-Type: text/html; charset=us-ascii
+
+<P>Two thoughts.&nbsp; Firstly, whatever approach (TMESH or subdivision surfaces) will be a fantastic improvement.&nbsp; I remember our work on the SFO Air Traffic Control tower and the inordinate amount of work I had to go through to simplify the USGS DEM geometry just to fit it into the model.
+<P>Secondly, back when I first requested this feature twelve years ago, I never realized that it was the ray intersection algorithm causing the problem.&nbsp;&nbsp;Although my suggestion sounds like throwing the baby out with the bath water,&nbsp;would&nbsp;it be&nbsp;reasonable to overhaul the&nbsp;entire ray intersection algorithm and use path tracing instead?&nbsp; I'm sure path tracing will have different requirements upon the implementation of a complex surface mesh primitive, and considering that path tracing has already been implemented, this might be a good excuse to take a look at it and see how it works.
+<P>-Chas</P>
+--0-638891907-1046467129=:61292--
+
+From radiance-dev@radiance-online.org  Fri Feb 28 22:17:04 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Fri, 28 Feb 2003 14:17:04 -0800
+Subject: [Radiance-dev] Re: primitive plan for meshes
+Message-ID: <5E066276-4B6A-11D7-ADBB-00306540F848@lmi.net>
+
+Charles Ehrlich wrote:
+
+> Two thoughts.  Firstly, whatever approach (TMESH or subdivision 
+> surfaces) will be a fantastic improvement.  I remember our work on the 
+> SFO Air Traffic Control tower and the inordinate amount of work I had 
+> to go through to simplify the USGS DEM geometry just to fit it into 
+> the model.
+>
+> Secondly, back when I first requested this feature twelve years ago, I 
+> never realized that it was the ray intersection algorithm causing the 
+> problem.  Although my suggestion sounds like throwing the baby out 
+> with the bath water, would it be reasonable to overhaul the entire ray 
+> intersection algorithm and use path tracing instead?  I'm sure path 
+> tracing will have different requirements upon the implementation of a 
+> complex surface mesh primitive, and considering that path tracing has 
+> already been implemented, this might be a good excuse to take a look 
+> at it and see how it works.
+
+Technically, path tracing and ray intersection are separable problems.  
+Path tracing addresses how shading is accomplished, including which 
+secondary rays are traced, not how rays are traced (i.e., intersected 
+with scene geometry).  We could consider moving to a path tracing 
+solution, but that would involve rewriting the renderer from scratch, 
+and probably wouldn't improve accuracy or efficiency in the end.  Path 
+tracing works very well for a particular subset of problems, and has 
+the nice property of being "unbiased," which means it always gets the 
+right answer on average, only the noise gets quite high when it's 
+having trouble.  In certain cases, you can't get rid of the noise no 
+matter how many paths you trace -- secondary light sources are a key 
+example where this occurs.  We'd no doubt end up building back in many 
+of the features that have evolved in Radiance over the years, perhaps 
+even ending up with something similar to what we have today.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Fri Feb 28 22:46:54 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Fri, 28 Feb 2003 17:46:54 -0500 (EST)
+Subject: [Radiance-dev] primitive plan for meshes
+In-Reply-To: <8851A590-4B34-11D7-A7D1-00306540F848@lmi.net>
+Message-ID: <Pine.BSF.4.44.0302281743260.28251-100000@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> I am thinking about adding a "mesh" primitive to Radiance, which would
+> be the first new geometric primitive since the system's inception.
+
+Oooohhhh....!
+
+
+> In a well-constructed t-mesh, each non-boundary vertex has a valence of
+> 6, which means that we can save a lot of memory by sharing vertices
+> rather than repeating them in individual triangles.
+
+Since you're using the t-word, are we necessarily restricted to
+triangles here? The obj format looks like an "n-mesh", allowing
+for faces to reference an arbitrary number of vertices. As long
+as those faces are planar, I think it would be nice to allow that
+as well, and I can't see any obvious reason why your concept
+shouldn't be able to handle the general case.
+
+
+> Furthermore, mesh
+> vertices can be constrained to fit within a bounding box, permitting
+> them to be represented by 32-bit integers rather than 64-bit doubles,
+> which saves another factor of two.  We have to add back in some
+> overhead for vertex indexing, but I think I can reduce this to one byte
+> per reference using face grouping -- I'll have to think about it some
+> more.
+
+I'm not sure what exactly "face grouping" means in practise, but
+it sounds complicated... Will it still work efficiently for
+irregular geometry? I'm thinking about meshes where the indivual
+faces intersect and stretch all around the bounding box, making
+it impossible to assign each of them to a local region. Or is the
+term invoking the wrong images in my head?
+
+In general, I wouldn't hesitate to trade a few bytes anymore, if
+we got noticeable performance improvements in return. Cutting
+memory use in half (or better) may still be worth the effort, but
+if it's less than that, then I'd say that RAM is cheap, and time
+is expensive.
+
+
+>   All I need to store is 3 orthonormal images on the mesh
+> bounding box, where each image pixel contains the set of triangles that
+> project onto that position (without hidden surface removal).  We
+> traverse the mesh bounding box with a ray using a 3DDA (3-diminetional
+> differential analyzer), computing the intersection of the three
+> orthonormal pixel sets at each 3-D voxel.  If a triangle is in all
+> three sets, that means we are within its local bounding box, and should
+> test it for intersection with the ray.
+
+Nice trick. What advantages does it have relative to building a
+sub-octree as for instances? I assume that with many (but not
+all) meshes, most of the voxels would be empty, but you still
+can't reduce their number, while an empty octree branch won't
+contain any further children. Or is it cheaper to traverse voxel
+sets instead of octrees? Since you want to generate them on the
+fly, I guess that at least that is significantly faster.
+
+
+> Another bonus we'll get with this implementation is something Radiance
+> has never had -- local (u,v) coordinates!  These can be stored wtih our
+> vertices and made available for patterns and textures through the
+> function language as new variables, Lu and Lv.
+
+That might make it tempting to convert "normal" geometry into
+meshes too for certain applications...
+
+
+> Their values will be
+> set in the mesh input file, for which I plan to use Wavefront .OBJ,
+> since it already contains pretty much everything we need to specify a
+> mesh without a lot of fluff.  Here's the primitive specification I have
+> in mind:
+>
+> mod mesh id
+> 1+ mesh_file.obj [xf ..]
+> 0
+> 0+ [smoothing_angle]
+
+Looks fine to me.
+I especially like the fact that the obj format will also allow us
+to accept true free form surfaces later...
+
+
+>  Do we need meshes or not?
+
+For people importing DXF data from programs like Rhino or FormZ,
+they'll be a gift from heaven, even without side benefits like
+local u/v.
+
+
+>   Am I going about it all wrong -- e.g., should I
+> be using subdivision surfaces instead of t-meshes?
+
+I had to look up the term, but... I'm not sure whether meshes vs.
+subdivision surfaces are really equivalent alternatives to each
+other.
+
+There may be implementation issues on your end that I don't see
+at the moment, but for me the big question is where the geometry
+data actually comes from. In practise, this will be any of the
+standard (or not so standard) CAD programs.
+
+It should be relatively straightforward for a modelling program
+like trueSpace to generate smoothed meshes from their subdivision
+surfaces on export. But it will be rather hard for any other CAD
+program to generate subdivision surfaces from their more
+traditional mesh data. As far as I am concerned, that would
+settle the question for Radiance.
+
+
+> Smoothed meshes are
+> notorious for creating reflection and refraction problems due to
+> inconsistent normals, which was my other excuse for avoiding them all
+> these years.
+
+People modelling optical lenses that way will have to blame
+themselfes for the results... ;)
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+

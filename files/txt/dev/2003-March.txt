@@ -1,0 +1,3460 @@
+From radiance-dev@radiance-online.org  Sat Mar  1 00:31:40 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Fri, 28 Feb 2003 16:31:40 -0800
+Subject: [Radiance-dev] Re: primitive plan for meshes
+Message-ID: <2B9BB853-4B7D-11D7-AD52-00306540F848@lmi.net>
+
+Schorsch writes:
+
+> Since you're using the t-word, are we necessarily restricted to
+> triangles here? The obj format looks like an "n-mesh", allowing
+> for faces to reference an arbitrary number of vertices. As long
+> as those faces are planar, I think it would be nice to allow that
+> as well, and I can't see any obvious reason why your concept
+> shouldn't be able to handle the general case.
+
+There are a few problems with N-meshes.  First, the vertices can be 
+non-planar.  Even slight non-planarity can result in visible cracks 
+under certain conditions.  The means for avoid cracking of non-planar 
+geometry are generally not available within a ray-tracer.  The second 
+problem with quads and especially poly's with 5 sides or more is that 
+they don't succumb easily to coordinate interpolation for smoothing and 
+(u,v) lookups.  Finally, and this is relatively minor,  it takes a bit 
+of extra storage and complexity to deal with N-ary polygons, to the 
+point where it doesn't cost much more to break everything into 
+triangles, which is what I plan to do if a quad (or higher) is 
+delivered in the .OBJ file.  (The cost of breaking quads into triangles 
+is 1 byte/quad, and the intersection tests don't take much longer -- 
+some people claim it's even faster if you optimize.)
+
+> I'm not sure what exactly "face grouping" means in practise, but
+> it sounds complicated... Will it still work efficiently for
+> irregular geometry? I'm thinking about meshes where the indivual
+> faces intersect and stretch all around the bounding box, making
+> it impossible to assign each of them to a local region. Or is the
+> term invoking the wrong images in my head?
+
+I came up with a fairly simple data structure for grouping vertices and 
+faces together so each triangle takes three bytes for the three vertex 
+references.  Reference locality is based on face order in the file, and 
+we solve the boundary problem by replicating vertices when we run out 
+of room in a given group.  The costs for doing so should be minor 
+relative to the savings.  Reading in the .OBJ file is a bit more 
+complicated this way, but we get a savings of about 9 bytes/triangle 
+over a more straightforward representation.  This cuts the memory use 
+nearly in half for a mesh without normals or texture coordinates, and 
+35% or so for a mesh with both normals and uv.  Access time is 
+unaffected.  Since a big reason for switching to a mesh representation 
+is to cut storage costs so we can handle scanned data and the like, I 
+think it's worth the effort to do a good job of it, provided we don't 
+compromise performance.  So, we're agreed on that.
+
+>> We traverse the mesh bounding box with a ray using a 3DDA 
+>> (3-diminetional differential analyzer), computing the intersection of 
+>> the three orthonormal pixel sets at each 3-D voxel.  If a triangle is 
+>> in all three sets, that means we are within its local bounding box, 
+>> and should test it for intersection with the ray.
+
+> Nice trick. What advantages does it have relative to building a
+> sub-octree as for instances? I assume that with many (but not
+> all) meshes, most of the voxels would be empty, but you still
+> can't reduce their number, while an empty octree branch won't
+> contain any further children. Or is it cheaper to traverse voxel
+> sets instead of octrees? Since you want to generate them on the
+> fly, I guess that at least that is significantly faster.
+
+Well, having thought about it some more, I'm starting to waiver on this 
+idea.  The scheme I devised is quite a bit more complicated than 
+leveraging the octree traversal code, which I'm starting to believe 
+isn't as impossible as I first thought.  I need a way of creating an 
+octree on the fly, or creating a compiled mesh format (and converter) 
+for quick loading.  Also, I'm not convinced the 3DDA would be that much 
+faster, if indeed it would be faster, since I'd be computing 
+potentially large set intersections along the path.  Such an approach 
+would be sensitive to depth complexity, and in the worst case when 
+densly meshed faces are aligned with the coordinate axes, we could get 
+some really large sets (thousands of faces) that we'd have to intersect 
+in a few places.  An octree doesn't suffer this problem, and the 
+existing structure would work as it is.  I'm still pondering this.
+
+> Looks fine to me.
+> I especially like the fact that the obj format will also allow us
+> to accept true free form surfaces later...
+
+What packages actually output Wavefront's free-form extensions?  I do 
+plan on making gensurf optionally output the new mesh format, since 
+it's basically computing a free-form mesh with uv coordinates as it is.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Sat Mar  1 00:58:52 2003
+From: radiance-dev@radiance-online.org (Charles Ehrlich)
+Date: Fri, 28 Feb 2003 16:58:52 -0800 (PST)
+Subject: [Radiance-dev] Re: primitive plan for meshes
+In-Reply-To: <2B9BB853-4B7D-11D7-AD52-00306540F848@lmi.net>
+Message-ID: <20030301005852.75016.qmail@web80309.mail.yahoo.com>
+
+--0-54572204-1046480332=:74707
+Content-Type: text/plain; charset=us-ascii
+
+
+Greg,
+The following caught my attention:
+>I need a way of creating an octree on the fly, or 
+> creating a compiled mesh format (and converter) 
+> for quick loading.
+
+This sounds like it would be useful for scene animations with a stay-in-memory version of the renderer, no?
+-Chas
+ Greg Ward <gward@lmi.net> wrote:Schorsch writes:
+
+> Since you're using the t-word, are we necessarily restricted to
+> triangles here? The obj format looks like an "n-mesh", allowing
+> for faces to reference an arbitrary number of vertices. As long
+> as those faces are planar, I think it would be nice to allow that
+> as well, and I can't see any obvious reason why your concept
+> shouldn't be able to handle the general case.
+
+There are a few problems with N-meshes. First, the vertices can be 
+non-planar. Even slight non-planarity can result in visible cracks 
+under certain conditions. The means for avoid cracking of non-planar 
+geometry are generally not available within a ray-tracer. The second 
+problem with quads and especially poly's with 5 sides or more is that 
+they don't succumb easily to coordinate interpolation for smoothing and 
+(u,v) lookups. Finally, and this is relatively minor, it takes a bit 
+of extra storage and complexity to deal with N-ary polygons, to the 
+point where it doesn't cost much more to break everything into 
+triangles, which is what I plan to do if a quad (or higher) is 
+delivered in the .OBJ file. (The cost of breaking quads into triangles 
+is 1 byte/quad, and the intersection tests don't take much longer -- 
+some people claim it's even faster if you optimize.)
+
+> I'm not sure what exactly "face grouping" means in practise, but
+> it sounds complicated... Will it still work efficiently for
+> irregular geometry? I'm thinking about meshes where the indivual
+> faces intersect and stretch all around the bounding box, making
+> it impossible to assign each of them to a local region. Or is the
+> term invoking the wrong images in my head?
+
+I came up with a fairly simple data structure for grouping vertices and 
+faces together so each triangle takes three bytes for the three vertex 
+references. Reference locality is based on face order in the file, and 
+we solve the boundary problem by replicating vertices when we run out 
+of room in a given group. The costs for doing so should be minor 
+relative to the savings. Reading in the .OBJ file is a bit more 
+complicated this way, but we get a savings of about 9 bytes/triangle 
+over a more straightforward representation. This cuts the memory use 
+nearly in half for a mesh without normals or texture coordinates, and 
+35% or so for a mesh with both normals and uv. Access time is 
+unaffected. Since a big reason for switching to a mesh representation 
+is to cut storage costs so we can handle scanned data and the like, I 
+think it's worth the effort to do a good job of it, provided we don't 
+compromise performance. So, we're agreed on that.
+
+>> We traverse the mesh bounding box with a ray using a 3DDA 
+>> (3-diminetional differential analyzer), computing the intersection of 
+>> the three orthonormal pixel sets at each 3-D voxel. If a triangle is 
+>> in all three sets, that means we are within its local bounding box, 
+>> and should test it for intersection with the ray.
+
+> Nice trick. What advantages does it have relative to building a
+> sub-octree as for instances? I assume that with many (but not
+> all) meshes, most of the voxels would be empty, but you still
+> can't reduce their number, while an empty octree branch won't
+> contain any further children. Or is it cheaper to traverse voxel
+> sets instead of octrees? Since you want to generate them on the
+> fly, I guess that at least that is significantly faster.
+
+Well, having thought about it some more, I'm starting to waiver on this 
+idea. The scheme I devised is quite a bit more complicated than 
+leveraging the octree traversal code, which I'm starting to believe 
+isn't as impossible as I first thought. I need a way of creating an 
+octree on the fly, or creating a compiled mesh format (and converter) 
+for quick loading. Also, I'm not convinced the 3DDA would be that much 
+faster, if indeed it would be faster, since I'd be computing 
+potentially large set intersections along the path. Such an approach 
+would be sensitive to depth complexity, and in the worst case when 
+densly meshed faces are aligned with the coordinate axes, we could get 
+some really large sets (thousands of faces) that we'd have to intersect 
+in a few places. An octree doesn't suffer this problem, and the 
+existing structure would work as it is. I'm still pondering this.
+
+> Looks fine to me.
+> I especially like the fact that the obj format will also allow us
+> to accept true free form surfaces later...
+
+What packages actually output Wavefront's free-form extensions? I do 
+plan on making gensurf optionally output the new mesh format, since 
+it's basically computing a free-form mesh with uv coordinates as it is.
+
+-Greg
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+--0-54572204-1046480332=:74707
+Content-Type: text/html; charset=us-ascii
+
+<P>Greg,
+<P>The following caught my attention:
+<P>&gt;I need a way of creating an octree on the fly, or <BR>&gt; creating a compiled mesh format (and converter) <BR>&gt; for quick loading.</P>
+<P>This sounds like it would be useful for&nbsp;scene animations with a stay-in-memory version of the renderer, no?
+<P>-Chas
+<P>&nbsp;<B><I>Greg Ward &lt;gward@lmi.net&gt;</I></B> wrote:
+<BLOCKQUOTE style="PADDING-LEFT: 5px; MARGIN-LEFT: 5px; BORDER-LEFT: #1010ff 2px solid">Schorsch writes:<BR><BR>&gt; Since you're using the t-word, are we necessarily restricted to<BR>&gt; triangles here? The obj format looks like an "n-mesh", allowing<BR>&gt; for faces to reference an arbitrary number of vertices. As long<BR>&gt; as those faces are planar, I think it would be nice to allow that<BR>&gt; as well, and I can't see any obvious reason why your concept<BR>&gt; shouldn't be able to handle the general case.<BR><BR>There are a few problems with N-meshes. First, the vertices can be <BR>non-planar. Even slight non-planarity can result in visible cracks <BR>under certain conditions. The means for avoid cracking of non-planar <BR>geometry are generally not available within a ray-tracer. The second <BR>problem with quads and especially poly's with 5 sides or more is that <BR>they don't succumb easily to coordinate interpolation for smoothing and <BR>(u,v) lookups. Finally, and this is relatively minor, it takes a bit <BR>of extra storage and complexity to deal with N-ary polygons, to the <BR>point where it doesn't cost much more to break everything into <BR>triangles, which is what I plan to do if a quad (or higher) is <BR>delivered in the .OBJ file. (The cost of breaking quads into triangles <BR>is 1 byte/quad, and the intersection tests don't take much longer -- <BR>some people claim it's even faster if you optimize.)<BR><BR>&gt; I'm not sure what exactly "face grouping" means in practise, but<BR>&gt; it sounds complicated... Will it still work efficiently for<BR>&gt; irregular geometry? I'm thinking about meshes where the indivual<BR>&gt; faces intersect and stretch all around the bounding box, making<BR>&gt; it impossible to assign each of them to a local region. Or is the<BR>&gt; term invoking the wrong images in my head?<BR><BR>I came up with a fairly simple data structure for grouping vertices and <BR>faces together so each triangle takes three bytes for the three vertex <BR>references. Reference locality is based on face order in the file, and <BR>we solve the boundary problem by replicating vertices when we run out <BR>of room in a given group. The costs for doing so should be minor <BR>relative to the savings. Reading in the .OBJ file is a bit more <BR>complicated this way, but we get a savings of about 9 bytes/triangle <BR>over a more straightforward representation. This cuts the memory use <BR>nearly in half for a mesh without normals or texture coordinates, and <BR>35% or so for a mesh with both normals and uv. Access time is <BR>unaffected. Since a big reason for switching to a mesh representation <BR>is to cut storage costs so we can handle scanned data and the like, I <BR>think it's worth the effort to do a good job of it, provided we don't <BR>compromise performance. So, we're agreed on that.<BR><BR>&gt;&gt; We traverse the mesh bounding box with a ray using a 3DDA <BR>&gt;&gt; (3-diminetional differential analyzer), computing the intersection of <BR>&gt;&gt; the three orthonormal pixel sets at each 3-D voxel. If a triangle is <BR>&gt;&gt; in all three sets, that means we are within its local bounding box, <BR>&gt;&gt; and should test it for intersection with the ray.<BR><BR>&gt; Nice trick. What advantages does it have relative to building a<BR>&gt; sub-octree as for instances? I assume that with many (but not<BR>&gt; all) meshes, most of the voxels would be empty, but you still<BR>&gt; can't reduce their number, while an empty octree branch won't<BR>&gt; contain any further children. Or is it cheaper to traverse voxel<BR>&gt; sets instead of octrees? Since you want to generate them on the<BR>&gt; fly, I guess that at least that is significantly faster.<BR><BR>Well, having thought about it some more, I'm starting to waiver on this <BR>idea. The scheme I devised is quite a bit more complicated than <BR>leveraging the octree traversal code, which I'm starting to believe <BR>isn't as impossible as I first thought. I need a way of creating an <BR>octree on the fly, or creating a compiled mesh format (and converter) <BR>for quick loading. Also, I'm not convinced the 3DDA would be that much <BR>faster, if indeed it would be faster, since I'd be computing <BR>potentially large set intersections along the path. Such an approach <BR>would be sensitive to depth complexity, and in the worst case when <BR>densly meshed faces are aligned with the coordinate axes, we could get <BR>some really large sets (thousands of faces) that we'd have to intersect <BR>in a few places. An octree doesn't suffer this problem, and the <BR>existing structure would work as it is. I'm still pondering this.<BR><BR>&gt; Looks fine to me.<BR>&gt; I especially like the fact that the obj format will also allow us<BR>&gt; to accept true free form surfaces later...<BR><BR>What packages actually output Wavefront's free-form extensions? I do <BR>plan on making gensurf optionally output the new mesh format, since <BR>it's basically computing a free-form mesh with uv coordinates as it is.<BR><BR>-Greg<BR><BR>_______________________________________________<BR>Radiance-dev mailing list<BR>Radiance-dev@radiance-online.org<BR>http://www.radiance-online.org/mailman/listinfo/radiance-dev</BLOCKQUOTE>
+--0-54572204-1046480332=:74707--
+
+From radiance-dev@radiance-online.org  Sat Mar  1 02:20:08 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Fri, 28 Feb 2003 21:20:08 -0500 (EST)
+Subject: [Radiance-dev] Re: primitive plan for meshes
+In-Reply-To: <2B9BB853-4B7D-11D7-AD52-00306540F848@lmi.net>
+Message-ID: <Pine.BSF.4.44.0302282116220.28251-100000@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> There are a few problems with N-meshes.  First, the vertices can be
+> non-planar.  Even slight non-planarity can result in visible cracks
+> under certain conditions.
+
+That's obvious, and comparable to what already happens with
+non-planar polygons now.
+
+
+> The second
+> problem with quads and especially poly's with 5 sides or more is that
+> they don't succumb easily to coordinate interpolation for smoothing and
+> (u,v) lookups.
+
+Ah, that's an aspect I didn't think about.
+
+
+>  break everything into
+> triangles, which is what I plan to do if a quad (or higher) is
+> delivered in the .OBJ file.
+
+Well, if you triangulize internally, that still means we'll
+accept non-triangles as input. This is a good thing, because
+we'll be able to use a lot of existing data unchanged. Many such
+files will have been exported from regular (gridded) meshes, and
+are likely to contain quadrilaterals.
+
+The data producer will only have to bother with the splitting in
+those case where the direction of the split matters.
+
+
+> I came up with a fairly simple data structure for grouping vertices and
+> faces together so each triangle takes three bytes for the three vertex
+> references.  Reference locality is based on face order in the file, and
+> we solve the boundary problem by replicating vertices when we run out
+> of room in a given group.
+
+So you're simply splitting up the mesh at an arbitrary point,
+into two or more individual meshes. The positive effect will be
+smallest for meshes that have been converted from regular grids,
+because the faces will appear in scanning order and you'll be
+duplicating a relatively large number of vertices along the grid
+lines. For grids with more than 128 columns, you'll actually be
+duplicating almost all vertices (except for the top and bottom
+rows).
+
+
+> would be sensitive to depth complexity, and in the worst case when
+> densly meshed faces are aligned with the coordinate axes, we could get
+> some really large sets (thousands of faces) that we'd have to intersect
+> in a few places.
+
+That could happen quite often with topographical models, or with
+certain styles of architecture. In fact, any massive facade with
+windows could end up like that, if I should manage to turn ACIS
+solid modelling entities from Autocad into meshes.
+
+
+> What packages actually output Wavefront's free-form extensions?
+
+I have no idea. I just checked the format specs to see what I
+would need to do with Radout and dxf2rad, and saw that it's
+possible. Another positive point is that the format seems to be
+fairly popular, because it is simple and straightforward, and has
+been around for a long time.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Sat Mar  1 04:44:24 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Fri, 28 Feb 2003 20:44:24 -0800
+Subject: [Radiance-dev] Re: primitive plan for meshes
+In-Reply-To: <20030301005901.2521.55713.Mailman@darkside-animation.com>
+Message-ID: <7A0ED4D0-4BA0-11D7-BF36-00306540F848@lmi.net>
+
+Schorsch writes:
+
+> So you're simply splitting up the mesh at an arbitrary point,
+> into two or more individual meshes. The positive effect will be
+> smallest for meshes that have been converted from regular grids,
+> because the faces will appear in scanning order and you'll be
+> duplicating a relatively large number of vertices along the grid
+> lines. For grids with more than 128 columns, you'll actually be
+> duplicating almost all vertices (except for the top and bottom
+> rows).
+
+You are right of course.  I thought about this a bit more, and some 
+sorting of the data is desirable.  An octree would make this fairly 
+simple if we generated it first.  Even if the data were organized 
+perfectly, 1/4 of the vertices would still have to be replicated if I 
+subdivide (as I planned) into blocks of 256 vertices.  Larger blocks 
+would have a smaller proportion of border vertices, but would require 
+more memory for references, to the point where I may as well give up 
+and use 4 bytes/reference.  The other option is to have special ways to 
+index border vertices from another block, and this may solve the 
+problem if I can "sort it out."  I'll have to think on it some more, 
+that much is clear.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Sat Mar  1 09:43:01 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Sat, 01 Mar 2003 10:43:01 +0100
+Subject: [Radiance-dev] Re: primitive plan for meshes
+References: <2B9BB853-4B7D-11D7-AD52-00306540F848@lmi.net>
+Message-ID: <3E6080A5.A1CFC2FF@pab-opto.de>
+
+Greg Ward wrote:
+
+> > Looks fine to me.
+> > I especially like the fact that the obj format will also allow us
+> > to accept true free form surfaces later...
+>
+> What packages actually output Wavefront's free-form extensions?  I do
+> plan on making gensurf optionally output the new mesh format, since
+> it's basically computing a free-form mesh with uv coordinates as it is.
+
+ uv coordinates, reading Wavefront at least partially directly, better
+modelling of smooth surfaces, smaller memory footprint - positive.
+
+Personally, my VRML experiences have not been memory limited so far (160000
+polygons, http://www.pab-opto.de/n/k5/fahrzeug/scene.pic.pc.jpg.stamped ).
+After all,  normal interpolation is used to limit the number of polygons in
+the first place.  Of course, using a texfunc per polygon is technically not
+compact, but it works (see below).  But VRML is typically not as
+polygon-intense as other CAD formats, so my view is limited.
+I wonder whether someone on the general list actually experienced memory
+limits with smooth surfaces, to back up the memory argument.
+
+Much more annoying than memory consumption is the dysfunctionality of
+texfuncs with glass and trans. Introducing a new "smooth" primitive without
+working support for all materials would be sad, as smooth objects will
+likely include reflectors and transparent surfaces. (despite that normal
+interpolation is slightly off for mirror reflections).
+
+If it wasn't Greg to mentioned it, I'd pointed out that the limited number
+of primitives is a major advantage of Radiance in terms of extensions and
+validation.
+Is a translator really out of question ? If we're faced with CAD generated,
+cumbersome huge vertex sets for tessellated surfaces, maybe it pays to
+implement one of the common vertex-reorganizing programs used for scanned
+geometry into the translator and boil it down.
+
+-Peter
+
+--
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+
+From radiance-dev@radiance-online.org  Sat Mar  1 11:43:05 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Sat, 1 Mar 2003 06:43:05 -0500 (EST)
+Subject: [Radiance-dev] Re: primitive plan for meshes
+In-Reply-To: <7A0ED4D0-4BA0-11D7-BF36-00306540F848@lmi.net>
+Message-ID: <Pine.BSF.4.44.0303010623040.85842-100000@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> Schorsch writes:
+>
+> > So you're simply splitting up the mesh at an arbitrary point,
+> > into two or more individual meshes. The positive effect will be
+> > smallest for meshes that have been converted from regular grids,
+> > because the faces will appear in scanning order and you'll be
+> > duplicating a relatively large number of vertices along the grid
+> > lines. For grids with more than 128 columns, you'll actually be
+> > duplicating almost all vertices (except for the top and bottom
+> > rows).
+>
+> You are right of course.  I thought about this a bit more, and some
+> sorting of the data is desirable.  An octree would make this fairly
+> simple if we generated it first.  Even if the data were organized
+> perfectly, 1/4 of the vertices would still have to be replicated if I
+> subdivide (as I planned) into blocks of 256 vertices.  Larger blocks
+> would have a smaller proportion of border vertices, but would require
+> more memory for references, to the point where I may as well give up
+> and use 4 bytes/reference.  The other option is to have special ways to
+> index border vertices from another block, and this may solve the
+> problem if I can "sort it out."  I'll have to think on it some more,
+> that much is clear.
+
+
+Isn't that rather a side issue of the whole feature anyway?
+It might be worth to just implement it in the straightforward
+way, and only then to look into further optimizations.
+I think that keeping the code reasonably simple should also be a
+design goal, that should only be thrown out for significant gains
+in either speed or memory use. Neither of those seems very
+obvious for the moment in the context of face grouping. Investing
+a lot of thinking and coding into another 20 or 30% after we
+already raised the bar by more than an order of magnitude doesn't
+sound like a priority task to me...
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+From radiance-dev@radiance-online.org  Mon Mar  3 14:36:25 2003
+From: radiance-dev@radiance-online.org (Jack de Valpine)
+Date: Mon, 03 Mar 2003 09:36:25 -0500
+Subject: [Radiance-dev] Re: primitive plan for meshes
+References: <2B9BB853-4B7D-11D7-AD52-00306540F848@lmi.net>
+Message-ID: <3E636869.106@visarc.com>
+
+Hi All,
+
+If the question is what packages output Wavefront .obj format, then one 
+would be Rhino from Robert McNeel & Associates (www.rhino3d.com). We 
+have used Rhino succesfully in the past for dealing with complex curved 
+surface modeling and conversion with obj2rad. The resulting octrees do 
+tend to be large. It would certainly great to be able to do more 
+sophisticated texturing on this kind of geometry. I am not sure whether 
+3DS Max or Viz export .obj?
+
+-Jack
+
+Greg Ward wrote:
+[snip out most of the important stuff ;->]
+
+>
+> What packages actually output Wavefront's free-form extensions?  I do 
+> plan on making gensurf optionally output the new mesh format, since 
+> it's basically computing a free-form mesh with uv coordinates as it is.
+>
+> -Greg
+>
+
+
+From radiance-dev@radiance-online.org  Mon Mar  3 19:19:38 2003
+From: radiance-dev@radiance-online.org (Randolph Fritz)
+Date: Mon, 3 Mar 2003 11:19:38 -0800
+Subject: [Radiance-dev] Re: primitive plan for meshes
+In-Reply-To: <3E636869.106@visarc.com>
+Message-ID: <13C77710-4DAD-11D7-84F4-0030658EA95E@panix.com>
+
+On Monday, March 3, 2003, at 06:36  AM, Jack de Valpine wrote:
+>>
+>> What packages actually output Wavefront's free-form extensions?  I do 
+>> plan on making gensurf optionally output the new mesh format, since 
+>> it's basically computing a free-form mesh with uv coordinates as it 
+>> is.
+
+I don't know about the free-form extensions, but FormZ outputs OBJ 
+format--I've used it with Radiance.  I think it very well might use the 
+extensions; FormZ has an extensive set of tools for modelling curving 
+forms.  In few weeks, during spring break, I might be able to make 
+inquiries.
+
+Randolph
+
+
+From radiance-dev@radiance-online.org  Mon Mar  3 22:48:35 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Mon, 3 Mar 2003 14:48:35 -0800
+Subject: [Radiance-dev] Re: primitive plan for meshes
+In-Reply-To: <20030302110002.6185.11194.Mailman@darkside-animation.com>
+Message-ID: <44194E36-4DCA-11D7-A2F0-00306540F848@lmi.net>
+
+schorsch writes:
+
+> Isn't that rather a side issue of the whole feature anyway?
+> It might be worth to just implement it in the straightforward
+> way, and only then to look into further optimizations.
+> I think that keeping the code reasonably simple should also be a
+> design goal, that should only be thrown out for significant gains
+> in either speed or memory use. Neither of those seems very
+> obvious for the moment in the context of face grouping. Investing
+> a lot of thinking and coding into another 20 or 30% after we
+> already raised the bar by more than an order of magnitude doesn't
+> sound like a priority task to me...
+
+Actually, memory use is the central issue in my mind.  (Don't take that 
+too literally.)  If memory weren't an issue, there'd be no real reason 
+to implement a mesh primitive.  The problems that Peter A-B mentions 
+regarding certain material types not working properly with interpolated 
+normals is an embarrassment.  In fact, I don't know why this bug stood 
+for so long -- I had a look at the relevant code, and the solution was 
+quite simple.  It should be fixed in the upcoming release, due out very 
+shortly!
+
+My main purpose for implementing meshes is to provide support for very 
+large, complicated geometries, as one might obtain from a laser range 
+scanner, for example.  Scanned meshes are required for many 
+archeological reconstructions and other scenes captured from real 
+geometry, and each mesh may contain hundreds of thousands or even 
+millions of triangles.  Memory and its influence on virtual memory 
+performance are the main rendering challenges.  If I give up on local 
+vertex references in faces, which I may have to unless I can resolve 
+some sticky problems, the memory use doesn't go up by 30% -- it 
+triples!  Pointers take the majority of space in a standard mesh 
+representation, and I would like to minimize these expenses any way I 
+can.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Mon Mar  3 23:39:29 2003
+From: radiance-dev@radiance-online.org (Randolph Fritz)
+Date: Mon, 3 Mar 2003 15:39:29 -0800
+Subject: [Radiance-dev] Re: primitive plan for meshes
+In-Reply-To: <44194E36-4DCA-11D7-A2F0-00306540F848@lmi.net>
+Message-ID: <60A71BC8-4DD1-11D7-926C-0030658EA95E@panix.com>
+
+On Monday, March 3, 2003, at 02:48  PM, Greg Ward wrote:
+
+> My main purpose for implementing meshes is to provide support for very 
+> large, complicated geometries, as one might obtain from a laser range 
+> scanner, for example.  Scanned meshes are required for many 
+> archeological reconstructions and other scenes captured from real 
+> geometry, and each mesh may contain hundreds of thousands or even 
+> millions of triangles.
+
+I think it would be valuable for the kind of architectural design that 
+disposes multiple buildings on a relatively large non-urban site, as 
+well.  I don't know that anyone's tried that with Radiance.
+
+Randolph
+
+
+From radiance-dev@radiance-online.org  Mon Mar  3 23:48:13 2003
+From: radiance-dev@radiance-online.org (Charles Ehrlich)
+Date: Mon, 3 Mar 2003 15:48:13 -0800 (PST)
+Subject: [Radiance-dev] Re: primitive plan for meshes
+In-Reply-To: <44194E36-4DCA-11D7-A2F0-00306540F848@lmi.net>
+Message-ID: <20030303234813.9058.qmail@web80312.mail.yahoo.com>
+
+--0-1890075824-1046735293=:9032
+Content-Type: text/plain; charset=us-ascii
+
+
+Greg,
+What about a heirarchical boundary representation?  One challenge of optimization is to minimize repeated vertex points, and another is to optimize the ray intersection calculation.  Perhaps this idea would address both?
+If the mesh at the top level is idealized as an n-sided polygon surrounding the entire collection of polygons, then as the ray "gets closer," the smaller "rings" of polygons are further resolved into smaller and smaller "idealized" n-sided polygons, until you are only left with one "loop" of triangles or polygons.  I'm imagining that a clever data structure could be developed where each successive "loop" of triangles can reference the vertex lists (by index) one level "up" and one level "down" the tree, thereby eliminating duplication.  The mesh would have to be pre-processed to order the vertexes accordingly, and would have to assume that all polygons are edge coherent.
+Make any sense?  Or am I just not grocking the problem?
+-Chas
+ Greg Ward <gward@lmi.net> wrote:schorsch writes:
+
+> Isn't that rather a side issue of the whole feature anyway?
+> It might be worth to just implement it in the straightforward
+> way, and only then to look into further optimizations.
+> I think that keeping the code reasonably simple should also be a
+> design goal, that should only be thrown out for significant gains
+> in either speed or memory use. Neither of those seems very
+> obvious for the moment in the context of face grouping. Investing
+> a lot of thinking and coding into another 20 or 30% after we
+> already raised the bar by more than an order of magnitude doesn't
+> sound like a priority task to me...
+
+Actually, memory use is the central issue in my mind. (Don't take that 
+too literally.) If memory weren't an issue, there'd be no real reason 
+to implement a mesh primitive. The problems that Peter A-B mentions 
+regarding certain material types not working properly with interpolated 
+normals is an embarrassment. In fact, I don't know why this bug stood 
+for so long -- I had a look at the relevant code, and the solution was 
+quite simple. It should be fixed in the upcoming release, due out very 
+shortly!
+
+My main purpose for implementing meshes is to provide support for very 
+large, complicated geometries, as one might obtain from a laser range 
+scanner, for example. Scanned meshes are required for many 
+archeological reconstructions and other scenes captured from real 
+geometry, and each mesh may contain hundreds of thousands or even 
+millions of triangles. Memory and its influence on virtual memory 
+performance are the main rendering challenges. If I give up on local 
+vertex references in faces, which I may have to unless I can resolve 
+some sticky problems, the memory use doesn't go up by 30% -- it 
+triples! Pointers take the majority of space in a standard mesh 
+representation, and I would like to minimize these expenses any way I 
+can.
+
+-Greg
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+--0-1890075824-1046735293=:9032
+Content-Type: text/html; charset=us-ascii
+
+<P>Greg,
+<P>What about a heirarchical boundary representation?&nbsp; One challenge of optimization is to minimize repeated vertex points, and another is to optimize the ray intersection calculation.&nbsp; Perhaps this idea would address both?
+<P>If the mesh at the top level is idealized as an n-sided polygon surrounding the entire collection of polygons,&nbsp;then as the ray "gets closer," the smaller "rings" of polygons are further resolved into smaller and smaller "idealized" n-sided polygons, until you are only left with one "loop" of triangles or polygons.&nbsp; I'm imagining that a clever data structure could be developed where each successive "loop" of triangles can reference the vertex lists (by index) one level "up" and one level "down" the tree, thereby eliminating duplication.&nbsp; The mesh would have to be pre-processed to order the vertexes accordingly, and would have to assume that all polygons are edge coherent.
+<P>Make any sense?&nbsp; Or am I just not grocking the problem?
+<P>-Chas
+<P>&nbsp;<B><I>Greg Ward &lt;gward@lmi.net&gt;</I></B> wrote:
+<BLOCKQUOTE style="PADDING-LEFT: 5px; MARGIN-LEFT: 5px; BORDER-LEFT: #1010ff 2px solid">schorsch writes:<BR><BR>&gt; Isn't that rather a side issue of the whole feature anyway?<BR>&gt; It might be worth to just implement it in the straightforward<BR>&gt; way, and only then to look into further optimizations.<BR>&gt; I think that keeping the code reasonably simple should also be a<BR>&gt; design goal, that should only be thrown out for significant gains<BR>&gt; in either speed or memory use. Neither of those seems very<BR>&gt; obvious for the moment in the context of face grouping. Investing<BR>&gt; a lot of thinking and coding into another 20 or 30% after we<BR>&gt; already raised the bar by more than an order of magnitude doesn't<BR>&gt; sound like a priority task to me...<BR><BR>Actually, memory use is the central issue in my mind. (Don't take that <BR>too literally.) If memory weren't an issue, there'd be no real reason <BR>to implement a mesh primitive. The problems that Peter A-B mentions <BR>regarding certain material types not working properly with interpolated <BR>normals is an embarrassment. In fact, I don't know why this bug stood <BR>for so long -- I had a look at the relevant code, and the solution was <BR>quite simple. It should be fixed in the upcoming release, due out very <BR>shortly!<BR><BR>My main purpose for implementing meshes is to provide support for very <BR>large, complicated geometries, as one might obtain from a laser range <BR>scanner, for example. Scanned meshes are required for many <BR>archeological reconstructions and other scenes captured from real <BR>geometry, and each mesh may contain hundreds of thousands or even <BR>millions of triangles. Memory and its influence on virtual memory <BR>performance are the main rendering challenges. If I give up on local <BR>vertex references in faces, which I may have to unless I can resolve <BR>some sticky problems, the memory use doesn't go up by 30% -- it <BR>triples! Pointers take the majority of space in a standard mesh <BR>representation, and I would like to minimize these expenses any way I <BR>can.<BR><BR>-Greg<BR><BR>_______________________________________________<BR>Radiance-dev mailing list<BR>Radiance-dev@radiance-online.org<BR>http://www.radiance-online.org/mailman/listinfo/radiance-dev</BLOCKQUOTE>
+--0-1890075824-1046735293=:9032--
+
+From radiance-dev@radiance-online.org  Thu Mar  6 08:23:32 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Thu, 06 Mar 2003 09:23:32 +0100
+Subject: [Radiance-dev] alias handling
+References: <CD80D2D2-4F84-11D7-942F-00306540F848@lmi.net>
+Message-ID: <3E670584.CF857487@pab-opto.de>
+
+Hi Greg,
+(quote of first message added, I'll post this to the dev list)
+
+     there wouldn't be a chance to change the handling of alias in
+     3.5 ?
+     Like adding 'alias' as a primitive, so rview etc. can display
+     the
+     material name as it was before aliasing ?
+     It means changing stuff at some places, but would help quite a
+     bit
+     during material editing or selection.
+
+Greg Ward wrote:
+
+> Are you sure this is the behavior most people would want?  Personally,
+> I'd rather know (in rview) what material was actually being used,
+> rather than the pre-alias name.  I typically use aliases to reassign
+> materials, using something generic like "wall_material" on my surfaces,
+> then aliasing this to something more descriptive, like "beige870".
+> Having rview tell me that my wall is made of "wall_material" is not
+> terribly useful.
+> Can you explain your problem with the current behavior a little better?
+
+It's as you said, may be a bit more ugly in my case:
+Most CAD systems have some internal names for materials, which show up in
+the exported geometry files. These names are not necessarily user
+definable, or if they are, the user has chosen different names (wall_mat1,
+wall_mat2, ....) which will get mapped to the same Radiance material. Both
+is true in my case.  I would imagine the second could be easily true for
+AutoCAD. Other CAD exporters may be even weirder in their choice of
+material names.
+As you said, material names used in the exported geometry have to be
+mapped to descriptive names of Radiance materials, which are typically
+stored in some sort of library, and this mapping could be a list of dozen
+materials for one scene. Alias definitions glue the two together, with
+multiple CAD material names mapped to the same Radiance materials.
+Currently, alias defines are lost in frozen octrees. One way to get them
+is by adding an "OBJECT oalias;" to the OBJREC structure, which is a waste
+of memory and breaks with frozen octrees. Reading the alias file
+explicitly doesn't ensure that the alias file and the octree are
+congruent, and would work only with rshow.
+It'll be useful to have access to both the original name and the aliased
+material: The orginal name may be out of reach at that moment, but the
+mapping is. To change that I'd need the original name displayed  in
+rview/rtrace/rshow.
+any other experiences and views on this matter much appreciated-
+
+ -Peter
+
+--
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+
+From radiance-dev@radiance-online.org  Thu Mar  6 10:37:23 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Thu, 6 Mar 2003 05:37:23 -0500 (EST)
+Subject: [Radiance-dev] alias handling
+In-Reply-To: <3E670584.CF857487@pab-opto.de>
+Message-ID: <Pine.BSF.4.44.0303060525360.99893-100000@emancholl.pair.com>
+
+Peter Apian-Bennewitz wrote:
+
+>  there wouldn't be a chance to change the handling of alias in 3.5 ?
+>  Like adding 'alias' as a primitive, so rview etc. can display the
+>  material name as it was before aliasing ?
+>  It means changing stuff at some places, but would help quite a bit
+>  during material editing or selection.
+
+
+Somehow I suspect that what you really want is to use
+descriptive IDs for the geometry primitive. If I understand your
+problem correctly, then you seem to have troubles in certain cases
+to identify where an offending primitive actually came from.
+That's exactly the purpose of the object ID.
+
+A CAD translator should include as mush useful information in
+that ID as possible, as well as making it as unique as possible.
+I haven't seen all of your argumentation, but I don't think
+that it's a good idea to "reverse engineer" this information
+later within Radiance, especially if that sould involve changing
+the behaviour of modifiers and aliases even in subtle ways.
+
+The problems you have with rshow rather seem to be related to
+the fact that you are using the octree when *modifiyng* the
+scene. I can see some of the reasons for that, but I don't
+think that's what the octree was designed for, so it may or
+may not be a good idea in the long run. Especially frozen
+octrees don't look like something that should be "edited".
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Thu Mar  6 14:57:36 2003
+From: radiance-dev@radiance-online.org (Jack de Valpine)
+Date: Thu, 06 Mar 2003 09:57:36 -0500
+Subject: [Radiance-dev] alias handling
+References: <Pine.BSF.4.44.0303060525360.99893-100000@emancholl.pair.com>
+Message-ID: <3E6761E0.8060102@visarc.com>
+
+--------------000704030602090005040105
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Transfer-Encoding: 7bit
+
+Hi Peter, Georg and Greg,
+
+I'll add in my two bits here from a user perspective. As Peter has 
+pointed out and depending on the export tools used the material name 
+that is applied to the exported geometry description may not make a lot 
+of sense from the standpoint of defining/assigning useful materials. 
+Thus alias's are a very handy way to map between useful/identifiable 
+radiance material definitions and the (equally useful) exported 
+geometry. For example (using radout):
+
+in file: abc_c101.rad
+
+abc_c101 polygon abc_c101.0.1
+0
+0
+12    168.09402    259.4408    86
+    168.09402    259.4408    82.416666
+    169.92021    268.62171    82.416666
+    169.92021    268.62171    86
+
+This geometry is exported with a basename of 'abc' that tells us what 
+building or model the geometry is associated with while c101 tells us 
+the uniquely assigned color associated with the autocad layer that the 
+particular geometry resides on (why export by autocad color vs. layer 
+name is another discussion if anyone wants to get into it).
+
+To assign a material to this geometry we would 'map' via alias a 
+predefined material residing or defined in a higher level library:
+
+in file: mats.generic.lib
+
+void plastic foo.white
+0
+0
+5 1 1 1 0 0
+
+and then in a separate file that 'maps' the materials from the library 
+for the geometry relating to 'abc' we would see:
+
+in file: mats.abc.rad
+
+void alias abc_c101 foo.white
+
+So from the standpoint of identifying the geometry in a useful manner 
+(via a trace in rview for example), this is a sufficient identifier. But 
+it is not so useful if I am trying to query the material assigned the 
+geometry, since I have to work backward from the file that 'maps' the 
+materials to the actual material name (not that this is that painful of 
+a task).
+
+Now, since the can of worms is open, the problem with using aliases in 
+this way is the use of compound or modified materials. Say in mats.lib 
+we had a brightfunc defined called foo.bf , in order to apply that 
+modifier it needs to occur in mats.abc.rad:
+
+foo.bf alias abc_c101 foo.white
+
+I understand why this is the case, but it would be really nice to able 
+to have fully defined compound material definitions that can just be 
+applied in the fourth position of the alias. So instead, I could do the 
+following:
+
+in mats.generic.lib
+
+void brightfunc foo.bf
+2 .5 .
+0
+0
+
+foo.bf plastic foo.white
+0
+0
+5 1 1 1 0 0
+
+in mats.abc.rad
+
+void alias abc_c101 foo.white
+
+where now abc_c101 'inherits' both modifier and material characteristics.
+
+Why???
+
+    * easier management of complex material definitions
+    * easier assignment of complex material definitions
+    * user does not need to know as much to utilize complex materials,
+      i.e. they do not have to understand how modifiers and materials
+      relate to each other in order to assign/map/alias a valid
+      predefined material to their geometry
+
+I know that there a lot of strategies for how this could be handled in 
+other ways, such as intermediate scripts/interfaces for assigning 
+materials that could equally well mask this from the user. Again, merely 
+my observations on the subject.
+
+Regards,
+
+-Jack
+
+Georg Mischler wrote:
+
+>Peter Apian-Bennewitz wrote:
+>
+>  
+>
+>> there wouldn't be a chance to change the handling of alias in 3.5 ?
+>> Like adding 'alias' as a primitive, so rview etc. can display the
+>> material name as it was before aliasing ?
+>> It means changing stuff at some places, but would help quite a bit
+>> during material editing or selection.
+>>    
+>>
+>
+>
+>Somehow I suspect that what you really want is to use
+>descriptive IDs for the geometry primitive. If I understand your
+>problem correctly, then you seem to have troubles in certain cases
+>to identify where an offending primitive actually came from.
+>That's exactly the purpose of the object ID.
+>
+>A CAD translator should include as mush useful information in
+>that ID as possible, as well as making it as unique as possible.
+>I haven't seen all of your argumentation, but I don't think
+>that it's a good idea to "reverse engineer" this information
+>later within Radiance, especially if that sould involve changing
+>the behaviour of modifiers and aliases even in subtle ways.
+>
+>The problems you have with rshow rather seem to be related to
+>the fact that you are using the octree when *modifiyng* the
+>scene. I can see some of the reasons for that, but I don't
+>think that's what the octree was designed for, so it may or
+>may not be a good idea in the long run. Especially frozen
+>octrees don't look like something that should be "edited".
+>
+>
+>-schorsch
+>
+>  
+>
+
+
+--------------000704030602090005040105
+Content-Type: text/html; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title></title>
+</head>
+<body>
+Hi Peter, Georg and Greg,<br>
+<br>
+I'll add in my two bits here from a user perspective. As Peter has pointed
+out and depending on the export tools used the material name that is applied
+to the exported geometry description may not make a lot of sense from the
+standpoint of defining/assigning useful materials. Thus alias's are a very
+handy way to map between useful/identifiable radiance material definitions
+and the (equally useful) exported geometry. For example (using radout):<br>
+<br>
+in file: abc_c101.rad<br>
+<br>
+abc_c101 polygon abc_c101.0.1<br>
+0<br>
+0<br>
+12&nbsp;&nbsp;&nbsp; 168.09402&nbsp;&nbsp;&nbsp; 259.4408&nbsp;&nbsp;&nbsp; 86<br>
+&nbsp;&nbsp;&nbsp; 168.09402&nbsp;&nbsp;&nbsp; 259.4408&nbsp;&nbsp;&nbsp; 82.416666<br>
+&nbsp;&nbsp;&nbsp; 169.92021&nbsp;&nbsp;&nbsp; 268.62171&nbsp;&nbsp;&nbsp; 82.416666<br>
+&nbsp;&nbsp;&nbsp; 169.92021&nbsp;&nbsp;&nbsp; 268.62171&nbsp;&nbsp;&nbsp; 86<br>
+<br>
+This geometry is exported with a basename of 'abc' that tells us what building
+or model the geometry is associated with while c101 tells us the uniquely
+assigned color associated with the autocad layer that the particular geometry
+resides on (why export by autocad color vs. layer name is another discussion
+if anyone wants to get into it).<br>
+<br>
+To assign a material to this geometry we would 'map' via alias a predefined
+material residing or defined in a higher level library:<br>
+<br>
+in file: mats.generic.lib<br>
+<br>
+void plastic foo.white<br>
+0<br>
+0<br>
+5 1 1 1 0 0<br>
+<br>
+and then in a separate file that 'maps' the materials from the library for
+the geometry relating to 'abc' we would see:<br>
+<br>
+in file: mats.abc.rad<br>
+<br>
+void alias abc_c101 foo.white<br>
+<br>
+So from the standpoint of identifying the geometry in a useful manner (via
+a trace in rview for example), this is a sufficient identifier. But it is
+not so useful if I am trying to query the material assigned the geometry,
+since I have to work backward from the file that 'maps' the materials to
+the actual material name (not that this is that painful of a task).<br>
+<br>
+Now, since the can of worms is open, the problem with using aliases in this
+way is the use of compound or modified materials. Say in mats.lib we had
+a brightfunc defined called foo.bf , in order to apply that modifier it needs
+to occur in mats.abc.rad:<br>
+<br>
+foo.bf alias abc_c101 foo.white<br>
+<br>
+I understand why this is the case, but it would be really nice to able to
+have fully defined compound material definitions that can just be applied
+in the fourth position of the alias. So instead, I could do the following:<br>
+<br>
+in mats.generic.lib<br>
+<br>
+void brightfunc foo.bf<br>
+2 .5 .<br>
+0<br>
+0<br>
+<br>
+foo.bf plastic foo.white<br>
+ 0<br>
+ 0<br>
+ 5 1 1 1 0 0<br>
+<br>
+in mats.abc.rad<br>
+<br>
+void alias abc_c101 foo.white<br>
+<br>
+where now abc_c101 'inherits' both modifier and material characteristics.<br>
+<br>
+Why??? <br>
+<ul>
+  <li>easier management of complex material definitions</li>
+  <li>easier assignment of complex material definitions</li>
+  <li>user does not need to know as much to utilize complex materials, i.e.
+they do not have to understand how modifiers and materials relate to each
+other in order to assign/map/alias a valid predefined material to their geometry<br>
+  </li>
+</ul>
+I know that there a lot of strategies for how this could be handled in other
+ways, such as intermediate scripts/interfaces for assigning materials that
+could equally well mask this from the user. Again, merely my observations
+on the subject.<br>
+<br>
+Regards,<br>
+<br>
+-Jack<br>
+<br>
+Georg Mischler wrote:<br>
+<blockquote type="cite"
+ cite="midPine.BSF.4.44.0303060525360.99893-100000@emancholl.pair.com">
+  <pre wrap="">Peter Apian-Bennewitz wrote:
+
+  </pre>
+  <blockquote type="cite">
+    <pre wrap=""> there wouldn't be a chance to change the handling of alias in 3.5 ?
+ Like adding 'alias' as a primitive, so rview etc. can display the
+ material name as it was before aliasing ?
+ It means changing stuff at some places, but would help quite a bit
+ during material editing or selection.
+    </pre>
+  </blockquote>
+  <pre wrap=""><!---->
+
+Somehow I suspect that what you really want is to use
+descriptive IDs for the geometry primitive. If I understand your
+problem correctly, then you seem to have troubles in certain cases
+to identify where an offending primitive actually came from.
+That's exactly the purpose of the object ID.
+
+A CAD translator should include as mush useful information in
+that ID as possible, as well as making it as unique as possible.
+I haven't seen all of your argumentation, but I don't think
+that it's a good idea to "reverse engineer" this information
+later within Radiance, especially if that sould involve changing
+the behaviour of modifiers and aliases even in subtle ways.
+
+The problems you have with rshow rather seem to be related to
+the fact that you are using the octree when *modifiyng* the
+scene. I can see some of the reasons for that, but I don't
+think that's what the octree was designed for, so it may or
+may not be a good idea in the long run. Especially frozen
+octrees don't look like something that should be "edited".
+
+
+-schorsch
+
+  </pre>
+</blockquote>
+<br>
+</body>
+</html>
+
+--------------000704030602090005040105--
+
+
+From radiance-dev@radiance-online.org  Thu Mar  6 16:08:43 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Thu, 06 Mar 2003 17:08:43 +0100
+Subject: [Radiance-dev] alias handling
+References: <Pine.BSF.4.44.0303060525360.99893-100000@emancholl.pair.com>
+Message-ID: <3E67728B.5C763AB4@pab-opto.de>
+
+Georg Mischler wrote:
+
+> Peter Apian-Bennewitz wrote:
+>
+> >  there wouldn't be a chance to change the handling of alias in 3.5 ?
+> >  Like adding 'alias' as a primitive, so rview etc. can display the
+> >  material name as it was before aliasing ?
+> >  It means changing stuff at some places, but would help quite a bit
+> >  during material editing or selection.
+>
+> Somehow I suspect that what you really want is to use
+> descriptive IDs for the geometry primitive. If I understand your
+> problem correctly, then you seem to have troubles in certain cases
+> to identify where an offending primitive actually came from.
+> That's exactly the purpose of the object ID.
+>
+> A CAD translator should include as mush useful information in
+> that ID as possible, as well as making it as unique as possible.
+
+I'm stuck with what I get exported from the CAD, at least in this
+scenario. There's no way of accessing any more  internal CAD data.
+
+> I haven't seen all of your argumentation, but I don't think
+> that it's a good idea to "reverse engineer" this information
+> later within Radiance, especially if that sould involve changing
+> the behaviour of modifiers and aliases even in subtle ways.
+
+Alias are treated quite asymmetric in Radiance, as they are  "primitives"
+syntactically, but filtered out directly at the time the rad file is read.
+Treating them as primitives and thus preserving the information they
+contain wouldn't break anything. To the user they would be absolutely
+identical. Internally the price is following one additional object lookup,
+which would be neglectable, as far as I guess.
+
+> The problems you have with rshow rather seem to be related to
+> the fact that you are using the octree when *modifiyng* the
+> scene. I can see some of the reasons for that, but I don't
+> think that's what the octree was designed for, so it may or
+> may not be a good idea in the long run. Especially frozen
+> octrees don't look like something that should be "edited".
+
+The alias information is generally lost, but it would be useful. E.g. it
+might be handy to get it via rtrace too.
+True- whether a scene tool should read octrees or its own scheme of rad
+(or other) files is open to taste and preference, but maybe it's a
+different subject. I always feel comfortable when checking and analyzing
+what's ultimately read by the renderer.
+My plea here is, in the octree, not to throw away bits of information
+which are useful and cheap in terms of size&speed.
+
+-Peter
+
+--
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+
+From radiance-dev@radiance-online.org  Thu Mar  6 18:12:37 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Thu, 6 Mar 2003 10:12:37 -0800
+Subject: [Radiance-dev] Re: alias handling
+In-Reply-To: <3E67728B.5C763AB4@pab-opto.de>
+Message-ID: <365A29F2-4FFF-11D7-9443-00306540F848@lmi.net>
+
+Peter A-B writes:
+> Alias are treated quite asymmetric in Radiance, as they are  
+> "primitives"
+> syntactically, but filtered out directly at the time the rad file is 
+> read.
+> Treating them as primitives and thus preserving the information they
+> contain wouldn't break anything. To the user they would be absolutely
+> identical. Internally the price is following one additional object 
+> lookup,
+> which would be neglectable, as far as I guess.
+
+Actually, an "alias" primitive does not fit with the syntax of standard 
+primitives at all, in that it doesn't have a variable list of 
+arguments.  It has just one argument, which is the alias target.
+
+I checked the code, and it seems I was confused about the current 
+behavior -- rview actually does record and report the ID of the alias, 
+rather than the alias target.  So, in my previous e-mail, rview would 
+in fact tell me that my wall was made of "wall_material," rather than 
+"beige870."  Isn't this what you're requesting?  I'm more confused than 
+ever.  The only thing that's really lost when the scene is loaded, is 
+the fact that we had an alias, rather than a modifier that happened to 
+have the same type and arguments as the target.  Is this somehow a 
+problem for you?
+
+In checking the code, I noticed that there's a bug in the way aliased 
+objects are freed the same as other objects.  Since I just copy the 
+OBJREC oargs struct without duplicating allocated memory, the oargs 
+memory gets freed twice or more in freeobjects(), a real no-no with 
+most malloc implementations.  Once we figure out what we want to do 
+with aliases (if anything), I'll be sure to fix this as well.
+
+Jack de Valpine writes:
+> Now, since the can of worms is open, the problem with using aliases in 
+> this way is the use of compound or modified materials. Say in mats.lib 
+> we had a brightfunc defined called foo.bf , in order to apply that 
+> modifier it needs to occur in mats.abc.rad:
+>
+> foo.bf alias abc_c101 foo.white
+>
+> I understand why this is the case, but it would be really nice to able 
+> to have fully defined compound material definitions that can just be 
+> applied in the fourth position of the alias. So instead, I could do 
+> the following:
+>
+> in mats.generic.lib
+>
+> void brightfunc foo.bf
+> 2 .5 .
+> 0
+> 0
+>
+> foo.bf plastic foo.white
+> 0
+> 0
+> 5 1 1 1 0 0
+>
+> in mats.abc.rad
+>
+> void alias abc_c101 foo.white
+>
+> where now abc_c101 'inherits' both modifier and material 
+> characteristics.
+
+I like this suggestion.  However, I don't think using "void" to 
+indicate that the alias should use the same modifiers as the original 
+is a good idea, as one might want to break the modifier chain in 
+creating an alias, and this is a valid use of "void" in the current 
+implementation.  However, we could introduce, for this one purpose, a 
+modifier keyword to associate with the alias pseudotype -- let's call 
+it "linked".  Then, your example above becomes:
+
+   linked alias abc_c101 foo.white
+
+The "linked" modifier gets replaced with the "foo.bf" modifier from the 
+"foo.white" target.  The only problem for backward compatibility would 
+be the unlikely case where someone had chosen "linked" as their 
+modifier in some scene file somewhere.  I think we can live with that 
+possibility, or we could come up with an even more obscure but still 
+sensible keyword.  (Suggestions? -- "full" was the other keyword that 
+occurred to me.)
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Thu Mar  6 19:05:07 2003
+From: radiance-dev@radiance-online.org (Jack de Valpine)
+Date: Thu, 06 Mar 2003 14:05:07 -0500
+Subject: [Radiance-dev] Re: alias handling
+References: <365A29F2-4FFF-11D7-9443-00306540F848@lmi.net>
+Message-ID: <3E679BE3.1060900@visarc.com>
+
+Hi Greg and Peter,
+
+Looking back at the earlier messages on the topic, I may be confused 
+myself. Anyhow, check out the following:
+
+void plastic white
+0
+0
+5 1 1 1 0 0
+
+void alias box.mat white
+
+!genbox box.mat box 1 1 1
+
+If we trace the top of the box in rview, we get the material "box.mat" 
+and the geometry "box.6457", we do not get that the material "box.mat" 
+is really the material "white".
+
+Hope this helps.
+
+-Jack
+
+Greg Ward wrote:
+
+>
+> I checked the code, and it seems I was confused about the current 
+> behavior -- rview actually does record and report the ID of the alias, 
+> rather than the alias target.  So, in my previous e-mail, rview would 
+> in fact tell me that my wall was made of "wall_material," rather than 
+> "beige870."  Isn't this what you're requesting?  I'm more confused 
+> than ever.  The only thing that's really lost when the scene is 
+> loaded, is the fact that we had an alias, rather than a modifier that 
+> happened to have the same type and arguments as the target.  Is this 
+> somehow a problem for you?
+>
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+
+
+
+From radiance-dev@radiance-online.org  Thu Mar  6 21:27:26 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Thu, 6 Mar 2003 16:27:26 -0500 (EST)
+Subject: [Radiance-dev] Re: alias handling
+In-Reply-To: <3E679BE3.1060900@visarc.com>
+Message-ID: <Pine.BSF.4.44.0303061553370.22146-100000@emancholl.pair.com>
+
+Jack de Valpine wrote:
+
+> Hi Greg and Peter,
+>
+> Looking back at the earlier messages on the topic, I may be confused
+> myself. Anyhow, check out the following:
+>
+> void plastic white
+> 0
+> 0
+> 5 1 1 1 0 0
+>
+> void alias box.mat white
+>
+> !genbox box.mat box 1 1 1
+>
+> If we trace the top of the box in rview, we get the material "box.mat"
+> and the geometry "box.6457", we do not get that the material "box.mat"
+> is really the material "white".
+
+
+I must admit that I'm still not completely certain about what the
+actual proposal really is. We just jumped into the middle of an
+ongoing discussion here. Peter, could you give a short and
+complete outline for everybody?
+
+What I seem to understand so far, is a wish that more information
+about the modifier tree is preserved when compiling/loading an
+octree, so that for the above example, the user could learn that
+the box with the modifier "box.mat" actually makes reference to
+the material "white". While this trivial example makes that look
+straihtforward, let's look at a real life use of modifiers, as
+any Rayfront user might create with a few clicks of the mouse.
+The following is a glass surface with 1cm wide horizontal strips
+of frosting, where the materials frosted_glass and floatglass are
+defined in another file:
+
+
+void mixfunc l_v1-wpane-m+++x+++stripes
+4 l_v1-wpane-m+++f l_v1-wpane-m+++b Pz*0.01 .
+0
+0
+
+void    alias  l_v1-wpane-m+++b      frosted_glass
+void    alias  l_v1-wpane-m+++f      floatglass
+void    alias  l_v1-wpane-m          l_v1-wpane-m+++x+++stripes
+!xform scene/l_glasswall.rad
+
+
+
+Which modifier name exactly do want to see when you run a trace
+on this geometry in rview?  It's still a fairly simple example,
+and you already have a choice of 7 names, two of which are
+materials (the most desirable choice). Or would you like to spit
+out the whole tree?
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Thu Mar  6 22:04:31 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Thu, 06 Mar 2003 23:04:31 +0100
+Subject: [Radiance-dev] Re: alias handling
+References: <365A29F2-4FFF-11D7-9443-00306540F848@lmi.net>
+Message-ID: <3E67C5EF.43A935C2@pab-opto.de>
+
+Greg Ward wrote:
+
+> Peter A-B writes:
+> > Alias are treated quite asymmetric in Radiance, as they are
+> > "primitives"
+> > syntactically, but filtered out directly at the time the rad file is
+> > read.
+> > Treating them as primitives and thus preserving the information they
+> > contain wouldn't break anything. To the user they would be absolutely
+> > identical. Internally the price is following one additional object
+> > lookup,
+> > which would be neglectable, as far as I guess.
+>
+> Actually, an "alias" primitive does not fit with the syntax of standard
+> primitives at all, in that it doesn't have a variable list of
+> arguments.  It has just one argument, which is the alias target.
+
+Since the syntax decoding of 'alias' is done seperately now, one could
+still put the data in the internal standard object structure.
+
+> I checked the code, and it seems I was confused about the current
+> behavior -- rview actually does record and report the ID of the alias,
+> rather than the alias target.  So, in my previous e-mail, rview would
+> in fact tell me that my wall was made of "wall_material," rather than
+> "beige870."
+
+Amidst the confusion, Jack, you and me agree on that.
+
+> Isn't this what you're requesting?  I'm more confused than
+> ever.  The only thing that's really lost when the scene is loaded, is
+> the fact that we had an alias, rather than a modifier that happened to
+> have the same type and arguments as the target.  Is this somehow a
+> problem for you?
+
+Well, - my point still holds: There's no way to get both information (alias
+and orginal).
+Only getting the aliased name doesn't tell  what material from a library of
+materials was chosen. E.g. this makes debugging difficult.
+
+>    linked alias abc_c101 foo.white
+>
+> The "linked" modifier gets replaced with the "foo.bf" modifier from the
+> "foo.white" target.  The only problem for backward compatibility would
+> be the unlikely case where someone had chosen "linked" as their
+> modifier in some scene file somewhere.  I think we can live with that
+> possibility, or we could come up with an even more obscure but still
+> sensible keyword.  (Suggestions? -- "full" was the other keyword that
+> occurred to me.)
+
+certainly useful, IMHO
+
+-Peter
+
+--
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+
+From radiance-dev@radiance-online.org  Thu Mar  6 22:26:04 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Thu, 6 Mar 2003 14:26:04 -0800
+Subject: [Radiance-dev] Re: alias handling
+In-Reply-To: <3E67C5EF.43A935C2@pab-opto.de>
+Message-ID: <9E77B832-5022-11D7-9443-00306540F848@lmi.net>
+
+Maybe we should put it to a vote.  It seems straightforward, but it's 
+actually a fair bit of coding to promote aliases to first class 
+citizens in the object array.  I guess I'd end up sticking the target 
+ID in a string argument and do a lookup each time the object function 
+was evaluated.  This would result in some overhead that isn't currently 
+there, both in terms of memory (negligible) and execution speed (more 
+significant -- see the lastmod() call).  I might be able to get around 
+the execution overhead using the OBJREC os pointer, but I generally 
+don't use this for tiny bits of memory like object references.  Is it 
+worth it to be able to trace the list of modifiers in applications like 
+rshow?
+
+Jack's suggestion can be implemented using the current alias handling 
+as well as an OBJREC structure.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Thu Mar  6 23:04:30 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Fri, 07 Mar 2003 00:04:30 +0100
+Subject: [Radiance-dev] alias handling - the infernal internals
+References: <Pine.BSF.4.44.0303061553370.22146-100000@emancholl.pair.com>
+Message-ID: <3E67D3FE.F5896D72@pab-opto.de>
+
+> I must admit that I'm still not completely certain about what the
+> actual proposal really is. We just jumped into the middle of an
+> ongoing discussion here. Peter, could you give a short and
+> complete outline for everybody?
+
+ok. I really should have been more lengthy at my first posting, sorry for
+that. Maybe I'll start with internal bits (it's a developer list, after
+all. Please correct me if I'm astray) to sharpen my description ( "use the
+source, Luke!" ) :
+
+All Radiance objects are fed into an internal structure  defined in
+common/object.h :
+
+     typedef struct {
+             OBJECT  omod;                   /* modifier number */
+             short  otype;                   /* object type number */
+             char  *oname;                   /* object name */
+             FUNARGS  oargs;                 /* object specification
+     */
+             char  *os;                      /* object structure */
+     }  OBJREC;
+
+where an OBJECT is an integer, which is converted by the macro  objptr()
+to an OBJREC pointer.
+By starting with the OBJREC struture of the geometric primitive and
+following  omod   the material description is decoded. There may be
+branches (mixfunc et al), and both leaves could be followed by
+modifier(org->oargs.sarg[0])  . Of course it can,- that's what happens at
+render time. Other programs can do that too, e.g. displaying the full tree
+of materials for one geometric primitive.
+
+Alias handling is exceptional, as "alias" is decoded only once while the
+rad file is read ( common/readobj.c , around line 117):
+It looks up an existing primitive with the target name of the alias, and
+fills the already allocated OBJREC structure with the type and arguments of
+the target primitive. The name of the target primitive is lost. Effectively
+we have a copy of the target primitive in memory, under a new name.
+Assuming that's exactly what Greg wanted, I would call this a fairly well
+working ,  flawless, solid tested, straight forward implementation. No
+doubt.
+But the information about the name of the target material for the alias is
+gone for good.
+Which leaves us with an octree ready for rendering, but no way of telling
+what material had been used from a library of materials. Judging by Jack's
+comments too, that is not an uncommon situation.
+
+If we would have an alias primitive in the sense of  common/otypes.h  ,  we
+could put the alias information itself in an OBJREC strcture and follow
+the  omod  link as we do with other materials (e.g. textures and patterns).
+That would work regardless of the different "alias" syntax in the rad file.
+
+Advantage: full information of original rad file is conserved and clearity
+of what is used in the octree is gained.
+Disadvantage: One  omod  lookup more.  Contrary to my first posting, there
+wouldn't even be a memory increase.
+
+Currently rtrace/rview return the first modifier of the modifier chain,
+which is the name of the alias as of now. With a new option to rtrace, it
+could return the first non-alias modifier of the chain, in case there are
+aliases. So the user could get both the alias name and the original name.
+The above assumes that the material library doesn't use alias in itself and
+would allow the user recursive aliases (for whatever reasons) in his scene
+file. Alternatively, we could output the first modifier after the alias.
+Whatever we output, we have the chance of displaying the information since
+it would be in the octree. Whereas now, it isn't.
+
+-Peter
+
+PS: I'll sit back, have some wine and wait how many postings I've missed
+while typing this one.....
+
+--
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+
+From radiance-dev@radiance-online.org  Thu Mar  6 23:27:47 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Thu, 6 Mar 2003 15:27:47 -0800
+Subject: [Radiance-dev] Re: alias handling - the infernal internals
+In-Reply-To: <3E67D3FE.F5896D72@pab-opto.de>
+Message-ID: <3D92F1E4-502B-11D7-9443-00306540F848@lmi.net>
+
+Peter A-B writes:
+> If we would have an alias primitive in the sense of  common/otypes.h  
+> ,  we
+> could put the alias information itself in an OBJREC strcture and follow
+> the  omod  link as we do with other materials (e.g. textures and 
+> patterns).
+> That would work regardless of the different "alias" syntax in the rad 
+> file.
+>
+> If we would have an alias primitive in the sense of  common/otypes.h  
+> ,  we
+> could put the alias information itself in an OBJREC strcture and follow
+> the  omod  link as we do with other materials (e.g. textures and 
+> patterns).
+> That would work regardless of the different "alias" syntax in the rad 
+> file.
+
+We would still have to store the target ID in a separate string 
+argument, or else we'd lose the ability to change the modifier chain, 
+which was one of the principal purposes I had in mind for aliases.  
+This then requires a lastmod() to identify the target material at 
+runtime, which can take some time if the target was a long ways back in 
+the input stream.
+
+This gets a bit convoluted, but we could use a string argument in the 
+case when we're replacing the modifier in the change, and a straight 
+link with the OBJREC omod member in the more common case where we are 
+not.  That way, the common case wouldn't require any extra memory or 
+take any extra time during rendering.  Following the chain in rshow 
+then requires an extra check for the presence of string arguments to 
+determine which modifier was aliased, but this also makes it explicit 
+when the modifier chain was altered or not.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Fri Mar  7 01:18:10 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Thu, 6 Mar 2003 20:18:10 -0500 (EST)
+Subject: [Radiance-dev] Inheriting modifiers (was: alias handling)
+In-Reply-To: <365A29F2-4FFF-11D7-9443-00306540F848@lmi.net>
+Message-ID: <Pine.BSF.4.44.0303062003010.22146-100000@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> Jack de Valpine writes:
+> >
+> > void alias abc_c101 foo.white
+> >
+> > where now abc_c101 'inherits' both modifier and material
+> > characteristics.
+>
+> I like this suggestion.  However, I don't think using "void" to
+> indicate that the alias should use the same modifiers as the original
+> is a good idea, as one might want to break the modifier chain in
+> creating an alias, and this is a valid use of "void" in the current
+> implementation.  However, we could introduce, for this one purpose, a
+> modifier keyword to associate with the alias pseudotype -- let's call
+> it "linked".  Then, your example above becomes:
+>
+>    linked alias abc_c101 foo.white
+
+
+Why not just spell it out as "inherit"?  It would be hard to make
+it more explicit what actually happens if this is implemented...
+
+I like the idea too, even if I might not use it a lot myself,
+since Rayfront juggles aliases in other ways at the moment.
+Actually, it might even simplify the implementation of some
+of the features that I have in mind for a future release.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Fri Mar  7 07:08:59 2003
+From: radiance-dev@radiance-online.org (Charles Ehrlich)
+Date: Thu, 6 Mar 2003 23:08:59 -0800 (PST)
+Subject: [Radiance-dev] Re: alias handling
+In-Reply-To: <9E77B832-5022-11D7-9443-00306540F848@lmi.net>
+Message-ID: <20030307070859.43168.qmail@web80303.mail.yahoo.com>
+
+--0-1384575238-1047020939=:42769
+Content-Type: text/plain; charset=us-ascii
+
+
+In the interest of backward compatibility, I suggest that whatever modifications to aliases happen with a new entity type, perhaps "alias2".
+Consider the way Desktop Radiance uses aliases:
+in glass_mat.rad:
+void glass gl_01
+0 0 3 1 1 1
+void glass gl_02
+0 0 3 1 1 1
+in window.rad
+void alias glass_mat gl_01
+glass_mat polygon gl_0.1
+0 0 12 x y z ...
+void alias glass_mat gl_02
+glass_mat polygon gl_0.2
+0 0 12 x y z ...
+void alias glass_mat gl_01
+glass_mat polygon gl_03
+0 0 12 x y z ...
+
+We do this because the geometry coming from AutoCAD sometimes has the same identifier.  It works because the alias primitive always uses the latest definition of the material.   We switch the particular material to be applied to the next surface as it is read into the scene.
+
+If "alias" must change, what about modifying the geometry's identifier with the id of the original material associated with that surface.  For example, a display of the object information for the above scene would show:
+
+hit gl_02_mat polygon glass_mat_gl_0.2
+Where the underscore character was used to join the original modifier, "glass_mat" with the polygon's identifier, "gl_0.2".
+-Chas
+==============
+ Greg Ward <gward@lmi.net> wrote:Maybe we should put it to a vote. It seems straightforward, but it's 
+actually a fair bit of coding to promote aliases to first class 
+citizens in the object array. I guess I'd end up sticking the target 
+ID in a string argument and do a lookup each time the object function 
+was evaluated. This would result in some overhead that isn't currently 
+there, both in terms of memory (negligible) and execution speed (more 
+significant -- see the lastmod() call). I might be able to get around 
+the execution overhead using the OBJREC os pointer, but I generally 
+don't use this for tiny bits of memory like object references. Is it 
+worth it to be able to trace the list of modifiers in applications like 
+rshow?
+
+Jack's suggestion can be implemented using the current alias handling 
+as well as an OBJREC structure.
+
+-Greg
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+--0-1384575238-1047020939=:42769
+Content-Type: text/html; charset=us-ascii
+
+<P>In the interest of backward compatibility, I suggest that whatever modifications to aliases happen with a new entity type, perhaps "alias2".
+<P>Consider the way Desktop Radiance uses aliases:
+<P>in glass_mat.rad:<BR>void glass gl_01<BR>0 0 3 1 1 1<BR>void glass gl_02<BR>0 0 3 1 1 1
+<P>in window.rad<BR>void alias glass_mat gl_01<BR>glass_mat polygon gl_0.1<BR>0 0 12 x y z ...<BR>void alias glass_mat gl_02<BR>glass_mat polygon gl_0.2<BR>0 0 12&nbsp;x y z ...<BR>void alias glass_mat gl_01<BR>glass_mat polygon gl_03<BR>0 0 12 x y z ...</P>
+<P>We do this because the geometry coming from AutoCAD sometimes has the same identifier.&nbsp; It works&nbsp;because the alias primitive always uses the latest definition of the material.&nbsp;&nbsp; We switch the particular material&nbsp;to be applied to the next surface&nbsp;as it is read into the scene.</P>
+<P>If "alias" must change, what about modifying the geometry's identifier with the id of the&nbsp;original material associated with that surface.&nbsp; For example, a display of the object information for the above scene would show:</P>
+<P>hit gl_02_mat polygon glass_mat_gl_0.2
+<P>Where the underscore character was used to join the original modifier, "glass_mat" with the polygon's identifier, "gl_0.2".
+<P>-Chas
+<P>==============
+<P>&nbsp;<B><I>Greg Ward &lt;gward@lmi.net&gt;</I></B> wrote:
+<BLOCKQUOTE style="PADDING-LEFT: 5px; MARGIN-LEFT: 5px; BORDER-LEFT: #1010ff 2px solid">Maybe we should put it to a vote. It seems straightforward, but it's <BR>actually a fair bit of coding to promote aliases to first class <BR>citizens in the object array. I guess I'd end up sticking the target <BR>ID in a string argument and do a lookup each time the object function <BR>was evaluated. This would result in some overhead that isn't currently <BR>there, both in terms of memory (negligible) and execution speed (more <BR>significant -- see the lastmod() call). I might be able to get around <BR>the execution overhead using the OBJREC os pointer, but I generally <BR>don't use this for tiny bits of memory like object references. Is it <BR>worth it to be able to trace the list of modifiers in applications like <BR>rshow?<BR><BR>Jack's suggestion can be implemented using the current alias handling <BR>as well as an OBJREC structure.<BR><BR>-Greg<BR><BR>_______________________________________________<BR>Radiance-dev mailing list<BR>Radiance-dev@radiance-online.org<BR>http://www.radiance-online.org/mailman/listinfo/radiance-dev</BLOCKQUOTE>
+--0-1384575238-1047020939=:42769--
+
+From radiance-dev@radiance-online.org  Fri Mar  7 09:57:06 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Fri, 07 Mar 2003 10:57:06 +0100
+Subject: [Radiance-dev] Re: alias handling - the infernal internals
+References: <3D92F1E4-502B-11D7-9443-00306540F848@lmi.net>
+Message-ID: <3E686CF2.D111ADF@pab-opto.de>
+
+Greg Ward wrote:
+
+> Peter A-B writes:
+> > If we would have an alias primitive in the sense of  common/otypes.h
+> > ,  we
+> > could put the alias information itself in an OBJREC strcture and follow
+> > the  omod  link as we do with other materials (e.g. textures and
+> > patterns).
+> > That would work regardless of the different "alias" syntax in the rad
+> > file.
+>
+> We would still have to store the target ID in a separate string
+> argument, or else we'd lose the ability to change the modifier chain,
+
+why not put the modifier number in iargs ?
+
+     oldmod_string  ALIAS  newmod_string  oldbase_string
+
+is converted to
+
+     newmod_orec->omod = oldbase_number
+     newmod_orec->oname = newmod_string
+     newmod_orec->oargs->iargs[0] = oldmod_id
+
+so in the common case of oldmod_string="void" we set niargs=0 during octree
+generation and then, during rendering, there's just the test for niargs==0 .
+
+If niargs==1, follow oldmod_id without string lookup.
+
+Peter
+
+--
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+
+From radiance-dev@radiance-online.org  Fri Mar  7 10:51:02 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Fri, 7 Mar 2003 05:51:02 -0500 (EST)
+Subject: [Radiance-dev] Re: alias handling
+In-Reply-To: <20030307070859.43168.qmail@web80303.mail.yahoo.com>
+Message-ID: <Pine.BSF.4.44.0303070536350.49937-100000@emancholl.pair.com>
+
+Charles Ehrlich wrote:
+
+>
+> In the interest of backward compatibility, I suggest that whatever
+> modifications to aliases happen with a new entity type, perhaps "alias2".
+
+
+The proposed modifications wouldn't change the user level semantics
+of aliases. They only make it possible to provide more complete
+diagnostics to people who lost track of their scene structure,
+possibly because they have to use a stupid CAD translator that
+doesn't generate unique identifiers.
+
+Whether such diagnostics are critical enough to change the octree
+file format, to increase the complexity of the code, and to
+possibly slow down the simulations, is an entierly different
+question. I can't say that I'm completely convinced at this
+point.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Sat Mar  8 19:32:12 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Sat, 08 Mar 2003 20:32:12 +0100
+Subject: [Radiance-dev] Re: alias handling
+References: <Pine.BSF.4.44.0303070536350.49937-100000@emancholl.pair.com>
+Message-ID: <3E6A453C.8199BC0C@pab-opto.de>
+
+Georg Mischler wrote:
+
+> Charles Ehrlich wrote:
+> > In the interest of backward compatibility, I suggest that whatever
+> > modifications to aliases happen with a new entity type, perhaps "alias2".
+>
+> The proposed modifications wouldn't change the user level semantics
+> of aliases. They only make it possible to provide more complete
+> diagnostics to people who lost track of their scene structure,
+> possibly because they have to use a stupid CAD translator that
+> doesn't generate unique identifiers.
+
+Exactly. They allow verification of any octree, regardless whether generated
+by makefiles or by GUI driven interfaces for individuals who don't  know
+(neither they need to, nor do they want to) what's in their octrees, and who
+never get an octree from someone else who uses a different generating
+mechanism.
+
+> Whether such diagnostics are critical enough to change the octree
+> file format, to increase the complexity of the code, and to
+> possibly slow down the simulations, is an entierly different
+> question. I can't say that I'm completely convinced at this
+> point.
+
+May I throw-in the thought that we're about to see another primitive anyway,
+so the new octree format will have lost backward compatibility already.
+As for complexity of the code, the current alias method stands as a singular
+exception of rad file processing in the code. Treating it as true primitive
+may actually synchronize this with the general flow of logic. If the method
+proposed earlier is valid, measured slowdown will be very, very low.
+
+-Peter
+
+--
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+
+From radiance-dev@radiance-online.org  Sun Mar  9 00:57:10 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Sat, 8 Mar 2003 19:57:10 -0500 (EST)
+Subject: [Radiance-dev] Re: alias handling
+In-Reply-To: <3E6A453C.8199BC0C@pab-opto.de>
+Message-ID: <Pine.BSF.4.44.0303081928460.60924-100000@emancholl.pair.com>
+
+Peter Apian-Bennewitz wrote:
+
+> May I throw-in the thought that we're about to see another primitive anyway,
+> so the new octree format will have lost backward compatibility already.
+
+There's a point to that.
+
+
+> As for complexity of the code, the current alias method stands as a singular
+> exception of rad file processing in the code. Treating it as true primitive
+> may actually synchronize this with the general flow of logic. If the method
+> proposed earlier is valid, measured slowdown will be very, very low.
+
+Unfortunately, aliases will remain singular as far as rad file
+processing is concerned, simply due to their irregular syntax.
+
+In the further processing there never was anything special about
+them, since they didn't exist there anymore.  They will become a
+*new* special case now, because the additional lookups they
+generate need to be short circuited as efficiently as possible.
+
+Greg mentioned something how this could be done with almost no
+performance penalties. I didn't understand the details, so I
+can't say anything smart about that aspect. The ultimate
+verification will come through running tests anyway. Isn't that
+what CVS branching was invented for? ;)
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Sun Mar  9 09:03:33 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Sun, 09 Mar 2003 10:03:33 +0100
+Subject: [Radiance-dev] Re: alias handling
+References: <Pine.BSF.4.44.0303081928460.60924-100000@emancholl.pair.com>
+Message-ID: <3E6B0365.34D9B13C@pab-opto.de>
+
+Georg Mischler wrote:
+
+> > As for complexity of the code, the current alias method stands as a singular
+> > exception of rad file processing in the code. Treating it as true primitive
+> > may actually synchronize this with the general flow of logic. If the method
+> > proposed earlier is valid, measured slowdown will be very, very low.
+>
+> Unfortunately, aliases will remain singular as far as rad file
+> processing is concerned, simply due to their irregular syntax.
+
+True. The rad file syntax of "alias" will remain irregular. We're probably stuck
+with that until an all-new grammar for the rad file is founded. With the little
+use MGF has seen yet (sadly), I don't bet on that happening soon. Maybe I'm wrong
+concerning MGF, I just haven't heard of it lately.
+The internal processing of "alias" wouldn't be special, it is what happens when
+the chain of modifiers is followed during  mixfunc  and texture/pattern
+processing. The difference being that "alias" wouldn't do any calculations.  The
+cost of mixfunc/textures/patterns results from the processing they do, not from
+following the modifier chain.
+
+> ...
+> Greg mentioned something how this could be done with almost no
+> performance penalties. I didn't understand the details, so I
+> can't say anything smart about that aspect. The ultimate
+> verification will come through running tests anyway. Isn't that
+> what CVS branching was invented for? ;)
+
+Yeap, in principle. Technically a  tree of branches is both possible and
+managable with CVS. Assuming that a branch is expensive in terms of coordination
+amongst developpers,  developpers-users and amongst users, maybe the "big"
+changes like photon-map or Christoph's energy calculations set the bar for
+branching.
+
+a nice weekend to all
+-Peter
+
+--
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+
+From radiance-dev@radiance-online.org  Mon Mar 10 14:27:01 2003
+From: radiance-dev@radiance-online.org (Jack de Valpine)
+Date: Mon, 10 Mar 2003 09:27:01 -0500
+Subject: [Radiance-dev] Re: alias handling
+References: <Pine.BSF.4.44.0303081928460.60924-100000@emancholl.pair.com>
+Message-ID: <3E6CA0B5.70409@visarc.com>
+
+--------------000008070703090001030908
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Transfer-Encoding: 7bit
+
+Hi Greg, Peter and Georg,
+
+I know that I am jumping in the middle again, so take what I say with 
+whatever sized grain of salt you think is warranted.
+
+Another area where alias handling can be a problem is in the 
+specification of a material for exclusion in the ambient calculation. As 
+things currently stand you must pass the name/id that is actually used 
+to modify the geometry, when in fact it might be preferable in some 
+cases to pass the name of the alias, e.g., if I have a material "black" 
+defined I would rather pass this name for exclusion than some exporter 
+derived name applied to the geometry.
+
+Would the revisions under discussion allow for this?
+
+On the other hand since we tend to use aliasing a lot I would prefer not 
+to slow performance.
+
+-Jack
+
+Georg Mischler wrote:
+
+>Peter Apian-Bennewitz wrote:
+>
+>  
+>
+>>May I throw-in the thought that we're about to see another primitive anyway,
+>>so the new octree format will have lost backward compatibility already.
+>>    
+>>
+>
+>There's a point to that.
+>
+>
+>  
+>
+>>As for complexity of the code, the current alias method stands as a singular
+>>exception of rad file processing in the code. Treating it as true primitive
+>>may actually synchronize this with the general flow of logic. If the method
+>>proposed earlier is valid, measured slowdown will be very, very low.
+>>    
+>>
+>
+>Unfortunately, aliases will remain singular as far as rad file
+>processing is concerned, simply due to their irregular syntax.
+>
+>In the further processing there never was anything special about
+>them, since they didn't exist there anymore.  They will become a
+>*new* special case now, because the additional lookups they
+>generate need to be short circuited as efficiently as possible.
+>
+>Greg mentioned something how this could be done with almost no
+>performance penalties. I didn't understand the details, so I
+>can't say anything smart about that aspect. The ultimate
+>verification will come through running tests anyway. Isn't that
+>what CVS branching was invented for? ;)
+>
+>
+>-schorsch
+>
+>  
+>
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+
+
+--------------000008070703090001030908
+Content-Type: text/html; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title></title>
+</head>
+<body>
+Hi Greg, Peter and Georg,<br>
+<br>
+I know that I am jumping in the middle again, so take what I say with whatever
+sized grain of salt you think is warranted.<br>
+<br>
+Another area where alias handling can be a problem is in the specification
+of a material for exclusion in the ambient calculation. As things currently
+stand you must pass the name/id that is actually used to modify the geometry,
+when in fact it might be preferable in some cases to pass the name of the
+alias, e.g., if I have a material "black" defined I would rather pass this
+name for exclusion than some exporter derived name applied to the geometry.<br>
+<br>
+Would the revisions under discussion allow for this? <br>
+<br>
+On the other hand since we tend to use aliasing a lot I would prefer not
+to slow performance.<br>
+<br>
+-Jack<br>
+<br>
+Georg Mischler wrote:<br>
+<blockquote type="cite"
+ cite="midPine.BSF.4.44.0303081928460.60924-100000@emancholl.pair.com">
+  <pre wrap="">Peter Apian-Bennewitz wrote:
+
+  </pre>
+  <blockquote type="cite">
+    <pre wrap="">May I throw-in the thought that we're about to see another primitive anyway,
+so the new octree format will have lost backward compatibility already.
+    </pre>
+  </blockquote>
+  <pre wrap=""><!---->
+There's a point to that.
+
+
+  </pre>
+  <blockquote type="cite">
+    <pre wrap="">As for complexity of the code, the current alias method stands as a singular
+exception of rad file processing in the code. Treating it as true primitive
+may actually synchronize this with the general flow of logic. If the method
+proposed earlier is valid, measured slowdown will be very, very low.
+    </pre>
+  </blockquote>
+  <pre wrap=""><!---->
+Unfortunately, aliases will remain singular as far as rad file
+processing is concerned, simply due to their irregular syntax.
+
+In the further processing there never was anything special about
+them, since they didn't exist there anymore.  They will become a
+*new* special case now, because the additional lookups they
+generate need to be short circuited as efficiently as possible.
+
+Greg mentioned something how this could be done with almost no
+performance penalties. I didn't understand the details, so I
+can't say anything smart about that aspect. The ultimate
+verification will come through running tests anyway. Isn't that
+what CVS branching was invented for? ;)
+
+
+-schorsch
+
+  </pre>
+</blockquote>
+<br>
+<pre class="moz-signature" cols="$mailwrapcol">-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	<a class="moz-txt-link-freetext" href="http://www.visarc.com">http://www.visarc.com</a>
+#
+#	channeling technology for superior design and construction</pre>
+<br>
+</body>
+</html>
+
+--------------000008070703090001030908--
+
+
+From radiance-dev@radiance-online.org  Mon Mar 10 18:20:48 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Mon, 10 Mar 2003 10:20:48 -0800
+Subject: [Radiance-dev] Re: alias handling - the infernal internals
+In-Reply-To: <3E686CF2.D111ADF@pab-opto.de>
+Message-ID: <0463D538-5325-11D7-A4B0-00306540F848@lmi.net>
+
+Peter A-B writes:
+> why not put the modifier number in iargs ?
+>
+>      oldmod_string  ALIAS  newmod_string  oldbase_string
+>
+> is converted to
+>
+>      newmod_orec->omod = oldbase_number
+>      newmod_orec->oname = newmod_string
+>      newmod_orec->oargs->iargs[0] = oldmod_id
+
+This would indeed be handy if IARGS were defined in the source, which 
+it is not.  Defining it would not only create a problem with octree 
+format compatibility, it would increase scene storage size by 8 
+bytes/object, whether alias'es are present or not.  I don't think it's 
+worth it.
+
+The solution I suggested, where the modifier chain is used in the 
+normal case where we are not changing it with the alias, won't take any 
+extra memory and won't incur a lookup during rendering.  Only if the 
+modifier was changed by the alias will we have to call lastmod(), and 
+this should be a small minority of the cases.  I don't see why a CAD 
+translator would ever use this feature, for example.  In cases where 
+the user is playing with modifier chains, they would hopefully do so 
+all in the same materials file, in which case the cost of calling 
+lastmod() would be minimal, as the modifier is only a few objects away 
+from the alias in the input.  We could add a note of advice along these 
+lines to the reference manual when we document the new "inherit" alias 
+keyword.
+
+I do not believe that octrees will be invalidated by these changes -- 
+we should be able to maintain backward compatibility.  Frozen octrees 
+will certainly not be affected.  Since the old aliases occupied an 
+object record just as the new alias will, the object count won't change 
+in a standard octree, so they should be fine as well.  Adding new 
+primitive types never affects backward compatibility, since we build a 
+type lookup when reading in an octree.  The only thing that causes 
+problems is removing a primitive type that is referenced in an octree, 
+as one might expect.
+
+Jack de Valpine writes:
+> Another area where alias handling can be a problem is in the 
+> specification of a material for exclusion in the ambient calculation. 
+> As things currently stand you must pass the name/id that is actually 
+> used to modify the geometry, when in fact it might be preferable in 
+> some cases to pass the name of the alias, e.g., if I have a material 
+> "black" defined I would rather pass this name for exclusion than some 
+> exporter derived name applied to the geometry.
+
+Regrettably, such a change would require some extensive coding.  Also, 
+at what point in the modifier chain do you stop checking?  When you get 
+to a material?  What about mixtures of two or more materials?  Some 
+people might be using the alias name as a way of controlling what to 
+include or exclude from the ambient calculation.  I wouldn't want to 
+mess them up in the process, either.
+
+Unless there are any objections, I'm going to go ahead and implement 
+these changes as I have outlined.  I'm also working on the new mesh 
+primitive, which I should be able to finish this week if all goes well. 
+  Then, we can do a little testing and package a new release.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Mon Mar 10 19:51:49 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Mon, 10 Mar 2003 14:51:49 -0500 (EST)
+Subject: [Radiance-dev] Re: alias handling - the infernal internals
+In-Reply-To: <0463D538-5325-11D7-A4B0-00306540F848@lmi.net>
+Message-ID: <Pine.BSF.4.44.0303101438510.44110-100000@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> The solution I suggested, where the modifier chain is used in the
+> normal case where we are not changing it with the alias, won't take any
+> extra memory and won't incur a lookup during rendering.  Only if the
+> modifier was changed by the alias will we have to call lastmod(), and
+> this should be a small minority of the cases.  I don't see why a CAD
+> translator would ever use this feature, for example.
+
+The translator as such probably not, but Rayfront uses this all
+the time to manipulate modifier trees. As it is now, Rayfront
+stores all modifier definitions in one file per project, which
+gets loaded first. The primitives in that file all have no
+modifier of their own. The modifier trees that are then assigned
+to each geometry "object" are composed exclusively through
+recursive aliases (I posted a simple example earlier in this
+thread).
+
+This system was the only way that I could figure out that gives
+the user complete freedom in combining materials and modifiers in
+a GUI environment, so I'm not really prepared for any fundamental
+changes in how it works.
+
+
+> In cases where
+> the user is playing with modifier chains, they would hopefully do so
+> all in the same materials file, in which case the cost of calling
+> lastmod() would be minimal, as the modifier is only a few objects away
+> from the alias in the input.
+
+Right now, Rayfront writes the !xform for each scene file and its
+associated modifier/alias tree together, which would mean that
+the aliases for the last scene file would have the complete scene
+ahead of them to search through. I could change this, so that the
+aliases come first, and the !xforms get combined together at the
+end in one block, which would move the geometry out of the way.
+That's not quite as nice for someone looking at the file in an
+editor, although nobody should really need to do that...
+
+But I'm still not happy with generating additional name lookups
+at runtime at all. Somehow I'm starting to think that using the
+same data structure for geometry and modifier primitives might
+not be quite such a good idea after all.
+
+In an object oriented architecture, this problem would be solved
+by polyformism, which means that the aliases would get a
+different brand of oargs, that includes niargs and *iarg.  This
+is also possible to do in C, just that the language doesn't
+explicitly help us to get it right. The disadvantage is that the
+routines allocating and freeing those structures need to know
+about the difference and treat each instance accordingly.
+
+I actually think that this could still be done without backwards
+incompatible changes to the octree format. It should be possible
+to resolve the names once when loading the octree (which is a lot
+more acceptable than repeatedly during a simulation), so that
+niargs and *iarg will only ever exist in memory.
+
+All that probably sounds a lot more complicated than it actually
+is, and it would give us the best of both worlds. We could even
+go further, and use the same principle to save more memory.
+Assume that polygons (and most other primitives) used a version
+of oargs that doesn't carry nsargs and **sarg around. That's an
+easy gain of several MB of RAM with non-trivial scenes. Ok, so I
+said that I'm against adding complexity just for relatively small
+memory gains, but it could easily be that all it takes would be
+two more typedefs and a few carefully placed casts.
+
+
+Thoughts? Counter arguments? Flames? ;)
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+From radiance-dev@radiance-online.org  Mon Mar 10 20:18:42 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Mon, 10 Mar 2003 12:18:42 -0800
+Subject: [Radiance-dev] Re: alias handling - the infernal internals
+In-Reply-To: <Pine.BSF.4.44.0303101438510.44110-100000@emancholl.pair.com>
+Message-ID: <7D1A3B43-5335-11D7-837E-00306540F848@lmi.net>
+
+Schorsch writes:
+>> Only if the
+>> modifier was changed by the alias will we have to call lastmod(), and
+>> this should be a small minority of the cases.  I don't see why a CAD
+>> translator would ever use this feature, for example.
+>
+> The translator as such probably not, but Rayfront uses this all
+> the time to manipulate modifier trees. As it is now, Rayfront
+> stores all modifier definitions in one file per project, which
+> gets loaded first. The primitives in that file all have no
+> modifier of their own. The modifier trees that are then assigned
+> to each geometry "object" are composed exclusively through
+> recursive aliases (I posted a simple example earlier in this
+> thread).
+
+Unless you are reusing modifier names, the cost of calling lastmod() is 
+quite modest.  If you check the code, it first does a hash lookup, 
+which is extremely fast, and only if the modifier has been redefined 
+since the current primitive (in this context, our alias) was loaded 
+will it resort to a linear search.  So, I really don't think you'll see 
+much of a performance hit with the suggested solution.
+
+Regarding the questionable wisdom of having a single data structure for 
+modifiers and objects, I tend to agree with you.  However, it's really 
+late in the game to making these sorts of fundamental "adjustments" to 
+the source code.  If we're going to do that, we may as well chuck the 
+whole scene description language in favor of something more MGF-like.  
+I've given this a lot of thought, though, and I really don't think it 
+would be worth the effort.  Besides the nasty compatibility issues, 
+there's just not that much to be gained by moving to a more sensible 
+input structure, and much time to be lost.  That's a whole can of worms 
+I don't want to open right now.  "Never" would be a good time.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Tue Mar 11 19:50:22 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Tue, 11 Mar 2003 11:50:22 -0800
+Subject: [Radiance-dev] Re: alias handling - the infernal internals
+Message-ID: <B20E17F0-53FA-11D7-9E19-00306540F848@lmi.net>
+
+I just checked in my change to Radiance alias handling, which also 
+fixed that memory bug I mentioned in freeobjects().  The new module, 
+rt/m_alias.c does the runtime handling, which is essentially free for 
+aliased materials that have the same modifier as the original (either 
+by coincidence or using the explicit "inherit" keyword).  The change 
+touched a few other files besides the obvious ones -- it even cleaned 
+up the code a bit in gen/xform.c.
+
+I also checked in the documentation in ray/doc -- the reference manual 
+and man pages.  I figure we should start tracking changes on those 
+again as well.  I don't think we need to bother about recovering the 
+SCCS revisions, so I won't even ask Peter for that.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Tue Mar 11 19:51:23 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Tue, 11 Mar 2003 11:51:23 -0800
+Subject: [Radiance-dev] Re: primitive plan for meshes
+In-Reply-To: <20030303234813.9058.qmail@web80312.mail.yahoo.com>
+Message-ID: <D6AD99D6-53FA-11D7-9E19-00306540F848@lmi.net>
+
+I checked in a working version of the new obj2mesh program and the my 
+"mesh" primitive implementation.  Obj2mesh lives in the src/ot 
+directory, since it's really more of an octree compiler than a 
+translator.  I left the possibility there for creating other "mesh 
+compilers," perhaps building off the simple language I used for 
+tmesh2rad or MGF.  The main problem with this sort of translation is 
+that there's no recovery of materials, since a mesh must be modified by 
+a single material.  I'll probably have to add an option to obj2mesh to 
+pull out geometry by group or material for that reason.
+
+All the shenanigans to save mesh memory were quite successful.  In the 
+simple test I did on an unsmoothed 747 model at least, the memory 
+required by the mesh was less than the memory of the octree 
+scaffolding.  For a smoothed mesh with uv coordinates, I expect the 
+octree and the mesh data structures to use about the same amount of 
+memory.  The rendering time is also about what it was with the original 
+model, though I plan to do some more testing to confirm this.  I expect 
+the rendering of smoothed meshes to be substantially faster, and I'll 
+add a new .OBJ output option to gensurf to verify this.
+
+Once I add an option to gensurf and do a little more testing, we can 
+make a 3.5 release on CVS!
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Tue Mar 11 20:42:02 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Tue, 11 Mar 2003 21:42:02 +0100
+Subject: [Radiance-dev] CVS in beta state
+References: <D6AD99D6-53FA-11D7-9E19-00306540F848@lmi.net>
+Message-ID: <3E6E4A1A.92ABBAC2@pab-opto.de>
+
+Greg Ward wrote:
+
+> Once I add an option to gensurf and do a little more testing, we can
+> make a 3.5 release on CVS!
+>
+> -Greg
+
+Hi all,
+maybe I missed it- I don't recall this has been mentioned on the list.
+Maybe an appropriate time to announce it on this dev list:
+    http://www.radiance-online.org/cgi-bin/viewcvs.cgi/
+the CVS server isn't directly accessible via anon-cvs, but the viewcvs
+interface should have it all. Have a try- Any comments appreciated.
+
+CVS allows for automatic emails for 'commits' on CVS, aka when Greg
+uploads new versions. Anyone who would like to receive these emails,
+please write to me directly (techsup@radiance-online.org). Alternatively
+these automagical emails could be sent to this list- however there may be
+one for each file (one for each commit in CVS-speak).
+
+The main pages are update yet, although new versions are ready for upload,
+once the CVS thing works and R3.5 is released.
+
+-Peter
+
+--
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+
+From radiance-dev@radiance-online.org  Tue Mar 18 18:05:19 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Tue, 18 Mar 2003 10:05:19 -0800
+Subject: [Radiance-dev] pre-release of Radiance 3.5
+Message-ID: <2DF4170C-596C-11D7-A6E8-00306540F848@lmi.net>
+
+I've put a pre-release of Radiance 3.5 up on radsite in the pickup 
+directory, along with compiled Mac OS X binaries:
+
+	http://radsite.lbl.gov/pickup/rad3R5.tar.gz
+	http://radsite.lbl.gov/pickup/osxbin.tar.gz
+
+I would like to get feedback from people in the next week or so 
+regarding compile problems on various platforms in hopes of sorting 
+these out before the official release.
+
+Peter A-B is working on a set of Linux binaries (and possibly even an 
+RPM distribution) as well as getting CVS set up for wider access to 
+work in progress.
+
+This release introduces substantial ANSI-fication of the code, and 
+includes the new animation program ranimove, and a new "mesh" primitive 
+with support by "obj2mesh" for Wavefront .OBJ files and a -o option to 
+gensurf to output .OBJ rather than Radiance.  Attached is the relevant 
+portion of ray/doc/notes/ReleaseNotes.
+
+-Greg
+
+P.S.  Apologies in advance to countries our renegade president has 
+decided to invade for reasons known only to him....
+
+==============================
+Version 3.5 (Released 3/14/03)
+
+Fixed bug in replmarks pointed out by Georg Mischler, which caused
+garbage to be output under specific conditions (unscaled, unrotated
+instances).
+
+Fixed bug in normtiff that caused occassional weird colors
+on human tone-mapping of 32-bit LogLuv inputs (tmapluv.c).
+
+Fixed -o option of pcomb so it resets le(i) and color exposure functions
+to unity.
+
+Fixed a bug in Type B photometry in ies2rad source.cal introduced
+in last fix where spherical sources were getting symmetric
+distributions front-to-back.
+
+Fixed another bug in ies2rad for 90-270 bilaterally symmetric fixtures, 
+which
+seems to have been there from the beginning.  Thanks to Jack de Valpine
+for pointing it out.
+
+Added NORANDOM symbol for tests with all random sampling turned off.
+
+Fixed a bug in expression evaluation code that was causing unneeded
+evaluations of constants.  This is a fix on an earlier fix of a more
+serious bug prior to the 3.4 release, where the expression clock
+was wrapping silently and allowing values to go stale.
+
+Fixed an even more serious bug in ies2rad for thin fixtures, where
+it was using "flatcorr" without the proper correction for the
+emitting area.  Thanks again to Jack de Valpine for spotting this.
+
+--- All of the above was put into a 3.4.1 patch release 4/1/2002
+
+Added a facility to gensurf to make holes in the mesh using a
+valid(s,t) function.
+
+Fixed bug in pcond that caused a bus error on images with large dark
+regions when acuity switch was set.
+
+Fixed bug in pcomb that caused the S(n) function to return half
+the solid angle value it should have.  (Thanks to John Mardaljevic
+for discovering this error.)
+
+Made rpict/rpiece/vwrays -vf option accept "-" as a synonym
+for standard input.
+
+Fixed bug in persist functions (-P and -PP) with FreeBSD
+(including MacOS X) having to do with altered system function
+behaviors.  Neither mknod() nor freopen() behave as they
+used to.
+
+Improved accuracy of irradiance gradient calculation near
+specular surfaces by using the effective ray distance
+rather than the first surface intersection.  (John
+Mardaljevic had pointed out some errors he was seeing
+with a particular atrium model.)
+
+Reinstated my favorite little Fresnel approximation for
+perfectly smooth materials, so grazing angles show an
+accurate gradient.  Simultaneously revised the computation
+of the direct component for proper energy balance.
+(Thanks to Phillip Greenup for nagging John M. who nagged me.)
+
+Improved the accuracy and appearance of indirect irradiance
+interpolation for smoothed surfaces.  (Thanks to Bernhard
+Spanlang for noticing the problem.)
+
+Fixed intolerance for carriage-returns in mkillum's input files,
+which caused problems for files imported from DOS/Windows.
+
+Fixed apparent bug that I couldn't reproduce in rpict for very
+narrow views, which sent it into an infinite loop under Linux.
+(Rich Gillibrand of Bristol Univ. pointed it out.)
+
+Improved movement in rholo for low-detail holodecks on fast
+graphics processors by inserting 50 ms pause during motion
+feedback.
+
+Finally fixed ages-old consistency error where ambient value
+lists were sorted incorrectly with the GNU-C compiler,
+causing the dreaded "address not found in avlmemi" crash.  All
+this time, I thought it was due to a faulty qsort(3) routine,
+when in fact it was due to the way GNU-C compares pointers.
+The fix was to change a single word in ambient.c from "AMBVAL"
+to "char" and now it all magically works.  No more -Dtracktime=0,
+hurrah!
+
+Fixed pcond veil behavior for scenes that have their contrast
+reduced by primary tone-mapping algorithms.  Previously, the
+veil would come out looking like a fog because it was applied
+prior to dynamic range compression and did not consider the
+overall effect.  In the new version, the veil is adjusted
+after dynamic range compression so that the net reduction
+in visibility is approximately correct over the whole image.
+(Later made this optional on compile with the ADJ_VEIL symbol, as I
+noticed more artifacts than improvements in the resulting images.)
+
+Fixed bug in BRTDfunc that caused an error in the calculation
+of the diffuse transmitted ambient component.  This must have
+been introduced early on, but never noticed by me or anyone.
+
+Wrote an interactive script called "glaze" (src/gen/glaze.csh)
+that computes a good material model for fritted and low-E glazing
+systems.  Thanks to Visarc (Jack de Valpine) for paying for its
+development and permitting it into the general distribution.
+
+Increased scanline window in pcomb to 64 (+/- 32 pixels) to allow
+for larger kernels in filtered images.
+
+****************** COMPATIBILITY CHANGE ***********************
+Changed behavior of pfilt gaussian blur to match more precise
+definition.  A blur radius of 0.6 is now preferred over the
+previous value of 1.0.
+
+Added ANSI function prototypes to the header files in
+src/common/ and src/rt/ and cleaned up the options processing
+in the rpict, rtrace, and rview main procedures so that the
+core Radiance rendering code can be more easily
+called by new application programs.  Changed src/rt/Rmakefile
+to create a rendering library called "libradiance.a" and
+to install it in the src/lib/ directory along with the new
+raycalls.o module, which should facilitate the building
+of new applications outside the src/rt/ directory.  The
+raypcalls.o module, also installed in src/lib, manages
+parallel rendering on multiprocessors with shared memories.
+
+Wrote new ranimove animation rendering program, which is an
+alternative to ranimate.  The key difference is that
+ranimove is optimized for moving scenes, and includes
+a complete blur simulation for camera and object motion.
+It also incorporates an sophisticated model of perceivable
+error based on visual focus, and allows progressive
+animation so one can explicitly control rendering time
+and/or accuracy.  See the man page for details.
+
+****************** COMPATIBILITY CHANGE ***********************
+The sense of the MBLUR setting has been changed for the ranimate
+command.  The first value is now the fraction of a frame during
+which the shutter is open, and the _second_ argument (which is
+optional) is the number of samples to specify to pmblur.
+
+Enhanced octree reader behavior so it will accept command
+specifications preceded by an exclamation mark ('!').  This
+enables rtrace and rview to take octrees from commands similar
+to rpict reading its octree from the standard input.  All
+programs taking octrees as arguments will be affected by this
+change.  However, since rad needs to get the modified date
+from the octree, rad will refuse such an octree command
+specification.
+
+Fixed a bug in src/common/fgetline.c where it failed to elide
+carriage-returns in Windows files.
+
+Modified src/common/fgetword.c so it accepts single- or
+double-quoted words with spaces in preparation for the
+Windows version, which needs to allow spaces in file
+paths.  Since fgetword() is called by all programs that
+read in string arguments in scene files, these may now
+be quoted with the expected behavior.  Also added a
+fputword() call to the library to automatically quote
+words on output that contain white space.  This routine
+is now called from all the right places, I hope!  The
+code does not support spaces in primitive identifiers,
+and you will get peculiar errors if you try them.
+
+Eliminated virtually all symbolic links from the source
+tree, most of which were links to compatibility routines
+and the calcomp functions for expression parsing.
+Replaced -D* defines used in cal* routines with "esupport"
+global that allows calling programs to set which language
+options they want to support at runtime.  More programs now
+link against the -lrt library.  Consolidated the src/cal
+subdirectories in the process.
+
+Added -dw option to pvalue program to input and output
+16-bit word values (-dW for byte swapping).
+
+Changed call ordering in material shaders to ensure
+proper surface normal perturbation for two-sided,
+textured surfaces.
+
+Added a new "mesh" primitive, which permits very
+complicated geometries with associated (u,v) coordinates
+using the new obj2mesh converter and the new -o option
+of gensurf for .OBJ output.  Mesh compilation takes
+roughly 500 bytes/triangle in obj2mesh, but memory
+access is well-ordered compared to rendering, which
+takes about 50 bytes/triangle with full surface normal
+and (u,v) coordinate interpolation.  (The actual mesh
+is represented in 15 bytes/triangle, and the rest is
+taken by the octree structure and malloc overhead.)
+Local coordinates are set with the "vt" statement
+in the Wavefront .OBJ file and accessed via the new
+"Lu" and "Lv" variables in a Radiance .cal file.
+Multiple instances of the same mesh with different
+transformations take little additional space during
+rendering, permitting scanned relief surfaces and
+displacement-map-like effects to be repeated as desired.
+
+Changed internal representation of alias'es in order
+to maintain information about links for programs like
+rshow that work from frozen octrees.  Added a special
+alias modifier keyword, "inherit", to indicate that
+an alias should get the same modifier as the original
+target to simplify common alias usage for material
+substitution.
+
+Increased default oconv -n value to 6.  Since triangle
+meshes commonly have six faces joining at each vertex,
+values less than this cause resolution-limited voxel
+subdivision.  Increased default -r option to 16384
+as well.  Also increased maximum internal set size
+from 127 to 511, to accommodate difficult mesh
+models where many faces come together at a point.
+This required a little reprogramming in for couple
+of recursive routines using sets to avoid overrunning
+the stack limit.
+
+
+From radiance-dev@radiance-online.org  Thu Mar 20 08:48:33 2003
+From: radiance-dev@radiance-online.org (Francesco Anselmo)
+Date: Thu, 20 Mar 2003 09:48:33 +0100
+Subject: [Radiance-dev] pre-release of Radiance 3.5
+In-Reply-To: <2DF4170C-596C-11D7-A6E8-00306540F848@lmi.net>
+References: <2DF4170C-596C-11D7-A6E8-00306540F848@lmi.net>
+Message-ID: <200303200846.h2K8kuE27360@www.unipa.it>
+
+Hi!
+
+> I've put a pre-release of Radiance 3.5 up on radsite in the pickup
+> directory
+
+yahoo!
+
+> I would like to get feedback from people in the next week or so
+> regarding compile problems on various platforms in hopes of sorting
+> these out before the official release.
+
+I successfully compiled radiance 3.5 on the following platforms
+gcc version 2.96 on Mandrake Linux 8.2 and Mandrake Linux 9.0
+gcc version 3.04 on Mandrake Linux 8.2
+gcc version 2.95 on Debian Linux 3.0r1
+
+but I had to comment the extern declaration at line 1034 in the rad.c file.
+
+Here is the list of programs I get after the compiling process:
+
+-rwxr-xr-x    1 francesco francesco    27442 mar 20 09:11 arch2rad*
+-rwxr-xr-x    1 francesco francesco    63683 mar 20 09:11 bgraph*
+-rwxr-xr-x    1 francesco francesco    39439 mar 20 09:13 calc*
+-rwxr-xr-x    1 francesco francesco    14250 mar 20 09:13 cnt*
+-rwxr-xr-x    1 francesco francesco     1291 mar 20 09:13 compamb*
+-rwxr-xr-x    1 francesco francesco    21959 mar 20 09:11 cv*
+-rwxr-xr-x    1 francesco francesco     5298 mar 20 09:13 dayfact*
+-rwxr-xr-x    1 francesco francesco     1006 mar 20 09:13 debugcal*
+drwxr-xr-x    2 francesco francesco     4096 mar 20 09:12 dev/
+-rwxr-xr-x    1 francesco francesco    47350 mar 20 09:11 dgraph*
+-rwxr-xr-x    1 francesco francesco    36867 mar 20 09:13 ev*
+-rwxr-xr-x    1 francesco francesco     3914 mar 20 09:12 falsecolor*
+-rwxr-xr-x    1 francesco francesco    58631 mar 20 09:13 findglare*
+-rwxr-xr-x    1 francesco francesco    47586 mar 20 09:11 gcomp*
+-rwxr-xr-x    1 francesco francesco    17404 mar 20 09:11 genblinds*
+-rwxr-xr-x    1 francesco francesco    16880 mar 20 09:11 genbox*
+-rwxr-xr-x    1 francesco francesco    17816 mar 20 09:11 genclock*
+-rwxr-xr-x    1 francesco francesco    21224 mar 20 09:11 genprism*
+-rwxr-xr-x    1 francesco francesco    37958 mar 20 09:11 genrev*
+-rwxr-xr-x    1 francesco francesco    28883 mar 20 09:12 genrhgrid*
+-rwxr-xr-x    1 francesco francesco    23390 mar 20 09:11 gensky*
+-rwxr-xr-x    1 francesco francesco    49107 mar 20 09:11 gensurf*
+-rwxr-xr-x    1 francesco francesco    38679 mar 20 09:11 genworm*
+-rwxr-xr-x    1 francesco francesco    68636 mar 20 09:11 getbbox*
+-rwxr-xr-x    1 francesco francesco    19071 mar 20 09:13 getinfo*
+-rwxr-xr-x    1 francesco francesco     5884 mar 20 09:13 glare*
+-rwxr-xr-x    1 francesco francesco    38617 mar 20 09:13 glarendx*
+-rwxr-xr-x    1 francesco francesco    11141 mar 20 09:11 glaze*
+-rwxr-xr-x    1 francesco francesco    16439 mar 20 09:13 histo*
+-rwxr-xr-x    1 francesco francesco    41085 mar 20 09:11 ies2rad*
+-rwxr-xr-x    1 francesco francesco    72236 mar 20 09:11 igraph*
+-rwxr-xr-x    1 francesco francesco    15263 mar 20 09:13 lam*
+-rwxr-xr-x    1 francesco francesco    27930 mar 20 09:11 lampcolor*
+-rwxr-xr-x    1 francesco francesco    26690 mar 20 09:11 lookamb*
+-rwxr-xr-x    1 francesco francesco    52586 mar 20 09:12 macbethcal*
+-rwxr-xr-x    1 francesco francesco    29973 mar 20 09:11 meta2tga*
+-rwxr-xr-x    1 francesco francesco    59016 mar 20 09:11 mgf2inv*
+-rwxr-xr-x    1 francesco francesco    62432 mar 20 09:11 mgf2meta*
+-rwxr-xr-x    1 francesco francesco    66450 mar 20 09:11 mgf2rad*
+-rwxr-xr-x    1 francesco francesco    51560 mar 20 09:11 mgfilt*
+-rwxr-xr-x    1 francesco francesco    50666 mar 20 09:11 mkillum*
+-rwxr-xr-x    1 francesco francesco    14870 mar 20 09:13 neat*
+-rwxr-xr-x    1 francesco francesco    47718 mar 20 09:11 nff2rad*
+-rwxr-xr-x    1 francesco francesco     3981 mar 20 09:12 normpat*
+-rwxr-xr-x    1 francesco francesco   271473 mar 20 09:12 normtiff*
+-rwxr-xr-x    1 francesco francesco    79478 mar 20 09:11 obj2mesh*
+-rwxr-xr-x    1 francesco francesco    36649 mar 20 09:11 obj2rad*
+-rwxr-xr-x    1 francesco francesco     1147 mar 20 09:13 objline*
+-rwxr-xr-x    1 francesco francesco      998 mar 20 09:13 objpict*
+-rwxr-xr-x    1 francesco francesco     1680 mar 20 09:13 objview*
+-rwxr-xr-x    1 francesco francesco    76471 mar 20 09:11 oconv*
+-rwxr-xr-x    1 francesco francesco    27623 mar 20 09:12 oki20*
+-rwxr-xr-x    1 francesco francesco    27627 mar 20 09:12 oki20c*
+-rwxr-xr-x    1 francesco francesco    62301 mar 20 09:12 pcomb*
+-rwxr-xr-x    1 francesco francesco    28102 mar 20 09:12 pcompos*
+-rwxr-xr-x    1 francesco francesco    73939 mar 20 09:12 pcond*
+-rwxr-xr-x    1 francesco francesco    37742 mar 20 09:12 pcwarp*
+-rwxr-xr-x    1 francesco francesco     1580 mar 20 09:12 pdelta*
+-rwxr-xr-x    1 francesco francesco      756 mar 20 09:12 pdfblur*
+-rwxr-xr-x    1 francesco francesco    26411 mar 20 09:11 pexpand*
+-rwxr-xr-x    1 francesco francesco    24991 mar 20 09:12 pextrem*
+-rwxr-xr-x    1 francesco francesco    59036 mar 20 09:12 pfilt*
+-rwxr-xr-x    1 francesco francesco    24981 mar 20 09:12 pflip*
+-rwxr-xr-x    1 francesco francesco      636 mar 20 09:12 phisto*
+-rwxr-xr-x    1 francesco francesco    59408 mar 20 09:12 pinterp*
+-rwxr-xr-x    1 francesco francesco    21517 mar 20 09:11 plot4*
+-rwxr-xr-x    1 francesco francesco    24814 mar 20 09:11 plotin*
+-rwxr-xr-x    1 francesco francesco      710 mar 20 09:12 pmblur*
+-rwxr-xr-x    1 francesco francesco    25379 mar 20 09:12 protate*
+-rwxr-xr-x    1 francesco francesco    36878 mar 20 09:12 psign*
+-rwxr-xr-x    1 francesco francesco    29886 mar 20 09:11 psmeta*
+-rwxr-xr-x    1 francesco francesco    23962 mar 20 09:11 psort*
+-rwxr-xr-x    1 francesco francesco    48400 mar 20 09:12 pvalue*
+-rwxr-xr-x    1 francesco francesco    28571 mar 20 09:12 ra_avs*
+-rwxr-xr-x    1 francesco francesco    28517 mar 20 09:12 ra_bn*
+-rwxr-xr-x    1 francesco francesco    54795 mar 20 09:13 rad*
+-rwxr-xr-x    1 francesco francesco    36184 mar 20 09:11 rad2mgf*
+-rwxr-xr-x    1 francesco francesco      433 mar 20 09:13 raddepend*
+-rwxr-xr-x    1 francesco francesco    41857 mar 20 09:12 ra_gif*
+-rwxr-xr-x    1 francesco francesco    24024 mar 20 09:12 ra_hexbit*
+-rwxr-xr-x    1 francesco francesco    63037 mar 20 09:13 ranimate*
+-rwxr-xr-x    1 francesco francesco   285440 mar 20 09:13 ranimove*
+-rwxr-xr-x    1 francesco francesco    28928 mar 20 09:12 ra_pict*
+-rwxr-xr-x    1 francesco francesco    32241 mar 20 09:12 ra_ppm*
+-rwxr-xr-x    1 francesco francesco    37444 mar 20 09:12 ra_pr*
+-rwxr-xr-x    1 francesco francesco    28391 mar 20 09:12 ra_pr24*
+-rwxr-xr-x    1 francesco francesco    34839 mar 20 09:12 ra_ps*
+-rwxr-xr-x    1 francesco francesco    28856 mar 20 09:12 ra_rgbe*
+-rwxr-xr-x    1 francesco francesco    30829 mar 20 09:12 ra_t16*
+-rwxr-xr-x    1 francesco francesco    41853 mar 20 09:12 ra_t8*
+-rwxr-xr-x    1 francesco francesco   258758 mar 20 09:12 ra_tiff*
+-rwxr-xr-x    1 francesco francesco    30569 mar 20 09:12 ra_xyze*
+-rwxr-xr-x    1 francesco francesco    43426 mar 20 09:13 rcalc*
+-rwxr-xr-x    1 francesco francesco    22951 mar 20 09:11 replmarks*
+-rwxr-xr-x    1 francesco francesco    63108 mar 20 09:12 rhcopy*
+-rwxr-xr-x    1 francesco francesco    40586 mar 20 09:12 rhinfo*
+-rwxr-xr-x    1 francesco francesco    91158 mar 20 09:12 rholo*
+-rwxr-xr-x    1 francesco francesco    43943 mar 20 09:12 rhoptimize*
+-rwxr-xr-x    1 francesco francesco    66674 mar 20 09:12 rhpict*
+-rwxr-xr-x    1 francesco francesco      284 mar 20 09:13 rlux*
+-rwxr-xr-x    1 francesco francesco      276 mar 19 12:04 rmake*
+-rwxr-xr-x    1 francesco francesco   269857 mar 20 09:11 rpict*
+-rwxr-xr-x    1 francesco francesco    49198 mar 20 09:13 rpiece*
+-rwxr-xr-x    1 francesco francesco   263698 mar 20 09:11 rtrace*
+-rwxr-xr-x    1 francesco francesco   290636 mar 20 09:11 rview*
+-rwxr-xr-x    1 francesco francesco    19413 mar 20 09:13 tabfunc*
+-rwxr-xr-x    1 francesco francesco    17666 mar 20 09:11 thf2rad*
+-rwxr-xr-x    1 francesco francesco    22530 mar 20 09:11 tmesh2rad*
+-rwxr-xr-x    1 francesco francesco    17323 mar 20 09:13 total*
+-rwxr-xr-x    1 francesco francesco     4733 mar 20 09:13 trad*
+-rwxr-xr-x    1 francesco francesco    26068 mar 20 09:12 ttyimage*
+-rwxr-xr-x    1 francesco francesco      655 mar 20 09:13 vinfo*
+-rwxr-xr-x    1 francesco francesco    35618 mar 20 09:13 vwrays*
+-rwxr-xr-x    1 francesco francesco    32721 mar 20 09:13 vwright*
+-rwxr-xr-x    1 francesco francesco    30469 mar 20 09:11 x11meta*
+-rwxr-xr-x    1 francesco francesco    40648 mar 20 09:11 xform*
+-rwxr-xr-x    1 francesco francesco    36920 mar 20 09:13 xglaresrc*
+-rwxr-xr-x    1 francesco francesco    85899 mar 20 09:12 ximage*
+-rwxr-xr-x    1 francesco francesco    35606 mar 20 09:12 xshowtrace*
+-rwxr-xr-x    1 francesco francesco     1274 mar 20 09:12 xyzimage*
+
+I also compiled glrad and 3ds2mgf, but I have to do it manually (like in 
+the previous radiance releases):
+1) to compile glrad:
+I cd to src/common and do a "rmake ogl" and then cd to src/util and
+type "rmake glrad" (also in this case I had to comment the extern function
+declaration at line 97).
+2) to compile 3ds2mgf:
+I simply cd to src/cv/mgflib and type "make 3ds2mgf".
+
+Why not including the compilation of these two useful programs automatically 
+in the makeall script process?
+
+> Peter A-B is working on a set of Linux binaries (and possibly even an
+> RPM distribution) as well as getting CVS set up for wider access to
+> work in progress.
+
+That is really wonderful. We could prepare a DEB distribution, too ...
+
+Is there any plan to include photon mapping in a short time in the main 
+radiance distribution?
+
+> P.S.  Apologies in advance to countries our renegade president has
+> decided to invade for reasons known only to him....
+
+thank you for this thought ...
+
+-- 
+ing. Francesco Anselmo
+anselmo@dream.unipa.it
+--
+[ DREAM ] 
+Dipartimento di Ricerche 
+Energetiche e Ambientali
+--
+Università di Palermo
+--
+Viale delle Scienze
+90128 Palermo - Italy
+--
+Tel + 39 091 236 302
+Fax + 39 091 484 425
+--
+
+
+From radiance-dev@radiance-online.org  Thu Mar 20 20:05:39 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Thu, 20 Mar 2003 12:05:39 -0800
+Subject: [Radiance-dev] pre-release of Radiance 3.5
+In-Reply-To: <200303200846.h2K8kuE27360@www.unipa.it>
+Message-ID: <52100B99-5B0F-11D7-B840-00306540F848@lmi.net>
+
+Francesco Anselmo <anselmo@dream.unipa.it> wrote:
+> I successfully compiled radiance 3.5 on the following platforms
+> gcc version 2.96 on Mandrake Linux 8.2 and Mandrake Linux 9.0
+> gcc version 3.04 on Mandrake Linux 8.2
+> gcc version 2.95 on Debian Linux 3.0r1
+>
+> but I had to comment the extern declaration at line 1034 in the rad.c 
+> file.
+>
+> Here is the list of programs I get after the compiling process:
+
+Looks like everything compiled -- great!  Thanks goes also to Peter 
+A-B, who pretested a lot of this stuff under Linux.  I missed the 
+problem in rad.c, but it will be fixed for the final release.
+
+> I also compiled glrad and 3ds2mgf, but I have to do it manually (like 
+> in
+> the previous radiance releases):
+> 1) to compile glrad:
+> I cd to src/common and do a "rmake ogl" and then cd to src/util and
+> type "rmake glrad" (also in this case I had to comment the extern 
+> function
+> declaration at line 97).
+> 2) to compile 3ds2mgf:
+> I simply cd to src/cv/mgflib and type "make 3ds2mgf".
+
+Yes, well...  I should probably enable the "ogl" special compile under 
+Linux, but I'm not sure how widely supported OpenGL is -- can anyone 
+tell me if there are cases where it is not?  You can add this yourself 
+to the rmake script (under the SPECIAL= variable) and avoid the trouble 
+of compiling glrad manually.  You also should go into the ray/src/hd 
+directory and run "rmake ogl" to get the extra rholo drivers.
+
+As for 3ds2mgf, I have concerns that it won't compile everywhere, which 
+is why I don't generally include it.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Thu Mar 20 20:07:47 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Thu, 20 Mar 2003 21:07:47 +0100
+Subject: [Radiance-dev] pre-release of Radiance 3.5
+In-Reply-To: <200303200846.h2K8kuE27360@www.unipa.it>
+References: <2DF4170C-596C-11D7-A6E8-00306540F848@lmi.net> <200303200846.h2K8kuE27360@www.unipa.it>
+Message-ID: <3E7A1F93.6070802@pab-opto.de>
+
+Francesco Anselmo wrote:
+
+>I successfully compiled radiance 3.5 on the following platforms
+>gcc version 2.96 on Mandrake Linux 8.2 and Mandrake Linux 9.0
+>gcc version 3.04 on Mandrake Linux 8.2
+>gcc version 2.95 on Debian Linux 3.0r1
+>
+>..
+>  
+>
+>>Peter A-B is working on a set of Linux binaries (and possibly even an
+>>RPM distribution) as well as getting CVS set up for wider access to
+>>work in progress.
+>>    
+>>
+>
+>That is really wonderful. We could prepare a DEB distribution, too ...
+>
+Greg got a bit optimistic there, ... I could test Slackware and Debian 
+Linux, but since Slackware's community is very small, Debian's deb files 
+are probably much more interesting. If you like to generate this, please 
+go ahead and let me know where to get them, so it gets linked at  
+Radiance-Online. I'm fairly busy until next week, including annual 
+updates of some software on the Radiance webserver. Greg suggested 
+trying to use as much static libs as possible for a "static" release. 
+I'll give it a try.
+Anyone with a current RedHat system, please step forward and supply an 
+rpm file. My try at this would be building rpm on a Slackware machine, 
+whcih may have other lib versions.
+
+>Is there any plan to include photon mapping in a short time in the main 
+>radiance distribution?
+>
+My guts feeling would be to test R3.5 "classic" first. With all the ANSI 
+changes it would be comforting to know it still works as before.  Photon 
+Map is quite substantial and might be a good candidate for creating a 
+CVS "branch".
+
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+From radiance-dev@radiance-online.org  Thu Mar 20 20:44:44 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Thu, 20 Mar 2003 15:44:44 -0500 (EST)
+Subject: [Radiance-dev] pre-release of Radiance 3.5
+In-Reply-To: <52100B99-5B0F-11D7-B840-00306540F848@lmi.net>
+Message-ID: <Pine.BSF.4.44.0303201512050.40419-100000@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> Yes, well...  I should probably enable the "ogl" special compile under
+> Linux, but I'm not sure how widely supported OpenGL is -- can anyone
+> tell me if there are cases where it is not?  You can add this yourself
+> to the rmake script (under the SPECIAL= variable) and avoid the trouble
+> of compiling glrad manually.  You also should go into the ray/src/hd
+> directory and run "rmake ogl" to get the extra rholo drivers.
+
+Linux systems usually have Mesa installed nowadays. You could
+have makeall check for libGL.so to make sure...
+
+
+> As for 3ds2mgf, I have concerns that it won't compile everywhere
+
+Any specific reasons why? I guess if that was the case, then we
+should be able to fix that?
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+From radiance-dev@radiance-online.org  Tue Mar 25 08:08:50 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Tue, 25 Mar 2003 09:08:50 +0100
+Subject: [Radiance-dev] CVS pages
+Message-ID: <3E800E92.2010100@pab-opto.de>
+
+Hi all,
+radiance-online got links to the CVS and tar ball downloads. Any 
+comments or links to binaries appreciated before I'm bothering the 
+general list with this.
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+From radiance-dev@radiance-online.org  Tue Mar 25 09:21:13 2003
+From: radiance-dev@radiance-online.org (Charles Ehrlich)
+Date: Tue, 25 Mar 2003 01:21:13 -0800 (PST)
+Subject: [Radiance-dev] Samba for Radiance
+Message-ID: <20030325092113.69162.qmail@web80311.mail.yahoo.com>
+
+--0-1384401038-1048584073=:67082
+Content-Type: text/plain; charset=us-ascii
+
+
+I don't remember where we left the issue regarding support for Samba file sharing and lock files. I suppose I haven't let go of it yet.
+
+Below is a link to the modifications made to rpiece.c by Tony Kay. He allowed these changes to be made feely available. The tarball also includes a samba lock exerciser.
+
+Samba for Rpiece
+
+If these changes are easy enough, please consider including them in the (next) release. Perhaps the same approach could be extended into the ambient file sharing code.
+
+The following link is to the Cywin (Win32) version of Radiance by Tarn Burton. I include this second link in case there are dependencies needed for Samba, and in case you would like to investigate Tarn's solution to various Windows-isms.
+
+Radiance for Cygwin (Win32s)
+
+Thanks to everyone for all your work on this!  Especially Greg!
+
+-Chas
+
+ 
+
+ 
+
+--0-1384401038-1048584073=:67082
+Content-Type: text/html; charset=us-ascii
+
+<FONT size=2>
+<P>I don't remember where we left the issue regarding support for Samba file sharing and lock files. I suppose I haven't let go of it yet.</P>
+<P>Below is a link to the modifications made to rpiece.c by Tony Kay. He allowed these changes to be made feely available. The tarball also includes a samba lock exerciser.</P>
+<P><A href="http://us.f1.yahoofs.com/users/90a0584a/bc/Radiance/Samba+for+Radiance.tar?BCg2Bg.Ab3lSQya2">Samba for Rpiece</A></P>
+<P>If these changes are easy enough, please consider including them in the (next) release. Perhaps the same approach could be extended into the ambient file sharing code.</P>
+<P>The following link is to the Cywin (Win32) version of Radiance by Tarn Burton. I include this second link in case there are dependencies needed for Samba, and in case you would like to investigate Tarn's solution to various Windows-isms.</P>
+<P><A href="http://us.f1.yahoofs.com/users/90a0584a/bc/Radiance/Radiance+for+Cygwin.tar?BCg2Bg.AjV2EVzT1">Radiance for Cygwin (Win32s)</A></P>
+<P>Thanks to everyone for all your work on this! &nbsp;Especially Greg!</P>
+<P>-Chas</P>
+<P><A href="http://us.f1.yahoofs.com/users/90a0584a/bc/Radiance/Samba+for+Radiance.tar?BCg2Bg.Ab3lSQya2"></A>&nbsp;</P>
+<P><A href="http://us.f1.yahoofs.com/users/90a0584a/bc/Radiance/Radiance+for+Cygwin.tar?BCg2Bg.AjV2EVzT1"></A>&nbsp;</P></FONT>
+--0-1384401038-1048584073=:67082--
+
+From radiance-dev@radiance-online.org  Tue Mar 25 15:59:45 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Tue, 25 Mar 2003 07:59:45 -0800
+Subject: [Radiance-dev] CVS pages
+In-Reply-To: <3E800E92.2010100@pab-opto.de>
+Message-ID: <CC2BAEBF-5EDA-11D7-859D-00306540F848@lmi.net>
+
+Hi Peter,
+
+This looks fine.  Unfortunately, radsite seems to have just gone down 
+this morning after I uploaded the binaries Roland compiled for IRIX 
+6.2.  Sigh.
+
+-Greg
+
+> From: Peter Apian-Bennewitz <apian@pab-opto.de>
+> Date: Tue Mar 25, 2003  12:08:50  AM US/Pacific
+> To: radiance-dev@radiance-online.org
+> Subject: [Radiance-dev] CVS pages
+> Reply-To: radiance-dev@radiance-online.org
+>
+> Hi all,
+> radiance-online got links to the CVS and tar ball downloads. Any 
+> comments or links to binaries appreciated before I'm bothering the 
+> general list with this.
+> -Peter
+
+
+From radiance-dev@radiance-online.org  Tue Mar 25 16:00:51 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Tue, 25 Mar 2003 11:00:51 -0500 (EST)
+Subject: [Radiance-dev] Samba for Radiance
+In-Reply-To: <20030325092113.69162.qmail@web80311.mail.yahoo.com>
+Message-ID: <Pine.BSF.4.44.0303251048290.11344-100000@emancholl.pair.com>
+
+Charles Ehrlich wrote:
+
+>
+> I don't remember where we left the issue regarding support for Samba file
+> sharing and lock files. I suppose I haven't let go of it yet.
+>
+> Below is a link to the modifications made to rpiece.c by Tony Kay. He allowed
+> these changes to be made feely available. The tarball also includes a samba
+> lock exerciser.
+
+Those links don't lead anywhere for me (some host not found).
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Tue Mar 25 21:48:24 2003
+From: radiance-dev@radiance-online.org (Charles Ehrlich)
+Date: Tue, 25 Mar 2003 13:48:24 -0800 (PST)
+Subject: [Radiance-dev] Re: Samba for Radiance
+In-Reply-To: <Pine.BSF.4.44.0303251048290.11344-100000@emancholl.pair.com>
+Message-ID: <20030325214824.57964.qmail@web80306.mail.yahoo.com>
+
+--0-216068285-1048628904=:57060
+Content-Type: text/plain; charset=us-ascii
+
+
+I'll send them to you directly.  Let me know if anyone else needs the files sent as an attachment.  It's just a few hundred KB.
+-Chas
+ Georg Mischler <schorsch@schorsch.com> wrote:Charles Ehrlich wrote:
+
+>
+> I don't remember where we left the issue regarding support for Samba file
+> sharing and lock files. I suppose I haven't let go of it yet.
+>
+> Below is a link to the modifications made to rpiece.c by Tony Kay. He allowed
+> these changes to be made feely available. The tarball also includes a samba
+> lock exerciser.
+
+Those links don't lead anywhere for me (some host not found).
+
+
+-schorsch
+
+-- 
+Georg Mischler -- simulations developer -- schorsch at schorsch com
++schorsch.com+ -- lighting design tools -- http://www.schorsch.com/
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+--0-216068285-1048628904=:57060
+Content-Type: text/html; charset=us-ascii
+
+<P>I'll send them to you directly.&nbsp; Let me know if anyone else needs the files sent as an attachment.&nbsp; It's just a few hundred KB.
+<P>-Chas
+<P>&nbsp;<B><I>Georg Mischler &lt;schorsch@schorsch.com&gt;</I></B> wrote:
+<BLOCKQUOTE style="PADDING-LEFT: 5px; MARGIN-LEFT: 5px; BORDER-LEFT: #1010ff 2px solid">Charles Ehrlich wrote:<BR><BR>&gt;<BR>&gt; I don't remember where we left the issue regarding support for Samba file<BR>&gt; sharing and lock files. I suppose I haven't let go of it yet.<BR>&gt;<BR>&gt; Below is a link to the modifications made to rpiece.c by Tony Kay. He allowed<BR>&gt; these changes to be made feely available. The tarball also includes a samba<BR>&gt; lock exerciser.<BR><BR>Those links don't lead anywhere for me (some host not found).<BR><BR><BR>-schorsch<BR><BR>-- <BR>Georg Mischler -- simulations developer -- schorsch at schorsch com<BR>+schorsch.com+ -- lighting design tools -- http://www.schorsch.com/<BR><BR>_______________________________________________<BR>Radiance-dev mailing list<BR>Radiance-dev@radiance-online.org<BR>http://www.radiance-online.org/mailman/listinfo/radiance-dev</BLOCKQUOTE>
+--0-216068285-1048628904=:57060--
+
+From radiance-dev@radiance-online.org  Thu Mar 27 17:37:32 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Thu, 27 Mar 2003 12:37:32 -0500 (EST)
+Subject: [Radiance-dev] Samba for Radiance
+In-Reply-To: <20030325092113.69162.qmail@web80311.mail.yahoo.com>
+Message-ID: <Pine.BSF.4.44.0303271234510.39204-100000@emancholl.pair.com>
+
+Charles Ehrlich wrote:
+
+> I don't remember where we left the issue regarding support for Samba file
+> sharing and lock files. I suppose I haven't let go of it yet.
+>
+> Below is a link to the modifications made to rpiece.c by Tony Kay. He allowed
+> these changes to be made feely available. The tarball also includes a samba
+> lock exerciser.
+
+
+I had a very short look at the code, and as far as I can see,
+this may not be exactly what you seem to think it is. Whether
+that makes it more or less useful, remains to be seen.
+
+Unless I have missed something, then Tony Kays changes have
+nothing directly to do with Samba. It's just that he happened to
+use Samba for the actual file access. What he seems to have done,
+is simply to link Radiance to the Cygwin libraries, which gave
+him access to an implementation of fcntl() that is aware of
+networked file locks. As a result, he could use exactly the same
+code on Windows as is already used on unix.
+
+Advantages:
+- works transparently together with unix NFS locks, even if the
+  file is actually accessed through a Samba mount.
+- no code changes required
+
+Disadvantages:
+- requires the Cygwin libraries, which makes commercial
+  redistribution potentially difficult/expensive.
+- NFS locks still seem to be unreliable on some unix systems.
+- I'm not sure if Cygwin can lock files on both unix and Windows
+  based filesystems this way.
+
+For my taste, those are at least two disadvantages too many...
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Thu Mar 27 19:44:14 2003
+From: radiance-dev@radiance-online.org (Charles Ehrlich)
+Date: Thu, 27 Mar 2003 11:44:14 -0800 (PST)
+Subject: [Radiance-dev] Re: Samba for Radiance
+In-Reply-To: <Pine.BSF.4.44.0303271234510.39204-100000@emancholl.pair.com>
+Message-ID: <20030327194414.56632.qmail@web80310.mail.yahoo.com>
+
+--0-2089804629-1048794254=:56596
+Content-Type: text/plain; charset=us-ascii
+
+
+George Mischler wrote:
+
+> Advantages:
+> - works transparently together with unix NFS locks, even if the
+> file is actually accessed through a Samba mount.
+> - no code changes required
+
+> Disadvantages:
+> - requires the Cygwin libraries, which makes commercial
+> redistribution potentially difficult/expensive.
+> - NFS locks still seem to be unreliable on some unix systems.
+> - I'm not sure if Cygwin can lock files on both unix and Windows
+> based filesystems this way.
+
+
+====
+Georg,
+Just to confirm, you looked at the revised code in rpiece.c written by Tony Kay?  I included the rest of the Cygwin stuff because I was not sure if the Samba additions depended upon it.  You seem to confirm my suspicions, and so, Samba file locking really hasn't been implemented in rpiece.c independent from Cygwin, right?  If so, then I agree, it is of little value.
+-Chas
+
+--0-2089804629-1048794254=:56596
+Content-Type: text/html; charset=us-ascii
+
+<P>George Mischler wrote:<BR><BR>&gt; Advantages:<BR>&gt; - works transparently together with unix NFS locks, even if the<BR>&gt; file is actually accessed through a Samba mount.<BR>&gt; - no code changes required<BR><BR>&gt; Disadvantages:<BR>&gt; - requires the Cygwin libraries, which makes commercial<BR>&gt; redistribution potentially difficult/expensive.<BR>&gt; - NFS locks still seem to be unreliable on some unix systems.<BR>&gt; - I'm not sure if Cygwin can lock files on both unix and Windows<BR>&gt; based filesystems this way.<BR><BR><BR>====
+<P>Georg,
+<P>Just to confirm, you looked at the revised code in rpiece.c written by Tony Kay?&nbsp; I included the rest of the Cygwin stuff because I was not sure if the Samba additions depended upon it.&nbsp; You seem to confirm my suspicions, and so, Samba file locking really hasn't been implemented in rpiece.c independent from Cygwin, right?&nbsp; If so, then I agree, it is of little value.
+<P>-Chas</P>
+--0-2089804629-1048794254=:56596--
+
+From radiance-dev@radiance-online.org  Fri Mar 28 00:25:58 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Thu, 27 Mar 2003 19:25:58 -0500 (EST)
+Subject: [Radiance-dev] Samba for Radiance
+In-Reply-To: <20030327194414.56632.qmail@web80310.mail.yahoo.com>
+Message-ID: <Pine.BSF.4.44.0303271914120.83733-100000@emancholl.pair.com>
+
+Charles Ehrlich wrote:
+
+> Georg,
+> Just to confirm, you looked at the revised code in rpiece.c written by Tony
+> Kay?  I included the rest of the Cygwin stuff because I was not sure if the
+> Samba additions depended upon it.  You seem to confirm my suspicions, and so,
+> Samba file locking really hasn't been implemented in rpiece.c independent
+> from Cygwin, right?  If so, then I agree, it is of little value.
+> -Chas
+
+
+Yes, I just cross checked. The actual changes in rpiece.c involve
+replacing the MSDOS preprocessor symbol by CYGWIN for conditional
+compiles, and some code to work around a Cygwin bug with fdopen().
+The locking mechanism is unchanged from standard unix Radiance,
+and can't work without Cygwin on Windows.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Mon Mar 31 15:19:55 2003
+From: radiance-dev@radiance-online.org (Francesco Anselmo)
+Date: Mon, 31 Mar 2003 16:19:55 +0200
+Subject: [Radiance-dev] DEB and RPM Radiance 3R5 packages
+In-Reply-To: <3E882C47.B4027F90@gmx.net>
+References: <3CEFD5D8-6163-11D7-8C57-00306540F848@lmi.net> <3E882C47.B4027F90@gmx.net>
+Message-ID: <200303311619.55154.anselmo@dream.unipa.it>
+
+Hi to all!
+
+I finally managed to build two debian packages for Radiance
+(1 for binaries + 1 for documentation) and I also converted
+them to RPM packages with alien.
+
+The binary packages also include glrad (special=ogl) and 3ds2mgf and
+the binaries have been compiled on a Debian 3.0r1 woody
+Linux distribution with gcc 2.95.4. 
+This is not a static binary distribution
+but I'm also planning to make it (in the next days).
+I also think I'm going to make a pmap package, so that it can be very easy
+to switch between the classic and the pmap radiance binaries.
+
+According to the File System Hierarchy Standard the executables are
+copied to /usr/bin, the library files are put inside /usr/share/radiance,
+the man files are sent to /usr/share/man and all the documentation 
+is saved inside /usr/share/radiance/doc.
+
+The user still has to set the RAYPATH variable, but I'm studying how to
+make it automatically through a shell script (next release).
+
+Of course, since this is my very first attempt at making a package, there is
+some problems.
+The bigger one is this: 
+  the "vim" package also has a "rview" executable:
+  since the vim package is usually quite important, I decided not to have
+  the radiance package conflicting with vim. So, on Debian based system, it is   
+  necessary to install the package by issuing the following command:
+  # dpkg -i --force-all radiance_3.5.0-1_i386.deb
+  in order to overwrite the /usr/bin/rview executable (very bad, isn't it?).
+  On different systems it may not be a problem, for instance on my
+  linux Mandrake 9.0 box rview from the vim package is put inside /bin/,
+  so no overwrite occurs and apparently everything goes smoothly,
+  but the system will always execute the vim rview binary, unless
+  somebody erases or rename it, or changes the PATH variable.
+
+Could anybody give me some feedback about how to solve this problem
+in the best way? I think I'm going to write a message on the debian developer 
+mailing list too.
+
+Could we ask to add Radiance to the main or contrib Debian distribution?
+
+The packages are located here:
+
+http://www.dream.unipa.it/dream/pub/dot/anselmo/radiance/packages/
+
+I hope to get your comments/suggestions/infos/flames soon, and I also
+hope to have done a useful job.
+
+-- 
+ing. Francesco Anselmo
+anselmo@dream.unipa.it
+--
+[ DREAM ] 
+Dipartimento di Ricerche 
+Energetiche e Ambientali
+--
+Università di Palermo
+--
+Viale delle Scienze
+90128 Palermo - Italy
+--
+Tel + 39 091 236 302
+Fax + 39 091 484 425
+--
+
+
+
+From radiance-dev@radiance-online.org  Mon Mar 31 16:21:07 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Mon, 31 Mar 2003 17:21:07 +0200
+Subject: [Radiance-dev] DEB and RPM Radiance 3R5 packages
+In-Reply-To: <200303311619.55154.anselmo@dream.unipa.it>
+References: <3CEFD5D8-6163-11D7-8C57-00306540F848@lmi.net> <3E882C47.B4027F90@gmx.net> <200303311619.55154.anselmo@dream.unipa.it>
+Message-ID: <3E885CE3.7020800@pab-opto.de>
+
+Francesco Anselmo wrote:
+
+>According to the File System Hierarchy Standard the executables are
+>copied to /usr/bin, the library files are put inside /usr/share/radiance,
+>the man files are sent to /usr/share/man and all the documentation 
+>is saved inside /usr/share/radiance/doc.
+>
+Well- thanks for your work, especially the upcoming static version and 
+the pmap binaries. Roland will surely appreciate that. Your link was 
+added to the list of binaries at radiance-online.
+However, FHS (http://www.pathname.com/fhs/2.2/fhs-3.12.html) recommends 
+//opt is reserved for the installation of add-on application software 
+packages/. , which is pretty much the category for Radiance.
+Solves the conflict with vim's rview too, users could add the Radiance 
+path before the standard directories, getting Radiance's rview.
+
+-Peter
+
+
+From radiance-dev@radiance-online.org  Mon Mar 31 16:55:27 2003
+From: radiance-dev@radiance-online.org (Francesco Anselmo)
+Date: Mon, 31 Mar 2003 17:55:27 +0200
+Subject: [Radiance-dev] DEB and RPM Radiance 3R5 packages
+In-Reply-To: <3E885CE3.7020800@pab-opto.de>
+References: <3CEFD5D8-6163-11D7-8C57-00306540F848@lmi.net> <200303311619.55154.anselmo@dream.unipa.it> <3E885CE3.7020800@pab-opto.de>
+Message-ID: <200303311755.28007.anselmo@dream.unipa.it>
+
+> Well- thanks for your work, especially the upcoming static version and
+> the pmap binaries. Roland will surely appreciate that. Your link was
+> added to the list of binaries at radiance-online.
+
+Thank you!
+
+> However, FHS (http://www.pathname.com/fhs/2.2/fhs-3.12.html) recommends
+> //opt is reserved for the installation of add-on application software
+> packages/. , which is pretty much the category for Radiance.
+> Solves the conflict with vim's rview too, users could add the Radiance
+> path before the standard directories, getting Radiance's rview.
+
+Right! It's the best way to solve the problem, and /opt/radiance is also the 
+place where I have my radiance tree. I think I'll study more the FHS documents 
+and the debian policy. 
+And tomorrow I'll update the radiance deb and rpm packages.
+
+What about adding Radiance to the debian distribution?
+
+-- 
+ing. Francesco Anselmo
+anselmo@dream.unipa.it
+--
+[ DREAM ] 
+Dipartimento di Ricerche 
+Energetiche e Ambientali
+--
+Università di Palermo
+--
+Viale delle Scienze
+90128 Palermo - Italy
+--
+Tel + 39 091 236 302
+Fax + 39 091 484 425
+--
+
+
+
+From radiance-dev@radiance-online.org  Mon Mar 31 17:03:14 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Mon, 31 Mar 2003 11:03:14 -0500 (EST)
+Subject: [Radiance-dev] DEB and RPM Radiance 3R5 packages
+In-Reply-To: <3E885CE3.7020800@pab-opto.de>
+Message-ID: <Pine.BSF.4.44.0303311100170.99569-100000@emancholl.pair.com>
+
+Peter Apian-Bennewitz wrote:
+
+> Francesco Anselmo wrote:
+>
+> >According to the File System Hierarchy Standard the executables are
+> >copied to /usr/bin, the library files are put inside /usr/share/radiance,
+> >the man files are sent to /usr/share/man and all the documentation
+> >is saved inside /usr/share/radiance/doc.
+> >
+> Well- thanks for your work, especially the upcoming static version and
+> the pmap binaries. Roland will surely appreciate that. Your link was
+> added to the list of binaries at radiance-online.
+> However, FHS (http://www.pathname.com/fhs/2.2/fhs-3.12.html) recommends
+> //opt is reserved for the installation of add-on application software
+> packages/. , which is pretty much the category for Radiance.
+> Solves the conflict with vim's rview too, users could add the Radiance
+> path before the standard directories, getting Radiance's rview.
+
+
+Well, Peter was quicker to post this short reply while I was
+still typing out all the details and arguments. Anyway, here
+we go:
+
+
+Personally, I'm very uncomfortable with Radiance spreading
+several hundred files all across /usr/*. There are simply too
+many of them for this to be a good idea. But looking at the FHS
+specification, there's an obvious alternative:
+
+  http://www.pathname.com/fhs/2.2/fhs-3.12.html
+
+  3.12 /opt : Add-on application software packages
+  3.12.1 Purpose
+  /opt is reserved for the installation of add-on application
+  software packages.
+
+  A package to be installed in /opt must locate its static files
+  in a separate /opt/<package> directory tree, where <package> is
+  a name that describes the software package.
+
+  3.12.2 Requirements
+
+    "/opt"    "Add-on application software packages"
+    <package> Static package objects
+
+
+Radiance *is* an "add-on application software package", right?
+
+So I would suggest to all the folks packaging Radiance for *nix
+based systems to simply to this:
+
+  /opt/radiance3.5/bin/*
+
+  /opt/radiance3.5/share/lib/*.cal
+  /opt/radiance3.5/share/lib/*.pic
+  /opt/radiance3.5/share/lib/*.dat
+
+  /opt/radiance3.5/share/demo/*/*
+
+  /opt/radiance3.5/share/doc/ps/*.ps
+
+  /opt/radiance3.5/man/man#/*.#
+
+And eventually:
+
+  /opt/radiance3.5/lib/*.#.so
+  /opt/radiance3.5/lib/*.h
+
+
+This has several advantages:
+
+ - We don't need to worry about name space clashes with other
+   software (eg. rview with vim). The choice is simply made by
+   placing one bin directory in front of the other in your PATH.
+
+ - You can install and use several different Radiance versions on
+   the same machine, by the same selection method.
+
+ - Installation is easy with or without any sophisticated package
+   manager (installing in /usr/* is completely unmanageable
+   without one).
+
+ - You can uninstall by removing a single directory (or through a
+   pagkage manager if you prefer).
+
+Disadvantages:
+
+ - Currently, I think the default library paths etc. are
+   hardcoded into the executables, which means you need to decide
+   about their location at compile time.
+
+Actually, this is not so much a disadvantage of installing in
+/opt, but simply a feature of Radiance that we might want to
+improve on.
+
+It would probably be a good idea for Radiance to automatically
+add the standard directories to RAYPATH, if they are found
+relative to the location of the executed binary. So if eg. rpict
+is run from /opt/radiance3.5/bin/rpict, then it would expect
+*.cal files to be found in /opt/radiance3.5/share/lib, and prefer
+to run eg. xform from its own directory. This would simplify the
+use of parallel installations considerably.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+

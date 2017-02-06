@@ -1,0 +1,1139 @@
+From radiance at rendigo.com  Tue Oct  7 02:57:52 2008
+From: radiance at rendigo.com (Erwin Zierler)
+Date: Tue Oct  7 02:58:03 2008
+Subject: [Radiance-dev] Re: [Radiance-general] compiling radiance
+Message-ID: <00038B29.48EB4EC0@192.168.0.81>
+
+Hi Greg,
+
+I just tried to compile the current HEAD release and remembered this post of yours, so I threw your customized Rmakefile into ray/src/px. Unfortunately this didn't work as expected. Every line in the file that was referring to .../common/ failed. 
+I changed those lines to ../common and now everything compiled just fine. Is my system (or csh) missing something or in other words, ist the notation of .../ something that should actually work? Just curios...
+
+Regards,
+ Erwin
+
+
+Original Message        processed by David.InfoCenter 
+Subject: [Radiance-dev] Re: [Radiance-general] compiling radiance (18-Sep-2008 15:46)
+From:    Greg Ward <gregoryjward@gmail.com>
+To:      radiance@rendigo.com
+
+
+Hi Nick, The libtiff distribution I currently have in Radiance seems to have a broken build system, and is failing on a lot of platforms. I think I just need to remove it, and clear the related dependencies from px/ Rmakefile. I'm pretty sure libtiff is included in most modern OS's, though I could use some verification on that point. I'm copying this discussion to the dev list, and we'll sort it out there. Meanwhile, you should be able to get the px tools to compile by substituting the attached px/Rmakefile and running "rmake install" in the px directory. Best, -Greg 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20081007/70ccc654/attachment.htm
+From radiance at rendigo.com  Tue Oct  7 04:35:07 2008
+From: radiance at rendigo.com (Erwin Zierler)
+Date: Tue Oct  7 04:35:21 2008
+Subject: [Radiance-dev] rvu -n option in newest head 
+Message-ID: <00038B3A.48EB658B@192.168.0.81>
+
+Hi,
+
+I just discovered the new -n option in rvu and had to try it instantly of course ;-) Pretty neat! I didn't have time yet to investigate the necessary code changes for this new option but I would like to ask if there is a chance that we'll see a similar feature for rpict in the (near) future? I know about and have used ranimate but a simple rpict -n sure does make parallel rendering easier.
+
+ Erwin
+
+
+
+From gregoryjward at gmail.com  Tue Oct  7 05:03:12 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue Oct  7 05:03:23 2008
+Subject: [Radiance-dev] Re: [Radiance-general] compiling radiance
+In-Reply-To: <00038B29.48EB4EC0@192.168.0.81>
+References: <00038B29.48EB4EC0@192.168.0.81>
+Message-ID: <0FE7FFE0-4D97-446A-A987-810D7AB04619@gmail.com>
+
+Hi Erwin,
+
+You got me on that one -- I have no idea where ".../common" might  
+have come from.  It's not in the Rmakefile I attached to my original  
+e-mail.  It's a mystery.
+
+-Greg
+
+> From: "Erwin Zierler" <radiance@rendigo.com>
+> Date: October 7, 2008 2:57:52 AM PDT
+>
+> Hi Greg,
+>
+> I just tried to compile the current HEAD release and remembered  
+> this post of yours, so I threw your customized Rmakefile into ray/ 
+> src/px. Unfortunately this didn't work as expected. Every line in  
+> the file that was referring to .../common/ failed.
+> I changed those lines to ../common and now everything compiled just  
+> fine. Is my system (or csh) missing something or in other words,  
+> ist the notation of .../ something that should actually work? Just  
+> curios...
+>
+> Regards,
+>  Erwin
+>
+
+From gregoryjward at gmail.com  Tue Oct  7 05:09:07 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue Oct  7 05:09:13 2008
+Subject: [Radiance-dev] rvu -n option in newest head 
+In-Reply-To: <00038B3A.48EB658B@192.168.0.81>
+References: <00038B3A.48EB658B@192.168.0.81>
+Message-ID: <6814694B-92A5-4028-9943-ABBE42031EF7@gmail.com>
+
+Hi Erwin,
+
+Unfortunately, adding -n to rpict isn't as simple as it was to add to  
+rvu (not that it was particularly simple there, either).  I have  
+pondered the problem for some time and not come up with a suitable  
+solution.  Basically, I would have to rewrite the sampling code for  
+rpict, which is more than I have time for at the moment.  I agree a  
+parallel rendering option to rpict would be very handy, but I don't  
+expect to create one anytime soon.  I'm afraid we're stuck with  
+rpiece for now....
+
+Sorry.
+-Greg
+
+> From: "Erwin Zierler" <radiance@rendigo.com>
+> Date: October 7, 2008 4:35:07 AM PDT
+>
+> Hi,
+>
+> I just discovered the new -n option in rvu and had to try it  
+> instantly of course ;-) Pretty neat! I didn't have time yet to  
+> investigate the necessary code changes for this new option but I  
+> would like to ask if there is a chance that we'll see a similar  
+> feature for rpict in the (near) future? I know about and have used  
+> ranimate but a simple rpict -n sure does make parallel rendering  
+> easier.
+>
+>  Erwin
+
+From radiance at rendigo.com  Tue Oct  7 08:26:49 2008
+From: radiance at rendigo.com (Erwin Zierler)
+Date: Tue Oct  7 08:27:02 2008
+Subject: [Radiance-dev] behavior of 3ds2mgf
+Message-ID: <00038B59.48EB9BD9@192.168.0.81>
+
+Hello all,
+
+I have two 64bit machines here running und Gentoo Linux. When compiling the latest HEAD everything works just fine, all executables are built.
+After running a few tests I discovered, that 3ds2mgf seems to be broken. This is the content of rmake:
+
+#!/bin/sh
+exec make "SPECIAL=" \
+        "OPT=-O2" \
+        "MACH=-Dlinux -D_FILE_OFFSET_BITS=64 -L/usr/X11R6/lib -I/usr/include/X11 -DNOSTEREO" \
+        ARCH=IBMPC "COMPAT=erf.o" \
+        INSTDIR=/opt/ray/bin \
+        LIBDIR=/opt/ray/lib \
+        ESUFFIX= \
+        CC=gcc "$@" -f Rmakefile
+
+"3ds2mgf file.3ds" only produces "file.mgf" with this content:
+
+c R =
+        cxy 0.640 0.330
+c G =
+        cxy 0.290 0.600
+c B =
+        cxy 0.150 0.060
+
+i file.inc
+
+and "file.inc" is empty. Can anyone reproduce this or maybe even better has a hint as to where I can start debugging this problem? 
+It seems all 32bit versions (older compiles) run fine on the same systems, i.e. they produce the expected output.
+
+Thanks in advance,
+ Erwin
+
+
+
+
+From gregoryjward at gmail.com  Tue Oct  7 09:38:57 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue Oct  7 09:39:21 2008
+Subject: [Radiance-dev] behavior of 3ds2mgf
+In-Reply-To: <00038B59.48EB9BD9@192.168.0.81>
+References: <00038B59.48EB9BD9@192.168.0.81>
+Message-ID: <2C11CF28-1036-4310-9090-C134CE948DC2@gmail.com>
+
+Hi Erwin,
+
+I'm pretty sure the problem is in 3ds2mgf.c:
+
+float read_float()
+{
+     dword data;
+
+     data = read_dword();
+
+     return *(float *)&data;
+}
+
+which assumes that "unsigned long" is 4-bytes long.  This bit of code  
+would actually work on a BigEndian system (I think), but not on  
+Intel.  This is not my code, so I'm not 100% confident on this fix,  
+but try it:
+
+float read_float()
+{
+     union { dword i; char c[8]; } u;
+     dword data;
+
+     data = read_dword();
+
+     if (sizeof(dword) == sizeof(float))
+         return *(float *)&data;
+
+     u.i = 1;
+     if (u.c[0] == 0)
+         return *(float *)&data; /* assume big-endian */
+
+     if (sizeof(dword) != 2*sizeof(float)) {
+         fputs("Unsupported word length\n", stderr);
+         exit(1);
+     }
+     u.i = data;
+     return *(float *)&u.c[4];
+}
+
+-Greg
+
+From radiance at rendigo.com  Tue Oct  7 21:56:34 2008
+From: radiance at rendigo.com (Erwin Zierler)
+Date: Tue Oct  7 21:58:00 2008
+Subject: Re-2: [Radiance-dev] behavior of 3ds2mgf
+Message-ID: <00038B77.48EC59A1@192.168.0.81>
+
+I have tried your patch but it didn't change things really. Out of curiosity I compiled the current head on a 32bit machine (also under Linux) and I get the exact same behavior (using the original 3ds2mgf.c). 
+So I finally tried an older binary of 3ds2mgf (Radiance 3.6a) on the same system and this one works just fine. Unfortunatly I dont have the sources anymore to see what happens if I compile them 
+Somehow I get a feeling it might have to do with the gcc version I am using on all these systems nowadays: 
+
+# gcc --version
+gcc (GCC) 4.1.2 (Gentoo 4.1.2 p1.1)
+
+For all older compilations I am pretty sure I was still using gcc 3.*. 
+Just in case that helps. 
+ Erwin
+
+-------- Original Message --------
+Subject: Re: [Radiance-dev] behavior of 3ds2mgf (07-Okt-2008 18:40)
+From:    Gregory J. Ward <gregoryjward@gmail.com>
+To:      radiance@rendigo.com
+
+> Hi Erwin,
+> 
+> I'm pretty sure the problem is in 3ds2mgf.c:
+> 
+> float read_float()
+> {
+>      dword data;
+> 
+>      data = read_dword();
+> 
+>      return *(float *)&data;
+> }
+> 
+> which assumes that "unsigned long" is 4-bytes long.  This bit of code  
+> would actually work on a BigEndian system (I think), but not on  
+> Intel.  This is not my code, so I'm not 100% confident on this fix,  
+> but try it:
+> 
+> float read_float()
+> {
+>      union { dword i; char c[8]; } u;
+>      dword data;
+> 
+>      data = read_dword();
+> 
+>      if (sizeof(dword) == sizeof(float))
+>          return *(float *)&data;
+> 
+>      u.i = 1;
+>      if (u.c[0] == 0)
+>          return *(float *)&data; /* assume big-endian */
+> 
+>      if (sizeof(dword) != 2*sizeof(float)) {
+>          fputs("Unsupported word length\n", stderr);
+>          exit(1);
+>      }
+>      u.i = data;
+>      return *(float *)&u.c[4];
+> }
+> 
+> -Greg
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+From gregoryjward at gmail.com  Tue Oct  7 23:01:42 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue Oct  7 23:17:59 2008
+Subject: [Radiance-dev] Re: behavior of 3ds2mgf
+In-Reply-To: <00038B77.48EC59A1@192.168.0.81>
+References: <00038B77.48EC59A1@192.168.0.81>
+Message-ID: <96E7552E-4368-413C-99EF-949E639880F4@gmail.com>
+
+Sorry, Erwin.  I tried.  It isn't easy for me to debug something  
+using a compiler I don't have on a machine I don't have.
+
+-Greg
+
+> From: "Erwin Zierler" <radiance@rendigo.com>
+> Date: October 7, 2008 9:56:34 PM PDT
+>
+> I have tried your patch but it didn't change things really. Out of  
+> curiosity I compiled the current head on a 32bit machine (also  
+> under Linux) and I get the exact same behavior (using the original  
+> 3ds2mgf.c).
+> So I finally tried an older binary of 3ds2mgf (Radiance 3.6a) on  
+> the same system and this one works just fine. Unfortunatly I dont  
+> have the sources anymore to see what happens if I compile them
+> Somehow I get a feeling it might have to do with the gcc version I  
+> am using on all these systems nowadays:
+>
+> # gcc --version
+> gcc (GCC) 4.1.2 (Gentoo 4.1.2 p1.1)
+>
+> For all older compilations I am pretty sure I was still using gcc 3.*.
+> Just in case that helps.
+>  Erwin
+
+From radiance at rendigo.com  Tue Oct  7 23:39:05 2008
+From: radiance at rendigo.com (Erwin Zierler)
+Date: Tue Oct  7 23:39:05 2008
+Subject: [Radiance-dev] Re: behavior of 3ds2mgf
+Message-ID: <00038B93.48EC71A8@192.168.0.81>
+
+Dont worry, I will figure it out eventually ;-)  
+Thanks,
+ Erwin
+
+-------- Original Message --------
+Subject: [Radiance-dev] Re: behavior of 3ds2mgf (08-Okt-2008 8:18)
+From:    Gregory J. Ward <gregoryjward@gmail.com>
+To:      radiance@rendigo.com
+
+> Sorry, Erwin.  I tried.  It isn't easy for me to debug something  
+> using a compiler I don't have on a machine I don't have.
+> 
+> -Greg
+> 
+> > From: "Erwin Zierler" <radiance@rendigo.com>
+> > Date: October 7, 2008 9:56:34 PM PDT
+> >
+> > I have tried your patch but it didn't change things really. Out of  
+> > curiosity I compiled the current head on a 32bit machine (also  
+> > under Linux) and I get the exact same behavior (using the original  
+> > 3ds2mgf.c).
+> > So I finally tried an older binary of 3ds2mgf (Radiance 3.6a) on  
+> > the same system and this one works just fine. Unfortunatly I dont  
+> > have the sources anymore to see what happens if I compile them
+> > Somehow I get a feeling it might have to do with the gcc version I  
+> > am using on all these systems nowadays:
+> >
+> > # gcc --version
+> > gcc (GCC) 4.1.2 (Gentoo 4.1.2 p1.1)
+> >
+> > For all older compilations I am pretty sure I was still using gcc 3.*.
+> > Just in case that helps.
+> >  Erwin
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+From jan.wienold at ise.fraunhofer.de  Wed Oct  8 00:00:43 2008
+From: jan.wienold at ise.fraunhofer.de (Jan Wienold)
+Date: Wed Oct  8 00:00:50 2008
+Subject: [Radiance-dev] Re: behavior of 3ds2mgf
+In-Reply-To: <96E7552E-4368-413C-99EF-949E639880F4@gmail.com>
+References: <00038B77.48EC59A1@192.168.0.81>
+	<96E7552E-4368-413C-99EF-949E639880F4@gmail.com>
+Message-ID: <48EC5A9B.8040909@ise.fraunhofer.de>
+
+Dear Erwin,
+
+I don't know if the gcc is really the problem - but if yes, see below an
+instruction how to build an older gcc version with a newer one. I use
+that for compiling esp-r- which also has trouble with gcc4.xx.
+
+Then you have two gcc versions in parallel. Be careful while installing:
+you have to use the /make bootstrap /otherwise you can destroy your
+system (if you install it as root it replaces the existing libraries - 
+I once  destroyed my system  with that....)
+Before using programs compiled under gcc3.x, you have to set the library
+path to the related lib-path ( export LD_LIBRARYPATH=/opt/gcc33/lib or
+similar).
+
+Good luck!
+
+Jan
+
+------------- Instruction to build an gcc 3.3.6, using gcc4.xx
+---------------------------
+
+Get gcc-core from from GCC Mirrors Page
+
+Compiling GCC-3.3.6:
+
+Untar the source then configure with:
+./configure --prefix=/opt/gcc33 --program-suffix=-3.3
+WARNING: Do NOT configure it with the default prefix! It is recommended
+to compile it with this prefix else you can damage your system!
+Now compile it with make bootstrap and after that install it with make
+install.
+
+
+
+
+
+
+Gregory J. Ward wrote:
+> Sorry, Erwin.  I tried.  It isn't easy for me to debug something using
+> a compiler I don't have on a machine I don't have.
+>
+> -Greg
+>
+>> From: "Erwin Zierler" <radiance@rendigo.com>
+>> Date: October 7, 2008 9:56:34 PM PDT
+>>
+>> I have tried your patch but it didn't change things really. Out of
+>> curiosity I compiled the current head on a 32bit machine (also under
+>> Linux) and I get the exact same behavior (using the original 3ds2mgf.c).
+>> So I finally tried an older binary of 3ds2mgf (Radiance 3.6a) on the
+>> same system and this one works just fine. Unfortunatly I dont have
+>> the sources anymore to see what happens if I compile them
+>> Somehow I get a feeling it might have to do with the gcc version I am
+>> using on all these systems nowadays:
+>>
+>> # gcc --version
+>> gcc (GCC) 4.1.2 (Gentoo 4.1.2 p1.1)
+>>
+>> For all older compilations I am pretty sure I was still using gcc 3.*.
+>> Just in case that helps.
+>>  Erwin
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+-- 
+Dipl.-Ing. Jan Wienold
+Project Manager
+Fraunhofer-Institut f?r Solare Energiesysteme
+Thermal Systems and Buildings, Lighting and Daylighting
+Heidenhofstr. 2, 79110 Freiburg, Germany
+Phone: +49(0)761 4588 5133 Fax:+49(0)761 4588 9133
+jan.wienold@ise.fraunhofer.de
+http://www.ise.fraunhofer.de
+
+In office: 
+Mo,Tue: 8:30-18:00
+We,Thu: 8:30-16:00
+Fr:  8:30-15:30
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20081008/8ae9fb0a/attachment.html
+From radiance at rendigo.com  Wed Oct  8 02:09:28 2008
+From: radiance at rendigo.com (Erwin Zierler)
+Date: Wed Oct  8 02:09:28 2008
+Subject: Re-2: [Radiance-dev] behavior of 3ds2mgf
+Message-ID: <00038BD1.48EC94E8@192.168.0.81>
+
+Hi Bernd,
+
+thanks for the offer, I will send you the exact same file plus the commandline I used in a private mail. And of course I will report back to the list later once we have solved this issue - just in case others run into this problem too. Actually radiance-general will probably be more apropriate for the report.
+
+ Erwin
+
+
+-------- Original Message --------
+Subject: Re: [Radiance-dev] behavior of 3ds2mgf (08-Okt-2008 10:42)
+From:    Bernd Zeimetz <bernd@bzed.de>
+To:      radiance@rendigo.com
+
+> Hi,
+> 
+> could you send me a 3ds file to test this? I don't have any 3ds stuff
+> around.
+> 
+> Thanks,
+> 
+> Bernd
+> 
+> 
+> 
+> Erwin Zierler wrote:
+> > Hello all,
+> > 
+> > I have two 64bit machines here running und Gentoo Linux. When compiling the 
+> > latest HEAD everything works just fine, all executables are built.
+> > After running a few tests I discovered, that 3ds2mgf seems to be broken. 
+> > This is the content of rmake:
+> > 
+> > #!/bin/sh
+> > exec make "SPECIAL=" \
+> >         "OPT=-O2" \
+> >         "MACH=-Dlinux -D_FILE_OFFSET_BITS=64 -L/usr/X11R6/lib -I/usr/
+> > include/X11 -DNOSTEREO" \
+> >         ARCH=IBMPC "COMPAT=erf.o" \
+> >         INSTDIR=/opt/ray/bin \
+> >         LIBDIR=/opt/ray/lib \
+> >         ESUFFIX= \
+> >         CC=gcc "$@" -f Rmakefile
+> > 
+> > "3ds2mgf file.3ds" only produces "file.mgf" with this content:
+> > 
+> > c R =
+> >         cxy 0.640 0.330
+> > c G =
+> >         cxy 0.290 0.600
+> > c B =
+> >         cxy 0.150 0.060
+> > 
+> > i file.inc
+> > 
+> > and "file.inc" is empty. Can anyone reproduce this or maybe even better has 
+> > a hint as to where I can start debugging this problem? 
+> > It seems all 32bit versions (older compiles) run fine on the same systems, 
+> > i.e. they produce the expected output.
+> > 
+> > Thanks in advance,
+> >  Erwin
+> > 
+> > 
+> > 
+> > 
+> > _______________________________________________
+> > Radiance-dev mailing list
+> > Radiance-dev@radiance-online.org
+> > http://www.radiance-online.org/mailman/listinfo/radiance-dev
+> 
+> 
+> -- 
+>  Bernd Zeimetz                           Debian GNU/Linux Developer
+>  GPG Fingerprint: 06C8 C9A2 EAAD E37E 5B2C BE93 067A AD04 C93B FF79
+
+
+
+From radiance at rendigo.com  Wed Oct  8 02:04:29 2008
+From: radiance at rendigo.com (Erwin Zierler)
+Date: Wed Oct  8 02:16:51 2008
+Subject: Re-2: [Radiance-dev] Re: behavior of 3ds2mgf
+Message-ID: <00038BCC.48EC93BD@192.168.0.81>
+
+Dear Jan,
+
+thanks for the pointer. I am using Gentoo Linux on all my servers and they also have howtos about this topic. The warning is definitely an important one though...
+I will first try to find a version of Radiance where 3ds2mgf still worked and compare the sources, then I will know if it's worth the effort. I am sure I have some old machine with gcc 3.* somewhere, I guess I will try that first.
+
+ Erwin
+Original Message        processed by David.InfoCenter 
+Subject: Re: [Radiance-dev] Re: behavior of 3ds2mgf (08-Okt-2008 9:01)
+From:    Jan Wienold <jan.wienold@ise.fraunhofer.de>
+To:      radiance@rendigo.com
+
+
+Dear Erwin,
+
+I don't know if the gcc is really the problem - but if yes, see below an instruction how to build an older gcc version with a newer one. I use that for compiling esp-r- which also has trouble with gcc4.xx.
+
+Then you have two gcc versions in parallel. Be careful while installing: you have to use the make bootstrap otherwise you can destroy your system (if you install it as root it replaces the existing libraries -  I once  destroyed my system  with that....) 
+Before using programs compiled under gcc3.x, you have to set the library path to the related lib-path ( export LD_LIBRARYPATH=/opt/gcc33/lib or similar).
+
+Good luck!
+
+Jan
+
+------------- Instruction to build an gcc 3.3.6, using gcc4.xx ---------------------------
+
+Get gcc-core from from GCC Mirrors Page
+
+Compiling GCC-3.3.6:
+
+Untar the source then configure with:
+./configure --prefix=/opt/gcc33 --program-suffix=-3.3
+WARNING: Do NOT configure it with the default prefix! It is recommended to compile it with this prefix else you can damage your system!
+Now compile it with make bootstrap and after that install it with make install. 
+
+
+
+
+
+
+Gregory J. Ward wrote: 
+Sorry, Erwin.  I tried.  It isn't easy for me to debug something using a compiler I don't have on a machine I don't have. 
+
+-Greg 
+
+
+From: "Erwin Zierler" <radiance@rendigo.com> 
+Date: October 7, 2008 9:56:34 PM PDT 
+
+I have tried your patch but it didn't change things really. Out of curiosity I compiled the current head on a 32bit machine (also under Linux) and I get the exact same behavior (using the original 3ds2mgf.c). 
+So I finally tried an older binary of 3ds2mgf (Radiance 3.6a) on the same system and this one works just fine. Unfortunatly I dont have the sources anymore to see what happens if I compile them 
+Somehow I get a feeling it might have to do with the gcc version I am using on all these systems nowadays: 
+
+# gcc --version 
+gcc (GCC) 4.1.2 (Gentoo 4.1.2 p1.1) 
+
+For all older compilations I am pretty sure I was still using gcc 3.*. 
+Just in case that helps. 
+ Erwin 
+
+
+_______________________________________________ 
+Radiance-dev mailing list 
+Radiance-dev@radiance-online.org 
+http://www.radiance-online.org/mailman/listinfo/radiance-dev 
+
+
+
+
+-- 
+Dipl.-Ing. Jan Wienold
+Project Manager
+Fraunhofer-Institut f?r Solare Energiesysteme
+Thermal Systems and Buildings, Lighting and Daylighting
+Heidenhofstr. 2, 79110 Freiburg, Germany
+Phone: +49(0)761 4588 5133 Fax:+49(0)761 4588 9133
+jan.wienold@ise.fraunhofer.de
+http://www.ise.fraunhofer.de
+
+In office: 
+Mo,Tue: 8:30-18:00
+We,Thu: 8:30-16:00
+Fr:  8:30-15:30
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20081008/0c830997/attachment-0001.htm
+From d.crowley at ecointelligentgrowth.net  Tue Oct 21 02:37:20 2008
+From: d.crowley at ecointelligentgrowth.net (Duncan)
+Date: Tue Oct 21 02:38:37 2008
+Subject: [Radiance-dev] Need assistance to download RADIANCE for computer
+	with windows 
+Message-ID: <E1KsDg3-0007Dt-6f@relay02-mail.uk.clara.net>
+
+Skipped content of type multipart/alternative-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: not available
+Type: image/jpeg
+Size: 8744 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-dev/attachments/20081021/73bfd9e3/attachment-0001.jpe
+From tbleicher at arcor.de  Tue Oct 21 03:13:15 2008
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Tue Oct 21 03:13:32 2008
+Subject: [Radiance-dev] Need assistance to download RADIANCE for computer
+	with windows 
+In-Reply-To: <E1KsDg3-0007Dt-6f@relay02-mail.uk.clara.net>
+References: <E1KsDg3-0007Dt-6f@relay02-mail.uk.clara.net>
+Message-ID: <7DD210F3-3108-4FEB-92E5-0C2B0E5849FA@arcor.de>
+
+Duncan.
+
+You can find Windows installers on Francesco Anselmo's website:
+
+http://www.bozzograo.net/radiance/modules.php? 
+op=modload&name=Downloads&file=index&req=viewdownload&cid=4
+
+Please read the package descriptions to decide which package is the  
+best for your.
+
+After the installation you may have to set an environment variable to  
+point to
+the installation directory. Please see the documentation (README)  
+files included
+in the package. I haven't done this recently so I don't know if it's  
+still necessary.
+
+All Windows installers miss some of the tools included in the Unix  
+distribution.
+You can replace things like 'ximage' and 'falsecolor' with raddisplay:
+
+http://deluminaelab.com/en/raddisplay_details.html
+
+Hth,
+Thomas
+
+
+
+
+From gregoryjward at gmail.com  Thu Oct 23 11:59:06 2008
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu Oct 23 11:59:14 2008
+Subject: [Radiance-dev] Re: Experimental Radiance build scripts
+In-Reply-To: <76EF9A59-0910-4A14-86A0-FFC0E6C46AD1@u.washington.edu>
+References: <DFFAAFCB-863D-403C-A11C-2D82BF57BD3D@u.washington.edu>
+	<9A13A351-A1A8-47B4-9D13-48240EAA9B3B@lmi.net>
+	<76EF9A59-0910-4A14-86A0-FFC0E6C46AD1@u.washington.edu>
+Message-ID: <A3B0F318-09CB-4016-8753-1B23287AD95D@lmi.net>
+
+OK, thanks for the additional explanation.  I'm moving this thread to  
+the development list for those who want to continue with it.  It's  
+really out of my domain.
+
+Best,
+-Greg
+
+> From: R Fritz <rfritz@u.washington.edu>
+> Date: October 23, 2008 11:20:09 AM PDT
+>
+> It's a new set of scripts, though I started with Schorsch's  
+> scripts, as well as the Radiance makefiles. This new set of scripts  
+> has ended up very different because I had different goals. The  
+> scripts use more-current SCons features. They are cross-platform,  
+> though the set of platforms is limited. The libraries built follow  
+> the makefile model as closely as I could quickly manage (few large  
+> libraries) rather than the Schorsch model (many small libraries). I  
+> like to think that this makes for simpler build scripts. I do,  
+> though, incorporate much of Schorsh's Windows C code, so that pipes  
+> in scene description files work. There are two small source-code  
+> tweaks, in included headers. Probably the biggest practical  
+> difference is that I have not written install code into the  
+> scripts, since these are a base for experimentation rather than  
+> production.
+>
+> Randolph
+>
+> On Oct 23, 2008, at 10:53 AM, Greg Ward wrote:
+>
+>> Hi Randolph,
+>>
+>> Are these a modification of the scons scripts schorsch already  
+>> developed, a replacement, or ??
+>>
+>> -Greg
+>>
+>>> From: R Fritz <rfritz@u.washington.edu>
+>>> Date: October 23, 2008 10:38:42 AM PDT
+>>>
+>>> I have written a set of scons scripts which build Radiance on  
+>>> Linux, Windows (using MSVC), and Mac OS X. The scripts are simple  
+>>> and generally follow the library model used in makeall. They work  
+>>> with the current Radiance head and are very alpha--the scripts do  
+>>> not install the built files and there are other limitations--but  
+>>> I think they might be interesting for experimentation. If anyone  
+>>> is interested in experimenting with them, I would be delighted to  
+>>> share them.
+>>>
+>>> Randolph
+
+From jacobs.axel at gmail.com  Sat Oct 25 11:09:21 2008
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Sat Oct 25 11:09:31 2008
+Subject: [Radiance-dev] HDR extension in rad, trad
+Message-ID: <100441490810251109l65e5aa3bkdf0378974a3ec61f@mail.gmail.com>
+
+> I agree. There are too many apps which already use "pic", and it's
+> confusing besides; there's more information in an HDR map than there
+> is in a conventional image file. Perhaps we could also register a MIME
+> type for hdr files? Or has that already been done? I'm willing to
+> undertake the work on that, if people want and if it hasn't been done
+> yet.
+
+Brilliant!
+
+I've looked into this, but are are not sufficiently confident with HDR
+file format.
+
+Let's move this thread over to dev and continue there.
+
+Axel
+
+From gregoryjward at gmail.com  Sat Oct 25 11:22:17 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Sat Oct 25 11:22:15 2008
+Subject: [Radiance-dev] HDR extension in rad, trad
+In-Reply-To: <100441490810251109l65e5aa3bkdf0378974a3ec61f@mail.gmail.com>
+References: <100441490810251109l65e5aa3bkdf0378974a3ec61f@mail.gmail.com>
+Message-ID: <E03DDE64-09F8-48D8-9864-DFE5DB7470DC@gmail.com>
+
+That's a great idea -- there may be a MIME type for HDR files  
+already, so be sure not to step on any toes.  Thanks for  
+volunteering, Randolph, as I wouldn't know how to go about it.
+
+Cheers,
+-Greg
+
+> From: "Axel Jacobs" <jacobs.axel@gmail.com>
+> Date: October 25, 2008 11:09:21 AM PDT
+>
+>> I agree. There are too many apps which already use "pic", and it's
+>> confusing besides; there's more information in an HDR map than there
+>> is in a conventional image file. Perhaps we could also register a  
+>> MIME
+>> type for hdr files? Or has that already been done? I'm willing to
+>> undertake the work on that, if people want and if it hasn't been done
+>> yet.
+>
+> Brilliant!
+>
+> I've looked into this, but are are not sufficiently confident with HDR
+> file format.
+>
+> Let's move this thread over to dev and continue there.
+>
+> Axel
+
+From jacobs.axel at gmail.com  Sat Oct 25 11:33:10 2008
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Sat Oct 25 11:33:17 2008
+Subject: [Radiance-dev] Radiane MIME types (was: HDR extension in rad, trad)
+Message-ID: <100441490810251133i276ee9a5ge3d9fe77dd342edd@mail.gmail.com>
+
+Randolph,
+
+The official mime types are assined by the IANA:
+http://www.iana.org/assignments/media-types/
+
+Getting .hdr accepted by IANA would mean that eventually all other
+mime assignment, e.g.
+for the various LINUX desktops:
+http://standards.freedesktop.org/shared-mime-info-spec/shared-mime-info-spec-latest.html
+will pick it up
+
+I started a thread here:
+http://luminance.londonmet.ac.uk/radiance_mailinglists/dev/2006-November/000761.html
+but it didn't lead anywhere.
+
+When I said I was not sufficiently confident about the file format,
+then this is what I meant:
+(see http://radsite.lbl.gov/radiance/refer/filefmts.pdf)
+
+HDR comes in two flavours:
+- RGBE
+- XYZE
+
+Each of those two flavours has three sub-flavours:
+- non-rle
+- rle
+- mixed
+
+Greg (http://luminance.londonmet.ac.uk/radiance_mailinglists/dev/2006-November/000766.html):
+-----------8<--------------
+> Both, RGBE and XYZE come in flat and in RLE flavours. However, the
+> official file specs only mention two FORMAT= string, i.e. 32-
+> bit_rle_rgbe
+> and 32-bit_rle_xyze. How does this work?
+
+I decided not to sub-type based on the presence or absence of run-
+length encoding.  Since the reader routines identify RLE on a per
+scanline basis (and in fact there can be a mix of RLE and
+uncompressed scanlines), there seemed no need for a separate format
+specifier.
+
+> The MIME specs have the notion of subclasses. So would RGBE and
+> XYZE be
+> subclasses of RADIANCE HDR?
+
+Again, I wouldn't bother to distinguish these within MIME.  It would
+be like distinguishing between different classes of TIFF.  Any
+software that opens an RGBE file will also open an XYZE file, even if
+it won't display the colors correctly.
+-----------8<--------------
+
+So there you go...
+
+I've started working on a mime XML file following the freedesktop.org
+style. This is to make my yearly chore of rolling LEARNIX somewhat
+easier. It's not well tested yet, but here is the first draft. The bit
+with the extensions seems to work, but I haven't tried yet what
+happens when the extension is removed (mime magick).
+
+Ignore all non-HDR stuff. I just thought I might as well leave it in,
+in the hope of getting some comments.
+
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+
+  <mime-type type="image/x-hdr">
+    <comment xml:lang="en">HDR image</comment>
+	<alias type="image/x-radiance"/>
+	<alias type="image/x-rgbe"/>
+    <magic priority="50">
+      <match type="string" value="#?RADIANCE" offset="0"/>
+      <match type="string" value="FORMAT=32-bit_rle_rgbe" offset="0:500"/>
+    </magic>
+    <glob pattern="*.hdr"/>
+    <glob pattern="*.unf"/>
+    <glob pattern="*.xyze"/>
+    <glob pattern="*.rgbe"/>
+  </mime-type>
+
+  <mime-type type="model/x-radiance-control">
+	<sub-class-of type="text/plain"/>
+    <comment xml:lang="en">Radiance input</comment>
+    <glob pattern="*.rif"/>
+  </mime-type>
+
+  <mime-type type="application/x-radiance-octree">
+    <comment xml:lang="en">Radiance octree</comment>
+    <magic priority="50">
+      <match type="string" value="#?RADIANCE" offset="0"/>
+      <match type="string" value="FORMAT=Radiance_octree" offset="0:500"/>
+    </magic>
+    <glob pattern="*.oct"/>
+  </mime-type>
+
+  <mime-type type="application/x-radiance-ambient-cache">
+    <comment xml:lang="en">Radiance ambient cache</comment>
+    <glob pattern="*.amb"/>
+  </mime-type>
+
+  <mime-type type="model/x-radiance-holodeck-control">
+	<sub-class-of type="text/plain"/>
+    <comment xml:lang="en">Radiance holodeck input</comment>
+    <glob pattern="*.hif"/>
+  </mime-type>
+
+  <mime-type type="application/x-radiance-holodeck">
+    <comment xml:lang="en">Radiance holodeck</comment>
+    <glob pattern="*.hdk"/>
+  </mime-type>
+
+  <mime-type type="model/x-radiance-geometry">
+	<sub-class-of type="text/plain"/>
+    <comment xml:lang="en">Radiance geometry</comment>
+    <glob pattern="*.rad"/>
+    <glob pattern="*.norm"/>
+  </mime-type>
+
+  <mime-type type="model/x-radiance-triangle-mesh">
+    <comment xml:lang="en">Radiance triangle mesh</comment>
+    <glob pattern="*.rtm"/>
+  </mime-type>
+
+  <mime-type type="model/x-radiance-material">
+	<sub-class-of type="text/plain"/>
+    <comment xml:lang="en">Radiance material</comment>
+    <glob pattern="*.mat"/>
+  </mime-type>
+
+  <mime-type type="model/x-radiance-view">
+	<sub-class-of type="text/plain"/>
+    <comment xml:lang="en">Radiance view</comment>
+    <glob pattern="*.vf"/>
+  </mime-type>
+
+  <mime-type type="model/x-radiance-cal">
+	<sub-class-of type="text/plain"/>
+    <comment xml:lang="en">Radiance cal</comment>
+    <glob pattern="*.cal"/>
+  </mime-type>
+
+  <mime-type type="model/x-radiance-bgraph">
+	<sub-class-of type="text/plain"/>
+    <comment xml:lang="en">Radiance bgraph</comment>
+    <glob pattern="*.bgraph"/>
+  </mime-type>
+
+  <mime-type type="model/x-radiance-options">
+	<sub-class-of type="text/plain"/>
+    <comment xml:lang="en">Radiance options</comment>
+    <glob pattern="*.opt"/>
+  </mime-type>
+
+</mime-info>
+
+Axel
+
+From rfritz at u.washington.edu  Sat Oct 25 14:51:56 2008
+From: rfritz at u.washington.edu (R Fritz)
+Date: Sat Oct 25 14:52:33 2008
+Subject: [Radiance-dev] Radiane MIME types (was: HDR extension in rad,
+	trad)
+In-Reply-To: <100441490810251133i276ee9a5ge3d9fe77dd342edd@mail.gmail.com>
+References: <100441490810251133i276ee9a5ge3d9fe77dd342edd@mail.gmail.com>
+Message-ID: <5C346694-2014-4586-A688-B4213BF30FA4@u.washington.edu>
+
+It looks pretty straightforward; I'll have to review the submission  
+requirements in more detail, but I don't see serious problems. We'll  
+probably have to come in as an organization-specific type ("image/ 
+vnd.radiance"), since an unqualified type now has to come from a  
+recognized standards body. I'll get back with more details later this  
+week.
+
+Randolph
+
+On Oct 25, 2008, at 11:33 AM, Axel Jacobs wrote:
+
+> Randolph,
+>
+> The official mime types are assined by the IANA:
+> http://www.iana.org/assignments/media-types/
+>
+> Getting .hdr accepted by IANA would mean that eventually all other
+> mime assignment, e.g.
+> for the various LINUX desktops:
+> http://standards.freedesktop.org/shared-mime-info-spec/shared-mime-info-spec-latest.html
+> will pick it up
+>
+> I started a thread here:
+> http://luminance.londonmet.ac.uk/radiance_mailinglists/dev/2006-November/000761.html
+> but it didn't lead anywhere.
+>
+> When I said I was not sufficiently confident about the file format,
+> then this is what I meant:
+> (see http://radsite.lbl.gov/radiance/refer/filefmts.pdf)
+>
+> HDR comes in two flavours:
+> - RGBE
+> - XYZE
+>
+> Each of those two flavours has three sub-flavours:
+> - non-rle
+> - rle
+> - mixed
+>
+> Greg (http://luminance.londonmet.ac.uk/radiance_mailinglists/dev/2006-November/000766.html 
+> ):
+> -----------8<--------------
+>> Both, RGBE and XYZE come in flat and in RLE flavours. However, the
+>> official file specs only mention two FORMAT= string, i.e. 32-
+>> bit_rle_rgbe
+>> and 32-bit_rle_xyze. How does this work?
+>
+> I decided not to sub-type based on the presence or absence of run-
+> length encoding.  Since the reader routines identify RLE on a per
+> scanline basis (and in fact there can be a mix of RLE and
+> uncompressed scanlines), there seemed no need for a separate format
+> specifier.
+>
+>> The MIME specs have the notion of subclasses. So would RGBE and
+>> XYZE be
+>> subclasses of RADIANCE HDR?
+>
+> Again, I wouldn't bother to distinguish these within MIME.  It would
+> be like distinguishing between different classes of TIFF.  Any
+> software that opens an RGBE file will also open an XYZE file, even if
+> it won't display the colors correctly.
+> -----------8<--------------
+>
+> So there you go...
+>
+> I've started working on a mime XML file following the freedesktop.org
+> style. This is to make my yearly chore of rolling LEARNIX somewhat
+> easier. It's not well tested yet, but here is the first draft. The bit
+> with the extensions seems to work, but I haven't tried yet what
+> happens when the extension is removed (mime magick).
+>
+> Ignore all non-HDR stuff. I just thought I might as well leave it in,
+> in the hope of getting some comments.
+>
+> <?xml version="1.0" encoding="UTF-8"?>
+> <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info 
+> ">
+>
+>  <mime-type type="image/x-hdr">
+>    <comment xml:lang="en">HDR image</comment>
+> 	<alias type="image/x-radiance"/>
+> 	<alias type="image/x-rgbe"/>
+>    <magic priority="50">
+>      <match type="string" value="#?RADIANCE" offset="0"/>
+>      <match type="string" value="FORMAT=32-bit_rle_rgbe"  
+> offset="0:500"/>
+>    </magic>
+>    <glob pattern="*.hdr"/>
+>    <glob pattern="*.unf"/>
+>    <glob pattern="*.xyze"/>
+>    <glob pattern="*.rgbe"/>
+>  </mime-type>
+>
+>  <mime-type type="model/x-radiance-control">
+> 	<sub-class-of type="text/plain"/>
+>    <comment xml:lang="en">Radiance input</comment>
+>    <glob pattern="*.rif"/>
+>  </mime-type>
+>
+>  <mime-type type="application/x-radiance-octree">
+>    <comment xml:lang="en">Radiance octree</comment>
+>    <magic priority="50">
+>      <match type="string" value="#?RADIANCE" offset="0"/>
+>      <match type="string" value="FORMAT=Radiance_octree"  
+> offset="0:500"/>
+>    </magic>
+>    <glob pattern="*.oct"/>
+>  </mime-type>
+>
+>  <mime-type type="application/x-radiance-ambient-cache">
+>    <comment xml:lang="en">Radiance ambient cache</comment>
+>    <glob pattern="*.amb"/>
+>  </mime-type>
+>
+>  <mime-type type="model/x-radiance-holodeck-control">
+> 	<sub-class-of type="text/plain"/>
+>    <comment xml:lang="en">Radiance holodeck input</comment>
+>    <glob pattern="*.hif"/>
+>  </mime-type>
+>
+>  <mime-type type="application/x-radiance-holodeck">
+>    <comment xml:lang="en">Radiance holodeck</comment>
+>    <glob pattern="*.hdk"/>
+>  </mime-type>
+>
+>  <mime-type type="model/x-radiance-geometry">
+> 	<sub-class-of type="text/plain"/>
+>    <comment xml:lang="en">Radiance geometry</comment>
+>    <glob pattern="*.rad"/>
+>    <glob pattern="*.norm"/>
+>  </mime-type>
+>
+>  <mime-type type="model/x-radiance-triangle-mesh">
+>    <comment xml:lang="en">Radiance triangle mesh</comment>
+>    <glob pattern="*.rtm"/>
+>  </mime-type>
+>
+>  <mime-type type="model/x-radiance-material">
+> 	<sub-class-of type="text/plain"/>
+>    <comment xml:lang="en">Radiance material</comment>
+>    <glob pattern="*.mat"/>
+>  </mime-type>
+>
+>  <mime-type type="model/x-radiance-view">
+> 	<sub-class-of type="text/plain"/>
+>    <comment xml:lang="en">Radiance view</comment>
+>    <glob pattern="*.vf"/>
+>  </mime-type>
+>
+>  <mime-type type="model/x-radiance-cal">
+> 	<sub-class-of type="text/plain"/>
+>    <comment xml:lang="en">Radiance cal</comment>
+>    <glob pattern="*.cal"/>
+>  </mime-type>
+>
+>  <mime-type type="model/x-radiance-bgraph">
+> 	<sub-class-of type="text/plain"/>
+>    <comment xml:lang="en">Radiance bgraph</comment>
+>    <glob pattern="*.bgraph"/>
+>  </mime-type>
+>
+>  <mime-type type="model/x-radiance-options">
+> 	<sub-class-of type="text/plain"/>
+>    <comment xml:lang="en">Radiance options</comment>
+>    <glob pattern="*.opt"/>
+>  </mime-type>
+>
+> </mime-info>
+>
+> Axel
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20081025/b47cb753/attachment.html

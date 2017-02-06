@@ -1,0 +1,110 @@
+From marcdevon at hotmail.com  Thu Mar  4 16:14:06 2004
+From: marcdevon at hotmail.com (Marcus Jacobs)
+Date: Thu Mar  4 16:14:12 2004
+Subject: [Radiance-dev] Question About Radiance Converstion Programs
+Message-ID: <BAY2-F114VpMmOlbcrY0002283d@hotmail.com>
+
+Dear Group
+
+I have some questions concerning some of the existing utilities in Radiance 
+for pattern mapping. I have written a conversion program myself. I based the 
+mapping of patterns onto polygons on a cal file x2ruvmap.cal written by Ole 
+Lemming for Conrad. It does its job well but this cal file is fairly long 
+and I think that it may be hampering performance. It seems the conversion of 
+uv coordinates to barycentric coordinates for patterns is done at render 
+time rather than the file conversion stage. For hundreds of millions (if not 
+billions) of ray hits, this can be quite costly. Then again, I may be wrong. 
+I have looked into tmesh.cal and I believe that the approach taken here is 
+much more efficient. My goal is to utilize the approach and routines in the 
+existing source code to implement into my conversion program. I have done 
+some research through some of the source code and I have some questions.
+
+While looking through obj2rad.c, it is mentioned in a comment block that the 
+texture map indices were taken out. May I ask why? Do mapping of 2d images 
+on polygons work with obj2rad/obj2mesh? Also while looking through 
+obj2rad.c, I noticed that there are steps to output a reversed triangle. It 
+has been my understanding that polygons in Radiance are 2 sided and as such, 
+they are visible on both sides. The only time I know when surface normal 
+orientation is critical is when setting up polygons for usage with mkillum 
+for mimicking windows and other apertures within a building. Why is it done 
+here?   As I looked through tmesh.c in the function comp_baryc, the order of 
+the vertices are rotated. Out of curiosity, why?
+
+
+Regards
+
+Marcus
+
+_________________________________________________________________
+Store more e-mails with MSN Hotmail Extra Storage – 4 plans to choose from! 
+http://click.atdmt.com/AVE/go/onm00200362ave/direct/01/
+
+
+From gward at lmi.net  Wed Mar 10 19:36:51 2004
+From: gward at lmi.net (Greg Ward)
+Date: Wed Mar 10 19:37:50 2004
+Subject: [Radiance-dev] Re: Question About Radiance Converstion Programs
+In-Reply-To: <BAY2-F114VpMmOlbcrY0002283d@hotmail.com>
+References: <BAY2-F114VpMmOlbcrY0002283d@hotmail.com>
+Message-ID: <E563BA9F-72C1-11D8-A8B2-000A95BB392A@lmi.net>
+
+Hi Marcus,
+
+Sorry for the slow response -- this one fell through the cracks 
+(growing wider by the minute).
+
+I took texture coordinates out of obj2rad because I didn't have any 
+working texture examples, and had some unresolved questions about 
+handling texture (image) files and getting the mappings to work out.  
+However, texture coordinates are fully implemented in the obj2mesh 
+code, which is the method I recommend because it doesn't need to 
+interpret any .cal files, which can be costly as you point out, even if 
+they're well-written.
+
+As for surface normals, most surfaces are indeed two sided, but not 
+all, and in cases where you need surface orientation (e.g., dielectric 
+solids), the normal interpolation will not work correctly if the vertex 
+normals are opposite to the face normals.  This is why there is some 
+code for reversing them in obj2rad and obj2mesh.
+
+I hope this helps.
+-Greg
+
+> From: "Marcus Jacobs" <marcdevon@hotmail.com>
+> Date: March 4, 2004 7:14:06 AM PST
+>
+> Dear Group
+>
+> I have some questions concerning some of the existing utilities in 
+> Radiance for pattern mapping. I have written a conversion program 
+> myself. I based the mapping of patterns onto polygons on a cal file 
+> x2ruvmap.cal written by Ole Lemming for Conrad. It does its job well 
+> but this cal file is fairly long and I think that it may be hampering 
+> performance. It seems the conversion of uv coordinates to barycentric 
+> coordinates for patterns is done at render time rather than the file 
+> conversion stage. For hundreds of millions (if not billions) of ray 
+> hits, this can be quite costly. Then again, I may be wrong. I have 
+> looked into tmesh.cal and I believe that the approach taken here is 
+> much more efficient. My goal is to utilize the approach and routines 
+> in the existing source code to implement into my conversion program. I 
+> have done some research through some of the source code and I have 
+> some questions.
+>
+> While looking through obj2rad.c, it is mentioned in a comment block 
+> that the texture map indices were taken out. May I ask why? Do mapping 
+> of 2d images on polygons work with obj2rad/obj2mesh? Also while 
+> looking through obj2rad.c, I noticed that there are steps to output a 
+> reversed triangle. It has been my understanding that polygons in 
+> Radiance are 2 sided and as such, they are visible on both sides. The 
+> only time I know when surface normal orientation is critical is when 
+> setting up polygons for usage with mkillum for mimicking windows and 
+> other apertures within a building. Why is it done here?   As I looked 
+> through tmesh.c in the function comp_baryc, the order of the vertices 
+> are rotated. Out of curiosity, why?
+>
+>
+> Regards
+>
+> Marcus
+
+

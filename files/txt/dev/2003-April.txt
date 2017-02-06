@@ -1,0 +1,491 @@
+From radiance-dev@radiance-online.org  Tue Apr  1 12:19:24 2003
+From: radiance-dev@radiance-online.org (Francesco Anselmo)
+Date: Tue, 1 Apr 2003 13:19:24 +0200
+Subject: [Radiance-dev] DEB and RPM Radiance 3R5 packages
+In-Reply-To: <Pine.BSF.4.44.0303311100170.99569-100000@emancholl.pair.com>
+References: <Pine.BSF.4.44.0303311100170.99569-100000@emancholl.pair.com>
+Message-ID: <200304011319.24406.anselmo@dream.unipa.it>
+
+Thank you "PAB" and "schorsch" for all your comments!
+
+I've prepared two new packages according to your advices, but
+I had to post a query in the debian-devel(-italian) ml about how 
+to use /opt with debian packages,
+because it seems that no debian packages are allowed to put 
+anything into /opt (maybe I'm wrong ...), since add-on packages
+are not debian packages ...
+
+There is also a few other conflicts with debian policy:
+
+No csh scripts can be used:
+begin---8<---quoting---8<---quoting---8<---quoting---8<---quoting---8<---quoting---
+11.4 Scripts
+[...]
+csh and tcsh should be avoided as scripting languages. See Csh Programming 
+Considered Harmful, one of the comp.unix.* FAQs, which can be found at 
+http://language.perl.com/versus/csh.whynot.[41] If an upstream package comes 
+with csh scripts then you must make sure that they start with #!/bin/csh and 
+make your package depend on the c-shell virtual package. 
+
+Any scripts which create files in world-writeable directories (e.g., in /tmp) 
+must use a mechanism which will fail if a file with the same name already 
+exists. 
+
+The Debian base system provides the tempfile and mktemp utilities for use by 
+scripts for this purpose. 
+end---8<---quoting---8<---quoting---8<---quoting---8<---quoting---8<---quoting---
+ 
+No environment variables should be used:
+begin---8<---quoting---8<---quoting---8<---quoting---8<---quoting---8<---quoting---
+10.9 Environment variables
+A program must not depend on environment variables to get reasonable defaults. 
+(That's because these environment variables would have to be set in a 
+system-wide configuration file like /etc/profile, which is not supported by 
+all shells.) 
+
+If a program usually depends on environment variables for its configuration, 
+the program should be changed to fall back to a reasonable default 
+configuration if these environment variables are not present. If this cannot 
+be done easily (e.g., if the source code of a non-free program is not 
+available), the program must be replaced by a small `wrapper' shell script 
+which sets the environment variables if they are not already defined, and 
+calls the original program. 
+
+Here is an example of a wrapper script for this purpose: 
+
+     #!/bin/sh
+     BAR=${BAR:-/var/lib/fubar}
+     export BAR
+     exec /usr/lib/foo/foo "$@"
+
+Furthermore, as /etc/profile is a configuration file of the base-files 
+package, other packages must not put any environment variables or other 
+commands into that file. 
+end---8<---quoting---8<---quoting---8<---quoting---8<---quoting---8<---quoting---
+
+I think I'll update the packages when I'll have received an answer ...
+
+I told you about my plan to make also a radiancestatic package and a 
+radiancepmap package. Is there anybody interested in having also a
+direct cache patched binary package?
+
+-- 
+ing. Francesco Anselmo
+anselmo@dream.unipa.it
+--
+[ DREAM ] 
+Dipartimento di Ricerche 
+Energetiche e Ambientali
+--
+Università di Palermo
+--
+Viale delle Scienze
+90128 Palermo - Italy
+--
+Tel + 39 091 236 302
+Fax + 39 091 484 425
+--
+
+
+
+From radiance-dev@radiance-online.org  Tue Apr  1 16:00:56 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Tue, 1 Apr 2003 10:00:56 -0500 (EST)
+Subject: [Radiance-dev] DEB and RPM Radiance 3R5 packages
+In-Reply-To: <200304011319.24406.anselmo@dream.unipa.it>
+Message-ID: <Pine.BSF.4.44.0304010956140.57516-100000@emancholl.pair.com>
+
+> csh and tcsh should be avoided as scripting languages.
+
+Writing this into an OS policy is condescending at best, and
+arrogant at worst. If Debian wants to claim posix compliance,
+then a csh variant must be present, which means users may use it
+for whatever purpose they please. Some people think that [t]csh
+doesn't have all the features they would like to have in a
+scripting language, and there are good arguments for that. But
+claiming that others may not use it for that reason is nonsense.
+
+Fortunately, they were decent enough to use the word "should".
+That makes it a recommendation that you're not bound to in any way.
+
+
+> [if a] package comes with csh scripts
+> then you must make sure that they start with #!/bin/csh and
+> make your package depend on the c-shell virtual package.
+
+That's a requirement of the package manager, and probably worth
+adhering to. Note that Radiance currently also includes scripts
+that depend on a specific (and rather old) version of tcl/tk.
+I'm not sure if making the package dependent on that would be an
+equally good idea, though.
+
+
+> Any scripts which create files in world-writeable directories (e.g., in /tmp)
+> must use a mechanism which will fail if a file with the same name already
+> exists.
+
+This is certainly good practise, but not critical for Radiance,
+and not in your hands as a package builder anyway. Or are they
+only talking about scripts that are used while *installing* the
+package?
+
+
+> No environment variables should be used:
+
+Another "should" that is not really up to the OS folks to decide
+about. It may still be a good idea for practical reasons, though.
+Note that my suggestion for Radiance to search its libraries in
+certain locations relative to its binaries would bring us into
+compliance with this point as a side effect.
+
+
+> I think I'll update the packages when I'll have received an answer ...
+
+I'd say ignore the "should"s at will. Nothing a user can do with
+your Radiance package will threaten the integrity of their
+system, not even on Debian.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Fri Apr  4 16:43:03 2003
+From: radiance-dev@radiance-online.org (Francesco Anselmo)
+Date: Fri, 4 Apr 2003 17:43:03 +0200
+Subject: [Radiance-dev] DEB and RPM Radiance linux packages page updated!
+In-Reply-To: <200304011319.24406.anselmo@dream.unipa.it>
+References: <Pine.BSF.4.44.0303311100170.99569-100000@emancholl.pair.com> <200304011319.24406.anselmo@dream.unipa.it>
+Message-ID: <200304041743.03272.anselmo@dream.unipa.it>
+
+My Radiance linux/i386 packages page has been updated:
+
+http://dream.unipa.it/dream/pub/dot/anselmo/radiance/packages/
+
+Here you will find the following versions of Radiance
+Radiance 3.5.0
+Radiance 3.5.0 static
+Radiance 3.4.1 pmap 
+(patched with the photon mapping extension by Roland Schregle)
+
+I have decided to prepare 4 kinds of packages: tar.gz, tar.bz2, deb and rpm.
+
+The tar.gz and tar.bz2 packages can be considered add-on packages, so
+the suggested installation location is /opt/radiance.
+
+The deb and rpm packages behave this way:
+
+the binaries are installed into -> /usr/lib/radiance/bin
+the radiance library is installed into  -> /usr/share/radiance/lib
+the examples are installed into -> /usr/share/radiance/obj
+the documentation is installed into -> /usr/share/doc/radiance
+the man pages are installed into -> /usr/share/man
+
+After the package installation, the user only has to add /usr/lib/radiance/bin
+to the PATH environment variable, since I have added /usr/share/radiance/lib
+to the default library search path in the source code (src/common/paths.h).
+
+Georg Mischler wrote:
+> I'd say ignore the "should"s at will. Nothing a user can do with
+> your Radiance package will threaten the integrity of their
+> system, not even on Debian.
+
+I finally decided to use these locations because making a debian package
+means contributing to the debian distribution, that has his own policy that
+must be respected. 
+I also tried to use the /opt/radiance path, but the debian packaging system 
+didn't behave very well in this case, so I followed the advices that came 
+from the Debian side. Of course I ignored the "csh scripts
+problem" and resolved the "environment variable problem" by adding  
+/usr/share/radiance/lib to the default library search path in the source code 
+(src/common/paths.h), as I already said.
+
+The rpm packages are derived from the deb ones using alien.
+
+Here are a few notes about the packages (for more info, just check the page):
+1) when compiling the "static version" I had some problems with unresolved 
+symbols inside libGL.a and libGLU.a coming from the Mesa distribution. I even 
+compiled by myself the Mesa libs, but this didn't solved the problem. 
+Unfortunately I don't much have time to go deeper, so the static version has 
+no OpenGL related stuff.
+2) I never managed in compiling the pmap patched code together with
+the holodeck files, so the pmap package has no holodeck executables.
+If anybody wants to help me, I can share my stderr.
+
+Many thanks to Georg Mischler and to Peter Apian-Bennewitz for their
+help and comments.
+
+I hope that these packages can be useful ...
+
+-- 
+ing. Francesco Anselmo
+anselmo@dream.unipa.it
+--
+[ DREAm ] 
+Dipartimento di Ricerche 
+Energetiche e Ambientali
+--
+Università di Palermo
+--
+Viale delle Scienze
+90128 Palermo - Italy
+--
+Tel + 39 091 236 302
+Fax + 39 091 484 425
+--
+
+
+
+From radiance-dev@radiance-online.org  Fri Apr  4 17:09:51 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Fri, 4 Apr 2003 11:09:51 -0500 (EST)
+Subject: [Radiance-dev] DEB and RPM Radiance linux packages page updated!
+In-Reply-To: <200304041743.03272.anselmo@dream.unipa.it>
+Message-ID: <Pine.BSF.4.44.0304041103420.21731-100000@emancholl.pair.com>
+
+Francesco Anselmo wrote:
+
+> 1) when compiling the "static version" I had some problems with unresolved
+> symbols inside libGL.a and libGLU.a coming from the Mesa distribution. I even
+> compiled by myself the Mesa libs, but this didn't solved the problem.
+> Unfortunately I don't much have time to go deeper, so the static version has
+> no OpenGL related stuff.
+
+
+I don't think it's useful (if even possible) to have all OpenGL
+components linked statically. After all, the hardware you have
+installed decides about which mesa modules need to be loaded.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Wed Apr  9 01:18:02 2003
+From: radiance-dev@radiance-online.org (Erwin Rol)
+Date: 09 Apr 2003 02:18:02 +0200
+Subject: [Radiance-dev] build system and some other things
+Message-ID: <1049847482.27010.11.camel@drake.erwin.muffin.org>
+
+--=-eUURVzmy0ZOXfyixJjff
+Content-Type: text/plain
+Content-Transfer-Encoding: quoted-printable
+
+Hello all,
+
+I have some questions regarding the build system used by radiance. First
+of all is there a reason to not use the autoconf tools ? ( i didn't find
+any references to this topic so i hope its not a FAQ). Secondly i
+noticed sources for X10 and old X11 releases and DOS-VGA stuff, what are
+the plans with these pieces ? rewrite to more modern versions ? removing
+them all to getter and have separate viewers ?=20
+
+And last, who is doing what , and where is what help needed ? :-)
+
+- Erwin
+
+--=20
+              Dipl.-Ing. Erwin Rol - Software Engineering
+tel: +49-(0)8024-479377  gsm: +49-(0)171-6929198 fax: +49-(0)8024-479379
+                        email: erwin@muffin.org
+
+--=-eUURVzmy0ZOXfyixJjff
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Description: This is a digitally signed message part
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.0.7 (GNU/Linux)
+
+iD8DBQA+k2a6ILu3T9PlUj8RAgBIAJ9U6b+z4Qzm3ccp7cECd5DPYe7byACfdE4e
+bcdrmhg/Q6fOjD+uAL3dvHs=
+=PKFt
+-----END PGP SIGNATURE-----
+
+--=-eUURVzmy0ZOXfyixJjff--
+
+From radiance-dev@radiance-online.org  Fri Apr 11 16:48:27 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Fri, 11 Apr 2003 08:48:27 -0700
+Subject: [Radiance-dev] Re: build system and some other things
+In-Reply-To: <1049847482.27010.11.camel@drake.erwin.muffin.org>
+Message-ID: <0987C12A-6C35-11D7-AA13-00306540F848@lmi.net>
+
+It's true that there's still some flotsam in the 3.5 distribution -- 
+mostly things that don't get built but I haven't looked at the source 
+code to decide if it needs to be thrown out or not.  The X11 stuff is 
+all up-to-date as far as I know.  The X10 and VGA drivers could easily 
+be thrown out, and probably should be at some point.
+
+I have never used autoconf and don't plan to, as I don't see the need 
+for it.  There are very few conditional compiles in Radiance, and as we 
+have discussed in previous posts, most of the ones that remain can be 
+eliminated with a little effort.  I would rather see us spend time on 
+that than tailoring compiles based on an autoconf approach, which would 
+be tedous and probably less reliable in the end.
+
+-Greg
+
+> From: Erwin Rol <erwin@muffin.org>
+> Date: Tue Apr 8, 2003  5:18:02  PM US/Pacific
+> To: Radiance Development <radiance-dev@radiance-online.org>
+> Subject: [Radiance-dev] build system and some other things
+> Reply-To: radiance-dev@radiance-online.org
+>
+> Hello all,
+>
+> I have some questions regarding the build system used by radiance. 
+> First
+> of all is there a reason to not use the autoconf tools ? ( i didn't 
+> find
+> any references to this topic so i hope its not a FAQ). Secondly i
+> noticed sources for X10 and old X11 releases and DOS-VGA stuff, what 
+> are
+> the plans with these pieces ? rewrite to more modern versions ? 
+> removing
+> them all to getter and have separate viewers ?
+>
+> And last, who is doing what , and where is what help needed ? :-)
+>
+> - Erwin
+
+
+From radiance-dev@radiance-online.org  Tue Apr 15 20:41:16 2003
+From: radiance-dev@radiance-online.org (=?iso-8859-1?q?toufik=20ouahdi?=)
+Date: Tue, 15 Apr 2003 21:41:16 +0200 (CEST)
+Subject: [Radiance-dev] how i can work with archicad and radiance ?
+Message-ID: <20030415194116.56913.qmail@web10301.mail.yahoo.com>
+
+--0-2005032364-1050435676=:56531
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: 8bit
+
+   hi,   I would like to work with archicad and radiance but i haven't any idia if anybody know you can contacte me and we work to guether .                                                                          Tou 
+
+
+
+---------------------------------
+Do You Yahoo!? -- Une adresse @yahoo.fr gratuite et en français !
+Testez le nouveau Yahoo! Mail
+--0-2005032364-1050435676=:56531
+Content-Type: text/html; charset=iso-8859-1
+Content-Transfer-Encoding: 8bit
+
+<DIV>
+<DIV>
+<DIV>
+<DIV><FONT face=Arial size=2>&nbsp;&nbsp;&nbsp;hi,</FONT></DIV>
+<DIV><FONT face=Arial size=2>&nbsp; &nbsp;I would like to work with archicad and radiance but i haven't any idia if anybody know you can contacte me and we work to guether .&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </FONT></DIV>
+<DIV><FONT face=Arial size=2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tou</FONT><FONT face=Arial size=2> <BR></DIV></FONT></DIV></DIV></DIV><p><br><hr size=1>Do You Yahoo!? -- Une adresse @yahoo.fr gratuite et en français !<br>
+<a href=http://fr.mail.yahoo.com>Testez le nouveau Yahoo! Mail</a>
+--0-2005032364-1050435676=:56531--
+
+From radiance-dev@radiance-online.org  Wed Apr 16 09:53:49 2003
+From: radiance-dev@radiance-online.org (Carsten Bauer)
+Date: Wed, 16 Apr 2003 08:53:49 +0000
+Subject: [Radiance-dev] how i can work with archicad and radiance ?
+In-Reply-To: <20030415194116.56913.qmail@web10301.mail.yahoo.com>
+References: <20030415194116.56913.qmail@web10301.mail.yahoo.com>
+Message-ID: <200304160853.49709.cbauer-@t-online.de>
+
+>    hi,   I would like to work with archicad and radiance but i haven't any
+> idia if anybody know you can contacte me and we work to guether .          
+>                                                                Tou
+
+Yeah, great idea ! But sorry, I have no idea either. But if one day an idea 
+explodes in my mind, I will contact you ! 
+
+Captain B.
+
+
+From radiance-dev@radiance-online.org  Wed Apr 16 15:08:45 2003
+From: radiance-dev@radiance-online.org (Rob Guglielmetti)
+Date: Wed, 16 Apr 2003 10:08:45 -0400
+Subject: [Radiance-dev] how i can work with archicad and radiance ?
+References: <20030415194116.56913.qmail@web10301.mail.yahoo.com> <200304160853.49709.cbauer-@t-online.de>
+Message-ID: <3E9D63ED.1010001@rumblestrip.org>
+
+Carsten Bauer wrote:
+>>   hi,   I would like to work with archicad and radiance but i haven't any
+>>idia if anybody know you can contacte me and we work to guether .          
+>>                                                               Tou
+> 
+> 
+> Yeah, great idea ! But sorry, I have no idea either. But if one day an idea 
+> explodes in my mind, I will contact you ! 
+
+I'm not sure the level of integration you are seeking Tou, but if all 
+you need is to get an Archicad model into Radiance for 
+rendering/analysis, I'd assume you could save your model as a DXF file 
+and use dxf2rad to convert it into a Radiance scene description.  If 
+you're looking to preserve materials or uv mappings, I'm pretty sure 
+there are other methods that will preserve at least some of that, but 
+that's out of my depth. HTH.
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+
+From radiance-dev@radiance-online.org  Wed Apr 16 16:03:43 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Wed, 16 Apr 2003 11:03:43 -0400 (EDT)
+Subject: [Radiance-dev] how i can work with archicad and radiance?
+In-Reply-To: <3E9D63ED.1010001@rumblestrip.org>
+Message-ID: <Pine.BSF.4.44.0304161051060.53053-100000@emancholl.pair.com>
+
+Rob Guglielmetti wrote:
+
+> Carsten Bauer wrote:
+>
+> > toufik ouahdi wrote:
+> >
+> >>   hi,   I would like to work with archicad and radiance but i haven't any
+> >>idia if anybody know you can contacte me and we work to guether .
+> >>                                                               Tou
+> >
+> > Yeah, great idea ! But sorry, I have no idea either. But if one day an idea
+> > explodes in my mind, I will contact you !
+>
+> I'm not sure the level of integration you are seeking Tou, but if all
+> you need is to get an Archicad model into Radiance for
+> rendering/analysis, I'd assume you could save your model as a DXF file
+> and use dxf2rad to convert it into a Radiance scene description.  If
+> you're looking to preserve materials or uv mappings, I'm pretty sure
+> there are other methods that will preserve at least some of that, but
+> that's out of my depth. HTH.
+
+
+Dxf2rad works fine with files generated by Archicad.
+
+I think some people have also had success with exporting
+to 3DS Max, and converting the result with Conrad, unless
+I'm confusing this with something else at the moment.
+
+If Archicad can export Wavefront obj files, then you could
+use those directly with Radiance 3.5.
+
+There are also attempts around to export Radiance scene files
+immediately from Archicad, but as far as I know, none of that
+is ready for public consumption at the moment.
+
+
+-schorsch
+
+PS: This discussion should really go to the general list,
+as it is not a development issue.
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+

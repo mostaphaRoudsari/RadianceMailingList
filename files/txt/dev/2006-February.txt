@@ -1,0 +1,692 @@
+From marcdevon at hotmail.com  Fri Feb 10 04:29:33 2006
+From: marcdevon at hotmail.com (Marcus Jacobs)
+Date: Fri Feb 10 04:31:28 2006
+Subject: [Radiance-dev] Compile Problems with Interix
+Message-ID: <BAY102-F32B1FAA42E71AA4A5CC5B5A4020@phx.gbl>
+
+Dear Group,
+
+I am attempting to compile Radiance using Microsoft's Services for Unix 
+(Interix 3.5). There are some problems that I am encountering. I have gotten 
+some of Radiance's utilities to compile (about 50 total) but I have run into 
+some issues in getting the core rendering programs (rpict and rtace) to 
+compile. I am willing to forgo rview while using Interix and use this 
+feature with Cygwin. Here are there error messages that I received while 
+attempting to compile the core rendering utilities:
+
+persist.c:37: error: conflicting types for `sighandler_t'
+/usr/include/signal.h:40: error: previous declaration of `sighandler_t'
+persist.c: In function `pfhold':
+persist.c:129: warning: passing arg 1 of `mkfifo' makes pointer from integer 
+wit
+hout a cast
+persist.c:131: warning: passing arg 1 of `mkfifo' makes pointer from integer 
+wit
+hout a cast
+persist.c:134: warning: passing arg 1 of `mkfifo' makes pointer from integer 
+wit
+hout a cast
+persist.c:152: error: cast specifies function type
+
+
+ambient.c: In function `ambsync':
+ambient.c:891: warning: assignment makes pointer from integer without a cast
+
+
+
+I should note that I am using the latest CVS snapshop (I downloaded within 
+the last 30 minutes). Can anyone help me?
+
+
+Thanks
+
+Marcus
+
+
+
+From andy.stone at bdsp.com  Fri Feb 10 12:24:36 2006
+From: andy.stone at bdsp.com (Andy Stone)
+Date: Fri Feb 10 12:26:36 2006
+Subject: [Radiance-dev] RE: Compile Problems with Interix
+Message-ID: <49DA5CB5F3540C4BB9B3A41200253F5B81C153@bdspserver04.BDSPUK02.local>
+
+Hi Marcus,
+
+I came across this problem when compiling Radiance under Interix.  I
+resolved it by commenting out these three lines near the top of the file
+persist.c:
+
+typedef void (sighandler_t)(int);
+static sighandler_t sig_io;
+static sighandler_t sig_alrm;
+
+I should warn you that I didn't look into the problem too deeply, so
+that may or may not be the best solution!
+
+There are a couple of other problems you might want to watch out for (I
+ran into these when compiling an older version of Radiance so maybe
+you'll be ok with the most recent version).  
+
+I had a problem compiling the tiff library (in ray/src/px/tiff).  The
+problem was caused by the config.guess file which didn't recognise
+Interix.  I found an updated version elsewhere which I can send to you
+if you need it.  
+
+Finally, I found that I was getting some very strange results from rpict
+(see
+http://www.radiance-online.org/pipermail/radiance-dev/2003-November/0002
+53.html).  The problem seemed to be caused by Interix's implementation
+of the frexp() function.  At the time there was an alternative version
+of that function with the Radiance source which fixed the problem.  It
+seems that the alternative was removed from the Radiance source at some
+point since then, so that option is no longer available.  You might have
+a more recent version of Interix that does not require the fix (you will
+know if you have the problem because all of the images produced by rpict
+will be obviously wrong).  Personally I switched to using Cygwin.
+
+
+Best regards,
+
+Andy Stone
+
+> Date: Fri, 10 Feb 2006 03:29:33 +0000
+> From: "Marcus Jacobs" <marcdevon@hotmail.com>
+> Subject: [Radiance-dev] Compile Problems with Interix
+> To: radiance-dev@radiance-online.org
+> Message-ID: <BAY102-F32B1FAA42E71AA4A5CC5B5A4020@phx.gbl>
+> Content-Type: text/plain; format=flowed
+> 
+> Dear Group,
+> 
+> I am attempting to compile Radiance using Microsoft's Services for
+Unix
+> (Interix 3.5). There are some problems that I am encountering. I have
+> gotten
+> some of Radiance's utilities to compile (about 50 total) but I have
+run
+> into
+> some issues in getting the core rendering programs (rpict and rtace)
+to
+> compile. I am willing to forgo rview while using Interix and use this
+> feature with Cygwin. Here are there error messages that I received
+while
+> attempting to compile the core rendering utilities:
+> 
+> persist.c:37: error: conflicting types for `sighandler_t'
+> /usr/include/signal.h:40: error: previous declaration of
+`sighandler_t'
+> persist.c: In function `pfhold':
+> persist.c:129: warning: passing arg 1 of `mkfifo' makes pointer from
+> integer
+> wit
+> hout a cast
+> persist.c:131: warning: passing arg 1 of `mkfifo' makes pointer from
+> integer
+> wit
+> hout a cast
+> persist.c:134: warning: passing arg 1 of `mkfifo' makes pointer from
+> integer
+> wit
+> hout a cast
+> persist.c:152: error: cast specifies function type
+> 
+> 
+> ambient.c: In function `ambsync':
+> ambient.c:891: warning: assignment makes pointer from integer without
+a
+> cast
+> 
+> 
+> 
+> I should note that I am using the latest CVS snapshop (I downloaded
+within
+> the last 30 minutes). Can anyone help me?
+> 
+> 
+> Thanks
+> 
+> Marcus
+> 
+
+
+From marcdevon at hotmail.com  Fri Feb 10 22:02:49 2006
+From: marcdevon at hotmail.com (Marcus Jacobs)
+Date: Fri Feb 10 22:04:42 2006
+Subject: [Radiance-dev] Compile Problems with Interix 
+Message-ID: <BAY102-F225DFAC5BE492B89765E0FA4020@phx.gbl>
+
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20060210/146d1ceb/attachment.htm
+From marcdevon at hotmail.com  Fri Feb 10 22:21:38 2006
+From: marcdevon at hotmail.com (Marcus Jacobs)
+Date: Fri Feb 10 22:23:23 2006
+Subject: [Radiance-dev] Compile Problems with Interix
+Message-ID: <BAY102-F7B19BCD7138D87F814F2BA4020@phx.gbl>
+
+Thanks for the info Andy. I did do a keyword search on 'Interix' and it 
+seemed like Greg and yourself took your correspondence out of this forum so 
+I am unsure of what became of this. Hey, at least you had some success in 
+getting your code to compile. I am not even there yet.
+
+I do not know if I want to start commenting out statements within the source 
+code. This is like having a rattling bolt in your car engine or suspension 
+and just haphazardly removing it in order to alleviate the situation without 
+knowing if you removed a critical part. I do want a stable, robust solution 
+to this problem (if it exists at all). I asked a question some time ago 
+about compiling programs on SFU on Interop System's forum. One of the gurus 
+there said "Read through the FAQ's about porting stuff; what options to 
+define ("-D") etc. It makes a big difference, particularly WRT to header 
+files. Interix aims to be SUS compliant."  The section in the FAQ that he 
+was alluding to I believe is this:
+
+
+Using GNU’s configure
+When using GNU's configure script to configure a build environment for an 
+application it is suggested that you set the following environment variables 
+before running configure.
+        CFLAGS="-D_ALL_SOURCE -D_REENTRANT"
+        CPPFLAGS="-D_ALL_SOURCE -D_REENTRANT -I/usr/local/include"
+        LDFLAGS="-L/usr/local/lib"
+If GNU's configure complains that the type of system is not recognized then 
+you need to update the file "config.guess." Some applications have multiple 
+copies of "config.guess" so be sure to find all of them. An updated 
+"config.guess" can be downloaded from 
+"ftp://ftp.interopsystems.com/pub/config.guess". You may also need to update 
+your LD_LIBRARY_FLAGS if you are using shared object libraries (DSOs), but 
+this is likely already done for you if you have installed a /Tools packaged 
+library.
+
+I don't know if this will help but I guess it’s worth a shot. Can anyone 
+provide some insight as to what all of this means?
+
+I assume that you compiled Radiance using gcc. I am doing the same although 
+I may try to port it to Windows using Microsoft’s C compiler later in the 
+future (if it is at all possible). There is also a beta version of gcc 4.0 
+available for Interix on Interop System's FTP site. This is something worth 
+looking in to but I do not believe that this will help my situation. I think 
+the problems that I am having are related SFU's standard libraries.
+
+Before giving up on this all together, I really would like to evaluate 
+Interix as a Windows solution for Radiance. Since it does support a NFS, I 
+may be able to finally utilize multiple processors via rpiece. Thanks for 
+your suggestions.
+
+Marcus
+
+
+
+From marcdevon at hotmail.com  Wed Feb 15 16:09:27 2006
+From: marcdevon at hotmail.com (Marcus Jacobs)
+Date: Wed Feb 15 16:11:28 2006
+Subject: [Radiance-dev] Where's librt.a???
+Message-ID: <BAY102-F2D71507C4AD04EF6F7071A4FA0@phx.gbl>
+
+Dear Group
+
+I have recently been trying to build Radiance with my ANSI C compiler. The 
+compiler has run into problems in locating the file librt.a. In the past 
+this file has been located in the path /ray/src/lib but in the latest HEAD 
+file that I downloaded last week this file was not present. Is this file 
+still apart of the Radiance or has it been removed? If it has been removed, 
+should the makefiles for the program be updated to reflect this change?
+
+Thanks
+
+Marcus
+
+
+
+From gregoryjward at gmail.com  Wed Feb 15 17:15:51 2006
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed Feb 15 17:17:29 2006
+Subject: [Radiance-dev] Where's librt.a???
+In-Reply-To: <BAY102-F2D71507C4AD04EF6F7071A4FA0@phx.gbl>
+References: <BAY102-F2D71507C4AD04EF6F7071A4FA0@phx.gbl>
+Message-ID: <F303AE16-983D-4F89-AAEA-B5393AD0A530@gmail.com>
+
+Hi Marcus,
+
+This may be my fault -- I made a recent change to clean up the build  
+procedure in src/common, and it might not be working on your machine  
+for some reason.  Please send me the output of "rmake install" in  
+your src/common directory, so I can figure out what's going on.  It  
+works for me under OS X.
+
+-Greg
+
+> From: "Marcus Jacobs" <marcdevon@hotmail.com>
+> Date: February 15, 2006 7:09:27 AM PST
+>
+> Dear Group
+>
+> I have recently been trying to build Radiance with my ANSI C  
+> compiler. The compiler has run into problems in locating the file  
+> librt.a. In the past this file has been located in the path /ray/ 
+> src/lib but in the latest HEAD file that I downloaded last week  
+> this file was not present. Is this file still apart of the Radiance  
+> or has it been removed? If it has been removed, should the  
+> makefiles for the program be updated to reflect this change?
+>
+> Thanks
+>
+> Marcus
+>
+
+From a.jacobs at londonmet.ac.uk  Thu Feb 16 14:42:15 2006
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Thu Feb 16 14:44:41 2006
+Subject: [Radiance-dev] Where's librt.a???
+In-Reply-To: <F303AE16-983D-4F89-AAEA-B5393AD0A530@gmail.com>
+References: <BAY102-F2D71507C4AD04EF6F7071A4FA0@phx.gbl>
+	<F303AE16-983D-4F89-AAEA-B5393AD0A530@gmail.com>
+Message-ID: <10032.213.58.97.221.1140097335.squirrel@webmail1.londonmet.ac.uk>
+
+Greg,
+
+allow me to muscle in on this thread. I think I might have the same
+problem as Marcus, but on Gentoo amd64.
+
+> Please send me the output of "rmake install" in
+> your src/common directory, so I can figure out what's going on.  It
+> works for me under OS X.
+
+I can compile enough binaries to run Mark's benchmark, but only find 100
+files under bin.
+
+Using gcc-3.4.4
+
+the "rmake install" under src/common runs fine (see tar ball), and
+librt.so is created, but not picked up.
+
+adele ray # find . -name librt.a -exec ls -l {} \;
+-rw-r--r--  1 root root 615784 Feb 16 13:31 ./src/lib/librt.a
+
+Here is some output:
+http://luminance.londonmet.ac.uk/pickup/log_axel.tgz
+
+Axel
+
+
+
+From gregoryjward at gmail.com  Sun Feb 26 18:11:41 2006
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Sun Feb 26 18:13:31 2006
+Subject: [Radiance-dev] Re: [Radiance-general] Mesh Rendering Performance
+In-Reply-To: <814553ecc7ac40056a3377b2d97adbd2@gmx.net>
+References: <BAY102-F198EF7F777CF434858D064A4F30@phx.gbl>
+	<7B695E27-07BC-4D86-AFF8-DA33C6076CEB@gmail.com>
+	<814553ecc7ac40056a3377b2d97adbd2@gmx.net>
+Message-ID: <F33291D3-C527-469C-89E0-F902D4CD7A7D@gmail.com>
+
+Hi Lars,
+
+I don't know quite understand how changing the struct's to union's  
+would help in vectorizing the code -- you'll have to give me an  
+explicit example, and this is probably one for radiance-dev.
+
+As for clustering rays, this is not as easy as it may sound.  We  
+would have to reorder the entire ray calculation in order to generate  
+bundles of dissociated rays, as otherwise you naturally get a tree  
+with many daughter rays generated for each parent diverging in all  
+directions in your scene.  Grouping daughters together you get almost  
+no coherence, and techniques for getting good ray bundles are fairly  
+complicated.  (See for example, Matt Pharr, Craig Kolb, Reid  
+Gershbein, and Pat Hanrahan, "Rendering Complex Scenes with Memory- 
+Coherent Ray Tracing," Proc. SIGGRAPH 1997 <http:// 
+graphics.stanford.edu/papers/coherentrt/>.)
+
+-Greg
+
+> From: Lars O. Grobe <grobe@gmx.net>
+> Date: February 26, 2006 1:38:23 AM PST
+>
+> Hi,
+>
+> just tried out, replaces my meshes by obj2rad-oconv-generated  
+> instances. May be faster, but now my rpict-process takes 1.4 GB  
+> instead of 700 MB ;-) So I guess I will have to stay with those  
+> "slow" meshes...
+>
+> CU Lars.
+>
+> P.S.: Concerning optimizations: I think trying to introduce  
+> assembler into radiance code is a bad idea, as it breaks  
+> portability, a great strength of the current code. Still, I think  
+> one should think about if the code could not be written to be more  
+> vector-friendly. Than compilers could do the rest (auto- 
+> vectorization is even in gcc since 4.0), and those who want to try  
+> (like me ;-) could simple replace some functions. Some ideas would  
+> be like passing not only one ray, but ray clusters to the  
+> subfunctions, so that these could be implemented to do calculations  
+> in parallel. Another help would be to replace the unflexible  
+> datatypes by unions. I ran into trouble when I just wanted to  
+> Altivec some routines. As mat4, fvec etc are simply arrays, I have  
+> to get the data in a altivec-suitable format, which causes  
+> overhead. If they had been e.g. unions (containing nothing but an  
+> array), I would have simply changed this to be an union of array  
+> and vector. All unchanged functions would work as now, and still I  
+> could directly apply altivec code on data. Those who think altivec  
+> is out because Apple build x86: this year we might see the first  
+> cell-processor machines. And vector units are built into almost all  
+> platforms today.
+
+From grobe at gmx.net  Sun Feb 26 21:14:15 2006
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Sun Feb 26 21:16:07 2006
+Subject: [Radiance-dev] vectorization data types
+In-Reply-To: <F33291D3-C527-469C-89E0-F902D4CD7A7D@gmail.com>
+References: <BAY102-F198EF7F777CF434858D064A4F30@phx.gbl>
+	<7B695E27-07BC-4D86-AFF8-DA33C6076CEB@gmail.com>
+	<814553ecc7ac40056a3377b2d97adbd2@gmx.net>
+	<F33291D3-C527-469C-89E0-F902D4CD7A7D@gmail.com>
+Message-ID: <efa1a5e5a67f1819adaed16d6822c839@gmx.net>
+
+Hi!
+
+> I don't know quite understand how changing the struct's to union's 
+> would help in vectorizing the code -- you'll have to give me an 
+> explicit example, and this is probably one for radiance-dev.
+
+This is the altivec way, I am not sure about other vector processors.
+
+A common approach to integrate altivec in conventional code is to keep 
+using arrays. The problem is that data has to be aligned for altivec. 
+If it isn't, one has to do quite a lot of operations before the actual 
+computation. As on altivec machines, I hace a type "vector", I can 
+enforce alignment of data in an array by the following:
+
+typedef union { float arrayData[4]; vector float vectorData; } myVector;
+
+Now, I can still access elements in the array, but the compiler will 
+align the data, and for altivec, I can use the vector directly without 
+any shifts.
+
+I came across this when I found an old posting from Georg, who proposed 
+that someone could take a look at multmat, which is perfect for 
+altivec. But as mat4 and fvect are not aligned, the overhead is too 
+large to really optimize code without changing data outside those 
+functions.
+
+Finally, I feel I really HAVE to say that I am not a programmer, if, 
+the lousiest c and c++ "scripter" out there... ;-)
+
+CU, Lars.
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: smime.p7s
+Type: application/pkcs7-signature
+Size: 2134 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-dev/attachments/20060226/05f1911d/smime.bin
+From gregoryjward at gmail.com  Sun Feb 26 22:53:35 2006
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Sun Feb 26 22:55:28 2006
+Subject: [Radiance-dev] vectorization data types
+In-Reply-To: <efa1a5e5a67f1819adaed16d6822c839@gmx.net>
+References: <BAY102-F198EF7F777CF434858D064A4F30@phx.gbl>
+	<7B695E27-07BC-4D86-AFF8-DA33C6076CEB@gmail.com>
+	<814553ecc7ac40056a3377b2d97adbd2@gmx.net>
+	<F33291D3-C527-469C-89E0-F902D4CD7A7D@gmail.com>
+	<efa1a5e5a67f1819adaed16d6822c839@gmx.net>
+Message-ID: <4EB31910-3B53-4DB1-AD6E-6A5D895B9254@gmail.com>
+
+OK, I see what you mean, now.  I haven't profiled the code recently,  
+but relatively little time is spent in the matrix routines.   
+Optimizing a ray tracer is really challenging, because bottlenecks  
+are not easy to isolate.  A lot of time is spent in the various  
+material shading routines, which are spread all over the place and  
+not easy to simplify.  The only place where you can really focus  
+effort is in the actual octree traversal code, and this doesn't  
+vectorize at all.
+
+-G
+
+> From: Lars O. Grobe <grobe@gmx.net>
+> Date: February 26, 2006 12:14:15 PM PST
+>
+> Hi!
+>
+>> I don't know quite understand how changing the struct's to union's  
+>> would help in vectorizing the code -- you'll have to give me an  
+>> explicit example, and this is probably one for radiance-dev.
+>
+> This is the altivec way, I am not sure about other vector processors.
+>
+> A common approach to integrate altivec in conventional code is to  
+> keep using arrays. The problem is that data has to be aligned for  
+> altivec. If it isn't, one has to do quite a lot of operations  
+> before the actual computation. As on altivec machines, I hace a  
+> type "vector", I can enforce alignment of data in an array by the  
+> following:
+>
+> typedef union { float arrayData[4]; vector float vectorData; }  
+> myVector;
+>
+> Now, I can still access elements in the array, but the compiler  
+> will align the data, and for altivec, I can use the vector directly  
+> without any shifts.
+>
+> I came across this when I found an old posting from Georg, who  
+> proposed that someone could take a look at multmat, which is  
+> perfect for altivec. But as mat4 and fvect are not aligned, the  
+> overhead is too large to really optimize code without changing data  
+> outside those functions.
+>
+> Finally, I feel I really HAVE to say that I am not a programmer,  
+> if, the lousiest c and c++ "scripter" out there... ;-)
+>
+> CU, Lars
+
+From grobe at gmx.net  Mon Feb 27 14:40:24 2006
+From: grobe at gmx.net (Lars Grobe)
+Date: Mon Feb 27 14:42:09 2006
+Subject: [Radiance-dev] vectorization data types
+References: <4EB31910-3B53-4DB1-AD6E-6A5D895B9254@gmail.com>
+Message-ID: <23441.1141047624@www044.gmx.net>
+
+> OK, I see what you mean, now.  I haven't profiled the code recently,  
+> but relatively little time is spent in the matrix routines.   
+> Optimizing a ray tracer is really challenging, because bottlenecks  
+> are not easy to isolate.  A lot of time is spent in the various  
+> material shading routines, which are spread all over the place and  
+> not easy to simplify.  The only place where you can really focus  
+> effort is in the actual octree traversal code, and this doesn't  
+> vectorize at all.
+
+I hoped at least for some transformations (instances, oconv), maybe even
+color calculation. In fact, every code snippet where the same function is
+applied to x,y,z (like fvect[0]=...; fvect[1]=...; fvect[2]=...;) should
+win, as such calculations could apply to the whole vector at once, maybe
+some color calculations as well.
+
+In fact, the growth of a ray tree from a cluster of rays is something I
+simply did not consider, as I am really not a programmer, so the idea of
+tracing more than one ray at once (which was so pretty thinking about
+ambient calculation) was nonsense.
+
+But I will stop now and have a look at the code before I continue to write a
+word ;-) Is there a nice schematic overview over the raytracing routines on
+the net? I have my "RwR" left in Germany because it was a bit heavy to take
+it in the plane ;-)))
+
+CU Lars.
+
+From gregoryjward at gmail.com  Mon Feb 27 17:18:02 2006
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon Feb 27 17:19:52 2006
+Subject: [Radiance-dev] vectorization data types
+In-Reply-To: <23441.1141047624@www044.gmx.net>
+References: <4EB31910-3B53-4DB1-AD6E-6A5D895B9254@gmail.com>
+	<23441.1141047624@www044.gmx.net>
+Message-ID: <998E2E8A-5CA1-44B4-A234-0283ADADCD0E@gmail.com>
+
+Well, it's a bit out of date, but there's the old document that  
+describes the source tree.  Probably not really what you're looking  
+for, but it's all I know about:
+
+	http://radsite.lbl.gov/radiance/refer/srctree.pdf
+
+While I agree there may be some vectorization possibilities offered  
+by the many color and vector operations in the code, I don't know  
+that they would really pay off as the set-up time (overhead) would  
+probably eliminate any savings you got from a single assignment or  
+dot product.  Vectorization helps much more when you have longer  
+vectors and arrays, and everything is 3-vectors in Radiance.
+
+If you want to test the idea if short vectors can actually speed up  
+the code, work on the known bottlenecks first, like the ray traversal  
+code in src/rt/raytrace.c.  In particular, the raymove() routine.   
+Try vectorizing:
+
+	pos[0] += r->rdir[0]*t;
+	pos[1] += r->rdir[1]*t;
+	pos[2] += r->rdir[2]*t;
+
+I suspect you will see negligible gains, because (1) the overhead  
+will kill you and (2) the conditional code above this dominates on  
+modern pipelined processors.
+
+-G
+
+> From: "Lars Grobe" <grobe@gmx.net>
+> Date: February 27, 2006 5:40:24 AM PST
+>
+> I hoped at least for some transformations (instances, oconv), maybe  
+> even
+> color calculation. In fact, every code snippet where the same  
+> function is
+> applied to x,y,z (like fvect[0]=...; fvect[1]=...; fvect[2]=...;)  
+> should
+> win, as such calculations could apply to the whole vector at once,  
+> maybe
+> some color calculations as well.
+>
+> In fact, the growth of a ray tree from a cluster of rays is  
+> something I
+> simply did not consider, as I am really not a programmer, so the  
+> idea of
+> tracing more than one ray at once (which was so pretty thinking about
+> ambient calculation) was nonsense.
+>
+> But I will stop now and have a look at the code before I continue  
+> to write a
+> word ;-) Is there a nice schematic overview over the raytracing  
+> routines on
+> the net? I have my "RwR" left in Germany because it was a bit heavy  
+> to take
+> it in the plane ;-)))
+>
+> CU Lars.
+
+From marcdevon at hotmail.com  Tue Feb 28 01:54:01 2006
+From: marcdevon at hotmail.com (Marcus Jacobs)
+Date: Tue Feb 28 01:55:59 2006
+Subject: [Radiance-dev] Mesh Rendering Performance
+In-Reply-To: <BAY0-MC9-F19trjhce2003dc553@bay0-mc9-f19.bay0.hotmail.com>
+Message-ID: <BAY102-F291918F70CB16540E092FBA4F70@phx.gbl>
+
+Greg,
+
+You mentioned that the Moller-Trumbore method required two divisions.  For 
+the code that I implemented,  I only needed one division at the end to 
+determine the ray length. Here is the page for various versions of the 
+source code.
+
+http://www.cs.lth.se/home/Tomas_Akenine_Moller/raytri/raytri.c
+
+
+I used the one without early division. If I am correct, this code without 
+early division supports two sided objects.
+
+
+
+Regards,
+
+Marcus
+
+
+
+From gregoryjward at gmail.com  Tue Feb 28 02:06:43 2006
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue Feb 28 02:08:34 2006
+Subject: [Radiance-dev] Mesh Rendering Performance
+In-Reply-To: <BAY102-F291918F70CB16540E092FBA4F70@phx.gbl>
+References: <BAY102-F291918F70CB16540E092FBA4F70@phx.gbl>
+Message-ID: <EF6F30D6-81B6-4D31-A0DC-AB9DFC678E96@gmail.com>
+
+Hi Marcus,
+
+I believe the version with one division is when you have stored the  
+surface normal, which is fine for normal polygons in Radiance, but  
+not for the mesh code.  For the mesh code, I would be using the  
+original version, which doesn't require any additional storage.
+
+-Greg
+
+> From: "Marcus Jacobs" <marcdevon@hotmail.com>
+> Date: February 27, 2006 4:54:01 PM PST
+>
+> Greg,
+>
+> You mentioned that the Moller-Trumbore method required two  
+> divisions.  For the code that I implemented,  I only needed one  
+> division at the end to determine the ray length. Here is the page  
+> for various versions of the source code.
+>
+> http://www.cs.lth.se/home/Tomas_Akenine_Moller/raytri/raytri.c
+>
+> I used the one without early division. If I am correct, this code  
+> without early division supports two sided objects.
+>
+>
+> Regards,
+>
+> Marcus
+>
+
+From gregoryjward at gmail.com  Tue Feb 28 18:25:45 2006
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue Feb 28 18:27:37 2006
+Subject: [Radiance-dev] Mesh Rendering Performance
+In-Reply-To: <BAY102-F291918F70CB16540E092FBA4F70@phx.gbl>
+References: <BAY102-F291918F70CB16540E092FBA4F70@phx.gbl>
+Message-ID: <0C716463-4D85-4E10-A08B-74376471B892@gmail.com>
+
+P.S.  Actually, you're right.  I should have counted the two  
+multiplications by the same reciprocal as a single divide.
+
+Sorry.
+-Greg
+
+> From: Greg Ward <gregoryjward@gmail.com>
+> Date: February 27, 2006 5:06:43 PM PST
+>
+> Hi Marcus,
+>
+> I believe the version with one division is when you have stored the  
+> surface normal, which is fine for normal polygons in Radiance, but  
+> not for the mesh code.  For the mesh code, I would be using the  
+> original version, which doesn't require any additional storage.
+>
+> -Greg
+>
+>> From: "Marcus Jacobs" <marcdevon@hotmail.com>
+>> Date: February 27, 2006 4:54:01 PM PST
+>>
+>> Greg,
+>>
+>> You mentioned that the Moller-Trumbore method required two  
+>> divisions.  For the code that I implemented,  I only needed one  
+>> division at the end to determine the ray length. Here is the page  
+>> for various versions of the source code.
+>>
+>> http://www.cs.lth.se/home/Tomas_Akenine_Moller/raytri/raytri.c
+>>
+>> I used the one without early division. If I am correct, this code  
+>> without early division supports two sided objects.
+>>
+>>
+>> Regards,
+>>
+>> Marcus
+

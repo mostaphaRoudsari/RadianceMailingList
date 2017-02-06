@@ -1,0 +1,337 @@
+From daniel at lightfoundryllc.com  Fri Apr  5 10:20:47 2013
+From: daniel at lightfoundryllc.com (Daniel C. Glaser)
+Date: Fri, 05 Apr 2013 11:20:47 -0600
+Subject: [Radiance-dev] IES gensky
+Message-ID: <515F07EF.5060300@lightfoundryllc.com>
+
+Hi Core Radiance Developers,
+   Has Zack's IES_gensky.py or an improvement to genksy to account for 
+the IESNA definition been included in the standard Radiance distribution 
+yet?  If not, are there plans to do so?
+   Thanks,
+- Dan
+
+
+
+From gregoryjward at gmail.com  Fri Apr  5 10:28:57 2013
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri, 5 Apr 2013 10:28:57 -0700
+Subject: [Radiance-dev] IES gensky
+In-Reply-To: <515F07EF.5060300@lightfoundryllc.com>
+References: <515F07EF.5060300@lightfoundryllc.com>
+Message-ID: <F5100C78-598A-4DA4-BA6A-CCD8C8F02379@gmail.com>
+
+Hi Dan,
+
+Nothing yet.  We currently don't have any Python scripts in Radiance, but maybe Rob G. has something to say about that...
+
+-Greg
+
+> From: "Daniel C. Glaser" <daniel at lightfoundryllc.com>
+> Date: April 5, 2013 10:20:47 AM PDT
+> 
+> Hi Core Radiance Developers,
+>  Has Zack's IES_gensky.py or an improvement to genksy to account for the IESNA definition been included in the standard Radiance distribution yet?  If not, are there plans to do so?
+>  Thanks,
+> - Dan
+
+
+From Robert.Guglielmetti at nrel.gov  Fri Apr  5 11:28:20 2013
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Fri, 5 Apr 2013 12:28:20 -0600
+Subject: [Radiance-dev] IES gensky
+In-Reply-To: <F5100C78-598A-4DA4-BA6A-CCD8C8F02379@gmail.com>
+Message-ID: <CD847095.1CED5%robert.guglielmetti@nrel.gov>
+
+All I was going to say was that adding another high level language to the
+Radiance dependency list was probably not something you'd be interested
+in, Greg. OTOH, since gensky ain't goin' noplace (and technically Python
+still wouldn't be a dependency since the use of IES_gensky would remain
+optional), I personally don't see the issue in adding IES_gensky.py (and
+the .cal file it needs) to the Radiance trunk. It could just be there for
+people who want to use it, and since it's even named differently from
+gensky its use would be less confusing than the objview/objview.rb
+dichotomy we currently have, which is operating system based. Zack would
+simply owe you a manpage for it, and we could add IES_gensky to our
+install/library routines. We could also consider adding Mark Stocks's
+genutahsky to the mix, but since that's written in C it's potentially more
+of a support burden than the Python script.(?)
+
+I was gonna stay out of this conversation, but since you asked Greg, the
+thread is now two cents richer. =)
+
+- Rob
+
+
+
+On 4/5/13 11:28 AM, "Gregory J. Ward" <gregoryjward at gmail.com> wrote:
+
+>Hi Dan,
+>
+>Nothing yet.  We currently don't have any Python scripts in Radiance, but
+>maybe Rob G. has something to say about that...
+>
+>-Greg
+>
+>> From: "Daniel C. Glaser" <daniel at lightfoundryllc.com>
+>> Date: April 5, 2013 10:20:47 AM PDT
+>> 
+>> Hi Core Radiance Developers,
+>>  Has Zack's IES_gensky.py or an improvement to genksy to account for
+>>the IESNA definition been included in the standard Radiance distribution
+>>yet?  If not, are there plans to do so?
+>>  Thanks,
+>> - Dan
+>
+>_______________________________________________
+>Radiance-dev mailing list
+>Radiance-dev at radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+From apian at pab.eu  Fri Apr 12 07:11:09 2013
+From: apian at pab.eu (Peter Apian-Bennewitz)
+Date: Fri, 12 Apr 2013 16:11:09 +0200
+Subject: [Radiance-dev] ra_jpg with EXIF headers - anyone ?
+Message-ID: <201304121411.r3CEBDof001674@mta2.lbl.gov>
+
+Hi folks,
+
+not that it matters much for daylighting .... but out of curiosity -
+
+has anyone written a converter from Radiance images to jpeg which tries 
+to convert the meta information in an hdr file as much as possible to 
+EXIF headers of jpeg ?
+("ra_ppm | cjpeg" works for sure, but the meta info is lost; exiv2 could 
+be used to put it back in via shell script, sure)
+Handling it directly would be neat, wouldn't it ? , if just for keeping 
+track of images and their history, plus some translatable camera 
+parameters like effective focal length, details displayed by getinfo. 
+EXIF is quite rich in tags, see http://www.exiv2.org/tags.html and this 
+metadata seems to be well supported by images browsers , search engines 
+and the like - if one wants to disclose the details, which on webserver 
+is doubtful, but in a local archive useful.
+
+just wondering-
+best,
+Peter
+
+-- 
+pab advanced technologies Ltd, http://www.pab.eu
+
+
+
+From gregoryjward at gmail.com  Fri Apr 12 08:45:24 2013
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri, 12 Apr 2013 08:45:24 -0700
+Subject: [Radiance-dev] ra_jpg with EXIF headers - anyone ?
+In-Reply-To: <201304121411.r3CEBDof001674@mta2.lbl.gov>
+References: <201304121411.r3CEBDof001674@mta2.lbl.gov>
+Message-ID: <442AF8AF-ACC8-45D2-824F-5F6E629C0BF6@gmail.com>
+
+Hi Peter,
+
+While the Exif header is a nice place to access such data and isn't that difficult to read, it's a real pain to write out.  The only tool I know of that does so robustly is exiftool, which is free and well-documented.  You can build a script around it such that you use the "ra_ppm | cjpeg" followed by a call to exiftool to insert the desired tags into the output.  It works quite well.
+
+Cheers,
+-Greg
+
+> From: Peter Apian-Bennewitz <apian at pab.eu>
+> Date: April 12, 2013 7:11:09 AM PDT
+> 
+> Hi folks,
+> 
+> not that it matters much for daylighting .... but out of curiosity -
+> 
+> has anyone written a converter from Radiance images to jpeg which tries to convert the meta information in an hdr file as much as possible to EXIF headers of jpeg ?
+> ("ra_ppm | cjpeg" works for sure, but the meta info is lost; exiv2 could be used to put it back in via shell script, sure)
+> Handling it directly would be neat, wouldn't it ? , if just for keeping track of images and their history, plus some translatable camera parameters like effective focal length, details displayed by getinfo. EXIF is quite rich in tags, see http://www.exiv2.org/tags.html and this metadata seems to be well supported by images browsers , search engines and the like - if one wants to disclose the details, which on webserver is doubtful, but in a local archive useful.
+> 
+> just wondering-
+> best,
+> Peter
+
+
+From apian at pab.eu  Fri Apr 12 08:59:54 2013
+From: apian at pab.eu (Peter Apian-Bennewitz)
+Date: Fri, 12 Apr 2013 17:59:54 +0200
+Subject: [Radiance-dev] ra_jpg with EXIF headers - anyone ?
+In-Reply-To: <442AF8AF-ACC8-45D2-824F-5F6E629C0BF6@gmail.com>
+References: <201304121411.r3CEBDof001674@mta2.lbl.gov>
+	<442AF8AF-ACC8-45D2-824F-5F6E629C0BF6@gmail.com>
+Message-ID: <201304121559.r3CFxwRn012462@mta3.lbl.gov>
+
+Hi,
+
+yeap, as mentioned, exiv2 can be used for that: getinfo ... | awk -f 
+somemagic.awk | exiv2 -m ... file.jpg
+Workable, doesn't even need a compiler, but dissects information from 
+text which is available, first hand and neatly structured, in c-code 
+reading hdr/pic images.
+Anyway- whatever fits.
+-Peter
+
+On 04/12/13 17:45, Gregory J. Ward wrote:
+> Hi Peter,
+>
+> While the Exif header is a nice place to access such data and isn't that difficult to read, it's a real pain to write out.  The only tool I know of that does so robustly is exiftool, which is free and well-documented.  You can build a script around it such that you use the "ra_ppm | cjpeg" followed by a call to exiftool to insert the desired tags into the output.  It works quite well.
+>
+> Cheers,
+> -Greg
+>
+>    
+>> From: Peter Apian-Bennewitz<apian at pab.eu>
+>> Date: April 12, 2013 7:11:09 AM PDT
+>>
+>> Hi folks,
+>>
+>> not that it matters much for daylighting .... but out of curiosity -
+>>
+>> has anyone written a converter from Radiance images to jpeg which tries to convert the meta information in an hdr file as much as possible to EXIF headers of jpeg ?
+>> ("ra_ppm | cjpeg" works for sure, but the meta info is lost; exiv2 could be used to put it back in via shell script, sure)
+>> Handling it directly would be neat, wouldn't it ? , if just for keeping track of images and their history, plus some translatable camera parameters like effective focal length, details displayed by getinfo. EXIF is quite rich in tags, see http://www.exiv2.org/tags.html and this metadata seems to be well supported by images browsers , search engines and the like - if one wants to disclose the details, which on webserver is doubtful, but in a local archive useful.
+>>
+>> just wondering-
+>> best,
+>> Peter
+>>      
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>    
+
+-- 
+pab advanced technologies Ltd, http://www.pab.eu
+
+
+
+From gregoryjward at gmail.com  Mon Apr 22 09:43:05 2013
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon, 22 Apr 2013 09:43:05 -0700
+Subject: [Radiance-dev] [Radiance-general] BSDF reader
+In-Reply-To: <CAOhSWL4G4Vi8xfkCWjKi2_-b=BPJma47sDJUAU+taJQiDdvdXQ@mail.gmail.com>
+References: <CAOhSWL4G4Vi8xfkCWjKi2_-b=BPJma47sDJUAU+taJQiDdvdXQ@mail.gmail.com>
+Message-ID: <6B069468-5FD9-4BF5-BB77-25B66447D0E6@lmi.net>
+
+Hi Aitor,
+
+This question probably belongs on the radiance-dev list, so I am cross-posting there and ask you to sign up (if you haven't already) and respond on that list.  (Same goes for others -- thanks!)
+
+The data order in the file is a matrix running from smallest to largest Klems patches, with the columns (inner loop data) corresponding to the input directions.  This is verified by a tag in the "DataDefinition" section that says:
+
+	<IncidentDataStructure>Columns</IncidentDataStructure>
+
+If "Rows" appears there instead of Columns, then the outgoing directions are the inner loop, but this would be unusual and probably not supported by WINDOW.
+
+The units of a BSDF are 1/steradians.
+
+If you have the opportunity to link to C code, you may also use the existing BSDF parser library included in the Radiance source tree to do the data loading and interpretation.
+
+Best,
+-Greg
+
+> From: leceta <aitorleceta at gmail.com>
+> Date: April 22, 2013 9:23:06 AM PDT
+> 
+> Hi all,
+> 
+> i would like to write a BSDF/xml parser for Rhino/Grasshopper 3d modelling software.
+> 
+> In order to correctly interpret the data contained in <ScatteringData> element in the xml file, i would appreciate to know: 
+> 
+> -The order of this data related to Klem?s patches. supposed that they are measuremts for each input/output direction
+> 
+> - The units of this data. Lumens? Percentage?
+> 
+> thanks
+> aitor
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20130422/b91be1b0/attachment.html>
+
+From amcneil at lbl.gov  Mon Apr 22 09:54:40 2013
+From: amcneil at lbl.gov (Andrew McNeil)
+Date: Mon, 22 Apr 2013 09:54:40 -0700
+Subject: [Radiance-dev] [Radiance-general] BSDF reader
+In-Reply-To: <6B069468-5FD9-4BF5-BB77-25B66447D0E6@lmi.net>
+References: <CAOhSWL4G4Vi8xfkCWjKi2_-b=BPJma47sDJUAU+taJQiDdvdXQ@mail.gmail.com>
+	<6B069468-5FD9-4BF5-BB77-25B66447D0E6@lmi.net>
+Message-ID: <CAOG+NiwcRCM0TBJxX2164XjGOmSPTdJOSRueSuaA=Xr9Pbzm6Q@mail.gmail.com>
+
+Hi Aitor,
+
+I recommend considering using the BSDF parser library from Radiance if you
+can.  The library has load and query routines to get everything you need.
+ It supports both Klems and TensorTree BSDFs without any need to
+differentiate between them your side.
+
+I used it for BSDF viewer, and it would have been a breeze if I didn't need
+to use Java Native Interface in the process.
+
+Andy
+
+
+On Mon, Apr 22, 2013 at 9:43 AM, Greg Ward <gregoryjward at gmail.com> wrote:
+
+> Hi Aitor,
+>
+> This question probably belongs on the radiance-dev list, so I am
+> cross-posting there and ask you to sign up (if you haven't already) and
+> respond on that list.  (Same goes for others -- thanks!)
+>
+> The data order in the file is a matrix running from smallest to largest
+> Klems patches, with the columns (inner loop data) corresponding to the
+> input directions.  This is verified by a tag in the "DataDefinition"
+> section that says:
+>
+> <IncidentDataStructure>Columns</IncidentDataStructure>
+>
+> If "Rows" appears there instead of Columns, then the outgoing directions
+> are the inner loop, but this would be unusual and probably not supported by
+> WINDOW.
+>
+> The units of a BSDF are 1/steradians.
+>
+> If you have the opportunity to link to C code, you may also use the
+> existing BSDF parser library included in the Radiance source tree to do the
+> data loading and interpretation.
+>
+> Best,
+> -Greg
+>
+> *From: *leceta <aitorleceta at gmail.com>
+>
+> *Date: *April 22, 2013 9:23:06 AM PDT
+>
+> *
+> *
+>
+> Hi all,
+>
+> i would like to write a BSDF/xml parser for Rhino/Grasshopper 3d modelling
+> software.
+>
+> In order to correctly interpret the data contained in <ScatteringData>
+> element in the xml file, i would appreciate to know:
+>
+> -The order of this data related to Klem?s patches. supposed that they are
+> measuremts for each input/output direction
+>
+> - The units of this data. Lumens? Percentage?
+>
+> thanks
+> aitor
+>
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20130422/e839f25c/attachment.html>
+

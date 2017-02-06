@@ -1,0 +1,2357 @@
+From kongzhewode at gmail.com  Wed Jan 25 13:15:49 2017
+From: kongzhewode at gmail.com (Zhe Kong)
+Date: Wed, 25 Jan 2017 15:15:49 -0600
+Subject: [HDRI] Convert equisolidangular to equiangular projection
+Message-ID: <CAEV5NycbY6hLjbPSmVb1H5pj_PW-Y4rNMjzrY4KJ2sLXkbV_wA@mail.gmail.com>
+
+Dear list:
+I am trying to compare HDR images and simulated luminance maps. Since I use
+SIGMA 8mm 1:3.5 for Canon, I need to convert equisolid-angular to
+equiangular project. I see very useful information from the post below:
+
+https://www.radiance-online.org:447/pipermail/radiance-general/2015-August/011184.html
+
+However, I still have some questions need to figure out.
+1) pinterp does not include equisolid-angular projection, so a equation
+needs to be applied to the function. Greg mentioned this simple expression,
+sin(theta)/theta, but I am still confused. Could anyone offer me the
+command?
+
+2) The post discussed the steps of processing HDR images. If I get it
+right, the steps following "adjust exposure" are vignetting correction,
+adding view information, converting project from equisolidangular to
+equiangular, then calibrating the image. I use a GOSSEN Starlite 2 to
+record the luminance value on a grey card for calibration. My question is,
+should I calibrate the image before or after converting fisheye projection?
+
+Any suggestions or explanation would be appreciated.
+
+Zhe
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20170125/6009a4a8/attachment.html>
+
+From gregoryjward at gmail.com  Wed Jan 25 16:48:55 2017
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed, 25 Jan 2017 16:48:55 -0800
+Subject: [HDRI] Convert equisolidangular to equiangular projection
+In-Reply-To: <CAEV5NycbY6hLjbPSmVb1H5pj_PW-Y4rNMjzrY4KJ2sLXkbV_wA@mail.gmail.com>
+References: <CAEV5NycbY6hLjbPSmVb1H5pj_PW-Y4rNMjzrY4KJ2sLXkbV_wA@mail.gmail.com>
+Message-ID: <69666289-A654-436D-90F5-9E304E4056AC@gmail.com>
+
+Hi Zhe,
+
+You should be able to apply the fisheye_corr.cal file I gave you earlier to correct the distortion and make it an angular fisheye image that pinterp works with.  (Why you need pinterp, I am not sure.)  The command is as suggested in the fisheye_corr.cal file itself:
+
+	pcomb -f fisheye_corr.cal -o fisheye.hdr \
+		| getinfo -a "VIEW= -vta -vh 180 -vv 180" \
+		> corrected.hdr
+
+This will also crop the area outside of 180? to black, assuming that is what you want.  It assumes that you have already cropped the image to a minimum square area.  You should apply vignetting correction and absolute calibration first.
+
+Cheers,
+-Greg
+
+> From: Zhe Kong <kongzhewode at gmail.com>
+> Date: January 25, 2017 1:15:49 PM PST
+> 
+> Dear list:
+> I am trying to compare HDR images and simulated luminance maps. Since I use SIGMA 8mm 1:3.5 for Canon, I need to convert equisolid-angular to equiangular project. I see very useful information from the post below:
+> 
+> https://www.radiance-online.org:447/pipermail/radiance-general/2015-August/011184.html
+> 
+> However, I still have some questions need to figure out. 
+> 1) pinterp does not include equisolid-angular projection, so a equation needs to be applied to the function. Greg mentioned this simple expression, sin(theta)/theta, but I am still confused. Could anyone offer me the command?
+> 
+> 2) The post discussed the steps of processing HDR images. If I get it right, the steps following "adjust exposure" are vignetting correction, adding view information, converting project from equisolidangular to equiangular, then calibrating the image. I use a GOSSEN Starlite 2 to record the luminance value on a grey card for calibration. My question is, should I calibrate the image before or after converting fisheye projection? 
+> 
+> Any suggestions or explanation would be appreciated. 
+> Zhe
+> 
+
+
+From alstan at jakubiec.net  Wed Jan 25 21:57:36 2017
+From: alstan at jakubiec.net (J. Alstan Jakubiec)
+Date: Thu, 26 Jan 2017 13:57:36 +0800
+Subject: [HDRI] Convert equisolidangular to equiangular projection
+In-Reply-To: <69666289-A654-436D-90F5-9E304E4056AC@gmail.com>
+References: <CAEV5NycbY6hLjbPSmVb1H5pj_PW-Y4rNMjzrY4KJ2sLXkbV_wA@mail.gmail.com>
+ <69666289-A654-436D-90F5-9E304E4056AC@gmail.com>
+Message-ID: <a2fef959-1bb4-c9f9-b3d6-4a0968e48990@jakubiec.net>
+
+Hi Zhe,
+
+As far as I am aware, the Sigma 8mm f/3.5 is an equi-angular (-vta) 
+lens, and the Sigma 4.5mm f/2.8 is an equi-solid angle (-???) lens. I am 
+having trouble finding a source from Sigma right now, but Cauwerts, 
+Bodart and Deneyer's paper 
+<http://www.tandfonline.com/doi/abs/10.1582/LEUKOS.2012.08.03.002> says so.
+
+That said, if you do end up with an equi-solidangle image, I have a 
+python script that converts equi-solid angle to equi-angle for each 
+source jpeg while maintaining the EXIF data. I used this to convert 
+equi-solidangle images from my Canon 8-15mm fisheye lenses.
+
+Best,
+Alstan
+
+On 1/26/2017 8:48 AM, Gregory J. Ward wrote:
+> Hi Zhe,
+>
+> You should be able to apply the fisheye_corr.cal file I gave you earlier to correct the distortion and make it an angular fisheye image that pinterp works with.  (Why you need pinterp, I am not sure.)  The command is as suggested in the fisheye_corr.cal file itself:
+>
+> 	pcomb -f fisheye_corr.cal -o fisheye.hdr \
+> 		| getinfo -a "VIEW= -vta -vh 180 -vv 180" \
+> 		> corrected.hdr
+>
+> This will also crop the area outside of 180? to black, assuming that is what you want.  It assumes that you have already cropped the image to a minimum square area.  You should apply vignetting correction and absolute calibration first.
+>
+> Cheers,
+> -Greg
+>
+>> From: Zhe Kong <kongzhewode at gmail.com>
+>> Date: January 25, 2017 1:15:49 PM PST
+>>
+>> Dear list:
+>> I am trying to compare HDR images and simulated luminance maps. Since I use SIGMA 8mm 1:3.5 for Canon, I need to convert equisolid-angular to equiangular project. I see very useful information from the post below:
+>>
+>> https://www.radiance-online.org:447/pipermail/radiance-general/2015-August/011184.html
+>>
+>> However, I still have some questions need to figure out.
+>> 1) pinterp does not include equisolid-angular projection, so a equation needs to be applied to the function. Greg mentioned this simple expression, sin(theta)/theta, but I am still confused. Could anyone offer me the command?
+>>
+>> 2) The post discussed the steps of processing HDR images. If I get it right, the steps following "adjust exposure" are vignetting correction, adding view information, converting project from equisolidangular to equiangular, then calibrating the image. I use a GOSSEN Starlite 2 to record the luminance value on a grey card for calibration. My question is, should I calibrate the image before or after converting fisheye projection?
+>>
+>> Any suggestions or explanation would be appreciated.
+>> Zhe
+>>
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20170126/2e646a95/attachment.html>
+
+From cbm at create.aau.dk  Thu Jan 26 02:17:01 2017
+From: cbm at create.aau.dk (=?utf-8?B?Q2xhdXMgQnLDuG5kZ2FhcmQgTWFkc2Vu?=)
+Date: Thu, 26 Jan 2017 10:17:01 +0000
+Subject: [HDRI] Convert equisolidangular to equiangular projection
+In-Reply-To: <a2fef959-1bb4-c9f9-b3d6-4a0968e48990@jakubiec.net>
+References: <CAEV5NycbY6hLjbPSmVb1H5pj_PW-Y4rNMjzrY4KJ2sLXkbV_wA@mail.gmail.com>
+ <69666289-A654-436D-90F5-9E304E4056AC@gmail.com>
+ <a2fef959-1bb4-c9f9-b3d6-4a0968e48990@jakubiec.net>
+Message-ID: <0121715B-6DBB-473E-ACC4-314E602E927E@create.aau.dk>
+
+
+
+If it is of any interest I did this overview some years back concerning various projections
+
+
+
+[cid:image001.png at 01D277C5.B71699A0]
+
+
+Claus B. Madsen
+
+Assoc. Prof., Ph.D. | Department of Architecture and Media Technology
+
+
+
+Phone: +45 9940 8788 | E-mail: cbm at create.aau.dk<mailto:cbm at create.aau.dk>
+
+Aalborg University | Rendsburggade 14 | 9000 Aalborg | Denmark
+
+
+
+Employee No.: 107255 | Vat No.: DK29102384
+
+
+
+From: "J. Alstan Jakubiec" <alstan at jakubiec.net>
+Reply-To: High Dynamic Range Imaging <hdri at radiance-online.org>
+Date: Thursday, 26 January 2017 at 06.57
+To: "hdri at radiance-online.org" <hdri at radiance-online.org>
+Subject: Re: [HDRI] Convert equisolidangular to equiangular projection
+
+
+Hi Zhe,
+
+As far as I am aware, the Sigma 8mm f/3.5 is an equi-angular (-vta) lens, and the Sigma 4.5mm f/2.8 is an equi-solid angle (-???) lens. I am having trouble finding a source from Sigma right now, but Cauwerts, Bodart and Deneyer's paper<http://www.tandfonline.com/doi/abs/10.1582/LEUKOS.2012.08.03.002> says so.
+That said, if you do end up with an equi-solidangle image, I have a python script that converts equi-solid angle to equi-angle for each source jpeg while maintaining the EXIF data. I used this to convert equi-solidangle images from my Canon 8-15mm fisheye lenses.
+
+Best,
+Alstan
+On 1/26/2017 8:48 AM, Gregory J. Ward wrote:
+
+Hi Zhe,
+
+
+
+You should be able to apply the fisheye_corr.cal file I gave you earlier to correct the distortion and make it an angular fisheye image that pinterp works with.  (Why you need pinterp, I am not sure.)  The command is as suggested in the fisheye_corr.cal file itself:
+
+
+
+  pcomb -f fisheye_corr.cal -o fisheye.hdr \
+
+         | getinfo -a "VIEW= -vta -vh 180 -vv 180" \
+
+         > corrected.hdr
+
+
+
+This will also crop the area outside of 180? to black, assuming that is what you want.  It assumes that you have already cropped the image to a minimum square area.  You should apply vignetting correction and absolute calibration first.
+
+
+
+Cheers,
+
+-Greg
+
+
+
+From: Zhe Kong <kongzhewode at gmail.com><mailto:kongzhewode at gmail.com>
+
+Date: January 25, 2017 1:15:49 PM PST
+
+
+
+Dear list:
+
+I am trying to compare HDR images and simulated luminance maps. Since I use SIGMA 8mm 1:3.5 for Canon, I need to convert equisolid-angular to equiangular project. I see very useful information from the post below:
+
+
+
+https://www.radiance-online.org:447/pipermail/radiance-general/2015-August/011184.html
+
+
+
+However, I still have some questions need to figure out.
+
+1) pinterp does not include equisolid-angular projection, so a equation needs to be applied to the function. Greg mentioned this simple expression, sin(theta)/theta, but I am still confused. Could anyone offer me the command?
+
+
+
+2) The post discussed the steps of processing HDR images. If I get it right, the steps following "adjust exposure" are vignetting correction, adding view information, converting project from equisolidangular to equiangular, then calibrating the image. I use a GOSSEN Starlite 2 to record the luminance value on a grey card for calibration. My question is, should I calibrate the image before or after converting fisheye projection?
+
+
+
+Any suggestions or explanation would be appreciated.
+
+Zhe
+
+
+
+_______________________________________________
+
+HDRI mailing list
+
+HDRI at radiance-online.org<mailto:HDRI at radiance-online.org>
+
+http://www.radiance-online.org/mailman/listinfo/hdri
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20170126/1413ac46/attachment-0001.html>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: image001.png
+Type: image/png
+Size: 5434 bytes
+Desc: image001.png
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20170126/1413ac46/attachment-0001.png>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: hemispherical.pdf
+Type: application/pdf
+Size: 758144 bytes
+Desc: hemispherical.pdf
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20170126/1413ac46/attachment-0001.pdf>
+
+From kongzhewode at gmail.com  Thu Jan 26 18:35:26 2017
+From: kongzhewode at gmail.com (Zhe Kong)
+Date: Thu, 26 Jan 2017 20:35:26 -0600
+Subject: [HDRI] Convert equisolidangular to equiangular projection
+Message-ID: <CAEV5Nyc3AneSk4iF7Fit45A6LmZWYot8W_GpfMA06phE91typw@mail.gmail.com>
+
+Hello Greg:
+Thank you very much for your answer. I will explore more about
+fisheye_corr.cal.
+
+Hello Alstan:
+Thank you for your explanation. I got this information from the
+manufacturer, but based on the paper you sent, I made a mistake. Thank you
+for saving my time and effort.
+
+Zhe
+
+On Thu, Jan 26, 2017 at 10:11 AM, <hdri-request at radiance-online.org> wrote:
+
+> Send HDRI mailing list submissions to
+>         hdri at radiance-online.org
+>
+> To subscribe or unsubscribe via the World Wide Web, visit
+>         http://www.radiance-online.org/mailman/listinfo/hdri
+> or, via email, send a message with subject or body 'help' to
+>         hdri-request at radiance-online.org
+>
+> You can reach the person managing the list at
+>         hdri-owner at radiance-online.org
+>
+> When replying, please edit your Subject line so it is more specific
+> than "Re: Contents of HDRI digest..."
+>
+>
+> Today's Topics:
+>
+>    1. Convert equisolidangular to equiangular projection (Zhe Kong)
+>    2. Re: Convert equisolidangular to equiangular projection
+>       (Gregory J. Ward)
+>    3. Re: Convert equisolidangular to equiangular projection
+>       (J. Alstan Jakubiec)
+>    4. Re: Convert equisolidangular to equiangular projection
+>       (Claus Br?ndgaard Madsen)
+>
+>
+> ----------------------------------------------------------------------
+>
+> Message: 1
+> Date: Wed, 25 Jan 2017 15:15:49 -0600
+> From: Zhe Kong <kongzhewode at gmail.com>
+> To: hdri at radiance-online.org
+> Subject: [HDRI] Convert equisolidangular to equiangular projection
+> Message-ID:
+>         <CAEV5NycbY6hLjbPSmVb1H5pj_PW-Y4rNMjzrY4KJ2sLXkbV_wA at mail.
+> gmail.com>
+> Content-Type: text/plain; charset="utf-8"
+>
+> Dear list:
+> I am trying to compare HDR images and simulated luminance maps. Since I use
+> SIGMA 8mm 1:3.5 for Canon, I need to convert equisolid-angular to
+> equiangular project. I see very useful information from the post below:
+>
+> https://www.radiance-online.org:447/pipermail/radiance-
+> general/2015-August/011184.html
+>
+> However, I still have some questions need to figure out.
+> 1) pinterp does not include equisolid-angular projection, so a equation
+> needs to be applied to the function. Greg mentioned this simple expression,
+> sin(theta)/theta, but I am still confused. Could anyone offer me the
+> command?
+>
+> 2) The post discussed the steps of processing HDR images. If I get it
+> right, the steps following "adjust exposure" are vignetting correction,
+> adding view information, converting project from equisolidangular to
+> equiangular, then calibrating the image. I use a GOSSEN Starlite 2 to
+> record the luminance value on a grey card for calibration. My question is,
+> should I calibrate the image before or after converting fisheye projection?
+>
+> Any suggestions or explanation would be appreciated.
+>
+> Zhe
+> -------------- next part --------------
+> An HTML attachment was scrubbed...
+> URL: <http://www.radiance-online.org/pipermail/hdri/
+> attachments/20170125/6009a4a8/attachment-0001.html>
+>
+> ------------------------------
+>
+> Message: 2
+> Date: Wed, 25 Jan 2017 16:48:55 -0800
+> From: "Gregory J. Ward" <gregoryjward at gmail.com>
+> To: High Dynamic Range Imaging <hdri at radiance-online.org>
+> Subject: Re: [HDRI] Convert equisolidangular to equiangular projection
+> Message-ID: <69666289-A654-436D-90F5-9E304E4056AC at gmail.com>
+> Content-Type: text/plain; charset=iso-8859-1
+>
+> Hi Zhe,
+>
+> You should be able to apply the fisheye_corr.cal file I gave you earlier
+> to correct the distortion and make it an angular fisheye image that pinterp
+> works with.  (Why you need pinterp, I am not sure.)  The command is as
+> suggested in the fisheye_corr.cal file itself:
+>
+>         pcomb -f fisheye_corr.cal -o fisheye.hdr \
+>                 | getinfo -a "VIEW= -vta -vh 180 -vv 180" \
+>                 > corrected.hdr
+>
+> This will also crop the area outside of 180? to black, assuming that is
+> what you want.  It assumes that you have already cropped the image to a
+> minimum square area.  You should apply vignetting correction and absolute
+> calibration first.
+>
+> Cheers,
+> -Greg
+>
+> > From: Zhe Kong <kongzhewode at gmail.com>
+> > Date: January 25, 2017 1:15:49 PM PST
+> >
+> > Dear list:
+> > I am trying to compare HDR images and simulated luminance maps. Since I
+> use SIGMA 8mm 1:3.5 for Canon, I need to convert equisolid-angular to
+> equiangular project. I see very useful information from the post below:
+> >
+> > https://www.radiance-online.org:447/pipermail/radiance-
+> general/2015-August/011184.html
+> >
+> > However, I still have some questions need to figure out.
+> > 1) pinterp does not include equisolid-angular projection, so a equation
+> needs to be applied to the function. Greg mentioned this simple expression,
+> sin(theta)/theta, but I am still confused. Could anyone offer me the
+> command?
+> >
+> > 2) The post discussed the steps of processing HDR images. If I get it
+> right, the steps following "adjust exposure" are vignetting correction,
+> adding view information, converting project from equisolidangular to
+> equiangular, then calibrating the image. I use a GOSSEN Starlite 2 to
+> record the luminance value on a grey card for calibration. My question is,
+> should I calibrate the image before or after converting fisheye projection?
+> >
+> > Any suggestions or explanation would be appreciated.
+> > Zhe
+> >
+>
+>
+>
+> ------------------------------
+>
+> Message: 3
+> Date: Thu, 26 Jan 2017 13:57:36 +0800
+> From: "J. Alstan Jakubiec" <alstan at jakubiec.net>
+> To: hdri at radiance-online.org
+> Subject: Re: [HDRI] Convert equisolidangular to equiangular projection
+> Message-ID: <a2fef959-1bb4-c9f9-b3d6-4a0968e48990 at jakubiec.net>
+> Content-Type: text/plain; charset="windows-1252"; Format="flowed"
+>
+> Hi Zhe,
+>
+> As far as I am aware, the Sigma 8mm f/3.5 is an equi-angular (-vta)
+> lens, and the Sigma 4.5mm f/2.8 is an equi-solid angle (-???) lens. I am
+> having trouble finding a source from Sigma right now, but Cauwerts,
+> Bodart and Deneyer's paper
+> <http://www.tandfonline.com/doi/abs/10.1582/LEUKOS.2012.08.03.002> says
+> so.
+>
+> That said, if you do end up with an equi-solidangle image, I have a
+> python script that converts equi-solid angle to equi-angle for each
+> source jpeg while maintaining the EXIF data. I used this to convert
+> equi-solidangle images from my Canon 8-15mm fisheye lenses.
+>
+> Best,
+> Alstan
+>
+> On 1/26/2017 8:48 AM, Gregory J. Ward wrote:
+> > Hi Zhe,
+> >
+> > You should be able to apply the fisheye_corr.cal file I gave you earlier
+> to correct the distortion and make it an angular fisheye image that pinterp
+> works with.  (Why you need pinterp, I am not sure.)  The command is as
+> suggested in the fisheye_corr.cal file itself:
+> >
+> >       pcomb -f fisheye_corr.cal -o fisheye.hdr \
+> >               | getinfo -a "VIEW= -vta -vh 180 -vv 180" \
+> >               > corrected.hdr
+> >
+> > This will also crop the area outside of 180? to black, assuming that is
+> what you want.  It assumes that you have already cropped the image to a
+> minimum square area.  You should apply vignetting correction and absolute
+> calibration first.
+> >
+> > Cheers,
+> > -Greg
+> >
+> >> From: Zhe Kong <kongzhewode at gmail.com>
+> >> Date: January 25, 2017 1:15:49 PM PST
+> >>
+> >> Dear list:
+> >> I am trying to compare HDR images and simulated luminance maps. Since I
+> use SIGMA 8mm 1:3.5 for Canon, I need to convert equisolid-angular to
+> equiangular project. I see very useful information from the post below:
+> >>
+> >> https://www.radiance-online.org:447/pipermail/radiance-
+> general/2015-August/011184.html
+> >>
+> >> However, I still have some questions need to figure out.
+> >> 1) pinterp does not include equisolid-angular projection, so a equation
+> needs to be applied to the function. Greg mentioned this simple expression,
+> sin(theta)/theta, but I am still confused. Could anyone offer me the
+> command?
+> >>
+> >> 2) The post discussed the steps of processing HDR images. If I get it
+> right, the steps following "adjust exposure" are vignetting correction,
+> adding view information, converting project from equisolidangular to
+> equiangular, then calibrating the image. I use a GOSSEN Starlite 2 to
+> record the luminance value on a grey card for calibration. My question is,
+> should I calibrate the image before or after converting fisheye projection?
+> >>
+> >> Any suggestions or explanation would be appreciated.
+> >> Zhe
+> >>
+> > _______________________________________________
+> > HDRI mailing list
+> > HDRI at radiance-online.org
+> > http://www.radiance-online.org/mailman/listinfo/hdri
+>
+> -------------- next part --------------
+> An HTML attachment was scrubbed...
+> URL: <http://www.radiance-online.org/pipermail/hdri/
+> attachments/20170126/2e646a95/attachment-0001.html>
+>
+> ------------------------------
+>
+> Message: 4
+> Date: Thu, 26 Jan 2017 10:17:01 +0000
+> From: Claus Br?ndgaard Madsen <cbm at create.aau.dk>
+> To: High Dynamic Range Imaging <hdri at radiance-online.org>
+> Subject: Re: [HDRI] Convert equisolidangular to equiangular projection
+> Message-ID: <0121715B-6DBB-473E-ACC4-314E602E927E at create.aau.dk>
+> Content-Type: text/plain; charset="utf-8"
+>
+>
+>
+> If it is of any interest I did this overview some years back concerning
+> various projections
+>
+>
+>
+> [cid:image001.png at 01D277C5.B71699A0]
+>
+>
+> Claus B. Madsen
+>
+> Assoc. Prof., Ph.D. | Department of Architecture and Media Technology
+>
+>
+>
+> Phone: +45 9940 8788 | E-mail: cbm at create.aau.dk<mailto:cbm at create.aau.dk>
+>
+> Aalborg University | Rendsburggade 14 | 9000 Aalborg | Denmark
+>
+>
+>
+> Employee No.: 107255 | Vat No.: DK29102384
+>
+>
+>
+> From: "J. Alstan Jakubiec" <alstan at jakubiec.net>
+> Reply-To: High Dynamic Range Imaging <hdri at radiance-online.org>
+> Date: Thursday, 26 January 2017 at 06.57
+> To: "hdri at radiance-online.org" <hdri at radiance-online.org>
+> Subject: Re: [HDRI] Convert equisolidangular to equiangular projection
+>
+>
+> Hi Zhe,
+>
+> As far as I am aware, the Sigma 8mm f/3.5 is an equi-angular (-vta) lens,
+> and the Sigma 4.5mm f/2.8 is an equi-solid angle (-???) lens. I am having
+> trouble finding a source from Sigma right now, but Cauwerts, Bodart and
+> Deneyer's paper<http://www.tandfonline.com/doi/abs/10.1582/LEUKOS.
+> 2012.08.03.002> says so.
+> That said, if you do end up with an equi-solidangle image, I have a python
+> script that converts equi-solid angle to equi-angle for each source jpeg
+> while maintaining the EXIF data. I used this to convert equi-solidangle
+> images from my Canon 8-15mm fisheye lenses.
+>
+> Best,
+> Alstan
+> On 1/26/2017 8:48 AM, Gregory J. Ward wrote:
+>
+> Hi Zhe,
+>
+>
+>
+> You should be able to apply the fisheye_corr.cal file I gave you earlier
+> to correct the distortion and make it an angular fisheye image that pinterp
+> works with.  (Why you need pinterp, I am not sure.)  The command is as
+> suggested in the fisheye_corr.cal file itself:
+>
+>
+>
+>   pcomb -f fisheye_corr.cal -o fisheye.hdr \
+>
+>          | getinfo -a "VIEW= -vta -vh 180 -vv 180" \
+>
+>          > corrected.hdr
+>
+>
+>
+> This will also crop the area outside of 180? to black, assuming that is
+> what you want.  It assumes that you have already cropped the image to a
+> minimum square area.  You should apply vignetting correction and absolute
+> calibration first.
+>
+>
+>
+> Cheers,
+>
+> -Greg
+>
+>
+>
+> From: Zhe Kong <kongzhewode at gmail.com><mailto:kongzhewode at gmail.com>
+>
+> Date: January 25, 2017 1:15:49 PM PST
+>
+>
+>
+> Dear list:
+>
+> I am trying to compare HDR images and simulated luminance maps. Since I
+> use SIGMA 8mm 1:3.5 for Canon, I need to convert equisolid-angular to
+> equiangular project. I see very useful information from the post below:
+>
+>
+>
+> https://www.radiance-online.org:447/pipermail/radiance-
+> general/2015-August/011184.html
+>
+>
+>
+> However, I still have some questions need to figure out.
+>
+> 1) pinterp does not include equisolid-angular projection, so a equation
+> needs to be applied to the function. Greg mentioned this simple expression,
+> sin(theta)/theta, but I am still confused. Could anyone offer me the
+> command?
+>
+>
+>
+> 2) The post discussed the steps of processing HDR images. If I get it
+> right, the steps following "adjust exposure" are vignetting correction,
+> adding view information, converting project from equisolidangular to
+> equiangular, then calibrating the image. I use a GOSSEN Starlite 2 to
+> record the luminance value on a grey card for calibration. My question is,
+> should I calibrate the image before or after converting fisheye projection?
+>
+>
+>
+> Any suggestions or explanation would be appreciated.
+>
+> Zhe
+>
+>
+>
+> _______________________________________________
+>
+> HDRI mailing list
+>
+> HDRI at radiance-online.org<mailto:HDRI at radiance-online.org>
+>
+> http://www.radiance-online.org/mailman/listinfo/hdri
+>
+>
+> -------------- next part --------------
+> An HTML attachment was scrubbed...
+> URL: <http://www.radiance-online.org/pipermail/hdri/
+> attachments/20170126/1413ac46/attachment.html>
+> -------------- next part --------------
+> A non-text attachment was scrubbed...
+> Name: image001.png
+> Type: image/png
+> Size: 5434 bytes
+> Desc: image001.png
+> URL: <http://www.radiance-online.org/pipermail/hdri/
+> attachments/20170126/1413ac46/attachment.png>
+> -------------- next part --------------
+> A non-text attachment was scrubbed...
+> Name: hemispherical.pdf
+> Type: application/pdf
+> Size: 758144 bytes
+> Desc: hemispherical.pdf
+> URL: <http://www.radiance-online.org/pipermail/hdri/
+> attachments/20170126/1413ac46/attachment.pdf>
+>
+> ------------------------------
+>
+> Subject: Digest Footer
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+>
+>
+> ------------------------------
+>
+> End of HDRI Digest, Vol 87, Issue 1
+> ***********************************
+>
+
+
+
+-- 
+*Zhe Kong*
+*PhD Student*
+*University of Wisconsin - Milwaukee *
+*School of Architecture and Urban Planning *
+*2131 E. Hartford Ave, Milwaukee, WI 53211 *
+*Office 327*
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20170126/aa582d90/attachment-0001.html>
+
+From Tobias.Porsch at technoteam.de  Fri Jan 27 02:17:11 2017
+From: Tobias.Porsch at technoteam.de (Tobias Porsch)
+Date: Fri, 27 Jan 2017 10:17:11 +0000
+Subject: [HDRI] Convert equisolidangular to equiangular projection
+In-Reply-To: <a2fef959-1bb4-c9f9-b3d6-4a0968e48990@jakubiec.net>
+References: <CAEV5NycbY6hLjbPSmVb1H5pj_PW-Y4rNMjzrY4KJ2sLXkbV_wA@mail.gmail.com>
+ <69666289-A654-436D-90F5-9E304E4056AC@gmail.com>
+ <a2fef959-1bb4-c9f9-b3d6-4a0968e48990@jakubiec.net>
+Message-ID: <d993837fac544c7da89363fe229574dc@technoteam.de>
+
+Hi Alstan,
+
+I'm not sure if your below description is correct.
+In my experience it's exactly the opposite. The Sigma f=8mm F/3.5 lens is an equi-solid angle (-vth) and the Sigma f=4.5mm F/2.8 is an equi-distant (-angular) (-vta) lens.
+Can you please double-check that issue for me?
+
+Cheers
+Tobias
+
+Von: J. Alstan Jakubiec [mailto:alstan at jakubiec.net]
+Gesendet: Donnerstag, 26. Januar 2017 06:58
+An: hdri at radiance-online.org
+Betreff: Re: [HDRI] Convert equisolidangular to equiangular projection
+
+
+Hi Zhe,
+
+As far as I am aware, the Sigma 8mm f/3.5 is an equi-angular (-vta) lens, and the Sigma 4.5mm f/2.8 is an equi-solid angle (-???) lens. I am having trouble finding a source from Sigma right now, but Cauwerts, Bodart and Deneyer's paper<http://www.tandfonline.com/doi/abs/10.1582/LEUKOS.2012.08.03.002> says so.
+That said, if you do end up with an equi-solidangle image, I have a python script that converts equi-solid angle to equi-angle for each source jpeg while maintaining the EXIF data. I used this to convert equi-solidangle images from my Canon 8-15mm fisheye lenses.
+
+Best,
+Alstan
+On 1/26/2017 8:48 AM, Gregory J. Ward wrote:
+
+Hi Zhe,
+
+
+
+You should be able to apply the fisheye_corr.cal file I gave you earlier to correct the distortion and make it an angular fisheye image that pinterp works with.  (Why you need pinterp, I am not sure.)  The command is as suggested in the fisheye_corr.cal file itself:
+
+
+
+ pcomb -f fisheye_corr.cal -o fisheye.hdr \
+
+        | getinfo -a "VIEW= -vta -vh 180 -vv 180" \
+
+        > corrected.hdr
+
+
+
+This will also crop the area outside of 180? to black, assuming that is what you want.  It assumes that you have already cropped the image to a minimum square area.  You should apply vignetting correction and absolute calibration first.
+
+
+
+Cheers,
+
+-Greg
+
+
+
+From: Zhe Kong <kongzhewode at gmail.com><mailto:kongzhewode at gmail.com>
+
+Date: January 25, 2017 1:15:49 PM PST
+
+
+
+Dear list:
+
+I am trying to compare HDR images and simulated luminance maps. Since I use SIGMA 8mm 1:3.5 for Canon, I need to convert equisolid-angular to equiangular project. I see very useful information from the post below:
+
+
+
+https://www.radiance-online.org:447/pipermail/radiance-general/2015-August/011184.html
+
+
+
+However, I still have some questions need to figure out.
+
+1) pinterp does not include equisolid-angular projection, so a equation needs to be applied to the function. Greg mentioned this simple expression, sin(theta)/theta, but I am still confused. Could anyone offer me the command?
+
+
+
+2) The post discussed the steps of processing HDR images. If I get it right, the steps following "adjust exposure" are vignetting correction, adding view information, converting project from equisolidangular to equiangular, then calibrating the image. I use a GOSSEN Starlite 2 to record the luminance value on a grey card for calibration. My question is, should I calibrate the image before or after converting fisheye projection?
+
+
+
+Any suggestions or explanation would be appreciated.
+
+Zhe
+
+
+
+
+
+_______________________________________________
+
+HDRI mailing list
+
+HDRI at radiance-online.org<mailto:HDRI at radiance-online.org>
+
+http://www.radiance-online.org/mailman/listinfo/hdri
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20170127/056d1c6d/attachment.html>
+
+From alstan at jakubiec.net  Fri Jan 27 02:26:37 2017
+From: alstan at jakubiec.net (J. Alstan Jakubiec)
+Date: Fri, 27 Jan 2017 18:26:37 +0800
+Subject: [HDRI] Convert equisolidangular to equiangular projection
+In-Reply-To: <d993837fac544c7da89363fe229574dc@technoteam.de>
+References: <CAEV5NycbY6hLjbPSmVb1H5pj_PW-Y4rNMjzrY4KJ2sLXkbV_wA@mail.gmail.com>
+ <69666289-A654-436D-90F5-9E304E4056AC@gmail.com>
+ <a2fef959-1bb4-c9f9-b3d6-4a0968e48990@jakubiec.net>
+ <d993837fac544c7da89363fe229574dc@technoteam.de>
+Message-ID: <26e4f44c-5429-b352-fa03-0fd24ea1914a@jakubiec.net>
+
+Hi Tobias,
+
+I just purchased a pair of Sigma 8mm f/3.5's for my work, but I haven't 
+measured them for vignetting and angular verification yet. It is on my 
+to do list :). I will be disappointed if they are equi-solid angular 
+however. Will let you know sometime after the Lunar new year.
+
+Alstan
+
+
+On 1/27/2017 6:17 PM, Tobias Porsch wrote:
+>
+> Hi Alstan,
+>
+> I'm not sure if your below description is correct.
+>
+> In my experience it's exactly the opposite. The Sigma f=8mm F/3.5 lens 
+> is an equi-solid angle (-vth) and the Sigma f=4.5mm F/2.8 is an 
+> equi-distant (-angular) (-vta) lens.
+>
+> Can you please double-check that issue for me?
+>
+> Cheers
+>
+> Tobias
+>
+> *Von:*J. Alstan Jakubiec [mailto:alstan at jakubiec.net]
+> *Gesendet:* Donnerstag, 26. Januar 2017 06:58
+> *An:* hdri at radiance-online.org
+> *Betreff:* Re: [HDRI] Convert equisolidangular to equiangular projection
+>
+> Hi Zhe,
+>
+> As far as I am aware, the Sigma 8mm f/3.5 is an equi-angular (-vta) 
+> lens, and the Sigma 4.5mm f/2.8 is an equi-solid angle (-???) lens. I 
+> am having trouble finding a source from Sigma right now, but Cauwerts, 
+> Bodart and Deneyer's paper 
+> <http://www.tandfonline.com/doi/abs/10.1582/LEUKOS.2012.08.03.002> 
+> says so.
+>
+> That said, if you do end up with an equi-solidangle image, I have a 
+> python script that converts equi-solid angle to equi-angle for each 
+> source jpeg while maintaining the EXIF data. I used this to convert 
+> equi-solidangle images from my Canon 8-15mm fisheye lenses.
+>
+> Best,
+> Alstan
+>
+> On 1/26/2017 8:48 AM, Gregory J. Ward wrote:
+>
+>     Hi Zhe,
+>
+>     You should be able to apply the fisheye_corr.cal file I gave you earlier to correct the distortion and make it an angular fisheye image that pinterp works with.  (Why you need pinterp, I am not sure.)  The command is as suggested in the fisheye_corr.cal file itself:
+>
+>       pcomb -f fisheye_corr.cal -o fisheye.hdr \
+>
+>              | getinfo -a "VIEW= -vta -vh 180 -vv 180" \
+>
+>              > corrected.hdr
+>
+>     This will also crop the area outside of 180? to black, assuming that is what you want.  It assumes that you have already cropped the image to a minimum square area.  You should apply vignetting correction and absolute calibration first.
+>
+>     Cheers,
+>
+>     -Greg
+>
+>         From: Zhe Kong<kongzhewode at gmail.com> <mailto:kongzhewode at gmail.com>
+>
+>         Date: January 25, 2017 1:15:49 PM PST
+>
+>         Dear list:
+>
+>         I am trying to compare HDR images and simulated luminance maps. Since I use SIGMA 8mm 1:3.5 for Canon, I need to convert equisolid-angular to equiangular project. I see very useful information from the post below:
+>
+>         https://www.radiance-online.org:447/pipermail/radiance-general/2015-August/011184.html
+>
+>         However, I still have some questions need to figure out.
+>
+>         1) pinterp does not include equisolid-angular projection, so a equation needs to be applied to the function. Greg mentioned this simple expression, sin(theta)/theta, but I am still confused. Could anyone offer me the command?
+>
+>         2) The post discussed the steps of processing HDR images. If I get it right, the steps following "adjust exposure" are vignetting correction, adding view information, converting project from equisolidangular to equiangular, then calibrating the image. I use a GOSSEN Starlite 2 to record the luminance value on a grey card for calibration. My question is, should I calibrate the image before or after converting fisheye projection?
+>
+>         Any suggestions or explanation would be appreciated.
+>
+>         Zhe
+>
+>     _______________________________________________
+>
+>     HDRI mailing list
+>
+>     HDRI at radiance-online.org <mailto:HDRI at radiance-online.org>
+>
+>     http://www.radiance-online.org/mailman/listinfo/hdri
+>
+>
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20170127/38fb03d2/attachment-0001.html>
+
+From alstan at jakubiec.net  Fri Jan 27 02:33:27 2017
+From: alstan at jakubiec.net (J. Alstan Jakubiec)
+Date: Fri, 27 Jan 2017 18:33:27 +0800
+Subject: [HDRI] Convert equisolidangular to equiangular projection
+In-Reply-To: <26e4f44c-5429-b352-fa03-0fd24ea1914a@jakubiec.net>
+References: <CAEV5NycbY6hLjbPSmVb1H5pj_PW-Y4rNMjzrY4KJ2sLXkbV_wA@mail.gmail.com>
+ <69666289-A654-436D-90F5-9E304E4056AC@gmail.com>
+ <a2fef959-1bb4-c9f9-b3d6-4a0968e48990@jakubiec.net>
+ <d993837fac544c7da89363fe229574dc@technoteam.de>
+ <26e4f44c-5429-b352-fa03-0fd24ea1914a@jakubiec.net>
+Message-ID: <40110ac6-0823-a577-fdb1-89ae7c4aac70@jakubiec.net>
+
+A little followup that is worth noting is that Axel Jacobs measured the 
+Sigma 4.5mm and found it to have an equi-solid angle projection. See his 
+presentation here: 
+https://www.radiance-online.org/community/workshops/2012-copenhagen/Day2/Jacobs/Jacobs-AJ09-HDR_Radiance_WS-2012.pdf
+
+Alstan
+
+
+On 1/27/2017 6:26 PM, J. Alstan Jakubiec wrote:
+>
+> Hi Tobias,
+>
+> I just purchased a pair of Sigma 8mm f/3.5's for my work, but I 
+> haven't measured them for vignetting and angular verification yet. It 
+> is on my to do list :). I will be disappointed if they are equi-solid 
+> angular however. Will let you know sometime after the Lunar new year.
+>
+> Alstan
+>
+>
+> On 1/27/2017 6:17 PM, Tobias Porsch wrote:
+>>
+>> Hi Alstan,
+>>
+>> I'm not sure if your below description is correct.
+>>
+>> In my experience it's exactly the opposite. The Sigma f=8mm F/3.5 
+>> lens is an equi-solid angle (-vth) and the Sigma f=4.5mm F/2.8 is an 
+>> equi-distant (-angular) (-vta) lens.
+>>
+>> Can you please double-check that issue for me?
+>>
+>> Cheers
+>>
+>> Tobias
+>>
+>> *Von:*J. Alstan Jakubiec [mailto:alstan at jakubiec.net]
+>> *Gesendet:* Donnerstag, 26. Januar 2017 06:58
+>> *An:* hdri at radiance-online.org
+>> *Betreff:* Re: [HDRI] Convert equisolidangular to equiangular projection
+>>
+>> Hi Zhe,
+>>
+>> As far as I am aware, the Sigma 8mm f/3.5 is an equi-angular (-vta) 
+>> lens, and the Sigma 4.5mm f/2.8 is an equi-solid angle (-???) lens. I 
+>> am having trouble finding a source from Sigma right now, but 
+>> Cauwerts, Bodart and Deneyer's paper 
+>> <http://www.tandfonline.com/doi/abs/10.1582/LEUKOS.2012.08.03.002> 
+>> says so.
+>>
+>> That said, if you do end up with an equi-solidangle image, I have a 
+>> python script that converts equi-solid angle to equi-angle for each 
+>> source jpeg while maintaining the EXIF data. I used this to convert 
+>> equi-solidangle images from my Canon 8-15mm fisheye lenses.
+>>
+>> Best,
+>> Alstan
+>>
+>> On 1/26/2017 8:48 AM, Gregory J. Ward wrote:
+>>
+>>     Hi Zhe,
+>>
+>>     You should be able to apply the fisheye_corr.cal file I gave you earlier to correct the distortion and make it an angular fisheye image that pinterp works with.  (Why you need pinterp, I am not sure.)  The command is as suggested in the fisheye_corr.cal file itself:
+>>
+>>       pcomb -f fisheye_corr.cal -o fisheye.hdr \
+>>
+>>              | getinfo -a "VIEW= -vta -vh 180 -vv 180" \
+>>
+>>              > corrected.hdr
+>>
+>>     This will also crop the area outside of 180? to black, assuming that is what you want.  It assumes that you have already cropped the image to a minimum square area.  You should apply vignetting correction and absolute calibration first.
+>>
+>>     Cheers,
+>>
+>>     -Greg
+>>
+>>         From: Zhe Kong<kongzhewode at gmail.com> <mailto:kongzhewode at gmail.com>
+>>
+>>         Date: January 25, 2017 1:15:49 PM PST
+>>
+>>         Dear list:
+>>
+>>         I am trying to compare HDR images and simulated luminance maps. Since I use SIGMA 8mm 1:3.5 for Canon, I need to convert equisolid-angular to equiangular project. I see very useful information from the post below:
+>>
+>>         https://www.radiance-online.org:447/pipermail/radiance-general/2015-August/011184.html
+>>
+>>         However, I still have some questions need to figure out.
+>>
+>>         1) pinterp does not include equisolid-angular projection, so a equation needs to be applied to the function. Greg mentioned this simple expression, sin(theta)/theta, but I am still confused. Could anyone offer me the command?
+>>
+>>         2) The post discussed the steps of processing HDR images. If I get it right, the steps following "adjust exposure" are vignetting correction, adding view information, converting project from equisolidangular to equiangular, then calibrating the image. I use a GOSSEN Starlite 2 to record the luminance value on a grey card for calibration. My question is, should I calibrate the image before or after converting fisheye projection?
+>>
+>>         Any suggestions or explanation would be appreciated.
+>>
+>>         Zhe
+>>
+>>     _______________________________________________
+>>
+>>     HDRI mailing list
+>>
+>>     HDRI at radiance-online.org <mailto:HDRI at radiance-online.org>
+>>
+>>     http://www.radiance-online.org/mailman/listinfo/hdri
+>>
+>>
+>>
+>> _______________________________________________
+>> HDRI mailing list
+>> HDRI at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/hdri
+>
+>
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20170127/90865c47/attachment.html>
+
+From cbm at create.aau.dk  Fri Jan 27 04:49:33 2017
+From: cbm at create.aau.dk (=?utf-8?B?Q2xhdXMgQnLDuG5kZ2FhcmQgTWFkc2Vu?=)
+Date: Fri, 27 Jan 2017 12:49:33 +0000
+Subject: [HDRI] Convert equisolidangular to equiangular projection
+In-Reply-To: <40110ac6-0823-a577-fdb1-89ae7c4aac70@jakubiec.net>
+References: <CAEV5NycbY6hLjbPSmVb1H5pj_PW-Y4rNMjzrY4KJ2sLXkbV_wA@mail.gmail.com>
+ <69666289-A654-436D-90F5-9E304E4056AC@gmail.com>
+ <a2fef959-1bb4-c9f9-b3d6-4a0968e48990@jakubiec.net>
+ <d993837fac544c7da89363fe229574dc@technoteam.de>
+ <26e4f44c-5429-b352-fa03-0fd24ea1914a@jakubiec.net>
+ <40110ac6-0823-a577-fdb1-89ae7c4aac70@jakubiec.net>
+Message-ID: <04DB52F0-142E-4C48-B57B-B2A5F23C0F14@create.aau.dk>
+
+
+
+Hi everyone,
+
+Some years ago I tested my Sigma 8mm lens, f3.5.
+
+At the time I found several sources online claiming it to be equi-solid angle (-vth), but it didn?t match my personal experiences with the lens, so I tested it.
+
+My tests showed it to be equidistant (-vta), i.e. identical to the angular fish eye projection in RADIANCE.
+
+So, in my experience, the 8mm Sigma lens is equidistant.
+
+Cheers,
+Claus
+
+
+
+Claus B. Madsen
+
+Assoc. Prof., Ph.D. | Department of Architecture and Media Technology
+
+
+
+Phone: +45 9940 8788 | E-mail: cbm at create.aau.dk<mailto:cbm at create.aau.dk>
+
+Aalborg University | Rendsburggade 14 | 9000 Aalborg | Denmark
+
+
+
+Employee No.: 107255 | Vat No.: DK29102384
+
+
+
+From: "J. Alstan Jakubiec" <alstan at jakubiec.net>
+Reply-To: High Dynamic Range Imaging <hdri at radiance-online.org>
+Date: Friday, 27 January 2017 at 11.33
+To: "hdri at radiance-online.org" <hdri at radiance-online.org>
+Subject: Re: [HDRI] Convert equisolidangular to equiangular projection
+
+
+A little followup that is worth noting is that Axel Jacobs measured the Sigma 4.5mm and found it to have an equi-solid angle projection. See his presentation here: https://www.radiance-online.org/community/workshops/2012-copenhagen/Day2/Jacobs/Jacobs-AJ09-HDR_Radiance_WS-2012.pdf
+
+Alstan
+
+On 1/27/2017 6:26 PM, J. Alstan Jakubiec wrote:
+
+Hi Tobias,
+
+I just purchased a pair of Sigma 8mm f/3.5's for my work, but I haven't measured them for vignetting and angular verification yet. It is on my to do list :). I will be disappointed if they are equi-solid angular however. Will let you know sometime after the Lunar new year.
+
+Alstan
+
+On 1/27/2017 6:17 PM, Tobias Porsch wrote:
+Hi Alstan,
+
+I'm not sure if your below description is correct.
+In my experience it's exactly the opposite. The Sigma f=8mm F/3.5 lens is an equi-solid angle (-vth) and the Sigma f=4.5mm F/2.8 is an equi-distant (-angular) (-vta) lens.
+Can you please double-check that issue for me?
+
+Cheers
+Tobias
+
+Von: J. Alstan Jakubiec [mailto:alstan at jakubiec.net]
+Gesendet: Donnerstag, 26. Januar 2017 06:58
+An: hdri at radiance-online.org<mailto:hdri at radiance-online.org>
+Betreff: Re: [HDRI] Convert equisolidangular to equiangular projection
+
+
+Hi Zhe,
+
+As far as I am aware, the Sigma 8mm f/3.5 is an equi-angular (-vta) lens, and the Sigma 4.5mm f/2.8 is an equi-solid angle (-???) lens. I am having trouble finding a source from Sigma right now, but Cauwerts, Bodart and Deneyer's paper<http://www.tandfonline.com/doi/abs/10.1582/LEUKOS.2012.08.03.002> says so.
+That said, if you do end up with an equi-solidangle image, I have a python script that converts equi-solid angle to equi-angle for each source jpeg while maintaining the EXIF data. I used this to convert equi-solidangle images from my Canon 8-15mm fisheye lenses.
+
+Best,
+Alstan
+On 1/26/2017 8:48 AM, Gregory J. Ward wrote:
+
+Hi Zhe,
+
+
+
+You should be able to apply the fisheye_corr.cal file I gave you earlier to correct the distortion and make it an angular fisheye image that pinterp works with.  (Why you need pinterp, I am not sure.)  The command is as suggested in the fisheye_corr.cal file itself:
+
+
+
+ pcomb -f fisheye_corr.cal -o fisheye.hdr \
+
+        | getinfo -a "VIEW= -vta -vh 180 -vv 180" \
+
+        > corrected.hdr
+
+
+
+This will also crop the area outside of 180? to black, assuming that is what you want.  It assumes that you have already cropped the image to a minimum square area.  You should apply vignetting correction and absolute calibration first.
+
+
+
+Cheers,
+
+-Greg
+
+
+
+From: Zhe Kong <kongzhewode at gmail.com><mailto:kongzhewode at gmail.com>
+
+Date: January 25, 2017 1:15:49 PM PST
+
+
+
+Dear list:
+
+I am trying to compare HDR images and simulated luminance maps. Since I use SIGMA 8mm 1:3.5 for Canon, I need to convert equisolid-angular to equiangular project. I see very useful information from the post below:
+
+
+
+https://www.radiance-online.org:447/pipermail/radiance-general/2015-August/011184.html
+
+
+
+However, I still have some questions need to figure out.
+
+1) pinterp does not include equisolid-angular projection, so a equation needs to be applied to the function. Greg mentioned this simple expression, sin(theta)/theta, but I am still confused. Could anyone offer me the command?
+
+
+
+2) The post discussed the steps of processing HDR images. If I get it right, the steps following "adjust exposure" are vignetting correction, adding view information, converting project from equisolidangular to equiangular, then calibrating the image. I use a GOSSEN Starlite 2 to record the luminance value on a grey card for calibration. My question is, should I calibrate the image before or after converting fisheye projection?
+
+
+
+Any suggestions or explanation would be appreciated.
+
+Zhe
+
+
+
+
+
+_______________________________________________
+
+HDRI mailing list
+
+HDRI at radiance-online.org<mailto:HDRI at radiance-online.org>
+
+http://www.radiance-online.org/mailman/listinfo/hdri
+
+
+
+
+
+_______________________________________________
+
+HDRI mailing list
+
+HDRI at radiance-online.org<mailto:HDRI at radiance-online.org>
+
+http://www.radiance-online.org/mailman/listinfo/hdri
+
+
+
+
+
+_______________________________________________
+
+HDRI mailing list
+
+HDRI at radiance-online.org<mailto:HDRI at radiance-online.org>
+
+http://www.radiance-online.org/mailman/listinfo/hdri
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20170127/73329ac9/attachment-0001.html>
+
+From raquelviula.lists at gmail.com  Fri Jan 27 05:49:57 2017
+From: raquelviula.lists at gmail.com (Raquel Viula)
+Date: Fri, 27 Jan 2017 14:49:57 +0100
+Subject: [HDRI] Convert equisolidangular to equiangular projection
+In-Reply-To: <04DB52F0-142E-4C48-B57B-B2A5F23C0F14@create.aau.dk>
+References: <CAEV5NycbY6hLjbPSmVb1H5pj_PW-Y4rNMjzrY4KJ2sLXkbV_wA@mail.gmail.com>
+ <69666289-A654-436D-90F5-9E304E4056AC@gmail.com>
+ <a2fef959-1bb4-c9f9-b3d6-4a0968e48990@jakubiec.net>
+ <d993837fac544c7da89363fe229574dc@technoteam.de>
+ <26e4f44c-5429-b352-fa03-0fd24ea1914a@jakubiec.net>
+ <40110ac6-0823-a577-fdb1-89ae7c4aac70@jakubiec.net>
+ <04DB52F0-142E-4C48-B57B-B2A5F23C0F14@create.aau.dk>
+Message-ID: <D4B10D63.1B0EB%raquelviula.lists@gmail.com>
+
+Hi all,
+Thank you for raising this topic and sharing your views. I?m using the
+output of a Sigma f=4.5mm F/2.8 for several analysis including DGP via
+Evalglare that should require a -vth or -vta view, so this is critical
+information for me.
+May I ask why people refer to -vth as equi-solid angle and not hemispherical
+as it is defined in Radiance?s rpict man page?
+My understanding from that page and from Axel Jacobs' presentation sent via
+the link just before is that there isn't a Radiance description for the
+equi-solid angle view.
+
+Best Regards
+
+
+
+Raquel Viula
+
+PhD Researcher
+
+
+
+TU Delft | Faculty of Architecture and the Built Environment |
+
+Architectural Engineering and Technology
+
+Julianalaan 134, 2628 BL Delft, The Netherlands | P.O. Box 5043 2600 GA
+Delft
+
+
+From:  Claus Br?ndgaard Madsen <cbm at create.aau.dk>
+Reply-To:  High Dynamic Range Imaging <hdri at radiance-online.org>
+Date:  Friday 27 January 2017 13:49
+To:  High Dynamic Range Imaging <hdri at radiance-online.org>
+Subject:  Re: [HDRI] Convert equisolidangular to equiangular projection
+
+ 
+ 
+Hi everyone,
+ 
+Some years ago I tested my Sigma 8mm lens, f3.5.
+ 
+At the time I found several sources online claiming it to be equi-solid
+angle (-vth), but it didn?t match my personal experiences with the lens, so
+I tested it.
+ 
+My tests showed it to be equidistant (-vta), i.e. identical to the angular
+fish eye projection in RADIANCE.
+ 
+So, in my experience, the 8mm Sigma lens is equidistant.
+ 
+Cheers,
+Claus
+ 
+ 
+
+ 
+
+Claus B. Madsen
+Assoc. Prof., Ph.D. | Department of Architecture and Media Technology
+ 
+Phone: +45 9940 8788 | E-mail: cbm at create.aau.dk <mailto:cbm at create.aau.dk>
+Aalborg University | Rendsburggade 14 | 9000 Aalborg | Denmark
+ 
+Employee No.: 107255 | Vat No.: DK29102384
+ 
+ 
+
+From: "J. Alstan Jakubiec" <alstan at jakubiec.net>
+Reply-To: High Dynamic Range Imaging <hdri at radiance-online.org>
+Date: Friday, 27 January 2017 at 11.33
+To: "hdri at radiance-online.org" <hdri at radiance-online.org>
+Subject: Re: [HDRI] Convert equisolidangular to equiangular projection
+
+ 
+A little followup that is worth noting is that Axel Jacobs measured the
+Sigma 4.5mm and found it to have an equi-solid angle projection. See his
+presentation here: 
+https://www.radiance-online.org/community/workshops/2012-copenhagen/Day2/Jac
+obs/Jacobs-AJ09-HDR_Radiance_WS-2012.pdf
+
+Alstan
+
+ 
+
+On 1/27/2017 6:26 PM, J. Alstan Jakubiec wrote:
+> Hi Tobias,
+> 
+> I just purchased a pair of Sigma 8mm f/3.5's for my work, but I haven't
+> measured them for vignetting and angular verification yet. It is on my to do
+> list :). I will be disappointed if they are equi-solid angular however. Will
+> let you know sometime after the Lunar new year.
+> 
+> Alstan
+> 
+>  
+> 
+> On 1/27/2017 6:17 PM, Tobias Porsch wrote:
+>> Hi Alstan,
+>>  
+>> I'm not sure if your below description is correct.
+>> In my experience it's exactly the opposite. The Sigma f=8mm F/3.5 lens is an
+>> equi-solid angle (-vth) and the Sigma f=4.5mm F/2.8 is an equi-distant
+>> (-angular) (-vta) lens.
+>> Can you please double-check that issue for me?
+>>  
+>> Cheers
+>> Tobias
+>>  
+>> 
+>> Von: J. Alstan Jakubiec [mailto:alstan at jakubiec.net]
+>> Gesendet: Donnerstag, 26. Januar 2017 06:58
+>> An: hdri at radiance-online.org
+>> Betreff: Re: [HDRI] Convert equisolidangular to equiangular projection
+>>  
+>> Hi Zhe,
+>> 
+>> As far as I am aware, the Sigma 8mm f/3.5 is an equi-angular (-vta) lens, and
+>> the Sigma 4.5mm f/2.8 is an equi-solid angle (-???) lens. I am having trouble
+>> finding a source from Sigma right now, but Cauwerts, Bodart and Deneyer's
+>> paper <http://www.tandfonline.com/doi/abs/10.1582/LEUKOS.2012.08.03.002>
+>> says so.
+>> 
+>> That said, if you do end up with an equi-solidangle image, I have a python
+>> script that converts equi-solid angle to equi-angle for each source jpeg
+>> while maintaining the EXIF data. I used this to convert equi-solidangle
+>> images from my Canon 8-15mm fisheye lenses.
+>> 
+>> Best,
+>> Alstan
+>> 
+>> On 1/26/2017 8:48 AM, Gregory J. Ward wrote:
+>>> Hi Zhe,
+>>>  
+>>> You should be able to apply the fisheye_corr.cal file I gave you earlier to
+>>> correct the distortion and make it an angular fisheye image that pinterp
+>>> works with.  (Why you need pinterp, I am not sure.)  The command is as
+>>> suggested in the fisheye_corr.cal file itself:
+>>>  
+>>>  pcomb -f fisheye_corr.cal -o fisheye.hdr \
+>>>         | getinfo -a "VIEW= -vta -vh 180 -vv 180" \
+>>>>         > corrected.hdr
+>>>  
+>>> This will also crop the area outside of 180? to black, assuming that is what
+>>> you want.  It assumes that you have already cropped the image to a minimum
+>>> square area.  You should apply vignetting correction and absolute
+>>> calibration first.
+>>>  
+>>> Cheers,
+>>> -Greg
+>>>  
+>>>> From: Zhe Kong <kongzhewode at gmail.com> <mailto:kongzhewode at gmail.com>
+>>>> Date: January 25, 2017 1:15:49 PM PST
+>>>>  
+>>>> Dear list:
+>>>> I am trying to compare HDR images and simulated luminance maps. Since I use
+>>>> SIGMA 8mm 1:3.5 for Canon, I need to convert equisolid-angular to
+>>>> equiangular project. I see very useful information from the post below:
+>>>>  
+>>>> https://www.radiance-online.org:447/pipermail/radiance-general/2015-August/
+>>>> 011184.html
+>>>>  
+>>>> However, I still have some questions need to figure out.
+>>>> 1) pinterp does not include equisolid-angular projection, so a equation
+>>>> needs to be applied to the function. Greg mentioned this simple expression,
+>>>> sin(theta)/theta, but I am still confused. Could anyone offer me the
+>>>> command?
+>>>>  
+>>>> 2) The post discussed the steps of processing HDR images. If I get it
+>>>> right, the steps following "adjust exposure" are vignetting correction,
+>>>> adding view information, converting project from equisolidangular to
+>>>> equiangular, then calibrating the image. I use a GOSSEN Starlite 2 to
+>>>> record the luminance value on a grey card for calibration. My question is,
+>>>> should I calibrate the image before or after converting fisheye projection?
+>>>>  
+>>>> Any suggestions or explanation would be appreciated.
+>>>> Zhe
+>>>>  
+>>>  
+>>> _______________________________________________
+>>> HDRI mailing list
+>>> HDRI at radiance-online.org
+>>> http://www.radiance-online.org/mailman/listinfo/hdri
+>>  
+>> 
+>> 
+>> 
+>> _______________________________________________
+>> HDRI mailing list
+>> HDRI at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/hdri
+> 
+> 
+> 
+> 
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+
+_______________________________________________ HDRI mailing list
+HDRI at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/hdri
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20170127/c5ed7c92/attachment-0001.html>
+
+From gregoryjward at gmail.com  Fri Jan 27 08:10:53 2017
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri, 27 Jan 2017 08:10:53 -0800
+Subject: [HDRI] Convert equisolidangular to equiangular projection
+In-Reply-To: <D4B10D63.1B0EB%raquelviula.lists@gmail.com>
+References: <CAEV5NycbY6hLjbPSmVb1H5pj_PW-Y4rNMjzrY4KJ2sLXkbV_wA@mail.gmail.com>
+ <69666289-A654-436D-90F5-9E304E4056AC@gmail.com>
+ <a2fef959-1bb4-c9f9-b3d6-4a0968e48990@jakubiec.net>
+ <d993837fac544c7da89363fe229574dc@technoteam.de>
+ <26e4f44c-5429-b352-fa03-0fd24ea1914a@jakubiec.net>
+ <40110ac6-0823-a577-fdb1-89ae7c4aac70@jakubiec.net>
+ <04DB52F0-142E-4C48-B57B-B2A5F23C0F14@create.aau.dk>
+ <D4B10D63.1B0EB%raquelviula.lists@gmail.com>
+Message-ID: <D6E5B3A8-5434-4FF6-A7F7-9D2728C02ED0@gmail.com>
+
+Raquel points out an important error in this discussion's terminology.  The "equidistant" fisheye does indeed correspond to the "-vta" view type in Radiance.  However, the "-vth" type corresponds to a hemispherical projection, which very few commercial fisheye lenses realize.  In particular, the equisolidangle projection is much closer to "-vta" than it is to "-vth".  If your lens is equisolidangle, then you need to use the fisheye_corr.cal script or similar to convert it to an equidistant projection.
+
+I have not implemented the equisolidangle projection, though there is a third fisheye type (-vts) which is called "stereographic", although we prefer the term "planisphere" projection to avoid confusion with stereo views.  This does not correspond to any commercial lenses to my knowledge, but I'd be interested to hear of one.
+
+> From: Raquel Viula <raquelviula.lists at gmail.com>
+> Date: January 27, 2017 5:49:57 AM PST
+> 
+> Hi all,
+> Thank you for raising this topic and sharing your views. I?m using the output of a Sigma f=4.5mm F/2.8 for several analysis including DGP via Evalglare that should require a -vth or -vta view, so this is critical information for me.
+> May I ask why people refer to -vth as equi-solid angle and not hemispherical as it is defined in Radiance?s rpict man page?
+> My understanding from that page and from Axel Jacobs' presentation sent via the link just before is that there isn't a Radiance description for the equi-solid angle view.
+> 
+> Best Regards
+> 
+> Raquel Viula
+> PhD Researcher
+> 
+> TU Delft | Faculty of Architecture and the Built Environment |
+> Architectural Engineering and Technology
+> Julianalaan 134, 2628 BL Delft, The Netherlands | P.O. Box 5043 2600 GA Delft
+> 
+> From: Claus Br?ndgaard Madsen <cbm at create.aau.dk>
+> Reply-To: High Dynamic Range Imaging <hdri at radiance-online.org>
+> Date: Friday 27 January 2017 13:49
+> To: High Dynamic Range Imaging <hdri at radiance-online.org>
+> Subject: Re: [HDRI] Convert equisolidangular to equiangular projection
+> 
+>  
+>  
+> Hi everyone,
+>  
+> Some years ago I tested my Sigma 8mm lens, f3.5.
+>  
+> At the time I found several sources online claiming it to be equi-solid angle (-vth), but it didn?t match my personal experiences with the lens, so I tested it.
+>  
+> My tests showed it to be equidistant (-vta), i.e. identical to the angular fish eye projection in RADIANCE.
+>  
+> So, in my experience, the 8mm Sigma lens is equidistant.
+>  
+> Cheers,
+> Claus
+>  
+>  
+>  
+> Claus B. Madsen
+> Assoc. Prof., Ph.D. | Department of Architecture and Media Technology
+>  
+> Phone: +45 9940 8788 | E-mail: cbm at create.aau.dk
+> Aalborg University | Rendsburggade 14 | 9000 Aalborg | Denmark
+>  
+> Employee No.: 107255 | Vat No.: DK29102384
+>  
+>  
+> From: "J. Alstan Jakubiec" <alstan at jakubiec.net>
+> Reply-To: High Dynamic Range Imaging <hdri at radiance-online.org>
+> Date: Friday, 27 January 2017 at 11.33
+> To: "hdri at radiance-online.org" <hdri at radiance-online.org>
+> Subject: Re: [HDRI] Convert equisolidangular to equiangular projection
+>  
+> A little followup that is worth noting is that Axel Jacobs measured the Sigma 4.5mm and found it to have an equi-solid angle projection. See his presentation here: https://www.radiance-online.org/community/workshops/2012-copenhagen/Day2/Jacobs/Jacobs-AJ09-HDR_Radiance_WS-2012.pdf
+> 
+> Alstan
+> 
+>  
+> On 1/27/2017 6:26 PM, J. Alstan Jakubiec wrote:
+> Hi Tobias,
+> 
+> I just purchased a pair of Sigma 8mm f/3.5's for my work, but I haven't measured them for vignetting and angular verification yet. It is on my to do list :). I will be disappointed if they are equi-solid angular however. Will let you know sometime after the Lunar new year.
+> 
+> Alstan
+> 
+>  
+> On 1/27/2017 6:17 PM, Tobias Porsch wrote:
+> Hi Alstan,
+>  
+> I'm not sure if your below description is correct.
+> In my experience it's exactly the opposite. The Sigma f=8mm F/3.5 lens is an equi-solid angle (-vth) and the Sigma f=4.5mm F/2.8 is an equi-distant (-angular) (-vta) lens.
+> Can you please double-check that issue for me?
+>  
+> Cheers
+> Tobias
+>  
+> Von: J. Alstan Jakubiec [mailto:alstan at jakubiec.net] 
+> Gesendet: Donnerstag, 26. Januar 2017 06:58
+> An: hdri at radiance-online.org
+> Betreff: Re: [HDRI] Convert equisolidangular to equiangular projection
+>  
+> Hi Zhe,
+> 
+> As far as I am aware, the Sigma 8mm f/3.5 is an equi-angular (-vta) lens, and the Sigma 4.5mm f/2.8 is an equi-solid angle (-???) lens. I am having trouble finding a source from Sigma right now, but Cauwerts, Bodart and Deneyer's paper says so.
+> 
+> That said, if you do end up with an equi-solidangle image, I have a python script that converts equi-solid angle to equi-angle for each source jpeg while maintaining the EXIF data. I used this to convert equi-solidangle images from my Canon 8-15mm fisheye lenses.
+> 
+> Best,
+> Alstan
+> 
+> On 1/26/2017 8:48 AM, Gregory J. Ward wrote:
+> Hi Zhe,
+>  
+> You should be able to apply the fisheye_corr.cal file I gave you earlier to correct the distortion and make it an angular fisheye image that pinterp works with.  (Why you need pinterp, I am not sure.)  The command is as suggested in the fisheye_corr.cal file itself:
+>  
+>  pcomb -f fisheye_corr.cal -o fisheye.hdr \
+>         | getinfo -a "VIEW= -vta -vh 180 -vv 180" \
+>         > corrected.hdr
+>  
+> This will also crop the area outside of 180? to black, assuming that is what you want.  It assumes that you have already cropped the image to a minimum square area.  You should apply vignetting correction and absolute calibration first.
+>  
+> Cheers,
+> -Greg
+>  
+> From: Zhe Kong <kongzhewode at gmail.com>
+> Date: January 25, 2017 1:15:49 PM PST
+>  
+> Dear list:
+> I am trying to compare HDR images and simulated luminance maps. Since I use SIGMA 8mm 1:3.5 for Canon, I need to convert equisolid-angular to equiangular project. I see very useful information from the post below:
+>  
+> https://www.radiance-online.org:447/pipermail/radiance-general/2015-August/011184.html
+>  
+> However, I still have some questions need to figure out. 
+> 1) pinterp does not include equisolid-angular projection, so a equation needs to be applied to the function. Greg mentioned this simple expression, sin(theta)/theta, but I am still confused. Could anyone offer me the command?
+>  
+> 2) The post discussed the steps of processing HDR images. If I get it right, the steps following "adjust exposure" are vignetting correction, adding view information, converting project from equisolidangular to equiangular, then calibrating the image. I use a GOSSEN Starlite 2 to record the luminance value on a grey card for calibration. My question is, should I calibrate the image before or after converting fisheye projection? 
+>  
+> Any suggestions or explanation would be appreciated. 
+> Zhe
+>  
+>  
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+>  
+> 
+> 
+> 
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+> 
+> 
+> 
+> 
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+> 
+> 
+> _______________________________________________ HDRI mailing list HDRI at radiance-online.org http://www.radiance-online.org/mailman/listinfo/hdri _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20170127/f2bd1701/attachment-0001.html>
+
+From far.mahlab at ku.edu  Fri Jan 27 14:53:42 2017
+From: far.mahlab at ku.edu (Mahlab, Seyedeh Farzaneh)
+Date: Fri, 27 Jan 2017 22:53:42 +0000
+Subject: [HDRI] RGB value from 0 to 255
+Message-ID: <7475990025a0419f88674901e8dc71bf@ex13-csf-cr-26.home.ku.edu>
+
+Hello
+Im trying to extract RGB value from an HDR image from 0 to 255. I was using : pvalue -o -s $HDR and RGB values are irradiances ? I added -db to the code but still not giving me the result. Any suggestion is appreciated.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20170127/bed452d6/attachment.html>
+
+From gregoryjward at gmail.com  Fri Jan 27 15:09:55 2017
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri, 27 Jan 2017 15:09:55 -0800
+Subject: [HDRI] RGB value from 0 to 255
+In-Reply-To: <7475990025a0419f88674901e8dc71bf@ex13-csf-cr-26.home.ku.edu>
+References: <7475990025a0419f88674901e8dc71bf@ex13-csf-cr-26.home.ku.edu>
+Message-ID: <0EB55234-5279-4042-95D7-0C9B6920CD04@gmail.com>
+
+Hi Seyedeh,
+
+The "-s" option to pvalue skips the specified number of bytes in the input for non-standard headers.  I don't think this is the option you want.
+
+You probably want the "-di" option (or "+di" if you want the pixels positions).  The "-o" option removes any exposure that has been applied to the image, so the output will be 255 for 1.0 watts/sr/m^2.  If your picture was created using the rpict "-i" or "-I" option, then the output will be irradiance rather than radiance, and 255 will correspond to 1.0 watts/m^2.
+
+I hope this helps.
+
+-Greg
+
+P.S.  I had to manually pass your e-mail through the system.  Next time, make sure you write from the address you signed up for on the HDRI list, or add this one.
+
+> From: "Mahlab, Seyedeh Farzaneh" <far.mahlab at ku.edu>
+> Date: January 27, 2017 2:53:42 PM PST
+> 
+> Hello
+> Im trying to extract RGB value from an HDR image from 0 to 255. I was using : pvalue ?o ?s $HDR and RGB values are irradiances ? I added ?db to the code but still not giving me the result. Any suggestion is appreciated.
+> 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20170127/7939018f/attachment.html>
+
+From kongzhewode at gmail.com  Fri Jan 27 17:09:54 2017
+From: kongzhewode at gmail.com (Zhe Kong)
+Date: Fri, 27 Jan 2017 19:09:54 -0600
+Subject: [HDRI] Convert equisolidangular to equiangular projection
+Message-ID: <CAEV5NyfGxvGSRUfU24Sg+VvFBR4X+xLSvSH8QkqK=hwTUy2sSQ@mail.gmail.com>
+
+Sorry about the confusion I brought up. I got this wrong information from
+the manufacturer. If I recall my previous experience, Sigma f/3.5 matches
+Radiance -vta pretty well. The current mismatch might be caused by the
+camera coordinate in the simulation.
+Anyway, Happy Chinese New Year, everyone!
+
+
+Zhe
+
+
+
+On Fri, Jan 27, 2017 at 10:11 AM, <hdri-request at radiance-online.org> wrote:
+
+> Send HDRI mailing list submissions to
+>         hdri at radiance-online.org
+>
+> To subscribe or unsubscribe via the World Wide Web, visit
+>         http://www.radiance-online.org/mailman/listinfo/hdri
+> or, via email, send a message with subject or body 'help' to
+>         hdri-request at radiance-online.org
+>
+> You can reach the person managing the list at
+>         hdri-owner at radiance-online.org
+>
+> When replying, please edit your Subject line so it is more specific
+> than "Re: Contents of HDRI digest..."
+>
+>
+> Today's Topics:
+>
+>    1. Re: Convert equisolidangular to equiangular projection
+>       (Gregory J. Ward)
+>
+>
+> ----------------------------------------------------------------------
+>
+> Message: 1
+> Date: Fri, 27 Jan 2017 08:10:53 -0800
+> From: "Gregory J. Ward" <gregoryjward at gmail.com>
+> To: High Dynamic Range Imaging <hdri at radiance-online.org>
+> Subject: Re: [HDRI] Convert equisolidangular to equiangular projection
+> Message-ID: <D6E5B3A8-5434-4FF6-A7F7-9D2728C02ED0 at gmail.com>
+> Content-Type: text/plain; charset="windows-1252"
+>
+> Raquel points out an important error in this discussion's terminology.
+> The "equidistant" fisheye does indeed correspond to the "-vta" view type in
+> Radiance.  However, the "-vth" type corresponds to a hemispherical
+> projection, which very few commercial fisheye lenses realize.  In
+> particular, the equisolidangle projection is much closer to "-vta" than it
+> is to "-vth".  If your lens is equisolidangle, then you need to use the
+> fisheye_corr.cal script or similar to convert it to an equidistant
+> projection.
+>
+> I have not implemented the equisolidangle projection, though there is a
+> third fisheye type (-vts) which is called "stereographic", although we
+> prefer the term "planisphere" projection to avoid confusion with stereo
+> views.  This does not correspond to any commercial lenses to my knowledge,
+> but I'd be interested to hear of one.
+>
+> > From: Raquel Viula <raquelviula.lists at gmail.com>
+> > Date: January 27, 2017 5:49:57 AM PST
+> >
+> > Hi all,
+> > Thank you for raising this topic and sharing your views. I?m using the
+> output of a Sigma f=4.5mm F/2.8 for several analysis including DGP via
+> Evalglare that should require a -vth or -vta view, so this is critical
+> information for me.
+> > May I ask why people refer to -vth as equi-solid angle and not
+> hemispherical as it is defined in Radiance?s rpict man page?
+> > My understanding from that page and from Axel Jacobs' presentation sent
+> via the link just before is that there isn't a Radiance description for the
+> equi-solid angle view.
+> >
+> > Best Regards
+> >
+> > Raquel Viula
+> > PhD Researcher
+> >
+> > TU Delft | Faculty of Architecture and the Built Environment |
+> > Architectural Engineering and Technology
+> > Julianalaan 134, 2628 BL Delft, The Netherlands | P.O. Box 5043 2600 GA
+> Delft
+> >
+> > From: Claus Br?ndgaard Madsen <cbm at create.aau.dk>
+> > Reply-To: High Dynamic Range Imaging <hdri at radiance-online.org>
+> > Date: Friday 27 January 2017 13:49
+> > To: High Dynamic Range Imaging <hdri at radiance-online.org>
+> > Subject: Re: [HDRI] Convert equisolidangular to equiangular projection
+> >
+> >
+> >
+> > Hi everyone,
+> >
+> > Some years ago I tested my Sigma 8mm lens, f3.5.
+> >
+> > At the time I found several sources online claiming it to be equi-solid
+> angle (-vth), but it didn?t match my personal experiences with the lens, so
+> I tested it.
+> >
+> > My tests showed it to be equidistant (-vta), i.e. identical to the
+> angular fish eye projection in RADIANCE.
+> >
+> > So, in my experience, the 8mm Sigma lens is equidistant.
+> >
+> > Cheers,
+> > Claus
+> >
+> >
+> >
+> > Claus B. Madsen
+> > Assoc. Prof., Ph.D. | Department of Architecture and Media Technology
+> >
+> > Phone: +45 9940 8788 | E-mail: cbm at create.aau.dk
+> > Aalborg University | Rendsburggade 14 | 9000 Aalborg | Denmark
+> >
+> > Employee No.: 107255 | Vat No.: DK29102384
+> >
+> >
+> > From: "J. Alstan Jakubiec" <alstan at jakubiec.net>
+> > Reply-To: High Dynamic Range Imaging <hdri at radiance-online.org>
+> > Date: Friday, 27 January 2017 at 11.33
+> > To: "hdri at radiance-online.org" <hdri at radiance-online.org>
+> > Subject: Re: [HDRI] Convert equisolidangular to equiangular projection
+> >
+> > A little followup that is worth noting is that Axel Jacobs measured the
+> Sigma 4.5mm and found it to have an equi-solid angle projection. See his
+> presentation here: https://www.radiance-online.
+> org/community/workshops/2012-copenhagen/Day2/Jacobs/Jacobs-
+> AJ09-HDR_Radiance_WS-2012.pdf
+> >
+> > Alstan
+> >
+> >
+> > On 1/27/2017 6:26 PM, J. Alstan Jakubiec wrote:
+> > Hi Tobias,
+> >
+> > I just purchased a pair of Sigma 8mm f/3.5's for my work, but I haven't
+> measured them for vignetting and angular verification yet. It is on my to
+> do list :). I will be disappointed if they are equi-solid angular however.
+> Will let you know sometime after the Lunar new year.
+> >
+> > Alstan
+> >
+> >
+> > On 1/27/2017 6:17 PM, Tobias Porsch wrote:
+> > Hi Alstan,
+> >
+> > I'm not sure if your below description is correct.
+> > In my experience it's exactly the opposite. The Sigma f=8mm F/3.5 lens
+> is an equi-solid angle (-vth) and the Sigma f=4.5mm F/2.8 is an
+> equi-distant (-angular) (-vta) lens.
+> > Can you please double-check that issue for me?
+> >
+> > Cheers
+> > Tobias
+> >
+> > Von: J. Alstan Jakubiec [mailto:alstan at jakubiec.net]
+> > Gesendet: Donnerstag, 26. Januar 2017 06:58
+> > An: hdri at radiance-online.org
+> > Betreff: Re: [HDRI] Convert equisolidangular to equiangular projection
+> >
+> > Hi Zhe,
+> >
+> > As far as I am aware, the Sigma 8mm f/3.5 is an equi-angular (-vta)
+> lens, and the Sigma 4.5mm f/2.8 is an equi-solid angle (-???) lens. I am
+> having trouble finding a source from Sigma right now, but Cauwerts, Bodart
+> and Deneyer's paper says so.
+> >
+> > That said, if you do end up with an equi-solidangle image, I have a
+> python script that converts equi-solid angle to equi-angle for each source
+> jpeg while maintaining the EXIF data. I used this to convert
+> equi-solidangle images from my Canon 8-15mm fisheye lenses.
+> >
+> > Best,
+> > Alstan
+> >
+> > On 1/26/2017 8:48 AM, Gregory J. Ward wrote:
+> > Hi Zhe,
+> >
+> > You should be able to apply the fisheye_corr.cal file I gave you earlier
+> to correct the distortion and make it an angular fisheye image that pinterp
+> works with.  (Why you need pinterp, I am not sure.)  The command is as
+> suggested in the fisheye_corr.cal file itself:
+> >
+> >  pcomb -f fisheye_corr.cal -o fisheye.hdr \
+> >         | getinfo -a "VIEW= -vta -vh 180 -vv 180" \
+> >         > corrected.hdr
+> >
+> > This will also crop the area outside of 180? to black, assuming that is
+> what you want.  It assumes that you have already cropped the image to a
+> minimum square area.  You should apply vignetting correction and absolute
+> calibration first.
+> >
+> > Cheers,
+> > -Greg
+> >
+> > From: Zhe Kong <kongzhewode at gmail.com>
+> > Date: January 25, 2017 1:15:49 PM PST
+> >
+> > Dear list:
+> > I am trying to compare HDR images and simulated luminance maps. Since I
+> use SIGMA 8mm 1:3.5 for Canon, I need to convert equisolid-angular to
+> equiangular project. I see very useful information from the post below:
+> >
+> > https://www.radiance-online.org:447/pipermail/radiance-
+> general/2015-August/011184.html
+> >
+> > However, I still have some questions need to figure out.
+> > 1) pinterp does not include equisolid-angular projection, so a equation
+> needs to be applied to the function. Greg mentioned this simple expression,
+> sin(theta)/theta, but I am still confused. Could anyone offer me the
+> command?
+> >
+> > 2) The post discussed the steps of processing HDR images. If I get it
+> right, the steps following "adjust exposure" are vignetting correction,
+> adding view information, converting project from equisolidangular to
+> equiangular, then calibrating the image. I use a GOSSEN Starlite 2 to
+> record the luminance value on a grey card for calibration. My question is,
+> should I calibrate the image before or after converting fisheye projection?
+> >
+> > Any suggestions or explanation would be appreciated.
+> > Zhe
+> >
+> >
+> > _______________________________________________
+> > HDRI mailing list
+> > HDRI at radiance-online.org
+> > http://www.radiance-online.org/mailman/listinfo/hdri
+> >
+> >
+> >
+> >
+> > _______________________________________________
+> > HDRI mailing list
+> > HDRI at radiance-online.org
+> > http://www.radiance-online.org/mailman/listinfo/hdri
+> >
+> >
+> >
+> >
+> > _______________________________________________
+> > HDRI mailing list
+> > HDRI at radiance-online.org
+> > http://www.radiance-online.org/mailman/listinfo/hdri
+> >
+> >
+> > _______________________________________________ HDRI mailing list
+> HDRI at radiance-online.org http://www.radiance-online.
+> org/mailman/listinfo/hdri _______________________________________________
+> > HDRI mailing list
+> > HDRI at radiance-online.org
+> > http://www.radiance-online.org/mailman/listinfo/hdri
+> -------------- next part --------------
+> An HTML attachment was scrubbed...
+> URL: <http://www.radiance-online.org/pipermail/hdri/
+> attachments/20170127/f2bd1701/attachment.html>
+>
+> ------------------------------
+>
+> Subject: Digest Footer
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+>
+>
+> ------------------------------
+>
+> End of HDRI Digest, Vol 87, Issue 6
+> ***********************************
+>
+
+
+
+-- 
+*Zhe Kong*
+*PhD Student*
+*University of Wisconsin - Milwaukee *
+*School of Architecture and Urban Planning *
+*2131 E. Hartford Ave, Milwaukee, WI 53211 *
+*Office 327*
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20170127/9a384b01/attachment-0001.html>
+
+From raquelviula.lists at gmail.com  Sat Jan 28 23:22:21 2017
+From: raquelviula.lists at gmail.com (Raquel Viula)
+Date: Sun, 29 Jan 2017 08:22:21 +0100
+Subject: [HDRI] Convert equisolidangular to equiangular projection
+In-Reply-To: <CAEV5NyfGxvGSRUfU24Sg+VvFBR4X+xLSvSH8QkqK=hwTUy2sSQ@mail.gmail.com>
+References: <CAEV5NyfGxvGSRUfU24Sg+VvFBR4X+xLSvSH8QkqK=hwTUy2sSQ@mail.gmail.com>
+Message-ID: <D4B35619.1B175%raquelviula.lists@gmail.com>
+
+Hi Zhe, I?m glad you brought this up and thank you Greg for the
+clarification.
+
+Best Regards
+
+Raquel
+
+
+
+Raquel Viula
+
+PhD Researcher
+
+
+
+TU Delft | Faculty of Architecture and the Built Environment |
+
+Architectural Engineering and Technology
+
+Julianalaan 134, 2628 BL Delft, The Netherlands | P.O. Box 5043 2600 GA Delf
+
+From:  Zhe Kong <kongzhewode at gmail.com>
+Reply-To:  High Dynamic Range Imaging <hdri at radiance-online.org>
+Date:  Saturday 28 January 2017 02:09
+To:  <hdri at radiance-online.org>
+Subject:  Re: [HDRI] Convert equisolidangular to equiangular projection
+
+Sorry about the confusion I brought up. I got this wrong information from
+the manufacturer. If I recall my previous experience, Sigma f/3.5 matches
+Radiance -vta pretty well. The current mismatch might be caused by the
+camera coordinate in the simulation.
+Anyway, Happy Chinese New Year, everyone!
+
+
+Zhe 
+
+
+ 
+On Fri, Jan 27, 2017 at 10:11 AM,  <hdri-request at radiance-online.org> wrote:
+> Send HDRI mailing list submissions to
+>         hdri at radiance-online.org
+> 
+> To subscribe or unsubscribe via the World Wide Web, visit
+>         http://www.radiance-online.org/mailman/listinfo/hdri
+> or, via email, send a message with subject or body 'help' to
+>         hdri-request at radiance-online.org
+> 
+> You can reach the person managing the list at
+>         hdri-owner at radiance-online.org
+> 
+> When replying, please edit your Subject line so it is more specific
+> than "Re: Contents of HDRI digest..."
+> 
+> 
+> Today's Topics:
+> 
+>    1. Re: Convert equisolidangular to equiangular projection
+>       (Gregory J. Ward)
+> 
+> 
+> ----------------------------------------------------------------------
+> 
+> Message: 1
+> Date: Fri, 27 Jan 2017 08:10:53 -0800
+> From: "Gregory J. Ward" <gregoryjward at gmail.com>
+> To: High Dynamic Range Imaging <hdri at radiance-online.org>
+> Subject: Re: [HDRI] Convert equisolidangular to equiangular projection
+> Message-ID: <D6E5B3A8-5434-4FF6-A7F7-9D2728C02ED0 at gmail.com>
+> Content-Type: text/plain; charset="windows-1252"
+> 
+> Raquel points out an important error in this discussion's terminology.  The
+> "equidistant" fisheye does indeed correspond to the "-vta" view type in
+> Radiance.  However, the "-vth" type corresponds to a hemispherical projection,
+> which very few commercial fisheye lenses realize.  In particular, the
+> equisolidangle projection is much closer to "-vta" than it is to "-vth".  If
+> your lens is equisolidangle, then you need to use the fisheye_corr.cal script
+> or similar to convert it to an equidistant projection.
+> 
+> I have not implemented the equisolidangle projection, though there is a third
+> fisheye type (-vts) which is called "stereographic", although we prefer the
+> term "planisphere" projection to avoid confusion with stereo views.  This does
+> not correspond to any commercial lenses to my knowledge, but I'd be interested
+> to hear of one.
+> 
+>> > From: Raquel Viula <raquelviula.lists at gmail.com>
+>> > Date: January 27, 2017 5:49:57 AM PST
+>> >
+>> > Hi all,
+>> > Thank you for raising this topic and sharing your views. I?m using the
+>> output of a Sigma f=4.5mm F/2.8 for several analysis including DGP via
+>> Evalglare that should require a -vth or -vta view, so this is critical
+>> information for me.
+>> > May I ask why people refer to -vth as equi-solid angle and not
+>> hemispherical as it is defined in Radiance?s rpict man page?
+>> > My understanding from that page and from Axel Jacobs' presentation sent via
+>> the link just before is that there isn't a Radiance description for the
+>> equi-solid angle view.
+>> >
+>> > Best Regards
+>> >
+>> > Raquel Viula
+>> > PhD Researcher
+>> >
+>> > TU Delft | Faculty of Architecture and the Built Environment |
+>> > Architectural Engineering and Technology
+>> > Julianalaan 134, 2628 BL Delft, The Netherlands | P.O. Box 5043 2600 GA
+>> Delft
+>> >
+>> > From: Claus Br?ndgaard Madsen <cbm at create.aau.dk>
+>> > Reply-To: High Dynamic Range Imaging <hdri at radiance-online.org>
+>> > Date: Friday 27 January 2017 13:49
+>> > To: High Dynamic Range Imaging <hdri at radiance-online.org>
+>> > Subject: Re: [HDRI] Convert equisolidangular to equiangular projection
+>> >
+>> >
+>> >
+>> > Hi everyone,
+>> >
+>> > Some years ago I tested my Sigma 8mm lens, f3.5.
+>> >
+>> > At the time I found several sources online claiming it to be equi-solid
+>> angle (-vth), but it didn?t match my personal experiences with the lens, so I
+>> tested it.
+>> >
+>> > My tests showed it to be equidistant (-vta), i.e. identical to the angular
+>> fish eye projection in RADIANCE.
+>> >
+>> > So, in my experience, the 8mm Sigma lens is equidistant.
+>> >
+>> > Cheers,
+>> > Claus
+>> >
+>> >
+>> >
+>> > Claus B. Madsen
+>> > Assoc. Prof., Ph.D. | Department of Architecture and Media Technology
+>> >
+>> > Phone: +45 9940 8788 <tel:%2B45%209940%208788>  | E-mail: cbm at create.aau.dk
+>> > Aalborg University | Rendsburggade 14 | 9000 Aalborg | Denmark
+>> >
+>> > Employee No.: 107255 | Vat No.: DK29102384
+>> >
+>> >
+>> > From: "J. Alstan Jakubiec" <alstan at jakubiec.net>
+>> > Reply-To: High Dynamic Range Imaging <hdri at radiance-online.org>
+>> > Date: Friday, 27 January 2017 at 11.33
+>> > To: "hdri at radiance-online.org" <hdri at radiance-online.org>
+>> > Subject: Re: [HDRI] Convert equisolidangular to equiangular projection
+>> >
+>> > A little followup that is worth noting is that Axel Jacobs measured the
+>> Sigma 4.5mm and found it to have an equi-solid angle projection. See his
+>> presentation here:
+>> https://www.radiance-online.org/community/workshops/2012-copenhagen/Day2/Jaco
+>> bs/Jacobs-AJ09-HDR_Radiance_WS-2012.pdf
+>> >
+>> > Alstan
+>> >
+>> >
+>> > On 1/27/2017 6:26 PM, J. Alstan Jakubiec wrote:
+>> > Hi Tobias,
+>> >
+>> > I just purchased a pair of Sigma 8mm f/3.5's for my work, but I haven't
+>> measured them for vignetting and angular verification yet. It is on my to do
+>> list :). I will be disappointed if they are equi-solid angular however. Will
+>> let you know sometime after the Lunar new year.
+>> >
+>> > Alstan
+>> >
+>> >
+>> > On 1/27/2017 6:17 PM, Tobias Porsch wrote:
+>> > Hi Alstan,
+>> >
+>> > I'm not sure if your below description is correct.
+>> > In my experience it's exactly the opposite. The Sigma f=8mm F/3.5 lens is
+>> an equi-solid angle (-vth) and the Sigma f=4.5mm F/2.8 is an equi-distant
+>> (-angular) (-vta) lens.
+>> > Can you please double-check that issue for me?
+>> >
+>> > Cheers
+>> > Tobias
+>> >
+>> > Von: J. Alstan Jakubiec [mailto:alstan at jakubiec.net]
+>> > Gesendet: Donnerstag, 26. Januar 2017 06:58
+>> > An: hdri at radiance-online.org
+>> > Betreff: Re: [HDRI] Convert equisolidangular to equiangular projection
+>> >
+>> > Hi Zhe,
+>> >
+>> > As far as I am aware, the Sigma 8mm f/3.5 is an equi-angular (-vta) lens,
+>> and the Sigma 4.5mm f/2.8 is an equi-solid angle (-???) lens. I am having
+>> trouble finding a source from Sigma right now, but Cauwerts, Bodart and
+>> Deneyer's paper says so.
+>> >
+>> > That said, if you do end up with an equi-solidangle image, I have a python
+>> script that converts equi-solid angle to equi-angle for each source jpeg
+>> while maintaining the EXIF data. I used this to convert equi-solidangle
+>> images from my Canon 8-15mm fisheye lenses.
+>> >
+>> > Best,
+>> > Alstan
+>> >
+>> > On 1/26/2017 8:48 AM, Gregory J. Ward wrote:
+>> > Hi Zhe,
+>> >
+>> > You should be able to apply the fisheye_corr.cal file I gave you earlier to
+>> correct the distortion and make it an angular fisheye image that pinterp
+>> works with.  (Why you need pinterp, I am not sure.)  The command is as
+>> suggested in the fisheye_corr.cal file itself:
+>> >
+>> >  pcomb -f fisheye_corr.cal -o fisheye.hdr \
+>> >         | getinfo -a "VIEW= -vta -vh 180 -vv 180" \
+>>> >         > corrected.hdr
+>> >
+>> > This will also crop the area outside of 180? to black, assuming that is
+>> what you want.  It assumes that you have already cropped the image to a
+>> minimum square area.  You should apply vignetting correction and absolute
+>> calibration first.
+>> >
+>> > Cheers,
+>> > -Greg
+>> >
+>> > From: Zhe Kong <kongzhewode at gmail.com>
+>> > Date: January 25, 2017 1:15:49 PM PST
+>> >
+>> > Dear list:
+>> > I am trying to compare HDR images and simulated luminance maps. Since I use
+>> SIGMA 8mm 1:3.5 for Canon, I need to convert equisolid-angular to equiangular
+>> project. I see very useful information from the post below:
+>> >
+>> > 
+>> https://www.radiance-online.org:447/pipermail/radiance-general/2015-August/01
+>> 1184.html
+>> >
+>> > However, I still have some questions need to figure out.
+>> > 1) pinterp does not include equisolid-angular projection, so a equation
+>> needs to be applied to the function. Greg mentioned this simple expression,
+>> sin(theta)/theta, but I am still confused. Could anyone offer me the command?
+>> >
+>> > 2) The post discussed the steps of processing HDR images. If I get it
+>> right, the steps following "adjust exposure" are vignetting correction,
+>> adding view information, converting project from equisolidangular to
+>> equiangular, then calibrating the image. I use a GOSSEN Starlite 2 to record
+>> the luminance value on a grey card for calibration. My question is, should I
+>> calibrate the image before or after converting fisheye projection?
+>> >
+>> > Any suggestions or explanation would be appreciated.
+>> > Zhe
+>> >
+>> >
+>> > _______________________________________________
+>> > HDRI mailing list
+>> > HDRI at radiance-online.org
+>> > http://www.radiance-online.org/mailman/listinfo/hdri
+>> >
+>> >
+>> >
+>> >
+>> > _______________________________________________
+>> > HDRI mailing list
+>> > HDRI at radiance-online.org
+>> > http://www.radiance-online.org/mailman/listinfo/hdri
+>> >
+>> >
+>> >
+>> >
+>> > _______________________________________________
+>> > HDRI mailing list
+>> > HDRI at radiance-online.org
+>> > http://www.radiance-online.org/mailman/listinfo/hdri
+>> >
+>> >
+>> > _______________________________________________ HDRI mailing list
+>> HDRI at radiance-online.org http://www.radiance-online.org/mailman/listinfo/hdri
+>> _______________________________________________
+>> > HDRI mailing list
+>> > HDRI at radiance-online.org
+>> > http://www.radiance-online.org/mailman/listinfo/hdri
+> -------------- next part --------------
+> An HTML attachment was scrubbed...
+> URL: 
+> <http://www.radiance-online.org/pipermail/hdri/attachments/20170127/f2bd1701/a
+> ttachment.html>
+> 
+> ------------------------------
+> 
+> Subject: Digest Footer
+> 
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+> 
+> 
+> ------------------------------
+> 
+> End of HDRI Digest, Vol 87, Issue 6
+> ***********************************
+
+
+
+-- 
+Zhe Kong
+PhD Student
+University of Wisconsin - Milwaukee
+School of Architecture and Urban Planning
+2131 E. Hartford Ave, Milwaukee, WI 53211
+Office 327
+_______________________________________________ HDRI mailing list
+HDRI at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/hdri
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20170129/8d04ef78/attachment-0001.html>
+
+From far.mahlab at ku.edu  Tue Jan 31 11:56:28 2017
+From: far.mahlab at ku.edu (Mahlab, Seyedeh Farzaneh)
+Date: Tue, 31 Jan 2017 19:56:28 +0000
+Subject: [HDRI] RGB extraction
+Message-ID: <bbb8c433ea864a06856475f486665d16@ex13-csf-cr-26.home.ku.edu>
+
+Hello
+I am trying to get RGB value of an HDR image captured with Canon camera of a light source , in (0-255) scale. I used pvalue -o -h $HDR command but the results are not on the desired range (0-255). Any suggestion is appreciated.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20170131/bc34038d/attachment.html>
+
+From gregoryjward at gmail.com  Tue Jan 31 12:21:15 2017
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue, 31 Jan 2017 12:21:15 -0800
+Subject: [HDRI] RGB extraction
+In-Reply-To: <bbb8c433ea864a06856475f486665d16@ex13-csf-cr-26.home.ku.edu>
+References: <bbb8c433ea864a06856475f486665d16@ex13-csf-cr-26.home.ku.edu>
+Message-ID: <E678E8FA-C1C7-4725-95F0-BDC9779DF234@gmail.com>
+
+The whole point of HDR is that it doesn't fit in an 8-bit range.  The pvalue program will give you integers if you ask for it, and 256 will correspond to 1.0 in the file, but it doesn't stop at that point, and is happy to give you integer values up to some very large limit (31 bits, I think).
+
+If that's not what you want, you can use rcalc to clip the output values over 255 to 255, like so:
+
+	pvalue -o -h -di $HDR | rcalc -e 'clip(i):if(i-255,255,i);$1=clip($1);$2=clip($2);$3=clip($3)'
+
+Or, if you are trying to squeeze everything in a 0-255 range, making 255 the maximum and everything else darker, there are ways to do that as well.  It's probably not a good move, though, as you'll usually end up with just a few white areas around the light sources, with everything else clipped to 0 (or nearly).
+
+-Greg
+
+> From: "Mahlab, Seyedeh Farzaneh" <far.mahlab at ku.edu>
+> Subject: [HDRI] RGB extraction
+> Date: January 31, 2017 11:56:28 AM PST
+> To: "hdri at radiance-online.org" <hdri at radiance-online.org>
+> Reply-To: High Dynamic Range Imaging <hdri at radiance-online.org>
+> 
+> Hello
+> I am trying to get RGB value of an HDR image captured with Canon camera of a light source , in (0-255) scale. I used pvalue ?o ?h $HDR command but the results are not on the desired range (0-255). Any suggestion is appreciated.
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20170131/78cd950c/attachment.html>
+
+From Christopher.Rush at arup.com  Tue Jan 31 12:31:10 2017
+From: Christopher.Rush at arup.com (Christopher Rush)
+Date: Tue, 31 Jan 2017 20:31:10 +0000
+Subject: [HDRI] RGB extraction
+In-Reply-To: <bbb8c433ea864a06856475f486665d16@ex13-csf-cr-26.home.ku.edu>
+References: <bbb8c433ea864a06856475f486665d16@ex13-csf-cr-26.home.ku.edu>
+Message-ID: <88079A360FAC7441AE93ECBF61998236470C0479@AMXExMb01.global.arup.com>
+
+It might help to know what you want to do with the 0-255 RGB values, and why you want to convert the HDR (high dynamic range) into a low dynamic range scale. Greg already pointed out some options in his reply. Is it something that the pcond command might help with? I'm not familiar enough with the code and what the "numbers" are that come out of pcond, but I do know it's intended to allow compression of an image into a lower dynamic range for image representation, even if it would still require further number manipulation to get you 0-255 integers.
+
+-Chris
+
+From: Mahlab, Seyedeh Farzaneh [mailto:far.mahlab at ku.edu]
+Sent: Tuesday, January 31, 2017 2:56 PM
+To: hdri at radiance-online.org
+Subject: [HDRI] RGB extraction
+
+Hello
+I am trying to get RGB value of an HDR image captured with Canon camera of a light source , in (0-255) scale. I used pvalue -o -h $HDR command but the results are not on the desired range (0-255). Any suggestion is appreciated.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20170131/cf015095/attachment.html>
+

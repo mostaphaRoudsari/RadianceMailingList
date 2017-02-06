@@ -1,0 +1,228 @@
+From jedev at visarc.com  Thu Jul  8 22:38:03 2004
+From: jedev at visarc.com (Jack de Valpine)
+Date: Thu Jul  8 22:38:17 2004
+Subject: [Radiance-dev] Worley Cellular Basis Function
+Message-ID: <40EDB0AB.6050203@visarc.com>
+
+Hi all,
+
+Steven Worley has source code available for his cellular basis function. 
+See www.texturingandmodeling.com
+
+Is this something that could be incorporated as another function to call 
+in procedural materials, similar to fnoise and others?
+
+The copyright (see below) would seem to allow for use of the code in a 
+pretty open manner.
+
+Regards,
+
+-Jack de Valpine
+
+/* Copyright 1994, 2002 by Steven Worley
+   This software may be modified and redistributed without restriction
+   provided this comment header remains intact in the source code.
+   This code is provided with no warrantee, express or implied, for
+   any purpose.
+   
+   A detailed description and application examples can be found in the
+   1996 SIGGRAPH paper "A Cellular Texture Basis Function" and
+   especially in the 2002 book "Texturing and Modeling, a Procedural
+   Approach, 3rd edition." There is also extra information on the web
+   site http://www.worley.com/cellular.html .
+
+   If you do find interesting uses for this tool, and especially if
+   you enhance it, please drop me an email at steve@worley.com. */
+
+
+
+/* Worley()
+
+   An implementation of the key cellular texturing basis
+   function. This function is hardwired to return an average F_1 value
+   of 1.0. It returns the <n> most closest feature point distances
+   F_1, F_2, .. F_n the vector delta to those points, and a 32 bit
+   seed for each of the feature points.  This function is not
+   difficult to extend to compute alternative information such as
+   higher order F values, to use the Manhattan distance metric, or
+   other fun perversions.
+
+   <at>    The input sample location. 
+   <max_order>  Smaller values compute faster. < 5, read the book to extend it.
+   <F>     The output values of F_1, F_2, ..F[n] in F[0], F[1], F[n-1]
+   <delta> The output vector difference between the sample point and the n-th
+            closest feature point. Thus, the feature point's location is the
+            hit point minus this value. The DERIVATIVE of F is the unit
+            normalized version of this vector.
+   <ID>    The output 32 bit ID number which labels the feature point. This
+            is useful for domain partitions, especially for coloring flagstone
+            patterns.
+
+   This implementation is tuned for speed in a way that any order > 5
+   will likely have discontinuous artifacts in its computation of F5+.
+   This can be fixed by increasing the internal points-per-cube
+   density in the source code, at the expense of slower
+   computation. The book lists the details of this tuning.  */
+
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+
+
+
+From apian at pab-opto.de  Fri Jul  9 23:54:10 2004
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Sat Jul 10 00:08:58 2004
+Subject: [Radiance-dev] GUI / Open-GL 
+In-Reply-To: <Pine.BSF.4.58.0407090815290.58240@emancholl.pair.com>
+References: <9B1C5BAE-D0EB-11D8-BA46-000A959DDB22@gmx.net>
+	<Pine.BSF.4.58.0407090815290.58240@emancholl.pair.com>
+Message-ID: <40EF1402.1020802@pab-opto.de>
+
+Georg Mischler wrote:
+
+>Lars O. Grobe wrote:
+>
+>  
+>
+>>Why not continuing one of the existing projects?
+>>    
+>>
+>
+>Most existing projects have one or several disadvantages:
+>- platform specific
+>- limited scope of functionality
+>- obsolete technology (eg. tcl)
+>- not available for free
+>  
+>
+for those interested some thoughts on Open-GL:
+
+tcl is used in rshow for the GUI part. Tcl is surely slightly a little 
+dusted, at the time it was one of the free GUIs running on UNIX and 
+Windows. And it still compiles, so why should I go porting it to a new lib ?
+
+IMHO, more relevant for daily work is the way Radiance geometry is fed 
+to Open-GL by the core rendering engine (written in ANSI-C in rshow):
+Rshow is based on my experience that being close to the hardware and its 
+Open-GL calls is being close to happiness. If you know the concept of 
+the Open-GL pipeline and your data structure, you know how to speed 
+things up. That worked pretty excellent on Fraunhofer's SGI VGX a dozen 
+years ago. And it saved me substantial megabytes in the current rshow 
+when I got rid of the more general concept of display lists and fed 3- 
+and 4 sided polygons directly to the pipeline. While the docs on the 
+structure of current ATI graphic cards are not as good as on the VGX, 
+programming on the "bare metal" offers still the advantage of knowing 
+what you're doing. And for merging rholo/Open-gl-texture that seems a 
+good thing, as shown by other people's experience.
+In the other hand: The reason for using 3d libraries is that the may 
+have effective ways of dealing with 3d objects on a higher level. 
+Culling and level-of-detail are essential key features for handling 
+large data sets. As an example, the way high-glass CAD programs handle 
+complex geometry with 30fps on an ATI X1 while zooming in on a small 
+detail is impressive. But they spent a long time building their data 
+structures when the object loads initially from disk and they are RAM 
+intensive.
+
+Higher libraries, like Java 3D classes, are interesting if they handle 
+at least one of the above aspects well.
+
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+
+
+From gward at lmi.net  Wed Jul 14 04:06:24 2004
+From: gward at lmi.net (Greg Ward)
+Date: Wed Jul 14 04:07:15 2004
+Subject: [Radiance-dev] Worley Cellular Basis Function
+In-Reply-To: <40EDB0AB.6050203@visarc.com>
+References: <40EDB0AB.6050203@visarc.com>
+Message-ID: <68BB1300-D53A-11D8-8294-000A95BB392A@lmi.net>
+
+Hi Jack,
+
+I don't see why we couldn't link this in.  I wonder how expensive it is 
+-- I looked into implementing it myself following his Siggraph 
+presentation, but it looked a bit too complex at the time.  Taking the 
+source code and adding it to the tree wouldn't be particularly 
+difficult.  I assume you'd find it useful if you're asking for it -- 
+thanks for pointing out its availability.
+
+-Greg
+
+> From: Jack de Valpine <jedev@visarc.com>
+> Date: July 8, 2004 1:38:03 PM PDT
+>
+> Hi all,
+>
+> Steven Worley has source code available for his cellular basis 
+> function. See www.texturingandmodeling.com
+>
+> Is this something that could be incorporated as another function to 
+> call in procedural materials, similar to fnoise and others?
+>
+> The copyright (see below) would seem to allow for use of the code in a 
+> pretty open manner.
+>
+> Regards,
+>
+> -Jack de Valpine
+>
+> /* Copyright 1994, 2002 by Steven Worley
+>   This software may be modified and redistributed without restriction
+>   provided this comment header remains intact in the source code.
+>   This code is provided with no warrantee, express or implied, for
+>   any purpose.
+>     A detailed description and application examples can be found in the
+>   1996 SIGGRAPH paper "A Cellular Texture Basis Function" and
+>   especially in the 2002 book "Texturing and Modeling, a Procedural
+>   Approach, 3rd edition." There is also extra information on the web
+>   site http://www.worley.com/cellular.html .
+>
+>   If you do find interesting uses for this tool, and especially if
+>   you enhance it, please drop me an email at steve@worley.com. */
+>
+> /* Worley()
+>
+>   An implementation of the key cellular texturing basis
+>   function. This function is hardwired to return an average F_1 value
+>   of 1.0. It returns the <n> most closest feature point distances
+>   F_1, F_2, .. F_n the vector delta to those points, and a 32 bit
+>   seed for each of the feature points.  This function is not
+>   difficult to extend to compute alternative information such as
+>   higher order F values, to use the Manhattan distance metric, or
+>   other fun perversions.
+>
+>   <at>    The input sample location.   <max_order>  Smaller values 
+> compute faster. < 5, read the book to extend it.
+>   <F>     The output values of F_1, F_2, ..F[n] in F[0], F[1], F[n-1]
+>   <delta> The output vector difference between the sample point and 
+> the n-th
+>            closest feature point. Thus, the feature point's location 
+> is the
+>            hit point minus this value. The DERIVATIVE of F is the unit
+>            normalized version of this vector.
+>   <ID>    The output 32 bit ID number which labels the feature point. 
+> This
+>            is useful for domain partitions, especially for coloring 
+> flagstone
+>            patterns.
+>
+>   This implementation is tuned for speed in a way that any order > 5
+>   will likely have discontinuous artifacts in its computation of F5+.
+>   This can be fixed by increasing the internal points-per-cube
+>   density in the source code, at the expense of slower
+>   computation. The book lists the details of this tuning.  */
+
+

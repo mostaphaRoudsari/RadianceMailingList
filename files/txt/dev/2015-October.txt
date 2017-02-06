@@ -1,0 +1,323 @@
+From Robert.Guglielmetti at nrel.gov  Tue Oct 20 08:14:26 2015
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Tue, 20 Oct 2015 15:14:26 +0000
+Subject: [Radiance-dev] [Radiance-general] NRL
+ radiance-5.0.a.6-Darwin.dmg trad/tcl incomplete installation
+In-Reply-To: <56265086.1080909@iinet.net.au>
+References: <56265086.1080909@iinet.net.au>
+Message-ID: <D24BB4EE.1E275%Robert.Guglielmetti@nrel.gov>
+
+Cross-posting (and we should move the discussion to) dev...
+
+Thanks Terrance! Looks like I have some more files to include in the CMake files, so our packages work correctly, thanks for the catches. As for item (1), it seems like the right move there is to have Greg change the shebang line to call "wish", and place the onus on the users to have a symlink for wish that points to whatever they have on their systems.
+
+Let's sort it out on dev when we have time. Thanks again for the heads up.
+
+- Rob
+
+On 10/20/15, 8:32 AM, "Terrance McMinn" <t.mcminn at iinet.net.au<mailto:t.mcminn at iinet.net.au>> wrote:
+
+Must report that "trad" does not run as installed by the radiance-5.0.a.6-Darwin.dmg OSX installer.
+
+Issues:
+1. $ -bash: /usr/local/radiance/bin/trad: /usr/local/bin/wish8.0: bad interpreter: No such file or directory
+
+    Fixed by sudo vi /usr/local/radiance/bin/trad and change the first line to "#!/usr/local/bin/wish8.5" as that is what is installed on my system.
+2. Error in startup script: invalid command name "helplink"
+    while executing
+"helplink .mess trad trad messages"
+    (file "/usr/local/radiance/bin/trad" line 104)
+    Fixed by:
+    a) downloading the source code (https://github.com/NREL/Radiance/releases)
+    b) create folder  with " sudo mkdir /usr/local/radiance/lib/tcl"
+    c) copy files from the source tree to the new folder
+        cd /usr/local/radiance/lib/tcl
+        sudo cp ~/Desktop/Radiance-5.0.a.6/src/util/*.tcl .
+        sudo cp ~/Desktop/Radiance-5.0.a.6/src/util/*.hlp .
+        sudo cp ~/Desktop/Radiance-5.0.a.6/src/util/*.icon .
+        sudo cp ~/Desktop/Radiance-5.0.a.6/src/util/tcl* .
+        This put the following file in the new folder:
+            do_action.tcl       do_results.tcl    do_zone.tcl    gethelp.tcl    trad.hlp
+            do_file.tcl            do_scene.tcl     file.hlp           help.hlp        trad.icon
+            do_options.tcl     do_views.tcl      getfile.tcl       tclIndex        util.tcl
+    d) sudo vi /usr/local/radiance/bin/trad
+        change "/usr/local/radiance/bin/trad" to "set radlib /usr/local/radiance/lib/tcl"
+
+--
+Regards
+Terrance McMinn
+
+
+From gregoryjward at gmail.com  Tue Oct 20 08:55:16 2015
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue, 20 Oct 2015 08:55:16 -0700
+Subject: [Radiance-dev] NRL radiance-5.0.a.6-Darwin.dmg trad/tcl
+	incomplete installation
+In-Reply-To: <56265086.1080909@iinet.net.au>
+References: <56265086.1080909@iinet.net.au>
+Message-ID: <EDA97D7C-DE94-409D-8619-49BA652703DD@lmi.net>
+
+Hi Terrance,
+
+It's remarkable that you were able to sort this out without aid.
+
+There's already a fairly sophisticated installation script written for trad, which gets triggered by "rmake install" in the src/util directory.  I wouldn't know how to replicate this using cmake, unless it can call the same script.
+
+I updated this to work with wish8.5, but if it isn't run on your system, I guess it won't work.  You can call it outside rmake using:
+
+	csh -f tradinstall.csh $(INSTDIR) $(LIBDIR)/tcl
+
+where $(INSTDIR) is the Radiance executable directory and $(LIBDIR) is the Radiance library directory on your system.
+
+Rob and I will figure out how to get this working on the NREL installers.  Thanks for alerting us to the problem!
+
+Cheers,
+-Greg
+
+> From: "Guglielmetti, Robert" <Robert.Guglielmetti at nrel.gov>
+> Subject: Re: [Radiance-general] NRL radiance-5.0.a.6-Darwin.dmg trad/tcl incomplete installation
+> Date: October 20, 2015 8:14:26 AM PDT
+> 
+> Cross-posting (and we should move the discussion to) dev...
+> 
+> Thanks Terrance! Looks like I have some more files to include in the CMake files, so our packages work correctly, thanks for the catches. As for item (1), it seems like the right move there is to have Greg change the shebang line to call "wish", and place the onus on the users to have a symlink for wish that points to whatever they have on their systems.
+> 
+> Let's sort it out on dev when we have time. Thanks again for the heads up.
+> 
+> - Rob
+> 
+> On 10/20/15, 8:32 AM, "Terrance McMinn" <t.mcminn at iinet.net.au<mailto:t.mcminn at iinet.net.au>> wrote:
+> 
+> Must report that "trad" does not run as installed by the radiance-5.0.a.6-Darwin.dmg OSX installer.
+> 
+> Issues:
+> 1. $ -bash: /usr/local/radiance/bin/trad: /usr/local/bin/wish8.0: bad interpreter: No such file or directory
+> 
+>    Fixed by sudo vi /usr/local/radiance/bin/trad and change the first line to "#!/usr/local/bin/wish8.5" as that is what is installed on my system.
+> 2. Error in startup script: invalid command name "helplink"
+>    while executing
+> "helplink .mess trad trad messages"
+>    (file "/usr/local/radiance/bin/trad" line 104)
+>    Fixed by:
+>    a) downloading the source code (https://github.com/NREL/Radiance/releases)
+>    b) create folder  with " sudo mkdir /usr/local/radiance/lib/tcl"
+>    c) copy files from the source tree to the new folder
+>        cd /usr/local/radiance/lib/tcl
+>        sudo cp ~/Desktop/Radiance-5.0.a.6/src/util/*.tcl .
+>        sudo cp ~/Desktop/Radiance-5.0.a.6/src/util/*.hlp .
+>        sudo cp ~/Desktop/Radiance-5.0.a.6/src/util/*.icon .
+>        sudo cp ~/Desktop/Radiance-5.0.a.6/src/util/tcl* .
+>        This put the following file in the new folder:
+>            do_action.tcl       do_results.tcl    do_zone.tcl    gethelp.tcl    trad.hlp
+>            do_file.tcl            do_scene.tcl     file.hlp           help.hlp        trad.icon
+>            do_options.tcl     do_views.tcl      getfile.tcl       tclIndex        util.tcl
+>    d) sudo vi /usr/local/radiance/bin/trad
+>        change "/usr/local/radiance/bin/trad" to "set radlib /usr/local/radiance/lib/tcl"
+> 
+> --
+> Regards
+> Terrance McMinn
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20151020/9ed1096e/attachment.html>
+
+From Robert.Guglielmetti at nrel.gov  Tue Oct 20 13:32:41 2015
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Tue, 20 Oct 2015 20:32:41 +0000
+Subject: [Radiance-dev] NRL radiance-5.0.a.6-Darwin.dmg trad/tcl
+ incomplete installation
+In-Reply-To: <EDA97D7C-DE94-409D-8619-49BA652703DD@lmi.net>
+References: <56265086.1080909@iinet.net.au>
+	<EDA97D7C-DE94-409D-8619-49BA652703DD@lmi.net>
+Message-ID: <D24C0030.1E2D5%Robert.Guglielmetti@nrel.gov>
+
+Thanks for shedding light on this, Greg. Since trad won't run on Windows, and the NREL Linux "packages" are nothing more than tarballs of the executables and library files, the only package that could benefit from this effort is the Mac one. Furthermore, since OpenStudio doesn't rely on trad for anything, this is pretty low on my TODO list, but it IS on the list. =/
+
+- Rob
+
+On 10/20/15, 9:55 AM, "Greg Ward" <gregoryjward at gmail.com<mailto:gregoryjward at gmail.com>> wrote:
+
+Hi Terrance,
+
+It's remarkable that you were able to sort this out without aid.
+
+There's already a fairly sophisticated installation script written for trad, which gets triggered by "rmake install" in the src/util directory.  I wouldn't know how to replicate this using cmake, unless it can call the same script.
+
+I updated this to work with wish8.5, but if it isn't run on your system, I guess it won't work.  You can call it outside rmake using:
+
+csh -f tradinstall.csh $(INSTDIR) $(LIBDIR)/tcl
+
+where $(INSTDIR) is the Radiance executable directory and $(LIBDIR) is the Radiance library directory on your system.
+
+Rob and I will figure out how to get this working on the NREL installers.  Thanks for alerting us to the problem!
+
+Cheers,
+-Greg
+
+
+From: "Guglielmetti, Robert" <Robert.Guglielmetti at nrel.gov<mailto:Robert.Guglielmetti at nrel.gov>>
+
+Subject: Re: [Radiance-general] NRL radiance-5.0.a.6-Darwin.dmg trad/tcl incomplete installation
+
+Date: October 20, 2015 8:14:26 AM PDT
+
+
+Cross-posting (and we should move the discussion to) dev...
+
+Thanks Terrance! Looks like I have some more files to include in the CMake files, so our packages work correctly, thanks for the catches. As for item (1), it seems like the right move there is to have Greg change the shebang line to call "wish", and place the onus on the users to have a symlink for wish that points to whatever they have on their systems.
+
+Let's sort it out on dev when we have time. Thanks again for the heads up.
+
+- Rob
+
+On 10/20/15, 8:32 AM, "Terrance McMinn" <t.mcminn at iinet.net.au<mailto:t.mcminn at iinet.net.au><mailto:t.mcminn at iinet.net.au>> wrote:
+
+Must report that "trad" does not run as installed by the radiance-5.0.a.6-Darwin.dmg OSX installer.
+
+Issues:
+1. $ -bash: /usr/local/radiance/bin/trad: /usr/local/bin/wish8.0: bad interpreter: No such file or directory
+
+   Fixed by sudo vi /usr/local/radiance/bin/trad and change the first line to "#!/usr/local/bin/wish8.5" as that is what is installed on my system.
+2. Error in startup script: invalid command name "helplink"
+   while executing
+"helplink .mess trad trad messages"
+   (file "/usr/local/radiance/bin/trad" line 104)
+   Fixed by:
+   a) downloading the source code (https://github.com/NREL/Radiance/releases)
+   b) create folder  with " sudo mkdir /usr/local/radiance/lib/tcl"
+   c) copy files from the source tree to the new folder
+       cd /usr/local/radiance/lib/tcl
+       sudo cp ~/Desktop/Radiance-5.0.a.6/src/util/*.tcl .
+       sudo cp ~/Desktop/Radiance-5.0.a.6/src/util/*.hlp .
+       sudo cp ~/Desktop/Radiance-5.0.a.6/src/util/*.icon .
+       sudo cp ~/Desktop/Radiance-5.0.a.6/src/util/tcl* .
+       This put the following file in the new folder:
+           do_action.tcl       do_results.tcl    do_zone.tcl    gethelp.tcl    trad.hlp
+           do_file.tcl            do_scene.tcl     file.hlp           help.hlp        trad.icon
+           do_options.tcl     do_views.tcl      getfile.tcl       tclIndex        util.tcl
+   d) sudo vi /usr/local/radiance/bin/trad
+       change "/usr/local/radiance/bin/trad" to "set radlib /usr/local/radiance/lib/tcl"
+
+--
+Regards
+Terrance McMinn
+
+
+From t.mcminn at iinet.net.au  Tue Oct 20 18:44:14 2015
+From: t.mcminn at iinet.net.au (Terrance McMinn)
+Date: Wed, 21 Oct 2015 09:44:14 +0800
+Subject: [Radiance-dev] NRL radiance-5.0.a.6-Darwin.dmg trad/tcl
+ incomplete installation
+In-Reply-To: <EDA97D7C-DE94-409D-8619-49BA652703DD@lmi.net>
+References: <56265086.1080909@iinet.net.au>
+	<EDA97D7C-DE94-409D-8619-49BA652703DD@lmi.net>
+Message-ID: <5626EDEE.3080308@iinet.net.au>
+
+Thanks Rob and Greg,
+
+It helps to have previously compiled radiance on the system, so it was 
+just a matter of checking folder contents. I thought after I had sent 
+the email that I could have solved the wish reference with a link. Oh 
+well both methods work, though the link is the better solution in the wild.
+
+Nice to be able to offer some constructive comments instead of only 
+questions.
+
+Re: Request for a change Regards
+*Terrance McMinn*
+
+On 20/10/2015 11:55 pm, Greg Ward wrote:
+> Hi Terrance,
+>
+> It's remarkable that you were able to sort this out without aid.
+>
+> There's already a fairly sophisticated installation script written for 
+> trad, which gets triggered by "rmake install" in the src/util 
+> directory.  I wouldn't know how to replicate this using cmake, unless 
+> it can call the same script.
+>
+> I updated this to work with wish8.5, but if it isn't run on your 
+> system, I guess it won't work.  You can call it outside rmake using:
+>
+> csh -f tradinstall.csh $(INSTDIR) $(LIBDIR)/tcl
+>
+> where $(INSTDIR) is the Radiance executable directory and $(LIBDIR) is 
+> the Radiance library directory on your system.
+>
+> Rob and I will figure out how to get this working on the NREL 
+> installers.  Thanks for alerting us to the problem!
+>
+> Cheers,
+> -Greg
+>
+>> *From: *"Guglielmetti, Robert" <Robert.Guglielmetti at nrel.gov 
+>> <mailto:Robert.Guglielmetti at nrel.gov>>
+>>
+>> *Subject: *Re: [Radiance-general] NRL radiance-5.0.a.6-Darwin.dmg 
+>> trad/tcl incomplete installation
+>>
+>> *Date: *October 20, 2015 8:14:26 AM PDT
+>>
+>> *
+>> *
+>>
+>> Cross-posting (and we should move the discussion to) dev...
+>>
+>> Thanks Terrance! Looks like I have some more files to include in the 
+>> CMake files, so our packages work correctly, thanks for the catches. 
+>> As for item (1), it seems like the right move there is to have Greg 
+>> change the shebang line to call "wish", and place the onus on the 
+>> users to have a symlink for wish that points to whatever they have on 
+>> their systems.
+>>
+>> Let's sort it out on dev when we have time. Thanks again for the 
+>> heads up.
+>>
+>> - Rob
+>>
+>> On 10/20/15, 8:32 AM, "Terrance McMinn" 
+>> <t.mcminn at iinet.net.au<mailto:t.mcminn at iinet.net.au>> wrote:
+>>
+>> Must report that "trad" does not run as installed by the 
+>> radiance-5.0.a.6-Darwin.dmg OSX installer.
+>>
+>> Issues:
+>> 1. $ -bash: /usr/local/radiance/bin/trad: /usr/local/bin/wish8.0: bad 
+>> interpreter: No such file or directory
+>>
+>>    Fixed by sudo vi /usr/local/radiance/bin/trad and change the first 
+>> line to "#!/usr/local/bin/wish8.5" as that is what is installed on my 
+>> system.
+>> 2. Error in startup script: invalid command name "helplink"
+>>    while executing
+>> "helplink .mess trad trad messages"
+>>    (file "/usr/local/radiance/bin/trad" line 104)
+>>    Fixed by:
+>>    a) downloading the source code 
+>> (https://github.com/NREL/Radiance/releases)
+>>    b) create folder  with " sudo mkdir /usr/local/radiance/lib/tcl"
+>>    c) copy files from the source tree to the new folder
+>>        cd /usr/local/radiance/lib/tcl
+>>        sudo cp ~/Desktop/Radiance-5.0.a.6/src/util/*.tcl .
+>>        sudo cp ~/Desktop/Radiance-5.0.a.6/src/util/*.hlp .
+>>        sudo cp ~/Desktop/Radiance-5.0.a.6/src/util/*.icon .
+>>        sudo cp ~/Desktop/Radiance-5.0.a.6/src/util/tcl* .
+>>        This put the following file in the new folder:
+>>            do_action.tcl       do_results.tcl    do_zone.tcl 
+>>    gethelp.tcl    trad.hlp
+>>            do_file.tcl            do_scene.tcl     file.hlp 
+>>           help.hlp        trad.icon
+>>            do_options.tcl     do_views.tcl      getfile.tcl 
+>>       tclIndex        util.tcl
+>>    d) sudo vi /usr/local/radiance/bin/trad
+>>        change "/usr/local/radiance/bin/trad" to "set radlib 
+>> /usr/local/radiance/lib/tcl"
+>>
+>> --
+>> Regards
+>> Terrance McMinn
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20151021/1d5b9602/attachment.html>
+

@@ -1,0 +1,442 @@
+From grobe at gmx.net  Tue Jun 10 04:24:31 2008
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Tue Jun 10 04:24:55 2008
+Subject: [HDRI] hdrgen's response curve file
+Message-ID: <1213097071.5749.22.camel@Optiplex755>
+
+Hi list,
+
+to compare the response curve as determined by hdrgen with the one by
+pfstools, I would like to plot it using gnuplot. To do so, I would like
+to know what the six values per line are. I guess with that info, I
+should be able to plot a run using Paul E. Debevec's and Jitendra
+Malik's algorithm as published.
+
+I guess that the lines correspond to the sensor's channels, but
+everything else is unknown to me right now...
+
+Lars.
+
+
+From grobe at gmx.net  Tue Jun 10 04:44:26 2008
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Tue Jun 10 04:45:02 2008
+Subject: [HDRI] Re: hdrgen's response curve file
+In-Reply-To: <1213097071.5749.22.camel@Optiplex755>
+References: <1213097071.5749.22.camel@Optiplex755>
+Message-ID: <1213098267.5749.27.camel@Optiplex755>
+
+Or is it just a*x^4+b*x^3+c*x^2+d*x+e ?
+
+What is the first (integer) column then?
+
+Thank you, Lars.
+
+
+From gregoryjward at gmail.com  Tue Jun 10 06:36:27 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue Jun 10 06:36:37 2008
+Subject: [HDRI] Re: hdrgen's response curve file
+In-Reply-To: <1213098267.5749.27.camel@Optiplex755>
+References: <1213097071.5749.22.camel@Optiplex755>
+	<1213098267.5749.27.camel@Optiplex755>
+Message-ID: <40642AA1-27B2-40E3-8FFB-C6E3568B3821@gmail.com>
+
+That's correct, Lars.  I like to keep my file formats as obvious as  
+possible.  The first integer is merely the maximum degree of the  
+equation, which should be 4 in this case.  It can be as low as 2 and  
+as high as 5 out of hdrgen.
+
+The first line is for the red channel response, the second is green,  
+and the third is blue.
+
+-Greg
+
+> From: "Lars O. Grobe" <grobe@gmx.net>
+> Date: June 10, 2008 4:44:26 AM PDT
+>
+> Or is it just a*x^4+b*x^3+c*x^2+d*x+e ?
+>
+> What is the first (integer) column then?
+>
+> Thank you, Lars.
+
+From grobe at gmx.net  Tue Jun 10 23:49:25 2008
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Tue Jun 10 23:49:50 2008
+Subject: [HDRI] Re: hdrgen's response curve file
+In-Reply-To: <40642AA1-27B2-40E3-8FFB-C6E3568B3821@gmail.com>
+References: <1213097071.5749.22.camel@Optiplex755>
+	<1213098267.5749.27.camel@Optiplex755>
+	<40642AA1-27B2-40E3-8FFB-C6E3568B3821@gmail.com>
+Message-ID: <1213166965.7674.11.camel@Optiplex755>
+
+> I like to keep my file formats as obvious as possible.
+
+While in general this works, in my case it was not obvious enough - at
+least I had to ask :-) Thank you for the explanation.
+
+Now, I see that I get a function for each channel. What I guess is that
+the function is sensor response ( picture luminance ), is this
+assumption true?
+
+What I actually would like to do is, for a range of picture luminances,
+plot a graph of the sensor output using the polynomal as given by
+hdrgen, and overlay it with the response curve as written by pfstools. I
+am using both tools at the moment and would like to see the differences
+for the given range of luminances caused by the different algorithms.
+
+Is this possible at all?
+
+Is there any kind of unit related to the sensor response values?
+
+TIA&CU Lars.
+
+
+From gregoryjward at gmail.com  Wed Jun 11 00:15:53 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed Jun 11 00:16:09 2008
+Subject: [HDRI] Re: hdrgen's response curve file
+In-Reply-To: <1213166965.7674.11.camel@Optiplex755>
+References: <1213097071.5749.22.camel@Optiplex755>
+	<1213098267.5749.27.camel@Optiplex755>
+	<40642AA1-27B2-40E3-8FFB-C6E3568B3821@gmail.com>
+	<1213166965.7674.11.camel@Optiplex755>
+Message-ID: <10270A1B-5ECA-45D8-876B-032A74B64BF1@gmail.com>
+
+Hi Lars,
+
+There are no units for the sensor response function, which isn't  
+luminance, but individual responses for the three color channels  
+(red, green, and blue).  Sadly, even these are mixed up, since there  
+is a non-linear (and unknown) color transform between the sensors RGB  
+and the image RGB values.
+
+BTW, most of the accuracy from HDR sequences is unrelated to the  
+derived camera response.  Rather, it's from the proper combining of  
+closely-spaced exposures with accurately reported ISO, speed, and  
+aperture.  If those things are not reported correctly by the camera,  
+then all bets are off.  Other things that undermine accuracy are lens  
+flare (trying to measure a dark area near a bright one or with direct  
+light entering the camera), and vignetting for wide apertures.   
+Absolute response is also a big issue, which is why you should  
+probably have at least one luminance reading from each captured scene  
+if the actual values (and not just relative values) matter to you.
+
+-Greg
+
+> From: "Lars O. Grobe" <grobe@gmx.net>
+> Date: June 10, 2008 11:49:25 PM PDT
+>
+>> I like to keep my file formats as obvious as possible.
+>
+> While in general this works, in my case it was not obvious enough - at
+> least I had to ask :-) Thank you for the explanation.
+>
+> Now, I see that I get a function for each channel. What I guess is  
+> that
+> the function is sensor response ( picture luminance ), is this
+> assumption true?
+>
+> What I actually would like to do is, for a range of picture  
+> luminances,
+> plot a graph of the sensor output using the polynomal as given by
+> hdrgen, and overlay it with the response curve as written by  
+> pfstools. I
+> am using both tools at the moment and would like to see the  
+> differences
+> for the given range of luminances caused by the different algorithms.
+>
+> Is this possible at all?
+>
+> Is there any kind of unit related to the sensor response values?
+>
+> TIA&CU Lars.
+
+From grobe at gmx.net  Wed Jun 11 00:25:37 2008
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Wed Jun 11 00:25:43 2008
+Subject: [HDRI] Re: hdrgen's response curve file
+In-Reply-To: <10270A1B-5ECA-45D8-876B-032A74B64BF1@gmail.com>
+References: <1213097071.5749.22.camel@Optiplex755>
+	<1213098267.5749.27.camel@Optiplex755>
+	<40642AA1-27B2-40E3-8FFB-C6E3568B3821@gmail.com>
+	<1213166965.7674.11.camel@Optiplex755>
+	<10270A1B-5ECA-45D8-876B-032A74B64BF1@gmail.com>
+Message-ID: <1213169137.7674.28.camel@Optiplex755>
+
+Hi Greg,
+
+thank you for giving some insight on hdrgen...!
+
+> There are no units for the sensor response function, which isn't  
+> luminance, but individual responses for the three color channels  
+> (red, green, and blue).  Sadly, even these are mixed up, since there  
+> is a non-linear (and unknown) color transform between the sensors RGB  
+> and the image RGB values.
+
+I understood the graphs / curves that I see response dependant on
+luminance? If I draw the curve as a graph, and I write "response" to the
+y-axis, what is the label for the x-axis in this case?
+
+> BTW, most of the accuracy from HDR sequences is unrelated to the  
+> derived camera response.
+
+I can confirm this, as even the most awful response data gives only
+slightly different results when taking pixel values from the generated
+HDR, as far as I could experience ;-)
+
+> Rather, it's from the proper combining of  
+> closely-spaced exposures with accurately reported ISO, speed, and  
+> aperture.  If those things are not reported correctly by the camera,  
+> then all bets are off.  Other things that undermine accuracy are lens  
+> flare (trying to measure a dark area near a bright one or with direct  
+> light entering the camera), and vignetting for wide apertures.   
+> Absolute response is also a big issue, which is why you should  
+> probably have at least one luminance reading from each captured scene  
+> if the actual values (and not just relative values) matter to you.
+
+I have a fixed lense (no zoom etc), I am trying to correct for
+vignetting, aperture is fixed, flare should not appear on the images
+taken (rather uniform gradients), and I created a HDR of a known
+calibrated light source under the same settings, allowing me to estimate
+the factor between reported luminance from the HDR and "real" luminance
+(according to the calibrated light source used). So I try to handle
+these uncertainties. I wanted to document the differences in the tools
+used, and one of the main differences between hdrgen and pfstools seams
+to be the response-curve fitting. So it would be great to be able to
+overlay the curves (six curves all in all, three channels for both tools
+each). But I do not really know how the function is applied to which
+datasets.
+
+CU Lars.
+
+
+From gregoryjward at gmail.com  Wed Jun 11 08:19:01 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed Jun 11 08:19:05 2008
+Subject: [HDRI] Re: hdrgen's response curve file
+In-Reply-To: <1213169137.7674.28.camel@Optiplex755>
+References: <1213097071.5749.22.camel@Optiplex755>
+	<1213098267.5749.27.camel@Optiplex755>
+	<40642AA1-27B2-40E3-8FFB-C6E3568B3821@gmail.com>
+	<1213166965.7674.11.camel@Optiplex755>
+	<10270A1B-5ECA-45D8-876B-032A74B64BF1@gmail.com>
+	<1213169137.7674.28.camel@Optiplex755>
+Message-ID: <D98D25F0-99A5-4C73-AC21-266EAEC43223@gmail.com>
+
+Hi Lars,
+
+Sorry for the poor response to your previous question.  I was a bit  
+confused by it.  This is clearer:
+
+> I understood the graphs / curves that I see response dependant on
+> luminance? If I draw the curve as a graph, and I write "response"  
+> to the
+> y-axis, what is the label for the x-axis in this case?
+
+In fact, the response curve is reversed.  The independent axis (x) is  
+"sensor output" scaled from the 0-255 in the image to a 0-1 range for  
+the recorded polynomial.  The dependent axis (y) produced by the  
+polynomial should be proportional to luminance, but it needs to be  
+multiplied by the appropriate scale factors taken from the ISO,  
+speed, aperture, and calibration.
+
+I hope this makes better sense.
+
+-Greg
+
+From jedev at visarc.com  Mon Jun 30 08:12:23 2008
+From: jedev at visarc.com (Jack de Valpine)
+Date: Mon Jun 30 08:32:59 2008
+Subject: [HDRI] raw2hdr
+Message-ID: <4868F7D7.1070507@visarc.com>
+
+Skipped content of type multipart/alternative-------------- next part --------------
+#!/bin/csh -f
+#
+# Convert camera RAW file to HDR image
+#
+
+if ($#argv < 1) then
+	echo "Usage: $0 [hdrgen opts][-h][-w][-n nproc] -o output.hdr input1.raw .."
+	exit 1
+endif
+
+set bscale=1
+set nprocs=1
+set dcraw=(dcraw -t 0 -4)
+set hdrgen=(hdrgen -m 400 -e -a -r /tmp/sqr.rsp)
+
+while ($#argv > 1)
+	switch ($argv[1])
+	case -o:
+		shift argv
+		set outfile="$argv[1]"
+		set hdrgen=($hdrgen:q -o $outfile:q)
+		breaksw
+	case -q:
+		shift argv
+		set hdrgen=($hdrgen:q -q $argv[1])
+		breaksw
+	case -m:
+		shift argv
+		set hdrgen=($hdrgen:q -m $argv[1])
+		breaksw
+	case -a:
+	case -e:
+	case -f:
+		set hdrgen=($hdrgen:q $argv[1])
+		breaksw
+	case -r:
+	case -s:
+		echo "hdrgen $argv[1] option not supported"
+		exit 1
+	case -h:
+	case -w:
+		set dcraw=($dcraw:q $argv[1])
+		breaksw
+	case -b:
+		shift argv
+		set bscale=$argv[1]
+		set dcraw=($dcraw:q -b $bscale)
+		breaksw
+	case -n:
+		shift argv
+		set nprocs=$argv[1]
+		breaksw
+	default:
+		break
+	endsw
+	shift argv
+end
+
+if (! $?outfile) then
+	echo "Missing -o output file specification"
+	exit 1
+endif
+
+onintr quit
+
+cat > /tmp/sqr.rsp << '_EOF_'
+2 1 0 0
+2 1 0 0
+2 1 0 0
+'_EOF_'
+
+#NOTE: change of format
+#due to changes in output of dcraw -i -v
+cat > /tmp/rawinfo.fmt << '_EOF_'
+
+Filename: $(img).$(ext)
+Timestamp: $(date)
+Camera: $(camera)
+Owner: $(owner)
+ISO speed: ${asa}
+Shutter: ${speed} sec
+Aperture: f/${aperture}
+Focal length: ${flen} mm
+Embedded ICC profile: $(eiccp)
+Number of raw images: ${nori}
+Thumb size:  ${twidth} x ${theight}
+Full size:   ${fwidth} x ${fheight}
+Image size:  ${iwidth} x ${iheight}
+Output size: ${owidth} x ${oheight}
+Raw colors: ${nrcolors}
+Filter pattern: $(filtpat)
+Daylight multipliers: ${rdmult} ${gdmult} ${bdmult}
+Camera multipliers: ${cm1} ${cm2} ${cm3} ${cm4}
+'_EOF_'
+
+$dcraw -i -v $argv > /tmp/rawinfo$$.txt
+
+#NOTE: this fixes the following case -
+#Shutter: 1/(1/shutter) sec 
+#which is output by dcraw for the case where 0 < shutter < 1
+perl -pi -e 'if (my $test = /^Shutter: (.*)\/(.*) sec/) {my $speed = sprintf("%0.9f",$1/$2); s/^Shutter: $1\/$2 sec/Shutter: $speed sec/}' /tmp/rawinfo$$.txt
+
+set capdate=`rcalc -i /tmp/rawinfo.fmt -o 'CAPDATE= $(date)' /tmp/rawinfo$$.txt | head -1`
+
+#NOTE: change of quoting are at -s
+set hdrgen=($hdrgen:q `rcalc -i /tmp/rawinfo.fmt -o '-s ${stonits} $(img)_2.tif' -e "stonits=161/$bscale*aperture*aperture/(speed*asa)" /tmp/rawinfo$$.txt`)
+
+set np=$nprocs
+
+foreach rawfile (`sed -n 's/^Filename: //p' /tmp/rawinfo$$.txt`)
+	if ($nprocs > 1) then
+		( echo $capdate ; $dcraw -c $rawfile \
+				| ra_ppm -r -g 1 ) \
+			| ra_tiff -g 2 - ${rawfile:r}_2.tif &
+		@ np--
+		if ($np <= 0) then
+			wait
+			set np=$nprocs
+		endif
+	else
+		( echo $capdate ; $dcraw -v -c $rawfile \
+				| ra_ppm -r -g 1 ) \
+			| ra_tiff -g 2 - ${rawfile:r}_2.tif
+	endif
+end
+if ($np != $nprocs) wait
+$hdrgen
+set res=$status
+quit:
+rm -f `rcalc -i /tmp/rawinfo.fmt -o '$(img)_2.tif' /tmp/rawinfo$$.txt`
+rm /tmp/rawinfo.fmt /tmp/sqr.rsp /tmp/rawinfo$$.txt
+exit $res
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: jedev.vcf
+Type: text/x-vcard
+Size: 251 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/hdri/attachments/20080630/594cac57/jedev.vcf
+From rpg at rumblestrip.org  Mon Jun 30 15:10:46 2008
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Mon Jun 30 15:10:51 2008
+Subject: [HDRI] raw2hdr
+In-Reply-To: <4868F7D7.1070507@visarc.com>
+References: <4868F7D7.1070507@visarc.com>
+Message-ID: <486959E6.7070204@rumblestrip.org>
+
+Jack de Valpine wrote:
+> Hello,
+>
+> For those who might be interested I have updated Greg's raw2hdr to run 
+> on linux. 
+
+Did I miss a meeting?  What is this raw2hdr utility you speak of?!  I 
+presume there is a version that works on OS X?  Inquiring minds...
+
+From gregoryjward at gmail.com  Mon Jun 30 15:24:02 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Mon Jun 30 15:24:09 2008
+Subject: [HDRI] raw2hdr
+In-Reply-To: <486959E6.7070204@rumblestrip.org>
+References: <4868F7D7.1070507@visarc.com> <486959E6.7070204@rumblestrip.org>
+Message-ID: <4209F171-6881-44DB-B044-E55AC47B93C3@gmail.com>
+
+The original (unsupported) version runs under OS X and includes a  
+utility for running a Canon camera through the necessary exposures.   
+It may still be found on the front page of www.anyhere.com.  It's not  
+well-advertised, and for good reason...
+
+	http://www.anyhere.com/gward/pickup/HDRcapOSX.tar.gz
+
+-Greg
+
+
+> From: Rob Guglielmetti <rpg@rumblestrip.org>
+> Date: June 30, 2008 3:10:46 PM PDT
+>
+> Jack de Valpine wrote:
+>> Hello,
+>>
+>> For those who might be interested I have updated Greg's raw2hdr to  
+>> run on linux.
+>
+> Did I miss a meeting?  What is this raw2hdr utility you speak of?!   
+> I presume there is a version that works on OS X?  Inquiring minds...
+>
+

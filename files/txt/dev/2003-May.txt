@@ -1,0 +1,269 @@
+From radiance-dev@radiance-online.org  Mon May  5 09:06:38 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Mon, 05 May 2003 10:06:38 +0200
+Subject: [Radiance-dev] Random numbers / -DMC
+Message-ID: <3EB61B8E.8090202@pab-opto.de>
+
+Hi,
+additionally to the general posting a few seconds ago: Reflections off 
+specular surfaces showing patterns. - my two thoughts:
+The visible patterns result from correlation between the sequence used 
+in stratifying random numbers and the image width.
+Either the stratification's sequence is enhanced (two orders of magn. 
+longer ?) or substituted by something without a sequence.
+Or (and more likely) the sequence is de-correlated with image width. A 
+sequence in one line is ok, a sequence slightly one or two pixels off 
+each line is (of course) visible.
+
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+From radiance-dev@radiance-online.org  Mon May  5 11:06:21 2003
+From: radiance-dev@radiance-online.org (radiance-dev@radiance-online.org)
+Date: Mon,  5 May 2003 03:06:21 -0700
+Subject: [Radiance-dev] Random numbers / -DMC
+In-Reply-To: <3EB61B8E.8090202@pab-opto.de>
+References: <3EB61B8E.8090202@pab-opto.de>
+Message-ID: <1052129181.3eb6379dab310@webmail.lmi.net>
+
+The correlation with pixel position is intentional.  Low-discrepancy
+sequences necessarily have some correlation, and it is up to the
+programmer to decide how this manifests itself.  If you don't choose
+something, you are likely to be surprised and disappointed with the
+results, as I was initially.  I selected this pattern based on its
+"brushed" appearance.  There is a function (pixnumber?) in src/rt/rpict.c
+that determines this, and you are welcome to play around with it.
+
+-Greg
+
+Quoting Peter Apian-Bennewitz <apian@pab-opto.de>:
+
+> Hi,
+> additionally to the general posting a few seconds ago: Reflections off 
+> specular surfaces showing patterns. - my two thoughts:
+> The visible patterns result from correlation between the sequence used 
+> in stratifying random numbers and the image width.
+> Either the stratification's sequence is enhanced (two orders of magn. 
+> longer ?) or substituted by something without a sequence.
+> Or (and more likely) the sequence is de-correlated with image width. A 
+> sequence in one line is ok, a sequence slightly one or two pixels off 
+> each line is (of course) visible.
+> 
+> -Peter
+
+From radiance-dev@radiance-online.org  Mon May  5 11:48:41 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Mon, 5 May 2003 06:48:41 -0400 (EDT)
+Subject: [Radiance-dev] Random numbers / -DMC
+In-Reply-To: <1052129181.3eb6379dab310@webmail.lmi.net>
+Message-ID: <Pine.BSF.4.44.0305050619150.93346-100000@emancholl.pair.com>
+
+gward@lmi.net wrote:
+
+> The correlation with pixel position is intentional.  Low-discrepancy
+> sequences necessarily have some correlation, and it is up to the
+> programmer to decide how this manifests itself.  If you don't choose
+> something, you are likely to be surprised and disappointed with the
+> results, as I was initially.  I selected this pattern based on its
+> "brushed" appearance.  There is a function (pixnumber?) in src/rt/rpict.c
+> that determines this, and you are welcome to play around with it.
+
+
+So what we really need would be some 2-dimensional random number
+generator producing a less conspicuous screening pattern?
+Assuming that such a thing even exists, of course...
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Thu May 15 05:07:46 2003
+From: radiance-dev@radiance-online.org (Randolph Fritz)
+Date: Wed, 14 May 2003 21:07:46 -0700
+Subject: [Radiance-dev] Compiling 3.6alpha on cutting-edge Linux
+In-Reply-To: <60A71BC8-4DD1-11D7-926C-0030658EA95E@panix.com>
+Message-ID: <C90600FA-868A-11D7-A355-0030658EA95E@panix.com>
+
+Debian sid (unstable) version, gcc-3.3.  I used scads of Pentium-4 
+compiler options, but I can't look them up now--the system I was 
+testing on is running MS-Windows at the moment.
+
+I noted these problems:
+
+1. There are two places where strcpy() is declared as an external 
+function; unfortunately it's a macro in that environment, and one gets 
+a confusing compile-time error.  PJ Plauger says that use of macros in 
+this way is valid, at least as of C99.  See 
+<http://www.dinkumware.com/manuals/reader.aspx?b=c/&h=lib_over.html>.
+
+2. The provided version of libtiff does not compile in that 
+environment; the configure script fails.  I suspect a conflict with the 
+system's version of "bash," which may have a bug--it is "unstable," 
+after all.  The current version of libtiff compiles, but I did not test 
+its functionality.  Libtiff is actually available on that platform as 
+the Debian package libtiffg3.
+
+3. That version of Linux supports OpenGL, but I had to hack makeall to 
+get it built in.
+
+"rholo" sure was fast, though!
+
+Randolph
+
+
+From radiance-dev@radiance-online.org  Thu May 15 05:45:37 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Wed, 14 May 2003 21:45:37 -0700
+Subject: [Radiance-dev] Compiling 3.6alpha on cutting-edge Linux
+In-Reply-To: <C90600FA-868A-11D7-A355-0030658EA95E@panix.com>
+Message-ID: <124628B6-8690-11D7-BF13-000A956D40C8@lmi.net>
+
+> From: Randolph Fritz <randolph@panix.com>
+> Date: Wed May 14, 2003  9:07:46  PM US/Pacific
+> To: radiance-dev@radiance-online.org
+> Subject: [Radiance-dev] Compiling 3.6alpha on cutting-edge Linux
+> Reply-To: radiance-dev@radiance-online.org
+>
+> Debian sid (unstable) version, gcc-3.3.  I used scads of Pentium-4 
+> compiler options, but I can't look them up now--the system I was 
+> testing on is running MS-Windows at the moment.
+>
+> I noted these problems:
+>
+> 1. There are two places where strcpy() is declared as an external 
+> function; unfortunately it's a macro in that environment, and one gets 
+> a confusing compile-time error.  PJ Plauger says that use of macros in 
+> this way is valid, at least as of C99.  See 
+> <http://www.dinkumware.com/manuals/reader.aspx?b=c/&h=lib_over.html>.
+
+Can you tell me where you found these?  I removed all the ones I could 
+find, and you could save me some tedious searching if you know where 
+they are.
+
+>
+> 2. The provided version of libtiff does not compile in that 
+> environment; the configure script fails.  I suspect a conflict with 
+> the system's version of "bash," which may have a bug--it is 
+> "unstable," after all.  The current version of libtiff compiles, but I 
+> did not test its functionality.  Libtiff is actually available on that 
+> platform as the Debian package libtiffg3.
+
+I don't know enough abot libtiff's build process to hack it.  There are 
+some problems on Solaris as well.
+
+>
+> 3. That version of Linux supports OpenGL, but I had to hack makeall to 
+> get it built in.
+
+You can add "ogl" to the SPECIAL= line of rmake -- you don't need to 
+hack makeall, really.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Thu May 15 22:28:44 2003
+From: radiance-dev@radiance-online.org (Randolph Fritz)
+Date: Thu, 15 May 2003 14:28:44 -0700
+Subject: [Radiance-dev] Compiling 3.6alpha on cutting-edge Linux
+In-Reply-To: <124628B6-8690-11D7-BF13-000A956D40C8@lmi.net>
+Message-ID: <34A9F3C0-871C-11D7-A355-0030658EA95E@panix.com>
+
+On Wednesday, May 14, 2003, at 09:45  PM, Greg Ward wrote:
+
+>> From: Randolph Fritz <randolph@panix.com>
+>> Date: Wed May 14, 2003  9:07:46  PM US/Pacific
+>> To: radiance-dev@radiance-online.org
+>> Subject: [Radiance-dev] Compiling 3.6alpha on cutting-edge Linux
+>> Reply-To: radiance-dev@radiance-online.org
+>>
+>> Debian sid (unstable) version, gcc-3.3.  I used scads of Pentium-4 
+>> compiler options, but I can't look them up now--the system I was 
+>> testing on is running MS-Windows at the moment.
+>>
+>> I noted these problems:
+>>
+>> 1. There are two places where strcpy() is declared as an external 
+>> function; unfortunately it's a macro in that environment, and one 
+>> gets a confusing compile-time error.  PJ Plauger says that use of 
+>> macros in this way is valid, at least as of C99.  See 
+>> <http://www.dinkumware.com/manuals/reader.aspx?b=c/&h=lib_over.html>.
+>
+> Can you tell me where you found these?  I removed all the ones I could 
+> find, and you could save me some tedious searching if you know where 
+> they are.
+
+Sorry--sure.
+
+1. util/glrad.c--strchr() (I was wrong about the function, too.)  
+Probably the #ifdef BSD that covers it with index() could be dropped, 
+too, since strchr() is part of C90.
+
+2. hd/rhd_ogl.c--index().  Ironically, the declaration (in 
+dev_section()) does not seem to actually be used, but still creates a 
+compile-time error.
+
+Anyone who doubts Greg's position on conditional compilation, take note.
+
+>
+>>
+>> 2. The provided version of libtiff does not compile in that 
+>> environment; the configure script fails.  I suspect a conflict with 
+>> the system's version of "bash," which may have a bug--it is 
+>> "unstable," after all.  The current version of libtiff compiles, but 
+>> I did not test its functionality.  Libtiff is actually available on 
+>> that platform as the Debian package libtiffg3.
+>
+> I don't know enough abot libtiff's build process to hack it.  There 
+> are some problems on Solaris as well.
+
+My compile-time problems were cleared by downloading the latest release 
+(3.5.7) from Debian; I expect the version at www.libtiff.org is the the 
+same.  The only thing I had to do to get it to compile was to bring 
+over the "configure.local" file from the old version.  I do not, 
+however, know that it will actually work, though I think it very 
+likely.  Note that LZW compression support is problematic, since that 
+algorithm has been patented, though code is linked at libtiff.org.
+
+>
+>>
+>> 3. That version of Linux supports OpenGL, but I had to hack makeall 
+>> to get it built in.
+>
+> You can add "ogl" to the SPECIAL= line of rmake -- you don't need to 
+> hack makeall, really.
+
+Great, thanks!
+
+Randolph
+
+
+From radiance-dev@radiance-online.org  Mon May 19 17:33:28 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Mon, 19 May 2003 09:33:28 -0700
+Subject: [Radiance-dev] Compiling 3.6alpha on cutting-edge Linux
+In-Reply-To: <34A9F3C0-871C-11D7-A355-0030658EA95E@panix.com>
+Message-ID: <9EC426FE-8A17-11D7-826F-000A956D40C8@lmi.net>
+
+I just checked in these changes -- sorry for the delay!
+
+-Greg
+
+> From: Randolph Fritz <randolph@panix.com>
+>
+> 1. util/glrad.c--strchr() (I was wrong about the function, too.)  
+> Probably the #ifdef BSD that covers it with index() could be dropped, 
+> too, since strchr() is part of C90.
+>
+> 2. hd/rhd_ogl.c--index().  Ironically, the declaration (in 
+> dev_section()) does not seem to actually be used, but still creates a 
+> compile-time error.
+
+

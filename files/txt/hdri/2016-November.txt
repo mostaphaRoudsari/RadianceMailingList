@@ -1,0 +1,755 @@
+From ikonsta at purdue.edu  Sat Nov 12 17:10:03 2016
+From: ikonsta at purdue.edu (Iason Konstantzos)
+Date: Sun, 13 Nov 2016 01:10:03 +0000
+Subject: [HDRI] Domain errors with incidence and solid angles during
+ overflow correction
+Message-ID: <SN2PR0801MB225598C1A75EF9042AF1BDFCC6BD0@SN2PR0801MB2255.namprd08.prod.outlook.com>
+
+Hello everyone,
+
+
+I have been doing some tests in order to apply the methodology for overflow correction covered in this year's paper by Jakubiec et al. using pcomb, as for example:
+
+
+pcomb -e "lo=L ? Sang ? cosCor; L=179 ? li(1);
+Sang=S(1); cosCor=Dy(1);" -o masked.hdr
+| pvalue -d -b -h -H
+| total
+
+
+However, I keep getting "domain error" messages for both the S(n) and Dy(n) functions in my images. My first thought was something's wrong with the headers, but the view information looks correct having the full 180 degrees span of my Sigma lens.
+
+Images are created by HDRgen using response function obtained by Photosphere, and are  square-cropped, and resized to 800x800, and otherwise work fine, in terms of validating luminances or illuminances over Evalglare (at least the ones that don't contain the sun).
+
+
+I'm getting the same domain errors in terms of solid angles when I try to extract a mapping of solid angles, using something like:  cat image.hdr |pcomb -e 'solidangl=S(1); ro=omega; go=omega; bo=omega' -o - > solid_angles.hdr
+
+
+If anybody has any hints or ideas, I'd greatly appreciate it, as I think that with careful use (no specular reflections etc.), overflow correction can be a great solution over the alternatives for direct sun measurements.
+
+
+Thanks in advance,
+
+Iason Konstantzos
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20161113/6b89cfb5/attachment.html>
+
+From gregoryjward at gmail.com  Sat Nov 12 18:26:51 2016
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Sat, 12 Nov 2016 18:26:51 -0800
+Subject: [HDRI] Domain errors with incidence and solid angles during
+ overflow correction
+In-Reply-To: <SN2PR0801MB225598C1A75EF9042AF1BDFCC6BD0@SN2PR0801MB2255.namprd08.prod.outlook.com>
+References: <SN2PR0801MB225598C1A75EF9042AF1BDFCC6BD0@SN2PR0801MB2255.namprd08.prod.outlook.com>
+Message-ID: <AD1C0F4B-4975-4D40-B4CA-8330C059033F@gmail.com>
+
+Hi Iason,
+
+Can you send the output of "getinfo" for the picture that you are feeding to pcomb?  My suspicion is that you performed the cropping operation caused the view parameters are being shifted or modified and are not being recognized by pcomb.  This will generate the domain error you are seeing.
+
+Cheers,
+-Greg
+
+> From: Iason Konstantzos <ikonsta at purdue.edu>
+> Date: November 12, 2016 5:10:03 PM PST
+> 
+> Hello everyone,
+> 
+> I have been doing some tests in order to apply the methodology for overflow correction covered in this year's paper by Jakubiec et al. using pcomb, as for example:
+> 
+> pcomb ?e "lo=L ? Sang ? cosCor; L=179 ? li(1);
+> Sang=S(1); cosCor=Dy(1);" ?o masked.hdr
+> | pvalue ?d ?b ?h ?H
+> | total
+> 
+> However, I keep getting "domain error" messages for both the S(n) and Dy(n) functions in my images. My first thought was something's wrong with the headers, but the view information looks correct having the full 180 degrees span of my Sigma lens.
+> Images are created by HDRgen using response function obtained by Photosphere, and are  square-cropped, and resized to 800x800, and otherwise work fine, in terms of validating luminances or illuminances over Evalglare (at least the ones that don't contain the sun). 
+> 
+> I'm getting the same domain errors in terms of solid angles when I try to extract a mapping of solid angles, using something like:  cat image.hdr |pcomb -e 'solidangl=S(1); ro=omega;
+>  go=omega; bo=omega' -o - > solid_angles.hdr
+> 
+> If anybody has any hints or ideas, I'd greatly appreciate it, as I think that with careful use (no specular reflections etc.), overflow correction can be a great solution over the alternatives for direct sun measurements.
+> 
+> Thanks in advance,
+> Iason Konstantzos
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20161112/243b2db9/attachment.html>
+
+From alstan at jakubiec.net  Sat Nov 12 21:34:02 2016
+From: alstan at jakubiec.net (J. Alstan Jakubiec)
+Date: Sun, 13 Nov 2016 13:34:02 +0800
+Subject: [HDRI] Domain errors with incidence and solid angles during
+ overflow correction
+In-Reply-To: <AD1C0F4B-4975-4D40-B4CA-8330C059033F@gmail.com>
+References: <SN2PR0801MB225598C1A75EF9042AF1BDFCC6BD0@SN2PR0801MB2255.namprd08.prod.outlook.com>
+ <AD1C0F4B-4975-4D40-B4CA-8330C059033F@gmail.com>
+Message-ID: <32557636-203d-2a8e-ebf8-33739a47be3b@jakubiec.net>
+
+Hello Iason,
+
+
+If you are following the steps in the paper 
+<http://asd.sutd.edu.sg/dcc/papers/Jakubiec-Inanici-Van-Den-Wymelenberg_2016_Improving-the-Accuracy-of-Measurements-in-Daylit-Interior-Scenes-Using-HDR.pdf>, 
+when you mask the image with the command,
+
+    pcomb ?e "lo=mask ? li(1); mask=if(li(2)?.1,1,0);" ?o image.hdr ?o
+    mask.hdr > image_masked.hdr
+
+
+All of the nice things you put in the header before, like the view type 
+(-vta -vv 180 -vh 180), get commented out. This keeps the luminance data 
+but eradicates view information; therefore, the S(1) and Dy(1) functions 
+don't work as they are view-dependent.
+
+
+You need to somehow re-add the view information to the image header, 
+which is a bit of a drag. We were doing everything in the paper with 
+some really simple Python scripts. In case its helpful to you, I'm 
+including a code snippet used below. Basically what it does is to write 
+a new .hdr file with the header information applied on the third line.
+
+    # append view information
+    tmpfile = open("masked.hdr", "rb")
+    outfile = open("masked_with-view.hdr", "wb")
+    for (n,line) in enumerate(tmpfile):
+         outfile.write(line)
+         if n == 2:
+             outfile.write("VIEW= -vta -vh 180 -vv 180\n")
+    tmpfile.close()
+    outfile.close()
+
+    # remove tmp hdr file missing view information
+    os.remove("masked.hdr")
+
+
+You can also achieve this manually with a text editor such as Notepad++ 
+or whatever is your favorite as long as it can write in binary formats. 
+The red part is what I inserted into the images.
+
+    #?RADIANCE
+    CAPDATE= 2015:02:04 09:30:51
+    GMT= 2015:02:04 01:30:51*
+    VIEW= -vta -vh 180 -vv 180*
+
+         (You will see that the commented information is identified as a
+    tab indent in the .hdr file.)
+
+
+Best regards,
+Alstan
+
+
+On 11/13/2016 10:26 AM, Gregory J. Ward wrote:
+> Hi Iason,
+>
+> Can you send the output of "getinfo" for the picture that you are 
+> feeding to pcomb?  My suspicion is that you performed the cropping 
+> operation caused the view parameters are being shifted or modified and 
+> are not being recognized by pcomb.  This will generate the domain 
+> error you are seeing.
+>
+> Cheers,
+> -Greg
+>
+>> *From: *Iason Konstantzos <ikonsta at purdue.edu 
+>> <mailto:ikonsta at purdue.edu>>
+>>
+>> *Date: *November 12, 2016 5:10:03 PM PST
+>>
+>> *
+>> *
+>>
+>> Hello everyone,
+>>
+>>
+>> I have been doing some tests in order to apply the methodology for 
+>> overflow correction covered in this year's paper by Jakubiec et al. 
+>> using pcomb, as for example:
+>>
+>>
+>> pcomb ?e "lo=L ? Sang ? cosCor; L=179 ? li(1);
+>> Sang=S(1); cosCor=Dy(1);" ?o masked.hdr
+>> | pvalue ?d ?b ?h ?H
+>> | total
+>>
+>> However, I keep getting "domain error" messages for both the S(n) and 
+>> Dy(n) functions in my images. My first thought was something's wrong 
+>> with the headers, but the view information looks correct having the 
+>> full 180 degrees span of my Sigma lens.
+>>
+>> Images are created by HDRgen using response function obtained by 
+>> Photosphere, and are  square-cropped, and resized to 800x800, and 
+>> otherwise work fine, in terms of validating luminances or 
+>> illuminances over Evalglare (at least the ones that don't contain the 
+>> sun).
+>>
+>>
+>> I'm getting the same domain errors in terms of solid angles when I 
+>> try to extract a mapping of solid angles, using something like: /cat 
+>> image.hdr |pcomb -e 'solidangl=S(1); ro=omega; go=omega; bo=omega' -o 
+>> - > solid_angles.hdr/
+>>
+>>
+>> If anybody has any hints or ideas, I'd greatly appreciate it, as I 
+>> think that with careful use (no specular reflections etc.), overflow 
+>> correction can be a great solution over the alternatives for direct 
+>> sun measurements.
+>>
+>>
+>> Thanks in advance,
+>>
+>> Iason Konstantzos
+>>
+>
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20161113/054e271c/attachment-0001.html>
+
+From ikonsta at purdue.edu  Sat Nov 12 22:29:19 2016
+From: ikonsta at purdue.edu (Iason Konstantzos)
+Date: Sun, 13 Nov 2016 06:29:19 +0000
+Subject: [HDRI] HDRI Digest, Vol 86, Issue 1
+In-Reply-To: <mailman.203.1479015255.12160.hdri@radiance-online.org>
+References: <mailman.203.1479015255.12160.hdri@radiance-online.org>
+Message-ID: <SN2PR0801MB225505453D720FFF5D603AA7C6BD0@SN2PR0801MB2255.namprd08.prod.outlook.com>
+
+Greg, Alstan,
+
+
+You were both right; I just realized that the fact I saw the view info in the header didn't mean that pcomb did recognize it.  It was indeed indented therefore ignored. Putting it in back in the third row made everything work like a charm!
+
+
+Thank you both for your prompt and enlightening responses!
+
+Best
+
+Iason
+
+
+----------------------------------------------------------------------
+
+Message: 1
+Date: Sun, 13 Nov 2016 01:10:03 +0000
+From: Iason Konstantzos <ikonsta at purdue.edu>
+To: "hdri at radiance-online.org" <hdri at radiance-online.org>
+Subject: [HDRI] Domain errors with incidence and solid angles during
+        overflow correction
+Message-ID:
+        <SN2PR0801MB225598C1A75EF9042AF1BDFCC6BD0 at SN2PR0801MB2255.namprd08.prod.outlook.com>
+
+Content-Type: text/plain; charset="iso-8859-1"
+
+Hello everyone,
+
+
+I have been doing some tests in order to apply the methodology for overflow correction covered in this year's paper by Jakubiec et al. using pcomb, as for example:
+
+
+pcomb -e "lo=L ? Sang ? cosCor; L=179 ? li(1);
+Sang=S(1); cosCor=Dy(1);" -o masked.hdr
+| pvalue -d -b -h -H
+| total
+
+
+However, I keep getting "domain error" messages for both the S(n) and Dy(n) functions in my images. My first thought was something's wrong with the headers, but the view information looks correct having the full 180 degrees span of my Sigma lens.
+
+Images are created by HDRgen using response function obtained by Photosphere, and are  square-cropped, and resized to 800x800, and otherwise work fine, in terms of validating luminances or illuminances over Evalglare (at least the ones that don't contain the sun).
+
+
+I'm getting the same domain errors in terms of solid angles when I try to extract a mapping of solid angles, using something like:  cat image.hdr |pcomb -e 'solidangl=S(1); ro=omega; go=omega; bo=omega' -o - > solid_angles.hdr
+
+
+If anybody has any hints or ideas, I'd greatly appreciate it, as I think that with careful use (no specular reflections etc.), overflow correction can be a great solution over the alternatives for direct sun measurements.
+
+
+Thanks in advance,
+
+Iason Konstantzos
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20161113/6b89cfb5/attachment-0001.html>
+
+------------------------------
+
+Message: 2
+Date: Sat, 12 Nov 2016 18:26:51 -0800
+From: "Gregory J. Ward" <gregoryjward at gmail.com>
+To: High Dynamic Range Imaging <hdri at radiance-online.org>
+Subject: Re: [HDRI] Domain errors with incidence and solid angles
+        during overflow correction
+Message-ID: <AD1C0F4B-4975-4D40-B4CA-8330C059033F at gmail.com>
+Content-Type: text/plain; charset="utf-8"
+
+Hi Iason,
+
+Can you send the output of "getinfo" for the picture that you are feeding to pcomb?  My suspicion is that you performed the cropping operation caused the view parameters are being shifted or modified and are not being recognized by pcomb.  This will generate the domain error you are seeing.
+
+Cheers,
+-Greg
+
+> From: Iason Konstantzos <ikonsta at purdue.edu>
+> Date: November 12, 2016 5:10:03 PM PST
+>
+> Hello everyone,
+>
+> I have been doing some tests in order to apply the methodology for overflow correction covered in this year's paper by Jakubiec et al. using pcomb, as for example:
+>
+> pcomb ?e "lo=L ? Sang ? cosCor; L=179 ? li(1);
+> Sang=S(1); cosCor=Dy(1);" ?o masked.hdr
+> | pvalue ?d ?b ?h ?H
+> | total
+>
+> However, I keep getting "domain error" messages for both the S(n) and Dy(n) functions in my images. My first thought was something's wrong with the headers, but the view information looks correct having the full 180 degrees span of my Sigma lens.
+> Images are created by HDRgen using response function obtained by Photosphere, and are  square-cropped, and resized to 800x800, and otherwise work fine, in terms of validating luminances or illuminances over Evalglare (at least the ones that don't contain the sun).
+>
+> I'm getting the same domain errors in terms of solid angles when I try to extract a mapping of solid angles, using something like:  cat image.hdr |pcomb -e 'solidangl=S(1); ro=omega;
+>  go=omega; bo=omega' -o - > solid_angles.hdr
+>
+> If anybody has any hints or ideas, I'd greatly appreciate it, as I think that with careful use (no specular reflections etc.), overflow correction can be a great solution over the alternatives for direct sun measurements.
+>
+> Thanks in advance,
+> Iason Konstantzos
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20161112/243b2db9/attachment-0001.html>
+
+------------------------------
+
+Message: 3
+Date: Sun, 13 Nov 2016 13:34:02 +0800
+From: "J. Alstan Jakubiec" <alstan at jakubiec.net>
+To: hdri at radiance-online.org
+Subject: Re: [HDRI] Domain errors with incidence and solid angles
+        during overflow correction
+Message-ID: <32557636-203d-2a8e-ebf8-33739a47be3b at jakubiec.net>
+Content-Type: text/plain; charset="utf-8"; Format="flowed"
+
+Hello Iason,
+
+
+If you are following the steps in the paper
+<http://asd.sutd.edu.sg/dcc/papers/Jakubiec-Inanici-Van-Den-Wymelenberg_2016_Improving-the-Accuracy-of-Measurements-in-Daylit-Interior-Scenes-Using-HDR.pdf>,
+Full - Improving the Accuracy of Measurements in Daylit ...<http://asd.sutd.edu.sg/dcc/papers/Jakubiec-Inanici-Van-Den-Wymelenberg_2016_Improving-the-Accuracy-of-Measurements-in-Daylit-Interior-Scenes-Using-HDR.pdf>
+asd.sutd.edu.sg
+PLEA 2016 Los Angeles - 36th International Conference on Passive and Low Energy Architecture. Cities, Buildings, People: Towards Regenerative Environments
+
+
+
+when you mask the image with the command,
+
+    pcomb ?e "lo=mask ? li(1); mask=if(li(2)?.1,1,0);" ?o image.hdr ?o
+    mask.hdr > image_masked.hdr
+
+
+All of the nice things you put in the header before, like the view type
+(-vta -vv 180 -vh 180), get commented out. This keeps the luminance data
+but eradicates view information; therefore, the S(1) and Dy(1) functions
+don't work as they are view-dependent.
+
+
+You need to somehow re-add the view information to the image header,
+which is a bit of a drag. We were doing everything in the paper with
+some really simple Python scripts. In case its helpful to you, I'm
+including a code snippet used below. Basically what it does is to write
+a new .hdr file with the header information applied on the third line.
+
+    # append view information
+    tmpfile = open("masked.hdr", "rb")
+    outfile = open("masked_with-view.hdr", "wb")
+    for (n,line) in enumerate(tmpfile):
+         outfile.write(line)
+         if n == 2:
+             outfile.write("VIEW= -vta -vh 180 -vv 180\n")
+    tmpfile.close()
+    outfile.close()
+
+    # remove tmp hdr file missing view information
+    os.remove("masked.hdr")
+
+
+You can also achieve this manually with a text editor such as Notepad++
+or whatever is your favorite as long as it can write in binary formats.
+The red part is what I inserted into the images.
+
+    #?RADIANCE
+    CAPDATE= 2015:02:04 09:30:51
+    GMT= 2015:02:04 01:30:51*
+    VIEW= -vta -vh 180 -vv 180*
+
+         (You will see that the commented information is identified as a
+    tab indent in the .hdr file.)
+
+
+Best regards,
+Alstan
+
+
+On 11/13/2016 10:26 AM, Gregory J. Ward wrote:
+> Hi Iason,
+>
+> Can you send the output of "getinfo" for the picture that you are
+> feeding to pcomb?  My suspicion is that you performed the cropping
+> operation caused the view parameters are being shifted or modified and
+> are not being recognized by pcomb.  This will generate the domain
+> error you are seeing.
+>
+> Cheers,
+> -Greg
+>
+>> *From: *Iason Konstantzos <ikonsta at purdue.edu
+>> <mailto:ikonsta at purdue.edu>>
+>>
+>> *Date: *November 12, 2016 5:10:03 PM PST
+>>
+>> *
+>> *
+>>
+>> Hello everyone,
+>>
+>>
+>> I have been doing some tests in order to apply the methodology for
+>> overflow correction covered in this year's paper by Jakubiec et al.
+>> using pcomb, as for example:
+>>
+>>
+>> pcomb ?e "lo=L ? Sang ? cosCor; L=179 ? li(1);
+>> Sang=S(1); cosCor=Dy(1);" ?o masked.hdr
+>> | pvalue ?d ?b ?h ?H
+>> | total
+>>
+>> However, I keep getting "domain error" messages for both the S(n) and
+>> Dy(n) functions in my images. My first thought was something's wrong
+>> with the headers, but the view information looks correct having the
+>> full 180 degrees span of my Sigma lens.
+>>
+>> Images are created by HDRgen using response function obtained by
+>> Photosphere, and are  square-cropped, and resized to 800x800, and
+>> otherwise work fine, in terms of validating luminances or
+>> illuminances over Evalglare (at least the ones that don't contain the
+>> sun).
+>>
+>>
+>> I'm getting the same domain errors in terms of solid angles when I
+>> try to extract a mapping of solid angles, using something like: /cat
+>> image.hdr |pcomb -e 'solidangl=S(1); ro=omega; go=omega; bo=omega' -o
+>> - > solid_angles.hdr/
+>>
+>>
+>> If anybody has any hints or ideas, I'd greatly appreciate it, as I
+>> think that with careful use (no specular reflections etc.), overflow
+>> correction can be a great solution over the alternatives for direct
+>> sun measurements.
+>>
+>>
+>> Thanks in advance,
+>>
+>> Iason Konstantzos
+>>
+>
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20161113/054e271c/attachment.html>
+
+------------------------------
+
+Subject: Digest Footer
+
+_______________________________________________
+HDRI mailing list
+HDRI at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/hdri
+
+
+------------------------------
+
+End of HDRI Digest, Vol 86, Issue 1
+***********************************
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20161113/e7038d8b/attachment-0001.html>
+
+From gregoryjward at gmail.com  Sun Nov 13 07:26:57 2016
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Sun, 13 Nov 2016 07:26:57 -0800
+Subject: [HDRI] HDRI Digest, Vol 86, Issue 1
+In-Reply-To: <SN2PR0801MB225505453D720FFF5D603AA7C6BD0@SN2PR0801MB2255.namprd08.prod.outlook.com>
+References: <mailman.203.1479015255.12160.hdri@radiance-online.org>
+ <SN2PR0801MB225505453D720FFF5D603AA7C6BD0@SN2PR0801MB2255.namprd08.prod.outlook.com>
+Message-ID: <A953721D-7828-4D8B-83CA-6A3B24FED4AF@gmail.com>
+
+The new getinfo "-a" option in the latest HEAD release (incl. Windows) is a handy way to add information to the header, including VIEW= lines.
+
+Cheers,
+-Greg
+
+> From: Iason Konstantzos <ikonsta at purdue.edu>
+> Date: November 12, 2016 10:29:19 PM PST
+> 
+> Greg, Alstan,
+> 
+> You were both right; I just realized that the fact I saw the view info in the header didn't mean that pcomb did recognize it.  It was indeed indented therefore ignored. Putting it in back in the third row made everything work like a charm!
+> 
+> Thank you both for your prompt and enlightening responses!
+> Best
+> Iason
+> 
+> 
+> ----------------------------------------------------------------------
+> 
+> Message: 1
+> Date: Sun, 13 Nov 2016 01:10:03 +0000
+>         
+> Content-Type: text/plain; charset="iso-8859-1"
+> 
+> Hello everyone,
+> 
+> 
+> I have been doing some tests in order to apply the methodology for overflow correction covered in this year's paper by Jakubiec et al. using pcomb, as for example:
+> 
+> 
+> pcomb -e "lo=L ? Sang ? cosCor; L=179 ? li(1);
+> Sang=S(1); cosCor=Dy(1);" -o masked.hdr
+> | pvalue -d -b -h -H
+> | total
+> 
+> 
+> However, I keep getting "domain error" messages for both the S(n) and Dy(n) functions in my images. My first thought was something's wrong with the headers, but the view information looks correct having the full 180 degrees span of my Sigma lens.
+> 
+> Images are created by HDRgen using response function obtained by Photosphere, and are  square-cropped, and resized to 800x800, and otherwise work fine, in terms of validating luminances or illuminances over Evalglare (at least the ones that don't contain the sun).
+> 
+> 
+> I'm getting the same domain errors in terms of solid angles when I try to extract a mapping of solid angles, using something like:  cat image.hdr |pcomb -e 'solidangl=S(1); ro=omega; go=omega; bo=omega' -o - > solid_angles.hdr
+> 
+> 
+> If anybody has any hints or ideas, I'd greatly appreciate it, as I think that with careful use (no specular reflections etc.), overflow correction can be a great solution over the alternatives for direct sun measurements.
+> 
+> 
+> Thanks in advance,
+> 
+> Iason Konstantzos
+> -------------- next part --------------
+> An HTML attachment was scrubbed...
+> URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20161113/6b89cfb5/attachment-0001.html>
+> 
+> ------------------------------
+> 
+> Message: 2
+> Date: Sat, 12 Nov 2016 18:26:51 -0800
+> From: "Gregory J. Ward" <gregoryjward at gmail.com>
+> To: High Dynamic Range Imaging <hdri at radiance-online.org>
+> Subject: Re: [HDRI] Domain errors with incidence and solid angles
+>         during overflow correction
+> Message-ID: <AD1C0F4B-4975-4D40-B4CA-8330C059033F at gmail.com>
+> Content-Type: text/plain; charset="utf-8"
+> 
+> Hi Iason,
+> 
+> Can you send the output of "getinfo" for the picture that you are feeding to pcomb?  My suspicion is that you performed the cropping operation caused the view parameters are being shifted or modified and are not being recognized by pcomb.  This will generate the domain error you are seeing.
+> 
+> Cheers,
+> -Greg
+> 
+> > From: Iason Konstantzos <ikonsta at purdue.edu>
+> > Date: November 12, 2016 5:10:03 PM PST
+> > 
+> > Hello everyone,
+> > 
+> > I have been doing some tests in order to apply the methodology for overflow correction covered in this year's paper by Jakubiec et al. using pcomb, as for example:
+> > 
+> > pcomb ?e "lo=L ? Sang ? cosCor; L=179 ? li(1);
+> > Sang=S(1); cosCor=Dy(1);" ?o masked.hdr
+> > | pvalue ?d ?b ?h ?H
+> > | total
+> > 
+> > However, I keep getting "domain error" messages for both the S(n) and Dy(n) functions in my images. My first thought was something's wrong with the headers, but the view information looks correct having the full 180 degrees span of my Sigma lens.
+> > Images are created by HDRgen using response function obtained by Photosphere, and are  square-cropped, and resized to 800x800, and otherwise work fine, in terms of validating luminances or illuminances over Evalglare (at least the ones that don't contain the sun). 
+> > 
+> > I'm getting the same domain errors in terms of solid angles when I try to extract a mapping of solid angles, using something like:  cat image.hdr |pcomb -e 'solidangl=S(1); ro=omega;
+> >  go=omega; bo=omega' -o - > solid_angles.hdr
+> > 
+> > If anybody has any hints or ideas, I'd greatly appreciate it, as I think that with careful use (no specular reflections etc.), overflow correction can be a great solution over the alternatives for direct sun measurements.
+> > 
+> > Thanks in advance,
+> > Iason Konstantzos
+> -------------- next part --------------
+> An HTML attachment was scrubbed...
+> URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20161112/243b2db9/attachment-0001.html>
+> 
+> ------------------------------
+> 
+> Message: 3
+> Date: Sun, 13 Nov 2016 13:34:02 +0800
+> From: "J. Alstan Jakubiec" <alstan at jakubiec.net>
+> To: hdri at radiance-online.org
+> Subject: Re: [HDRI] Domain errors with incidence and solid angles
+>         during overflow correction
+> Message-ID: <32557636-203d-2a8e-ebf8-33739a47be3b at jakubiec.net>
+> Content-Type: text/plain; charset="utf-8"; Format="flowed"
+> 
+> Hello Iason,
+> 
+> 
+> If you are following the steps in the paper 
+> <http://asd.sutd.edu.sg/dcc/papers/Jakubiec-Inanici-Van-Den-Wymelenberg_2016_Improving-the-Accuracy-of-Measurements-in-Daylit-Interior-Scenes-Using-HDR.pdf>,
+> Full - Improving the Accuracy of Measurements in Daylit ...
+> asd.sutd.edu.sg
+> PLEA 2016 Los Angeles - 36th International Conference on Passive and Low Energy Architecture. Cities, Buildings, People: Towards Regenerative Environments
+> 
+> 
+> when you mask the image with the command,
+> 
+>     pcomb ?e "lo=mask ? li(1); mask=if(li(2)?.1,1,0);" ?o image.hdr ?o
+>     mask.hdr > image_masked.hdr
+> 
+> 
+> All of the nice things you put in the header before, like the view type 
+> (-vta -vv 180 -vh 180), get commented out. This keeps the luminance data 
+> but eradicates view information; therefore, the S(1) and Dy(1) functions 
+> don't work as they are view-dependent.
+> 
+> 
+> You need to somehow re-add the view information to the image header, 
+> which is a bit of a drag. We were doing everything in the paper with 
+> some really simple Python scripts. In case its helpful to you, I'm 
+> including a code snippet used below. Basically what it does is to write 
+> a new .hdr file with the header information applied on the third line.
+> 
+>     # append view information
+>     tmpfile = open("masked.hdr", "rb")
+>     outfile = open("masked_with-view.hdr", "wb")
+>     for (n,line) in enumerate(tmpfile):
+>          outfile.write(line)
+>          if n == 2:
+>              outfile.write("VIEW= -vta -vh 180 -vv 180\n")
+>     tmpfile.close()
+>     outfile.close()
+> 
+>     # remove tmp hdr file missing view information
+>     os.remove("masked.hdr")
+> 
+> 
+> You can also achieve this manually with a text editor such as Notepad++ 
+> or whatever is your favorite as long as it can write in binary formats. 
+> The red part is what I inserted into the images.
+> 
+>     #?RADIANCE
+>     CAPDATE= 2015:02:04 09:30:51
+>     GMT= 2015:02:04 01:30:51*
+>     VIEW= -vta -vh 180 -vv 180*
+> 
+>          (You will see that the commented information is identified as a
+>     tab indent in the .hdr file.)
+> 
+> 
+> Best regards,
+> Alstan
+> 
+> 
+> On 11/13/2016 10:26 AM, Gregory J. Ward wrote:
+> > Hi Iason,
+> >
+> > Can you send the output of "getinfo" for the picture that you are 
+> > feeding to pcomb?  My suspicion is that you performed the cropping 
+> > operation caused the view parameters are being shifted or modified and 
+> > are not being recognized by pcomb.  This will generate the domain 
+> > error you are seeing.
+> >
+> > Cheers,
+> > -Greg
+> >
+> >> *From: *Iason Konstantzos <ikonsta at purdue.edu 
+> >> <mailto:ikonsta at purdue.edu>>
+> >>
+> >> *Date: *November 12, 2016 5:10:03 PM PST
+> >>
+> >> *
+> >> *
+> >>
+> >> Hello everyone,
+> >>
+> >>
+> >> I have been doing some tests in order to apply the methodology for 
+> >> overflow correction covered in this year's paper by Jakubiec et al. 
+> >> using pcomb, as for example:
+> >>
+> >>
+> >> pcomb ?e "lo=L ? Sang ? cosCor; L=179 ? li(1);
+> >> Sang=S(1); cosCor=Dy(1);" ?o masked.hdr
+> >> | pvalue ?d ?b ?h ?H
+> >> | total
+> >>
+> >> However, I keep getting "domain error" messages for both the S(n) and 
+> >> Dy(n) functions in my images. My first thought was something's wrong 
+> >> with the headers, but the view information looks correct having the 
+> >> full 180 degrees span of my Sigma lens.
+> >>
+> >> Images are created by HDRgen using response function obtained by 
+> >> Photosphere, and are  square-cropped, and resized to 800x800, and 
+> >> otherwise work fine, in terms of validating luminances or 
+> >> illuminances over Evalglare (at least the ones that don't contain the 
+> >> sun).
+> >>
+> >>
+> >> I'm getting the same domain errors in terms of solid angles when I 
+> >> try to extract a mapping of solid angles, using something like: /cat 
+> >> image.hdr |pcomb -e 'solidangl=S(1); ro=omega; go=omega; bo=omega' -o 
+> >> - > solid_angles.hdr/
+> >>
+> >>
+> >> If anybody has any hints or ideas, I'd greatly appreciate it, as I 
+> >> think that with careful use (no specular reflections etc.), overflow 
+> >> correction can be a great solution over the alternatives for direct 
+> >> sun measurements.
+> >>
+> >>
+> >> Thanks in advance,
+> >>
+> >> Iason Konstantzos
+> >>
+> >
+> >
+> > _______________________________________________
+> > HDRI mailing list
+> > HDRI at radiance-online.org
+> > http://www.radiance-online.org/mailman/listinfo/hdri
+> 
+> -------------- next part --------------
+> An HTML attachment was scrubbed...
+> URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20161113/054e271c/attachment.html>
+> 
+> ------------------------------
+> 
+> Subject: Digest Footer
+> 
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+> 
+> 
+> ------------------------------
+> 
+> End of HDRI Digest, Vol 86, Issue 1
+> ***********************************
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20161113/c5629fd0/attachment-0001.html>
+

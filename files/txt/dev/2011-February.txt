@@ -1,0 +1,742 @@
+From grobe at gmx.net  Tue Feb  1 05:50:13 2011
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Tue, 01 Feb 2011 14:50:13 +0100
+Subject: [Radiance-dev] parallel Radiance
+In-Reply-To: <7543BDF1-327B-4CCF-A38F-1740D77C6BE0@gmail.com>
+References: <DCDA812E-035B-443D-ACE0-8C7C3D2249DC@gmail.com>
+	<7543BDF1-327B-4CCF-A38F-1740D77C6BE0@gmail.com>
+Message-ID: <4D480F95.8040809@gmx.net>
+
+Hi!
+
+There used to be a modified implementation of Radiance using MPI. I 
+never used it, and it was based on a release that is pretty much 
+outdated by now. The code modifications together with a paper titled 
+"MPI-parallelized Radiance on SGI CoW and SMP" were published by Roland 
+Koholka, Heinz Mayer and Alois Goller in 1999.
+
+Most critical tools in Radiance supports coordinated processing on 
+multiple cores by now. This is clearly aiming at platforms providing 
+several CPUs/cores per node, not at SIMD. I am not aware of any attempt 
+to port the code to GPUs or other specialized cores.
+
+Cheers, Lars.
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: smime.p7s
+Type: application/pkcs7-signature
+Size: 3740 bytes
+Desc: S/MIME Cryptographic Signature
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20110201/9124d022/attachment.bin>
+
+From RFritz at lbl.gov  Mon Feb  7 13:29:09 2011
+From: RFritz at lbl.gov (Randolph M. Fritz)
+Date: Mon, 7 Feb 2011 13:29:09 -0800
+Subject: [Radiance-dev] gensky -g buglet
+Message-ID: <iipo75$f18$1@dough.gmane.org>
+
+If -g is given as the last argument to the gensky command, a bus error 
+or segmentation fault results.  That is:
+  gensky 3 31 10:00 -g -c
+works, but
+  gensky 3 31 10:00 -c -g
+fails.
+-- 
+Randolph M. Fritz ? RFritz at lbl.gov
+Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+
+
+
+
+From gregoryjward at gmail.com  Mon Feb  7 13:49:44 2011
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Mon, 7 Feb 2011 13:49:44 -0800
+Subject: [Radiance-dev] gensky -g buglet
+In-Reply-To: <iipo75$f18$1@dough.gmane.org>
+References: <iipo75$f18$1@dough.gmane.org>
+Message-ID: <1437A715-11BA-453B-A0C3-740238ABFD38@gmail.com>
+
+That's because -g is expecting an argument (the ground reflectance).  If you give "-c" after, it probably calls atof("-c") which returns 0.
+
+In general, Radiance doesn't have very paranoid argument checking.  If you don't give a legal command line, many Radiance programs just muddle through (or crash if they try reading past the last argument).  The exceptions to this are the rendering programs and a few utilities that call badarg() to check command argument types.
+
+-Greg
+
+> From: "Randolph M. Fritz" <RFritz at lbl.gov>
+> Date: February 7, 2011 1:29:09 PM PST
+> 
+> If -g is given as the last argument to the gensky command, a bus error or segmentation fault results.  That is:
+> gensky 3 31 10:00 -g -c
+> works, but
+> gensky 3 31 10:00 -c -g
+> fails.
+> -- 
+> Randolph M. Fritz ? RFritz at lbl.gov
+> Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+
+
+From RFritz at lbl.gov  Wed Feb  9 10:05:17 2011
+From: RFritz at lbl.gov (Randolph M. Fritz)
+Date: Wed, 9 Feb 2011 10:05:17 -0800
+Subject: [Radiance-dev] gensky -g buglet
+References: <iipo75$f18$1@dough.gmane.org>
+	<1437A715-11BA-453B-A0C3-740238ABFD38@gmail.com>
+Message-ID: <iiul0s$abg$1@dough.gmane.org>
+
+So is the default never used?  Or only when -g is not given?
+
+On 2011-02-07 13:49:44 -0800, Gregory J. Ward said:
+
+> That's because -g is expecting an argument (the ground reflectance).  
+> If you give "-c" after, it probably calls atof("-c") which returns 0.
+> 
+> In general, Radiance doesn't have very paranoid argument checking.  If 
+> you don't give a legal command line, many Radiance programs just muddle 
+> through (or crash if they try reading past the last argument).  The 
+> exceptions to this are the rendering programs and a few utilities that 
+> call badarg() to check command argument types.
+> 
+> -Greg
+> 
+>> From: "Randolph M. Fritz" <RFritz at lbl.gov>
+>> Date: February 7, 2011 1:29:09 PM PST
+>> 
+>> If -g is given as the last argument to the gensky command, a bus error 
+>> or segmentation fault results.  That is:
+>> gensky 3 31 10:00 -g -c
+>> works, but
+>> gensky 3 31 10:00 -c -g
+>> fails.
+>> --
+>> Randolph M. Fritz ? RFritz at lbl.gov
+>> Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+
+
+-- 
+Randolph M. Fritz ? RFritz at lbl.gov
+Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+
+
+
+
+From gregoryjward at gmail.com  Wed Feb  9 10:21:56 2011
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed, 9 Feb 2011 10:21:56 -0800
+Subject: [Radiance-dev] gensky -g buglet
+In-Reply-To: <iiul0s$abg$1@dough.gmane.org>
+References: <iipo75$f18$1@dough.gmane.org>
+	<1437A715-11BA-453B-A0C3-740238ABFD38@gmail.com>
+	<iiul0s$abg$1@dough.gmane.org>
+Message-ID: <28E2C9D5-6AE9-4C9D-BD1B-1034F0B1EA00@gmail.com>
+
+Huh?  You get the default value if you *don't* specify a -g option.  If you use -g 0.30, you would get a ground reflectance of 30% instead of the default 20%.
+
+Make sense?
+-Greg
+
+> From: "Randolph M. Fritz" <RFritz at lbl.gov>
+> Date: February 9, 2011 10:05:17 AM PST
+> 
+> So is the default never used?  Or only when -g is not given?
+> 
+> On 2011-02-07 13:49:44 -0800, Gregory J. Ward said:
+> 
+>> That's because -g is expecting an argument (the ground reflectance).  If you give "-c" after, it probably calls atof("-c") which returns 0.
+>> In general, Radiance doesn't have very paranoid argument checking.  If you don't give a legal command line, many Radiance programs just muddle through (or crash if they try reading past the last argument).  The exceptions to this are the rendering programs and a few utilities that call badarg() to check command argument types.
+>> -Greg
+>>> From: "Randolph M. Fritz" <RFritz at lbl.gov>
+>>> Date: February 7, 2011 1:29:09 PM PST
+>>> If -g is given as the last argument to the gensky command, a bus error or segmentation fault results.  That is:
+>>> gensky 3 31 10:00 -g -c
+>>> works, but
+>>> gensky 3 31 10:00 -c -g
+>>> fails.
+>>> --
+>>> Randolph M. Fritz ? RFritz at lbl.gov
+>>> Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+> 
+> 
+> -- 
+> Randolph M. Fritz ? RFritz at lbl.gov
+> Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+> 
+> 
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+From Robert.Guglielmetti at nrel.gov  Wed Feb  9 10:22:13 2011
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Wed, 9 Feb 2011 11:22:13 -0700
+Subject: [Radiance-dev] gensky -g buglet
+In-Reply-To: <iiul0s$abg$1@dough.gmane.org>
+Message-ID: <C97827E4.34EB%robert.guglielmetti@nrel.gov>
+
+The default rfl value for -g is used when -g is not given. That's the
+definition of default, isn't it? =8-)
+
+Greg is saying that -g needs an argument, for the ground refl. It's not an
+on/off switch.
+ 
+Rob Guglielmetti  IESNA, LEED AP
+Commercial Buildings Research Group
+National Renewable Energy Laboratory
+1617 Cole Blvd MS:RSF202
+Golden, CO 80401
+T. 303.275.4319
+F. 303.630.2055
+E. robert.guglielmetti at nrel.gov
+
+
+
+
+
+On 2/9/11 11:05 AM, "Randolph M. Fritz" <RFritz at lbl.gov> wrote:
+
+>So is the default never used?  Or only when -g is not given?
+>
+>On 2011-02-07 13:49:44 -0800, Gregory J. Ward said:
+>
+>> That's because -g is expecting an argument (the ground reflectance).
+>> If you give "-c" after, it probably calls atof("-c") which returns 0.
+>> 
+>> In general, Radiance doesn't have very paranoid argument checking.  If
+>> you don't give a legal command line, many Radiance programs just muddle
+>> through (or crash if they try reading past the last argument).  The
+>> exceptions to this are the rendering programs and a few utilities that
+>> call badarg() to check command argument types.
+>> 
+>> -Greg
+>> 
+>>> From: "Randolph M. Fritz" <RFritz at lbl.gov>
+>>> Date: February 7, 2011 1:29:09 PM PST
+>>> 
+>>> If -g is given as the last argument to the gensky command, a bus error
+>>> or segmentation fault results.  That is:
+>>> gensky 3 31 10:00 -g -c
+>>> works, but
+>>> gensky 3 31 10:00 -c -g
+>>> fails.
+>>> --
+>>> Randolph M. Fritz ? RFritz at lbl.gov
+>>> Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+>
+>
+>-- 
+>Randolph M. Fritz ? RFritz at lbl.gov
+>Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+>
+>
+>
+>_______________________________________________
+>Radiance-dev mailing list
+>Radiance-dev at radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+From Robert.Guglielmetti at nrel.gov  Wed Feb  9 10:29:00 2011
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Wed, 9 Feb 2011 11:29:00 -0700
+Subject: [Radiance-dev] gensky -g buglet
+In-Reply-To: <C97827E4.34EB%robert.guglielmetti@nrel.gov>
+Message-ID: <C9782A59.34F8%robert.guglielmetti@nrel.gov>
+
+BTW, the default value for -g is not printed in the manpage, but it's 20%
+(you can find it in gensky.c, and Axel Jacobs mentions this in his
+rtcontrib tutorial, I believe).
+ 
+
+Rob Guglielmetti  IESNA, LEED AP
+Commercial Buildings Research Group
+National Renewable Energy Laboratory
+1617 Cole Blvd MS:RSF202
+Golden, CO 80401
+T. 303.275.4319
+F. 303.630.2055
+E. robert.guglielmetti at nrel.gov
+
+
+
+
+
+On 2/9/11 11:22 AM, "Guglielmetti, Robert" <Robert.Guglielmetti at nrel.gov>
+wrote:
+
+>The default rfl value for -g is used when -g is not given. That's the
+>definition of default, isn't it? =8-)
+>
+>Greg is saying that -g needs an argument, for the ground refl. It's not an
+>on/off switch.
+> 
+>Rob Guglielmetti  IESNA, LEED AP
+>Commercial Buildings Research Group
+>National Renewable Energy Laboratory
+>1617 Cole Blvd MS:RSF202
+>Golden, CO 80401
+>T. 303.275.4319
+>F. 303.630.2055
+>E. robert.guglielmetti at nrel.gov
+>
+>
+>
+>
+>
+>On 2/9/11 11:05 AM, "Randolph M. Fritz" <RFritz at lbl.gov> wrote:
+>
+>>So is the default never used?  Or only when -g is not given?
+>>
+>>On 2011-02-07 13:49:44 -0800, Gregory J. Ward said:
+>>
+>>> That's because -g is expecting an argument (the ground reflectance).
+>>> If you give "-c" after, it probably calls atof("-c") which returns 0.
+>>> 
+>>> In general, Radiance doesn't have very paranoid argument checking.  If
+>>> you don't give a legal command line, many Radiance programs just muddle
+>>> through (or crash if they try reading past the last argument).  The
+>>> exceptions to this are the rendering programs and a few utilities that
+>>> call badarg() to check command argument types.
+>>> 
+>>> -Greg
+>>> 
+>>>> From: "Randolph M. Fritz" <RFritz at lbl.gov>
+>>>> Date: February 7, 2011 1:29:09 PM PST
+>>>> 
+>>>> If -g is given as the last argument to the gensky command, a bus error
+>>>> or segmentation fault results.  That is:
+>>>> gensky 3 31 10:00 -g -c
+>>>> works, but
+>>>> gensky 3 31 10:00 -c -g
+>>>> fails.
+>>>> --
+>>>> Randolph M. Fritz ? RFritz at lbl.gov
+>>>> Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+>>
+>>
+>>-- 
+>>Randolph M. Fritz ? RFritz at lbl.gov
+>>Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+>>
+>>
+>>
+>>_______________________________________________
+>>Radiance-dev mailing list
+>>Radiance-dev at radiance-online.org
+>>http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+>_______________________________________________
+>Radiance-dev mailing list
+>Radiance-dev at radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+From gregoryjward at gmail.com  Wed Feb  9 10:37:13 2011
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed, 9 Feb 2011 10:37:13 -0800
+Subject: [Radiance-dev] gensky -g buglet
+In-Reply-To: <C9782A59.34F8%robert.guglielmetti@nrel.gov>
+References: <C9782A59.34F8%robert.guglielmetti@nrel.gov>
+Message-ID: <95D0160F-B73F-4F3B-9368-2D77C74146D3@gmail.com>
+
+There is a "gensky -defaults" report if you like:
+
++s				# Sunny sky with sun
+-g 0.200000			# Ground plane reflectance
+-t 2.450000			# Atmospheric turbidity
+-a 37.815214			# Site latitude (degrees)
+-o 122.040010			# Site longitude (degrees)
+-m 120.000281			# Standard meridian (degrees)
+
+-Greg
+
+
+> From: "Guglielmetti, Robert" <Robert.Guglielmetti at nrel.gov>
+> Date: February 9, 2011 10:29:00 AM PST
+> 
+> BTW, the default value for -g is not printed in the manpage, but it's 20%
+> (you can find it in gensky.c, and Axel Jacobs mentions this in his
+> rtcontrib tutorial, I believe).
+> 
+> 
+> Rob Guglielmetti  IESNA, LEED AP
+> 
+
+
+From RFritz at lbl.gov  Thu Feb 10 13:19:38 2011
+From: RFritz at lbl.gov (Randolph M. Fritz)
+Date: Thu, 10 Feb 2011 13:19:38 -0800
+Subject: [Radiance-dev] gensky -g buglet
+References: <iipo75$f18$1@dough.gmane.org>
+	<1437A715-11BA-453B-A0C3-740238ABFD38@gmail.com>
+	<iiul0s$abg$1@dough.gmane.org>
+	<C97827E4.34EB%robert.guglielmetti@nrel.gov>
+Message-ID: <ij1kpa$mor$1@dough.gmane.org>
+
+On 2011-02-09 10:22:13 -0800, Guglielmetti, Robert said:
+
+> The default rfl value for -g is used when -g is not given. That's the
+> definition of default, isn't it? =8-)
+
+> 
+> Greg is saying that -g needs an argument, for the ground refl. It's not an
+> on/off switch.
+
+I know that...now.
+
+Thanks.
+
+Randolph
+
+
+
+
+From RFritz at lbl.gov  Thu Feb 10 13:34:42 2011
+From: RFritz at lbl.gov (Randolph M. Fritz)
+Date: Thu, 10 Feb 2011 13:34:42 -0800
+Subject: [Radiance-dev] gensky -g buglet
+References: <iipo75$f18$1@dough.gmane.org>
+	<1437A715-11BA-453B-A0C3-740238ABFD38@gmail.com>
+	<iiul0s$abg$1@dough.gmane.org>
+	<28E2C9D5-6AE9-4C9D-BD1B-1034F0B1EA00@gmail.com>
+Message-ID: <ij1lli$rq8$1@dough.gmane.org>
+
+Ooof!  Something really weird happens when I run:
+  gensky 6 21 10:30 -g -c
+
+Not sure what it does, but it includes a sun.
+
+Time to rerun some simulations...
+
+Randolph
+
+On 2011-02-09 10:21:56 -0800, Gregory J. Ward said:
+
+> Huh?  You get the default value if you *don't* specify a -g option.  If 
+> you use -g 0.30, you would get a ground reflectance of 30% instead of 
+> the default 20%.
+> 
+> Make sense?
+> -Greg
+> 
+>> From: "Randolph M. Fritz" <RFritz at lbl.gov>
+>> Date: February 9, 2011 10:05:17 AM PST
+>> 
+>> So is the default never used?  Or only when -g is not given?
+>> 
+>> On 2011-02-07 13:49:44 -0800, Gregory J. Ward said:
+>> 
+>>> That's because -g is expecting an argument (the ground reflectance).  
+>>> If you give "-c" after, it probably calls atof("-c") which returns 0.
+>>> In general, Radiance doesn't have very paranoid argument checking.  If 
+>>> you don't give a legal command line, many Radiance programs just muddle 
+>>> through (or crash if they try reading past the last argument).  The 
+>>> exceptions to this are the rendering programs and a few utilities that 
+>>> call badarg() to check command argument types.
+>>> -Greg
+>>>> From: "Randolph M. Fritz" <RFritz at lbl.gov>
+>>>> Date: February 7, 2011 1:29:09 PM PST
+>>>> If -g is given as the last argument to the gensky command, a bus error 
+>>>> or segmentation fault results.  That is:
+>>>> gensky 3 31 10:00 -g -c
+>>>> works, but
+>>>> gensky 3 31 10:00 -c -g
+>>>> fails.
+>>>> --
+>>>> Randolph M. Fritz ? RFritz at lbl.gov
+>>>> Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+>> 
+>> 
+>> --
+>> Randolph M. Fritz ? RFritz at lbl.gov
+>> Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+>> 
+>> 
+>> 
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+-- 
+Randolph M. Fritz ? RFritz at lbl.gov
+Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+
+
+
+
+From RFritz at lbl.gov  Thu Feb 10 13:56:21 2011
+From: RFritz at lbl.gov (Randolph M. Fritz)
+Date: Thu, 10 Feb 2011 13:56:21 -0800
+Subject: [Radiance-dev] gensky -g buglet
+References: <iipo75$f18$1@dough.gmane.org>
+	<1437A715-11BA-453B-A0C3-740238ABFD38@gmail.com>
+	<iiul0s$abg$1@dough.gmane.org>
+	<28E2C9D5-6AE9-4C9D-BD1B-1034F0B1EA00@gmail.com>
+	<ij1lli$rq8$1@dough.gmane.org>
+Message-ID: <ij1mu5$33j$1@dough.gmane.org>
+
+It generates an intermediate sky with a sun...
+
+Randolph
+
+On 2011-02-10 13:34:42 -0800, Randolph M. Fritz said:
+
+> Ooof!  Something really weird happens when I run:
+>   gensky 6 21 10:30 -g -c
+> 
+> Not sure what it does, but it includes a sun.
+> 
+> Time to rerun some simulations...
+> 
+> Randolph
+> 
+> On 2011-02-09 10:21:56 -0800, Gregory J. Ward said:
+> 
+>> Huh?  You get the default value if you *don't* specify a -g option.  If
+>> you use -g 0.30, you would get a ground reflectance of 30% instead of
+>> the default 20%.
+>> 
+>> Make sense?
+>> -Greg
+>> 
+>>> From: "Randolph M. Fritz" <RFritz at lbl.gov>
+>>> Date: February 9, 2011 10:05:17 AM PST
+>>> 
+>>> So is the default never used?  Or only when -g is not given?
+>>> 
+>>> On 2011-02-07 13:49:44 -0800, Gregory J. Ward said:
+>>> 
+>>>> That's because -g is expecting an argument (the ground reflectance).
+>>>> If you give "-c" after, it probably calls atof("-c") which returns 0.
+>>>> In general, Radiance doesn't have very paranoid argument checking.  If
+>>>> you don't give a legal command line, many Radiance programs just muddle
+>>>> through (or crash if they try reading past the last argument).  The
+>>>> exceptions to this are the rendering programs and a few utilities that
+>>>> call badarg() to check command argument types.
+>>>> -Greg
+>>>>> From: "Randolph M. Fritz" <RFritz at lbl.gov>
+>>>>> Date: February 7, 2011 1:29:09 PM PST
+>>>>> If -g is given as the last argument to the gensky command, a bus error
+>>>>> or segmentation fault results.  That is:
+>>>>> gensky 3 31 10:00 -g -c
+>>>>> works, but
+>>>>> gensky 3 31 10:00 -c -g
+>>>>> fails.
+>>>>> --
+>>>>> Randolph M. Fritz ? RFritz at lbl.gov
+>>>>> Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+>>> 
+>>> 
+>>> --
+>>> Randolph M. Fritz ? RFritz at lbl.gov
+>>> Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+>>> 
+>>> 
+>>> 
+>>> _______________________________________________
+>>> Radiance-dev mailing list
+>>> Radiance-dev at radiance-online.org
+>>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+-- 
+Randolph M. Fritz ? RFritz at lbl.gov
+Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+
+
+
+
+From rfritz at lbl.gov  Thu Feb 17 18:03:48 2011
+From: rfritz at lbl.gov (Randolph Fritz)
+Date: Thu, 17 Feb 2011 18:03:48 -0800
+Subject: [Radiance-dev] LBL: Announcing Radiance Anonymous CVS Access
+Message-ID: <83DAA1CC-9057-435B-9CAB-26BB51BBA90E@lbl.gov>
+
+The Radiance source code history is now publicly available via  
+anonymous CVS from the Labs server at:
+   :pserver:anonymous at radiance-online.org:/home/cvsd/radiance
+
+The following versions (so far) are tagged:
+   rad4R0
+   rad3R9
+   rad3R8
+   rad3R7P2
+   rad3R7P1
+   rad3R6P1
+   rad3R6
+   rad3R5
+
+To get your very own copy of the head version of Radiance, use:
+   cvs -d :pserver:anonymous at radiance-online.org:/home/cvsd/radiance  
+co ray
+
+To get a copy of version 3.7 patch 2, use:
+   cvs -d :pserver:anonymous at radiance-online.org:/home/cvsd/radiance  
+co -rrad3R7P2 ray
+
+CVS is documented in Cederqvist's *Version Management with CVS*, which  
+is available online at <http://ximbiot.com/cvs/manual/>.  O'Reilly has  
+publishes Vesperman's *Essential CVS*, which is available online  
+through many university libraries.
+--
+Randolph M. Fritz ? RFritz at lbl.gov ? 510-495-2532
+Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+
+
+
+From bernd at bzed.de  Fri Feb 18 08:59:04 2011
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Fri, 18 Feb 2011 17:59:04 +0100
+Subject: [Radiance-dev] Fix for compilation with gcc >=4.5
+Message-ID: <4D5EA558.4080107@bzed.de>
+
+Hi,
+
+building radiance fails with gcc >=4.5 with
+rhdobj.c:221:15: error: storage size of 'neighlist' isn't constant
+
+which is due to the fact that using a define like
+#define NAZI		((int)(PI/2.*NALT+.5))
+to define the size of an array is not allowed - gcc 4.5 implements various
+details of the standard stricter than versions before.
+
+Attached patch fixes that, not sure if it is the best way to handle it - I
+didn't check if NAZI or NALT will be redfined somewhere. The issue should be
+fixed in some way, though.
+
+Cheers,
+
+Bernd
+
+-- 
+ Bernd Zeimetz                            Debian GNU/Linux Developer
+ http://bzed.de                                http://www.debian.org
+ GPG Fingerprint: ECA1 E3F2 8E11 2432 D485  DD95 EB36 171A 6FF9 435F
+-------------- next part --------------
+An embedded and charset-unspecified text was scrubbed...
+Name: gcc-4.5-fixes
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20110218/b97fd8a7/attachment.ksh>
+
+From bernd at bzed.de  Fri Feb 18 09:08:52 2011
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Fri, 18 Feb 2011 18:08:52 +0100
+Subject: [Radiance-dev] LBL: Announcing Radiance Anonymous CVS Access
+In-Reply-To: <83DAA1CC-9057-435B-9CAB-26BB51BBA90E@lbl.gov>
+References: <83DAA1CC-9057-435B-9CAB-26BB51BBA90E@lbl.gov>
+Message-ID: <4D5EA7A4.1070708@bzed.de>
+
+On 02/18/2011 03:03 AM, Randolph Fritz wrote:
+> The Radiance source code history is now publicly available via anonymous
+> CVS from the Labs server at:
+>   :pserver:anonymous at radiance-online.org:/home/cvsd/radiance
+
+I've imported the CVS into git and setup a cronjob to keep it updated.
+
+gitweb: http://git.recluse.de/?p=radiance/radiance.git;a=summary
+git clone git://git.recluse.de/radiance/radiance.git
+
+
+I'll add a repository with integrated aux files, too - but I'm not exactly sure
+on how to do that yet.
+
+
+Cheers,
+
+ Bernd
+-- 
+ Bernd Zeimetz                            Debian GNU/Linux Developer
+ http://bzed.de                                http://www.debian.org
+ GPG Fingerprint: ECA1 E3F2 8E11 2432 D485  DD95 EB36 171A 6FF9 435F
+
+
+From gregoryjward at gmail.com  Fri Feb 18 09:32:05 2011
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri, 18 Feb 2011 09:32:05 -0800
+Subject: [Radiance-dev] Fix for compilation with gcc >=4.5
+In-Reply-To: <4D5EA558.4080107@bzed.de>
+References: <4D5EA558.4080107@bzed.de>
+Message-ID: <3BD0C49F-CA63-4AD7-A1B2-6C5B4D1780BA@gmail.com>
+
+Thanks Bernd, easily fixed.  (Unfortunate choice of constant name...)
+
+Cheers,
+-Greg
+
+> From: Bernd Zeimetz <bernd at bzed.de>
+> Date: February 18, 2011 8:59:04 AM PST
+> 
+> Hi,
+> 
+> building radiance fails with gcc >=4.5 with
+> rhdobj.c:221:15: error: storage size of 'neighlist' isn't constant
+> 
+> which is due to the fact that using a define like
+> #define NAZI		((int)(PI/2.*NALT+.5))
+> to define the size of an array is not allowed - gcc 4.5 implements various
+> details of the standard stricter than versions before.
+> 
+> Attached patch fixes that, not sure if it is the best way to handle it - I
+> didn't check if NAZI or NALT will be redfined somewhere. The issue should be
+> fixed in some way, though.
+> 
+> Cheers,
+> 
+> Bernd
+> 
+> -- 
+> Bernd Zeimetz                            Debian GNU/Linux Developer
+> http://bzed.de                                http://www.debian.org
+> GPG Fingerprint: ECA1 E3F2 8E11 2432 D485  DD95 EB36 171A 6FF9 435F
+> 
+
+
+From RFritz at lbl.gov  Fri Feb 18 17:12:40 2011
+From: RFritz at lbl.gov (Randolph M. Fritz)
+Date: Fri, 18 Feb 2011 17:12:40 -0800
+Subject: [Radiance-dev] Fix for compilation with gcc >=4.5
+References: <4D5EA558.4080107@bzed.de>
+Message-ID: <ijn5e8$o88$1@dough.gmane.org>
+
+Interesting--I would have thought that was a constant, since the value 
+can be calculated at compile time.  But then, it is asking a lot of the 
+compiler to provide results consistent at run and compile times in that 
+case.  In The Old Days, I suppose a compiler would have just cavalierly 
+ignored the issue, in the same way compilers assume that computer 
+arithmetic is associative and commutative.
+
+Randolph
+
+On 2011-02-18 08:59:04 -0800, Bernd Zeimetz said:
+
+> Hi,
+> 
+> building radiance fails with gcc >=4.5 with
+> rhdobj.c:221:15: error: storage size of 'neighlist' isn't constant
+> 
+> which is due to the fact that using a define like
+> #define NAZI		((int)(PI/2.*NALT+.5))
+> to define the size of an array is not allowed - gcc 4.5 implements various
+> details of the standard stricter than versions before.
+> 
+> Attached patch fixes that, not sure if it is the best way to handle it - I
+> didn't check if NAZI or NALT will be redfined somewhere. The issue should be
+> fixed in some way, though.
+> 
+> Cheers,
+> 
+> Bernd
+
+
+-- 
+Randolph M. Fritz ? RFritz at lbl.gov
+Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+
+
+
+

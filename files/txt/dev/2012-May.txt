@@ -1,0 +1,1489 @@
+From pally.sandher at iesve.com  Tue May  1 09:35:44 2012
+From: pally.sandher at iesve.com (Pally Sandher)
+Date: Tue, 1 May 2012 16:35:44 +0000
+Subject: [Radiance-dev] mgf2inv VRML export
+In-Reply-To: <CBC45F59.1056C%robert.guglielmetti@nrel.gov>
+References: <CAL-bo5F+eJghh=5x4=itNB2+JGOODSfA-dfS698LvtvWJYncbA@mail.gmail.com>
+	<CBC45F59.1056C%robert.guglielmetti@nrel.gov>
+Message-ID: <A7E25FADF831E94DBBD5904D7E5848650DF025@GL-EXC-01.iesve.com>
+
+Does this mean the Radiance CMake environment is available for general consumption?
+
+Palbinder Sandher 
+Software Platform Engineer 
+T:+44 (0) 141 945 8500
+F:+44 (0) 141 945 8501
+http://www.iesve.com 
+
+**Design, Simulate + Innovate with the <Virtual Environment>** 
+Integrated Environmental Solutions Limited. Registered in Scotland No. SC151456
+Registered Office - Helix Building, West Of Scotland Science Park, Glasgow G20 0SP
+Email Disclaimer 
+
+
+-----Original Message-----
+From: Guglielmetti, Robert [mailto:Robert.Guglielmetti at nrel.gov] 
+Sent: 30 April 2012 22:28
+To: code development
+Subject: Re: [Radiance-dev] mgf2inv VRML export
+
+Hi David,
+
+I am trying to sort out two other issues with the Windows binaries, but I can push out a new Windows installer tomorrow morning for you with this fix. We can talk offline if you want to talk about getting up and running with CMake, too.
+
+Rob Guglielmetti  IESNA, LEED AP
+Commercial Buildings Research Group
+National Renewable Energy Laboratory
+15013 Denver West Parkway MS:RSF202
+Golden, CO 80401
+303.275.4319
+robert.guglielmetti at nrel.gov
+
+
+On 4/30/12 2:11 PM, "David Geisler-Moroder" <david.moroder at gmail.com<mailto:david.moroder at gmail.com>> wrote:
+
+Hi Greg, Rob,
+
+thanks a lot for the quick responses and for the fix!
+
+However, I need to wait for the new NREL-binaries to use the fixed version (or maybe finally step into the CMake thing to get the Windows bins compiled by myself... ;-) ).
+
+Cheers,
+David
+
+2012/4/30 Gregory J. Ward <gregoryjward at gmail.com<mailto:gregoryjward at gmail.com>>
+Hi David,
+
+I found the problem, and can figure out how to fix it.  The code assumes that exponents have two digits only, which is still true on most Unix machines.  I guess they're making room for "long double's" (128-bit IEEE float) and don't have different code for that than the "regular" doubles.
+
+I will check in a fix later today -- thanks so much for spotting this.
+
+Cheers,
+-Greg
+
+> From: "Guglielmetti, Robert" <Robert.Guglielmetti at nrel.gov<mailto:Robert.Guglielmetti at nrel.gov>>
+> Date: April 30, 2012 8:41:17 AM PDT
+>
+> Hi David,
+>
+> AFAIK, the sources for those two programs were not touched in the Windows binary project. I don't fully understand the behavior of this program right now. I will check with Kitware to see if any changes were in fact made to that source in order to get it to work on Windows.
+>
+> Rob Guglielmetti  IESNA, LEED AP
+>
+>
+> On 4/30/12 6:35 AM, "David Geisler-Moroder" <david.moroder at gmail.com<mailto:david.moroder at gmail.com><mailto:david.moroder at gmail.com<mailto:david.moroder at gmail.com>>> wrote:
+>
+> Hi Greg, hi list,
+>
+> from time to time I am using mgf2inv with the "-vrml" option to export and view my models.
+>
+> This time I wanted to do the conversion with rad2mgf and mgf2inv -vrml on Windows using the
+> NREL binaries. However, the resulting files are corrupt due to bad number representations and
+> normal descriptions.
+>
+> For example the description of a face in the VRML-file created with the Linux binaries is:
+>
+> DEF ceil_fac_001 Group {
+>  Separator {
+>    USE ceil_mat
+>    Coordinate3 {
+>      point [ -2.000000000e+00 +4.500000000e+00 +2.162119874e+00,
+>              -1.500000000e+00 +4.500000000e+00 +3.000000000e+00,
+>              -1.500000000e+00 +5.000000000e+00 +1.461123454e+00,
+>              -2.000000000e+00 +5.000000000e+00 +6.232433278e-01 ]
+>    }
+>    IndexedFaceSet {
+>      coordIndex [ 0, 1, 2, 3 ]
+>    }
+>  }
+> }
+>
+>
+> In the files created with the Windows version the same face is described as:
+>
+> DEF ceil_fac_001 Group {
+>  Separator {
+>    USE ceil_mat
+>    Coordinate3 {
+>      point [ -2.000000000e+000 +4.500000000e+000 +2.162119874e+,
+>              -1.500000000e+000 +4.500000000e+000 +3.000000000e+,
+>              -1.500000000e+000 +5.000000000e+000 +1.461123454e+,
+>              -2.000000000e+000 +5.000000000e+000 +6.232433278e- ]
+>    }
+>    Normal {
+>      vector [ 00
+> +0.000 +0.000 +0.0-1.500000000e+000 +4.500000000e+000 +3.000000000e+,
+>               00
+> +0.000 +0.000 +0.0-1.500000000e+000 +5.000000000e+000 +1.461123454e+,
+>               00
+> +0.000 +0.000 +0.0-2.000000000e+000 +5.000000000e+000 +6.232433278e-,
+>               01
+> +0.000 +0.000 +0.000 ]
+>    }
+>    IndexedFaceSet {
+>      coordIndex [ 0, 1, 2, 3 ]
+>      normalIndex [ 0, 1, 2, 3 ]
+>    }
+>  }
+> }
+>
+>
+> Obviously, two things are corrupt:
+> - the z-coordinates are missing their exponents
+> - the normal vector coordinates are messed up
+>
+> Moreover, for me it's unclear why normal vectors are written (needed ??) in the Windows version, while
+> they are completely missing in the Linux version.
+>
+> I believe that all this has something to do with de definition of VERTFMT in src/cv/mgf2inv.c
+> #define VERTFMT        "%+16.9e %+16.9e %+16.9e\n%+6.3f %+6.3f %+6.3f"
+>
+> Any ideas how to solve that for both platforms??
+>
+> Cheers,
+> David
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev at radiance-online.org<mailto:Radiance-dev at radiance-online.org>
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+--
+DI Dr. David Geisler-Moroder
+Hofwaldweg 14/20
+6020 Innsbruck
+
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+
+From Robert.Guglielmetti at nrel.gov  Tue May  1 09:42:04 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Tue, 1 May 2012 10:42:04 -0600
+Subject: [Radiance-dev] mgf2inv VRML export
+In-Reply-To: <A7E25FADF831E94DBBD5904D7E5848650DF025@GL-EXC-01.iesve.com>
+Message-ID: <CBC56D60.10611%robert.guglielmetti@nrel.gov>
+
+On 5/1/12 10:35 AM, "Pally Sandher" <pally.sandher at iesve.com> wrote:
+
+
+>Does this mean the Radiance CMake environment is available for general
+>consumption?
+
+It does indeed, Pally. I just announced I on radiance-general, and was
+planning an update on how to use the Cmake system on your own system, to
+be posted to tis dev list. In the meantime, you can check out what we have
+on offer at:
+
+https://openstudio.nrel.gov/getting-started-developer/getting-started-radia
+nce
+
+There are still a couple of issues (typically Windows issues) cropping up
+(like the one David discovered recently) that Greg is actively fixing and
+pushing into HEAD, but we are currently updating the HEAD installers every
+two weeks. So, for the latest-greatest Radiance, you'll want to get up to
+speed with Cmake.
+
+- Rob
+
+
+
+From pally.sandher at iesve.com  Tue May  1 09:54:14 2012
+From: pally.sandher at iesve.com (Pally Sandher)
+Date: Tue, 1 May 2012 16:54:14 +0000
+Subject: [Radiance-dev] mgf2inv VRML export
+In-Reply-To: <CBC56D60.10611%robert.guglielmetti@nrel.gov>
+References: <A7E25FADF831E94DBBD5904D7E5848650DF025@GL-EXC-01.iesve.com>
+	<CBC56D60.10611%robert.guglielmetti@nrel.gov>
+Message-ID: <A7E25FADF831E94DBBD5904D7E5848650DF053@GL-EXC-01.iesve.com>
+
+Excellent Rob, I'm a bit busy with an impending software release right now but I'll definitely have a go later this month.
+
+Thanks for all the hard work (and I really should get on the radiance-general list as I seem to miss a lot of announcements only being on here).
+
+Palbinder Sandher 
+Software Platform Engineer 
+T: +44 (0) 141 945 8500
+F: +44 (0) 141 945 8501
+http://www.iesve.com 
+
+**Design, Simulate + Innovate with the <Virtual Environment>** 
+Integrated Environmental Solutions Limited. Registered in Scotland No. SC151456
+Registered Office - Helix Building, West Of Scotland Science Park, Glasgow G20 0SP
+Email Disclaimer 
+
+
+-----Original Message-----
+From: Guglielmetti, Robert [mailto:Robert.Guglielmetti at nrel.gov] 
+Sent: 01 May 2012 17:43
+To: code development
+Subject: Re: [Radiance-dev] mgf2inv VRML export
+
+On 5/1/12 10:35 AM, "Pally Sandher" <pally.sandher at iesve.com> wrote:
+
+
+>Does this mean the Radiance CMake environment is available for general
+>consumption?
+
+It does indeed, Pally. I just announced I on radiance-general, and was
+planning an update on how to use the Cmake system on your own system, to
+be posted to tis dev list. In the meantime, you can check out what we have
+on offer at:
+
+https://openstudio.nrel.gov/getting-started-developer/getting-started-radia
+nce
+
+There are still a couple of issues (typically Windows issues) cropping up
+(like the one David discovered recently) that Greg is actively fixing and
+pushing into HEAD, but we are currently updating the HEAD installers every
+two weeks. So, for the latest-greatest Radiance, you'll want to get up to
+speed with Cmake.
+
+- Rob
+
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+
+From Robert.Guglielmetti at nrel.gov  Tue May  1 10:02:26 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Tue, 1 May 2012 11:02:26 -0600
+Subject: [Radiance-dev] mgf2inv VRML export
+In-Reply-To: <A7E25FADF831E94DBBD5904D7E5848650DF053@GL-EXC-01.iesve.com>
+Message-ID: <CBC57244.10629%robert.guglielmetti@nrel.gov>
+
+My pleasure Pally (actually it was (is) a giant PITA, and Greg Ward, Axel
+Jacobs and the Kitware guys deserve a lot of the credit for making this a
+success)!
+
+And yeah, -general and -dev are a package deal, you need to monitor both
+lists to get the full monty.
+ 
+
+Rob Guglielmetti  IESNA, LEED AP
+Commercial Buildings Research Group
+National Renewable Energy Laboratory
+15013 Denver West Parkway MS:RSF202
+Golden, CO 80401
+303.275.4319
+robert.guglielmetti at nrel.gov
+
+
+
+
+
+On 5/1/12 10:54 AM, "Pally Sandher" <pally.sandher at iesve.com> wrote:
+
+>Excellent Rob, I'm a bit busy with an impending software release right
+>now but I'll definitely have a go later this month.
+>
+>Thanks for all the hard work (and I really should get on the
+>radiance-general list as I seem to miss a lot of announcements only being
+>on here).
+>
+>Palbinder Sandher 
+>Software Platform Engineer
+>T: +44 (0) 141 945 8500
+>F: +44 (0) 141 945 8501
+>http://www.iesve.com
+>
+>**Design, Simulate + Innovate with the <Virtual Environment>**
+>Integrated Environmental Solutions Limited. Registered in Scotland No.
+>SC151456
+>Registered Office - Helix Building, West Of Scotland Science Park,
+>Glasgow G20 0SP
+>Email Disclaimer 
+>
+>
+>-----Original Message-----
+>From: Guglielmetti, Robert [mailto:Robert.Guglielmetti at nrel.gov]
+>Sent: 01 May 2012 17:43
+>To: code development
+>Subject: Re: [Radiance-dev] mgf2inv VRML export
+>
+>On 5/1/12 10:35 AM, "Pally Sandher" <pally.sandher at iesve.com> wrote:
+>
+>
+>>Does this mean the Radiance CMake environment is available for general
+>>consumption?
+>
+>It does indeed, Pally. I just announced I on radiance-general, and was
+>planning an update on how to use the Cmake system on your own system, to
+>be posted to tis dev list. In the meantime, you can check out what we have
+>on offer at:
+>
+>https://openstudio.nrel.gov/getting-started-developer/getting-started-radi
+>a
+>nce
+>
+>There are still a couple of issues (typically Windows issues) cropping up
+>(like the one David discovered recently) that Greg is actively fixing and
+>pushing into HEAD, but we are currently updating the HEAD installers every
+>two weeks. So, for the latest-greatest Radiance, you'll want to get up to
+>speed with Cmake.
+>
+>- Rob
+>
+>
+>_______________________________________________
+>Radiance-dev mailing list
+>Radiance-dev at radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+>
+>_______________________________________________
+>Radiance-dev mailing list
+>Radiance-dev at radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+From pally.sandher at iesve.com  Wed May  2 02:58:30 2012
+From: pally.sandher at iesve.com (Pally Sandher)
+Date: Wed, 2 May 2012 09:58:30 +0000
+Subject: [Radiance-dev] mgf2inv VRML export
+In-Reply-To: <CBC57244.10629%robert.guglielmetti@nrel.gov>
+References: <A7E25FADF831E94DBBD5904D7E5848650DF053@GL-EXC-01.iesve.com>
+	<CBC57244.10629%robert.guglielmetti@nrel.gov>
+Message-ID: <A7E25FADF831E94DBBD5904D7E5848650DF116@GL-EXC-01.iesve.com>
+
+I'm sure it's appreciated though Rob =)
+Certainly for anyone like myself who has to build Radiance on Windows as trying to use the old Scons system was also a massive PITA but at least this is something which can be maintained and is cross platform.
+
+Signing myself up to Radiance-general now ;)
+
+Again thanks to everyone involved for all the time, effort, blood, sweat, tears & anything else required to get this up & running.
+
+Palbinder Sandher 
+Software Platform Engineer 
+T:+44 (0) 141 945 8500
+F:+44 (0) 141 945 8501
+http://www.iesve.com 
+
+**Design, Simulate + Innovate with the <Virtual Environment>** 
+Integrated Environmental Solutions Limited. Registered in Scotland No. SC151456
+Registered Office - Helix Building, West Of Scotland Science Park, Glasgow G20 0SP
+Email Disclaimer 
+
+
+-----Original Message-----
+From: Guglielmetti, Robert [mailto:Robert.Guglielmetti at nrel.gov] 
+Sent: 01 May 2012 18:04
+To: code development
+Subject: Re: [Radiance-dev] mgf2inv VRML export
+
+My pleasure Pally (actually it was (is) a giant PITA, and Greg Ward, Axel
+Jacobs and the Kitware guys deserve a lot of the credit for making this a
+success)!
+
+And yeah, -general and -dev are a package deal, you need to monitor both
+lists to get the full monty.
+ 
+
+Rob Guglielmetti  IESNA, LEED AP
+Commercial Buildings Research Group
+National Renewable Energy Laboratory
+15013 Denver West Parkway MS:RSF202
+Golden, CO 80401
+303.275.4319
+robert.guglielmetti at nrel.gov
+
+
+
+
+
+On 5/1/12 10:54 AM, "Pally Sandher" <pally.sandher at iesve.com> wrote:
+
+>Excellent Rob, I'm a bit busy with an impending software release right
+>now but I'll definitely have a go later this month.
+>
+>Thanks for all the hard work (and I really should get on the
+>radiance-general list as I seem to miss a lot of announcements only being
+>on here).
+>
+>Palbinder Sandher 
+>Software Platform Engineer
+>T: +44 (0) 141 945 8500
+>F: +44 (0) 141 945 8501
+>http://www.iesve.com
+>
+>**Design, Simulate + Innovate with the <Virtual Environment>**
+>Integrated Environmental Solutions Limited. Registered in Scotland No.
+>SC151456
+>Registered Office - Helix Building, West Of Scotland Science Park,
+>Glasgow G20 0SP
+>Email Disclaimer 
+>
+>
+>-----Original Message-----
+>From: Guglielmetti, Robert [mailto:Robert.Guglielmetti at nrel.gov]
+>Sent: 01 May 2012 17:43
+>To: code development
+>Subject: Re: [Radiance-dev] mgf2inv VRML export
+>
+>On 5/1/12 10:35 AM, "Pally Sandher" <pally.sandher at iesve.com> wrote:
+>
+>
+>>Does this mean the Radiance CMake environment is available for general
+>>consumption?
+>
+>It does indeed, Pally. I just announced I on radiance-general, and was
+>planning an update on how to use the Cmake system on your own system, to
+>be posted to tis dev list. In the meantime, you can check out what we have
+>on offer at:
+>
+>https://openstudio.nrel.gov/getting-started-developer/getting-started-radi
+>a
+>nce
+>
+>There are still a couple of issues (typically Windows issues) cropping up
+>(like the one David discovered recently) that Greg is actively fixing and
+>pushing into HEAD, but we are currently updating the HEAD installers every
+>two weeks. So, for the latest-greatest Radiance, you'll want to get up to
+>speed with Cmake.
+>
+>- Rob
+>
+>
+>_______________________________________________
+>Radiance-dev mailing list
+>Radiance-dev at radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+>
+>_______________________________________________
+>Radiance-dev mailing list
+>Radiance-dev at radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+
+From gregoryjward at gmail.com  Thu May  3 08:18:42 2012
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu, 3 May 2012 08:18:42 -0700
+Subject: [Radiance-dev] [Radiance-general] Cross Platform Radiance
+	Installers Now Available
+In-Reply-To: <20120503.13151500.1336365412@gyor.oxdrove.co.uk>
+References: <CBBF0508.FFCA%robert.guglielmetti@nrel.gov>
+	<20120503.13151500.1336365412@gyor.oxdrove.co.uk>
+Message-ID: <7779311B-332F-4FCE-92D5-0835FE02EAA0@lmi.net>
+
+Let's move this thread to the radiance-dev list.  You should subscribe there if you want to respond to code/compile issues.
+
+All help is appreciated in sorting these issues out.
+
+Thanks!
+-Greg
+
+> From: James Lee <list at oxdrove.co.uk>
+> Date: May 3, 2012 6:15:15 AM PDT
+> 
+> On 01/05/12, 17:23:43, "Guglielmetti," Robert 
+> <Robert.Guglielmetti at nrel.gov> wrote regarding [Radiance-general] Cross 
+> Platform Radiance Installers Now Available:
+> 
+>> NREL has completed a project aimed at making Radiance more accessible to
+>> building simulationists, regardless of what platform they are using. This
+>> will benefit users of the OpenStudio SDK and applications, as well as
+>> anyone interested in using the powerful raytracing software but reluctant
+>> to learn how to compile code.
+> 
+>> Working with Greg Ward and Kitware, we have modified the Radiance source
+>> tree to allow us to build Radiance easily for Windows, Mac, and Linux.
+> 
+> ...but harder for Solaris.  cmake building fails when making Version.c:
+> 
+> ...
+> [ 62%] Generating /src/rt/Version.c
+> CMake Error: Error processing file:/src/rt/create_version.cmake
+> *** Error code 1
+> The following command caused the error:
+> cd /work/build/radiance/32/rt && /opt/XXXX/bin/cmake 
+> -DVERSION_OUT_FILE="/src/rt/Version.c" 
+> -DVERSION_IN_FILE="/src/rt/VERSION" -DVERSION_GOLD="/src/rt/Version.c" -P 
+> /src/rt/create_version.cmake
+> dmake: Fatal error: Command failed for target `/src/rt/Version.c'
+> Current working directory /work/build/radiance/32
+> *** Error code 1
+> The following command caused the error:
+> dmake -f rt/CMakeFiles/radiance.dir/build.make 
+> rt/CMakeFiles/radiance.dir/depend
+> dmake: Fatal error: Command failed for target 
+> `rt/CMakeFiles/radiance.dir/all'
+> Current working directory /work/build/radiance/32
+> *** Error code 1
+> The following command caused the error:
+> cd /work/build/radiance/32 && dmake -f CMakeFiles/Makefile2 rt/all
+> dmake: Fatal error: Command failed for target `all'
+> 
+> 
+> 
+> It looks like it's lost "radiance_SOURCE_DIR".
+> 
+> 
+> 
+> 
+> James.
+
+
+From list at oxdrove.co.uk  Thu May  3 08:30:15 2012
+From: list at oxdrove.co.uk (James Lee)
+Date: Thu, 03 May 2012 15:30:15 GMT
+Subject: [Radiance-dev] [Radiance-general] Cross Platform Radiance
+ Installers Now Available
+In-Reply-To: <7779311B-332F-4FCE-92D5-0835FE02EAA0@lmi.net>
+References: <CBBF0508.FFCA%robert.guglielmetti@nrel.gov>
+	<20120503.13151500.1336365412@gyor.oxdrove.co.uk>
+	<7779311B-332F-4FCE-92D5-0835FE02EAA0@lmi.net>
+Message-ID: <20120503.15301500.566862397@gyor.oxdrove.co.uk>
+
+On 03/05/12, 16:18:42, Greg Ward <gregoryjward at gmail.com> wrote regarding
+Re: [Radiance-dev] [Radiance-general] Cross Platform Radiance Installers
+Now Available:
+
+> Let's move this thread to the radiance-dev list.  You should
+> subscribe there if you want to respond to code/compile issues.
+
+I am subscribed.  I think the "Reply-To" wasn't correctly set.
+
+
+
+James.
+
+
+From Robert.Guglielmetti at nrel.gov  Thu May  3 08:43:07 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Thu, 3 May 2012 09:43:07 -0600
+Subject: [Radiance-dev] [Radiance-general] Cross Platform Radiance
+ Installers Now Available
+In-Reply-To: <20120503.15301500.566862397@gyor.oxdrove.co.uk>
+Message-ID: <CBC80269.107CF%robert.guglielmetti@nrel.gov>
+
+Hi James,
+
+Your reply-to was fine, this thread started in -general. As to your
+problem, I will pass this along to the Kitware guys to try and find a fix.
+You are the first person to test this on Solaris for us, so thanks much!
+
+Greg, I am getting a release Windows build posted to the site today, and
+would like to at least address those two user questions in -general. But
+yeah I agree, after that, we should move these discussions to -dev.
+ 
+
+Rob Guglielmetti  IESNA, LEED AP
+Commercial Buildings Research Group
+National Renewable Energy Laboratory
+15013 Denver West Parkway MS:RSF202
+Golden, CO 80401
+303.275.4319
+robert.guglielmetti at nrel.gov
+
+
+
+
+
+On 5/3/12 9:30 AM, "James Lee" <list at oxdrove.co.uk> wrote:
+
+>On 03/05/12, 16:18:42, Greg Ward <gregoryjward at gmail.com> wrote regarding
+>Re: [Radiance-dev] [Radiance-general] Cross Platform Radiance Installers
+>Now Available:
+>
+>> Let's move this thread to the radiance-dev list.  You should
+>> subscribe there if you want to respond to code/compile issues.
+>
+>I am subscribed.  I think the "Reply-To" wasn't correctly set.
+>
+>
+>
+>James.
+>
+>_______________________________________________
+>Radiance-dev mailing list
+>Radiance-dev at radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+From guy.vaessen at gmail.com  Thu May  3 15:44:11 2012
+From: guy.vaessen at gmail.com (Guy Vaessen)
+Date: Fri, 4 May 2012 00:44:11 +0200
+Subject: [Radiance-dev] Cross platform Radiance installers,
+	just tried rvu on Windows
+Message-ID: <CAFXPCRYPgrpdPKvUMu5vQ+YAJY7j+ZcyKDujcwKsk3pXEiRVXA@mail.gmail.com>
+
+Great job! I really like the new rvu on Windows.
+
+I just tried it on Windows 7 64 bits
+
+A few remarks:
+
+In rvu
+
+-selecting load view (file viewpoint.vp) contents: -vp -.5 -5 1.15 -vd 0.5
+5 0 doesn't set the viewparameters (it doesn't do anything).
+
+After manually setting a view
+-selecting load view and pressing cancel 'resets' the view and rvu
+recalculates from a random viewpoint, doing it again (select load view and
+press cancel) goes back to the manually entered view before and
+recalculates.
+
+-selecting file -> Load .rif doesn't do anything.
+
+-selecting parameter: some values could be expained a bit more, for example
+te first tab ambient has in the first column value: 0 0 0 (I don't know
+which values are required).
+
+It looks like it is possible to set the environmental path on Windows
+directly in the NSIS installer:
+
+http://nsis.sourceforge.net/Environmental_Variables:_append,_prepend,_and_remove_entries
+(The old MnGW installer offered at: http://www.bozzograo.net/radiance/ did
+also set the environment variables).
+
+One question: are you sure you want to include rpiece in the
+Windows installer? Since for Windows at compile-time the only message
+possible by rpiece is the one about the missing NFS-manager.
+To get rpiece working on Windows one would have rewrite (at least) the part
+about file locking since Windows does this differently from other OS.
+(It would be great to see rpiece working on Windows too!).
+
+Best Regards,
+
+Guy
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20120504/e678cbf6/attachment.html>
+
+From Robert.Guglielmetti at nrel.gov  Thu May  3 15:50:17 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Thu, 3 May 2012 16:50:17 -0600
+Subject: [Radiance-dev] Cross platform Radiance installers,
+ just tried rvu on Windows
+In-Reply-To: <CAFXPCRYPgrpdPKvUMu5vQ+YAJY7j+ZcyKDujcwKsk3pXEiRVXA@mail.gmail.com>
+Message-ID: <CBC86706.1087E%robert.guglielmetti@nrel.gov>
+
+Hi Guy,
+
+Thanks for the feedback! I'm running out the door to catch a bus, but I will review this tonight. Thanks especially to the NSIS pointer on env paths. I knew it was possible, just hadn't had time to look into it, so thanks for the pointer. The rvu bugs seem serious, I have to admit I haven't tested that extensively on Windows. And you're right, rpiece should be taken out of the Windows package for now; that's an easy fix. Making rpiece Windows-compatible, now that's a different story. ;)
+
+-Rob
+
+
+On 5/3/12 4:44 PM, "Guy Vaessen" < > wrote:
+
+Great job! I really like the new rvu on Windows.
+
+I just tried it on Windows 7 64 bits
+
+A few remarks:
+
+In rvu
+
+-selecting load view (file viewpoint.vp) contents: -vp -.5 -5 1.15 -vd 0.5 5 0 doesn't set the viewparameters (it doesn't do anything).
+
+After manually setting a view
+-selecting load view and pressing cancel 'resets' the view and rvu recalculates from a random viewpoint, doing it again (select load view and press cancel) goes back to the manually entered view before and recalculates.
+
+-selecting file -> Load .rif doesn't do anything.
+
+-selecting parameter: some values could be expained a bit more, for example te first tab ambient has in the first column value: 0 0 0 (I don't know which values are required).
+
+It looks like it is possible to set the environmental path on Windows directly in the NSIS installer:
+ http://nsis.sourceforge.net/Environmental_Variables:_append,_prepend,_and_remove_entries
+(The old MnGW installer offered at: http://www.bozzograo.net/radiance/ did also set the environment variables).
+
+One question: are you sure you want to include rpiece in the Windows installer? Since for Windows at compile-time the only message possible by rpiece is the one about the missing NFS-manager.
+To get rpiece working on Windows one would have rewrite (at least) the part about file locking since Windows does this differently from other OS.
+(It would be great to see rpiece working on Windows too!).
+
+Best Regards,
+
+Guy
+
+
+
+From david.moroder at gmail.com  Fri May  4 01:05:30 2012
+From: david.moroder at gmail.com (David Geisler-Moroder)
+Date: Fri, 4 May 2012 10:05:30 +0200
+Subject: [Radiance-dev] mgf2inv VRML export
+In-Reply-To: <CAL-bo5Gtg=YfhQEm_MGCWj6hsuk8keFzsHcuMoqEq5__TRx8kg@mail.gmail.com>
+References: <CAL-bo5Gtg=YfhQEm_MGCWj6hsuk8keFzsHcuMoqEq5__TRx8kg@mail.gmail.com>
+Message-ID: <CAL-bo5FKZOOtOQ=spaPATQuD4wz11EiqGyn7DCckuxQKYsEdyw@mail.gmail.com>
+
+Hi Greg,
+
+the last mgf2inv update fixed the problem with the tree digit exponents.
+However, on Windows (thanks again Rob for providing the new binaries!)
+the normals are still messed up -- see below.
+
+The strange thing is that using the Windows binaries normals are printed
+whereas in Linux the normals are not printed at all.
+
+The output in Windows is:
+
+*DEF ceil_fac_001 Group {
+  Separator {
+    USE ceil_mat
+    Coordinate3 {
+      point [ -2.000000000e+000 +4.500000000e+000 +2.853170182e+000,
+              -1.500000000e+000 +4.500000000e+000 +3.000000000e+000,
+              -1.500000000e+000 +5.000000000e+000 +2.544315366e+000,
+              -2.000000000e+000 +5.000000000e+000 +2.397485548e+000 ]
+    }
+    Normal {
+      vector [ +0.000 +0.000 +0.0-1.500000000e+000 +4.500000000e+000
++3.000000000e+000,
+               +0.000 +0.000 +0.0-1.500000000e+000 +5.000000000e+000
++2.544315366e+000,
+               +0.000 +0.000 +0.0-2.000000000e+000 +5.000000000e+000
++2.397485548e+000,
+               +0.000 +0.000 +0.000 ]
+    }
+    IndexedFaceSet {
+      coordIndex [ 0, 1, 2, 3 ]
+      normalIndex [ 0, 1, 2, 3 ]
+    }
+  }
+}
+*
+It seems the vlist[] is corrupt under Win because in line 546 of mgf2inv.c
+the strcmp is
+nonzero. To me it seems that from the the second vertex on the vertices are
+written 3 bytes
+left of where they should be -- these could be just the bytes that Win (or
+any system with
+3 digit exponents) needs more?!
+
+All in all it's probaly the VFLEN that is correct for a 2 digit exponent
+(72 = VSEPPOS (50) +
+space (1) + len(VZVECT) (20) + len(\0) (1)) but not for a 3 digit exponent.
+
+Cheers,
+David
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20120504/50cad32d/attachment.html>
+
+From pally.sandher at iesve.com  Fri May  4 02:58:37 2012
+From: pally.sandher at iesve.com (Pally Sandher)
+Date: Fri, 4 May 2012 09:58:37 +0000
+Subject: [Radiance-dev] Cross platform Radiance installers,
+ just tried rvu on Windows
+In-Reply-To: <CBC86706.1087E%robert.guglielmetti@nrel.gov>
+References: <CAFXPCRYPgrpdPKvUMu5vQ+YAJY7j+ZcyKDujcwKsk3pXEiRVXA@mail.gmail.com>
+	<CBC86706.1087E%robert.guglielmetti@nrel.gov>
+Message-ID: <A7E25FADF831E94DBBD5904D7E5848650DF9CB@GL-EXC-01.iesve.com>
+
+Any specific reason why you're using NSIS to build your installer rather than WiX? -> http://wixtoolset.org/
+WiX should be supported by CMake (it was last time I checked).
+
+Palbinder Sandher 
+Software Platform Engineer 
+T:+44 (0) 141 945 8500
+F:+44 (0) 141 945 8501
+http://www.iesve.com 
+
+**Design, Simulate + Innovate with the <Virtual Environment>** 
+Integrated Environmental Solutions Limited. Registered in Scotland No. SC151456
+Registered Office - Helix Building, West Of Scotland Science Park, Glasgow G20 0SP
+Email Disclaimer 
+
+
+-----Original Message-----
+From: Guglielmetti, Robert [mailto:Robert.Guglielmetti at nrel.gov] 
+Sent: 03 May 2012 23:51
+To: code development
+Subject: Re: [Radiance-dev] Cross platform Radiance installers, just tried rvu on Windows
+
+Hi Guy,
+
+Thanks for the feedback! I'm running out the door to catch a bus, but I will review this tonight. Thanks especially to the NSIS pointer on env paths. I knew it was possible, just hadn't had time to look into it, so thanks for the pointer. The rvu bugs seem serious, I have to admit I haven't tested that extensively on Windows. And you're right, rpiece should be taken out of the Windows package for now; that's an easy fix. Making rpiece Windows-compatible, now that's a different story. ;)
+
+-Rob
+
+
+On 5/3/12 4:44 PM, "Guy Vaessen" < > wrote:
+
+Great job! I really like the new rvu on Windows.
+
+I just tried it on Windows 7 64 bits
+
+A few remarks:
+
+In rvu
+
+-selecting load view (file viewpoint.vp) contents: -vp -.5 -5 1.15 -vd 0.5 5 0 doesn't set the viewparameters (it doesn't do anything).
+
+After manually setting a view
+-selecting load view and pressing cancel 'resets' the view and rvu recalculates from a random viewpoint, doing it again (select load view and press cancel) goes back to the manually entered view before and recalculates.
+
+-selecting file -> Load .rif doesn't do anything.
+
+-selecting parameter: some values could be expained a bit more, for example te first tab ambient has in the first column value: 0 0 0 (I don't know which values are required).
+
+It looks like it is possible to set the environmental path on Windows directly in the NSIS installer:
+ http://nsis.sourceforge.net/Environmental_Variables:_append,_prepend,_and_remove_entries
+(The old MnGW installer offered at: http://www.bozzograo.net/radiance/ did also set the environment variables).
+
+One question: are you sure you want to include rpiece in the Windows installer? Since for Windows at compile-time the only message possible by rpiece is the one about the missing NFS-manager.
+To get rpiece working on Windows one would have rewrite (at least) the part about file locking since Windows does this differently from other OS.
+(It would be great to see rpiece working on Windows too!).
+
+Best Regards,
+
+Guy
+
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+
+From david.moroder at gmail.com  Tue May 15 00:20:15 2012
+From: david.moroder at gmail.com (David Geisler-Moroder)
+Date: Tue, 15 May 2012 09:20:15 +0200
+Subject: [Radiance-dev] BSDF orientation vector
+Message-ID: <CAL-bo5FAESTz5rZTQxV5V6uuixJXQLbqQJh7RRiw5VrcR-hM=g@mail.gmail.com>
+
+Hi list, hi Greg,
+
+I have a question concerning the BSDF "up-vector".
+For e.g. a facade-mounted fenestration system the definition of the vector
+is clear.
+But what, if I have a BSDF defining the material properties and use this
+BSDF to
+simulate the BSDF of a daylighting system (i.e. curved specular lamellae)?
+
+The comment in m_bsdf.c says that the "up-vector" together with the surface
+normal
+defines the local coordinate system. How exactly is that done??
+Unfortunately I did
+not have time yet to dig deeper into the BSDF-code to find that out...
+
+Cheers,
+David
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20120515/e6788050/attachment.html>
+
+From gregoryjward at gmail.com  Tue May 15 08:38:27 2012
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue, 15 May 2012 08:38:27 -0700
+Subject: [Radiance-dev] BSDF orientation vector
+In-Reply-To: <CAL-bo5FAESTz5rZTQxV5V6uuixJXQLbqQJh7RRiw5VrcR-hM=g@mail.gmail.com>
+References: <CAL-bo5FAESTz5rZTQxV5V6uuixJXQLbqQJh7RRiw5VrcR-hM=g@mail.gmail.com>
+Message-ID: <3318FB31-1706-4289-B9CB-79DE251C811E@gmail.com>
+
+The code is pretty simple.  So long as the "up vector" is not parallel to the surface normal, it is used to orient the 0-degree azimuth position by projecting it into the plane of the surface normal at the ray intersection point.  Make sense?
+
+-Greg
+
+> From: David Geisler-Moroder <david.moroder at gmail.com>
+> Date: May 15, 2012 12:20:15 AM PDT
+> 
+> Hi list, hi Greg,
+> 
+> I have a question concerning the BSDF "up-vector". 
+> For e.g. a facade-mounted fenestration system the definition of the vector is clear. 
+> But what, if I have a BSDF defining the material properties and use this BSDF to 
+> simulate the BSDF of a daylighting system (i.e. curved specular lamellae)?
+> 
+> The comment in m_bsdf.c says that the "up-vector" together with the surface normal 
+> defines the local coordinate system. How exactly is that done?? Unfortunately I did 
+> not have time yet to dig deeper into the BSDF-code to find that out...
+> 
+> Cheers,
+> David
+
+
+From david.moroder at gmail.com  Tue May 15 08:58:37 2012
+From: david.moroder at gmail.com (David Geisler-Moroder)
+Date: Tue, 15 May 2012 17:58:37 +0200
+Subject: [Radiance-dev] BSDF orientation vector
+In-Reply-To: <3318FB31-1706-4289-B9CB-79DE251C811E@gmail.com>
+References: <CAL-bo5FAESTz5rZTQxV5V6uuixJXQLbqQJh7RRiw5VrcR-hM=g@mail.gmail.com>
+	<3318FB31-1706-4289-B9CB-79DE251C811E@gmail.com>
+Message-ID: <CAL-bo5HiGZVKpeF+1pqz8vSwC11hi1-uk2sOH0fs5yA7s6wmAw@mail.gmail.com>
+
+Ok, perfect -- this is exactly what I hoped it to be!
+
+Thanks for the fast response,
+cheers,
+David
+
+2012/5/15 Gregory J. Ward <gregoryjward at gmail.com>
+
+> The code is pretty simple.  So long as the "up vector" is not parallel to
+> the surface normal, it is used to orient the 0-degree azimuth position by
+> projecting it into the plane of the surface normal at the ray intersection
+> point.  Make sense?
+>
+> -Greg
+>
+> > From: David Geisler-Moroder <david.moroder at gmail.com>
+> > Date: May 15, 2012 12:20:15 AM PDT
+> >
+> > Hi list, hi Greg,
+> >
+> > I have a question concerning the BSDF "up-vector".
+> > For e.g. a facade-mounted fenestration system the definition of the
+> vector is clear.
+> > But what, if I have a BSDF defining the material properties and use this
+> BSDF to
+> > simulate the BSDF of a daylighting system (i.e. curved specular
+> lamellae)?
+> >
+> > The comment in m_bsdf.c says that the "up-vector" together with the
+> surface normal
+> > defines the local coordinate system. How exactly is that done??
+> Unfortunately I did
+> > not have time yet to dig deeper into the BSDF-code to find that out...
+> >
+> > Cheers,
+> > David
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20120515/a377bbe5/attachment.html>
+
+From pally.sandher at iesve.com  Thu May 31 08:05:02 2012
+From: pally.sandher at iesve.com (Pally Sandher)
+Date: Thu, 31 May 2012 15:05:02 +0000
+Subject: [Radiance-dev] Cross platform Radiance installers,
+ just tried rvu on Windows
+In-Reply-To: <CBC86706.1087E%robert.guglielmetti@nrel.gov>
+References: <CAFXPCRYPgrpdPKvUMu5vQ+YAJY7j+ZcyKDujcwKsk3pXEiRVXA@mail.gmail.com>
+	<CBC86706.1087E%robert.guglielmetti@nrel.gov>
+Message-ID: <A7E25FADF831E94DBBD5904D7E584865103792@GL-EXC-01.iesve.com>
+
+FYI The Windows zip file download at http://openstudio.nrel.gov/getting-started-developer/getting-started-radiance doesn't work. Clicking it keeps asking for a log in even though I am logged in & can download the executable installer.
+
+Palbinder Sandher 
+Software Platform Engineer 
+T: +44 (0) 141 945 8500
+F: +44 (0) 141 945 8501
+http://www.iesve.com 
+
+**Design, Simulate + Innovate with the <Virtual Environment>** 
+Integrated Environmental Solutions Limited. Registered in Scotland No. SC151456
+Registered Office - Helix Building, West Of Scotland Science Park, Glasgow G20 0SP
+Email Disclaimer 
+
+
+
+-----Original Message-----
+From: Guglielmetti, Robert [mailto:Robert.Guglielmetti at nrel.gov] 
+Sent: 03 May 2012 23:51
+To: code development
+Subject: Re: [Radiance-dev] Cross platform Radiance installers, just tried rvu on Windows
+
+Hi Guy,
+
+Thanks for the feedback! I'm running out the door to catch a bus, but I will review this tonight. Thanks especially to the NSIS pointer on env paths. I knew it was possible, just hadn't had time to look into it, so thanks for the pointer. The rvu bugs seem serious, I have to admit I haven't tested that extensively on Windows. And you're right, rpiece should be taken out of the Windows package for now; that's an easy fix. Making rpiece Windows-compatible, now that's a different story. ;)
+
+-Rob
+
+
+On 5/3/12 4:44 PM, "Guy Vaessen" < > wrote:
+
+Great job! I really like the new rvu on Windows.
+
+I just tried it on Windows 7 64 bits
+
+A few remarks:
+
+In rvu
+
+-selecting load view (file viewpoint.vp) contents: -vp -.5 -5 1.15 -vd 0.5 5 0 doesn't set the viewparameters (it doesn't do anything).
+
+After manually setting a view
+-selecting load view and pressing cancel 'resets' the view and rvu recalculates from a random viewpoint, doing it again (select load view and press cancel) goes back to the manually entered view before and recalculates.
+
+-selecting file -> Load .rif doesn't do anything.
+
+-selecting parameter: some values could be expained a bit more, for example te first tab ambient has in the first column value: 0 0 0 (I don't know which values are required).
+
+It looks like it is possible to set the environmental path on Windows directly in the NSIS installer:
+ http://nsis.sourceforge.net/Environmental_Variables:_append,_prepend,_and_remove_entries
+(The old MnGW installer offered at: http://www.bozzograo.net/radiance/ did also set the environment variables).
+
+One question: are you sure you want to include rpiece in the Windows installer? Since for Windows at compile-time the only message possible by rpiece is the one about the missing NFS-manager.
+To get rpiece working on Windows one would have rewrite (at least) the part about file locking since Windows does this differently from other OS.
+(It would be great to see rpiece working on Windows too!).
+
+Best Regards,
+
+Guy
+
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+
+From Robert.Guglielmetti at nrel.gov  Thu May 31 08:31:50 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Thu, 31 May 2012 09:31:50 -0600
+Subject: [Radiance-dev] Cross platform Radiance installers,
+ just tried rvu on Windows
+In-Reply-To: <A7E25FADF831E94DBBD5904D7E584865103792@GL-EXC-01.iesve.com>
+Message-ID: <CBECEAC6.111EF%robert.guglielmetti@nrel.gov>
+
+Thanks Pally,
+
+That's odd, it works for me at the office as well as on my personal
+computer. I'll look into it. If anyone else on this list has a second to
+try this out, I'd appreciate any feedback.
+ 
+
+Rob Guglielmetti  IESNA, LEED AP
+Commercial Buildings Research Group
+National Renewable Energy Laboratory
+15013 Denver West Parkway MS:RSF202
+Golden, CO 80401
+303.275.4319
+robert.guglielmetti at nrel.gov
+
+
+
+
+
+On 5/31/12 9:05 AM, "Pally Sandher" <pally.sandher at iesve.com> wrote:
+
+>FYI The Windows zip file download at
+>http://openstudio.nrel.gov/getting-started-developer/getting-started-radia
+>nce doesn't work. Clicking it keeps asking for a log in even though I am
+>logged in & can download the executable installer.
+>
+>Palbinder Sandher 
+>Software Platform Engineer
+>T: +44 (0) 141 945 8500
+>F: +44 (0) 141 945 8501
+>http://www.iesve.com
+>
+>**Design, Simulate + Innovate with the <Virtual Environment>**
+>Integrated Environmental Solutions Limited. Registered in Scotland No.
+>SC151456
+>Registered Office - Helix Building, West Of Scotland Science Park,
+>Glasgow G20 0SP
+>Email Disclaimer 
+>
+>
+>
+>-----Original Message-----
+>From: Guglielmetti, Robert [mailto:Robert.Guglielmetti at nrel.gov]
+>Sent: 03 May 2012 23:51
+>To: code development
+>Subject: Re: [Radiance-dev] Cross platform Radiance installers, just
+>tried rvu on Windows
+>
+>Hi Guy,
+>
+>Thanks for the feedback! I'm running out the door to catch a bus, but I
+>will review this tonight. Thanks especially to the NSIS pointer on env
+>paths. I knew it was possible, just hadn't had time to look into it, so
+>thanks for the pointer. The rvu bugs seem serious, I have to admit I
+>haven't tested that extensively on Windows. And you're right, rpiece
+>should be taken out of the Windows package for now; that's an easy fix.
+>Making rpiece Windows-compatible, now that's a different story. ;)
+>
+>-Rob
+>
+>
+>On 5/3/12 4:44 PM, "Guy Vaessen" < > wrote:
+>
+>Great job! I really like the new rvu on Windows.
+>
+>I just tried it on Windows 7 64 bits
+>
+>A few remarks:
+>
+>In rvu
+>
+>-selecting load view (file viewpoint.vp) contents: -vp -.5 -5 1.15 -vd
+>0.5 5 0 doesn't set the viewparameters (it doesn't do anything).
+>
+>After manually setting a view
+>-selecting load view and pressing cancel 'resets' the view and rvu
+>recalculates from a random viewpoint, doing it again (select load view
+>and press cancel) goes back to the manually entered view before and
+>recalculates.
+>
+>-selecting file -> Load .rif doesn't do anything.
+>
+>-selecting parameter: some values could be expained a bit more, for
+>example te first tab ambient has in the first column value: 0 0 0 (I
+>don't know which values are required).
+>
+>It looks like it is possible to set the environmental path on Windows
+>directly in the NSIS installer:
+> 
+>http://nsis.sourceforge.net/Environmental_Variables:_append,_prepend,_and_
+>remove_entries
+>(The old MnGW installer offered at: http://www.bozzograo.net/radiance/
+>did also set the environment variables).
+>
+>One question: are you sure you want to include rpiece in the Windows
+>installer? Since for Windows at compile-time the only message possible by
+>rpiece is the one about the missing NFS-manager.
+>To get rpiece working on Windows one would have rewrite (at least) the
+>part about file locking since Windows does this differently from other OS.
+>(It would be great to see rpiece working on Windows too!).
+>
+>Best Regards,
+>
+>Guy
+>
+>
+>_______________________________________________
+>Radiance-dev mailing list
+>Radiance-dev at radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+>
+>_______________________________________________
+>Radiance-dev mailing list
+>Radiance-dev at radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+From gmolina1 at uc.cl  Thu May 31 08:38:06 2012
+From: gmolina1 at uc.cl (=?ISO-8859-1?Q?Germ=E1n_Molina_Larrain?=)
+Date: Thu, 31 May 2012 11:38:06 -0400
+Subject: [Radiance-dev] Cross platform Radiance installers,
+ just tried rvu on Windows
+In-Reply-To: <CBECEAC6.111EF%robert.guglielmetti@nrel.gov>
+References: <A7E25FADF831E94DBBD5904D7E584865103792@GL-EXC-01.iesve.com>
+	<CBECEAC6.111EF%robert.guglielmetti@nrel.gov>
+Message-ID: <CAF-iH4KSvn33jG6dCGP=iX6FcC2PxXybyrasMGrjpFZ2pewfiQ@mail.gmail.com>
+
+Bob,
+
+I have just downloaded it, but I'm not sure how tu run it. haha
+
+cheers,
+
+German
+
+
+
+2012/5/31 Guglielmetti, Robert <Robert.Guglielmetti at nrel.gov>
+
+> Thanks Pally,
+>
+> That's odd, it works for me at the office as well as on my personal
+> computer. I'll look into it. If anyone else on this list has a second to
+> try this out, I'd appreciate any feedback.
+>
+>
+> Rob Guglielmetti  IESNA, LEED AP
+> Commercial Buildings Research Group
+> National Renewable Energy Laboratory
+> 15013 Denver West Parkway MS:RSF202
+> Golden, CO 80401
+> 303.275.4319
+> robert.guglielmetti at nrel.gov
+>
+>
+>
+>
+>
+> On 5/31/12 9:05 AM, "Pally Sandher" <pally.sandher at iesve.com> wrote:
+>
+> >FYI The Windows zip file download at
+> >
+> http://openstudio.nrel.gov/getting-started-developer/getting-started-radia
+> >nce doesn't work. Clicking it keeps asking for a log in even though I am
+> >logged in & can download the executable installer.
+> >
+> >Palbinder Sandher
+> >Software Platform Engineer
+> >T: +44 (0) 141 945 8500
+> >F: +44 (0) 141 945 8501
+> >http://www.iesve.com
+> >
+> >**Design, Simulate + Innovate with the <Virtual Environment>**
+> >Integrated Environmental Solutions Limited. Registered in Scotland No.
+> >SC151456
+> >Registered Office - Helix Building, West Of Scotland Science Park,
+> >Glasgow G20 0SP
+> >Email Disclaimer
+> >
+> >
+> >
+> >-----Original Message-----
+> >From: Guglielmetti, Robert [mailto:Robert.Guglielmetti at nrel.gov]
+> >Sent: 03 May 2012 23:51
+> >To: code development
+> >Subject: Re: [Radiance-dev] Cross platform Radiance installers, just
+> >tried rvu on Windows
+> >
+> >Hi Guy,
+> >
+> >Thanks for the feedback! I'm running out the door to catch a bus, but I
+> >will review this tonight. Thanks especially to the NSIS pointer on env
+> >paths. I knew it was possible, just hadn't had time to look into it, so
+> >thanks for the pointer. The rvu bugs seem serious, I have to admit I
+> >haven't tested that extensively on Windows. And you're right, rpiece
+> >should be taken out of the Windows package for now; that's an easy fix.
+> >Making rpiece Windows-compatible, now that's a different story. ;)
+> >
+> >-Rob
+> >
+> >
+> >On 5/3/12 4:44 PM, "Guy Vaessen" < > wrote:
+> >
+> >Great job! I really like the new rvu on Windows.
+> >
+> >I just tried it on Windows 7 64 bits
+> >
+> >A few remarks:
+> >
+> >In rvu
+> >
+> >-selecting load view (file viewpoint.vp) contents: -vp -.5 -5 1.15 -vd
+> >0.5 5 0 doesn't set the viewparameters (it doesn't do anything).
+> >
+> >After manually setting a view
+> >-selecting load view and pressing cancel 'resets' the view and rvu
+> >recalculates from a random viewpoint, doing it again (select load view
+> >and press cancel) goes back to the manually entered view before and
+> >recalculates.
+> >
+> >-selecting file -> Load .rif doesn't do anything.
+> >
+> >-selecting parameter: some values could be expained a bit more, for
+> >example te first tab ambient has in the first column value: 0 0 0 (I
+> >don't know which values are required).
+> >
+> >It looks like it is possible to set the environmental path on Windows
+> >directly in the NSIS installer:
+> >
+> >
+> http://nsis.sourceforge.net/Environmental_Variables:_append,_prepend,_and_
+> >remove_entries
+> >(The old MnGW installer offered at: http://www.bozzograo.net/radiance/
+> >did also set the environment variables).
+> >
+> >One question: are you sure you want to include rpiece in the Windows
+> >installer? Since for Windows at compile-time the only message possible by
+> >rpiece is the one about the missing NFS-manager.
+> >To get rpiece working on Windows one would have rewrite (at least) the
+> >part about file locking since Windows does this differently from other OS.
+> >(It would be great to see rpiece working on Windows too!).
+> >
+> >Best Regards,
+> >
+> >Guy
+> >
+> >
+> >_______________________________________________
+> >Radiance-dev mailing list
+> >Radiance-dev at radiance-online.org
+> >http://www.radiance-online.org/mailman/listinfo/radiance-dev
+> >
+> >
+> >
+> >_______________________________________________
+> >Radiance-dev mailing list
+> >Radiance-dev at radiance-online.org
+> >http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20120531/21bbff1b/attachment.html>
+
+From Robert.Guglielmetti at nrel.gov  Thu May 31 08:46:50 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Thu, 31 May 2012 09:46:50 -0600
+Subject: [Radiance-dev] Cross platform Radiance installers,
+ just tried rvu on Windows
+In-Reply-To: <CAF-iH4KSvn33jG6dCGP=iX6FcC2PxXybyrasMGrjpFZ2pewfiQ@mail.gmail.com>
+Message-ID: <CBECEE66.111FE%robert.guglielmetti@nrel.gov>
+
+Thanks Germain. Pally, this is working on a number of systems here as well. Let's take this offlist and see if we can sort this out.
+
+Rob Guglielmetti  IESNA, LEED AP
+Commercial Buildings Research Group
+National Renewable Energy Laboratory
+15013 Denver West Parkway MS:RSF202
+Golden, CO 80401
+303.275.4319
+robert.guglielmetti at nrel.gov
+
+
+On 5/31/12 9:38 AM, "Germ?n Molina Larrain" <gmolina1 at uc.cl<mailto:gmolina1 at uc.cl>> wrote:
+
+Bob,
+
+I have just downloaded it, but I'm not sure how tu run it. haha
+
+cheers,
+
+German
+
+
+
+2012/5/31 Guglielmetti, Robert <Robert.Guglielmetti at nrel.gov<mailto:Robert.Guglielmetti at nrel.gov>>
+Thanks Pally,
+
+That's odd, it works for me at the office as well as on my personal
+computer. I'll look into it. If anyone else on this list has a second to
+try this out, I'd appreciate any feedback.
+
+
+Rob Guglielmetti  IESNA, LEED AP
+Commercial Buildings Research Group
+National Renewable Energy Laboratory
+15013 Denver West Parkway MS:RSF202
+Golden, CO 80401
+303.275.4319<tel:303.275.4319>
+robert.guglielmetti at nrel.gov<mailto:robert.guglielmetti at nrel.gov>
+
+
+
+
+
+On 5/31/12 9:05 AM, "Pally Sandher" <pally.sandher at iesve.com<mailto:pally.sandher at iesve.com>> wrote:
+
+>FYI The Windows zip file download at
+>http://openstudio.nrel.gov/getting-started-developer/getting-started-radia
+>nce doesn't work. Clicking it keeps asking for a log in even though I am
+>logged in & can download the executable installer.
+>
+>Palbinder Sandher
+>Software Platform Engineer
+>T: +44 (0) 141 945 8500<tel:%2B44%20%280%29%20141%20945%208500>
+>F: +44 (0) 141 945 8501<tel:%2B44%20%280%29%20141%20945%208501>
+>http://www.iesve.com
+>
+>**Design, Simulate + Innovate with the <Virtual Environment>**
+>Integrated Environmental Solutions Limited. Registered in Scotland No.
+>SC151456
+>Registered Office - Helix Building, West Of Scotland Science Park,
+>Glasgow G20 0SP
+>Email Disclaimer
+>
+>
+>
+>-----Original Message-----
+>From: Guglielmetti, Robert [mailto:Robert.Guglielmetti at nrel.gov<mailto:Robert.Guglielmetti at nrel.gov>]
+>Sent: 03 May 2012 23:51
+>To: code development
+>Subject: Re: [Radiance-dev] Cross platform Radiance installers, just
+>tried rvu on Windows
+>
+>Hi Guy,
+>
+>Thanks for the feedback! I'm running out the door to catch a bus, but I
+>will review this tonight. Thanks especially to the NSIS pointer on env
+>paths. I knew it was possible, just hadn't had time to look into it, so
+>thanks for the pointer. The rvu bugs seem serious, I have to admit I
+>haven't tested that extensively on Windows. And you're right, rpiece
+>should be taken out of the Windows package for now; that's an easy fix.
+>Making rpiece Windows-compatible, now that's a different story. ;)
+>
+>-Rob
+>
+>
+>On 5/3/12 4:44 PM, "Guy Vaessen" < > wrote:
+>
+>Great job! I really like the new rvu on Windows.
+>
+>I just tried it on Windows 7 64 bits
+>
+>A few remarks:
+>
+>In rvu
+>
+>-selecting load view (file viewpoint.vp) contents: -vp -.5 -5 1.15 -vd
+>0.5 5 0 doesn't set the viewparameters (it doesn't do anything).
+>
+>After manually setting a view
+>-selecting load view and pressing cancel 'resets' the view and rvu
+>recalculates from a random viewpoint, doing it again (select load view
+>and press cancel) goes back to the manually entered view before and
+>recalculates.
+>
+>-selecting file -> Load .rif doesn't do anything.
+>
+>-selecting parameter: some values could be expained a bit more, for
+>example te first tab ambient has in the first column value: 0 0 0 (I
+>don't know which values are required).
+>
+>It looks like it is possible to set the environmental path on Windows
+>directly in the NSIS installer:
+>
+>http://nsis.sourceforge.net/Environmental_Variables:_append,_prepend,_and_
+>remove_entries
+>(The old MnGW installer offered at: http://www.bozzograo.net/radiance/
+>did also set the environment variables).
+>
+>One question: are you sure you want to include rpiece in the Windows
+>installer? Since for Windows at compile-time the only message possible by
+>rpiece is the one about the missing NFS-manager.
+>To get rpiece working on Windows one would have rewrite (at least) the
+>part about file locking since Windows does this differently from other OS.
+>(It would be great to see rpiece working on Windows too!).
+>
+>Best Regards,
+>
+>Guy
+>
+>
+>_______________________________________________
+>Radiance-dev mailing list
+>Radiance-dev at radiance-online.org<mailto:Radiance-dev at radiance-online.org>
+>http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+>
+>_______________________________________________
+>Radiance-dev mailing list
+>Radiance-dev at radiance-online.org<mailto:Radiance-dev at radiance-online.org>
+>http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev at radiance-online.org<mailto:Radiance-dev at radiance-online.org>
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+

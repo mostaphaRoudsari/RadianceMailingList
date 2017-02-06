@@ -1,0 +1,711 @@
+From rgrodriguez at mendoza-conicet.gov.ar  Mon Jun  1 13:29:57 2009
+From: rgrodriguez at mendoza-conicet.gov.ar (Roberto Rodriguez)
+Date: Mon Jun  1 13:30:46 2009
+Subject: [HDRI] ximage and hdri
+Message-ID: <9868.190.179.203.60.1243888197.squirrel@lab.cricyt.edu.ar>
+
+I?m a PhD student from Argentina, member of a research team advocated to
+the study of natural lighting. We are exploring the HRDI technique and we
+found a limitation while using hdrgen and ximage: Only squared shapes are
+avaiable to average Luminances, and we need to calculate the mean
+Luminances for radial shapes (circular, toroidal) in order to get the
+luminance contrast in the field of view.
+
+How can we overcome this? Can we "borrow" the source code of ximage so we
+can write a script acording to our needs?
+Thank you.
+
+-- 
+Dis. Ind. Roberto G. Rodriguez
+Laboratorio de Ambiente
+Humano y Vivienda-LAHV
+INCIHUSA-CRICYT-CONICET
+Av. Ruiz Leal s/n, Pque. Gral. San Mart?n
+(5500) Mendoza, Argentina
+Tel. 54-261-5244334
+Fax: 54-261-4287370
+rgrodriguez@mendoza-conicet.gov.ar
+http:www.cricyt.edu.ar
+
+
+
+
+-- 
+Dis. Ind. Roberto G. Rodriguez
+Laboratorio de Ambiente
+Humano y Vivienda-LAHV
+INCIHUSA-CRICYT-CONICET
+Av. Ruiz Leal s/n, Pque. Gral. San Mart?n
+(5500) Mendoza, Argentina
+Tel. 54-261-5244334
+Fax: 54-261-4287370
+rgrodriguez@mendoza-conicet.gov.ar
+http:www.cricyt.edu.ar
+
+
+
+
+From geotrupes at mac.com  Mon Jun  1 14:18:27 2009
+From: geotrupes at mac.com (Giulio)
+Date: Mon Jun  1 14:18:30 2009
+Subject: [HDRI] ximage and hdri
+In-Reply-To: <9868.190.179.203.60.1243888197.squirrel@lab.cricyt.edu.ar>
+References: <9868.190.179.203.60.1243888197.squirrel@lab.cricyt.edu.ar>
+Message-ID: <D7B3D996-C07E-4C5D-9BE7-7A8E386EA898@mac.com>
+
+low teck approach, just command line:
+I would just generate a mask with photoshop, an image with just white  
+and black pixels, but in RGB.
+convert it to tiff and then to pic    (ra_tiff -r ).
+use pcomb with image 1 and image 2 and write an expression that takes  
+value of pixels in your HDR only if they are inside of the mask, all  
+the others null (basically multiply image 1 by image 2, check that the  
+mask contains 0 and 1 only!).
+use pvalue on the filtered image and convert to numbers
+use total and get the sum of all data from filtered image, TL
+count the white pixels in the mask (pvalue and total for example), TN
+TL/TN = average luminance within the mask
+....
+the whole thing can be written in a script.
+and perhaps also put together with a nice sequence of pipes.
+G
+
+
+On 1 Jun 2009, at 21:29, Roberto Rodriguez wrote:
+
+> I?m a PhD student from Argentina, member of a research team  
+> advocated to
+> the study of natural lighting. We are exploring the HRDI technique  
+> and we
+> found a limitation while using hdrgen and ximage: Only squared  
+> shapes are
+> avaiable to average Luminances, and we need to calculate the mean
+> Luminances for radial shapes (circular, toroidal) in order to get the
+> luminance contrast in the field of view.
+>
+> How can we overcome this? Can we "borrow" the source code of ximage  
+> so we
+> can write a script acording to our needs?
+> Thank you.
+>
+> -- 
+> Dis. Ind. Roberto G. Rodriguez
+> Laboratorio de Ambiente
+> Humano y Vivienda-LAHV
+> INCIHUSA-CRICYT-CONICET
+> Av. Ruiz Leal s/n, Pque. Gral. San Mart?n
+> (5500) Mendoza, Argentina
+> Tel. 54-261-5244334
+> Fax: 54-261-4287370
+> rgrodriguez@mendoza-conicet.gov.ar
+> http:www.cricyt.edu.ar
+>
+>
+>
+>
+> -- 
+> Dis. Ind. Roberto G. Rodriguez
+> Laboratorio de Ambiente
+> Humano y Vivienda-LAHV
+> INCIHUSA-CRICYT-CONICET
+> Av. Ruiz Leal s/n, Pque. Gral. San Mart?n
+> (5500) Mendoza, Argentina
+> Tel. 54-261-5244334
+> Fax: 54-261-4287370
+> rgrodriguez@mendoza-conicet.gov.ar
+> http:www.cricyt.edu.ar
+>
+>
+>
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+
+From jedev at visarc.com  Mon Jun  1 14:25:43 2009
+From: jedev at visarc.com (Jack de Valpine)
+Date: Mon Jun  1 14:25:55 2009
+Subject: [HDRI] ximage and hdri
+In-Reply-To: <9868.190.179.203.60.1243888197.squirrel@lab.cricyt.edu.ar>
+References: <9868.190.179.203.60.1243888197.squirrel@lab.cricyt.edu.ar>
+Message-ID: <4A244757.8090100@visarc.com>
+
+Hi Roberto,
+
+Radiance is open source and is available at www.radiance-online.org. The 
+program "ximage" is part of the Radiance tool set. Rather than hacking 
+ximage source code there may be other ways to calculate the average 
+luminances that want. For example it is possible to read in values from 
+an image on a per pixel basis, depending on what you are trying to 
+accomplish this could be coupled with an image mask to sample only 
+selected pixels.
+
+Regards,
+
+-Jack de Valpine
+
+
+Roberto Rodriguez wrote:
+> I?m a PhD student from Argentina, member of a research team advocated to
+> the study of natural lighting. We are exploring the HRDI technique and we
+> found a limitation while using hdrgen and ximage: Only squared shapes are
+> avaiable to average Luminances, and we need to calculate the mean
+> Luminances for radial shapes (circular, toroidal) in order to get the
+> luminance contrast in the field of view.
+>
+> How can we overcome this? Can we "borrow" the source code of ximage so we
+> can write a script acording to our needs?
+> Thank you.
+>
+>   
+
+
+-- 
+# Jack de Valpine
+# president
+#
+# visarc incorporated
+# http://www.visarc.com
+#
+# channeling technology for superior design and construction
+
+
+From tbleicher at googlemail.com  Mon Jun  1 15:02:39 2009
+From: tbleicher at googlemail.com (Thomas Bleicher)
+Date: Mon Jun  1 15:06:50 2009
+Subject: [HDRI] ximage and hdri
+In-Reply-To: <9868.190.179.203.60.1243888197.squirrel@lab.cricyt.edu.ar>
+References: <9868.190.179.203.60.1243888197.squirrel@lab.cricyt.edu.ar>
+Message-ID: <18ABC0EC-F1EC-46FB-9141-646720131AFF@googlemail.com>
+
+
+On 1 Jun 2009, at 21:29, Roberto Rodriguez wrote:
+
+> I?m a PhD student from Argentina, member of a research team  
+> advocated to
+> the study of natural lighting. We are exploring the HRDI technique  
+> and we
+> found a limitation while using hdrgen and ximage: Only squared  
+> shapes are
+> avaiable to average Luminances, and we need to calculate the mean
+> Luminances for radial shapes (circular, toroidal) in order to get the
+> luminance contrast in the field of view.
+
+I assume you refer to the interactive command key 'l' to display
+luminance of the 'area of interest' which is a rectangular selection
+of the image.
+
+If you can calculate the pixel coordinates for your shapes you
+can use the command line tool 'pvalue' to get the value of a pixel
+at (x,y) of the image. Sum up all the values and divide by the number
+of pixels and you have your average.
+
+If you can't calculate those pixel coordinates easily you can
+create a black and white mask to isolate the area of interest.
+You would then combine the mask and your picture, get the sum
+of all pixels in the image but divide by the number of pixels
+that are not zero (black).
+
+> How can we overcome this? Can we "borrow" the source code of ximage
+> so we can write a script acording to our needs?
+
+The source code for ximage is freely available. You can find
+the CVS repository online here:
+
+http://www.radiance-online.org/cgi-bin/viewcvs.cgi/
+
+The ximage source code is located in ray/src/px/.
+
+
+Regards,
+Thomas
+
+
+From ccox at adobe.com  Tue Jun  2 12:15:22 2009
+From: ccox at adobe.com (Chris Cox)
+Date: Tue Jun  2 12:15:27 2009
+Subject: [HDRI] ximage and hdri
+In-Reply-To: <D7B3D996-C07E-4C5D-9BE7-7A8E386EA898@mac.com>
+Message-ID: <C64AC85A.80031%ccox@adobe.com>
+
+Wouldn't it be a little faster to just create a mask (selection is easiest in this case) in Photoshop and use the average filter?
+
+Chris
+
+
+On 6/1/09 2:18 PM, "Giulio" <geotrupes@mac.com> wrote:
+
+low teck approach, just command line:
+I would just generate a mask with photoshop, an image with just white
+and black pixels, but in RGB.
+convert it to tiff and then to pic    (ra_tiff -r ).
+use pcomb with image 1 and image 2 and write an expression that takes
+value of pixels in your HDR only if they are inside of the mask, all
+the others null (basically multiply image 1 by image 2, check that the
+mask contains 0 and 1 only!).
+use pvalue on the filtered image and convert to numbers
+use total and get the sum of all data from filtered image, TL
+count the white pixels in the mask (pvalue and total for example), TN
+TL/TN = average luminance within the mask
+....
+the whole thing can be written in a script.
+and perhaps also put together with a nice sequence of pipes.
+G
+
+
+On 1 Jun 2009, at 21:29, Roberto Rodriguez wrote:
+
+> I?m a PhD student from Argentina, member of a research team
+> advocated to
+> the study of natural lighting. We are exploring the HRDI technique
+> and we
+> found a limitation while using hdrgen and ximage: Only squared
+> shapes are
+> avaiable to average Luminances, and we need to calculate the mean
+> Luminances for radial shapes (circular, toroidal) in order to get the
+> luminance contrast in the field of view.
+>
+> How can we overcome this? Can we "borrow" the source code of ximage
+> so we
+> can write a script acording to our needs?
+> Thank you.
+>
+> --
+> Dis. Ind. Roberto G. Rodriguez
+> Laboratorio de Ambiente
+> Humano y Vivienda-LAHV
+> INCIHUSA-CRICYT-CONICET
+> Av. Ruiz Leal s/n, Pque. Gral. San Mart?n
+> (5500) Mendoza, Argentina
+> Tel. 54-261-5244334
+> Fax: 54-261-4287370
+> rgrodriguez@mendoza-conicet.gov.ar
+> http:www.cricyt.edu.ar
+>
+>
+>
+>
+> --
+> Dis. Ind. Roberto G. Rodriguez
+> Laboratorio de Ambiente
+> Humano y Vivienda-LAHV
+> INCIHUSA-CRICYT-CONICET
+> Av. Ruiz Leal s/n, Pque. Gral. San Mart?n
+> (5500) Mendoza, Argentina
+> Tel. 54-261-5244334
+> Fax: 54-261-4287370
+> rgrodriguez@mendoza-conicet.gov.ar
+> http:www.cricyt.edu.ar
+>
+>
+>
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+
+_______________________________________________
+HDRI mailing list
+HDRI@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/hdri
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/hdri/attachments/20090602/c7bc29b5/attachment.html
+From jaf at cis.rit.edu  Wed Jun  3 12:03:06 2009
+From: jaf at cis.rit.edu (Jim Ferwerda)
+Date: Wed Jun  3 12:11:28 2009
+Subject: [HDRI] Post-Doc in Image-Based 3D Modeling of Fine Art (RIT/MOMA)
+Message-ID: <4A26C8EA.7090605@cis.rit.edu>
+
+Post-Doctoral Position in Image-Based 3D Modeling of Fine Art (RIT/MOMA)
+
+Sponsor: Andrew W. Mellon Foundation
+
+Location(s): The Munsell Color Science Laboratory, Rochester Institute 
+of Technology, Rochester, NY and the Museum of Modern Art, New York City
+
+Principal Investigators: Drs. Roy S. Berns and James A. Ferwerda
+
+Project Description: The Munsell Color Science Laboratory (MCSL) at RIT 
+is seeking an outstanding researcher for a two-year postdoctoral 
+fellowship in the area of Image-Based 3D Modeling of Fine Art. The goal 
+of the research is to develop advanced methods for creating rich digital 
+representations of paintings and other cultural heritage objects that 
+can serve as surrogates for archiving, analysis, restoration, 
+reproduction, and scholarship. The fellowship is sponsored by the Andrew 
+W. Mellon Foundation as part of a project entitled ?Improving Artwork 
+Reproduction through 3D-Spectral Capture and Computer Graphics 
+Rendering?. Research resources of the MCSL include a light measurement 
+laboratory, a custom imaging goniospectrophotometer, a compute cluster, 
+and calibrated spectral printing, display systems, and visual 
+psychophysics laboratories. In addition to research at the MCSL in 
+Rochester NY, the appointment will include extended residencies at the 
+Museum of Modern Art in New York City.
+
+Requirements: Applicants should have a Ph.D. in Computer Science, 
+Computer Graphics, Image Processing, or a related field. Applicants with 
+research backgrounds in the following areas will be preferred: 
+Image-Based Modeling/Rendering/Lighting, Computational Photography, 
+Physically-Based Rendering, and Material Appearance. Strong mathematical 
+and computational skills (MATLAB and C/C++) and a proven track record of 
+independent research and publication are required.
+
+Application Process: Applicants should email a curriculum vitae, and a 
+cover letter that describes their graduate training, research interests, 
+and qualifications for the position to Ms. Val Hemink (val@cis.rit.edu). 
+Applicants should also arrange to have three letters of recommendation 
+sent to the same address. Review of the applications will be ongoing and 
+will continue until the position is filled.
+
+Salary: Commensurate with experience.
+Start date: Negotiable but no later than October 2009.
+Duration: Two years.
+
+More information about the Munsell Color Science Laboratory is available 
+at http://mcsl.rit.edu/
+
+From ken at ziedman.com  Wed Jun  3 20:26:30 2009
+From: ken at ziedman.com (Kenneth Ziedman, PhD)
+Date: Wed Jun  3 20:26:44 2009
+Subject: [HDRI] Installing Radiance on Mac G5 Leopard?
+Message-ID: <94807C8C40894610AD79B0AAD85FCE39@T61>
+
+I am primarily interested in the image analysis features of radiance but have not found any step-by-step instructions for installing the software on a Mac G5 running Leopard. Not interested at this point in the rendering functions. Very interested in using HDR photography for luminance measurements. Would appreciate any references covering these topics. Unix and Matlab naive, although I suppose I could learn!
+
+I have reviewed several articles including Inanici & Galvin 2004 and Beltran and Mogo 2005.
+
+PS There is an useful program, ImageJ, developed at the National Institutes of Health that allows for luminance calibration of pixel values and arbitary selection of image areas for computation of average luminance and other functions. I have used this successfully for contrast measurements of scene objects; however it is limited to LDR images. It is a free download.
+
+
+
+Kenneth Ziedman, Ph. D.
+PO Box 1505
+12088 Shoreline Hwy.
+Pont Reyes Station, CA 94956-1505
+415-663-9179
+415-663-5442 fax
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/hdri/attachments/20090603/a2c07e32/attachment.html
+From gregoryjward at gmail.com  Wed Jun  3 20:47:57 2009
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed Jun  3 20:48:27 2009
+Subject: [HDRI] Installing Radiance on Mac G5 Leopard?
+In-Reply-To: <94807C8C40894610AD79B0AAD85FCE39@T61>
+References: <94807C8C40894610AD79B0AAD85FCE39@T61>
+Message-ID: <E8E4CC05-ADD1-4D3B-863F-D60699D183BB@gmail.com>
+
+Hi Kenneth,
+
+Two words, the second being a URL:
+
+Photosphere at http://www.anyhere.com/
+
+This application does pretty much exactly what you're asking.  For  
+command-line image processing, Radiance is useful as well.  You can  
+download the executables for Leopard from:
+
+	http://radsite.lbl.gov/radiance/framed.html
+
+Cheers,
+-Greg
+
+> From: "Kenneth Ziedman, PhD" <ken@ziedman.com>
+> Date: June 3, 2009 8:26:30 PM PDT
+>
+> I am primarily interested in the image analysis features of  
+> radiance but have not found any step-by-step instructions for  
+> installing the software on a Mac G5 running Leopard. Not interested  
+> at this point in the rendering functions. Very interested in using  
+> HDR photography for luminance measurements. Would appreciate any  
+> references covering these topics. Unix and Matlab naive, although I  
+> suppose I could learn!
+>
+> I have reviewed several articles including Inanici & Galvin 2004  
+> and Beltran and Mogo 2005.
+>
+> PS There is an useful program, ImageJ, developed at the National  
+> Institutes of Health that allows for luminance calibration of pixel  
+> values and arbitary selection of image areas for computation of  
+> average luminance and other functions. I have used this  
+> successfully for contrast measurements of scene objects; however it  
+> is limited to LDR images. It is a free download.
+>
+> Kenneth Ziedman, Ph. D.
+> PO Box 1505
+> 12088 Shoreline Hwy.
+> Pont Reyes Station, CA 94956-1505
+> 415-663-9179
+> 415-663-5442 fax
+
+From geotrupes at mac.com  Thu Jun  4 09:25:31 2009
+From: geotrupes at mac.com (Giulio)
+Date: Thu Jun  4 09:25:45 2009
+Subject: [HDRI] ximage and hdri
+In-Reply-To: <C64AC85A.80031%ccox@adobe.com>
+References: <C64AC85A.80031%ccox@adobe.com>
+Message-ID: <90A65C95-469D-485E-89C7-A0C1363027A7@mac.com>
+
+photoshop cs4 pro?
+cool!
+On 2 Jun 2009, at 20:15, Chris Cox wrote:
+
+> Wouldn?t it be a little faster to just create a mask (selection is  
+> easiest in this case) in Photoshop and use the average filter?
+>
+> Chris
+>
+>
+> On 6/1/09 2:18 PM, "Giulio" <geotrupes@mac.com> wrote:
+>
+> low teck approach, just command line:
+> I would just generate a mask with photoshop, an image with just white
+> and black pixels, but in RGB.
+> convert it to tiff and then to pic    (ra_tiff -r ).
+> use pcomb with image 1 and image 2 and write an expression that takes
+> value of pixels in your HDR only if they are inside of the mask, all
+> the others null (basically multiply image 1 by image 2, check that the
+> mask contains 0 and 1 only!).
+> use pvalue on the filtered image and convert to numbers
+> use total and get the sum of all data from filtered image, TL
+> count the white pixels in the mask (pvalue and total for example), TN
+> TL/TN = average luminance within the mask
+> ....
+> the whole thing can be written in a script.
+> and perhaps also put together with a nice sequence of pipes.
+> G
+>
+>
+> On 1 Jun 2009, at 21:29, Roberto Rodriguez wrote:
+>
+> > I?m a PhD student from Argentina, member of a research team
+> > advocated to
+> > the study of natural lighting. We are exploring the HRDI technique
+> > and we
+> > found a limitation while using hdrgen and ximage: Only squared
+> > shapes are
+> > avaiable to average Luminances, and we need to calculate the mean
+> > Luminances for radial shapes (circular, toroidal) in order to get  
+> the
+> > luminance contrast in the field of view.
+> >
+> > How can we overcome this? Can we "borrow" the source code of ximage
+> > so we
+> > can write a script acording to our needs?
+> > Thank you.
+> >
+> > --
+> > Dis. Ind. Roberto G. Rodriguez
+> > Laboratorio de Ambiente
+> > Humano y Vivienda-LAHV
+> > INCIHUSA-CRICYT-CONICET
+> > Av. Ruiz Leal s/n, Pque. Gral. San Mart?n
+> > (5500) Mendoza, Argentina
+> > Tel. 54-261-5244334
+> > Fax: 54-261-4287370
+> > rgrodriguez@mendoza-conicet.gov.ar
+> > http:www.cricyt.edu.ar
+> >
+> >
+> >
+> >
+> > --
+> > Dis. Ind. Roberto G. Rodriguez
+> > Laboratorio de Ambiente
+> > Humano y Vivienda-LAHV
+> > INCIHUSA-CRICYT-CONICET
+> > Av. Ruiz Leal s/n, Pque. Gral. San Mart?n
+> > (5500) Mendoza, Argentina
+> > Tel. 54-261-5244334
+> > Fax: 54-261-4287370
+> > rgrodriguez@mendoza-conicet.gov.ar
+> > http:www.cricyt.edu.ar
+> >
+> >
+> >
+> >
+> > _______________________________________________
+> > HDRI mailing list
+> > HDRI@radiance-online.org
+> > http://www.radiance-online.org/mailman/listinfo/hdri
+>
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/hdri/attachments/20090604/5dab7536/attachment.htm
+From maamari at soft-energy.com  Thu Jun 11 09:37:59 2009
+From: maamari at soft-energy.com (Fawaz Maamari)
+Date: Thu Jun 11 09:54:11 2009
+Subject: [HDRI] Automate HDR image acquisition
+Message-ID: <!&!AAAAAAAAAAAYAAAAAAAAAHu2xo49xuJJseMyawsiwj/CgAAAEAAAAHnbzOJTBdlCog8mYWiQyeABAAAAAA==@soft-energy.com>
+
+Hi All,
+
+I am looking for information about software programms allowing to automate
+HDR image acquisition with the possibility to set frequency (every hour or
+other) and to give absolute values for both speed and aperture for a given
+number of pictures.
+
+Thank you for informing me about such existing tools.
+
+Regards,
+
+Fawaz. 
+
+ 
+
+ 
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/hdri/attachments/20090611/5de6739a/attachment.html
+From magali.bodart at uclouvain.be  Fri Jun 12 01:20:30 2009
+From: magali.bodart at uclouvain.be (Magali Bodart)
+Date: Fri Jun 12 01:21:00 2009
+Subject: [HDRI] Automate HDR image acquisition
+In-Reply-To: <!&!AAAAAAAAAAAYAAAAAAAAAHu2xo49xuJJseMyawsiwj/CgAAAEAAAAHnbzOJTBdlCog8mYWiQyeABAAAAAA==@soft-energy.com>
+References: <!&!AAAAAAAAAAAYAAAAAAAAAHu2xo49xuJJseMyawsiwj/CgAAAEAAAAHnbzOJTBdlCog8mYWiQyeABAAAAAA==@soft-energy.com>
+Message-ID: <001801c9eb36$a71f0880$f55d1980$@bodart@uclouvain.be>
+
+I use DSLR Remote Pro (for CANON EOS) which has all these possibilities and
+is very easy to use.
+
+Regards,
+
+ 
+
+Magali
+
+ 
+
+ 
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Dr Magali Bodart (Mrs)
+
+ 
+
+Scientific Research Worker F.R.S. - FNRS - lecturer UCL
+
+Civil Engineer
+
+ 
+
+Catholic University of Louvain - UCL
+
+Louvain school of Engineering - EPL
+
+Architecture et Climat
+
+Place du Levant 1
+
+B 1348 Louvain-la-Neuve
+
+ 
+
+tel : +32 10 47 21 60 
+
+fax : +32 10 47 21 50
+
+ 
+
+ 
+
+ 
+
+ 
+
+De : hdri-bounces@radiance-online.org
+[mailto:hdri-bounces@radiance-online.org] De la part de Fawaz Maamari
+Envoy? : jeudi 11 juin 2009 18:38
+? : hdri@radiance-online.org
+Objet : [HDRI] Automate HDR image acquisition
+
+ 
+
+Hi All,
+
+I am looking for information about software programms allowing to automate
+HDR image acquisition with the possibility to set frequency (every hour or
+other) and to give absolute values for both speed and aperture for a given
+number of pictures.
+
+Thank you for informing me about such existing tools.
+
+Regards,
+
+Fawaz. 
+
+ 
+
+ 
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/hdri/attachments/20090612/1aecf8a3/attachment.htm
+From jm at dmu.ac.uk  Fri Jun 12 01:21:27 2009
+From: jm at dmu.ac.uk (John Mardaljevic)
+Date: Fri Jun 12 01:22:02 2009
+Subject: [HDRI] Automate HDR image acquisition
+Message-ID: <FA54D9AC-D030-496A-95C5-9A06FE0DA20D@dmu.ac.uk>
+
+Hi Fawaz,
+Here's a couple of Mac OS X applications that might be worth checking  
+out:
+Sofortbild for Nikon cameras:
+http://www.sofortbildapp.com/		
+and
+HDRcapOSX for Canon DSLRs:
+http://www.iesd.dmu.ac.uk/~jm/resources.html
+Cheers,
+-John
+-----------------------------------------------
+Dr. John Mardaljevic
+Reader in Daylight Modelling
+Institute of Energy and Sustainable Development
+De Montfort University
+The Gateway
+Leicester
+LE1 9BH, UK
++44 (0) 116 257 7972
++44 (0) 116 257 7981 (fax)
+
+jm@dmu.ac.uk
+http://www.iesd.dmu.ac.uk/~jm
+
+
+
+
+From grobe at gmx.net  Thu Jun 18 02:02:47 2009
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Thu Jun 18 02:13:25 2009
+Subject: [HDRI] using "ptpcam" to automate HDR acquisition [any friendly
+	cameras?]
+In-Reply-To: <49609.67.180.140.103.1222332641.squirrel@calmail.berkeley.edu>
+References: <49609.67.180.140.103.1222332641.squirrel@calmail.berkeley.edu>
+Message-ID: <4A3A02B7.3000307@gmx.net>
+
+Hi!
+> Is anyone aware of a good digital camera who's settings are controllable
+> from ptpcam (or similar programs)?
+It seams that the Nikon's are pretty well supported by gphoto2.
+
+CU Lars.
+
+

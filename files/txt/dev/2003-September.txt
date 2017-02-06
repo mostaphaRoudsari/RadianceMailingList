@@ -1,0 +1,1743 @@
+From radiance-dev@radiance-online.org  Mon Sep  1 08:42:30 2003
+From: radiance-dev@radiance-online.org (radiance-dev@radiance-online.org)
+Date: Mon,  1 Sep 2003 00:42:30 -0700
+Subject: [Radiance-dev] irradiance and antimatter
+In-Reply-To: <3F521990.9040209@pab-opto.de>
+References: <3F521990.9040209@pab-opto.de>
+Message-ID: <1062402150.3f52f8669b440@webmail.lmi.net>
+
+Hi Peter,
+
+This is indeed a bug, but your fix won´t work because
+some antimatter surfaces should in fact be visible.
+I´ll look at this and see if I can come up with a more
+robust fix.
+
+I may not get to it until next week, because I´m at
+Eurographics this week.
+
+-Greg
+
+Quoting Peter Apian-Bennewitz <apian@pab-opto.de>:
+
+> Hi folks,
+> 
+> rpict -i calculates irradiance on antimatter surfaces, which are 
+> otherwise (no -i) not visible.
+> Any comments to my thinking it should continue tracing to the first 
+> non-antimattered surface and do the irradiance there ?
+> 
+> That'll be in version 2.42 of rt/raytrace.c in line 177:
+> changing
+>                 if (do_irrad && !(r->crtype & ~(PRIMARY|TRANS)) &&
+>                                 (ofun[m->otype].flags & (T_M|T_X)) ) {
+> to
+>                 if (do_irrad && !(r->crtype & ~(PRIMARY|TRANS)) &&
+>                                 (ofun[m->otype].flags & (T_M|T_X)) && 
+> (m->otype!=MAT_CLIP) ) {
+> 
+> 
+> -Peter
+> 
+> -- 
+>  pab-opto, Freiburg, Germany, www.pab-opto.de
+> 
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+> 
+> 
+
+
+
+
+From radiance-dev@radiance-online.org  Thu Sep  4 12:02:41 2003
+From: radiance-dev@radiance-online.org (Carsten Bauer)
+Date: Thu,  4 Sep 2003 11:02:41 +0000 (GMT)
+Subject: [Radiance-dev] irradiance and antimatter
+Message-ID: <20030904110241.9FC7216713@pinback.darkstar.de>
+
+
+OK now, lets try again (I was one of those whose emails got kicked out, whatever
+happened at osirusoft.com, ?? if I get it right it rejected one of the t-online mail servers,
+amongst others, probably...)
+
+And now the real message:
+
+Hi Peter,
+
+I remember this funny thing, I " fixed " it long ago in one of my private source
+hackings ...
+
+I chose to interfere some lines further down in the same block, changing
+
+                          if (!islight(m->otype))
+
+                                  m = &Lamb;
+
+into
+   if (!islight(m->otype) && (m->otype!=MAT_CLIP)  )
+
+                                  m = &Lamb;
+
+Don't know if its the correct way, either, (that's why the 'fixed' is in
+parantheses ) but it suited my personal demands in simply preventing
+antimatter ojects suddenly popping up out of nowhere in -i runs
+
+-Carsten
+
+
+
+
+From radiance-dev@radiance-online.org  Thu Sep  4 11:54:32 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Thu, 04 Sep 2003 12:54:32 +0200
+Subject: [Radiance-dev] irradiance and antimatter
+In-Reply-To: <20030904110241.9FC7216713@pinback.darkstar.de>
+References: <20030904110241.9FC7216713@pinback.darkstar.de>
+Message-ID: <3F5719E8.3040801@pab-opto.de>
+
+Carsten Bauer wrote:
+
+>
+>
+> OK now, lets try again (I was one of those whose emails got kicked 
+> out, whatever
+> happened at osirusoft.com, ?? if I get it right it rejected one of the 
+> t-online mail servers,
+> amongst others, probably...) 
+
+yeap.  osirusoft.com  run one blackhole list of spam distributing sites, 
+but suffers a denial-of-service attack since 27.8.03 (apparently the 
+evil side fights back...) . So I changed the blackhole lists .
+Sorry for that, but these lists are quite effective otherwise.
+
+>
+>
+> And now the real message:
+>
+> Hi Peter,
+>
+> I remember this funny thing, I " fixed " it long ago in one of my 
+> private source
+> hackings ...
+>
+> I chose to interfere some lines further down in the same block, changing
+>
+>                          if (!islight(m->otype))
+>
+>                                  m = &Lamb;
+>
+> into
+>   if (!islight(m->otype) && (m->otype!=MAT_CLIP)  )
+>
+>                                  m = &Lamb;
+>
+> Don't know if its the correct way, either, (that's why the 'fixed' is in
+> parantheses ) but it suited my personal demands in simply preventing
+> antimatter ojects suddenly popping up out of nowhere in -i runs 
+
+exactly. Fruthermore, I don't feel like glass (dielectric, etc) surfaces 
+should be ignored during irradiance calcs (T_IRR_IGN flag). Maybe time 
+for another cmdline. Any comments, anyone ?
+
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+From radiance-dev@radiance-online.org  Thu Sep  4 13:24:58 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Thu, 4 Sep 2003 08:24:58 -0400 (EDT)
+Subject: [Radiance-dev] scons status?
+In-Reply-To: <86B2918F-D682-11D7-B36A-0030658EA95E@panix.com>
+Message-ID: <Pine.BSF.4.44.0309040818390.7598-101000@emancholl.pair.com>
+
+  This message is in MIME format.  The first part should be readable text,
+  while the remaining parts are likely unreadable without MIME-aware tools.
+  Send mail to mime@docserver.cac.washington.edu for more info.
+
+--0-728900327-1062678298=:7598
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+
+Randolph Fritz wrote:
+
+> I got very busy with other things & didn't have time to work on this.
+> So here's my last notes--I added an install (note that it doesn't
+> require a separate environment) and build for meta.  What's the status
+> of the scons scripts for Radiance--has anyone else done work on them?
+
+Here's what I've come up with so far. The file scons_03.tgz
+expands into the source tree from the "ray" directory.
+I also figured out that we don't need a seperate environment
+for installing. That makes things even simpler.
+I merged your changes for saving the options into my version.
+Apart from that, I went full ahead, and now have a version that
+does almost everything I think we need.
+
+Displays the copyright and license text (unless silenced with
+"SKIP=1").
+
+Checks for the SGI stereo extension to X11 automatically.
+
+Reads information from a platform specific configuration file as
+shipped or a customized version thereof.
+
+Allows to override (some of) the options in the platform files by
+command line options.
+
+Stores command line options in a file which will be automatically
+consulted from then on (unless you tell it otherwise).
+
+all executables are built in ray/bin[/dev], and all libraries in
+ray/src/lib.
+
+builds the standard set of tools and those special tools that
+compile on my system with the targets "build" "meta_special",
+"px_special", and "util_special"
+
+Installs the standard tools as well as the library files and man
+pages (minus the CVS directories) with the "install" targets
+(resp. the subtargets "bininstall", "rlibinstall", and
+"maninstall"). Special tools are installed with the targets
+"meta_special_install", "px_special_install", and
+"util_special_install".
+
+I moved most task specific code to a subdirectory "build_utils",
+and the platform specific configuration files to "platform".
+The latter are found by their name as known by the Python os.name
+attribute, such as "platform/<os.name>.cfg". If the exact name
+can't be found, then first one and then two characters will be
+shaved off the end. This means that os.name == "irix4" will find
+the file "irix4.cfg", but eg. "irix5" will instead match the more
+generic file "irix.cfg".
+
+If there's a file named "platform/<os.name>_custom.cfg", then
+this will be taken instead. This is meant as an easy way to
+modify the shipped files while still preserving the original for
+reference.
+
+The format of those *.cfg files should be self explanatory.
+
+I kept everything compatible to Python 1.5 for the moment, even
+though a few things could be made simple or more elegant with
+newer versions.
+
+
+There are still a few open ends:
+
+There's a mix of tools for fetching options from platform
+specific files, from a cache file, and from the command line.
+I'm not sure if we already have the best possible combination, or
+what the optimal sequence/precedence would be. Most likely,
+command line options should be able to override pretty much
+everything.
+
+Related to that, I'd like to have a way to bypass all this with a
+stored set of options for custom builds or for testing. Ideally,
+you could say "scons cfgfile=blah.cfg" and it would just start to
+determine the dependencies based on the information in blah.cfg.
+This is needed as an equivalent for creating custom rmake files.
+
+I'd also like to reduce the necessity for copying the global
+build environment in subdirectories. It currently only happens in
+some, but maybe we can eliminate those copies completely. The
+reason being that I suspect them to cost us time, but maybe we
+should test this theory first.
+
+We need some mechanism to build Version.c from VERSION. This can
+be done within SCons, I'll just have to figure out how...
+
+My experiments uncovered several instances of duplicate function
+names and file names (including Version.c). If those functions
+end up in libraries, then that limits the way those libraries can
+be linked later. There's probably some cleanup work to be done
+here, but maybe we should address that topic seperately.
+
+There's a number of *.cal and other library files sprinkled
+through the source directories (some are duplicates). To make
+testing within the build environment possible, those should
+probably all be moved to ray/lib[/*].
+
+On Windows, the holodeck display driver files will have to be
+changed to the extension *.exe (besides all the other obstacles
+to porting the holodeck to Windows). Some of those drivers don't
+build on Linux because of a problem in sm_geom.c.
+
+I was unable to figure out why each holodeck display driver is
+also linked to an alternative name with an "h" appended to the
+original (x11.hdi -> x11h.hdi).
+
+The tifflib is built using its own makefile, which makes it
+somewhat platform dependent. If a platform isn't supported by
+tifflibs configure script, then the build will currently fail.
+I guess we'll have to make a special case for VC on Windows,
+but the version of tifflib that we currently use also doesn't
+recognize eg. Cygwin. I just checked, and the last stable release
+on http://www.remotesensing.org/libtiff/ is 3.5.7, while we're
+still using 3.4beta. Are there any fundamental obstacles to
+updating our copy of the tifflib?
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+--0-728900327-1062678298=:7598
+Content-Type: APPLICATION/octet-stream; name="scons_03.tgz"
+Content-Transfer-Encoding: BASE64
+Content-ID: <Pine.BSF.4.44.0309040824580.7598@emancholl.pair.com>
+Content-Description: 
+Content-Disposition: attachment; filename="scons_03.tgz"
+
+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
+ThwiBfrnz7lW8PsPaxtW9H/nO+l/vZLT/91n/X9y+r9TXvxkbv/BZcC7qp1s
+oaJmJlYUz8TsxwkFUv13aZ3ne+l/Paf/NP+vV/af5/8//vrfU8n+3V3z+zkW
+975E/9ONTo+u/9VqNdv/U6ty/r/y/P7PE9H/uXft0emLtOFaFFhKiulmbToZ
+dsI2QR1z6AtrbAVqKsBL/oyCX2g/7dNmTX7vm064EhYfFxgs1evl/G4ob84b
+J5snL5fqZVR1DC3UW9rX6nADOkY2dxhhOaEhkt5YNe3JW9W8Pq8iOZIDFcfQ
+epcOOohK9IgPD13Sm9fpq6hOrI7AYJLoBJRQMt3ln3NuU/sp9kH9rJ/U/kdz
+z4++U/xX3c/Z/z2y/9XK8/6Pp2H/+75rhU70nNf5T1z9yen/rePVa99H//cr
+2f7Pyl6N13+e479H0n+lVN94F+h32/eZ7fnY9nzXv/LFdktsvut067VNvuy2
+2q/Pj9U19LzbPz1p67u3r5v9zbwRSVEc74ntd3V8vxfbpzWx/QHfRy2x/dVb
+xFY3nt6/Xyz3dt4BAlQve/vx/2N26Bhg23K3s4OZH3/+V6/q/M/OPkKAHZX/
+ffb/j/LJHf/QmeXOFBd0MCx0HZMhPhcogOJ5sWHM1s4UUEfrszrSCWFWOE5P
+3YawHvcBWyCloKkdazCfqhitnCLJB/sXTIihzcdT62PH6Z5e7dUnVoexSS+P
+EQHFEsDljf45Cg0ub1Lg+8DDBL0GD/Po74LHPmxZDpzvE/AUyvb0gdoJyZiN
+pkQMRwzjSSvOd4vus24pGNeareDB/R08sXU5mXvoQkKRuldwdzsAmxP7uQ7w
+/VoH1FHv/MorD5Z6TZu27OtTKs7U7v2CGtLDB97UTH86g97xqxC1GxsbaqAP
+g2EVxRCSPi5r+icfWnJizd24QC3d+RGI1WPVD4f50zLu/ChKiaktjv72cxF+
+lg/bf34r/9u5gM+d/1Db203P/6nvcP6PpoTP9v8x7f8vxi+rHoAK+MSGgH7d
+hPQeMHzGgjWG+SjwO8sHQr+r+gnTwB6ixC4gQcqvJ/MRWMAJywJ8/BtSyurQ
+caKOfXr5h7TjgrYjZgYFI1b6JT2POAnxDs2tVqt9xOesffy4efAqwl96Kfae
+3z76xYhnVmD7Lh/q8GCTKdDDLZ4hZGxRewD0xtSi7qI+PZjeg/cZqxhLMm/S
+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
+--0-728900327-1062678298=:7598--
+
+From radiance-dev@radiance-online.org  Thu Sep  4 14:08:41 2003
+From: radiance-dev@radiance-online.org (Rob Guglielmetti)
+Date: Thu, 04 Sep 2003 09:08:41 -0400
+Subject: [Radiance-dev] irradiance and antimatter
+In-Reply-To: <3F5719E8.3040801@pab-opto.de>
+References: <20030904110241.9FC7216713@pinback.darkstar.de> <3F5719E8.3040801@pab-opto.de>
+Message-ID: <3F573959.6020203@rumblestrip.org>
+
+Peter Apian-Bennewitz wrote:
+
+> exactly. Fruthermore, I don't feel like glass (dielectric, etc) surfaces 
+> should be ignored during irradiance calcs (T_IRR_IGN flag). Maybe time 
+> for another cmdline. Any comments, anyone ?
+
+I agree (well, it should be optional).  I asked Greg about this a little 
+while ago, and he gave me the following hack to obtain irradiance on 
+glass surfaces:
+
+vwrays -x XRES -y YRES -vf viewfile -fd | rtrace -h -fd -opn octree \
+| rtrace -fdc -I render_options -x XRES -y YRES octree > illum_picture.pic
+
+The first rtrace computes the intersection point (which is fast) and the 
+second rtrace does the illuminance calculation. Cool, yes? Yes.
+
+Note that this only works with square views. rtrace throws a little fit 
+doing the pixel aspect ratio normalization for non-square views, which 
+can be countered by using this variation instead:
+
+vwrays -x XRES -y YRES -vf viewfile -fd \
+| rtrace -h -fd -opn octree \
+| rtrace -fdc -I render_options `vwrays -d -x XRES -y YRES -vf viewfile` \
+octree > illum_picture.pic
+
+To quote Greg:
+
+"This guarantees that the resolution used by vwrays is the same as that 
+given to the final rtrace command. this wouldn't be necessary, except 
+that rtrace needs the -x and -y options to create a standard radiance 
+picture on its output (along with a -f?c option)."
+
+... but the addition of another switch to rtrace that facilitates this 
+would be nice too.
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+
+From radiance-dev@radiance-online.org  Fri Sep  5 11:19:24 2003
+From: radiance-dev@radiance-online.org (Carsten Bauer)
+Date: Fri,  5 Sep 2003 10:19:24 +0000 (GMT)
+Subject: [Radiance-dev] irradiance and antimatter
+Message-ID: <20030905101924.24ACB7437@boiler.darkstar.de>
+
+Hi Peter,
+
+now the time has come for me to ask one of those (probably stuuupid) questions
+which are hovering around in my mind for a loooong time:
+
+In irradiance runs (rpict -i ...) all surface materials are replaced by the
+mysterious "Lambertian" material with the reflectance set to PI. 
+
+This is obvious for a surface lit by a direct source (in Radiance terms), setting
+refl=PI makes the caculated radiance equal to the irradiance by the classical formula.
+(at least for the approximation of purely lambertian surfaces)
+But as soon as ambient light is considered, i.e. the light reflected (diffusely) via
+several bounces in the scene, isn't  there an error introduced by setting ALL materials'
+reflectivity equal to PI regardless of their real properties? 
+
+Furthermore, specular reflections aren't considered at all with this treatment.
+
+So, from this point of view, -i in its current form has some considerable limitations
+additionally to your mentionings...
+ 
+Hmmm ??!!  
+
+  
+-Carsten
+
+
+
+
+From radiance-dev@radiance-online.org  Fri Sep  5 10:52:38 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Fri, 5 Sep 2003 05:52:38 -0400 (EDT)
+Subject: [Radiance-dev] irradiance and antimatter
+In-Reply-To: <20030905101924.24ACB7437@boiler.darkstar.de>
+Message-ID: <Pine.BSF.4.44.0309050542380.16332-100000@emancholl.pair.com>
+
+Carsten Bauer wrote:
+
+> In irradiance runs (rpict -i ...) all surface materials are replaced by the
+> mysterious "Lambertian" material with the reflectance set to PI.
+>
+> This is obvious for a surface lit by a direct source (in Radiance terms),
+> setting refl=PI makes the caculated radiance equal to the irradiance by the
+> classical formula. (at least for the approximation of purely lambertian
+> surfaces) But as soon as ambient light is considered, i.e. the light
+> reflected (diffusely) via several bounces in the scene, isn't  there an error
+> introduced by setting ALL materials' reflectivity equal to PI regardless of
+> their real properties?
+
+This method doesn't introduce any errors than wouldn't also be
+present in any "normal" simulation. The purpose of the ambient and
+direct calculations is ultimately the same, to determine how much
+light arrives at a given point from a set of given directions.
+The fact that direct sources are treated seperately is mostly a
+consequence of practical considerations, because the ambient
+calculation is not good at finding small sources.
+
+ From a photometric/radiometric point of view, those two methods
+of calculation are equivalent, which means they can be treated
+the same way in this context as well.
+
+
+> Furthermore, specular reflections aren't considered at all with this
+> treatment.
+
+On the final bounce (resp. the first when counting from the eye),
+the goal is to eliminate the effects of reflection completely.
+We're only interested in the incoming light (= irradiance) here.
+Setting the lambertian reflectivity to Pi is a technical trick to
+reach this goal, in order to avoid a more complicated special
+case treatment in the code.
+
+On all further bounces, both diffuse and specular reflections are
+handled normally.
+
+
+> So, from this point of view, -i in its current form has some considerable
+> limitations additionally to your mentionings...
+
+The -i parameter does exactly what it promises to do (besides the
+antimatter bug, which should probably be fixed).
+
+The question about transparent materials on the first bounce is
+more difficult, I don't have a final opinion on that one yet.
+Maybe another parameter to select the desired behaviour would be
+most appropriate.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+From radiance-dev@radiance-online.org  Fri Sep  5 11:13:37 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Fri, 05 Sep 2003 12:13:37 +0200
+Subject: [Radiance-dev] irradiance and antimatter
+In-Reply-To: <20030905101924.24ACB7437@boiler.darkstar.de>
+References: <20030905101924.24ACB7437@boiler.darkstar.de>
+Message-ID: <3F5861D1.7060105@pab-opto.de>
+
+Carsten Bauer wrote:
+
+>
+> Hi Peter,
+>
+> now the time has come for me to ask one of those (probably stuuupid) 
+> questions
+> which are hovering around in my mind for a loooong time:
+>
+> In irradiance runs (rpict -i ...) all surface materials are replaced 
+> by the
+> mysterious "Lambertian" material with the reflectance set to PI.
+> This is obvious for a surface lit by a direct source (in Radiance 
+> terms), setting
+> refl=PI makes the caculated radiance equal to the irradiance by the 
+> classical formula.
+> (at least for the approximation of purely lambertian surfaces)
+> But as soon as ambient light is considered, i.e. the light reflected 
+> (diffusely) via
+> several bounces in the scene, isn't  there an error introduced by 
+> setting ALL materials'
+> reflectivity equal to PI regardless of their real properties?
+> Furthermore, specular reflections aren't considered at all with this 
+> treatment.
+>
+> So, from this point of view, -i in its current form has some 
+> considerable limitations
+> additionally to your mentionings...
+>
+> Hmmm ??!! 
+>  
+> -Carsten
+
+Hi Carsten,
+the irrad code is somehow an interesting piece of C code (the MAT_CLIP 
+hack is not part of current standard distribution)
+
+                if (do_irrad && !(r->crtype & ~(PRIMARY|TRANS)) &&
+                                (ofun[m->otype].flags & (T_M|T_X)) && 
+(m->otype!=MAT_CLIP)  ) {
+                        if (irr_ignore(m->otype)) {
+#if  MAXLOOP
+                                depth--;
+#endif
+                                raytrans(r);
+                                return(1);
+                        }
+                        if (!islight(m->otype))
+                                m = &Lamb;
+                }
+
+If I decode the   !(r->crtype & ~(PRIMARY|TRANS))   correctly, it 
+triggers if  crtype  has no flags set, but PRIMARY or TRANS. So any 
+reflected or ambient ray will see the original materials. Light sources 
+will not be "lamberted" too. The core idea is "lambert" a surface only 
+for the first ray coming from the eye (PRIMARY), while all other calcs 
+go on as usual.
+However, algorithms for the surface in question will be influenced by 
+the substitution (e.g. no ambient calcs for glass, no speculars for 
+lambertian).
+
+I trust Greg has further insights and/or corrections.
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+From radiance-dev@radiance-online.org  Fri Sep  5 15:08:38 2003
+From: radiance-dev@radiance-online.org (Carsten Bauer)
+Date: Fri, 05 Sep 2003 14:08:38 +0000
+Subject: [Radiance-dev] irradiance and antimatter
+References: <20030905101924.24ACB7437@boiler.darkstar.de> <3F5861D1.7060105@pab-opto.de>
+Message-ID: <3F5898E6.30600@t-online.de>
+
+Hi Peter & Schorsch,
+
+ok, I should have looked at the code more thoroughly ... :-)
+
+but that ! ( ... & ~(  ...) )  is really tricky ...
+
+thanx
+
+-Carsten
+
+
+From radiance-dev@radiance-online.org  Tue Sep  9 04:32:22 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Mon, 8 Sep 2003 20:32:22 -0700
+Subject: [Radiance-dev] Re: irradiance and antimatter
+In-Reply-To: <1062402150.3f52f8669b440@webmail.lmi.net>
+Message-ID: <39432E1E-E276-11D7-B6C9-000A956D40C8@lmi.net>
+
+I believe I've fixed this, now.  The trick was to allow the antimatter 
+type to take care of itself, as it will call rayshade() to do the right 
+thing based on whether or not it decides that it hit a surface 
+material.  I haven't tested it at this point, but I assume Peter will 
+do it.
+
+-Greg
+
+> From: Peter Apian-Bennewitz <apian@pab-opto.de>
+> Date: Sun Aug 31, 2003  8:51:44  AM US/Pacific
+>
+> rpict -i calculates irradiance on antimatter surfaces, which are 
+> otherwise (no -i) not visible.
+> Any comments to my thinking it should continue tracing to the first 
+> non-antimattered surface and do the irradiance there ?
+>
+
+
+From radiance-dev@radiance-online.org  Tue Sep  9 02:23:45 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Mon, 8 Sep 2003 18:23:45 -0700
+Subject: [Radiance-dev] scons status?
+In-Reply-To: <Pine.BSF.4.44.0309040818390.7598-101000@emancholl.pair.com>
+Message-ID: <419CC4C7-E264-11D7-9C37-000A956D40C8@lmi.net>
+
+Unfortunately, I haven't had time to look at this, and probably won't 
+before the workshop.  Hopefully, we can talk about it more there.  I 
+wanted to add a few comments all the same:
+
+> From: Georg Mischler <schorsch@schorsch.com>
+> Date: Thu Sep 4, 2003  5:24:58  AM US/Pacific
+>
+> There are still a few open ends:
+>
+> There's a mix of tools for fetching options from platform
+> specific files, from a cache file, and from the command line.
+> I'm not sure if we already have the best possible combination, or
+> what the optimal sequence/precedence would be. Most likely,
+> command line options should be able to override pretty much
+> everything.
+>
+> Related to that, I'd like to have a way to bypass all this with a
+> stored set of options for custom builds or for testing. Ideally,
+> you could say "scons cfgfile=blah.cfg" and it would just start to
+> determine the dependencies based on the information in blah.cfg.
+> This is needed as an equivalent for creating custom rmake files.
+>
+> I'd also like to reduce the necessity for copying the global
+> build environment in subdirectories. It currently only happens in
+> some, but maybe we can eliminate those copies completely. The
+> reason being that I suspect them to cost us time, but maybe we
+> should test this theory first.
+>
+> We need some mechanism to build Version.c from VERSION. This can
+> be done within SCons, I'll just have to figure out how...
+>
+> My experiments uncovered several instances of duplicate function
+> names and file names (including Version.c). If those functions
+> end up in libraries, then that limits the way those libraries can
+> be linked later. There's probably some cleanup work to be done
+> here, but maybe we should address that topic seperately.
+
+I don't think there's any directory-dependent compiles anymore, so 
+eliminating duplicates and putting them into a library makes sense.  
+Version.c is currently rebuilt based on file modifications in the rt 
+subdirectory, and that makes it more tricky.
+
+> There's a number of *.cal and other library files sprinkled
+> through the source directories (some are duplicates). To make
+> testing within the build environment possible, those should
+> probably all be moved to ray/lib[/*].
+
+There should be no duplicated auxiliary files.  The ones that live in 
+the build directories (as opposed to the main library directory) are 
+there because their versioning must be maintained with associated 
+program files in those directories.
+
+> On Windows, the holodeck display driver files will have to be
+> changed to the extension *.exe (besides all the other obstacles
+> to porting the holodeck to Windows). Some of those drivers don't
+> build on Linux because of a problem in sm_geom.c.
+>
+> I was unable to figure out why each holodeck display driver is
+> also linked to an alternative name with an "h" appended to the
+> original (x11.hdi -> x11h.hdi).
+
+The 'h' means "human tone-mapping."  The driver checks its own name and 
+alters the tone-mapping settings accordingly, since there's no way to 
+pass options to the drivers.
+
+> The tifflib is built using its own makefile, which makes it
+> somewhat platform dependent. If a platform isn't supported by
+> tifflibs configure script, then the build will currently fail.
+> I guess we'll have to make a special case for VC on Windows,
+> but the version of tifflib that we currently use also doesn't
+> recognize eg. Cygwin. I just checked, and the last stable release
+> on http://www.remotesensing.org/libtiff/ is 3.5.7, while we're
+> still using 3.4beta. Are there any fundamental obstacles to
+> updating our copy of the tifflib?
+
+I'd have to download and look at the library to see if they properly 
+incorporated my updates to the LogLuv part of the library, which 
+Radiance relies on in several places.  It would be nice to use the 
+standard distribution of the library, but we might have to fix it up a 
+bit.  Can you tell me where it lives these days?  I lost track of it 
+some time ago.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Tue Sep  9 06:33:34 2003
+From: radiance-dev@radiance-online.org (Randolph Fritz)
+Date: Mon, 8 Sep 2003 22:33:34 -0700
+Subject: [Radiance-dev] scons status?
+In-Reply-To: <419CC4C7-E264-11D7-9C37-000A956D40C8@lmi.net>
+References: <Pine.BSF.4.44.0309040818390.7598-101000@emancholl.pair.com> <419CC4C7-E264-11D7-9C37-000A956D40C8@lmi.net>
+Message-ID: <20030909053334.GB20468@panix.com>
+
+On Mon, Sep 08, 2003 at 06:23:45PM -0700, Greg Ward wrote:
+> 
+> I'd have to download and look at the library to see if they properly 
+> incorporated my updates to the LogLuv part of the library, which 
+> Radiance relies on in several places.  It would be nice to use the 
+> standard distribution of the library, but we might have to fix it up a 
+> bit.  Can you tell me where it lives these days?  I lost track of it 
+> some time ago.
+> 
+
+http://www.remotesensing.org/libtiff
+
+They do include some LogLuv code, but I do not know how complete it
+is--they call it out as experimental.  I would like to see your
+changes included in the standard distribution, if that is possible.
+
+Randolph
+
+From radiance-dev@radiance-online.org  Tue Sep  9 16:15:12 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Tue, 9 Sep 2003 08:15:12 -0700
+Subject: [Radiance-dev] TIFF library
+In-Reply-To: <20030909053334.GB20468@panix.com>
+Message-ID: <68B7EA74-E2D8-11D7-96A6-000A956D40C8@lmi.net>
+
+Hi Randolph,
+
+Thanks for locating this -- ever since www.libtiff.org went down, I 
+haven't been able to find the library anymore.
+
+I looked through the 3.5.7 version of the library, and all seems well.  
+They have the latest updates to the LogLuv stuff and it appears to work 
+OK.  I will include this in the next official release.
+
+-Greg
+
+> From: Randolph Fritz <randolph@panix.com>
+> Date: Mon Sep 8, 2003  10:33:34  PM US/Pacific
+
+>
+> http://www.remotesensing.org/libtiff
+>
+> They do include some LogLuv code, but I do not know how complete it
+> is--they call it out as experimental.  I would like to see your
+> changes included in the standard distribution, if that is possible.
+>
+> Randolph
+
+
+From radiance-dev@radiance-online.org  Wed Sep 10 02:40:25 2003
+From: radiance-dev@radiance-online.org (Randolph Fritz)
+Date: Tue, 9 Sep 2003 18:40:25 -0700
+Subject: [Radiance-dev] TIFF library
+In-Reply-To: <68B7EA74-E2D8-11D7-96A6-000A956D40C8@lmi.net>
+References: <20030909053334.GB20468@panix.com>
+ <68B7EA74-E2D8-11D7-96A6-000A956D40C8@lmi.net>
+Message-ID: <20030909184025.490ab8dd.randolph@panix.com>
+
+On Tue, 9 Sep 2003 08:15:12 -0700
+Greg Ward <gward@lmi.net> wrote:
+> 
+> I looked through the 3.5.7 version of the library, and all seems well.  
+> They have the latest updates to the LogLuv stuff and it appears to work 
+> OK.  I will include this in the next official release.
+> 
+
+Great, thanks!
+
+Ideally, Radiance would just the local library it on platforms that
+already have it.  Maybe when I get back to working on build scripts I'll
+look at that.
+
+Wish I could make the conference but money, family, career all militiate against it.
+
+Randolph
+
+From radiance-dev@radiance-online.org  Thu Sep 11 09:49:41 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Thu, 11 Sep 2003 10:49:41 +0200
+Subject: [Radiance-dev] OT: sw patents
+Message-ID: <3F603725.6090905@pab-opto.de>
+
+Hi folks,
+
+posting politics on technical mailing list is difficult...
+--politics on--
+It may be worth for the European developpers on the list to conside for 
+a secod that apparently EU software patents are becoming an issue: 
+http://swpat.ffii.org/ has more. If I remember right, some years ago a 
+Berlin company claimed (unsuccesfully) intellectual rights on the 
+Photon-Map concept, so with stricter legislation, these things may 
+directly affect our work one day.
+Nothing more to it- I just wanted to spread the idea (check the Debian 
+and Apache webpages for further links).
+--politics off--
+
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+From radiance-dev@radiance-online.org  Sat Sep 13 01:42:27 2003
+From: radiance-dev@radiance-online.org (Randolph Fritz)
+Date: Fri, 12 Sep 2003 17:42:27 -0700
+Subject: [Radiance-dev] Radiance quality assurance suggestions
+In-Reply-To: <Pine.BSF.4.44.0308010719350.55334-100000@emancholl.pair.com>
+Message-ID: <2648E852-E583-11D7-A7D3-0030658EA95E@panix.com>
+
+[These have been sitting in my "Drafts" mailbox for a while; I've 
+decided to send them out.  I'm still too busy to *do* anything at this 
+point, however.--R.]
+
+>>>  We'll
+>>> have to run all the tests on all the seperate platforms anyway.
+>>
+>> The more of the code is platform-independent, however, the more tests
+>> will apply across platforms, providing additional testing for free.
+>
+> What happened to your usual paranoia here? ;)
+> No test applies across platforms.
+
+No, no.  If one tests a file without platform dependencies on two 
+platforms, the same code is tested twice in different environments.  
+Testing a file with platform dependencies on two platforms tests 
+different code, once, on each platform.  One gets better from testing 
+the same code twice, you see?
+
+> I prefer a less polemic and more practical approach. Fact is,
+> that all systems we're currently try to *directly* support have
+> those functions from posix that we need, and that can be mapped
+> directly to the semantics of the underlying system. And the few
+> exceptions (eg. process control on Windows) are already being
+> addressed.
+
+The question at the heart of QA is: how do we know this fact?  *Are* 
+the functions really all the same?  We have not studied and tested each 
+system call in Radiance.  There is not even, yet, a test suite, and no 
+test suite will ever cover all cases.  That none of the systems we are 
+most interested in are POSIX-certified is a strong indication that we 
+don't, in fact, know this for a fact at all.  We only hope.  If we did 
+structural engineering like this, in Weinberg's phrase, "the first 
+woodpecker that came along would destroy civilization."
+
+On Friday, August 1, 2003, at 04:27  AM, Georg Mischler wrote:
+
+> Randolph Fritz wrote:
+>
+>>> 64 bit systems are a can of worms that I'd like to open as late
+>>> as possible, ...
+>>
+>> Too late, I think; it was open the minute the G5 shipped.  If we're
+>> lucky, we won't have someone pop up on this list with "I compiled
+>> Radiance on my shiny new G5 with -mpowerpc64 and ...".
+>
+> That's why we provide default compile settings in makeall.
+> As far as I'm concerned (until Greg convinces me otherwise),
+> Radiance is not 64 bit safe. Of course, that doesn't mean it
+> won't work on 64 bit system when compiled in 32 bit mode. People
+> have been successfully using it that way for quite some time
+> already.
+
+Fair enough.
+
+>>> Radiance still carries code (and conditionals) from a time when
+>>> the differences between unixes were much bigger than they are
+>>> today, and we're continuously reducing that historical ballast.
+>>
+>> I'm all for that.  But let's not make the next leg of the journey in
+>> ballast, hunh?  Want to carry pay cargo, I do.
+>
+> My goal for this leg of the journey is to make the code (minus
+> the GUI stuff for the moment) first compile and then run
+> correctly on Windows. I think that's cargo enough. All other
+> changes I make are just serving that one goal, even if some of
+> the details may be determined by other long-term considerations.
+
+I'm sorry--I didn't understand.  Yes, that makes sense.  
+Platform-independent stuff first.
+
+>> Apple's comments on this:
+>>> ...
+>>
+>> And this also applies to MS-Windows, of course.
+>
+> Now you're switching from discussing the fundamental OS APIs (as
+> used by roughly 100 executables in Radiance) to discussing the
+> look-and-feel options of the GUI (as used by 3 executables in
+> Radiance).
+
+rview, rholo, and ximage.  ... and the plotting stuff.  ...and perhaps 
+others.
+
+> No sane person will refuse to use Radiance on OS X just because
+> rview doesn't have shiny transparent buttons there. But of
+> course, if you want to write portable replacements that use the
+> native widget set on each platform, you're very welcome! ;)
+
+In fact, people refuse to use apps because they don't look native, on 
+both MS-Windows and Macintosh systems, every day; that quote from Apple 
+is based on experience.  Lots of not-sane people, I guess.  On the 
+other hand, Radiance is designed to accommodate multiple GUIs, so 
+perhaps it isn't so hard, provided we can get the code base to a point 
+where it will interface cleanly with C++ and Objective C.
+
+[Lots more stuff I cd. say & no time to say it.--R]
+
+Randolph
+
+
+From radiance-dev@radiance-online.org  Sun Sep 14 08:52:56 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Sun, 14 Sep 2003 03:52:56 -0400 (EDT)
+Subject: [Radiance-dev] Re: [Radiance-general] Re: -ar, -ad, -as, ahh $#*@!
+In-Reply-To: <3F637165.5032.8A8EED@localhost>
+Message-ID: <Pine.BSF.4.44.0309140347001.68722-101000@emancholl.pair.com>
+
+  This message is in MIME format.  The first part should be readable text,
+  while the remaining parts are likely unreadable without MIME-aware tools.
+  Send mail to mime@docserver.cac.washington.edu for more info.
+
+--0-783069987-1063525976=:68722
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+
+Ok, so after mentioning the discrepancy between rpict and rview I
+actually ran my new test scene through rpict, and bingo!
+
+Maybe it's possible, but within the last hour I couldn't manage
+to get the effect in rview. I also found that the appearance
+together with mapping data was a coincidence, the bug triggers
+with plane jane illums as well.
+
+I'm appending a very simple test case using the rpict defaults
+(plus -ab 1 for visuals). Something interesting I also just
+detected is that the size of the source appears to make a
+difference.
+
+Since this now turns into a development issue, I'm crossposting
+to the dev-list. I suggest that everybody involved also reply
+there.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+--0-783069987-1063525976=:68722
+Content-Type: APPLICATION/octet-stream; name="illumbug.tgz"
+Content-Transfer-Encoding: BASE64
+Content-ID: <Pine.BSF.4.44.0309140352560.68722@emancholl.pair.com>
+Content-Description: 
+Content-Disposition: attachment; filename="illumbug.tgz"
+
+H4sIADMdZD8CA+2WwY6bMBCGffZTzKpSb5AZjKG99FUqCIRYJYAMoenb13bC
+blKl5bKJ1NV8GA9Yv4fD+Mc2bXs8lMdmIx4HYoq51i4i5lkaIqXneEFgnitC
+0lmiBBIlKhWgxRM4jlNhAURzWNPVdhQfDrPUv+p/dq1p9tMY26J63/oTYnap
+9736U6pe65/kudOnhJkA5Po/HFlaX3SwpmvArwGJ7voCEcYaEFCC7yGi8BCT
+lH+bcX9CIqVg/gP/Lw/v7v51/2tMXv2vkZxeaUXs/2cw96aCoS3GyWyhsfWv
+4GYN8dK8peVLU3dlfwqCc5eAdndkpLzJUBX2x5KBLi1kCKqwxuD8/5C0iBW4
+9bHc7lunXW8PEE1A4Z9C8Ve43ZxuJLQuSdYlal2S3pfID+J/e+wedv5zdf3X
++U/R2/5PGfrzX65T9v8z+PQCm9J0m3Evx3qCaJb9tu9muN4O4Nvba7+dpB3M
+1kmL0rnCW8Pt9vM0u24IliU/PFfO99770bwHSnycQ7zOdJ3Y5ZTDzrTTzdCV
+4vuwC6KTORRN/ecwfOZzBsMwDMMwDMMwDMMwDMMwDMMwDMP8BjEeYJ0AKAAA
+
+--0-783069987-1063525976=:68722--
+
+From radiance-dev@radiance-online.org  Sun Sep 14 20:33:31 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Sun, 14 Sep 2003 12:33:31 -0700
+Subject: [Radiance-dev] Re: [Radiance-general] Re: -ar, -ad, -as, ahh $#*@!
+In-Reply-To: <Pine.BSF.4.44.0309140347001.68722-101000@emancholl.pair.com>
+Message-ID: <52B86360-E6EA-11D7-9A68-000A956D40C8@lmi.net>
+
+Aha!  It's not a bug, it's a "feature!"
+
+The reason this shows up in rpict but not in rview is because rpict 
+resorts to a specialized set of routines (in srcdraw.c) to draw sources 
+that are small in the rendered image.  This overrides the illum 
+calculation for low-angle, small sources, who are deemed too small to 
+sample correctly on the image plane.  Rather than substituting the 
+alternate material, which would normally happen for view rays, 
+drawsources() sends a "shadow" ray to the source that is being drawn.  
+This invokes the illum rather than its substitute, giving very 
+different results if the substitute is a poor one.  In other words, you 
+saw it before in your IES sources because the source distribution 
+either didn't match the simulated source.  It shows up well in this 
+example because your alternate material is a dark diffuse one rather 
+than something emitting.
+
+I could eliminate illum's from the drawsources() calculations, but I 
+think the net result would be worse than what we currently have, as 
+illum sources then would be poorly sampled on the image plane when they 
+got to be small and/or thin.
+
+-Greg
+
+> From: Georg Mischler <schorsch@schorsch.com>
+> Date: Sun Sep 14, 2003  12:52:56  AM US/Pacific
+>
+> Ok, so after mentioning the discrepancy between rpict and rview I
+> actually ran my new test scene through rpict, and bingo!
+>
+> Maybe it's possible, but within the last hour I couldn't manage
+> to get the effect in rview. I also found that the appearance
+> together with mapping data was a coincidence, the bug triggers
+> with plane jane illums as well.
+>
+> I'm appending a very simple test case using the rpict defaults
+> (plus -ab 1 for visuals). Something interesting I also just
+> detected is that the size of the source appears to make a
+> difference.
+>
+> Since this now turns into a development issue, I'm crossposting
+> to the dev-list. I suggest that everybody involved also reply
+> there.
+
+
+From radiance-dev@radiance-online.org  Sun Sep 14 21:26:32 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Sun, 14 Sep 2003 16:26:32 -0400 (EDT)
+Subject: [Radiance-dev] Illum bug
+In-Reply-To: <52B86360-E6EA-11D7-9A68-000A956D40C8@lmi.net>
+Message-ID: <Pine.BSF.4.44.0309141618290.97009-100000@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> Aha!  It's not a bug, it's a "feature!"
+
+Let's call it a buggy feature, ok? ;)
+
+
+> you saw it before in your IES sources because the source distribution
+> either didn't match the simulated source.  It shows up well in this
+> example because your alternate material is a dark diffuse one rather
+> than something emitting.
+
+There are light fixtures with the visual appearance of a dark
+hole in the ceiling ("dark lights"). This is how I found the bug
+in 1998 with distribution data applied, and the test case shows
+the same effect without the data. I also had Rayfront users
+complain because part of the impostor illums for their luminaires
+became visible when they shouldn't (as in Robs example).
+
+Both cases, a dark substitution material and void for transparency
+are valid and necessary uses of the illum material, and there's no
+other way to get the correct result in those situations. Well, as
+it is now, there's no way to get the correct result at all.
+
+
+> I could eliminate illum's from the drawsources() calculations, but I
+> think the net result would be worse than what we currently have, as
+> illum sources then would be poorly sampled on the image plane when they
+> got to be small and/or thin.
+
+I think that drawsources() (resp. the routine calling it) should
+first check whether the target is not just an illum, but an illum
+with a substitute material. If that is the case, then there's no
+source to draw, hence no justification to invoke a shadow ray. The
+possibility that the substitute material is again a luminous type
+can probably be neglected, as it doesn't make any practical sense.
+
+I didn't check in the sources how hard it will be to fix this,
+but I consider the current behaviour to be fundamentally wrong.
+Hey, this will give you a chance to brag at the workshop that you
+just fixed "one of the oldest Radiance bugs ever found"... ;)
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Sun Sep 14 22:26:24 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Sun, 14 Sep 2003 14:26:24 -0700
+Subject: [Radiance-dev] Illum bug
+In-Reply-To: <Pine.BSF.4.44.0309141618290.97009-100000@emancholl.pair.com>
+Message-ID: <17994C6E-E6FA-11D7-9DD9-000A956D40C8@lmi.net>
+
+Hi Schorsch,
+
+I still disagree that this is really a bug.  Unexpected behavior 
+perhaps, but that's not the same thing.  I'll try to explain my 
+reasoning better, below.
+
+> From: Georg Mischler <schorsch@schorsch.com>
+> Date: Sun Sep 14, 2003  1:26:32  PM US/Pacific
+>
+> Greg Ward wrote:
+>
+>> Aha!  It's not a bug, it's a "feature!"
+>
+> Let's call it a buggy feature, ok? ;)
+>
+>> you saw it before in your IES sources because the source distribution
+>> either didn't match the simulated source.  It shows up well in this
+>> example because your alternate material is a dark diffuse one rather
+>> than something emitting.
+>
+> There are light fixtures with the visual appearance of a dark
+> hole in the ceiling ("dark lights"). This is how I found the bug
+> in 1998 with distribution data applied, and the test case shows
+> the same effect without the data. I also had Rayfront users
+> complain because part of the impostor illums for their luminaires
+> became visible when they shouldn't (as in Robs example).
+
+I don't believe this is triggering in any of Rob's renderings, as the 
+lights are all large enough to be adequately sampled using standard 
+sampling in rpict.  He can check this by setting -ps 1 to see if 
+anything changes.
+
+> Both cases, a dark substitution material and void for transparency
+> are valid and necessary uses of the illum material, and there's no
+> other way to get the correct result in those situations. Well, as
+> it is now, there's no way to get the correct result at all.
+
+If the source distribution were correct, it would go to zero at low 
+angles to match the "dark lights" you describe.  If it doesn't, then 
+the distribution data is in error.  I have seen such an inconsistency 
+with IES data, myself.
+
+If you want to make sure you render the alternate material without 
+invoking drawsources(), you can increase your sampling by increasing 
+the resolution and/or setting -ps 1 so that all the sources in the 
+image are adequately sampled.  If you want to avoid drawsources() 
+altogether, you can use vwrays with rtrace, instead.  (So there is 
+always a way to get around anything if you're determined to do it.)
+
+>> I could eliminate illum's from the drawsources() calculations, but I
+>> think the net result would be worse than what we currently have, as
+>> illum sources then would be poorly sampled on the image plane when 
+>> they
+>> got to be small and/or thin.
+>
+> I think that drawsources() (resp. the routine calling it) should
+> first check whether the target is not just an illum, but an illum
+> with a substitute material. If that is the case, then there's no
+> source to draw, hence no justification to invoke a shadow ray. The
+> possibility that the substitute material is again a luminous type
+> can probably be neglected, as it doesn't make any practical sense.
+
+The reason for invoking the shadow ray is because the source is not 
+adequately sampled on the image plane.  This happens when the chances 
+are 50-50 (or thereabouts) that an image sample will hit the source.  
+If I remove the call to drawsources() for illum's, terrible aliasing 
+will result, and this will be noteably worse than the current output in 
+most cases.  If the illum and its alternate are properly matched, then 
+the current solution should be better than either doing nothing or 
+sampling the alternate material instead of the illum, since we get the 
+benefit of averaging.
+
+The only time I really see this as being a problem is when someone is 
+trying to "hide" certain light sources from view.  This of course 
+enters into the non-physical realm, where Radiance doesn't really 
+compete with other renderers.
+
+> I didn't check in the sources how hard it will be to fix this,
+> but I consider the current behaviour to be fundamentally wrong.
+> Hey, this will give you a chance to brag at the workshop that you
+> just fixed "one of the oldest Radiance bugs ever found"... ;)
+
+We can discuss it further at the workshop if you like, but I'll hold 
+off doing anything until then.  I think we should agree first, and I 
+don't feel like we're getting there with this exchange.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Mon Sep 15 12:20:49 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Mon, 15 Sep 2003 07:20:49 -0400 (EDT)
+Subject: [Radiance-dev] Illum bug
+In-Reply-To: <17994C6E-E6FA-11D7-9DD9-000A956D40C8@lmi.net>
+Message-ID: <Pine.BSF.4.44.0309150705440.91289-200000@emancholl.pair.com>
+
+  This message is in MIME format.  The first part should be readable text,
+  while the remaining parts are likely unreadable without MIME-aware tools.
+  Send mail to mime@docserver.cac.washington.edu for more info.
+
+--0-687750287-1063624849=:91289
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+
+Greg Ward wrote:
+
+> I don't believe this is triggering in any of Rob's renderings, as the
+> lights are all large enough to be adequately sampled using standard
+> sampling in rpict.
+
+How do you explain the bright strips in this picture then?
+  http://www.rumblestrip.org/rad/illum2.png
+
+Maybe there's an *additional* bug in the routines that determine
+how big the sources will appear in the picture? The sources in my
+test case are also big enough that I wouldn't expect any special
+sampling to be necessary.
+
+
+> The reason for invoking the shadow ray is because the source is not
+> adequately sampled on the image plane.  This happens when the chances
+> are 50-50 (or thereabouts) that an image sample will hit the source.
+
+Allow me to repeat my central point:
+
+  If an illum has an alternate material, then there's no source to
+  sample for display in the picture, whether that sampling would
+  be theoretically adequate or not.
+
+My proposed fix avoids exactly this, and prevents Radiance from
+doing unnecessary work. The fix is straightforward, a patch is
+appended for review. As far as I can tell, this patch has no
+consequences whatsoever for the rest of the simulation. It's a
+purely visual fix for a purely visual problem.
+
+The only thing I'm not sure about is whether the test in
+srcdraw.c is positioned correctly relative to the other tests
+above and below it, you'll be able to decide about the optimal
+sequence better than I can.
+
+
+> If I remove the call to drawsources() for illum's, terrible aliasing
+> will result, and this will be noteably worse than the current output in
+> most cases.  If the illum and its alternate are properly matched,
+
+I don't see what useful definition "properly matched" can have in
+this context. Isn't the idea behind the alternate material that
+the user may visually substitute *something else* for the light
+source? Or in the case of impostor geometry, to have the "true"
+light source visually disappear?
+
+
+> then
+> the current solution should be better than either doing nothing or
+> sampling the alternate material instead of the illum, since we get the
+> benefit of averaging.
+
+The current implementation shows light sources where there are
+supposed to be none visible. How can that be better than anything?
+
+
+> The only time I really see this as being a problem is when someone is
+> trying to "hide" certain light sources from view.  This of course
+> enters into the non-physical realm, where Radiance doesn't really
+> compete with other renderers.
+
+To the contrary. This is recommended and standard practise when
+seperating light emission and geometry of a light source, either
+by applying distribution data to an impostor geometry directly,
+or by using mkillum. You personally recommended this approach to
+Rob in the thread that started this discussion over in
+radiance-general.
+
+The following is an example that was sent to me by a Rayfront
+user, and I was unable to offer him a solution at that time:
+  http://www.schorsch.com/stuff/rad/EdenInst_front_wall.jpg
+
+This isn't anywhere in the non-physical realm. It's a massive
+problem for people trying to get renderings that are both
+physically *and* visually accurate, and who wish to do so within
+reasonable time. Reducing -ps to 1 is at best a crude workaround
+fighting the symptoms, and probably still not eliminating them in
+all cases. The real cause of the problem can be easily fixed with
+my patch.
+
+
+> We can discuss it further at the workshop if you like, but I'll hold
+> off doing anything until then.  I think we should agree first, and I
+> don't feel like we're getting there with this exchange.
+
+No need to rush anything, of course.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+--0-687750287-1063624849=:91289
+Content-Type: TEXT/PLAIN; charset=US-ASCII; name="illumbug.diff"
+Content-Transfer-Encoding: BASE64
+Content-ID: <Pine.BSF.4.44.0309150720490.91289@emancholl.pair.com>
+Content-Description: 
+Content-Disposition: attachment; filename="illumbug.diff"
+
+ZGlmZiAtYyBzcmNfaWxsdW1idWcvcnQvc291cmNlLmMgc3JjL3J0L3NvdXJj
+ZS5jDQoqKiogc3JjX2lsbHVtYnVnL3J0L3NvdXJjZS5jCTIwMDMtMDktMTUg
+MTI6Mjc6MTguMDAwMDAwMDAwICswMjAwDQotLS0gc3JjL3J0L3NvdXJjZS5j
+CTIwMDMtMDktMTUgMTI6MjU6MzQuMDAwMDAwMDAwICswMjAwDQoqKioqKioq
+KioqKioqKioNCioqKiA5Miw5NyAqKioqDQotLS0gOTIsOTkgLS0tLQ0KICAN
+CiAgCQlzZXRzb3VyY2UoJnNvdXJjZVtuc10sIG8pOw0KICANCisgCQlpZiAo
+bS0+b3R5cGUgPT0gTUFUX0lMTFVNICYmIG0tPm9hcmdzLm5zYXJncykNCisg
+CQkJc291cmNlW25zXS5zZmxhZ3MgfD0gQUxUSUxMVU07DQogIAkJaWYgKG0t
+Pm90eXBlID09IE1BVF9HTE9XKSB7DQogIAkJCXNvdXJjZVtuc10uc2ZsYWdz
+IHw9IFNQUk9YOw0KICAJCQlzb3VyY2VbbnNdLnNsLnByb3ggPSBtLT5vYXJn
+cy5mYXJnWzNdOw0KZGlmZiAtYyBzcmNfaWxsdW1idWcvcnQvc291cmNlLmgg
+c3JjL3J0L3NvdXJjZS5oDQoqKiogc3JjX2lsbHVtYnVnL3J0L3NvdXJjZS5o
+CTIwMDMtMDktMTUgMTI6Mjc6MjIuMDAwMDAwMDAwICswMjAwDQotLS0gc3Jj
+L3J0L3NvdXJjZS5oCTIwMDMtMDktMTUgMTI6MDM6NTEuMDAwMDAwMDAwICsw
+MjAwDQoqKioqKioqKioqKioqKioNCioqKiAyMywyOCAqKioqDQotLS0gMjMs
+MjkgLS0tLQ0KICAjZGVmaW5lICBTRkxBVAkJMDQwCQkvKiBzb3VyY2UgZmxh
+dCBmbGFnICovDQogICNkZWZpbmUgIFNDWUwJCTAxMDAJCS8qIHNvdXJjZSBj
+eWxpbmRyaWNhbCBmbGFnICovDQogICNkZWZpbmUgIFNGT0xMT1cJMDIwMAkJ
+Lyogc291cmNlIGZvbGxvdyBwYXRoIGZsYWcgKi8NCisgI2RlZmluZSAgQUxU
+SUxMVU0gICAwNDAwICAgIC8qIGlsbHVtIHdpdGggYWx0IG1hdGVyaWFsICov
+DQogIA0KICB0eXBlZGVmIHN0cnVjdCB7DQogIAlGVkVDVCAgYWltOwkJLyog
+YWltIGRpcmVjdGlvbiBvciBjZW50ZXIgKi8NCmRpZmYgLWMgc3JjX2lsbHVt
+YnVnL3J0L3NyY2RyYXcuYyBzcmMvcnQvc3JjZHJhdy5jDQoqKiogc3JjX2ls
+bHVtYnVnL3J0L3NyY2RyYXcuYwkyMDAzLTA5LTE1IDEyOjI4OjA4LjAwMDAw
+MDAwMCArMDIwMA0KLS0tIHNyYy9ydC9zcmNkcmF3LmMJMjAwMy0wOS0xNSAx
+MjoxMzo0Ny4wMDAwMDAwMDAgKzAyMDANCioqKioqKioqKioqKioqKg0KKioq
+IDI3NiwyODEgKioqKg0KLS0tIDI3NiwyODMgLS0tLQ0KICAJaWYgKHMtPnNm
+bGFncyAmIChTRElTVEFOVHxTRkxBVCkpIHsNCiAgCQlpZiAocy0+c2ZsYWdz
+ICYgU0RJU1RBTlQgJiYgb3Vydmlldy50eXBlID09IFZUX1BBUikNCiAgCQkJ
+cmV0dXJuKDApOwkJLyogYWxsIG9yIG5vdGhpbmcgY2FzZSAqLw0KKyAJCWlm
+IChzLT5zZmxhZ3MgICYgQUxUSUxMVU0pDQorIAkJCXJldHVybigwKTsgLyog
+aWxsdW0gd2l0aCBhbHQgbWF0LCBubyBzb3VyY2UgdG8gZHJhdyAqLw0KICAJ
+CWlmIChzLT5zZmxhZ3MgJiBTRkxBVCkgew0KICAJCQlmb3IgKGkgPSAwOyBp
+IDwgMzsgaSsrKQ0KICAJCQkJYXBbaV0gPSBzLT5zbG9jW2ldIC0gb3Vydmll
+dy52cFtpXTsNCg==
+--0-687750287-1063624849=:91289--
+
+From radiance-dev@radiance-online.org  Mon Sep 15 17:28:06 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Mon, 15 Sep 2003 09:28:06 -0700
+Subject: [Radiance-dev] Illum bug
+In-Reply-To: <Pine.BSF.4.44.0309150705440.91289-200000@emancholl.pair.com>
+Message-ID: <95F1B702-E799-11D7-9D02-00306540F848@lmi.net>
+
+My response is inline, below.
+
+> From: Georg Mischler <schorsch@schorsch.com>
+> Date: Mon Sep 15, 2003  4:20:49  AM US/Pacific
+>
+> Greg Ward wrote:
+>
+>> I don't believe this is triggering in any of Rob's renderings, as the
+>> lights are all large enough to be adequately sampled using standard
+>> sampling in rpict.
+>
+> How do you explain the bright strips in this picture then?
+>   http://www.rumblestrip.org/rad/illum2.png
+>
+> Maybe there's an *additional* bug in the routines that determine
+> how big the sources will appear in the picture? The sources in my
+> test case are also big enough that I wouldn't expect any special
+> sampling to be necessary.
+
+Well, indeed this is a bug, but not one I can easily fix.  You see, 
+it's pretty easy to figure out the projected area for polygons onto a 
+perspective image, but gets quite tricky for fisheye views where 
+straight lines don't come out straight, and the routines in srcdraw.c 
+become somewhat crude in their approximations.  I think the arrangement 
+that Jack de Valpine suggested to Rob of a single polygon beneath each 
+fixture is much better, anyway.  (A bit of a copout, I admit.)  Also, I 
+think Rob was still been working on the coffer glow model, which wasn't 
+nearly bright enough in this image.
+
+>> The reason for invoking the shadow ray is because the source is not
+>> adequately sampled on the image plane.  This happens when the chances
+>> are 50-50 (or thereabouts) that an image sample will hit the source.
+
+Actually, I should correct this quote -- drawsources() kicks in when 
+the sampling probability drops below 100% as it's trying to any 
+problems with aliasing.
+
+> Allow me to repeat my central point:
+>
+>   If an illum has an alternate material, then there's no source to
+>   sample for display in the picture, whether that sampling would
+>   be theoretically adequate or not.
+
+This is where we disagree.  The surface, whatever material it's made 
+of, be it glass, trans, or even plastic, has an illum attached to it 
+because it is a concentrated source of illumination.  That makes it a 
+light source -- otherwise it should never have been assigned an illum 
+in the first place.  Sampling is therefore important because any errors 
+in image sampling will result in very large variances in the filtered 
+result.
+
+> My proposed fix avoids exactly this, and prevents Radiance from
+> doing unnecessary work. The fix is straightforward, a patch is
+> appended for review. As far as I can tell, this patch has no
+> consequences whatsoever for the rest of the simulation. It's a
+> purely visual fix for a purely visual problem.
+>
+> The only thing I'm not sure about is whether the test in
+> srcdraw.c is positioned correctly relative to the other tests
+> above and below it, you'll be able to decide about the optimal
+> sequence better than I can.
+
+If you turn off sampling of illum's in srcdraw.c, you will actually 
+_create_ visual problems due to inadequate sampling of small illum's.  
+How can I change something in good conscience when I believe it will 
+make matters worse rather than better?  Do I need to show you some 
+example images to make my point?
+
+>> If I remove the call to drawsources() for illum's, terrible aliasing
+>> will result, and this will be noteably worse than the current output 
+>> in
+>> most cases.  If the illum and its alternate are properly matched,
+>
+> I don't see what useful definition "properly matched" can have in
+> this context. Isn't the idea behind the alternate material that
+> the user may visually substitute *something else* for the light
+> source? Or in the case of impostor geometry, to have the "true"
+> light source visually disappear?
+
+No, that is not the purpose of illum's, to make the real light source 
+disappear.  The "something else" associated with the alternate material 
+in an illum should have an output equivalent to the illum's output, on 
+average.  The point of the illum is to smooth this distribution and 
+thus avoid high variance in the illumination calculation.  If you are 
+really using the illum to make invisible light sources, then you are in 
+the non-physical realm that Radiance doesn't care about.  (And by the 
+way, the user would probably not specify an alternate material type in 
+this case, as they would want nothing to replace the illum -- so your 
+fix wouldn't do what you are saying is the right thing, either.)
+
+>> then
+>> the current solution should be better than either doing nothing or
+>> sampling the alternate material instead of the illum, since we get the
+>> benefit of averaging.
+>
+> The current implementation shows light sources where there are
+> supposed to be none visible. How can that be better than anything?
+
+Again, we disagree.  The fact that there is an illum there means that 
+something VERY bright should be visible.  If it is not, then the illum 
+is being used improperly.  If there is, then sampling variance is a big 
+issue, and the drawsources() routine can (and does) help.
+
+>> The only time I really see this as being a problem is when someone is
+>> trying to "hide" certain light sources from view.  This of course
+>> enters into the non-physical realm, where Radiance doesn't really
+>> compete with other renderers.
+>
+> To the contrary. This is recommended and standard practise when
+> seperating light emission and geometry of a light source, either
+> by applying distribution data to an impostor geometry directly,
+> or by using mkillum. You personally recommended this approach to
+> Rob in the thread that started this discussion over in
+> radiance-general.
+
+You misunderstand me.  The illum is not "hiding" the source -- it is 
+substituting a smoother version of it.  If the source then becomes too 
+small to adequately sample in the view, the smoother version becomes a 
+sensible substitute, as any small number of image samples is going to 
+give a high variance result.
+
+> The following is an example that was sent to me by a Rayfront
+> user, and I was unable to offer him a solution at that time:
+>   http://www.schorsch.com/stuff/rad/EdenInst_front_wall.jpg
+>
+> This isn't anywhere in the non-physical realm. It's a massive
+> problem for people trying to get renderings that are both
+> physically *and* visually accurate, and who wish to do so within
+> reasonable time. Reducing -ps to 1 is at best a crude workaround
+> fighting the symptoms, and probably still not eliminating them in
+> all cases. The real cause of the problem can be easily fixed with
+> my patch.
+
+Again, I don't think your patch would fix the problem if you restrict 
+it to illum's with alternate materials.  We'd have to avoid illum's in 
+drawsources() altogether.  (I can't figure out what's going on with 
+your user's scene, or what it's supposed to look like -- there appear 
+to be boxes and ovals overlapping, and light patches on the ceiling not 
+associated with any sources.)
+
+I agree that it takes a bit more effort to get a match between the 
+illum and a detailed fixture it's replacing, especially going from an 
+IES file.  Mkillum usually does a reasonable job, so long as you set 
+glow values sensibly and don't do anything else to the source model 
+after you've run mkillum.
+
+>> We can discuss it further at the workshop if you like, but I'll hold
+>> off doing anything until then.  I think we should agree first, and I
+>> don't feel like we're getting there with this exchange.
+>
+> No need to rush anything, of course.
+
+These are complex issues.  The best fix would be one that determined 
+whether the illum was a good average of whatever it substitutes or not, 
+which would be equivalent to running mkillum again.  We could of course 
+create a new option to turn drawsources on and off, and this might be 
+the simplest compromise in the end.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Wed Sep 17 00:38:14 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Wed, 17 Sep 2003 01:38:14 +0200
+Subject: [Radiance-dev] web statistics radiance-online available
+Message-ID: <3F679EE6.8000806@pab-opto.de>
+
+Hi folks,
+
+FYI: radiance-online's web statistics (webalizer output) are now 
+available at
+     http://www.radiance-online.org/webalizer/stats/
+(also linked from side index, which has a second link to webalizer's 
+terms and acronyms)
+
+Interesting what people were looking for when directed by search engines 
+to these pages (follow "Search" links on monthly statistic pages).
+
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+

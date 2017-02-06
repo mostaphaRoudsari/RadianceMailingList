@@ -1,0 +1,498 @@
+From chris at coolshadow.com  Fri Apr 20 15:13:31 2012
+From: chris at coolshadow.com (Humann Chris)
+Date: Fri, 20 Apr 2012 15:13:31 -0700
+Subject: [HDRI] adding EXIF headers to JPEGS
+Message-ID: <2A45CC57-FFB4-436E-83CB-ECC23D4719A3@coolshadow.com>
+
+Dear Group,
+
+I'm using an Industrial video camera to capture exposure bracketed JPG  
+stills that I'd like to turn into HDR images.  The problem that I'm  
+having is that HDRgen and Photosphere both throw an error:
+from HDRgen=
+phdrimg.cpp at 560>data: fc2_save_2012-04-20-202102-0000.jpg: needs  
+exposure calibration
+
+or from Photoshpere=
+Inkown image exposure(s)
+
+using Exiftool I've tried writing to the header in each JPG like so:
+exiftool -ExposureTime='1/5'  image_1.jpg
+
+However I continue to get the same exposure errors.  Is there more  
+that I need to add into the Header?  Below is the header printed from  
+exiftool for a sample JPG taken by the camer:
+==> exiftool -h fimage_1.jpg
+<!-- image_1.jpg -->
+<table>
+<tr><td>ExifTool Version Number</td><td>8.88</td></tr>
+<tr><td>File Name</td><td>fc2_save_2012-04-20-202102-0000.jpg</td></tr>
+<tr><td>Directory</td><td>.</td></tr>
+<tr><td>File Size</td><td>637 kB</td></tr>
+<tr><td>File Modification Date/Time</td><td>2012:04:20 14:48:31-07:00</ 
+td></tr>
+<tr><td>File Permissions</td><td>rwxr-----</td></tr>
+<tr><td>File Type</td><td>JPEG</td></tr>
+<tr><td>MIME Type</td><td>image/jpeg</td></tr>
+<tr><td>JFIF Version</td><td>1.01</td></tr>
+<tr><td>Exif Byte Order</td><td>Big-endian (Motorola, MM)</td></tr>
+<tr><td>X Resolution</td><td>72</td></tr>
+<tr><td>Y Resolution</td><td>72</td></tr>
+<tr><td>Resolution Unit</td><td>inches</td></tr>
+<tr><td>Y Cb Cr Positioning</td><td>Centered</td></tr>
+<tr><td>Exposure Time</td><td>1/60</td></tr>
+<tr><td>Exif Version</td><td>0230</td></tr>
+<tr><td>Components Configuration</td><td>Y, Cb, Cr, -</td></tr>
+<tr><td>Flashpix Version</td><td>0100</td></tr>
+<tr><td>Color Space</td><td>Uncalibrated</td></tr>
+<tr><td>Image Width</td><td>1280</td></tr>
+<tr><td>Image Height</td><td>960</td></tr>
+<tr><td>Encoding Process</td><td>Baseline DCT, Huffman coding</td></tr>
+<tr><td>Bits Per Sample</td><td>8</td></tr>
+<tr><td>Color Components</td><td>3</td></tr>
+<tr><td>Y Cb Cr Sub Sampling</td><td>YCbCr4:2:0 (2 2)</td></tr>
+<tr><td>Shutter Speed</td><td>1/60</td></tr>
+<tr><td>Image Size</td><td>1280x960</td></tr>
+</table>
+
+As always thanks for any info or help.
+
+Kind regards,
+Chris
+
+
+Christian Humann ~ Associate
+LOISOS + UBBELOHDE
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+1917 Clement Avenue  Building 10A
+Alameda, CA  94501 USA
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+510 521 3800 VOICE
+510 521 3820 FAX
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+www.coolshadow.com
+
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20120420/34a8674b/attachment.html>
+
+From jacobs.axel at gmail.com  Fri Apr 20 15:41:47 2012
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Fri, 20 Apr 2012 23:41:47 +0100
+Subject: [HDRI] adding EXIF headers to JPEGS
+In-Reply-To: <2A45CC57-FFB4-436E-83CB-ECC23D4719A3@coolshadow.com>
+References: <2A45CC57-FFB4-436E-83CB-ECC23D4719A3@coolshadow.com>
+Message-ID: <4F91E62B.3060504@gmail.com>
+
+Chris,
+
+ > using Exiftool I've tried writing to the header in each JPG like so:
+ > exiftool -ExposureTime='1/5' image_1.jpg
+ >
+ > However I continue to get the same exposure errors. Is there more that I
+ > need to add into the Header?
+
+hdrgen need the following info:
+
+- ExposureTime
+- ISO
+- FNumber
+
+If it still fails, try writing the ExposureTime as floating-point 
+seconds; but I think fractions are fine.
+
+Axel
+
+
+
+From gregoryjward at gmail.com  Fri Apr 20 15:56:21 2012
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri, 20 Apr 2012 15:56:21 -0700
+Subject: [HDRI] adding EXIF headers to JPEGS
+In-Reply-To: <4F91E62B.3060504@gmail.com>
+References: <2A45CC57-FFB4-436E-83CB-ECC23D4719A3@coolshadow.com>
+	<4F91E62B.3060504@gmail.com>
+Message-ID: <E7F52D27-2F1E-4EDB-AACE-2B470CB7D26C@gmail.com>
+
+Hi Chris,
+
+You can also substitute the -s option in the case of hdrgen (not Photosphere, though).  This sets the exposure multiplier explicitly.  You can estimate this from the known camera parameters using:
+
+		Kfactor = 87.;
+		stonits = Kfactor * aperture*aperture / (exptime * asa);
+
+where aperture is in f-stops and exptime is in seconds.
+
+That way, you don't need exiftool.  Usually the only information missing is the ASA, and this can usually be solved by choosing an ASA that is 1 EV higher.
+
+Cheers,
+-Greg
+
+From chris at coolshadow.com  Sat Apr 21 19:41:45 2012
+From: chris at coolshadow.com (Christian Humann)
+Date: Sat, 21 Apr 2012 19:41:45 -0700
+Subject: [HDRI] HDRI Digest, Vol 48, Issue 1
+In-Reply-To: <mailman.1.1335034800.52643.hdri@radiance-online.org>
+References: <mailman.1.1335034800.52643.hdri@radiance-online.org>
+Message-ID: <30A52C2A-A989-409C-AAE2-37B75DE79861@coolshadow.com>
+
+Hi Greg and Axel,
+
+Thank you so much for your input.  Both methods seem to work although  
+I'm still a bit confused on the ASA setting.
+
+Greg, in your comment:
+> Usually the only information missing is the ASA, and this can  
+> usually be solved by choosing an ASA that is 1 EV higher.
+
+Do you have an example you might be able to offer that I can work  
+from?  I'm not sure how to work out an ASA from an exposure value.   
+Would the ASA value change with each bracketed exposure?  I'm still  
+scratching my brain cells around some of this and am not sure yet how  
+to interrupt sensor sensitivity from these Machine Video cameras and  
+the various settings the interface allows one to control.
+
+Thanks again!
+
+Cheers,
+Chris
+
+
+
+On Apr 21, 2012, at 12:00 PM, hdri-request at radiance-online.org wrote:
+
+> Send HDRI mailing list submissions to
+> 	hdri at radiance-online.org
+>
+> To subscribe or unsubscribe via the World Wide Web, visit
+> 	http://www.radiance-online.org/mailman/listinfo/hdri
+> or, via email, send a message with subject or body 'help' to
+> 	hdri-request at radiance-online.org
+>
+> You can reach the person managing the list at
+> 	hdri-owner at radiance-online.org
+>
+> When replying, please edit your Subject line so it is more specific
+> than "Re: Contents of HDRI digest..."
+>
+>
+> Today's Topics:
+>
+>   1. adding EXIF headers to JPEGS (Humann Chris)
+>   2. Re: adding EXIF headers to JPEGS (Axel Jacobs)
+>   3. Re: adding EXIF headers to JPEGS (Gregory J. Ward)
+>
+>
+> ----------------------------------------------------------------------
+>
+> Message: 1
+> Date: Fri, 20 Apr 2012 15:13:31 -0700
+> From: Humann Chris <chris at coolshadow.com>
+> To: hdri at radiance-online.org
+> Subject: [HDRI] adding EXIF headers to JPEGS
+> Message-ID: <2A45CC57-FFB4-436E-83CB-ECC23D4719A3 at coolshadow.com>
+> Content-Type: text/plain; charset="us-ascii"; Format="flowed";
+> 	DelSp="yes"
+>
+> Dear Group,
+>
+> I'm using an Industrial video camera to capture exposure bracketed JPG
+> stills that I'd like to turn into HDR images.  The problem that I'm
+> having is that HDRgen and Photosphere both throw an error:
+> from HDRgen=
+> phdrimg.cpp at 560>data: fc2_save_2012-04-20-202102-0000.jpg: needs
+> exposure calibration
+>
+> or from Photoshpere=
+> Inkown image exposure(s)
+>
+> using Exiftool I've tried writing to the header in each JPG like so:
+> exiftool -ExposureTime='1/5'  image_1.jpg
+>
+> However I continue to get the same exposure errors.  Is there more
+> that I need to add into the Header?  Below is the header printed from
+> exiftool for a sample JPG taken by the camer:
+> ==> exiftool -h fimage_1.jpg
+> <!-- image_1.jpg -->
+> <table>
+> <tr><td>ExifTool Version Number</td><td>8.88</td></tr>
+> <tr><td>File Name</td><td>fc2_save_2012-04-20-202102-0000.jpg</td></ 
+> tr>
+> <tr><td>Directory</td><td>.</td></tr>
+> <tr><td>File Size</td><td>637 kB</td></tr>
+> <tr><td>File Modification Date/Time</td><td>2012:04:20  
+> 14:48:31-07:00</
+> td></tr>
+> <tr><td>File Permissions</td><td>rwxr-----</td></tr>
+> <tr><td>File Type</td><td>JPEG</td></tr>
+> <tr><td>MIME Type</td><td>image/jpeg</td></tr>
+> <tr><td>JFIF Version</td><td>1.01</td></tr>
+> <tr><td>Exif Byte Order</td><td>Big-endian (Motorola, MM)</td></tr>
+> <tr><td>X Resolution</td><td>72</td></tr>
+> <tr><td>Y Resolution</td><td>72</td></tr>
+> <tr><td>Resolution Unit</td><td>inches</td></tr>
+> <tr><td>Y Cb Cr Positioning</td><td>Centered</td></tr>
+> <tr><td>Exposure Time</td><td>1/60</td></tr>
+> <tr><td>Exif Version</td><td>0230</td></tr>
+> <tr><td>Components Configuration</td><td>Y, Cb, Cr, -</td></tr>
+> <tr><td>Flashpix Version</td><td>0100</td></tr>
+> <tr><td>Color Space</td><td>Uncalibrated</td></tr>
+> <tr><td>Image Width</td><td>1280</td></tr>
+> <tr><td>Image Height</td><td>960</td></tr>
+> <tr><td>Encoding Process</td><td>Baseline DCT, Huffman coding</td></ 
+> tr>
+> <tr><td>Bits Per Sample</td><td>8</td></tr>
+> <tr><td>Color Components</td><td>3</td></tr>
+> <tr><td>Y Cb Cr Sub Sampling</td><td>YCbCr4:2:0 (2 2)</td></tr>
+> <tr><td>Shutter Speed</td><td>1/60</td></tr>
+> <tr><td>Image Size</td><td>1280x960</td></tr>
+> </table>
+>
+> As always thanks for any info or help.
+>
+> Kind regards,
+> Chris
+>
+>
+> Christian Humann ~ Associate
+> LOISOS + UBBELOHDE
+> - - - - - - - - - - - - - - - - - - - - - - - - - - -
+> 1917 Clement Avenue  Building 10A
+> Alameda, CA  94501 USA
+> - - - - - - - - - - - - - - - - - - - - - - - - - - -
+> 510 521 3800 VOICE
+> 510 521 3820 FAX
+> - - - - - - - - - - - - - - - - - - - - - - - - - - -
+> www.coolshadow.com
+>
+>
+>
+> -------------- next part --------------
+> An HTML attachment was scrubbed...
+> URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20120420/34a8674b/attachment-0001.html 
+> >
+>
+> ------------------------------
+>
+> Message: 2
+> Date: Fri, 20 Apr 2012 23:41:47 +0100
+> From: Axel Jacobs <jacobs.axel at gmail.com>
+> To: High Dynamic Range Imaging <hdri at radiance-online.org>
+> Subject: Re: [HDRI] adding EXIF headers to JPEGS
+> Message-ID: <4F91E62B.3060504 at gmail.com>
+> Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+>
+> Chris,
+>
+>> using Exiftool I've tried writing to the header in each JPG like so:
+>> exiftool -ExposureTime='1/5' image_1.jpg
+>>
+>> However I continue to get the same exposure errors. Is there more  
+>> that I
+>> need to add into the Header?
+>
+> hdrgen need the following info:
+>
+> - ExposureTime
+> - ISO
+> - FNumber
+>
+> If it still fails, try writing the ExposureTime as floating-point
+> seconds; but I think fractions are fine.
+>
+> Axel
+>
+>
+>
+>
+> ------------------------------
+>
+> Message: 3
+> Date: Fri, 20 Apr 2012 15:56:21 -0700
+> From: "Gregory J. Ward" <gregoryjward at gmail.com>
+> To: High Dynamic Range Imaging <hdri at radiance-online.org>
+> Subject: Re: [HDRI] adding EXIF headers to JPEGS
+> Message-ID: <E7F52D27-2F1E-4EDB-AACE-2B470CB7D26C at gmail.com>
+> Content-Type: text/plain; charset=us-ascii
+>
+> Hi Chris,
+>
+> You can also substitute the -s option in the case of hdrgen (not  
+> Photosphere, though).  This sets the exposure multiplier  
+> explicitly.  You can estimate this from the known camera parameters  
+> using:
+>
+> 		Kfactor = 87.;
+> 		stonits = Kfactor * aperture*aperture / (exptime * asa);
+>
+> where aperture is in f-stops and exptime is in seconds.
+>
+> That way, you don't need exiftool.  Usually the only information  
+> missing is the ASA, and this can usually be solved by choosing an  
+> ASA that is 1 EV higher.
+>
+> Cheers,
+> -Greg
+>
+>
+> ------------------------------
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+>
+>
+> End of HDRI Digest, Vol 48, Issue 1
+> ***********************************
+
+
+Christian Humann ~ Associate
+LOISOS + UBBELOHDE
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+1917 Clement Avenue  Building 10A
+Alameda, CA  94501 USA
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+510 521 3800 VOICE
+510 521 3820 FAX
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+www.coolshadow.com
+
+
+
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20120421/e3ce0fb4/attachment.html>
+
+From gregoryjward at gmail.com  Sat Apr 21 20:34:22 2012
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Sat, 21 Apr 2012 20:34:22 -0700
+Subject: [HDRI] adding EXIF headers to JPEGS
+In-Reply-To: <30A52C2A-A989-409C-AAE2-37B75DE79861@coolshadow.com>
+References: <mailman.1.1335034800.52643.hdri@radiance-online.org>
+	<30A52C2A-A989-409C-AAE2-37B75DE79861@coolshadow.com>
+Message-ID: <FF7AEA52-E716-4C25-AECB-DF49EEAB41B0@gmail.com>
+
+Hi Chris,
+
+It's just that some cameras (Nikons in particular) treat the lowest ASA setting to be an "extended" mode, which isn't recorded in the Exif header in the usual fashion.  If this ASA is 50, setting the ASA to 100 usually solves the problem.  If the lowest settable ASA is 100, try setting it to 200.  (The same is true for the opposite end of the sensitivity scale, but you should stay away from this for HDR captures.)
+
+The ASA is generally fixed in an exposure bracketed sequence, or should be.  Some cameras offer an "Auto ASA" mode, but you should definitely avoid this setting for HDR.
+
+For the purposes of putting the ASA back into the equation when it was not recorded, you can often use the camera itself in one of its information modes to tell you what it was actually set to when you took the exposures.
+
+Does this help?
+-Greg
+
+P.S.  To keep the subject line the same and enable thread-tracking, be sure to respond to the posting and not the digest.  Easy to forget.  ;-)
+
+> From: Christian Humann <chris at coolshadow.com>
+> Date: April 21, 2012 7:41:45 PM PDT
+> 
+> Hi Greg and Axel,
+> 
+> Thank you so much for your input.  Both methods seem to work although I'm still a bit confused on the ASA setting.
+> 
+> Greg, in your comment:
+>> Usually the only information missing is the ASA, and this can usually be solved by choosing an ASA that is 1 EV higher.
+> 
+> Do you have an example you might be able to offer that I can work from?  I'm not sure how to work out an ASA from an exposure value.  Would the ASA value change with each bracketed exposure?  I'm still scratching my brain cells around some of this and am not sure yet how to interrupt sensor sensitivity from these Machine Video cameras and the various settings the interface allows one to control.
+> 
+> Thanks again!
+> 
+> Cheers,
+> Chris
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20120421/fad7ecd1/attachment-0001.html>
+
+From chris at coolshadow.com  Sun Apr 22 18:59:00 2012
+From: chris at coolshadow.com (Christian Humann)
+Date: Sun, 22 Apr 2012 18:59:00 -0700
+Subject: [HDRI]  adding EXIF headers to JPEGS
+In-Reply-To: <mailman.26.1335065678.2089.hdri@radiance-online.org>
+References: <mailman.26.1335065678.2089.hdri@radiance-online.org>
+Message-ID: <7DA8628A-7E58-4AE9-9589-85C66375D594@coolshadow.com>
+
+Thanks Greg,
+
+These machine vision cameras have no readout and are driven from a GUI  
+via USB / Firewire.  The GUI I'm using for this particular camera has  
+settings for:
+Gamma .01 - 2.56 (which I set to 1)
+Blue Gain 0-1023 (adjusted to get the on screen image as close to grey  
+for the particular light source under which I'm shooting)
+Red Gain 0-1023
+Brightness 160 - 842 ( adjusted to 160 ~I think this is the same as  
+CCD sensor gain and thus what I need to correlate to ASA)
+Exposure .01ms - 3mins  (I'm using this to bracket the images)
+
+The lens I'm using has a manual iris for setting aperture.  I'm  
+dividing the focal length of the lens by the diameter of the aperture  
+to derive the f/stop value.
+
+I think I just need to experiment with setting the  brightness  value  
+to its lowest setting under a constant light source and see what kind  
+of values i get from the HDR shots using a constant ASA value in  
+HDRgen and adjusting this value until I get some agreement between  
+measured brightness and HDR image brightness.  I'f I'm lucky a  
+brightness value setting of 160 will equal an ASA of 160:)
+
+Thanks again for you help Greg.  Also, thanks to those who replied to  
+my previous posts on color channel masking...great help!
+
+Cheers,
+Chris
+
+
+
+
+
+
+From gregoryjward at gmail.com  Sun Apr 22 20:27:22 2012
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Sun, 22 Apr 2012 20:27:22 -0700
+Subject: [HDRI] adding EXIF headers to JPEGS
+In-Reply-To: <7DA8628A-7E58-4AE9-9589-85C66375D594@coolshadow.com>
+References: <mailman.26.1335065678.2089.hdri@radiance-online.org>
+	<7DA8628A-7E58-4AE9-9589-85C66375D594@coolshadow.com>
+Message-ID: <5BE68920-03F0-4C55-8556-897F31B349FA@gmail.com>
+
+Hi Chris,
+
+You would be better off setting the gamma to 2.2.  Hdrgen will adjust itself to whatever camera response function is present, but this is closer to the norm and makes better use of the 8-bit code values.
+
+Regarding the Brightness scaling, use 160 and assume this is ASA.  Your calculation for iris sounds about right.
+
+The main thing is to get the proportions between exposures correct -- the absolute value will be off no matter what you do.  The absolute scaling can be corrected by a gray patch luminance measurement and the "Calibrate" function in Photosphere.
+
+As long as you keep the inverse linear relationship to exposure time and ASA/brightness and the square relationship to aperture, you will get the relative exposure ratios correct, and this is what matters to the merge operation.
+
+-Greg
+
+> From: Christian Humann <chris at coolshadow.com>
+> Date: April 22, 2012 6:59:00 PM PDT
+> 
+> Thanks Greg,
+> 
+> These machine vision cameras have no readout and are driven from a GUI via USB / Firewire.  The GUI I'm using for this particular camera has settings for:
+> Gamma .01 - 2.56 (which I set to 1)
+> Blue Gain 0-1023 (adjusted to get the on screen image as close to grey for the particular light source under which I'm shooting)
+> Red Gain 0-1023
+> Brightness 160 - 842 ( adjusted to 160 ~I think this is the same as CCD sensor gain and thus what I need to correlate to ASA)
+> Exposure .01ms - 3mins  (I'm using this to bracket the images)
+> 
+> The lens I'm using has a manual iris for setting aperture.  I'm dividing the focal length of the lens by the diameter of the aperture to derive the f/stop value.
+> 
+> I think I just need to experiment with setting the  brightness  value to its lowest setting under a constant light source and see what kind of values i get from the HDR shots using a constant ASA value in HDRgen and adjusting this value until I get some agreement between measured brightness and HDR image brightness.  I'f I'm lucky a brightness value setting of 160 will equal an ASA of 160:)
+> 
+> Thanks again for you help Greg.  Also, thanks to those who replied to my previous posts on color channel masking...great help!
+> 
+> Cheers,
+> Chris
+
+

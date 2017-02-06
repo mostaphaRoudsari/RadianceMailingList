@@ -1,0 +1,3469 @@
+From apian at pab-opto.de  Fri Oct  1 18:46:29 2004
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Fri Oct  1 18:47:02 2004
+Subject: [Radiance-dev] hand crafted SSE2 matrix&vector ?
+Message-ID: <415D89E5.7000904@pab-opto.de>
+
+Hi all,
+
+anyone thought of, implemented or analyzed the potential of hand crafted 
+versions of core vector/matrix calcs using SSE2 instructions on 
+Intel&AMD CPUs ?
+(apart from "-march=pentium4 -mfpmath=sse")
+
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+
+
+From gward at lmi.net  Fri Oct  1 19:10:55 2004
+From: gward at lmi.net (Greg Ward)
+Date: Fri Oct  1 19:11:33 2004
+Subject: [Radiance-dev] Re: hand crafted SSE2 matrix&vector ?
+In-Reply-To: <415D89E5.7000904@pab-opto.de>
+References: <415D89E5.7000904@pab-opto.de>
+Message-ID: <DAFA5B35-13CC-11D9-AF42-000A95BB392A@lmi.net>
+
+Good idea.
+
+I recommend some profiling ahead of time to determine where to 
+concentrate in the code.  I suspect that the vector and matrix 
+routines, although inviting, don't use a substantial fraction of the 
+time in most renderings.  If short vectors don't kill you on set-up, 
+the color manipulation macros might be a better starting point, or 
+perhaps something could be done to accelerate the expression evaluation 
+code in the common/cal* routines.  I know these can be a bottleneck in 
+a lot of scenes.
+
+In general, a good profiling of the code on a variety of scenes would 
+be very helpful to anyone wishing to work on tuning Radiance in the 
+future.
+
+My humming desktop also compels me to mention that Apple has some handy 
+C libraries for vector and matrix operations on the G4 and G5 
+processors.  (I haven't tried them yet myself, I'm ashamed to say.)
+
+-Greg
+
+> From: Peter Apian-Bennewitz <apian@pab-opto.de>
+> Date: October 1, 2004 9:46:29 AM PDT
+>
+> Hi all,
+>
+> anyone thought of, implemented or analyzed the potential of hand 
+> crafted versions of core vector/matrix calcs using SSE2 instructions 
+> on Intel&AMD CPUs ?
+> (apart from "-march=pentium4 -mfpmath=sse")
+>
+> -Peter
+
+
+From tonygeek at yahoo.com  Fri Oct  1 21:45:09 2004
+From: tonygeek at yahoo.com (Tonko Juricic)
+Date: Fri Oct  1 22:13:20 2004
+Subject: [Radiance-dev] hand crafted SSE2 matrix&vector ?
+In-Reply-To: <415D89E5.7000904@pab-opto.de>
+Message-ID: <20041001194509.50412.qmail@web52102.mail.yahoo.com>
+
+
+--- Peter Apian-Bennewitz <apian@pab-opto.de> wrote:
+
+> Hi all,
+> 
+> anyone thought of, implemented or analyzed the
+> potential of hand crafted 
+> versions of core vector/matrix calcs using SSE2
+> instructions on 
+> Intel&AMD CPUs ?
+> (apart from "-march=pentium4 -mfpmath=sse")
+> 
+> -Peter
+
+I am currently interested in camera
+lens/glare/flare/lenticular halo/depth of field/motion
+blurr etc. post-processing of Radiance images and to
+that aim I joined blitz++
+(http://www.oonumerics.org/blitz ) and FFTW (
+fftw@fftw.org) groups.
+
+I think that code and research available from these
+two sites is very promising.
+
+Unfortunately, in my experience so far, it seems that
+these people suffer from the
+parochial/boy-scouts/Phi-Gamma-Whatever/golf-buddies
+mentality and despite all the pretense and claims to
+the contrary, they typically don't answer emails or
+demonstrate any capability to communicate with the
+'outsiders'.
+
+Tony
+
+
+		
+__________________________________
+Do you Yahoo!?
+Yahoo! Mail - 50x more storage than other providers!
+http://promotions.yahoo.com/new_mail
+
+From wisaffec at lily.freemail.ne.jp  Sun Oct  3 17:54:16 2004
+From: wisaffec at lily.freemail.ne.jp (Tom)
+Date: Sun Oct  3 17:54:18 2004
+Subject: [Radiance-dev] Compiling on Microsoft Visual C++
+Message-ID: <20041004002327.5D5D.WISAFFEC@lily.freemail.ne.jp>
+
+Hi,
+
+I'm Tom, and a guraduate student in Japan.
+I joined this ML today, and I want you to tell me
+how to compile the radiance code(rad3R5.tar.gz)
+on Microsoft Visual C++.
+
+(If you think I'm reffering to the improper topic in this ML,
+I have to say I'm sorry, and please ignore this mail.)
+
+Although I tried to find the source code set for Visual C++
+using search engines, but I could not.
+First, I want to know whether such program code set exists.
+If there is no code set, I want you to tell me the way
+to easily compile on Microsoft Visual C++, if any.
+
+I'm often using Visual C++ 6.0 now in order to handle/create
+C or C++ program, and trying to customise the radiance program
+from now on.
+
+I'm sorry to spare your precious time.
+
+-- 
+Tom <wisaffec@lily.freemail.ne.jp>
+
+
+
+From tonygeek at yahoo.com  Sun Oct  3 19:20:04 2004
+From: tonygeek at yahoo.com (Tonko Juricic)
+Date: Sun Oct  3 19:26:48 2004
+Subject: [Radiance-dev] Compiling on Microsoft Visual C++
+In-Reply-To: <20041004002327.5D5D.WISAFFEC@lily.freemail.ne.jp>
+Message-ID: <20041003172004.56191.qmail@web52103.mail.yahoo.com>
+
+Compiling Radiance under Visual C++ is actually pretty
+easy. 
+
+Look into Rmakefile file in each source directory.
+Even if you are not familiar with UNIX makefiles it is
+pretty clear which sources go into which
+program/library and what gets linked to what.
+
+I would suggest to start with common directory and
+create the library which then gets linked into almost
+every Radiance program.
+
+This is where the problems start because some files
+simply won't compile. For example, malloc.c won't
+compile because Windows has no sbrk() call. One file
+does ++ on void pointer and VC++ doesn't like it.
+Other files assume you have X11 or OpenGL headers.
+Etc.
+
+My suggestions is to initially simply exclude the
+files that won't compile and resolve porting issues
+only when and if you get linker errors.
+
+I started creating MS IDE project files (but for
+Visual Studio .NET 2003, i.e. compiler version 7.1
+rather than 6) but then got sidetracked into Fast
+Fourier Transforms, SIMD and such stuff. For this I
+needed only common (librt) library and image decoding
+programs(in px directory) and it didn't take more than
+an hour to get these programs running.
+
+Rpict, rview and such programs require much more work.
+
+Tony 
+
+
+		
+_______________________________
+Do you Yahoo!?
+Declare Yourself - Register online to vote today!
+http://vote.yahoo.com
+
+From cbauer- at t-online.de  Sun Oct  3 20:59:19 2004
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Sun Oct  3 19:50:26 2004
+Subject: [Radiance-dev] Compiling on Microsoft Visual C++
+References: <20041003172004.56191.qmail@web52103.mail.yahoo.com>
+Message-ID: <41604C07.2040209@t-online.de>
+
+Hi Tony & Tom
+
+making Radiance compile under C++ is not difficult in principle, but 
+just a little tedious as you have to hunt down a lot of minor issues. 
+You've already mentioned some, others are eg. the K&R vs ANSI question, 
+esp. the stricter prototyping requirements of C++.
+
+For those who are interested:
+There's a C++ version of Radiance available, however, this is not 
+original Radiance anymore as I performed some considerably changes
+(added new features/deprecated some of the old ones), and it's still a 
+work in progress, currently focusing only on the rendering programs 
+rpict/rview.
+see http://www.cb-d.de/radzilla.html
+
+It is of course pure UNIX flavour, compiles wich GNU g++, but still 
+contains X11 headers, symbolic links in the source tree and certainly 
+some other issues not MS compatible of which I'm not even aware of (I 
+know pretty little about the whole Michealsooft stuff, so I cannot offer 
+any help in this respect :-)
+
+-cb
+
+
+From schorsch at schorsch.com  Sun Oct  3 20:40:19 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Sun Oct  3 20:40:28 2004
+Subject: [Radiance-dev] Compiling on Microsoft Visual C++
+In-Reply-To: <20041004002327.5D5D.WISAFFEC@lily.freemail.ne.jp>
+References: <20041004002327.5D5D.WISAFFEC@lily.freemail.ne.jp>
+Message-ID: <Pine.BSF.4.58.0410031409330.48685@emancholl.pair.com>
+
+Tom wrote:
+
+> Hi,
+>
+> I'm Tom, and a guraduate student in Japan.
+> I joined this ML today, and I want you to tell me
+> how to compile the radiance code(rad3R5.tar.gz)
+> on Microsoft Visual C++.
+>
+> (If you think I'm reffering to the improper topic in this ML,
+> I have to say I'm sorry, and please ignore this mail.)
+>
+> Although I tried to find the source code set for Visual C++
+> using search engines, but I could not.
+> First, I want to know whether such program code set exists.
+> If there is no code set, I want you to tell me the way
+> to easily compile on Microsoft Visual C++, if any.
+>
+> I'm often using Visual C++ 6.0 now in order to handle/create
+> C or C++ program, and trying to customise the radiance program
+> from now on.
+
+
+- Get and install Python: http://www.python.org/
+- Get and install SCons:  http://scons.sourceforge.net/
+- Get and install the Radiance HEAD dump and auxiliary package
+  (the 3.5 release won't work).
+- Open a command console (DOS box), and change to the "ray"
+  directory of the Radiance source tree.
+- Run the command "scons install" in that directory.
+  (You may need to give the full path to the SCons batch file)
+- Wait.
+
+This will build and install *most* of Radiance, using the most
+current VC version found on the system. There are a few parts
+that still need to get ported, such as the holodeck, the GUI
+programs, and some other minor stuff.  The default installation
+location for Windows is under "C:\radiance3.6a\".  You may need
+to set the correct RAYPATH for everything to work properly.
+Actually, I'm not sure if it will actually *work*... ;)
+I have done a few simple tests, and I don't remember any major
+hickups. If you (or someone else) find any, feel free to report
+and/or fix at your leisure.
+
+If you want it to install in a different location, then you
+have two possibilities:
+
+* Either add the variables RAD_BINDIR, RAD_MANDIR, and RAD_RLIBDIR
+  to the SCons command line like this:
+  "scons RAD_BINDIR=c:\where\ever\bin install"
+  (add the other two as well).
+
+* Or make a copy of the file "platform\win32.cfg" to
+  "platform\win32_custom.cfg" and change the respective variables
+  in the new copy. Note that in this case those three variables
+  are relative to RAD_BASEDIR. If such a *_custom.cfg file
+  exists, then it will take precedence over the original.
+
+
+If you need the missing parts as well, then you'll have to resort
+to Cygwin, SCons will work there as well. In fact, the SCons
+build system works on all platforms supported by Radiance, as an
+alternative to the traditional makefiles.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From schorsch at schorsch.com  Sun Oct  3 20:48:41 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Sun Oct  3 20:48:44 2004
+Subject: [Radiance-dev] Compiling on Microsoft Visual C++
+In-Reply-To: <20041003172004.56191.qmail@web52103.mail.yahoo.com>
+References: <20041003172004.56191.qmail@web52103.mail.yahoo.com>
+Message-ID: <Pine.BSF.4.58.0410031441380.48685@emancholl.pair.com>
+
+Tonko Juricic wrote:
+
+>  One file
+> does ++ on void pointer and VC++ doesn't like it.
+
+Did you report this? We need to know about all bugs that you find
+(unless you're talking about 3.5, in that case we don't care).
+
+
+> I started creating MS IDE project files
+
+Don't do that. Use the SCons system instead.
+That works exactly the same on all platforms, and already knows
+which source files and includes are required on each.
+
+
+> Rpict, rview and such programs require much more work.
+
+Rpict compiles fine on Windows, although you'll have to test
+yourself if it works well enough for your purposes.
+
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From tonygeek at yahoo.com  Sun Oct  3 21:03:25 2004
+From: tonygeek at yahoo.com (Tonko Juricic)
+Date: Sun Oct  3 21:03:28 2004
+Subject: [Radiance-dev] Compiling on Microsoft Visual C++
+In-Reply-To: <41604C07.2040209@t-online.de>
+Message-ID: <20041003190325.93943.qmail@web52103.mail.yahoo.com>
+
+
+--- Carsten Bauer <cbauer-@t-online.de> wrote:
+
+> For those who are interested:
+> There's a C++ version of Radiance available,
+> however, this is not 
+> original Radiance anymore as I performed some
+> considerably changes
+> (added new features/deprecated some of the old
+> ones), and it's still a 
+> work in progress, currently focusing only on the
+> rendering programs 
+> rpict/rview.
+> see http://www.cb-d.de/radzilla.html
+
+Hey Carsten,
+
+great site! I liked photon mapping integration and may
+end up "stealing" some code from you :)
+
+I liked your comments about C++ porting because I was
+toying with the idea of OO-ing Radiance for some time
+but then I started thinking: what parts of code would
+really profit from OO-ing it, both performance and
+extensibility-wise?
+
+As I haven't found a satisfactory answer to this
+question I decided not to mess with it. Eventually,
+interfacing Radiance to other packages (often written
+in C++) may make me understand these issues better.
+
+My current approach is: as little changes as possible.
+For example, I included bmalloc.c in library build
+simply because it will take more #ifdef _WIN32 in the
+other code that calls bmalloc, than casting void* to
+(char*) before incrementing it.
+
+In any case, your experiences with porting to C++ are
+very valuable and interesting to me.
+
+Thanks,
+Tony 
+
+
+		
+__________________________________
+Do you Yahoo!?
+Yahoo! Mail - 50x more storage than other providers!
+http://promotions.yahoo.com/new_mail
+
+From tonygeek at yahoo.com  Sun Oct  3 21:54:39 2004
+From: tonygeek at yahoo.com (Tonko Juricic)
+Date: Sun Oct  3 21:54:43 2004
+Subject: [Radiance-dev] Compiling on Microsoft Visual C++
+In-Reply-To: <Pine.BSF.4.58.0410031441380.48685@emancholl.pair.com>
+Message-ID: <20041003195439.99589.qmail@web52108.mail.yahoo.com>
+
+
+--- Georg Mischler <schorsch@schorsch.com> wrote:
+
+> Did you report this? We need to know about all bugs
+> that you find
+> (unless you're talking about 3.5, in that case we
+> don't care).
+
+Isn't this place Ok to reprt? Anyway, I am looking
+into CVS from Web site and bmalloc.c has:
+
+static void  *bposition = NULL;
+....
+	bposition += n;
+
+and in few places more in the same file.
+
+> > I started creating MS IDE project files
+> 
+> Don't do that. Use the SCons system instead.
+> That works exactly the same on all platforms, and
+> already knows
+> which source files and includes are required on
+> each.
+
+I am using it is as complementary, not as a system
+build substitute for SCons. 
+
+The problem is, I just can't work normally without my
+familiar IDE, IDE's editor, shortcuts and the stuff. 
+
+Following the code execution in debugger is a great
+learning tool for me.
+
+In order to play I need to read the code, change,
+compile, debug, try this, try that. After all these
+years I can not switch to Windows version of vi editor
+and drop to command line to recompile/relink each and
+every time. 
+
+Tony
+
+
+		
+_______________________________
+Do you Yahoo!?
+Declare Yourself - Register online to vote today!
+http://vote.yahoo.com
+
+From schorsch at schorsch.com  Sun Oct  3 22:50:14 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Sun Oct  3 22:51:13 2004
+Subject: [Radiance-dev] Compiling on Microsoft Visual C++
+In-Reply-To: <20041003195439.99589.qmail@web52108.mail.yahoo.com>
+References: <20041003195439.99589.qmail@web52108.mail.yahoo.com>
+Message-ID: <Pine.BSF.4.58.0410031649050.48685@emancholl.pair.com>
+
+Tonko Juricic wrote:
+
+> Isn't this place Ok to report?
+
+Yes of course. Just that I haven't heard of this specific
+item before.
+
+
+> Anyway, I am looking
+> into CVS from Web site and bmalloc.c has:
+>
+> static void  *bposition = NULL;
+> ....
+>         bposition += n;
+>
+> and in few places more in the same file.
+
+
+That's interesting... And it's probably me who changed the
+declaration from a char* to a void* in my ANSIfication efforts.
+
+But you're right. Even if most compilers allow it, by the books
+it's not legal to do pointer arithmetic with void pointers.
+The solution is probably to just change it back:
+
+ static char *bposition = NULL;
+
+Since bposition is only accessed within those two functions,
+and it only gets assigned void pointers, that should work just
+as fine as it did before my change. I've just checked the fix
+into CVS, so it should be in tomorrows HEAD dump.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From cbauer- at t-online.de  Mon Oct  4 00:18:11 2004
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Sun Oct  3 23:08:37 2004
+Subject: [Radiance-dev] Compiling on Microsoft Visual C++
+References: <20041003190325.93943.qmail@web52103.mail.yahoo.com>
+Message-ID: <41607AA3.5090700@t-online.de>
+
+Hi Tonko,
+
+> what parts of code would
+> really profit from OO-ing it, both performance and
+> extensibility-wise?
+> 
+> As I haven't found a satisfactory answer to this
+> question I decided not to mess with it. Eventually,
+
+these questions are really difficult to answer. The overwhelming 
+majority of the core code (esp the calculation stuff like octree 
+traversal, ray intersections, material behaviour etc etc) is already 
+highly optimized and is better left as it is (which is what I did, apart 
+from ANSIfying or rearranging)
+
+The main justification of the project certainly is it's role as a hands 
+on learning thing.
+
+The key problem is that one could do everything different if one started 
+completely from scratch. In this case, I always would use C++. But this 
+was/is of course impossible (would be unnecessary, too), so I contented 
+myself  which the experiences gained without implementing/changing 
+everything what could theoretically  have been done. In some of my 
+extensions, however, I greatly benefitted from C++. And if there will 
+ever be a situation, where a larger team might be in charge for the 
+further Radiance development, a C++ base would of course be a plus, too. 
+As this isn't the case, the question is of no importance.
+
+
+-Carsten
+
+PS feel free to mess with the code. I should apologize for the missing 
+documentation so far, you know, the usual lack of time :-) But I'm 
+always open for questions and private communication
+
+
+
+From randolph at panix.com  Mon Oct  4 01:16:40 2004
+From: randolph at panix.com (Randolph Fritz)
+Date: Mon Oct  4 01:16:51 2004
+Subject: [Radiance-dev] Compiling on Microsoft Visual C++
+In-Reply-To: <Pine.BSF.4.58.0410031649050.48685@emancholl.pair.com>
+References: <20041003195439.99589.qmail@web52108.mail.yahoo.com>
+	<Pine.BSF.4.58.0410031649050.48685@emancholl.pair.com>
+Message-ID: <20041003231640.GA19019@panix.com>
+
+snicker, snicker, snicker...
+
+Randolph
+
+On Sun, Oct 03, 2004 at 04:50:14PM -0400, Georg Mischler wrote:
+> Tonko Juricic wrote:
+> 
+> > Isn't this place Ok to report?
+> 
+> Yes of course. Just that I haven't heard of this specific
+> item before.
+> 
+> 
+> > Anyway, I am looking
+> > into CVS from Web site and bmalloc.c has:
+> >
+> > static void  *bposition = NULL;
+> > ....
+> >         bposition += n;
+> >
+> > and in few places more in the same file.
+> 
+> 
+> That's interesting... And it's probably me who changed the
+> declaration from a char* to a void* in my ANSIfication efforts.
+> 
+> But you're right. Even if most compilers allow it, by the books
+> it's not legal to do pointer arithmetic with void pointers.
+> The solution is probably to just change it back:
+> 
+>  static char *bposition = NULL;
+> 
+> Since bposition is only accessed within those two functions,
+> and it only gets assigned void pointers, that should work just
+> as fine as it did before my change. I've just checked the fix
+> into CVS, so it should be in tomorrows HEAD dump.
+> 
+> 
+> -schorsch
+> 
+> -- 
+> Georg Mischler  --  simulations developer  --  schorsch at schorsch com
+> +schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+From randolph at panix.com  Mon Oct  4 01:17:36 2004
+From: randolph at panix.com (Randolph Fritz)
+Date: Mon Oct  4 01:17:40 2004
+Subject: [Radiance-dev] Compiling on Microsoft Visual C++
+In-Reply-To: <20041003231640.GA19019@panix.com>
+References: <20041003195439.99589.qmail@web52108.mail.yahoo.com>
+	<Pine.BSF.4.58.0410031649050.48685@emancholl.pair.com>
+	<20041003231640.GA19019@panix.com>
+Message-ID: <20041003231736.GB19019@panix.com>
+
+Um, that was supposed to be quiet snickering...
+
+oh, well.
+
+Randolph
+
+From randolph at panix.com  Mon Oct  4 01:24:39 2004
+From: randolph at panix.com (Randolph Fritz)
+Date: Mon Oct  4 01:24:42 2004
+Subject: [Radiance-dev] void*
+In-Reply-To: <20041003231640.GA19019@panix.com>
+References: <20041003195439.99589.qmail@web52108.mail.yahoo.com>
+	<Pine.BSF.4.58.0410031649050.48685@emancholl.pair.com>
+	<20041003231640.GA19019@panix.com>
+Message-ID: <20041003232439.GA21173@panix.com>
+
+On Sun, Oct 03, 2004 at 04:16:40PM -0700, Randolph Fritz wrote:
+> >
+> > But you're right. Even if most compilers allow it, by the books
+> > it's not legal to do pointer arithmetic with void pointers.
+> > The solution is probably to just change it back:
+> > 
+
+Not exactly...it's "undefined".  Some compilers, like gcc, accept it.
+Others don't.  That code is intended to improve virtual memory
+performance; such code is, unfortunately, system-dependent and belongs
+in the non-existant bottle we need to keep system-dependent stuff.
+
+Randolph
+
+From mailinglists at erwinrol.com  Mon Oct  4 01:30:04 2004
+From: mailinglists at erwinrol.com (Erwin Rol)
+Date: Mon Oct  4 01:30:08 2004
+Subject: [Radiance-dev] void*
+In-Reply-To: <20041003232439.GA21173@panix.com>
+References: <20041003195439.99589.qmail@web52108.mail.yahoo.com>
+	<Pine.BSF.4.58.0410031649050.48685@emancholl.pair.com>
+	<20041003231640.GA19019@panix.com> <20041003232439.GA21173@panix.com>
+Message-ID: <1096846204.4027.35.camel@drake.home.erwinrol.com>
+
+On Sun, 2004-10-03 at 16:24 -0700, Randolph Fritz wrote:
+> On Sun, Oct 03, 2004 at 04:16:40PM -0700, Randolph Fritz wrote:
+> > >
+> > > But you're right. Even if most compilers allow it, by the books
+> > > it's not legal to do pointer arithmetic with void pointers.
+> > > The solution is probably to just change it back:
+> > > 
+> 
+> Not exactly...it's "undefined".  Some compilers, like gcc, accept it.
+
+gcc in C mode accepts it, but not when using C++.
+
+[erwin@drake erwin]$ gcc -c void.c
+[erwin@drake erwin]$ g++ -c void.c
+void.c: In function `int main()':
+void.c:3: error: ISO C++ forbids incrementing a pointer of type `void*'
+
+> Others don't.  That code is intended to improve virtual memory
+> performance; such code is, unfortunately, system-dependent and belongs
+> in the non-existant bottle we need to keep system-dependent stuff.
+> 
+> Randolph
+
+
+
+From schorsch at schorsch.com  Mon Oct  4 02:12:56 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Mon Oct  4 02:13:00 2004
+Subject: [Radiance-dev] void*
+In-Reply-To: <20041003232439.GA21173@panix.com>
+References: <20041003195439.99589.qmail@web52108.mail.yahoo.com>
+	<Pine.BSF.4.58.0410031649050.48685@emancholl.pair.com>
+	<20041003231640.GA19019@panix.com>
+	<20041003232439.GA21173@panix.com>
+Message-ID: <Pine.BSF.4.58.0410031954550.48685@emancholl.pair.com>
+
+Randolph Fritz wrote:
+
+> >
+> > But you're right. Even if most compilers allow it, by the books
+> > it's not legal to do pointer arithmetic with void pointers.
+>
+> Not exactly...it's "undefined".
+
+That's the same thing for most pratical purposes.
+
+
+>   That code is intended to improve virtual memory
+> performance; such code is, unfortunately, system-dependent and belongs
+> in the non-existant bottle we need to keep system-dependent stuff.
+
+I can't find anything system-dependent in that code, other
+than it may help more on some platforms than on others.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From randolph at panix.com  Mon Oct  4 05:26:14 2004
+From: randolph at panix.com (Randolph Fritz)
+Date: Mon Oct  4 05:26:19 2004
+Subject: [Radiance-dev] void*
+In-Reply-To: <Pine.BSF.4.58.0410031954550.48685@emancholl.pair.com>
+References: <20041003195439.99589.qmail@web52108.mail.yahoo.com>
+	<Pine.BSF.4.58.0410031649050.48685@emancholl.pair.com>
+	<20041003231640.GA19019@panix.com>
+	<20041003232439.GA21173@panix.com>
+	<Pine.BSF.4.58.0410031954550.48685@emancholl.pair.com>
+Message-ID: <20041004032614.GA10798@panix.com>
+
+On Sun, Oct 03, 2004 at 08:12:56PM -0400, Georg Mischler wrote:
+> Randolph Fritz wrote:
+> 
+> > >
+> > > But you're right. Even if most compilers allow it, by the books
+> > > it's not legal to do pointer arithmetic with void pointers.
+> >
+> > Not exactly...it's "undefined".
+> 
+> That's the same thing for most pratical purposes.
+> 
+
+No, some environments (like gcc) define it.  The problem is that it
+only works in some environments and it cannot be counted on to work in
+the same way in environments where it does work.  "void *" does work
+with gcc, whereas I'm not sure a "char *" version always will.
+
+> 
+> >   That code is intended to improve virtual memory
+> > performance; such code is, unfortunately, system-dependent and belongs
+> > in the non-existant bottle we need to keep system-dependent stuff.
+> 
+> I can't find anything system-dependent in that code, other
+> than it may help more on some platforms than on others.
+> 
+
+You have not had a youth wasted programming in too many weird
+assembler languages!  (At least, I hope not.)  The "void *" version
+only works if "void *" is the address of a byte in a contiguous
+address space.  That's actually not the case in some addressing models
+on x86 machines, which is why the compiler rejects it.  The "char *"
+version depends on BYTES_WORD being correct.  On, for instance, 64-bit
+systems where "double" refers to a 128-bit quantity, it will allocate
+a minimum of 16 bytes, rather than 8--a performance bug.  More
+seriously, one might encounter systems where the alignment requirement
+is "long double" rather than "double", and future code which attempted
+to cast the result of bmalloc() to "long double" would fail.  
+
+For the moment, I think, it is probably best to choose the type of
+bposition with conditional compilation (wince), but I think in the
+long run it's best to address the problem in a more general fashion; I
+cannot enough stress how unreliable conditional compilation makes
+cross-platform code.
+
+Randolph, wishing he had more time to spend on Radiance
+
+
+From wisaffec at lily.freemail.ne.jp  Mon Oct  4 09:25:46 2004
+From: wisaffec at lily.freemail.ne.jp (Tom)
+Date: Mon Oct  4 09:25:52 2004
+Subject: [Radiance-dev] Compiling on Microsoft Visual C++
+In-Reply-To: <20041003172004.56191.qmail@web52103.mail.yahoo.com>
+References: <20041004002327.5D5D.WISAFFEC@lily.freemail.ne.jp>
+	<20041003172004.56191.qmail@web52103.mail.yahoo.com>
+Message-ID: <20041004161610.10E2.WISAFFEC@lily.freemail.ne.jp>
+
+Hi all,
+
+Thank you so much for your kindness.
+I'm suprised to get much more information than I expected.
+
+Now I've not yet read your mail intensively, but I knew what to do
+at the beginning.
+Please help me again if I have some questions.
+
+Thank you again!
+
+Regards,
+
+Tom
+
+-- 
+Tom <wisaffec@lily.freemail.ne.jp>
+
+
+
+From schorsch at schorsch.com  Mon Oct  4 10:20:47 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Mon Oct  4 10:20:51 2004
+Subject: [Radiance-dev] void*
+In-Reply-To: <20041004032614.GA10798@panix.com>
+References: <20041003195439.99589.qmail@web52108.mail.yahoo.com>
+	<Pine.BSF.4.58.0410031649050.48685@emancholl.pair.com>
+	<20041003231640.GA19019@panix.com>
+	<20041003232439.GA21173@panix.com>
+	<Pine.BSF.4.58.0410031954550.48685@emancholl.pair.com>
+	<20041004032614.GA10798@panix.com>
+Message-ID: <Pine.BSF.4.58.0410040344001.63602@emancholl.pair.com>
+
+Randolph Fritz wrote:
+
+> "void *" does work with gcc, whereas I'm not sure a "char *"
+> version always will.
+
+I'd think it's the other way round. The void* obviously doesn't
+work everywhere. The char* works the way Greg originally intended.
+
+This is so, because sizeof() is garanteed to return values relative
+to the size of a char, whatever that is. And the size values
+given as arguments to those two functions should always be determined
+by sizeof() (as they should when you use plain malloc() and friends).
+
+
+> > > That code is intended to improve virtual memory
+> > > performance; such code is, unfortunately, system-dependent and belongs
+> > > in the non-existant bottle we need to keep system-dependent stuff.
+> >
+> > I can't find anything system-dependent in that code, other
+> > than it may help more on some platforms than on others.
+> >
+>
+> You have not had a youth wasted programming in too many weird
+> assembler languages!  (At least, I hope not.)  The "void *" version
+> only works if...
+
+The void* version was indeed system-dependent, as has been shown.
+
+The char* version isn't. Maybe the exact size of the memory
+chunks handed out would vary on 64 bit systems, but that's just
+potentially suboptimal memory use, not a dependency.
+
+Radiance is explicitly *not* 64 bit clean, and even if we were
+to change that, this would probably be one of the simplest and
+most obvious parts to optimize (after all the things that really
+need to get fixed).
+
+
+>  More
+> seriously, one might encounter systems where the alignment requirement
+> is "long double" rather than "double", and future code which attempted
+> to cast the result of bmalloc() to "long double" would fail.
+
+So on some systems you won't be able to increment a char* pointer
+anymore? I'm not quite as pessimistic... ;)
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From tonygeek at yahoo.com  Mon Oct  4 10:59:51 2004
+From: tonygeek at yahoo.com (Tonko Juricic)
+Date: Mon Oct  4 11:06:33 2004
+Subject: [Radiance-dev] One more of those pesky little issues
+In-Reply-To: <Pine.BSF.4.58.0410040344001.63602@emancholl.pair.com>
+Message-ID: <20041004085951.21632.qmail@web52106.mail.yahoo.com>
+
+This one could be due to me having few weeks old
+tarball, but I can not get X_OK to be defined in
+win_popen.c without adding:
+
+#include "paths.h" 
+
+which defines X_OK.
+
+Tony
+
+
+
+		
+_______________________________
+Do you Yahoo!?
+Declare Yourself - Register online to vote today!
+http://vote.yahoo.com
+
+From cbauer- at t-online.de  Mon Oct  4 12:58:59 2004
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Mon Oct  4 11:50:20 2004
+Subject: [Radiance-dev] void*
+References: <20041003195439.99589.qmail@web52108.mail.yahoo.com>	<Pine.BSF.4.58.0410031649050.48685@emancholl.pair.com>	<20041003231640.GA19019@panix.com>	<20041003232439.GA21173@panix.com>	<Pine.BSF.4.58.0410031954550.48685@emancholl.pair.com>	<20041004032614.GA10798@panix.com>
+	<Pine.BSF.4.58.0410040344001.63602@emancholl.pair.com>
+Message-ID: <41612CF3.6070600@t-online.de>
+
+ehmm, hmm,isn't this business a bit strange?
+
+A question from someone who was lucky in NOT having its youth wasted
+with weird asssembler languages :-)
+
+What sense does it make incrementing a pointer when a priori you don't 
+know anything about the entities it points to?
+
+-cb
+
+
+From tonygeek at yahoo.com  Mon Oct  4 11:54:34 2004
+From: tonygeek at yahoo.com (Tonko Juricic)
+Date: Mon Oct  4 11:54:38 2004
+Subject: [Radiance-dev] Support for two more image formats?
+In-Reply-To: <20041004085951.21632.qmail@web52106.mail.yahoo.com>
+Message-ID: <20041004095434.89487.qmail@web52105.mail.yahoo.com>
+
+Motivation: display sample images on Web sites in JPEG
+and PNG format. In particular, most browsers by now
+support PNG but don't support TIFF, which seems to be
+receeding into the obscurity.
+
+I don't know what people on UNIX systems do (I see
+command like "TIFF | cjpeg" in Radiance book) but I
+can't see anything in existing code for pic->jpeg on
+Windows.
+
+I also started work on decoder for PNG that shows
+promise to work on Win32 (I follow the rules for image
+decoder writing) but it would be nice if somebody with
+access to UNIX/Linux would later check that code
+compiles on those platforms.
+
+Or am I just wasting time and there is code for JPEG
+and PNG already available somewhere?
+
+Tony
+
+__________________________________________________
+Do You Yahoo!?
+Tired of spam?  Yahoo! Mail has the best spam protection around 
+http://mail.yahoo.com 
+
+From tonygeek at yahoo.com  Mon Oct  4 12:00:39 2004
+From: tonygeek at yahoo.com (Tonko Juricic)
+Date: Mon Oct  4 12:00:42 2004
+Subject: [Radiance-dev] void*
+In-Reply-To: <41612CF3.6070600@t-online.de>
+Message-ID: <20041004100039.89523.qmail@web52108.mail.yahoo.com>
+
+I searched "all over the place" for what people are
+saying about void* and the concensus seems to be that
+it is an old gcc-ism, inherited from the days when
+type safety was not so important and sizeof(char)
+arithmetic on void pointer was deemed a reasonable
+default (even if, I would imagie, C people could also
+reasonably expect it to be sizeof(int) by default).
+
+Tony
+
+--- Carsten Bauer <cbauer-@t-online.de> wrote:
+
+> ehmm, hmm,isn't this business a bit strange?
+> 
+> A question from someone who was lucky in NOT having
+> its youth wasted
+> with weird asssembler languages :-)
+> 
+> What sense does it make incrementing a pointer when
+> a priori you don't 
+> know anything about the entities it points to?
+
+
+__________________________________________________
+Do You Yahoo!?
+Tired of spam?  Yahoo! Mail has the best spam protection around 
+http://mail.yahoo.com 
+
+From schorsch at schorsch.com  Mon Oct  4 12:14:27 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Mon Oct  4 12:14:31 2004
+Subject: [Radiance-dev] One more of those pesky little issues
+In-Reply-To: <20041004085951.21632.qmail@web52106.mail.yahoo.com>
+References: <20041004085951.21632.qmail@web52106.mail.yahoo.com>
+Message-ID: <Pine.BSF.4.58.0410040549370.63602@emancholl.pair.com>
+
+Tonko Juricic wrote:
+
+> This one could be due to me having few weeks old
+> tarball, but I can not get X_OK to be defined in
+> win_popen.c without adding:
+>
+> #include "paths.h"
+>
+> which defines X_OK.
+
+Yes that's true, thanks for the pointer.
+Win_popen.c is actully still a bit experimental. If anyone finds
+more problems with it, I'd be happy to hear about them.
+Especially mode "w" isn't very well tested.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From tonygeek at yahoo.com  Mon Oct  4 13:06:53 2004
+From: tonygeek at yahoo.com (Tonko Juricic)
+Date: Mon Oct  4 13:13:36 2004
+Subject: [Radiance-dev] Image conversion self-answer
+In-Reply-To: <20041004095434.89487.qmail@web52105.mail.yahoo.com>
+Message-ID: <20041004110653.16678.qmail@web52105.mail.yahoo.com>
+
+I guess the answer is: use some third-party convesion
+image program from PIC to TIFF or BMP to PNG.
+
+Goofy Windows confused me: I went through multiple
+formats conversion process and it turns out that
+Windows pre-intalled image viewer (and also Paint) can
+not view grayscale images in their own native BMP
+format!
+
+Using Adobe's ImageReady or PhotoShop displayed
+grayscale BMP derived from the original PIC just fine.
+
+I'll stop messing with conversion to PNG unless more
+knowledgeable people here know that some precious info
+gets lost without direct conversion.
+
+Tony
+
+
+__________________________________________________
+Do You Yahoo!?
+Tired of spam?  Yahoo! Mail has the best spam protection around 
+http://mail.yahoo.com 
+
+From cbauer- at t-online.de  Mon Oct  4 15:17:59 2004
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Mon Oct  4 14:09:13 2004
+Subject: [Radiance-dev] Image conversion self-answer
+References: <20041004110653.16678.qmail@web52105.mail.yahoo.com>
+Message-ID: <41614D87.3000805@t-online.de>
+
+AFAIK, there are no hidden secrets in a Radiance pic.
+
+You may know that already, the most important thing getting lost during 
+conversion is of course the HDR character. There is a lot of awkward 
+color math in this step from radiance data (W/m2sr) in three color 
+channels to rgb values, of which e.g ra_t16 or ra_tiff is taking care of.
+
+I for example convert to TGA and then use GIMP (the Linux equivalent of 
+Photoshop) for postprocessing and conversion. I doubt that it pays off 
+writing an extra converter to go directly from pic to png jpeg
+
+-cb
+
+
+From schorsch at schorsch.com  Mon Oct  4 14:30:55 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Mon Oct  4 14:51:02 2004
+Subject: [Radiance-dev] Image conversion self-answer
+In-Reply-To: <41614D87.3000805@t-online.de>
+References: <20041004110653.16678.qmail@web52105.mail.yahoo.com>
+	<41614D87.3000805@t-online.de>
+Message-ID: <Pine.BSF.4.58.0410040815310.63602@emancholl.pair.com>
+
+Carsten Bauer wrote:
+
+> AFAIK, there are no hidden secrets in a Radiance pic.
+>
+> You may know that already, the most important thing getting lost during
+> conversion is of course the HDR character. There is a lot of awkward
+> color math in this step from radiance data (W/m2sr) in three color
+> channels to rgb values, of which e.g ra_t16 or ra_tiff is taking care of.
+
+
+The mechanics of conversion are the same for all formats, so
+that's not a problem at all. The main reason why there are not
+more formats currently supported is that Greg hates third party
+library dependencies. The tifflib is currently the only
+exception, mainly because that was (and probably still is) the
+most common lossless format, which even supports HDR data
+nowadays.
+
+The situation of JPEG is shady at the moment, due to some
+patent claims. This caused the IEEE to discuss the depreciation
+of the JPEG format as an official standard. Nobody seems to
+know where that will lead eventually.
+
+I'd be in favour of adding PNG support though, which has been
+carefully designed to steer clear of intellectual property claims.
+The libPNG offers a variety of losslessly compressed formats in
+various bit depths. The library seems robust, and both the
+specification and the API are stable.  Since early this year, PNG
+is also an ISO standard, so we can count on it staying around in
+a backwards compatible manner for a long time.
+
+Any folks with too much time on their hands are invited to
+contribute...
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From jedev at visarc.com  Mon Oct  4 15:16:01 2004
+From: jedev at visarc.com (Jack de Valpine)
+Date: Mon Oct  4 15:16:11 2004
+Subject: [Radiance-dev] Image conversion self-answer
+In-Reply-To: <41614D87.3000805@t-online.de>
+References: <20041004110653.16678.qmail@web52105.mail.yahoo.com>
+	<41614D87.3000805@t-online.de>
+Message-ID: <41614D11.1080605@visarc.com>
+
+For image conversion (cli), I would strongly suggest ImageMagick 
+(www.imagemagick.com). This toolset is available in source and compiled 
+forms (for both windows and linux). It contains some very powerful tools 
+such as: convert, mogrify and composite are a few. In many cases these 
+tools can be used to deal with most image processing issues, then and 
+only then do you need to consider doing things by hand with photoshop or 
+gimp. On a side note, along with Carsten, I am a big fan of Gimp! 
+Although I have never messed with it, gimp can also be driven from the 
+command line for batch type processing.
+
+-Jack
+
+Carsten Bauer wrote:
+
+> AFAIK, there are no hidden secrets in a Radiance pic.
+>
+> You may know that already, the most important thing getting lost 
+> during conversion is of course the HDR character. There is a lot of 
+> awkward color math in this step from radiance data (W/m2sr) in three 
+> color channels to rgb values, of which e.g ra_t16 or ra_tiff is taking 
+> care of.
+>
+> I for example convert to TGA and then use GIMP (the Linux equivalent 
+> of Photoshop) for postprocessing and conversion. I doubt that it pays 
+> off writing an extra converter to go directly from pic to png jpeg
+>
+> -cb
+>
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+
+
+
+From mstock at umich.edu  Mon Oct  4 15:26:44 2004
+From: mstock at umich.edu (Mark Stock)
+Date: Mon Oct  4 15:26:50 2004
+Subject: [Radiance-dev] Image conversion self-answer
+In-Reply-To: <41614D11.1080605@visarc.com>
+References: <20041004110653.16678.qmail@web52105.mail.yahoo.com>
+	<41614D87.3000805@t-online.de> <41614D11.1080605@visarc.com>
+Message-ID: <Pine.SOL.4.58.0410040920130.8070@asteroids.gpcc.itd.umich.edu>
+
+In addition to gimp, Radiance users may benefit from using
+cinepaint (http://cinepaint.sourceforge.net/) for image
+manipulation. It operates natively on >24-bit file formats,
+though it does not have a Radiance .pic-reader. I use it to make
+minor adjustments on 16 bpc TIFFs before reducing my work to
+8-bit and sending it to the printer.
+
+There are versions for Mac, Windows, and Linux.
+
+Mark
+mstock@umich.edu
+
+On Mon, 4 Oct 2004, Jack de Valpine wrote:
+
+> For image conversion (cli), I would strongly suggest ImageMagick
+> (www.imagemagick.com). This toolset is available in source and compiled
+> forms (for both windows and linux). It contains some very powerful tools
+> such as: convert, mogrify and composite are a few. In many cases these
+> tools can be used to deal with most image processing issues, then and
+> only then do you need to consider doing things by hand with photoshop or
+> gimp. On a side note, along with Carsten, I am a big fan of Gimp!
+> Although I have never messed with it, gimp can also be driven from the
+> command line for batch type processing.
+>
+> -Jack
+>
+> Carsten Bauer wrote:
+>
+> > AFAIK, there are no hidden secrets in a Radiance pic.
+> >
+> > You may know that already, the most important thing getting lost
+> > during conversion is of course the HDR character. There is a lot of
+> > awkward color math in this step from radiance data (W/m2sr) in three
+> > color channels to rgb values, of which e.g ra_t16 or ra_tiff is taking
+> > care of.
+> >
+> > I for example convert to TGA and then use GIMP (the Linux equivalent
+> > of Photoshop) for postprocessing and conversion. I doubt that it pays
+> > off writing an extra converter to go directly from pic to png jpeg
+
+From gward at lmi.net  Mon Oct  4 18:04:35 2004
+From: gward at lmi.net (Greg Ward)
+Date: Mon Oct  4 18:05:11 2004
+Subject: [Radiance-dev] Image conversion self-answer
+In-Reply-To: <Pine.BSF.4.58.0410040815310.63602@emancholl.pair.com>
+References: <20041004110653.16678.qmail@web52105.mail.yahoo.com>
+	<41614D87.3000805@t-online.de>
+	<Pine.BSF.4.58.0410040815310.63602@emancholl.pair.com>
+Message-ID: <160A88E0-161F-11D9-A5D8-000A95BB392A@lmi.net>
+
+Hi All,
+
+> From: Georg Mischler <schorsch@schorsch.com>
+> Date: October 4, 2004 5:30:55 AM PDT
+>
+> The mechanics of conversion are the same for all formats, so
+> that's not a problem at all. The main reason why there are not
+> more formats currently supported is that Greg hates third party
+> library dependencies. The tifflib is currently the only
+> exception, mainly because that was (and probably still is) the
+> most common lossless format, which even supports HDR data
+> nowadays.
+
+That is correct.  I have experienced a lot of frustration myself, 
+especially with OpenSource software, trying to get all the 
+prerequisites compiled for some package in order to try it out.  I have 
+always tried to avoid this situation in Radiance by making it as 
+uniform and self-contained as practical.  The TIFF library is the only 
+exception, and though it is well-written and portable, it still causes 
+compilation troubles on some systems (most notably Solaris these days).
+
+> The situation of JPEG is shady at the moment, due to some
+> patent claims. This caused the IEEE to discuss the depreciation
+> of the JPEG format as an official standard. Nobody seems to
+> know where that will lead eventually.
+
+Is this regarding the original DCT-based JPEG, or the new wavelet-based 
+JPEG 2000?  I hadn't heard of any patent cases related to the original 
+JPEG, but I haven't really been paying attention to the IEEE, either.  
+I never saw much sense in distributing JPEG as part of Radiance because 
+if you can compile Tom Lane's libjpeg, you get cjpeg and djpeg which 
+interface nicely with ra_ppm or (now) ra_bmp.  The latter even does 
+quick tone-mapping.
+
+> I'd be in favour of adding PNG support though, which has been
+> carefully designed to steer clear of intellectual property claims.
+> The libPNG offers a variety of losslessly compressed formats in
+> various bit depths. The library seems robust, and both the
+> specification and the API are stable.  Since early this year, PNG
+> is also an ISO standard, so we can count on it staying around in
+> a backwards compatible manner for a long time.
+
+As long as it doesn't cause hitches on different compilers, I wouldn't 
+be opposed.  I generally agree with the philosophy behind PNG, though I 
+don't know why they didn't include a high dynamic-range format amongst 
+their myriad encoding options.
+
+-Greg
+
+
+From schorsch at schorsch.com  Mon Oct  4 19:08:07 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Mon Oct  4 19:08:12 2004
+Subject: [Radiance-dev] Image conversion self-answer
+In-Reply-To: <160A88E0-161F-11D9-A5D8-000A95BB392A@lmi.net>
+References: <20041004110653.16678.qmail@web52105.mail.yahoo.com>
+	<41614D87.3000805@t-online.de>
+	<Pine.BSF.4.58.0410040815310.63602@emancholl.pair.com>
+	<160A88E0-161F-11D9-A5D8-000A95BB392A@lmi.net>
+Message-ID: <Pine.BSF.4.58.0410041222310.63602@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> > The situation of JPEG is shady at the moment, due to some
+> > patent claims. This caused the IEEE to discuss the depreciation
+> > of the JPEG format as an official standard. Nobody seems to
+> > know where that will lead eventually.
+>
+> Is this regarding the original DCT-based JPEG, or the new wavelet-based
+> JPEG 2000?
+
+This must be the old format. It also appears that the patent
+will expire in 2006. Fogent has just sued three dozen large
+corporations about it this year, although the applicability of
+the patent to the actual JPEG format is still under debate.
+Several companies (including Sony) have bought licenses for
+tens of millions of dollars so far.
+
+JPEG 2000 is covered by some known patents, but those have been
+released for use without fee. How much is this format already in
+use? As it seems to be lossless, it looks very promising.
+
+
+> As long as it doesn't cause hitches on different compilers, I wouldn't
+> be opposed.  I generally agree with the philosophy behind PNG, though I
+> don't know why they didn't include a high dynamic-range format amongst
+> their myriad encoding options.
+
+Probably because nobody shouted loud enough about it at the time
+of design.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From ganjatron at gmx.net  Mon Oct  4 20:49:06 2004
+From: ganjatron at gmx.net (Roland Schregle)
+Date: Mon Oct  4 20:53:28 2004
+Subject: [Radiance-dev] Image conversion self-answer
+In-Reply-To: <Pine.BSF.4.58.0410041222310.63602@emancholl.pair.com>
+References: <20041004110653.16678.qmail@web52105.mail.yahoo.com>	<41614D87.3000805@t-online.de>	<Pine.BSF.4.58.0410040815310.63602@emancholl.pair.com>	<160A88E0-161F-11D9-A5D8-000A95BB392A@lmi.net>
+	<Pine.BSF.4.58.0410041222310.63602@emancholl.pair.com>
+Message-ID: <41619B22.6020807@gmx.net>
+
+Georg Mischler wrote:
+> Greg Ward wrote:
+
+>>Is this regarding the original DCT-based JPEG, or the new wavelet-based
+>>JPEG 2000?
+
+> JPEG 2000 is covered by some known patents, but those have been
+> released for use without fee. How much is this format already in
+> use? As it seems to be lossless, it looks very promising.
+
+AFAIK wavelet compression isn't lossy. Compression involves thresholding 
+and removing coefficients, so there's inevitable loss. However, wavelets 
+adapt well to signal features, largely due to their local support, so 
+the loss may not be as noticeable as with the old JPEG. I would imagine 
+contours are well preserved with this method and don't exhibit the 
+obnoxious ringing artifacts we've all come to hate from standard JPEG 
+with high compression rates.
+
+--Roland
+
+
+-- 
+Roland Schregle
+PhD candidate, Fraunhofer Institute for Solar Energy Systems
+RADIANCE Photon Map page: www.ise.fhg.de/radiance/photon-map
+
+END OF LINE. (MCP)
+
+
+From ganjatron at gmx.net  Mon Oct  4 21:17:34 2004
+From: ganjatron at gmx.net (Roland Schregle)
+Date: Mon Oct  4 21:21:20 2004
+Subject: [Radiance-dev] Image conversion self-answer
+In-Reply-To: <41619B22.6020807@gmx.net>
+References: <20041004110653.16678.qmail@web52105.mail.yahoo.com>	<41614D87.3000805@t-online.de>	<Pine.BSF.4.58.0410040815310.63602@emancholl.pair.com>	<160A88E0-161F-11D9-A5D8-000A95BB392A@lmi.net>	<Pine.BSF.4.58.0410041222310.63602@emancholl.pair.com>
+	<41619B22.6020807@gmx.net>
+Message-ID: <4161A1CE.1070001@gmx.net>
+
+Roland Schregle wrote:
+
+> AFAIK wavelet compression isn't lossy. 
+
+Ahem... of course it *IS* lossy... kinda like my communications skills...
+
+-- 
+Roland Schregle
+PhD candidate, Fraunhofer Institute for Solar Energy Systems
+RADIANCE Photon Map page: www.ise.fhg.de/radiance/photon-map
+
+END OF LINE. (MCP)
+
+
+From gward at lmi.net  Mon Oct  4 21:56:34 2004
+From: gward at lmi.net (Greg Ward)
+Date: Mon Oct  4 21:57:19 2004
+Subject: [Radiance-dev] Image conversion self-answer
+In-Reply-To: <4161A1CE.1070001@gmx.net>
+References: <20041004110653.16678.qmail@web52105.mail.yahoo.com>	<41614D87.3000805@t-online.de>	<Pine.BSF.4.58.0410040815310.63602@emancholl.pair.com>	<160A88E0-161F-11D9-A5D8-000A95BB392A@lmi.net>	<Pine.BSF.4.58.0410041222310.63602@emancholl.pair.com>
+	<41619B22.6020807@gmx.net> <4161A1CE.1070001@gmx.net>
+Message-ID: <7E47B840-163F-11D9-97C9-000A95BB392A@lmi.net>
+
+> Roland Schregle wrote:
+>
+>> AFAIK wavelet compression isn't lossy.
+>
+> Ahem... of course it *IS* lossy... kinda like my communications 
+> skills...
+
+We knowed what you meaned....
+
+Actually, though, I believe Schorsh is right.  There is a "lossless" 
+version of JPEG 2000 that exactly reproduces the 8-bit input values 
+using wavelet compression, though this isn't the mode most folks are 
+expected to use.  Likewise, JPEG is "almost lossless" if the 
+quantization tables are set to all zeroes, but due to round-off error, 
+the 8-bit values you get back are sometimes off by one or two counts.
+
+This of course begs the question, what does it mean to record 
+8-bits/channel "losslessly?"  So much information has been lost in 
+deriving those 8 bits, that the exact reproduction afterwards is mostly 
+a joke.
+
+My two bits.
+-Greg
+
+
+From randolph at panix.com  Mon Oct  4 22:24:59 2004
+From: randolph at panix.com (Randolph Fritz)
+Date: Mon Oct  4 22:25:06 2004
+Subject: [Radiance-dev] void*
+In-Reply-To: <41612CF3.6070600@t-online.de>
+References: <20041003195439.99589.qmail@web52108.mail.yahoo.com>
+	<Pine.BSF.4.58.0410031649050.48685@emancholl.pair.com>
+	<20041003231640.GA19019@panix.com>
+	<20041003232439.GA21173@panix.com>
+	<Pine.BSF.4.58.0410031954550.48685@emancholl.pair.com>
+	<20041004032614.GA10798@panix.com>
+	<Pine.BSF.4.58.0410040344001.63602@emancholl.pair.com>
+	<41612CF3.6070600@t-online.de>
+Message-ID: <20041004202458.GA15078@panix.com>
+
+On Mon, Oct 04, 2004 at 10:58:59AM +0000, Carsten Bauer wrote:
+> ehmm, hmm,isn't this business a bit strange?
+> 
+> A question from someone who was lucky in NOT having its youth wasted
+> with weird asssembler languages :-)
+> 
+> What sense does it make incrementing a pointer when a priori you don't 
+> know anything about the entities it points to?
+> 
+
+When you are writing a storage alligator, er, allocator, it makes
+perfect sense.  Which is of course exactly what is under discussion.
+
+Randolph
+
+From cbauer- at t-online.de  Tue Oct  5 02:06:34 2004
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Tue Oct  5 00:56:33 2004
+Subject: [Radiance-dev] Image conversion self-answer
+References: <20041004110653.16678.qmail@web52105.mail.yahoo.com>	<41614D87.3000805@t-online.de>	<Pine.BSF.4.58.0410040815310.63602@emancholl.pair.com>
+	<160A88E0-161F-11D9-A5D8-000A95BB392A@lmi.net>
+Message-ID: <4161E58A.7050005@t-online.de>
+
+Greg Ward wrote:
+
+> self-contained as practical.  The TIFF library is the only exception, 
+> and though it is well-written and portable, it still causes compilation 
+> troubles on some systems (most notably Solaris these days).
+> 
+
+So far, the libtiff stuff never compiled on my Linux box either, but I 
+didn't care about it and thus didn't examine the problem further :-)
+
+-cb
+
+
+
+From wisaffec at lily.freemail.ne.jp  Tue Oct  5 06:55:54 2004
+From: wisaffec at lily.freemail.ne.jp (Tom)
+Date: Tue Oct  5 06:56:16 2004
+Subject: [Radiance-dev] Compiling on Microsoft Visual C++
+In-Reply-To: <Pine.BSF.4.58.0410031409330.48685@emancholl.pair.com>
+References: <20041004002327.5D5D.WISAFFEC@lily.freemail.ne.jp>
+	<Pine.BSF.4.58.0410031409330.48685@emancholl.pair.com>
+Message-ID: <20041005133859.77F1.WISAFFEC@lily.freemail.ne.jp>
+
+Now I'm struggling with running SCons...
+
+In the following instruction,
+
+> - Get and install Python: http://www.python.org/
+> - Get and install SCons:  http://scons.sourceforge.net/
+> - Get and install the Radiance HEAD dump and auxiliary package
+>   (the 3.5 release won't work).
+> - Open a command console (DOS box), and change to the "ray"
+>   directory of the Radiance source tree.
+> - Run the command "scons install" in that directory.
+>   (You may need to give the full path to the SCons batch file)
+> - Wait.
+
+What is "the Radiance HEAD dump and auxiliary package"?
+I think it is kind of "SConstruct" file, but I don't know
+wheter I can get it by downloading in the radiance site or 
+by making by myself.
+
+Please tell me where it is or how to make?
+
+Thank you,
+
+Tom
+
+-- 
+Tom <wisaffec@lily.freemail.ne.jp>
+
+
+
+From randolph at panix.com  Tue Oct  5 07:19:00 2004
+From: randolph at panix.com (Randolph Fritz)
+Date: Tue Oct  5 07:19:07 2004
+Subject: [Radiance-dev] void*
+In-Reply-To: <Pine.BSF.4.58.0410040344001.63602@emancholl.pair.com>
+References: <20041003195439.99589.qmail@web52108.mail.yahoo.com>
+	<Pine.BSF.4.58.0410031649050.48685@emancholl.pair.com>
+	<20041003231640.GA19019@panix.com>
+	<20041003232439.GA21173@panix.com>
+	<Pine.BSF.4.58.0410031954550.48685@emancholl.pair.com>
+	<20041004032614.GA10798@panix.com>
+	<Pine.BSF.4.58.0410040344001.63602@emancholl.pair.com>
+Message-ID: <20041005051900.GA1603@panix.com>
+
+On Mon, Oct 04, 2004 at 04:20:47AM -0400, Georg Mischler wrote:
+> 
+> >  More
+> > seriously, one might encounter systems where the alignment requirement
+> > is "long double" rather than "double", and future code which attempted
+> > to cast the result of bmalloc() to "long double" would fail.
+> 
+> So on some systems you won't be able to increment a char* pointer
+> anymore? I'm not quite as pessimistic... ;)
+> 
+
+On some current RISC systems you can't do so with impunity.  For example:
+
+  offset = 2;
+  p = malloc(2*sizeof(double));
+  dp = (double *) (p + offset);
+  *dp = 1.0;  /* runtime error */
+
+I have little doubt that we will soon encounter RISC systems with
+128-bit wide data buses that require offset to be 16.  It is for this
+reason that the results of void* arithmetic is undefined by the
+standard; there is no way to define it that is fast, space-conserving,
+and portable.  At the same time, every C compiler supports some
+version of unbound pointer arithmetic because it is required for
+writing storage allocators like calloc()/malloc()/free().
+
+I'd really rather not see more platform-dependent Radiance code.
+Unfortunately, it at least used to be the case that
+platform-dependencies made for substantial performance improvements.
+
+My long-term recommendation on such matters has not changed: it is
+best, first, to test for performance problems and use existing library
+facilities where performance problems are absent, second, to to use
+platform-dependent code in a clean way when it is of value.
+
+Randolph
+
+
+From gward at lmi.net  Tue Oct  5 07:27:55 2004
+From: gward at lmi.net (Greg Ward)
+Date: Tue Oct  5 07:28:39 2004
+Subject: [Radiance-dev] void*
+In-Reply-To: <20041005051900.GA1603@panix.com>
+References: <20041003195439.99589.qmail@web52108.mail.yahoo.com>
+	<Pine.BSF.4.58.0410031649050.48685@emancholl.pair.com>
+	<20041003231640.GA19019@panix.com>
+	<20041003232439.GA21173@panix.com>
+	<Pine.BSF.4.58.0410031954550.48685@emancholl.pair.com>
+	<20041004032614.GA10798@panix.com>
+	<Pine.BSF.4.58.0410040344001.63602@emancholl.pair.com>
+	<20041005051900.GA1603@panix.com>
+Message-ID: <4F6A1094-168F-11D9-844D-000A95BB392A@lmi.net>
+
+The macro ALIGNT is set to the appropriate alignment type for the 
+target system.  All allocation pointers are aligned with this type in 
+Radiance.  The setting of this macro is controlled in makeall with the 
+other (few) system-dependent settings.
+
+> From: Randolph Fritz <randolph@panix.com>
+> Date: October 4, 2004 10:19:00 PM PDT
+>
+> On Mon, Oct 04, 2004 at 04:20:47AM -0400, Georg Mischler wrote:
+>>
+>>>  More
+>>> seriously, one might encounter systems where the alignment 
+>>> requirement
+>>> is "long double" rather than "double", and future code which 
+>>> attempted
+>>> to cast the result of bmalloc() to "long double" would fail.
+>>
+>> So on some systems you won't be able to increment a char* pointer
+>> anymore? I'm not quite as pessimistic... ;)
+>
+> On some current RISC systems you can't do so with impunity.  For 
+> example:
+>
+>   offset = 2;
+>   p = malloc(2*sizeof(double));
+>   dp = (double *) (p + offset);
+>   *dp = 1.0;  /* runtime error */
+>
+> I have little doubt that we will soon encounter RISC systems with
+> 128-bit wide data buses that require offset to be 16.  It is for this
+> reason that the results of void* arithmetic is undefined by the
+> standard; there is no way to define it that is fast, space-conserving,
+> and portable.  At the same time, every C compiler supports some
+> version of unbound pointer arithmetic because it is required for
+> writing storage allocators like calloc()/malloc()/free().
+>
+> I'd really rather not see more platform-dependent Radiance code.
+> Unfortunately, it at least used to be the case that
+> platform-dependencies made for substantial performance improvements.
+>
+> My long-term recommendation on such matters has not changed: it is
+> best, first, to test for performance problems and use existing library
+> facilities where performance problems are absent, second, to to use
+> platform-dependent code in a clean way when it is of value.
+>
+> Randolph
+
+
+From randolph at panix.com  Tue Oct  5 07:34:44 2004
+From: randolph at panix.com (Randolph Fritz)
+Date: Tue Oct  5 07:34:48 2004
+Subject: [Radiance-dev] void*
+In-Reply-To: <4F6A1094-168F-11D9-844D-000A95BB392A@lmi.net>
+References: <20041003195439.99589.qmail@web52108.mail.yahoo.com>
+	<Pine.BSF.4.58.0410031649050.48685@emancholl.pair.com>
+	<20041003231640.GA19019@panix.com>
+	<20041003232439.GA21173@panix.com>
+	<Pine.BSF.4.58.0410031954550.48685@emancholl.pair.com>
+	<20041004032614.GA10798@panix.com>
+	<Pine.BSF.4.58.0410040344001.63602@emancholl.pair.com>
+	<20041005051900.GA1603@panix.com>
+	<4F6A1094-168F-11D9-844D-000A95BB392A@lmi.net>
+Message-ID: <20041005053444.GA2479@panix.com>
+
+On Mon, Oct 04, 2004 at 10:27:55PM -0700, Greg Ward wrote:
+> The macro ALIGNT is set to the appropriate alignment type for the 
+> target system.  All allocation pointers are aligned with this type in 
+> Radiance.  The setting of this macro is controlled in makeall with the 
+> other (few) system-dependent settings.
+
+Still, writing that routine with "char *" is probably going to fail in
+some environment, if it doesn't already.  And we know writing it with
+"void*" fails on MSVC.
+
+I really, really, really would prefer to isolate platform-dependent
+code.
+
+Randolph
+
+From apian at pab-opto.de  Tue Oct  5 09:45:13 2004
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Tue Oct  5 09:45:27 2004
+Subject: [Radiance-dev] Compiling on Microsoft / zip version of archives
+	now available
+In-Reply-To: <20041005133859.77F1.WISAFFEC@lily.freemail.ne.jp>
+References: <20041004002327.5D5D.WISAFFEC@lily.freemail.ne.jp>	<Pine.BSF.4.58.0410031409330.48685@emancholl.pair.com>
+	<20041005133859.77F1.WISAFFEC@lily.freemail.ne.jp>
+Message-ID: <41625109.9030406@pab-opto.de>
+
+Tom wrote:
+
+>>- Get and install Python: http://www.python.org/
+>>- Get and install SCons:  http://scons.sourceforge.net/
+>>- Get and install the Radiance HEAD dump and auxiliary package
+>>  (the 3.5 release won't work).
+>>...
+>>
+>Please tell me where it is or how to make?
+>  
+>
+for downloads of these files see
+
+http://www.radiance-online.org/software/
+
+zip versions of both archives have beeen added this morning.
+
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+
+
+From cbauer- at t-online.de  Tue Oct  5 13:38:10 2004
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Tue Oct  5 12:29:15 2004
+Subject: [Radiance-dev] Compiling on Microsoft Visual C++
+References: <20041004002327.5D5D.WISAFFEC@lily.freemail.ne.jp>	<Pine.BSF.4.58.0410031409330.48685@emancholl.pair.com>
+	<20041005133859.77F1.WISAFFEC@lily.freemail.ne.jp>
+Message-ID: <416287A2.9090307@t-online.de>
+
+Hi Tom
+
+yepp, now you see where you are, Radiance is indeed complex and you 
+notice the complexity right form the beginning :-)
+
+It's always the same problem, for those working already with it 
+everything has become self-evident, and its difficult to imagine how a 
+beginner might see it..
+
+
+1)
+there is a so called 'official' RADIANCE version 3.5, which can be 
+downloaded from the official radsite.lbl.gov
+
+this contains everything you need in one package
+
+2)
+this 'official' version is not really up to date, there is a continously 
+improved RADIANCE version, which is called RADIANCE-HEAD, containing the 
+latest bugfixes and some new features. This can be downloaded from 
+radiance-online.
+
+But the HEAD - Version is split into two parts, the rendering and 
+postprocessing programs and - the second part - a collection of library 
+files '.cal-files' (<- after some time spent with RADIANCE you'll know 
+what these are) etc, etc. This is called the auxilary package and has to 
+be downloaded separately (also from radiance-online)
+
+3) not to be mixed up with this auxiliary package is the SCons and 
+Python stuff.
+
+Radiance contains an installation script based on the classic UNIX 
+shells (C-shell) to perform all the tasks necessary to install it
+
+Georg Mischler has added a second possibility to install RADIANCE with 
+help of a publicly available tool called SCons, which itself needs 
+Python. So if you want to go the SCons way for the installation, you 
+have to get that tool of course.
+
+-cb.
+
+
+From tonygeek at yahoo.com  Tue Oct  5 13:46:24 2004
+From: tonygeek at yahoo.com (Tonko Juricic)
+Date: Tue Oct  5 13:53:11 2004
+Subject: [Radiance-dev] Compiling on Microsoft Visual C++
+In-Reply-To: <416287A2.9090307@t-online.de>
+Message-ID: <20041005114624.20882.qmail@web52108.mail.yahoo.com>
+
+
+--- Carsten Bauer <cbauer-@t-online.de> wrote:
+
+> Hi Tom
+> 
+> yepp, now you see where you are...
+
+All in all, README file wouldn't hurt. I am involved
+in a couple of other open source projects and it is
+always the same story : you spend enormous time
+learning how to build. That's why I like those
+projects that settled for complementary approach -
+generic build tool+separate directories for specific
+IDE builds. The problem with adding the latter is that
+there is another set of files that have to be
+maintained separately, but for some popular Source
+Forge projects it is obviously not a problem.
+
+Tony
+
+__________________________________________________
+Do You Yahoo!?
+Tired of spam?  Yahoo! Mail has the best spam protection around 
+http://mail.yahoo.com 
+
+From gward at lmi.net  Tue Oct  5 17:35:11 2004
+From: gward at lmi.net (Greg Ward)
+Date: Tue Oct  5 17:35:57 2004
+Subject: [Radiance-dev] void*
+In-Reply-To: <20041005053444.GA2479@panix.com>
+References: <20041003195439.99589.qmail@web52108.mail.yahoo.com>
+	<Pine.BSF.4.58.0410031649050.48685@emancholl.pair.com>
+	<20041003231640.GA19019@panix.com>
+	<20041003232439.GA21173@panix.com>
+	<Pine.BSF.4.58.0410031954550.48685@emancholl.pair.com>
+	<20041004032614.GA10798@panix.com>
+	<Pine.BSF.4.58.0410040344001.63602@emancholl.pair.com>
+	<20041005051900.GA1603@panix.com>
+	<4F6A1094-168F-11D9-844D-000A95BB392A@lmi.net>
+	<20041005053444.GA2479@panix.com>
+Message-ID: <25452680-16E4-11D9-BF41-000A95BB392A@lmi.net>
+
+By your measure, every bit of code is system dependent and would have 
+to be isolated....  This code has never failed, and given the ubiquity 
+of char * for memory (and its long history in C), any compiler that 
+choked on it would break 3/4 of Unix.  The reason C is portable is 
+because Unix is written in it, so it can't change arbitrarily from one 
+implementation to the next.  I still contend that it was MORE portable 
+before ANSI came along than after, but that's another discussion.
+
+-G
+
+> From: Randolph Fritz <randolph@panix.com>
+> Date: October 4, 2004 10:34:44 PM PDT
+>
+> On Mon, Oct 04, 2004 at 10:27:55PM -0700, Greg Ward wrote:
+>> The macro ALIGNT is set to the appropriate alignment type for the
+>> target system.  All allocation pointers are aligned with this type in
+>> Radiance.  The setting of this macro is controlled in makeall with the
+>> other (few) system-dependent settings.
+>
+> Still, writing that routine with "char *" is probably going to fail in
+> some environment, if it doesn't already.  And we know writing it with
+> "void*" fails on MSVC.
+>
+> I really, really, really would prefer to isolate platform-dependent
+> code.
+>
+> Randolph
+
+
+From randolph at panix.com  Tue Oct  5 18:41:15 2004
+From: randolph at panix.com (Randolph Fritz)
+Date: Tue Oct  5 18:41:19 2004
+Subject: [Radiance-dev] void*
+In-Reply-To: <25452680-16E4-11D9-BF41-000A95BB392A@lmi.net>
+References: <Pine.BSF.4.58.0410031649050.48685@emancholl.pair.com>
+	<20041003231640.GA19019@panix.com>
+	<20041003232439.GA21173@panix.com>
+	<Pine.BSF.4.58.0410031954550.48685@emancholl.pair.com>
+	<20041004032614.GA10798@panix.com>
+	<Pine.BSF.4.58.0410040344001.63602@emancholl.pair.com>
+	<20041005051900.GA1603@panix.com>
+	<4F6A1094-168F-11D9-844D-000A95BB392A@lmi.net>
+	<20041005053444.GA2479@panix.com>
+	<25452680-16E4-11D9-BF41-000A95BB392A@lmi.net>
+Message-ID: <20041005164115.GA26178@panix.com>
+
+On Tue, Oct 05, 2004 at 08:35:11AM -0700, Greg Ward wrote:
+> By your measure, every bit of code is system dependent and would have 
+> to be isolated....  This code has never failed, and given the ubiquity 
+> of char * for memory (and its long history in C), any compiler that 
+> choked on it would break 3/4 of Unix.  The reason C is portable is 
+> because Unix is written in it, so it can't change arbitrarily from one 
+> implementation to the next.  I still contend that it was MORE portable 
+> before ANSI came along than after, but that's another discussion.
+
+As long as one restricted to porting machines with VAX-like addressing
+and number sizes!  But, no, I don't think all, or even most, of
+Radiance is platform dependent.
+
+Randolph
+
+From schorsch at schorsch.com  Tue Oct  5 19:34:59 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Tue Oct  5 19:35:04 2004
+Subject: [Radiance-dev] void*
+In-Reply-To: <25452680-16E4-11D9-BF41-000A95BB392A@lmi.net>
+References: <20041003195439.99589.qmail@web52108.mail.yahoo.com>
+	<Pine.BSF.4.58.0410031649050.48685@emancholl.pair.com>
+	<20041003231640.GA19019@panix.com>
+	<20041003232439.GA21173@panix.com>
+	<Pine.BSF.4.58.0410031954550.48685@emancholl.pair.com>
+	<20041004032614.GA10798@panix.com>
+	<Pine.BSF.4.58.0410040344001.63602@emancholl.pair.com>
+	<20041005051900.GA1603@panix.com>
+	<4F6A1094-168F-11D9-844D-000A95BB392A@lmi.net>
+	<20041005053444.GA2479@panix.com>
+	<25452680-16E4-11D9-BF41-000A95BB392A@lmi.net>
+Message-ID: <Pine.BSF.4.58.0410051156250.95297@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> By your measure, every bit of code is system dependent and would have
+> to be isolated....  This code has never failed, and given the ubiquity
+> of char * for memory (and its long history in C), any compiler that
+> choked on it would break 3/4 of Unix.
+
+
+All C code using dynamic memory would break.
+
+There's a very basic reason why char* is the correct choice here.
+By definition, sizeof(char) == 1.  This means that memory sizes
+are always measured relative to the size of a char, while the
+actual number of bits in a char is irrelevant. If this rule (or
+an equivalent one) wasn't enforced, reliable memory handling
+would be impossible, let alone in a platform-independent way.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From tonygeek at yahoo.com  Wed Oct  6 15:29:49 2004
+From: tonygeek at yahoo.com (Tonko Juricic)
+Date: Wed Oct  6 15:36:34 2004
+Subject: [Radiance-dev] Fast Fourier Transform of PIC images
+In-Reply-To: <Pine.BSF.4.58.0410031441380.48685@emancholl.pair.com>
+Message-ID: <20041006132949.61697.qmail@web52104.mail.yahoo.com>
+
+Read this only if you are interested in Fast Fourier
+Transform of Radiance images.
+
+I got the latest version 3.0.1 of FFTW (www.fftw.org)
+to compile under Visual C++ 7.1, both with and without
+SIMD (SSE in my case) optimizations.
+
+Then I linked the resulting libray with the new
+program ra_fftw which behaves pretty much like
+standard image decoder programs. FFT of Radiance PIC
+file is another file with Radiance image header. It
+contains binary dump of float values for both real and
+imaginary parts of FFT laid aout like this:
+
+Real part RED scanline #1
+Real part GREEN scanline #1
+Real part BLUE scanline #1
+
+...
+
+Real part RED scanline #height
+Real part GREEN scanline #height
+Real part BLUE scanline #height
+Imaginary part RED scanline #1
+Imaginary part GREEN scanline #1
+Imaginary part BLUE scanline #1
+
+...
+
+Imaginary part RED scanline #height
+Imaginary part GREEN scanline #height
+Imaginary part BLUE scanline #height
+
+Invoking ra_fftw with -r option produces Radiance PIC
+after applying inverse FFT to the file in the format
+given above. That is how I verified that code actually
+works.
+
+I will probably add options for different output
+layouts and plus options for producing PIC from FFT
+file (like PIC only of real or imaginary part or PIC
+for Re^2+Im^2).
+
+After few more tests I will put the code with examples
+on the Web site that I am currently working on. You
+are welcome to suggest changes and additions to nay of
+above at this stage.
+
+Now for the bad news. While FFTW library compiles with
+SIMD enabled, it does not produce correct results.
+Attempting to trace the cause I am now almost certain
+that problem is caused by x86 stack alignment (which
+defaults to 4 bytes when using MS VC++) which should
+be forced to 8 bytes with SSE support enabled.
+Unfortunately, even if www.fftw.org invites comments
+about these problems and new ports, they never
+responded to my emails. In fact, they still offer old
+(and IMO pretty useless) MSVC project files for
+download on their site (big thanks to Francois, Joe
+Blow and who knows who geek kids for doing nothing >-(
+).
+
+Tony
+
+__________________________________________________
+Do You Yahoo!?
+Tired of spam?  Yahoo! Mail has the best spam protection around 
+http://mail.yahoo.com 
+
+From torspace at gmx.net  Sun Oct 10 12:10:15 2004
+From: torspace at gmx.net (torspace@gmx.net)
+Date: Sun Oct 10 12:10:22 2004
+Subject: [Radiance-dev] Radiance pic - float values to normal rgb ?
+Message-ID: <10377.1097403015@www66.gmx.net>
+
+hi,
+
+i want to make a simple hdri (radiance-pic)-viewer
+i have enocodet a hdr-image and as result i have floats from the 32Bit float
+triplet
+how can ein convert this values in a optimized bmp ? 
+there is a formal for it ? 
+now i make this
+
+for example:
+
+
+r_float_value = 2.00;
+g_float_value = 3.00;
+b_float_value = 5.00;
+
+r = 2*factor;
+if(r>255)r=255;
+g = 2*factor;
+if(g>255)r=255;
+b = 2*factor;
+if(b>255)r=255;
+
+this shows me a hdr-image.
+factor is a userdefined value. the user can modify this in runtime. while
+changing this the picture show me the different details. okay .. this is a
+strange work, but i dont know, how can i convert this (with gamma and other)
+
+(work with vc c++)
+thanks for help
+Greetings
+
+-- 
++++ GMX DSL Premiumtarife 3 Monate gratis* + WLAN-Router 0,- EUR* +++
+Clevere DSL-Nutzer wechseln jetzt zu GMX: http://www.gmx.net/de/go/dsl
+
+
+From gward at lmi.net  Thu Oct 14 15:27:47 2004
+From: gward at lmi.net (Greg Ward)
+Date: Thu Oct 14 15:30:22 2004
+Subject: [Radiance-dev] Radiance pic - float values to normal rgb ?
+In-Reply-To: <10377.1097403015@www66.gmx.net>
+References: <10377.1097403015@www66.gmx.net>
+Message-ID: <D65A1B63-1DE4-11D9-90F6-00306540F848@lmi.net>
+
+Why don't you simply modify the code in ra_bmp.c in the Radiance HEAD 
+distribution?  This may be found at:
+
+	http://www.radiance-online.org/
+
+under the "Software" distribution link.
+
+-Greg
+
+> From: torspace@gmx.net
+> Date: October 10, 2004 11:10:15 AM GMT+01:00
+>
+> hi,
+>
+> i want to make a simple hdri (radiance-pic)-viewer
+> i have enocodet a hdr-image and as result i have floats from the 32Bit 
+> float
+> triplet
+> how can ein convert this values in a optimized bmp ?
+> there is a formal for it ?
+> now i make this
+>
+> for example:
+>
+> r_float_value = 2.00;
+> g_float_value = 3.00;
+> b_float_value = 5.00;
+>
+> r = 2*factor;
+> if(r>255)r=255;
+> g = 2*factor;
+> if(g>255)r=255;
+> b = 2*factor;
+> if(b>255)r=255;
+>
+> this shows me a hdr-image.
+> factor is a userdefined value. the user can modify this in runtime. 
+> while
+> changing this the picture show me the different details. okay .. this 
+> is a
+> strange work, but i dont know, how can i convert this (with gamma and 
+> other)
+>
+> (work with vc c++)
+> thanks for help
+> Greetings
+
+
+From debatin_2 at relux.ch  Fri Oct 15 09:27:03 2004
+From: debatin_2 at relux.ch (Siegbert Debatin)
+Date: Fri Oct 15 09:26:41 2004
+Subject: [Radiance-dev] Win32 version
+In-Reply-To: <20041006132949.61697.qmail@web52104.mail.yahoo.com>
+References: <20041006132949.61697.qmail@web52104.mail.yahoo.com>
+Message-ID: <opsfwhndhtwm82zg@mail.relux.ch>
+
+Hi all
+
+Stimulated by the discussions during the Radiance workshop in Fribourg, we 
+tried to compile the head release on Windows. It failed in many files. We 
+fixed a lot of the problems, so most of the commandline programs no run 
+fine.
+
+So the important question to Greg and Schorsch is: how can I check in the 
+sources?
+
+Siegbert
+-- 
+Dr.-Ing. Siegbert Debatin
+Software development
+Relux Informatik AG      Dornacherstr. 377       CH-4053 Basel
+Tel. ++41 61 333 07 70   Fax: ++41 61 333 07 72
+
+From apian at pab-opto.de  Fri Oct 15 09:51:58 2004
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Fri Oct 15 09:52:40 2004
+Subject: [Radiance-dev] Win32 version
+In-Reply-To: <opsfwhndhtwm82zg@mail.relux.ch>
+References: <20041006132949.61697.qmail@web52104.mail.yahoo.com>
+	<opsfwhndhtwm82zg@mail.relux.ch>
+Message-ID: <416F819E.9060202@pab-opto.de>
+
+Siegbert Debatin wrote:
+
+> Hi all
+>
+> Stimulated by the discussions during the Radiance workshop in 
+> Fribourg, we tried to compile the head release on Windows. It failed 
+> in many files. We fixed a lot of the problems, so most of the 
+> commandline programs no run fine.
+>
+> So the important question to Greg and Schorsch is: how can I check in 
+> the sources?
+>
+> Siegbert
+
+writing to the CVS is handled via an ssh login to the machine, thereby 
+requiring a userid on it.
+While there's no compelling reason not to extend the inner circle of 
+folks with write access (currently three, including one not doing 
+anything (me)),
+I'd suggest that syncronization is easier if its either fed through Greg 
+or Schorsch.
+Let me know if that's feasible or not,
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+
+
+From gward at lmi.net  Fri Oct 15 11:02:58 2004
+From: gward at lmi.net (Greg Ward)
+Date: Fri Oct 15 11:03:49 2004
+Subject: [Radiance-dev] Win32 version
+In-Reply-To: <opsfwhndhtwm82zg@mail.relux.ch>
+References: <20041006132949.61697.qmail@web52104.mail.yahoo.com>
+	<opsfwhndhtwm82zg@mail.relux.ch>
+Message-ID: <0238033C-1E89-11D9-A41F-00306540F848@lmi.net>
+
+Hi Siegbert,
+
+You should definitely send your source changes to Schorsch, as he is 
+managing the Windows component.  This is good timing, as we hope to 
+make an official release, soon.
+
+Thanks, and nice talking to you at the workshop.
+-Greg
+
+> From: Siegbert Debatin <debatin_2@relux.ch>
+> Date: October 15, 2004 8:27:03 AM GMT+01:00
+>
+> Hi all
+>
+> Stimulated by the discussions during the Radiance workshop in 
+> Fribourg, we tried to compile the head release on Windows. It failed 
+> in many files. We fixed a lot of the problems, so most of the 
+> commandline programs no run fine.
+>
+> So the important question to Greg and Schorsch is: how can I check in 
+> the sources?
+>
+> Siegbert
+> -- 
+> Dr.-Ing. Siegbert Debatin
+> Software development
+> Relux Informatik AG      Dornacherstr. 377       CH-4053 Basel
+> Tel. ++41 61 333 07 70   Fax: ++41 61 333 07 72
+
+
+From schorsch at schorsch.com  Fri Oct 15 11:53:58 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Fri Oct 15 11:54:03 2004
+Subject: [Radiance-dev] Win32 version
+In-Reply-To: <opsfwhndhtwm82zg@mail.relux.ch>
+References: <20041006132949.61697.qmail@web52104.mail.yahoo.com>
+	<opsfwhndhtwm82zg@mail.relux.ch>
+Message-ID: <Pine.BSF.4.58.0410150528080.50234@emancholl.pair.com>
+
+Siegbert Debatin wrote:
+
+> Hi all
+>
+> Stimulated by the discussions during the Radiance workshop in Fribourg, we
+> tried to compile the head release on Windows. It failed in many files. We
+> fixed a lot of the problems, so most of the commandline programs no run
+> fine.
+
+Last time I tried, everything that is included in the SCons build
+went through without a problem.  Did you use SCons to build? It
+does a few things differently than the traditional makefiles.
+So the reasons why you had to fix some files may be caused by the
+build procedure, by changes that happened since my last try, or
+maybe even by a different compiler version.
+
+The SCons build has the advantage that it works the same on all
+platforms. It has the disadvantage that it doesn't directly
+interact with the VisualStudio environment on Windows, which
+prevents graphical debugging.  Actually, SCons should be able to
+generate VS project files. I'll try this feature some time next
+week, unless you manage to get it working before me...
+
+
+> So the important question to Greg and Schorsch is: how can I check in the
+> sources?
+
+If you ran the build with SCons, send me the changes.
+If you built your own project files manually, then you may not
+have included/linked to all the right files, so at least some of
+your changes may turn out to be redundant.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From debatin_2 at relux.ch  Fri Oct 15 13:59:44 2004
+From: debatin_2 at relux.ch (debatin_2@relux.ch)
+Date: Fri Oct 15 14:00:00 2004
+Subject: [Radiance-dev] Win32 version
+Message-ID: <200410151359.i9FBxgQL054712@mx3.imp.ch>
+
+> Last time I tried, everything that is included in the SCons 
+build
+> went through without a problem.  Did you use SCons to build? It
+> does a few things differently than the traditional makefiles.
+> So the reasons why you had to fix some files may be caused by 
+the
+> build procedure, by changes that happened since my last try, or
+> maybe even by a different compiler version.
+
+Yes, we used SCons to build. I could not check, wether the 
+problems were old or not. One was the void problem, already 
+discussed here a few days ago, another was a goto adress, which 
+did not exist.
+
+
+> It has the disadvantage that it doesn't directly
+> interact with the VisualStudio environment on Windows, which
+> prevents graphical debugging.  Actually, SCons should be able 
+to
+> generate VS project files. I'll try this feature some time next
+> week, unless you manage to get it working before me...
+
+I will try it next week. (I already stopped working this week.)
+
+
+> If you ran the build with SCons, send me the changes.
+
+SCons selected VisualStudio 7.0 for the build, I will also try it 
+with VisualStudio 6 and then send you the changes.
+
+Happy weekend
+
+Siegbert
+
+
+
+
+From debatin_2 at relux.ch  Tue Oct 19 10:19:17 2004
+From: debatin_2 at relux.ch (Siegbert Debatin)
+Date: Tue Oct 19 10:19:08 2004
+Subject: [Radiance-dev] Win32 version
+In-Reply-To: <Pine.BSF.4.58.0410150528080.50234@emancholl.pair.com>
+References: <20041006132949.61697.qmail@web52104.mail.yahoo.com>
+	<opsfwhndhtwm82zg@mail.relux.ch>
+	<Pine.BSF.4.58.0410150528080.50234@emancholl.pair.com>
+Message-ID: <opsf3yqfm5wm82zg@mail.relux.ch>
+
+> Actually, SCons should be able to
+> generate VS project files. I'll try this feature some time next
+> week, unless you manage to get it working before me...
+
+I tried to generate the Win32 project files from SCons using the 
+MSVSProject() function, but SCons told me something like "function not 
+found". It seems, that the generation of VS projects files does not work 
+at the moment. I found at note regarding this point in the SCons Wiki: 
+http://www.scons.org/cgi-bin/wiki/ExtendedExample. But I am not familiar 
+with Python, maybe I only missed something.
+
+Siegbert
+-- 
+Dr.-Ing. Siegbert Debatin
+Softwareentwicklung
+Relux Informatik AG      Dornacherstr. 377       CH-4053 Basel
+Tel. ++41 61 333 07 70   Fax: ++41 61 333 07 72
+
+From debatin_2 at relux.ch  Wed Oct 20 09:08:30 2004
+From: debatin_2 at relux.ch (Siegbert Debatin)
+Date: Wed Oct 20 09:08:46 2004
+Subject: [Radiance-dev] Illum problem
+Message-ID: <opsf5p4gxpwm82zg@mail.relux.ch>
+
+Hi all
+
+I have a scene, which consist of only one polygon. This polygon is an 
+illum and it renders visible. It renders unvisible as expected if I set 
+either:
+- ps = 6
+- change the height of the illum face
+- change the view a little bit.
+The effect also depends on the Radiance version. I first found it in the 
+old Windows version, but it is also in Radiance 3.5 and 3.6a. The latter 
+renders the polygon outlined, with dashed lines, but it is visible.
+
+This might be a problem in the Radiance kernel. The project files can be 
+downloaded from
+ftp://ftp.relux.biz/radiance/radProblem.zip
+
+Siegbert
+-- 
+Dr.-Ing. Siegbert Debatin
+Softwareentwicklung
+Relux Informatik AG      Dornacherstr. 377       CH-4053 Basel
+Tel. ++41 61 333 07 70   Fax: ++41 61 333 07 72
+
+From cveleglg at bankerinter.net  Wed Oct 20 11:22:54 2004
+From: cveleglg at bankerinter.net (Marija)
+Date: Wed Oct 20 11:31:35 2004
+Subject: [Radiance-dev] Compiling problems
+Message-ID: <00a301c4b687$89538990$0100a8c0@mallah>
+
+Hi,
+I'm trying to make some kind of Material editor, which will be used to 
+preview materials in the early phase of design, before the final scene is 
+composed. For that purpose I need to parse text file with material 
+descriptions, to find out which materials are defined.
+
+ My idea is to use some of existing Radiance functions for parsing. I found 
+that void readobj(char*) [readobj.c] could be useful for this. And finally 
+there is a question:
+
+Example of a code:
+file: parser.c
+------------------
+#include "standard.h"
+#include "object.h"
+
+void parse(char* name)
+{
+   readobj(name);
+}
+
+file: makefile
+--------------------
+RAD=/home/marija/ray/src/common
+LRAD==/home/marija/ray/src/lib
+CCOPTS=-O
+
+parser: parser.c
+ cc $(CCOPTS) -I$(RAD) -o parser parser.c -L$(LRAD) -lrt -lm
+_____________________________________________
+When I try to make it, I get next error massages:
+
+cc -O -I/home/marija/ray/src/common -o parser 
+parser.c -L=/home/marija/ray/src/lib  -lrt -lm
+/home/marija/ray/src/lib/librt.a(otypes.o)(.text+0x17): In function `otype':
+: undefined reference to `ofun'
+/home/marija/ray/src/lib/librt.a(otypes.o)(.text+0x61): In function 
+`objerror':
+: undefined reference to `ofun'
+/home/marija/ray/src/lib/librt.a(modobject.o)(.text+0xb9): In function 
+`lastmod':
+: undefined reference to `ofun'
+/home/marija/ray/src/lib/librt.a(modobject.o)(.text+0x144): In function 
+`insertobject':
+: undefined reference to `ofun'
+/home/marija/ray/src/lib/librt.a(readoct.o)(.text+0x55e): In function 
+`nonsurfinset':
+: undefined reference to `ofun'
+/home/marija/ray/src/lib/librt.a(mesh.o)(.text+0xe64): more undefined 
+references to `ofun' follow
+collect2: ld returned 1 exit status
+make: *** [parser] Error 1
+
+___________________________________________________________________
+My first idea was that I am doing something wrong, but when I tried to call 
+some other functions that don't use "ofun" table, program is compiled 
+without problems.
+
+Could somebody, please, tell me what is the problem here, because I am 
+trying to solve it for a week, without results.
+
+Regards,
+Marija.
+
+
+From Giulio.Antonutto at arup.com  Wed Oct 20 12:26:10 2004
+From: Giulio.Antonutto at arup.com (Giulio Antonutto)
+Date: Wed Oct 20 12:26:16 2004
+Subject: [Radiance-dev] Illum problem
+Message-ID: <DC0CAEEA090E984C911D3B85B16C3F900302C037@l-gnts05>
+
+no problem on 3.6a, macosX.
+used objview *.rad to preview
+and nothing appears,
+I added a red polygon and changed between illum/light several times to test,
+also tried rad -o x11 relux2_1.rif, all ok.
+everything appears to be ok... 
+cheers,
+giulio
+
+
+PS may be you are using an old .oct that is frozen?
+
+
+-----Original Message-----
+From: radiance-dev-bounces@radiance-online.org
+[mailto:radiance-dev-bounces@radiance-online.org]On Behalf Of Siegbert
+Debatin
+Sent: 20 October 2004 08:09
+To: radiance-dev@radiance-online.org
+Subject: [Radiance-dev] Illum problem
+
+
+Hi all
+
+I have a scene, which consist of only one polygon. This polygon is an 
+illum and it renders visible. It renders unvisible as expected if I set 
+either:
+- ps = 6
+- change the height of the illum face
+- change the view a little bit.
+The effect also depends on the Radiance version. I first found it in the 
+old Windows version, but it is also in Radiance 3.5 and 3.6a. The latter 
+renders the polygon outlined, with dashed lines, but it is visible.
+
+This might be a problem in the Radiance kernel. The project files can be 
+downloaded from
+ftp://ftp.relux.biz/radiance/radProblem.zip
+
+Siegbert
+-- 
+Dr.-Ing. Siegbert Debatin
+Softwareentwicklung
+Relux Informatik AG      Dornacherstr. 377       CH-4053 Basel
+Tel. ++41 61 333 07 70   Fax: ++41 61 333 07 72
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+___________________________________________________________________
+Electronic mail messages entering and leaving Arup business
+systems are scanned for acceptability of content and viruses.
+
+From debatin_2 at relux.ch  Wed Oct 20 13:31:42 2004
+From: debatin_2 at relux.ch (Siegbert Debatin)
+Date: Wed Oct 20 13:31:46 2004
+Subject: [Radiance-dev] Illum problem
+In-Reply-To: <DC0CAEEA090E984C911D3B85B16C3F900302C037@l-gnts05>
+References: <DC0CAEEA090E984C911D3B85B16C3F900302C037@l-gnts05>
+Message-ID: <opsf52a4qewm82zg@mail.relux.ch>
+
+> no problem on 3.6a, macosX.
+> used objview *.rad to preview
+> and nothing appears,
+> I added a red polygon and changed between illum/light several times to 
+> test,
+> also tried rad -o x11 relux2_1.rif, all ok.
+
+This way, it also works on my system, probably because of a different 
+parameter set. The problem only appears if I invoke Radiance via rad.
+
+Regards
+
+Siegbert
+-- 
+Dr.-Ing. Siegbert Debatin
+Softwareentwicklung
+Relux Informatik AG      Dornacherstr. 377       CH-4053 Basel
+Tel. ++41 61 333 07 70   Fax: ++41 61 333 07 72
+
+From cbauer- at t-online.de  Wed Oct 20 14:44:43 2004
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Wed Oct 20 13:34:27 2004
+Subject: [Radiance-dev] Compiling problems
+References: <00a301c4b687$89538990$0100a8c0@mallah>
+Message-ID: <41765DBB.5010608@t-online.de>
+
+Hi Marija,
+
+the Radiance library librt.a apparently cannot be used as standalone 
+module. It needs the separate ofun table. The reason is probably this: 
+if you produce oconv, the ofun table gets assigned the 'inclusion' 
+functions which check if an object intersects an octree subcube. If you 
+compile rpict or rvu, the ofun table gets assigned the ray-object 
+intersection functions.
+
+So if you don't need either of those, simply remove all references to 
+the ofun table from your parser code files. The other way would be 
+including it (no matter of you need it or not), then you have to look 
+out for the files which define it  (one is e.g. initotypes.c in src/rt), 
+but then in turn you have to include the whole set of functions, too, 
+and you'll end up in compiling almost all of the complete rpict...
+
+No matter which way you take, be aware that modifying the Radiance code 
+brings you right into the devil's boiling pot...
+
+But don't give up, there's always a solution..
+
+-cb
+
+PS: if you've further questions, I'd offer to continue this discussion 
+off-list
+
+
+From cbauer- at t-online.de  Wed Oct 20 15:14:27 2004
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Wed Oct 20 14:05:29 2004
+Subject: [Radiance-dev] Compiling problems --corr.
+References: <00a301c4b687$89538990$0100a8c0@mallah>
+	<41765DBB.5010608@t-online.de>
+Message-ID: <417664B3.7060808@t-online.de>
+
+Hi Marija,
+
+my first answer was -as usual with me- a bit lax and thus probably not 
+100% correct..
+I think the only point were the ofun table is used within the librt.a is 
+to get the name and type-number connection right for the various 
+primitives. And for your parser module you most certainly don't need the 
+real functions themselves but only the funname entry. So you might get 
+away with setting up a dummy table which simply sets a default (look at 
+initotypes.c) for all functions..
+
+-cb
+
+
+From Giulio.Antonutto at arup.com  Wed Oct 20 14:29:40 2004
+From: Giulio.Antonutto at arup.com (Giulio Antonutto)
+Date: Wed Oct 20 14:29:46 2004
+Subject: [Radiance-dev] Illum problem
+Message-ID: <DC0CAEEA090E984C911D3B85B16C3F900302C038@l-gnts05>
+
+try to delete the octree.
+ad run again rad -o x11
+hope it works...
+giulio
+
+-----Original Message-----
+From: Siegbert Debatin [mailto:debatin_2@relux.ch]
+Sent: 20 October 2004 12:32
+To: code development
+Subject: Re: [Radiance-dev] Illum problem
+
+
+> no problem on 3.6a, macosX.
+> used objview *.rad to preview
+> and nothing appears,
+> I added a red polygon and changed between illum/light several times to 
+> test,
+> also tried rad -o x11 relux2_1.rif, all ok.
+
+This way, it also works on my system, probably because of a different 
+parameter set. The problem only appears if I invoke Radiance via rad.
+
+Regards
+
+Siegbert
+-- 
+Dr.-Ing. Siegbert Debatin
+Softwareentwicklung
+Relux Informatik AG      Dornacherstr. 377       CH-4053 Basel
+Tel. ++41 61 333 07 70   Fax: ++41 61 333 07 72
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+___________________________________________________________________
+Electronic mail messages entering and leaving Arup business
+systems are scanned for acceptability of content and viruses.
+
+From Giulio.Antonutto at arup.com  Wed Oct 20 14:48:13 2004
+From: Giulio.Antonutto at arup.com (Giulio Antonutto)
+Date: Wed Oct 20 14:48:19 2004
+Subject: [Radiance-dev] Illum problem
+Message-ID: <DC0CAEEA090E984C911D3B85B16C3F900302C039@l-gnts05>
+
+ok,
+if I use rad and I write to a file I have the same problem:
+you are right.
+and you are right also when you say that it is due to the -ps setting....
+
+no idea now! 
+
+just use -ps 1..., but you did already ;-)
+cheers
+giulio
+
+
+
+-----Original Message-----
+From: Giulio Antonutto [mailto:Giulio.Antonutto@arup.com]
+Sent: 20 October 2004 13:30
+To: 'code development'
+Subject: RE: [Radiance-dev] Illum problem
+
+
+try to delete the octree.
+ad run again rad -o x11
+hope it works...
+giulio
+
+-----Original Message-----
+From: Siegbert Debatin [mailto:debatin_2@relux.ch]
+Sent: 20 October 2004 12:32
+To: code development
+Subject: Re: [Radiance-dev] Illum problem
+
+
+> no problem on 3.6a, macosX.
+> used objview *.rad to preview
+> and nothing appears,
+> I added a red polygon and changed between illum/light several times to 
+> test,
+> also tried rad -o x11 relux2_1.rif, all ok.
+
+This way, it also works on my system, probably because of a different 
+parameter set. The problem only appears if I invoke Radiance via rad.
+
+Regards
+
+Siegbert
+-- 
+Dr.-Ing. Siegbert Debatin
+Softwareentwicklung
+Relux Informatik AG      Dornacherstr. 377       CH-4053 Basel
+Tel. ++41 61 333 07 70   Fax: ++41 61 333 07 72
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+___________________________________________________________________
+Electronic mail messages entering and leaving Arup business
+systems are scanned for acceptability of content and viruses.
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+___________________________________________________________________
+Electronic mail messages entering and leaving Arup business
+systems are scanned for acceptability of content and viruses.
+
+From debatin_2 at relux.ch  Wed Oct 20 15:28:18 2004
+From: debatin_2 at relux.ch (Siegbert Debatin)
+Date: Wed Oct 20 15:28:24 2004
+Subject: [Radiance-dev] Illum problem
+In-Reply-To: <DC0CAEEA090E984C911D3B85B16C3F900302C039@l-gnts05>
+References: <DC0CAEEA090E984C911D3B85B16C3F900302C039@l-gnts05>
+Message-ID: <opsf57pgz4wm82zg@mail.relux.ch>
+
+> ok,
+> if I use rad and I write to a file I have the same problem:
+> you are right.
+> and you are right also when you say that it is due to the -ps setting....
+>
+> no idea now!
+>
+> just use -ps 1..., but you did already ;-)
+
+So I am not the only one. Thank you for testing, Giulio.
+
+Regards
+
+Siegbert
+-- 
+Dr.-Ing. Siegbert Debatin
+Softwareentwicklung
+Relux Informatik AG      Dornacherstr. 377       CH-4053 Basel
+Tel. ++41 61 333 07 70   Fax: ++41 61 333 07 72
+
+From cbauer- at t-online.de  Wed Oct 20 16:42:39 2004
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Wed Oct 20 15:32:31 2004
+Subject: [Radiance-dev] Illum problem
+References: <DC0CAEEA090E984C911D3B85B16C3F900302C039@l-gnts05>
+Message-ID: <4176795F.7020701@t-online.de>
+
+Hi Siegbert, Giulio
+
+unfortunately I don't have acess to my windows machine right now, so I 
+can't unpack the zip file (if you could probide a normal linux/unix tar 
+or tar.gz I'd have a look..)
+
+There is one 'problem' with illums and the additional source-drawing 
+routine I'm aware of, but this only occurs if the illum is viewed from a 
+distant point of view
+
+-cb
+
+
+
+
+
+From debatin_2 at relux.ch  Wed Oct 20 16:24:04 2004
+From: debatin_2 at relux.ch (Siegbert Debatin)
+Date: Wed Oct 20 16:24:04 2004
+Subject: [Radiance-dev] Illum problem
+In-Reply-To: <4176795F.7020701@t-online.de>
+References: <DC0CAEEA090E984C911D3B85B16C3F900302C039@l-gnts05>
+	<4176795F.7020701@t-online.de>
+Message-ID: <opsf6aaeacwm82zg@mail.relux.ch>
+
+> unfortunately I don't have acess to my windows machine right now, so I 
+> can't unpack the zip file (if you could probide a normal linux/unix tar 
+> or tar.gz I'd have a look..)
+
+Hi Carsten
+
+No problem:
+ftp://ftp.relux.biz/radiance/radProblem.tar.gz
+
+regards
+
+Siegbert
+-- 
+Dr.-Ing. Siegbert Debatin
+Softwareentwicklung
+Relux Informatik AG      Dornacherstr. 377       CH-4053 Basel
+Tel. ++41 61 333 07 70   Fax: ++41 61 333 07 72
+
+From cbauer- at t-online.de  Wed Oct 20 18:22:15 2004
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Wed Oct 20 17:13:46 2004
+Subject: [Radiance-dev] Illum problem
+References: <DC0CAEEA090E984C911D3B85B16C3F900302C039@l-gnts05>	<4176795F.7020701@t-online.de>
+	<opsf6aaeacwm82zg@mail.relux.ch>
+Message-ID: <417690B7.6080409@t-online.de>
+
+Hi Siegbert, Giulio
+
+yepp, thanx. Now I see it right before my eyes.. it's looking very 
+strange indeed..
+
+I came so far by now with my first tests:
+
+You look at the source at a very flat angle, and I suppose it's 
+something with the additional source-drawing routine. The pattern 
+doesn't appear in rvu (where this add. src-drawing is not performed).
+
+I made checks with radzilla, too, where I've switched off source-drawing 
+for illums by default. The pattern doesn't appear.
+But if I set -dd 1 individually for the illum polygon (i.e. switch on 
+add. source-drawing), I get the rim pattern, too. (but only for -ps 8 
+and higher)
+
+The connection to the ps setting (which controls the sampling density 
+for the picture generation) is not yet obvious to me. And probably the 
+boxcorr function plays a role,too...
+
+so there are still some mysteries to unravel :-)
+
+-cb
+
+
+From ckehrlich at yahoo.com  Wed Oct 20 18:34:08 2004
+From: ckehrlich at yahoo.com (Charles Ehrlich)
+Date: Wed Oct 20 18:34:16 2004
+Subject: [Radiance-dev] Re:  Illum problem
+In-Reply-To: <417690B7.6080409@t-online.de>
+Message-ID: <20041020163408.37312.qmail@web80304.mail.yahoo.com>
+
+Look in Srcsmp.c--if you dare--and you'll see either a. the holy grail or b. Armageddon depending upon your point of view.
+ 
+-Chas
+
+Carsten Bauer <cbauer-@t-online.de> wrote:
+Hi Siegbert, Giulio
+
+yepp, thanx. Now I see it right before my eyes.. it's looking very 
+strange indeed..
+
+I came so far by now with my first tests:
+
+You look at the source at a very flat angle, and I suppose it's 
+something with the additional source-drawing routine. The pattern 
+doesn't appear in rvu (where this add. src-drawing is not performed).
+
+I made checks with radzilla, too, where I've switched off source-drawing 
+for illums by default. The pattern doesn't appear.
+But if I set -dd 1 individually for the illum polygon (i.e. switch on 
+add. source-drawing), I get the rim pattern, too. (but only for -ps 8 
+and higher)
+
+The connection to the ps setting (which controls the sampling density 
+for the picture generation) is not yet obvious to me. And probably the 
+boxcorr function plays a role,too...
+
+so there are still some mysteries to unravel :-)
+
+-cb
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20041020/3754fdd2/attachment-0001.html
+From gward at lmi.net  Wed Oct 20 20:25:37 2004
+From: gward at lmi.net (Greg Ward)
+Date: Wed Oct 20 20:29:35 2004
+Subject: [Radiance-dev] Illum problem
+In-Reply-To: <417690B7.6080409@t-online.de>
+References: <DC0CAEEA090E984C911D3B85B16C3F900302C039@l-gnts05>	<4176795F.7020701@t-online.de>
+	<opsf6aaeacwm82zg@mail.relux.ch> <417690B7.6080409@t-online.de>
+Message-ID: <705EC465-22C5-11D9-8C10-000A95BB392A@lmi.net>
+
+Hi Siegbert, Guilio, Carsten,
+
+There was indeed a problem with the source drawing routines used by 
+rpict, which are not used in rvu.  I thought I had fixed this awhile 
+ago, but apparently not well enough.  I just checked in a new version 
+of srcdraw.c, which I'm hoping will be included in tomorrow's HEAD 
+tarball, or you can get it individually from CVS if you like.  The 
+change was minor, affecting the edges of illum surfaces.  Let me know 
+if there are still problems.
+
+And thanks for pointing this out!
+-Greg
+
+> From: cbauer-@t-online.de (Carsten Bauer)
+> Date: October 20, 2004 9:22:15 AM PDT
+>
+> Hi Siegbert, Giulio
+>
+> yepp, thanx. Now I see it right before my eyes.. it's looking very 
+> strange indeed..
+>
+> I came so far by now with my first tests:
+>
+> You look at the source at a very flat angle, and I suppose it's 
+> something with the additional source-drawing routine. The pattern 
+> doesn't appear in rvu (where this add. src-drawing is not performed).
+>
+> I made checks with radzilla, too, where I've switched off 
+> source-drawing for illums by default. The pattern doesn't appear.
+> But if I set -dd 1 individually for the illum polygon (i.e. switch on 
+> add. source-drawing), I get the rim pattern, too. (but only for -ps 8 
+> and higher)
+>
+> The connection to the ps setting (which controls the sampling density 
+> for the picture generation) is not yet obvious to me. And probably the 
+> boxcorr function plays a role,too...
+>
+> so there are still some mysteries to unravel :-)
+>
+> -cb
+
+
+From gward at lmi.net  Wed Oct 20 20:30:54 2004
+From: gward at lmi.net (Greg Ward)
+Date: Wed Oct 20 20:32:43 2004
+Subject: [Radiance-dev] Compiling problems --corr.
+In-Reply-To: <417664B3.7060808@t-online.de>
+References: <00a301c4b687$89538990$0100a8c0@mallah>
+	<41765DBB.5010608@t-online.de> <417664B3.7060808@t-online.de>
+Message-ID: <2D2604BE-22C6-11D9-8C10-000A95BB392A@lmi.net>
+
+Yes, Carsten is correct.  A line of the form:
+
+FUN  ofun[NUMOTYPE] = INIT_OTYPE;       /* default types and actions */
+
+In your file should define the table as needed.  You can look in 
+src/gen/xform.c for an example of using the Radiance parser.
+
+-Greg
+
+> From: cbauer-@t-online.de (Carsten Bauer)
+> Date: October 20, 2004 6:14:27 AM PDT
+>
+> Hi Marija,
+>
+> my first answer was -as usual with me- a bit lax and thus probably not 
+> 100% correct..
+> I think the only point were the ofun table is used within the librt.a 
+> is to get the name and type-number connection right for the various 
+> primitives. And for your parser module you most certainly don't need 
+> the real functions themselves but only the funname entry. So you might 
+> get away with setting up a dummy table which simply sets a default 
+> (look at initotypes.c) for all functions..
+>
+> -cb
+
+
+From cbauer- at t-online.de  Thu Oct 21 00:52:03 2004
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Wed Oct 20 23:41:49 2004
+Subject: [Radiance-dev] Re:  Illum problem
+References: <20041020163408.37312.qmail@web80304.mail.yahoo.com>
+Message-ID: <4176EC13.5080108@t-online.de>
+
+Charles Ehrlich wrote:
+> Look in Srcsmp.c--if you dare--and you'll see either a. the holy grail 
+> or b. Armageddon depending upon your point of view.
+>  
+
+:-)  its probably both at the same time
+
+In fact, that special detail is really fantastic stuff, and after 
+looking into srcdraw.c I was impressed by the amount of work which is 
+necessary to implement the - otherwise - straightforward sounding idea.
+
+And my approach of switching it off for illums in general simply serves 
+to allow undisturbed cheating :-)
+
+-cb
+
+
+From gward at lmi.net  Thu Oct 21 01:11:21 2004
+From: gward at lmi.net (Greg Ward)
+Date: Thu Oct 21 01:12:25 2004
+Subject: [Radiance-dev] Re:  Illum problem
+In-Reply-To: <4176EC13.5080108@t-online.de>
+References: <20041020163408.37312.qmail@web80304.mail.yahoo.com>
+	<4176EC13.5080108@t-online.de>
+Message-ID: <5B14BDCC-22ED-11D9-BD5B-000A95BB392A@lmi.net>
+
+> From: cbauer-@t-online.de (Carsten Bauer)
+>
+> In fact, that special detail is really fantastic stuff, and after 
+> looking into srcdraw.c I was impressed by the amount of work which is 
+> necessary to implement the - otherwise - straightforward sounding 
+> idea.
+
+I thought so as well, but Rob Shakespeare really needed it for his neon 
+lights, so I spent the time to get it working.  It was a major 
+headache.
+
+> And my approach of switching it off for illums in general simply 
+> serves to allow undisturbed cheating :-)
+
+The new change effectively switches source drawing off for illum's -- 
+at least, I think it does!
+
+-Greg
+
+
+From debatin_2 at relux.ch  Thu Oct 21 10:11:45 2004
+From: debatin_2 at relux.ch (Siegbert Debatin)
+Date: Thu Oct 21 10:11:40 2004
+Subject: [Radiance-dev] Illum problem
+In-Reply-To: <5B14BDCC-22ED-11D9-BD5B-000A95BB392A@lmi.net>
+References: <20041020163408.37312.qmail@web80304.mail.yahoo.com>
+	<4176EC13.5080108@t-online.de>
+	<5B14BDCC-22ED-11D9-BD5B-000A95BB392A@lmi.net>
+Message-ID: <opsf7npvy7wm82zg@mail.relux.ch>
+
+Greg Ward <gward@lmi.net> wrote:
+> The new change effectively switches source drawing off for illum's -- at 
+> least, I think it does!
+
+We checked out the head revision and compiled the Windows version, and it 
+works. Thank you, Greg.
+
+Siegbert
+-- 
+Dr.-Ing. Siegbert Debatin
+Softwareentwicklung
+Relux Informatik AG      Dornacherstr. 377       CH-4053 Basel
+Tel. ++41 61 333 07 70   Fax: ++41 61 333 07 72
+
+From schorsch at schorsch.com  Fri Oct 22 14:08:15 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Fri Oct 22 14:08:20 2004
+Subject: [Radiance-dev] Windows build [was Re: Official RADIANCE 3.6 release]
+In-Reply-To: <opsf9hsfipwm82zg@mail.relux.ch>
+References: <D75E3533-23B1-11D9-8F49-000A95BB392A@lmi.net>
+	<opsf9hsfipwm82zg@mail.relux.ch>
+Message-ID: <Pine.BSF.4.58.0410220803130.97265@emancholl.pair.com>
+
+Siegbert Debatin wrote:
+
+> This version does not compile on Windows for 2 main reasons:
+> 1. The folder build_utils is missing in the distribution, so the SCons
+> build script aborts.
+
+We didn't place a big focus on Windows for this release, because
+the port is a continuing effort. So while it would be nice to
+have the build_utils directory in the package, anyone trying to
+build on Windows should preferrably use the HEAD dump anyway.
+
+
+> 2. The changes I sent to Georg Mischler beginning this week are missing.
+> If you fix problem 1, the build process will terminate with errors.
+
+I didn't see any specfic fixes from you. Did you only intend
+to send those, or is this a mail system failure?
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From debatin_2 at relux.ch  Fri Oct 22 14:45:28 2004
+From: debatin_2 at relux.ch (Siegbert Debatin)
+Date: Fri Oct 22 14:45:18 2004
+Subject: [Radiance-dev] Windows build [was Re: Official RADIANCE 3.6
+	release]
+In-Reply-To: <Pine.BSF.4.58.0410220803130.97265@emancholl.pair.com>
+References: <D75E3533-23B1-11D9-8F49-000A95BB392A@lmi.net>
+	<opsf9hsfipwm82zg@mail.relux.ch>
+	<Pine.BSF.4.58.0410220803130.97265@emancholl.pair.com>
+Message-ID: <opsf9u12slwm82zg@mail.relux.ch>
+
+On Fri, 22 Oct 2004 08:08:15 -0400 (EDT), Georg Mischler 
+<schorsch@schorsch.com> wrote:
+> We didn't place a big focus on Windows for this release, because
+> the port is a continuing effort. So while it would be nice to
+> have the build_utils directory in the package, anyone trying to
+> build on Windows should preferrably use the HEAD dump anyway.
+
+I just wanted to check, wether the new release is Windows enabled or not. 
+It was not mentioned in Gregs post.
+
+
+> I didn't see any specfic fixes from you. Did you only intend
+> to send those, or is this a mail system failure?
+
+I sent them on Tuesday morning this week to schorsch@schorsch.com. I just 
+redirected the original mail to you. Please give me a note, if you didn't 
+receive it.
+
+Siegbert
+-- 
+Dr.-Ing. Siegbert Debatin
+Softwareentwicklung
+Relux Informatik AG      Dornacherstr. 377       CH-4053 Basel
+Tel. ++41 61 333 07 70   Fax: ++41 61 333 07 72
+
+From tonygeek at yahoo.com  Sat Oct 23 20:27:25 2004
+From: tonygeek at yahoo.com (Tonko Juricic)
+Date: Sat Oct 23 20:34:10 2004
+Subject: [Radiance-dev] Weekend topic: void* cast
+In-Reply-To: <opsf7npvy7wm82zg@mail.relux.ch>
+Message-ID: <20041023182725.46267.qmail@web52108.mail.yahoo.com>
+
+Picky little unimportant topic:
+
+I see casts to void * like, for ex.
+
+char* cin;
+cin=(char*)malloc(SOMETHING);
+free((void *)cin);  <<<< THIS ONE!!!
+
+MS compiler never complains if you skip the last cast
+and I noticed it because it strikes me as quite ugly.
+
+I wonder if C ANSI-fication requires explicit cast to
+void* like in free function above?
+Or is it that some compilers issue unwanted warnings?
+
+Tony 
+
+
+
+
+
+
+		
+_______________________________
+Do you Yahoo!?
+Declare Yourself - Register online to vote today!
+http://vote.yahoo.com
+
+From schorsch at schorsch.com  Sat Oct 23 20:53:51 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Sat Oct 23 20:54:02 2004
+Subject: [Radiance-dev] Weekend topic: void* cast
+In-Reply-To: <20041023182725.46267.qmail@web52108.mail.yahoo.com>
+References: <20041023182725.46267.qmail@web52108.mail.yahoo.com>
+Message-ID: <Pine.BSF.4.58.0410231450490.26863@emancholl.pair.com>
+
+Tonko Juricic wrote:
+
+> Picky little unimportant topic:
+>
+> I see casts to void * like, for ex.
+>
+> char* cin;
+> cin=(char*)malloc(SOMETHING);
+> free((void *)cin);  <<<< THIS ONE!!!
+>
+> MS compiler never complains if you skip the last cast
+> and I noticed it because it strikes me as quite ugly.
+>
+> I wonder if C ANSI-fication requires explicit cast to
+> void* like in free function above?
+> Or is it that some compilers issue unwanted warnings?
+
+
+I think it used to be necessary in K&R C. In ANSI, void* is the
+official "generic" pointer, and any assignment from or two one of
+those is valid without a cast. Since malloc() and free() have
+void* as their return resp. argument type, both casts in your
+example are redundant.
+
+That's how I understand it, anyway... ;)
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From randolph at panix.com  Sat Oct 23 21:04:42 2004
+From: randolph at panix.com (Randolph Fritz)
+Date: Sat Oct 23 21:04:58 2004
+Subject: [Radiance-dev] Weekend topic: void* cast
+In-Reply-To: <Pine.BSF.4.58.0410231450490.26863@emancholl.pair.com>
+References: <20041023182725.46267.qmail@web52108.mail.yahoo.com>
+	<Pine.BSF.4.58.0410231450490.26863@emancholl.pair.com>
+Message-ID: <20041023190442.GA299@panix.com>
+
+On Sat, Oct 23, 2004 at 02:53:51PM -0400, Georg Mischler wrote:
+> Tonko Juricic wrote:
+> 
+> > Picky little unimportant topic:
+> >
+> > I see casts to void * like, for ex.
+> >
+> > char* cin;
+> > cin=(char*)malloc(SOMETHING);
+> > free((void *)cin);  <<<< THIS ONE!!!
+> >
+> > MS compiler never complains if you skip the last cast
+> > and I noticed it because it strikes me as quite ugly.
+> >
+> > I wonder if C ANSI-fication requires explicit cast to
+> > void* like in free function above?
+> > Or is it that some compilers issue unwanted warnings?
+> 
+> 
+> I think it used to be necessary in K&R C. In ANSI, void* is the
+> official "generic" pointer, and any assignment from or two one of
+> those is valid without a cast. Since malloc() and free() have
+> void* as their return resp. argument type, both casts in your
+> example are redundant.
+> 
+> That's how I understand it, anyway... ;)
+> 
+
+I believe this is correct, though I'd have to check a reference I
+don't have to hand to be sure.
+
+Randolph
+
+From schorsch at schorsch.com  Sat Oct 23 21:26:46 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Sat Oct 23 21:26:50 2004
+Subject: [Radiance-dev] Windows build
+In-Reply-To: <opsf9u12slwm82zg@mail.relux.ch>
+References: <D75E3533-23B1-11D9-8F49-000A95BB392A@lmi.net>
+	<opsf9hsfipwm82zg@mail.relux.ch>
+	<Pine.BSF.4.58.0410220803130.97265@emancholl.pair.com>
+	<opsf9u12slwm82zg@mail.relux.ch>
+Message-ID: <Pine.BSF.4.58.0410231521070.26863@emancholl.pair.com>
+
+Siegbert Debatin wrote:
+
+> Georg Mischler wrote:
+>> I didn't see any specfic fixes from you. Did you only intend
+>> to send those, or is this a mail system failure?
+>
+> I sent them on Tuesday morning this week to schorsch@schorsch.com. I just
+> redirected the original mail to you. Please give me a note, if you didn't
+> receive it.
+
+Mail with a *.zip attachment is sorted into a seperate folder
+on my server, together with all the viruses and worms. Quite
+likely that I didn't spot yours in between those and accidentally
+deleted it.
+
+But I got the second copy, and applied as much of it as I could.
+The changes are checked in and should be in tomorrows HEAD dump.
+
+Following below are my comments to those items where I didn't
+simply use your fix. The explanations and questions may also be
+interesting for others to better understand the task at hand.
+If anyone sees a specific problem that they'd like to tackle,
+please speak up so we can discuss the details.
+
+1.
+You added a "typedef RT_PID pid_t" to common/rtprocess.h.
+However, we shouldn't be using pid_t, as it is platform specific.
+I found only one place where it was still used, in the dummy
+definition of kill() in util/win_netproc.h. I removed this
+function, because the new win_kill() in common/win_process.c
+should be used instead (but see next item).
+
+2.
+The kill(pid, SIGALRM) in gen/mkillum.c was added recently and
+points to a more general problem on Windows. First there is no
+kill() in Windows anyway. I added a #define in rtprocess.h, so
+that it will call win_kill() and ultimately SafeTerminateProcess()
+from common/win_process.c. But this only solves part of the
+problem, because it ignores the signal number and always does the
+equivalent of a "kill -9". The reason unix uses SIGALRM here is
+to alert the subprocess, so that it has a chance to clean up its
+temporary files etc. before exiting. I assume there's equivalent
+notification functionality available in the native Win32 APIs.
+Maybe we should create an abstraction like "send_alarm_to_die()"
+to generalize the task?
+
+3.
+This leaves us with select() not linked in gen/mkillum2.c.
+The select() call was recently added for parallel processing.
+It may be possible to compile this with the right libaries, but
+it will NOT work on Windows because the Windows select() only
+supports sockets. Does anyone know a good alternative to poll a
+number of file descriptors without doing a busy-wait on Windows?
+
+4.
+What does Windows define in sys/file.h? Is it present on all
+versions? In that case, it might be better to include that in
+common/paths.h or common/platform.h instead of directly in
+ot/obj2mesh.c.
+You also added sys/file.h to rt/rpict.c, but in a section that is
+only relevant to posix-but-non-bsd systems, which I assume is not
+what you meant. Did moving platform.h further up there solve
+anything?
+
+5.
+The missing goto label in util/rad.c was still present in the
+sources to Radiance3.3 (from DR), so I added it again.
+That code allows to pass view parameters in through environment
+variables. This is/was necessary for programs that are called
+through system()/popen(), where the shell would limit the number
+of arguments passed to a subprocess. I'm not sure if it is still
+needed, or if it even might be helpful on other platforms as
+well.
+
+6.
+including sys/wait.h only for POSIX systems in util/rpiece.c is
+ugly, but the simplest workaround for the moment. We'll need an
+abstraction for the process management in rpiece to make this
+portable.
+
+7.
+You changed the first argument of bfree() in common/bmalloc.c to
+char*, so we can operate arithmetics on it (analog to my fix for
+bposition). However, changing the signature of that function
+would require numerous casts elsewhere. I now created a seperate
+local char* variable, which should give us the positive effect
+without the signature change.
+Actually, what was the latest consensus again? Do we really still
+need common/bmalloc.c anymore on any current platforms?
+
+8.
+You included resolu.h a second time in gen/genrev.c. Did that
+change anything, or was the actual solution to link against
+rtio.lib?
+
+9.
+Ra_bmp.exe now links against rtproc.lib, and common/tmapcolrs.c
+includes rtprocess.h, so that they will have our popen()
+replacement available and should build on Windows as well.
+
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From debatin_2 at relux.ch  Mon Oct 25 17:12:58 2004
+From: debatin_2 at relux.ch (Siegbert Debatin)
+Date: Mon Oct 25 17:13:06 2004
+Subject: [Radiance-dev] Windows build
+In-Reply-To: <Pine.BSF.4.58.0410231521070.26863@emancholl.pair.com>
+References: <D75E3533-23B1-11D9-8F49-000A95BB392A@lmi.net>
+	<opsf9hsfipwm82zg@mail.relux.ch>
+	<Pine.BSF.4.58.0410220803130.97265@emancholl.pair.com>
+	<opsf9u12slwm82zg@mail.relux.ch>
+	<Pine.BSF.4.58.0410231521070.26863@emancholl.pair.com>
+Message-ID: <opsgflvwbrwm82zg@mail.relux.ch>
+
+Georg Mischler <schorsch@schorsch.com> wrote:
+> Mail with a *.zip attachment is sorted into a seperate folder
+> on my server, together with all the viruses and worms. Quite
+> likely that I didn't spot yours in between those and accidentally
+> deleted it.
+
+Which type of attachment should I use for further code changes?
+
+> 4.
+> What does Windows define in sys/file.h? Is it present on all
+> versions?
+
+It is not present at all for Microsoft Visual C++ 6.0, 7.0 and 7.1. That's 
+the reason for putting it in a posix-but-non-bsd systems section.
+
+I will have to check the other points in more detail. What I can state for 
+now is, that the current head release does not even compile on Windows.
+
+Siegbert
+-- 
+Dr.-Ing. Siegbert Debatin
+Softwareentwicklung
+Relux Informatik AG      Dornacherstr. 377       CH-4053 Basel
+Tel. ++41 61 333 07 70   Fax: ++41 61 333 07 72
+
+From pisuke at blueyonder.co.uk  Sun Oct 31 01:20:15 2004
+From: pisuke at blueyonder.co.uk (Francesco Anselmo)
+Date: Sun Oct 31 01:20:23 2004
+Subject: [Radiance-dev] #error "GCC no longer implements <varargs.h>"
+Message-ID: <1099178415.27574.14.camel@leviathan>
+
+Hi!
+
+Just compiled 3R6P1 with gcc 3.3.4.
+
+Everything compiles fine, also with Scons 
+(great job! very useful!), except
+the programs in the meta directory.
+
+gcc 3.3 doesn't like the use of <varargs.h> any more ...
+the error is:
+
+-----8<----cut-here-----8<----cut-here-----8<----cut-here-----8<----
+
+In file included from src/meta/imPfuncs.h:18,
+                 from src/meta/impress.c:15:
+/usr/lib/gcc-lib/i486-linux/3.3.4/include/varargs.h:4:2: 
+#error "GCC no longer implements <varargs.h>"
+/usr/lib/gcc-lib/i486-linux/3.3.4/include/varargs.h:4:2:
+#error "Revise your code to use <stdarg.h>."
+
+-----8<----cut-here-----8<----cut-here-----8<----cut-here-----8<----
+
+With gcc 2.95 the meta stuff compiles perfectly.
+
+Simply changing 
+#include <varargs.h> 
+to
+#include <stdarg.h> 
+doesn't work in this case ...
+
+I've been using x11meta and the plot functions from time to time:
+is there anybody else still using the libmeta related programs?
+
+
+-- 
+Francesco Anselmo <pisuke@blueyonder.co.uk>
+
+
+From anselmo at dream.unipa.it  Sun Oct 31 02:14:00 2004
+From: anselmo at dream.unipa.it (Francesco Anselmo)
+Date: Sun Oct 31 02:14:08 2004
+Subject: [Radiance-dev] #error "GCC no longer implements <varargs.h>"
+In-Reply-To: <1099178415.27574.14.camel@leviathan>
+References: <1099178415.27574.14.camel@leviathan>
+Message-ID: <1099181640.27574.25.camel@leviathan>
+
+Hi again!
+
+> Simply changing 
+> #include <varargs.h> 
+> to
+> #include <stdarg.h> 
+> doesn't work in this case ...
+
+I forgot to say how I fixed it ...
+
+Here is what I've modified in ray/src/meta/imPfuncs.c to make it compile
+again (also same #include modification in ray/src/meta/imPfuncs.h).
+
+15c15
+< #include <stdarg.h>
+---
+> #include <varargs.h>
+127c127,129
+< imCreateFamilyTable(int count,...)
+---
+> imCreateFamilyTable(va_alist)
+>
+> va_dcl
+136c138
+<     va_start(vars, count);
+---
+>     va_start(vars);
+161c163,165
+< imCreatePath(int mcount, ...)
+---
+> imCreatePath(va_alist)
+>
+> va_dcl
+169c173
+<     va_start(vars, mcount);
+---
+>     va_start(vars);
+
+--
+Francesco
+
+
+From gward at lmi.net  Sun Oct 31 23:01:00 2004
+From: gward at lmi.net (Greg Ward)
+Date: Sun Oct 31 23:02:14 2004
+Subject: [Radiance-dev] #error "GCC no longer implements <varargs.h>"
+In-Reply-To: <1099181640.27574.25.camel@leviathan>
+References: <1099178415.27574.14.camel@leviathan>
+	<1099181640.27574.25.camel@leviathan>
+Message-ID: <59B7DC7C-2B88-11D9-BD72-000A95BB392A@lmi.net>
+
+HiFrancesco,
+
+Thanks for the bug report, and the fix.  For whatever reason, varargs 
+is still supported on the gcc 3.3 compiler under Mac OS X.  I've 
+noticed other differences between the Linux gcc and the Mac OS X one, 
+to the point where I really don't think the version means much.
+
+Anyway, I'm not sure it's even worth making this fix, since the Impress 
+printer drivers are not used anymore.  We should simply remove this 
+program from the build list and fix it that way.  There's no sense in 
+maintaining obsolete programs in my opinion, though we seem to have a 
+lot of them.  We really need to compile a list of programs no one uses 
+anymore and decomission them.
+
+-Greg
+
+
+From randolph at panix.com  Sun Oct 31 23:28:06 2004
+From: randolph at panix.com (Randolph Fritz)
+Date: Sun Oct 31 23:28:17 2004
+Subject: [Radiance-dev] #error "GCC no longer implements <varargs.h>"
+In-Reply-To: <59B7DC7C-2B88-11D9-BD72-000A95BB392A@lmi.net>
+References: <1099178415.27574.14.camel@leviathan>
+	<1099181640.27574.25.camel@leviathan>
+	<59B7DC7C-2B88-11D9-BD72-000A95BB392A@lmi.net>
+Message-ID: <20041031222806.GA24873@panix.com>
+
+On Sun, Oct 31, 2004 at 02:01:00PM -0800, Greg Ward wrote:
+> 
+> Thanks for the bug report, and the fix.  For whatever reason, varargs 
+> is still supported on the gcc 3.3 compiler under Mac OS X.  I've 
+> noticed other differences between the Linux gcc and the Mac OS X one, 
+> to the point where I really don't think the version means much.
+> 
+
+Varargs is not C90, btw--I'm not sure what platform it comes from.
+
+>
+> Anyway, I'm not sure it's even worth making this fix, since the Impress 
+> printer drivers are not used anymore.  We should simply remove this 
+> program from the build list and fix it that way.  There's no sense in 
+> maintaining obsolete programs in my opinion, though we seem to have a 
+> lot of them.  We really need to compile a list of programs no one uses 
+> anymore and decomission them.
+> 
+
+I daresay.  Can we even test this driver?  Anyone have an Impress
+printer?
+
+Randolph
+

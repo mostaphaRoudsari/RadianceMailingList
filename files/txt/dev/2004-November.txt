@@ -1,0 +1,1394 @@
+From cbauer- at t-online.de  Mon Nov  1 00:53:58 2004
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Sun Oct 31 23:43:23 2004
+Subject: [Radiance-dev] #error "GCC no longer implements <varargs.h>"
+References: <1099178415.27574.14.camel@leviathan>	<1099181640.27574.25.camel@leviathan>	<59B7DC7C-2B88-11D9-BD72-000A95BB392A@lmi.net>
+	<20041031222806.GA24873@panix.com>
+Message-ID: <41857B16.40105@t-online.de>
+
+Randolph Fritz wrote:
+
+> 
+> I daresay.  Can we even test this driver?  Anyone have an Impress
+> printer?
+> 
+
+What *IS* an Impress printer ??? Maybe I'm too young to know about this..
+
+-cb
+
+
+
+From schorsch at schorsch.com  Mon Nov  1 00:26:53 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Mon Nov  1 00:27:00 2004
+Subject: [Radiance-dev] #error "GCC no longer implements <varargs.h>"
+In-Reply-To: <20041031222806.GA24873@panix.com>
+References: <1099178415.27574.14.camel@leviathan>
+	<1099181640.27574.25.camel@leviathan>
+	<59B7DC7C-2B88-11D9-BD72-000A95BB392A@lmi.net>
+	<20041031222806.GA24873@panix.com>
+Message-ID: <Pine.BSF.4.58.0410311814140.87934@emancholl.pair.com>
+
+Randolph Fritz wrote:
+
+> On Sun, Oct 31, 2004 at 02:01:00PM -0800, Greg Ward wrote:
+> >
+> > Thanks for the bug report, and the fix.  For whatever reason, varargs
+> > is still supported on the gcc 3.3 compiler under Mac OS X.
+>
+> Varargs is not C90, btw--I'm not sure what platform it comes from.
+
+Varargs is K&R C (pre ANSI). It is still supported by most
+compilers (resp. the associated libraries) for backwards
+compatibility.  Apparently some gcc packages are starting to
+abandon that tradition now, which was to be expected eventually.
+
+
+> > Anyway, I'm not sure it's even worth making this fix, since the Impress
+> > printer drivers are not used anymore.
+
+If that's the only place where we use varargs.h, then dropping
+that driver is a reasonable solution. If it's used elsewhere as
+well, then we should fix those places to use the ANSI stdarg
+macros instead.  That's one of the remaining items in my
+ANSIfication efforts.
+
+Apropos: Can we establish any kind of consensus about which
+modules in the current distribution are considered obsolete?
+I'm sure there are a few more, and if we remove all of them in
+one go, then that might eliminate a few more potential build
+hassles. The deleted files will go to the CVS attic, where
+people can still get them if anyone should ever need them again.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From gward at lmi.net  Mon Nov  1 04:28:38 2004
+From: gward at lmi.net (Greg Ward)
+Date: Mon Nov  1 04:29:53 2004
+Subject: [Radiance-dev] #error "GCC no longer implements <varargs.h>"
+In-Reply-To: <Pine.BSF.4.58.0410311814140.87934@emancholl.pair.com>
+References: <1099178415.27574.14.camel@leviathan>
+	<1099181640.27574.25.camel@leviathan>
+	<59B7DC7C-2B88-11D9-BD72-000A95BB392A@lmi.net>
+	<20041031222806.GA24873@panix.com>
+	<Pine.BSF.4.58.0410311814140.87934@emancholl.pair.com>
+Message-ID: <1F0149EA-2BB6-11D9-B4F6-000A95BB392A@lmi.net>
+
+I don't think varargs.h is used anywhere else -- at least, I've never 
+used it.  I took the impress functions from somewhere else.  I don't 
+think the printers have existed since 1989 or so, and they weren't even 
+all that popular back then.  PostScript took over the printer market 
+about that time.
+
+Here's my candidate list of programs for the CVS attic:
+
+oki20	- printer driver for OkiMate 20 printer (B&W)
+oki20c	- printer driver for OkiMate 20 color printer
+pcwarp	- intended as more general substitute for macbetcal, but never 
+quite worked
+plotin	- convert old Unix plot(5) files to metafile graphics
+ra_avs	- convert to & from AVS image format
+ra_bn	- convert to & from Barneyscann format
+ra_pr	- convert to & from 8-bit Sun rasterfile format (still used by 
+anyone?)
+ra_pr24	- convert to & from 24-bit Sun rasterfile format
+thf2rad	- convert GDS "things file" to Radiance scene format
+ttyimage	- picture to ASCII output converter (useful for anything 
+anymore?)
+
+So, not quite as many as I thought.  In fact, I notice that the impress 
+driver isn't in my list of built executables -- meaning that it's 
+already effectively "off the list" of Radiance programs.  However, it's 
+still in the source directories, along with a lot of other flotsam 
+that's no longer used for anything.  I wonder now why Francesco was 
+even seeing this error, and now I see that my gcc 3.3 compiler does NOT 
+support varargs when I try to build the "impress" executable manually.  
+Perhaps he was using SCONS, and schorsch included things there that are 
+not built by the default Rmakefile.
+
+So, we should add to the list source files that are not built by 
+default these days.  Unused headers:
+
+hd/rhd_sample.h
+hd/sm.h
+hd/sm_flag.h
+hd/sm_geom.h
+hd/sm_list.h
+hd/sm_qtree.h
+hd/sm_stree.h
+meta/macplot.h
+meta/random.h
+meta/span.h
+meta/tgraph.h
+px/tardev.h
+px/x11icon.h
+px/xraster.h
+rt/newsconstants.h
+
+Unused C-files:
+
+common/bcopy.c
+common/fixargv0.c
+common/frexp.c
+common/fwrite.c
+common/malloc.c
+common/peano.c
+common/popen.c
+common/random.c
+gen/genmarble.c
+gen/genbeads.c
+gen/hermite3.c
+hd/rhd_glx.c
+hd/rhd_glx2.c
+hd/rhd_ogl.c
+hd/rhd_ogl0.c
+hd/rhd_oglo.c
+hd/rhd_ogls.c
+hd/rhd_oglso.c
+hd/rhd_x11dbg.c
+hd/rhdisp3.c
+hd/sm.c
+hd/sm_del.c
+hd/sm_geom.c
+hd/sm_list.c
+hd/sm_ogl.c
+hd/sm_qtree.c
+hd/sm_samp.c
+hd/sm_sets.c
+hd/sm_stree.c
+hd/sm_test.c
+hd/sm_usets.c
+meta/aed5.c
+meta/convect.c
+meta/cvmaze.c
+meta/ealloc.c
+meta/genflake.c
+meta/gentree.c
+meta/hfio.c
+meta/imPfuncs.c
+meta/imagew.c
+meta/implot.c
+meta/impress.c
+meta/mac.c
+meta/macplot.c
+meta/macprt.c
+meta/mplot.c
+meta/mqdraw.c
+meta/mt160.c
+meta/mt160l.c
+meta/mtext.c
+meta/mx80.c
+meta/okimate.c
+meta/plotout.c
+meta/tbar.c
+meta/tcurve.c
+meta/tgraph.c
+meta/tscat.c
+meta/xplot.c
+px/aedimage.c
+px/brandom.c
+px/colorscale.c
+px/d48c.c
+px/glimage.c
+px/greyscale.c
+px/hexbit.c
+px/mt160r.c
+px/paintjet.c
+px/panim.c
+px/psum.c
+px/ra_im.c
+px/ra_pixar.c
+px/ra_xim.c
+px/scan.c
+px/slide.c
+px/t4027.c
+px/vgaimage.c
+px/xdebugamb.c
+px/ximage.c
+px/xraster.c
+rt/aed.c
+rt/msmouse.c
+rt/tty.c
+rt/vga.c
+util/contour.c
+util/makedist.c
+util/pranim.c
+util/scanner.c
+util/swaprasheader.c
+util/t16anim.c
+
+------------------
+
+The README files in the corresponding directories explain what some of 
+these are.  For others, you have to examine the files themselves.  Some 
+have clearly not been compiled for a long, long time.  As far as I'm 
+concerned, we can retire them all to the CVS attic.  If it turns out we 
+made a mistake on one or two, we can always pull them down again.  
+There's no real rush on this, so if anyone has any thoughts or wants to 
+speak up for a favorite routine, now's the time.
+
+-Greg
+
+
+From randolph at panix.com  Mon Nov  1 07:36:23 2004
+From: randolph at panix.com (Randolph Fritz)
+Date: Mon Nov  1 07:36:31 2004
+Subject: [Radiance-dev] #error "GCC no longer implements <varargs.h>"
+In-Reply-To: <41857B16.40105@t-online.de>
+References: <1099178415.27574.14.camel@leviathan>
+	<1099181640.27574.25.camel@leviathan>
+	<59B7DC7C-2B88-11D9-BD72-000A95BB392A@lmi.net>
+	<20041031222806.GA24873@panix.com> <41857B16.40105@t-online.de>
+Message-ID: <20041101063623.GA268@panix.com>
+
+On Sun, Oct 31, 2004 at 11:53:58PM +0000, Carsten Bauer wrote:
+> Randolph Fritz wrote:
+> 
+> >
+> >I daresay.  Can we even test this driver?  Anyone have an Impress
+> >printer?
+> >
+> 
+> What *IS* an Impress printer ??? Maybe I'm too young to know about this..
+> 
+
+It was a competitor to PostScript developed by Imagen, back in the
+long-long ago.  There are probably still some imPRESS printers out
+there operating--there are at least some Linux drivers for them.  I am
+hoping they are rare enough that we can stop worrying about imPRESS,
+though.
+
+Randolph
+
+
+From schorsch at schorsch.com  Mon Nov  1 10:53:12 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Mon Nov  1 10:53:19 2004
+Subject: [Radiance-dev] #error "GCC no longer implements <varargs.h>"
+In-Reply-To: <1F0149EA-2BB6-11D9-B4F6-000A95BB392A@lmi.net>
+References: <1099178415.27574.14.camel@leviathan>
+	<1099181640.27574.25.camel@leviathan>
+	<59B7DC7C-2B88-11D9-BD72-000A95BB392A@lmi.net>
+	<20041031222806.GA24873@panix.com>
+	<Pine.BSF.4.58.0410311814140.87934@emancholl.pair.com>
+	<1F0149EA-2BB6-11D9-B4F6-000A95BB392A@lmi.net>
+Message-ID: <Pine.BSF.4.58.0411010428080.66923@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> I don't think varargs.h is used anywhere else -- at least, I've never
+> used it.
+
+I couldn't find any other instance either.
+
+
+> Here's my candidate list of programs for the CVS attic:
+>
+> [...]
+> ttyimage	- picture to ASCII output converter (useful for anything
+> anymore?)
+
+Ttyimage is used in the test suite. It is generally a nice
+debugging tool, which I also used when I wrote my image file
+parser for Python some time ago.
+
+
+>   I wonder now why Francesco was even seeing this error,
+
+He obviously tried to build the "special" selection.
+
+
+> and now I see that my gcc 3.3 compiler does NOT
+> support varargs when I try to build the "impress" executable manually.
+> Perhaps he was using SCONS, and schorsch included things there that are
+> not built by the default Rmakefile.
+
+SCons has the same "special" targets as the RMakefiles, but
+I'd be happy to get rid of them.
+
+
+> Unused C-files:
+>
+> common/fixargv0.c
+
+This is (or should be?) used on Windows to remove the *.exe
+file name extension from executable paths. I'm not sure how
+necessary it really is though, because even the SCons build
+seems to ignore it at the moment.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From schorsch at schorsch.com  Mon Nov  1 11:01:09 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Mon Nov  1 11:01:12 2004
+Subject: [Radiance-dev] #error "GCC no longer implements <varargs.h>"
+In-Reply-To: <1F0149EA-2BB6-11D9-B4F6-000A95BB392A@lmi.net>
+References: <1099178415.27574.14.camel@leviathan>
+	<1099181640.27574.25.camel@leviathan>
+	<59B7DC7C-2B88-11D9-BD72-000A95BB392A@lmi.net>
+	<20041031222806.GA24873@panix.com>
+	<Pine.BSF.4.58.0410311814140.87934@emancholl.pair.com>
+	<1F0149EA-2BB6-11D9-B4F6-000A95BB392A@lmi.net>
+Message-ID: <Pine.BSF.4.58.0411010459520.66923@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> common/malloc.c
+
+This also eliminates common/getpagesize.c, which does a few things
+that we should definitively avoid anyway...
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From schorsch at schorsch.com  Mon Nov  1 12:24:21 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Mon Nov  1 12:24:25 2004
+Subject: [Radiance-dev] #error "GCC no longer implements <varargs.h>"
+In-Reply-To: <1F0149EA-2BB6-11D9-B4F6-000A95BB392A@lmi.net>
+References: <1099178415.27574.14.camel@leviathan>
+	<1099181640.27574.25.camel@leviathan>
+	<59B7DC7C-2B88-11D9-BD72-000A95BB392A@lmi.net>
+	<20041031222806.GA24873@panix.com>
+	<Pine.BSF.4.58.0410311814140.87934@emancholl.pair.com>
+	<1F0149EA-2BB6-11D9-B4F6-000A95BB392A@lmi.net>
+Message-ID: <Pine.BSF.4.58.0411010618460.66923@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> Unused C-files:
+
+Two more I don't see used anywhere:
+
+common/preadwrite.c
+common/mktemp.c
+
+Then there's common/fropen.c, which we might reimplement
+in a more general way with the help of common/getpath.c
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From francesco.anselmo at arup.com  Mon Nov  1 13:04:34 2004
+From: francesco.anselmo at arup.com (Francesco Anselmo)
+Date: Mon Nov  1 13:04:43 2004
+Subject: [Radiance-dev] 3R6P1/cygwin + CVS attic
+Message-ID: <EDB5EE732DF718419F0BBADB40C8E96C02061220@l-gnts04.global.arup.com>
+
+Hi!
+
+I've just compiled Radiance with cygwin.
+EVERYTHING got compiled (Yup! I only applied the small
+fix for varargs.h - again: GREAT WORK! This time I didn't have
+any problem with the libtiff either!), but the programs don't get
+copied to the specified bin directory.
+A quick fix is adding the $(ESUFFIX) variable after the
+name of each program in the PROGS declaration of each Rmakefile,
+like this:
+
+PROGS = icalc$(ESUFFIX) ev$(ESUFFIX) rcalc$(ESUFFIX) ...
+
+This shouldn't change the rmake behaviour with other platforms, right?
+
+Now it's time for Scons ...
+
+I should make a downloadable cygwin/radiance package soon ...
+
+About the CVS attic, I also like ttyimage, 
+and I think that it should be a lot of fun enhancing it
+with aalib (!)
+
+http://aa-project.sourceforge.net/index.html
+http://aa-project.sourceforge.net/tune/
+
+About the other programs, I've used plotin ...
+
+--
+Francesco 
+
+___________________________________________________________________
+Electronic mail messages entering and leaving Arup business
+systems are scanned for acceptability of content and viruses.
+
+From francesco.anselmo at arup.com  Mon Nov  1 13:11:40 2004
+From: francesco.anselmo at arup.com (Francesco Anselmo)
+Date: Mon Nov  1 13:11:47 2004
+Subject: [Radiance-dev] 3R6P1/cygwin + CVS attic
+Message-ID: <EDB5EE732DF718419F0BBADB40C8E96C02061221@l-gnts04.global.arup.com>
+
+Oops, I forgot ...
+
+Of course also the makefile rules would need to have the $(ESUFFIX)
+variable after the rule name ...
+
+--
+Francesco
+
+
+___________________________________________________________________
+Electronic mail messages entering and leaving Arup business
+systems are scanned for acceptability of content and viruses.
+
+From jedev at visarc.com  Fri Nov  5 00:35:00 2004
+From: jedev at visarc.com (Jack de Valpine)
+Date: Fri Nov  5 00:35:12 2004
+Subject: [Radiance-dev] limit to # of materials in -aE file
+Message-ID: <418ABCA4.40400@visarc.com>
+
+Hi,
+
+There seems to be a limit to the number of materials that can be listed 
+in a file for use with the -aE option. It looks like it is 128 lines. Is 
+this fixed? Can it be adjusted at compile time? Can multiple exclude 
+files be used?
+
+-Jack
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+
+
+From cbauer- at t-online.de  Fri Nov  5 02:47:11 2004
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Fri Nov  5 01:36:37 2004
+Subject: [Radiance-dev] limit to # of materials in -aE file
+References: <418ABCA4.40400@visarc.com>
+Message-ID: <418ADB9F.1090006@t-online.de>
+
+Hi Jack,
+
+yes, the number of materials in the ambient exclude/include list ist 
+currently limited to 128.
+
+if you want to augment it (at compile time) change
+
+1) in rpict.c the declaration char* amblist[128]
+
+2) to be on the safe side
+     in ambient.c : augment the #define MAXASET 511
+
+3) also to be on the safe side
+    in wordfile.c (src/common) augment the #define MAXFLEN 8192
+
+
+steps 2 and 3 are probably not necessary, the business is a bit weird 
+because the hierachyless input format allows the occurence of several 
+material instances with the same name, but different object number 
+(that's why the MAXASET (511) is greater than the name list maximum (128))
+
+as usual, I don't give any guarantee if this is enough or right or if 
+I've still forgotten something ...and AFAIK you can only specify one 
+exclude file, 'cause there's only one list internally which is checked
+
+-cb
+
+PS it's funy, in fact I've already waited for something like this to 
+happen, i.e. someone running against this border :-)
+
+
+From jedev at visarc.com  Fri Nov  5 02:42:09 2004
+From: jedev at visarc.com (Jack de Valpine)
+Date: Fri Nov  5 02:42:14 2004
+Subject: [Radiance-dev] limit to # of materials in -aE file
+In-Reply-To: <418ADB9F.1090006@t-online.de>
+References: <418ABCA4.40400@visarc.com> <418ADB9F.1090006@t-online.de>
+Message-ID: <418ADA71.9050807@visarc.com>
+
+Hi Carsten,
+
+Thanks for the follow-up. Is there a way to determine what MAXASET and 
+MAXFLEN should be set to relative to amblist[]. For example if I double 
+amblist to amblist[256] do I need to double the other values. Also I 
+note that amblist occurs in rtrace.c and rview.c. Wouldn't it make sense 
+if amblist was defined in one place (eg some header file) so that it 
+could be uniformly applied? Also is there some hidden downside to 
+increasing these values?
+
+FYI, as to hitting the border. The exclude file that I have is really to 
+serve as a default list so that if certain objects (trees, plants) are 
+used in the scene then their geometry is excluded from the ambient 
+calculation (that is that I do not have to think about it). I was trying 
+to add some more and encountered the problem. It is not that I currently 
+have more that 128 items that are actually being excluded.
+
+-Jack
+
+PS, I really need to set some time aside to work with radzilla and play 
+with all the features you implemented!
+
+Carsten Bauer wrote:
+
+> Hi Jack,
+>
+> yes, the number of materials in the ambient exclude/include list ist 
+> currently limited to 128.
+>
+> if you want to augment it (at compile time) change
+>
+> 1) in rpict.c the declaration char* amblist[128]
+>
+> 2) to be on the safe side
+>     in ambient.c : augment the #define MAXASET 511
+>
+> 3) also to be on the safe side
+>    in wordfile.c (src/common) augment the #define MAXFLEN 8192
+>
+>
+> steps 2 and 3 are probably not necessary, the business is a bit weird 
+> because the hierachyless input format allows the occurence of several 
+> material instances with the same name, but different object number 
+> (that's why the MAXASET (511) is greater than the name list maximum 
+> (128))
+>
+> as usual, I don't give any guarantee if this is enough or right or if 
+> I've still forgotten something ...and AFAIK you can only specify one 
+> exclude file, 'cause there's only one list internally which is checked
+>
+> -cb
+>
+> PS it's funy, in fact I've already waited for something like this to 
+> happen, i.e. someone running against this border :-)
+>
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+
+
+From cbauer- at t-online.de  Fri Nov  5 12:53:50 2004
+From: cbauer- at t-online.de (Carsten Bauer)
+Date: Fri Nov  5 11:44:26 2004
+Subject: [Radiance-dev] limit to # of materials in -aE file
+References: <418ABCA4.40400@visarc.com> <418ADB9F.1090006@t-online.de>
+	<418ADA71.9050807@visarc.com>
+Message-ID: <418B69CE.3000906@t-online.de>
+
+Hi Jack
+
+again, the following holds as far as I understood it ..
+
+The matter is this: you can write e.g.
+
+void plastic blue
+0
+0 ..blablabla
+
+blue sphere b_sphere
+0
+0
+4 ...
+
+void plastic blue
+0
+0
+...
+
+blue polygon b_polygon
+0
+0
+..
+
+then the sphere will be made of the first blue, the polygon out of the 
+second. You have only one time the name blue, but two material objects 
+which are affected if 'blue' is to be excluded.
+
+Now no one would do this in the way I described it, but think of putting 
+together a scene by xforming several inputfiles together. A typical case 
+are luminaire description files, usually you have a 'brightdata', a 
+brightdata-modified 'light', and then the geometry, say a 'ring' or a 
+'polygon'. If you model a 10 times 10 array of these luminaires on a 
+ceiling, and xform luminaire.rad a hundred times into your scene, you 
+will have 100 instances of the 'brightdata' and the 'light' material 
+also, i.e. a hundred 'light' material objects with the same name.
+
+So the amount by which MAXASET needs to be bigger than the name list is 
+in fact not determined, but depends upon how often the same material 
+name appears in your input files. And the MAXFLEN sets the file size for 
+the exclude list, and thus depend a bit on your names (there is another 
+limit, a name string can be maximal 128 characters long, so the current 
+MAXFLEN allows e.g 64 128-character long words
+(who names materials with 128 character words ???) .
+
+In other words, if you specify a material name only once in your scene 
+input, you needn't bother about MAXASET and MAXFLEN, only augment the 
+amblist length.
+
+Yes, it would be easier if this max. list length could be set by one 
+define somewhere. But I guess the topic simply was considered of minor 
+importance, as in 99.99% of all cases maybe one or two materials are 
+excluded. The weird thing about all this is that this minor detail 
+causes some headache on the programming side... :-)
+
+
+The downside from a longer list is probably negligible. You have to 
+search a longer list on input. The number of name occurences in the 
+input files determine the list which is checked during rendering, so if 
+you 'pro forma' exclude a material which doesn't appear in your scene 
+anyway, you won't notice it at all.
+
+-cb
+
+
+From jedev at visarc.com  Fri Nov  5 17:25:01 2004
+From: jedev at visarc.com (Jack de Valpine)
+Date: Fri Nov  5 17:25:18 2004
+Subject: [Radiance-dev] limit to # of materials in -aE file
+In-Reply-To: <418B69CE.3000906@t-online.de>
+References: <418ABCA4.40400@visarc.com>
+	<418ADB9F.1090006@t-online.de>	<418ADA71.9050807@visarc.com>
+	<418B69CE.3000906@t-online.de>
+Message-ID: <418BA95D.1040600@visarc.com>
+
+Hi Carsten,
+
+Sorry to be dense-headed here.
+
+   1. amblist[128] - is this the number of names possible in the list?
+   2. MAXASET - the comments indicate this is the maximum number of
+      elements in the ambient set, what does this mean? Is a scene
+      limited to 511 names of materials assigned directly to geometry?
+   3. MAXFLEN - Does the type of compile make a difference? I have a new
+      opeteron system which I am compiling with -m64? I must admit I am
+      a bit confused about the 64 v 32 bit stuff (all I really care
+      about is performance!) The exclude file is well under 8K in size.
+
+So the question still remains (mostly because I still getting my head 
+around it), if I want to increase the number of names that can be 
+included in the exclude list, what do I need to change?
+
+I believe that I can add the following to the rmake file:
+
+    -DMAXASET=a_new_value -DMAXFLEN=b_new_value
+
+I have done this for -DMAXOBJBLK=131071 at compile, so I assume this 
+would work for the others
+
+Can I do something similar to set amblist[] at compile rather than 
+editing the files?
+
+Thanks for all your help.
+
+-Jackl
+
+Carsten Bauer wrote:
+
+> Hi Jack
+>
+> again, the following holds as far as I understood it ..
+>
+> The matter is this: you can write e.g.
+>
+> void plastic blue
+> 0
+> 0 ..blablabla
+>
+> blue sphere b_sphere
+> 0
+> 0
+> 4 ...
+>
+> void plastic blue
+> 0
+> 0
+> ...
+>
+> blue polygon b_polygon
+> 0
+> 0
+> ..
+>
+> then the sphere will be made of the first blue, the polygon out of the 
+> second. You have only one time the name blue, but two material objects 
+> which are affected if 'blue' is to be excluded.
+>
+> Now no one would do this in the way I described it, but think of 
+> putting together a scene by xforming several inputfiles together. A 
+> typical case are luminaire description files, usually you have a 
+> 'brightdata', a brightdata-modified 'light', and then the geometry, 
+> say a 'ring' or a 'polygon'. If you model a 10 times 10 array of these 
+> luminaires on a ceiling, and xform luminaire.rad a hundred times into 
+> your scene, you will have 100 instances of the 'brightdata' and the 
+> 'light' material also, i.e. a hundred 'light' material objects with 
+> the same name.
+>
+> So the amount by which MAXASET needs to be bigger than the name list 
+> is in fact not determined, but depends upon how often the same 
+> material name appears in your input files. And the MAXFLEN sets the 
+> file size for the exclude list, and thus depend a bit on your names 
+> (there is another limit, a name string can be maximal 128 characters 
+> long, so the current MAXFLEN allows e.g 64 128-character long words
+> (who names materials with 128 character words ???) .
+>
+> In other words, if you specify a material name only once in your scene 
+> input, you needn't bother about MAXASET and MAXFLEN, only augment the 
+> amblist length.
+>
+> Yes, it would be easier if this max. list length could be set by one 
+> define somewhere. But I guess the topic simply was considered of minor 
+> importance, as in 99.99% of all cases maybe one or two materials are 
+> excluded. The weird thing about all this is that this minor detail 
+> causes some headache on the programming side... :-)
+>
+>
+> The downside from a longer list is probably negligible. You have to 
+> search a longer list on input. The number of name occurences in the 
+> input files determine the list which is checked during rendering, so 
+> if you 'pro forma' exclude a material which doesn't appear in your 
+> scene anyway, you won't notice it at all.
+>
+> -cb
+>
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20041105/9ef35599/attachment.html
+From jedev at visarc.com  Fri Nov  5 18:29:53 2004
+From: jedev at visarc.com (Jack de Valpine)
+Date: Fri Nov  5 18:29:59 2004
+Subject: [Radiance-dev] limit to # of materials in -aE file
+In-Reply-To: <418BA95D.1040600@visarc.com>
+References: <418ABCA4.40400@visarc.com>	<418ADB9F.1090006@t-online.de>	<418ADA71.9050807@visarc.com>	<418B69CE.3000906@t-online.de>
+	<418BA95D.1040600@visarc.com>
+Message-ID: <418BB891.5000405@visarc.com>
+
+Hi Carsten,
+
+Poking around a bit more, I see that there is:
+
+#define AMBLLEN 128 /* max. ambient list length */
+
+in ray.h
+
+This looks like it might be closer to what I need?
+
+This is used to set the length of amblist in raycalls.c, why not in the 
+other locations where amblist is used?
+
+-Jack
+
+Jack de Valpine wrote:
+
+> Hi Carsten,
+>
+> Sorry to be dense-headed here.
+>
+>    1. amblist[128] - is this the number of names possible in the list?
+>    2. MAXASET - the comments indicate this is the maximum number of
+>       elements in the ambient set, what does this mean? Is a scene
+>       limited to 511 names of materials assigned directly to geometry?
+>    3. MAXFLEN - Does the type of compile make a difference? I have a
+>       new opeteron system which I am compiling with -m64? I must admit
+>       I am a bit confused about the 64 v 32 bit stuff (all I really
+>       care about is performance!) The exclude file is well under 8K in
+>       size.
+>
+> So the question still remains (mostly because I still getting my head 
+> around it), if I want to increase the number of names that can be 
+> included in the exclude list, what do I need to change?
+>
+> I believe that I can add the following to the rmake file:
+>
+>     -DMAXASET=a_new_value -DMAXFLEN=b_new_value
+>
+> I have done this for -DMAXOBJBLK=131071 at compile, so I assume this 
+> would work for the others
+>
+> Can I do something similar to set amblist[] at compile rather than 
+> editing the files?
+>
+> Thanks for all your help.
+>
+> -Jackl
+>
+> Carsten Bauer wrote:
+>
+>> Hi Jack
+>>
+>> again, the following holds as far as I understood it ..
+>>
+>> The matter is this: you can write e.g.
+>>
+>> void plastic blue
+>> 0
+>> 0 ..blablabla
+>>
+>> blue sphere b_sphere
+>> 0
+>> 0
+>> 4 ...
+>>
+>> void plastic blue
+>> 0
+>> 0
+>> ...
+>>
+>> blue polygon b_polygon
+>> 0
+>> 0
+>> ..
+>>
+>> then the sphere will be made of the first blue, the polygon out of 
+>> the second. You have only one time the name blue, but two material 
+>> objects which are affected if 'blue' is to be excluded.
+>>
+>> Now no one would do this in the way I described it, but think of 
+>> putting together a scene by xforming several inputfiles together. A 
+>> typical case are luminaire description files, usually you have a 
+>> 'brightdata', a brightdata-modified 'light', and then the geometry, 
+>> say a 'ring' or a 'polygon'. If you model a 10 times 10 array of 
+>> these luminaires on a ceiling, and xform luminaire.rad a hundred 
+>> times into your scene, you will have 100 instances of the 
+>> 'brightdata' and the 'light' material also, i.e. a hundred 'light' 
+>> material objects with the same name.
+>>
+>> So the amount by which MAXASET needs to be bigger than the name list 
+>> is in fact not determined, but depends upon how often the same 
+>> material name appears in your input files. And the MAXFLEN sets the 
+>> file size for the exclude list, and thus depend a bit on your names 
+>> (there is another limit, a name string can be maximal 128 characters 
+>> long, so the current MAXFLEN allows e.g 64 128-character long words
+>> (who names materials with 128 character words ???) .
+>>
+>> In other words, if you specify a material name only once in your 
+>> scene input, you needn't bother about MAXASET and MAXFLEN, only 
+>> augment the amblist length.
+>>
+>> Yes, it would be easier if this max. list length could be set by one 
+>> define somewhere. But I guess the topic simply was considered of 
+>> minor importance, as in 99.99% of all cases maybe one or two 
+>> materials are excluded. The weird thing about all this is that this 
+>> minor detail causes some headache on the programming side... :-)
+>>
+>>
+>> The downside from a longer list is probably negligible. You have to 
+>> search a longer list on input. The number of name occurences in the 
+>> input files determine the list which is checked during rendering, so 
+>> if you 'pro forma' exclude a material which doesn't appear in your 
+>> scene anyway, you won't notice it at all.
+>>
+>> -cb
+>>
+>>
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev@radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>>
+>>
+>
+>-- 
+>#	John E. de Valpine
+>#	president
+>#
+>#	visarc incorporated
+>#	http://www.visarc.com
+>#
+>#	channeling technology for superior design and construction
+>
+>------------------------------------------------------------------------
+>
+>_______________________________________________
+>Radiance-dev mailing list
+>Radiance-dev@radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>  
+>
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20041105/35353a80/attachment.htm
+From gward at lmi.net  Fri Nov  5 18:41:59 2004
+From: gward at lmi.net (Greg Ward)
+Date: Fri Nov  5 18:43:23 2004
+Subject: [Radiance-dev] limit to # of materials in -aE file
+In-Reply-To: <418BA95D.1040600@visarc.com>
+References: <418ABCA4.40400@visarc.com>
+	<418ADB9F.1090006@t-online.de>	<418ADA71.9050807@visarc.com>
+	<418B69CE.3000906@t-online.de> <418BA95D.1040600@visarc.com>
+Message-ID: <FED101A6-2F51-11D9-B67C-000A95BB392A@lmi.net>
+
+Hi Jack,
+
+First, thanks to Carsten for fielding Jack's questions -- I learned a 
+bit about my own code from your exchange.  For one, I didn't realize 
+that I hadn't used the AMBLLEN macro I defined in rt/ray.h everywhere I 
+should have.  I just increased this value from 128 to 512, allowing for 
+override at compile time.  (Before, there wasn't an enclosing #ifdef 
+around it.)  I did the same for the MAXFLEN macro.  Before, it wouldn't 
+work to add -DMAXFLEN=?? to the compile script.  Now, it will.  I also 
+doubled the value from 8192 to 16384 for MAXFLEN.  These changes will 
+appear in tonight's HEAD, or can be downloaded individually through the 
+CVS interface.
+
+Oh -- just got your e-mail about AMBLLEN not being used consistently.  
+Bingo.
+
+I also increased the maximum number of excluded/included modifiers 
+(MAXASET) to 2047.  This may not be enough if you have some object 
+you've transformed all over the place as Carsten described, so you may 
+also want to override this in your compile, which I've enabled as well. 
+  An argument against making this too large is that the method for 
+determining whether to exclude a surface or not from the 
+interreflection calculation involves a binary search of this list.  In 
+other words, you pay a penalty for having a list that increases as the 
+log(N), where N is the number of included/excluded surfaces.  Since you 
+pay this penalty every time you need an ambient value, you can in 
+effect spend more time searching the list than you do computing 
+interreflections.  I don't know when this crossover occurs, but I 
+imagine it would be a very large number for N.
+
+-Greg
+
+
+From jedev at visarc.com  Fri Nov  5 18:57:53 2004
+From: jedev at visarc.com (Jack de Valpine)
+Date: Fri Nov  5 18:58:00 2004
+Subject: [Radiance-dev] limit to # of materials in -aE file
+In-Reply-To: <FED101A6-2F51-11D9-B67C-000A95BB392A@lmi.net>
+References: <418ABCA4.40400@visarc.com>	<418ADB9F.1090006@t-online.de>	<418ADA71.9050807@visarc.com>	<418B69CE.3000906@t-online.de>
+	<418BA95D.1040600@visarc.com>
+	<FED101A6-2F51-11D9-B67C-000A95BB392A@lmi.net>
+Message-ID: <418BBF21.4000500@visarc.com>
+
+Hi Greg,
+
+Thanks for the additional input and again also to Carsten to getting the 
+conversation to this point! So just to confirm it looks like if I grab 
+the following from CVS I will be ok:
+
+    * rtrace.c
+    * rview.c
+    * ambient.c
+    * ray.h
+    * rpict.c
+
+Correct?
+
+-Jack
+
+Greg Ward wrote:
+
+> Hi Jack,
+>
+> First, thanks to Carsten for fielding Jack's questions -- I learned a 
+> bit about my own code from your exchange.  For one, I didn't realize 
+> that I hadn't used the AMBLLEN macro I defined in rt/ray.h everywhere 
+> I should have.  I just increased this value from 128 to 512, allowing 
+> for override at compile time.  (Before, there wasn't an enclosing 
+> #ifdef around it.)  I did the same for the MAXFLEN macro.  Before, it 
+> wouldn't work to add -DMAXFLEN=?? to the compile script.  Now, it 
+> will.  I also doubled the value from 8192 to 16384 for MAXFLEN.  These 
+> changes will appear in tonight's HEAD, or can be downloaded 
+> individually through the CVS interface.
+>
+> Oh -- just got your e-mail about AMBLLEN not being used consistently.  
+> Bingo.
+>
+> I also increased the maximum number of excluded/included modifiers 
+> (MAXASET) to 2047.  This may not be enough if you have some object 
+> you've transformed all over the place as Carsten described, so you may 
+> also want to override this in your compile, which I've enabled as 
+> well.  An argument against making this too large is that the method 
+> for determining whether to exclude a surface or not from the 
+> interreflection calculation involves a binary search of this list.  In 
+> other words, you pay a penalty for having a list that increases as the 
+> log(N), where N is the number of included/excluded surfaces.  Since 
+> you pay this penalty every time you need an ambient value, you can in 
+> effect spend more time searching the list than you do computing 
+> interreflections.  I don't know when this crossover occurs, but I 
+> imagine it would be a very large number for N.
+>
+> -Greg
+>
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20041105/89f9d75c/attachment.html
+From gward at lmi.net  Fri Nov  5 19:08:25 2004
+From: gward at lmi.net (Greg Ward)
+Date: Fri Nov  5 19:09:51 2004
+Subject: [Radiance-dev] limit to # of materials in -aE file
+In-Reply-To: <418BBF21.4000500@visarc.com>
+References: <418ABCA4.40400@visarc.com>	<418ADB9F.1090006@t-online.de>	<418ADA71.9050807@visarc.com>	<418B69CE.3000906@t-online.de>
+	<418BA95D.1040600@visarc.com>
+	<FED101A6-2F51-11D9-B67C-000A95BB392A@lmi.net>
+	<418BBF21.4000500@visarc.com>
+Message-ID: <AFE76E35-2F55-11D9-B67C-000A95BB392A@lmi.net>
+
+Hi Jack,
+
+You should also pick up wordfile.c from the common directory, and that 
+should be it.
+
+-G
+
+> From: Jack de Valpine <jedev@visarc.com>
+> Date: November 5, 2004 9:57:53 AM PST
+>
+  Hi Greg,
+
+  Thanks for the additional input and again also to Carsten to getting 
+the conversation to this point! So just to confirm it looks like if I 
+grab the following from CVS I will be ok:
+
+	? 	rtrace.c
+	? 	rview.c
+	? 	ambient.c
+	? 	ray.h
+
+	? 	rpict.c
+  Correct?
+
+  -Jack
+
+
+From gward at lmi.net  Fri Nov  5 19:10:47 2004
+From: gward at lmi.net (Greg Ward)
+Date: Fri Nov  5 19:12:59 2004
+Subject: [Radiance-dev] limit to # of materials in -aE file
+In-Reply-To: <418BBF21.4000500@visarc.com>
+References: <418ABCA4.40400@visarc.com>	<418ADB9F.1090006@t-online.de>	<418ADA71.9050807@visarc.com>	<418B69CE.3000906@t-online.de>
+	<418BA95D.1040600@visarc.com>
+	<FED101A6-2F51-11D9-B67C-000A95BB392A@lmi.net>
+	<418BBF21.4000500@visarc.com>
+Message-ID: <04688E6B-2F56-11D9-B67C-000A95BB392A@lmi.net>
+
+P.S. A correction to my previous e-mail.  I wrote:
+
+> In other words, you pay a penalty for having a list that increases as 
+> the log(N), where N is the number of included/excluded surfaces
+
+I meant the number of included/excluded MODIFIERS, not surfaces.  An 
+important distinction for most scenes....
+
+
+From cveleglg at bankerinter.net  Fri Nov  5 10:29:35 2004
+From: cveleglg at bankerinter.net (Marija)
+Date: Sun Nov  7 14:09:30 2004
+Subject: [Radiance-dev] Rvu window?
+Message-ID: <000201c4c4c3$628bc350$0100a8c0@mallah>
+
+Hello,
+Is there any way to define position and size of rvu window?
+
+
+Thanks,
+Marija
+
+From gward at lmi.net  Mon Nov  8 17:47:29 2004
+From: gward at lmi.net (Greg Ward)
+Date: Mon Nov  8 17:47:38 2004
+Subject: [Radiance-dev] Re: Rvu window? (moved from Radiance-dev)
+In-Reply-To: <000201c4c4c3$628bc350$0100a8c0@mallah>
+References: <000201c4c4c3$628bc350$0100a8c0@mallah>
+Message-ID: <E0FEFF54-31A5-11D9-998D-000A95BB392A@lmi.net>
+
+Hi Marija,
+
+This came up in July on the general list, and no one seemed to have a  
+proper answer...
+
+	http://www.radiance-online.org/pipermail/radiance-general/2004-July/ 
+001939.html
+
+The window size is determined by the X11 window manager.  Some window  
+managers have preferences you can set for specific X11 clients, but I  
+don't know where they live.  Do you know what window manager you are  
+using?  (Hint: they are generally platform-specific, so if you tell us  
+what machine/OS you are using, this would help.)  Can anyone on the  
+list offer suggestions?
+
+-Greg
+
+> From: "Marija" <cveleglg@bankerinter.net>
+> Date: November 5, 2004 1:29:35 AM PST
+>
+> Hello,
+> Is there any way to define position and size of rvu window?
+>
+> Thanks,
+> Marija
+
+
+From apian at pab-opto.de  Mon Nov  8 18:25:20 2004
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Mon Nov  8 18:24:40 2004
+Subject: [Radiance-dev] Re: [Radiance-general] Re: Rvu window? (moved from
+	Radiance-dev)
+In-Reply-To: <E0FEFF54-31A5-11D9-998D-000A95BB392A@lmi.net>
+References: <000201c4c4c3$628bc350$0100a8c0@mallah>
+	<E0FEFF54-31A5-11D9-998D-000A95BB392A@lmi.net>
+Message-ID: <418FAC00.8020003@pab-opto.de>
+
+Greg Ward wrote:
+
+> Hi Marija,
+>
+> This came up in July on the general list, and no one seemed to have a  
+> proper answer...
+>
+>     http://www.radiance-online.org/pipermail/radiance-general/2004-July/ 
+> 001939.html
+>
+> The window size is determined by the X11 window manager.  Some window  
+> managers have preferences you can set for specific X11 clients, but I  
+> don't know where they live.  Do you know what window manager you are  
+> using?  (Hint: they are generally platform-specific, so if you tell 
+> us  what machine/OS you are using, this would help.)  Can anyone on 
+> the  list offer suggestions?
+>
+> -Greg
+>
+>> From: "Marija" <cveleglg@bankerinter.net>
+>> Date: November 5, 2004 1:29:35 AM PST
+>>
+>> Hello,
+>> Is there any way to define position and size of rvu window?
+>>
+>> Thanks,
+>> Marija
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+likely the original question was asking for something like
+
+    rvu -geometry 100x600-0-0 -vf abc.vf -ab 2 .....
+
+"man 7 X" says:
+
+GEOMETRY SPECIFICATIONS
+       One of the advantages of using window systems instead of 
+hardwired terminals is that applications don't have to be restricted to 
+a particular
+       size  or  location  on  the screen.  Although the layout of 
+windows on a display is controlled by the window manager that the user 
+is running
+       (described below), most X programs accept a command line argument 
+of the form -geometry WIDTHxHEIGHT+XOFF+YOFF (where  WIDTH,  HEIGHT,  XOFF,
+       and YOFF are numbers) for specifying a preferred size and 
+location for this application's main window.
+
+whereas rvu says:
+
+merkur $ rvu -geometry 800x600 -vf close.vf baugruppen.oct
+rvu: fatal - command line error at '-geometry'
+
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+
+
+From apian at pab-opto.de  Tue Nov  9 18:36:48 2004
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Tue Nov  9 18:35:28 2004
+Subject: [Radiance-dev] Re: [Radiance-general] Rvu window?
+In-Reply-To: <CDC070A4-326E-11D9-8894-000A95BB392A@lmi.net>
+References: <000201c4c4c3$628bc350$0100a8c0@mallah>	<E0FEFF54-31A5-11D9-998D-000A95BB392A@lmi.net>	<418FAC00.8020003@pab-opto.de>
+	<4190B0DC.9000300@t-online.de>	<4190DB7B.4050501@rumblestrip.org>	<Pine.BSF.4.58.0411091110120.97125@emancholl.pair.com>
+	<CDC070A4-326E-11D9-8894-000A95BB392A@lmi.net>
+Message-ID: <41910030.90006@pab-opto.de>
+
+Greg Ward wrote:
+
+> I think Rob is right.  As I said in my initial reply, many window 
+> managers under X11 override the client window dimensions, and some can 
+> even be instructed how to override these dimensions for specific 
+> programs via a preferences file.  Unfortunately, each window manager 
+> has its own way of doing this, so we need to ask the X11 gurus out 
+> there how it might be done.  I don't really know how Gnome handles 
+> things, for instance.  Under twm, the user can create a ".twmrc" file 
+> in their home directory, which contains the variable "MaxWindowSize" 
+> that may be set to control the maximum dimensions for any client 
+> application.  Related variables are UsePPosition and RandomPlacement.  
+> I don't have a reference, but I know the Solaris window manager can 
+> direct individual client placements.
+
+now, this topic evolves faster than I can download mails via DSL....
+
+The X client can deny being resized/repositioned by a window manager.
+
+        attri.override_redirect=True;           /* keep uwm silent */
+        attri.backing_store=Always;             /* offscreen saved pixels */
+        attri.event_mask=ButtonPressMask;
+        
+XChangeWindowAttributes(display,WID,CWEventMask|CWOverrideRedirect|CWBackingStore,&attri);
+
+that piece of C is somewhat dated, but the  override_redirect  flag 
+still lives in recent X, I bet. However, I might not be very up-to-date 
+with my bare-metal X hacking.
+
+Anyway- the main idea would be that the X client (rvu) has _some_ wish 
+how large and where it wants to be. That much the client may specify and 
+maybe (like) even enforce by the attributes, thereby ignoring any window 
+manager.
+At last, the window manager is just another X-client in the world of X, 
+- no super natural powers assigned to it.
+
+-Peter
+
+PS: at least these bits belong on the dev list, mea culpa to those not 
+used to an X-programming overdose...
+
+-- 
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+
+
+From apian at pab-opto.de  Tue Nov  9 21:12:27 2004
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Tue Nov  9 21:11:22 2004
+Subject: [Radiance-dev] Re: [Radiance-general] Rvu window?
+In-Reply-To: <41911A8A.4000707@rumblestrip.org>
+References: <000201c4c4c3$628bc350$0100a8c0@mallah>	<E0FEFF54-31A5-11D9-998D-000A95BB392A@lmi.net>	<418FAC00.8020003@pab-opto.de>	<4190B0DC.9000300@t-online.de>	<4190DB7B.4050501@rumblestrip.org>	<Pine.BSF.4.58.0411091110120.97125@emancholl.pair.com>	<4190F40E.8090405@rumblestrip.org>	<41911617.2020107@t-online.de>
+	<41911A8A.4000707@rumblestrip.org>
+Message-ID: <419124AB.4050604@pab-opto.de>
+
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20041109/e01ddf71/attachment.html
+From rpg at rumblestrip.org  Tue Nov  9 21:34:59 2004
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Tue Nov  9 21:33:57 2004
+Subject: [Radiance-dev] Re: [Radiance-general] Rvu window?
+In-Reply-To: <419124AB.4050604@pab-opto.de>
+References: <000201c4c4c3$628bc350$0100a8c0@mallah>	<E0FEFF54-31A5-11D9-998D-000A95BB392A@lmi.net>	<418FAC00.8020003@pab-opto.de>	<4190B0DC.9000300@t-online.de>	<4190DB7B.4050501@rumblestrip.org>	<Pine.BSF.4.58.0411091110120.97125@emancholl.pair.com>	<4190F40E.8090405@rumblestrip.org>	<41911617.2020107@t-online.de>	<41911A8A.4000707@rumblestrip.org>
+	<419124AB.4050604@pab-opto.de>
+Message-ID: <419129F3.2060109@rumblestrip.org>
+
+Peter Apian-Bennewitz wrote:
+
+> *sigh* -.. - rvu, as we know it today, just doesn't ask the server for 
+> it. Sorry for not applying bright "*/example, not yet implemented/*" 
+> stickers to it in the first place.
+
+(removes foot)  Hey, I *did* say in that same email that I was bowing 
+out of the convo, as I already figured I was in over my head...
+
+I guess you could say: */I'm no Radiance expert, but I sometimes play 
+one on this list./* (Well, actually, over on radiance-general.)
+
+Thanks for the clarification(s).
+
+-Rob
+
+From apian at pab-opto.de  Tue Nov  9 22:08:29 2004
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Tue Nov  9 22:07:04 2004
+Subject: [Radiance-dev] Re: [Radiance-general] Rvu window?
+In-Reply-To: <419129F3.2060109@rumblestrip.org>
+References: <000201c4c4c3$628bc350$0100a8c0@mallah>	<E0FEFF54-31A5-11D9-998D-000A95BB392A@lmi.net>	<418FAC00.8020003@pab-opto.de>	<4190B0DC.9000300@t-online.de>	<4190DB7B.4050501@rumblestrip.org>	<Pine.BSF.4.58.0411091110120.97125@emancholl.pair.com>	<4190F40E.8090405@rumblestrip.org>	<41911617.2020107@t-online.de>	<41911A8A.4000707@rumblestrip.org>	<419124AB.4050604@pab-opto.de>
+	<419129F3.2060109@rumblestrip.org>
+Message-ID: <419131CD.4070807@pab-opto.de>
+
+Rob Guglielmetti wrote:
+
+> Peter Apian-Bennewitz wrote:
+>
+>> *sigh* -.. - rvu, as we know it today, just doesn't ask the server 
+>> for it. Sorry for not applying bright "*/example, not yet 
+>> implemented/*" stickers to it in the first place.
+>
+>
+> (removes foot)  Hey, I *did* say in that same email that I was bowing 
+> out of the convo, as I already figured I was in over my head...
+
+Rob, - sorry for that. You could have expected a friendlier sounding bit 
+of response from me there, given your sound contributions to the mailing 
+list in the past.
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+
+

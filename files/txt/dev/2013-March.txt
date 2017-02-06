@@ -1,0 +1,565 @@
+From michael at coolshadow.com  Thu Mar 21 14:16:24 2013
+From: michael at coolshadow.com (Michael Martinez)
+Date: Thu, 21 Mar 2013 14:16:24 -0700
+Subject: [Radiance-dev] Falsecolor
+Message-ID: <221E3729-A0DA-4A53-B15B-437CB0C6B6F2@coolshadow.com>
+
+Hi Folks, 
+
+I installed the latest HEAD yesterday, and learned in a round about way how -spec has been replaced with -pal spec (or hot or pm3d...) 
+
+When I errantly used -spec the error message indicated my mistake was in the -l or -log options. Reading the new man page showed me the way, but I suppose the preferred error message would have called my attention to the misuse of  -spec
+
+(Also not sure if reporting these small bugs to the dev list is a best practice, so advanced apologies if this is misplaced...) 
+Here are the commands I used and the error messages: 
+
+$ falsecolor -ip images/6_1_1200.hdr -n 8 -s 8000 -spec -l cd/m2 -log 1 > test.hdr
+bad option "cd/m2"
+
+$ falsecolor -ip images/6_1_1200.hdr -n 8 -s 8000 -spec -log 1 > test.hdr
+bad option "1"
+
+$ falsecolor -ip images/6_1_1200.hdr -n 8 -s 8000 -spec  > test.hdr
+Use of uninitialized value $scale in pattern match (m//) at /usr/local/bin/falsecolor line 42.
+Use of uninitialized value $scale in pattern match (m//) at /usr/local/bin/falsecolor line 115.
+Use of uninitialized value $scale in concatenation (.) or string at /usr/local/bin/falsecolor line 126.
+Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+/var/folders/pd/z41h8vkn5ks9d47kx028xvkw0000gn/T/S49kzBYNXL/pc0.cal, line 2:
+scale :  ;
+         ^ unexpected character
+/var/folders/pd/z41h8vkn5ks9d47kx028xvkw0000gn/T/S49kzBYNXL/scol.hdr: bad picture size
+/var/folders/pd/z41h8vkn5ks9d47kx028xvkw0000gn/T/S49kzBYNXL/pc0.cal, line 2:
+scale :  ;
+         ^ unexpected character
+
+
+Thanks!
+Mike
+
+
+Michael Martinez ~ Associate
+LOISOS + UBBELOHDE
+- - - - - - - - - - - - - - - - - - - - - - - - - - - 
+1917 Clement Avenue  Building 10A
+Alameda, CA  94501 USA
+- - - - - - - - - - - - - - - - - - - - - - - - - - - 
+510 521 3800 VOICE
+510 521 3820 FAX
+- - - - - - - - - - - - - - - - - - - - - - - - - - - 
+www.coolshadow.com
+
+
+
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20130321/3b6c464d/attachment.html>
+
+From Robert.Guglielmetti at nrel.gov  Fri Mar 22 13:56:28 2013
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Fri, 22 Mar 2013 14:56:28 -0600
+Subject: [Radiance-dev] Falsecolor
+In-Reply-To: <221E3729-A0DA-4A53-B15B-437CB0C6B6F2@coolshadow.com>
+Message-ID: <CD721C80.1C942%robert.guglielmetti@nrel.gov>
+
+Hi Michael,
+
+It appears that whenever you enter "-s*" you break the argument vector parsing. The scale option is expected as:
+-s [some number]
+or:
+-s [a(uto)]
+
+In other words, falsecolor is looking for a "-s", followed by a space, followed by either an integer (or the letter "a" to indicate autoscaling).
+
+When you enter ?spec (or ?sun, or ?shit, or ?supercalifragilisticexpialidocious, for that matter),  you confuse the argument vector parser because it's expecting a space after the ?s. So instead of being caught by the "bad option" case, "-spec" causes an error, and whatever option follows "?spec" is presented as the culprit, but only because it's the next option in the argument vector. I agree, it's a misleading error.
+
+In some more other words, I know what  the cause is, but not the cure. Axel (Andy? Greg?), can you help? We need some Perl and Regex assistance here.
+
+- Rob
+
+Rob Guglielmetti
+National Renewable Energy Laboratory (NREL)
+Commercial Buildings Research Group
+15013 Denver West Parkway MS:RSF202
+Golden, CO 80401
+303.275.4319
+robert.guglielmetti at nrel.gov
+
+
+
+On 3/21/13 3:16 PM, "Michael Martinez" <michael at coolshadow.com<mailto:michael at coolshadow.com>> wrote:
+
+Hi Folks,
+
+I installed the latest HEAD yesterday, and learned in a round about way how -spec has been replaced with -pal spec (or hot or pm3d...)
+
+When I errantly used -spec the error message indicated my mistake was in the -l or -log options. Reading the new man page showed me the way, but I suppose the preferred error message would have called my attention to the misuse of  -spec
+
+(Also not sure if reporting these small bugs to the dev list is a best practice, so advanced apologies if this is misplaced...)
+Here are the commands I used and the error messages:
+
+$ falsecolor -ip images/6_1_1200.hdr -n 8 -s 8000 -spec -l cd/m2 -log 1 > test.hdr
+bad option "cd/m2"
+
+$ falsecolor -ip images/6_1_1200.hdr -n 8 -s 8000 -spec -log 1 > test.hdr
+bad option "1"
+
+$ falsecolor -ip images/6_1_1200.hdr -n 8 -s 8000 -spec  > test.hdr
+Use of uninitialized value $scale in pattern match (m//) at /usr/local/bin/falsecolor line 42.
+Use of uninitialized value $scale in pattern match (m//) at /usr/local/bin/falsecolor line 115.
+Use of uninitialized value $scale in concatenation (.) or string at /usr/local/bin/falsecolor line 126.
+Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+/var/folders/pd/z41h8vkn5ks9d47kx028xvkw0000gn/T/S49kzBYNXL/pc0.cal, line 2:
+scale :  ;
+         ^ unexpected character
+/var/folders/pd/z41h8vkn5ks9d47kx028xvkw0000gn/T/S49kzBYNXL/scol.hdr: bad picture size
+/var/folders/pd/z41h8vkn5ks9d47kx028xvkw0000gn/T/S49kzBYNXL/pc0.cal, line 2:
+scale :  ;
+         ^ unexpected character
+
+
+Thanks!
+Mike
+
+
+Michael Martinez ~ Associate
+LOISOS + UBBELOHDE
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+1917 Clement Avenue  Building 10A
+Alameda, CA  94501 USA
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+510 521 3800 VOICE
+510 521 3820 FAX
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+www.coolshadow.com<http://www.coolshadow.com/>
+
+
+
+
+
+
+
+From jacobs.axel at gmail.com  Fri Mar 22 14:14:24 2013
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Fri, 22 Mar 2013 21:14:24 +0000
+Subject: [Radiance-dev] Falsecolor
+In-Reply-To: <CD721C80.1C942%robert.guglielmetti@nrel.gov>
+References: <CD721C80.1C942%robert.guglielmetti@nrel.gov>
+Message-ID: <514CC9B0.4020400@gmail.com>
+
+Chaps,
+
+Rob is correct about the -s trap of the argument parser in falsecolor.pl
+
+This is fixable, and I'd be happy to do this. To my excuse, however, I 
+must say that the arg parser in any of the csh scripts in Radiance, and 
+probably in many of the Perl scripts, too, is not terribly 
+sophisticated. It does its job, but not all possible errors are caught.
+
+The arg parser in Radiance's Perl scripts is free-form, rather than 
+relying on a module. This is both a deliberate design decision, but also 
+born out of necessity: The Perl parsers are all based on GNU syntax, 
+which Radiance doesn't follow. We looked into this, but it turned out 
+that modifying existing 'bullet proof' modules to deal with all the 
+quirks of Radiance command line args is simply a pain in the neck.
+
+Existing Perl parsers are good with -s or --short-option style things. 
+When you throw -a+ vs -a- at them, they just give up. Making this work 
+properly is a helluva job.
+
+So should -spec be treated as -pal spec (probably not), or should it 
+throw up a more meaningful error message e.g. 'deprecated'?
+
+Cheers
+
+Axel
+
+
+ > It appears that whenever you enter "-s*" you break the argument 
+vector parsing. The scale option is expected as:
+> -s [some number]
+> or:
+> -s [a(uto)]
+>
+> In other words, falsecolor is looking for a "-s", followed by a space, followed by either an integer (or the letter "a" to indicate autoscaling).
+>
+> When you enter ?spec (or ?sun, or ?shit, or ?supercalifragilisticexpialidocious, for that matter),  you confuse the argument vector parser because it's expecting a space after the ?s. So instead of being caught by the "bad option" case, "-spec" causes an error, and whatever option follows "?spec" is presented as the culprit, but only because it's the next option in the argument vector. I agree, it's a misleading error.
+>
+> In some more other words, I know what  the cause is, but not the cure. Axel (Andy? Greg?), can you help? We need some Perl and Regex assistance here.
+>
+> - Rob
+>
+> Rob Guglielmetti
+> National Renewable Energy Laboratory (NREL)
+> Commercial Buildings Research Group
+> 15013 Denver West Parkway MS:RSF202
+> Golden, CO 80401
+> 303.275.4319
+> robert.guglielmetti at nrel.gov
+>
+>
+>
+> On 3/21/13 3:16 PM, "Michael Martinez" <michael at coolshadow.com<mailto:michael at coolshadow.com>> wrote:
+>
+> Hi Folks,
+>
+> I installed the latest HEAD yesterday, and learned in a round about way how -spec has been replaced with -pal spec (or hot or pm3d...)
+>
+> When I errantly used -spec the error message indicated my mistake was in the -l or -log options. Reading the new man page showed me the way, but I suppose the preferred error message would have called my attention to the misuse of  -spec
+>
+> (Also not sure if reporting these small bugs to the dev list is a best practice, so advanced apologies if this is misplaced...)
+> Here are the commands I used and the error messages:
+>
+> $ falsecolor -ip images/6_1_1200.hdr -n 8 -s 8000 -spec -l cd/m2 -log 1 > test.hdr
+> bad option "cd/m2"
+>
+> $ falsecolor -ip images/6_1_1200.hdr -n 8 -s 8000 -spec -log 1 > test.hdr
+> bad option "1"
+>
+> $ falsecolor -ip images/6_1_1200.hdr -n 8 -s 8000 -spec  > test.hdr
+> Use of uninitialized value $scale in pattern match (m//) at /usr/local/bin/falsecolor line 42.
+> Use of uninitialized value $scale in pattern match (m//) at /usr/local/bin/falsecolor line 115.
+> Use of uninitialized value $scale in concatenation (.) or string at /usr/local/bin/falsecolor line 126.
+> Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+> Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+> Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+> Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+> Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+> Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+> Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+> Use of uninitialized value $value in multiplication (*) at /usr/local/bin/falsecolor line 273.
+> /var/folders/pd/z41h8vkn5ks9d47kx028xvkw0000gn/T/S49kzBYNXL/pc0.cal, line 2:
+> scale :  ;
+>           ^ unexpected character
+> /var/folders/pd/z41h8vkn5ks9d47kx028xvkw0000gn/T/S49kzBYNXL/scol.hdr: bad picture size
+> /var/folders/pd/z41h8vkn5ks9d47kx028xvkw0000gn/T/S49kzBYNXL/pc0.cal, line 2:
+> scale :  ;
+>           ^ unexpected character
+>
+>
+> Thanks!
+> Mike
+>
+>
+> Michael Martinez ~ Associate
+> LOISOS + UBBELOHDE
+> - - - - - - - - - - - - - - - - - - - - - - - - - - -
+> 1917 Clement Avenue  Building 10A
+> Alameda, CA  94501 USA
+> - - - - - - - - - - - - - - - - - - - - - - - - - - -
+> 510 521 3800 VOICE
+> 510 521 3820 FAX
+> - - - - - - - - - - - - - - - - - - - - - - - - - - -
+> www.coolshadow.com<http://www.coolshadow.com/>
+>
+>
+>
+>
+>
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+
+
+
+From Robert.Guglielmetti at nrel.gov  Fri Mar 22 14:47:45 2013
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Fri, 22 Mar 2013 15:47:45 -0600
+Subject: [Radiance-dev] Falsecolor
+In-Reply-To: <514CC9B0.4020400@gmail.com>
+Message-ID: <CD722CDD.1CA4B%robert.guglielmetti@nrel.gov>
+
+On 3/22/13 3:14 PM, "Axel Jacobs" <jacobs.axel at gmail.com> wrote:
+
+
+>This is fixable, and I'd be happy to do this. To my excuse, however, I
+>must say that the arg parser in any of the csh scripts in Radiance, and
+>probably in many of the Perl scripts, too, is not terribly
+>sophisticated. It does its job, but not all possible errors are caught.
+
+
+Agreed, I will say that Ruby has a nice class for this stuff, but in the
+end it's probably not much more robust than whatever Perl's got going on.
+
+>Existing Perl parsers are good with -s or --short-option style things.
+>When you throw -a+ vs -a- at them, they just give up. Making this work
+>properly is a helluva job.
+>
+>So should -spec be treated as -pal spec (probably not), or should it
+>throw up a more meaningful error message e.g. 'deprecated'?
+
+I vote a deprecated error, along with a pointer to the newer -pal option &
+syntax. 
+
+Thanks Axel!
+
+- Rob
+
+
+
+From michael at coolshadow.com  Fri Mar 22 15:04:31 2013
+From: michael at coolshadow.com (Michael Martinez)
+Date: Fri, 22 Mar 2013 15:04:31 -0700
+Subject: [Radiance-dev] Falsecolor
+In-Reply-To: <CD722CDD.1CA4B%robert.guglielmetti@nrel.gov>
+References: <CD722CDD.1CA4B%robert.guglielmetti@nrel.gov>
+Message-ID: <2F0DD69C-D048-4514-9D5A-511C159791E6@coolshadow.com>
+
+
+On Mar 22, 2013, at 2:47 PM, Guglielmetti, Robert wrote:
+
+> On 3/22/13 3:14 PM, "Axel Jacobs" <jacobs.axel at gmail.com> wrote:
+> 
+> 
+>> This is fixable, and I'd be happy to do this. To my excuse, however, I
+>> must say that the arg parser in any of the csh scripts in Radiance, and
+>> probably in many of the Perl scripts, too, is not terribly
+>> sophisticated. It does its job, but not all possible errors are caught.
+> 
+> 
+> Agreed, I will say that Ruby has a nice class for this stuff, but in the
+> end it's probably not much more robust than whatever Perl's got going on.
+> 
+>> Existing Perl parsers are good with -s or --short-option style things.
+>> When you throw -a+ vs -a- at them, they just give up. Making this work
+>> properly is a helluva job.
+>> 
+>> So should -spec be treated as -pal spec (probably not), or should it
+>> throw up a more meaningful error message e.g. 'deprecated'?
+> 
+> I vote a deprecated error, along with a pointer to the newer -pal option &
+> syntax. 
+
+Agreed - a pointer to the newer -pal option would be great, it might help a few souls like myself discover the new colorscales. Best part of my week (well, my Radiance week) was stumbling upon the new heat map scale. 
+
+MM
+
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20130322/21f0bc51/attachment.html>
+
+From jacobs.axel at gmail.com  Fri Mar 22 15:17:56 2013
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Fri, 22 Mar 2013 22:17:56 +0000
+Subject: [Radiance-dev] Falsecolor
+In-Reply-To: <CD722CDD.1CA4B%robert.guglielmetti@nrel.gov>
+References: <CD722CDD.1CA4B%robert.guglielmetti@nrel.gov>
+Message-ID: <514CD894.1030005@gmail.com>
+
+Michael,
+
+could you give this a try and let me know if it works for you. I'm not 
+saying 'read the man page', because I'm not sure how this is (or is 
+going to be) done on Windows. All right?
+
+I have taken the liberty to add a new '-pal eco' which I promised to 
+submit almost a year ago.
+
+There is also a new -cp (posterise) option that has been in HEAD for a 
+while. Just needs mentioning on the man page.
+
+@Greg,
+please give us your opinion on the current implementation. I'm touching 
+up the man page now. It needs the -cp option, and also the sponsor of 
+the -pal eco option. Will report back....
+
+Cheers
+
+Axel
+
+On 03/22/2013 09:47 PM, Guglielmetti, Robert wrote:
+> On 3/22/13 3:14 PM, "Axel Jacobs" <jacobs.axel at gmail.com> wrote:
+>
+>
+>> This is fixable, and I'd be happy to do this. To my excuse, however, I
+>> must say that the arg parser in any of the csh scripts in Radiance, and
+>> probably in many of the Perl scripts, too, is not terribly
+>> sophisticated. It does its job, but not all possible errors are caught.
+>
+>
+> Agreed, I will say that Ruby has a nice class for this stuff, but in the
+> end it's probably not much more robust than whatever Perl's got going on.
+>
+>> Existing Perl parsers are good with -s or --short-option style things.
+>> When you throw -a+ vs -a- at them, they just give up. Making this work
+>> properly is a helluva job.
+>>
+>> So should -spec be treated as -pal spec (probably not), or should it
+>> throw up a more meaningful error message e.g. 'deprecated'?
+>
+> I vote a deprecated error, along with a pointer to the newer -pal option &
+> syntax.
+>
+> Thanks Axel!
+>
+> - Rob
+>
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: falsecolor-aj-20130322.pl
+Type: application/x-perl
+Size: 10524 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20130322/a3a60aa6/attachment-0001.bin>
+
+From michael at coolshadow.com  Fri Mar 22 15:40:40 2013
+From: michael at coolshadow.com (Michael Martinez)
+Date: Fri, 22 Mar 2013 15:40:40 -0700
+Subject: [Radiance-dev] Falsecolor
+In-Reply-To: <514CD894.1030005@gmail.com>
+References: <CD722CDD.1CA4B%robert.guglielmetti@nrel.gov>
+	<514CD894.1030005@gmail.com>
+Message-ID: <8C22F5A9-335B-4AD7-BBA6-00B100C94932@coolshadow.com>
+
+Hi Axel - Thanks! This works, and seems like a good error message. 
+
+Hopefully I'm not the only -spec fan out there with out of date binaries, and others will benefit from this update. 
+
+MM
+
+
+
+
+On Mar 22, 2013, at 3:17 PM, Axel Jacobs wrote:
+
+> Michael,
+> 
+> could you give this a try and let me know if it works for you. I'm not saying 'read the man page', because I'm not sure how this is (or is going to be) done on Windows. All right?
+> 
+> I have taken the liberty to add a new '-pal eco' which I promised to submit almost a year ago.
+> 
+> There is also a new -cp (posterise) option that has been in HEAD for a while. Just needs mentioning on the man page.
+> 
+> @Greg,
+> please give us your opinion on the current implementation. I'm touching up the man page now. It needs the -cp option, and also the sponsor of the -pal eco option. Will report back....
+> 
+> Cheers
+> 
+> Axel
+> 
+> On 03/22/2013 09:47 PM, Guglielmetti, Robert wrote:
+>> On 3/22/13 3:14 PM, "Axel Jacobs" <jacobs.axel at gmail.com> wrote:
+>> 
+>> 
+>>> This is fixable, and I'd be happy to do this. To my excuse, however, I
+>>> must say that the arg parser in any of the csh scripts in Radiance, and
+>>> probably in many of the Perl scripts, too, is not terribly
+>>> sophisticated. It does its job, but not all possible errors are caught.
+>> 
+>> 
+>> Agreed, I will say that Ruby has a nice class for this stuff, but in the
+>> end it's probably not much more robust than whatever Perl's got going on.
+>> 
+>>> Existing Perl parsers are good with -s or --short-option style things.
+>>> When you throw -a+ vs -a- at them, they just give up. Making this work
+>>> properly is a helluva job.
+>>> 
+>>> So should -spec be treated as -pal spec (probably not), or should it
+>>> throw up a more meaningful error message e.g. 'deprecated'?
+>> 
+>> I vote a deprecated error, along with a pointer to the newer -pal option &
+>> syntax.
+>> 
+>> Thanks Axel!
+>> 
+>> - Rob
+>> 
+>> 
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>> 
+> 
+> <falsecolor-aj-20130322.pl>_______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20130322/a7506840/attachment.html>
+
+From jacobs.axel at gmail.com  Fri Mar 22 15:57:35 2013
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Fri, 22 Mar 2013 22:57:35 +0000
+Subject: [Radiance-dev] Falsecolor
+In-Reply-To: <8C22F5A9-335B-4AD7-BBA6-00B100C94932@coolshadow.com>
+References: <CD722CDD.1CA4B%robert.guglielmetti@nrel.gov>
+	<514CD894.1030005@gmail.com>
+	<8C22F5A9-335B-4AD7-BBA6-00B100C94932@coolshadow.com>
+Message-ID: <514CE1DF.5020903@gmail.com>
+
+All right, lads,
+
+ > Hopefully I'm not the only -spec fan out there with out of date
+> binaries, and others will benefit from this update.
+
+I'm sure they will. When I talked Greg into this new -pal option (which 
+is a lot more flexible), we weren't too worried about compatibility. 
+You've just reminded us that old habits die hard. Now, if only there was 
+a way of killing off this dreaded Desktop Radiance....
+
+>> There is also a new -cp (posterise) option that has been in HEAD for a
+>> while. Just needs mentioning on the man page.
+
+Oops, it is mentioned.
+
+>> @Greg,
+>> please give us your opinion on the current implementation. I'm
+>> touching up the man page now. It needs the -cp option, and also the
+>> sponsor of the -pal eco option. Will report back....
+
+@Greg:
+Done a few tweaks on the man page. See attachment. F+P are mentioned as 
+sponsors now, and there is a -palettes example. Please edit as required.
+
+Cheers
+
+Axel
+
+PS: Since Easter is approaching, I thought I might as well tell you 
+about this on-topic Easter egg in Radiance:
+
+falsecolor -ip my_image.hdr -s Axel | ximage
+
+Yezzzzz! Thought you'd like it! ;-P
+
+As always, see source code for explanation.
+
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: falsecolor-aj-20130322.1
+Type: application/x-troff-man
+Size: 4251 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20130322/64c3661f/attachment.man>
+

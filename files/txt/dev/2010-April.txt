@@ -1,0 +1,812 @@
+From randolph+LD at panix.com  Mon Apr  5 10:53:51 2010
+From: randolph+LD at panix.com (Randolph Fritz)
+Date: Mon Apr  5 10:53:50 2010
+Subject: [Radiance-dev] Test--please ignore
+Message-ID: <092A2E8B-5F63-4EB9-81A3-8F757E4A0323@panix.com>
+
+
+Randolph
+
+
+
+
+From Daniel.Macumber at nrel.gov  Tue Apr 13 09:15:16 2010
+From: Daniel.Macumber at nrel.gov (Macumber, Daniel)
+Date: Tue Apr 13 09:15:12 2010
+Subject: [Radiance-dev] SCons + Windows for Radiance 4.0?
+Message-ID: <07186B30C3DFE948B0EE2862AC1999F70A00E0AD43@MAILBOX2.nrel.gov>
+
+Hello, I was pleasantly surprised to find that I could compile Radiance 3.9 with only minor modifications using the SCons scripts and both MSVC and MinGW on Windows.  However, the latest release of Radiance 4.0 is giving me a lot more trouble.  There is a typo in 'build_utils/find_libs.py' where 'v = env.FindFile('Verdana.fnt', './lib')' should be 'v = env.FindFile('Veerdana.fnt', './lib')'; this leads me to believe that the SCons scripts weren't even tested for this release, is that right?  Getting past the minor issues there seem to be some deeper problems for Windows (use of timegm function is where I stopped this function is not in the standard <time.h>).  So my question is, is anyone planning on trying to get Radiance 4.0 compiling using SCons on Windows (either MSVC or MinGW) without requiring cygwin?
+
+Thanks a lot,
+Dan
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20100413/e575a738/attachment.htm
+From tbleicher at googlemail.com  Tue Apr 13 09:45:58 2010
+From: tbleicher at googlemail.com (Thomas Bleicher)
+Date: Tue Apr 13 09:46:09 2010
+Subject: [Radiance-dev] SCons + Windows for Radiance 4.0?
+In-Reply-To: <07186B30C3DFE948B0EE2862AC1999F70A00E0AD43@MAILBOX2.nrel.gov>
+References: <07186B30C3DFE948B0EE2862AC1999F70A00E0AD43@MAILBOX2.nrel.gov>
+Message-ID: <o2j89355c0f1004130945s1407cc8fhb18c39e60f21f375@mail.gmail.com>
+
+Hi Daniel.
+
+I believe the update of the scons scripts for 3.9 is largely due to
+Francesco's efforts with mingw. I tried to compile 4.0 a few weeks ago
+and search the list for mails about compiling on Windows. Most of
+Francesco's comments where already in place.
+
+I didn't get too far with my own efforts although I was surprised that
+most of the core apps did compile fine. I had to change a few bits
+here and there and modify the includes. I also came across the time_gm
+(?) issue and replace it with a function that is part of time.h on
+Windows. I think it's only used to produce a time stamp and at that
+moment I just wanted to see if I could get the stuff to work at all.
+
+In the end I gave up when it came to rtcontrib and all the definitions
+from ray.h where suddenly not available any more. I couldn't find what
+was wrong with my limited knowledge of C and because it was just
+curiosity that made me do it in the first place I gave up.
+
+I hope someone who is actually using Windows will pick it up soon.
+
+Regards,
+Thomas
+
+On Tue, Apr 13, 2010 at 5:15 PM, Macumber, Daniel
+<Daniel.Macumber@nrel.gov> wrote:
+> Hello, I was pleasantly surprised to find that I could compile Radiance 3.9
+> with only minor modifications using the SCons scripts and both MSVC and
+> MinGW on Windows.? However, the latest release of Radiance 4.0 is giving me
+> a lot more trouble.? There is a typo in ?build_utils/find_libs.py? where ?v
+> = env.FindFile('Verdana.fnt', './lib')? should be ?v =
+> env.FindFile('Veerdana.fnt', './lib')?; this leads me to believe that the
+> SCons scripts weren?t even tested for this release, is that right?? Getting
+> past the minor issues there seem to be some deeper problems for Windows (use
+> of timegm function is where I stopped this function is not in the standard
+> <time.h>).? So my question is, is anyone planning on trying to get Radiance
+> 4.0 compiling using SCons on Windows (either MSVC or MinGW) without
+> requiring cygwin?
+>
+>
+>
+> Thanks a lot,
+> Dan
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+
+From randolph+LD at panix.com  Tue Apr 20 13:44:33 2010
+From: randolph+LD at panix.com (Randolph Fritz)
+Date: Tue Apr 20 13:44:29 2010
+Subject: [Radiance-dev] Cross-platform pcomb command-line processing
+Message-ID: <FAC70B0C-1DD5-4A56-820F-E6A848F38998@panix.com>
+
+The variations across platforms you see is because pcomb itself does  
+not process the quotes, relying instead on the OS and the C API to get  
+the arguments. So arguments are processed in different ways. At the  
+risk of providing too much information, here's a writeup of how and why.
+
+On Unix, the OS passes pcomb a list of arguments without quotes and  
+any substitutions done to pcomb, which never sees the quotes or  
+substitutions at all. A Unix shell processes single and double quotes  
+and does command-line substitutions.
+
+On Windows a string is passed to the C library, which creates the list  
+of arguments and then invokes pcomb. The C library only recognizes  
+double quotes. The full arcane details of the Microsoft C library's  
+argument processing are documented at http://msdn.microsoft.com/en-us/library/aa243471%28VS.60%29.aspx 
+. I'm not sure what the GNU C library (mingw) does on Windows.
+
+The Python "subprocess" module can be used in two different ways: to  
+invoke pcomb directly (shell=False), in which case a sequence is  
+preferred, and no processing is done on the sequence; "subprocess"  
+makes every effort to see that that sequence becomes pcomb's argument  
+list on all platforms. If, on the other hand, if shell=True is used, a  
+string argument is preferred, and pcomb is invoked indirectly through  
+a shell. My general preference is for shell=False, since one can get  
+amazingly confusing results passing already-processed arguments  
+through a shell, but there are some uses for shell=True.
+
+Randolph
+
+
+From randolph+LD at panix.com  Fri Apr 23 12:05:44 2010
+From: randolph+LD at panix.com (Randolph Fritz)
+Date: Fri Apr 23 12:06:02 2010
+Subject: [Radiance-dev] wxfalsecolor on Mac OS (was: wxfalsecolor v0.1
+	binary download available)
+Message-ID: <EC29EF8C-3E5E-4628-B605-DF0558937D41@panix.com>
+
+[moving this to code development]
+
+On 10.5.8 / Python.org Python 2.5.4:
+   It starts, & I can view images. If I press "convert," however, I  
+get a "broken pipe" message from combineImages.
+
+Does this work on 10.6?
+
+Randolph
+
+On 2010-04-23 11:34:28 -0700, Thomas Bleicher said:
+
+On Fri, Apr 23, 2010 at 7:19 PM, R Fritz <randolph+LD-VmQCmMdMyN0AvxtiuMwx3w@public.gmane.org 
+ > wrote:
+Has anyone else tried this on Mac OS? It doesn't work for me--is it  
+working
+for anyone?
+
+Yes, here! OS X 10.6, Python 2.6 from the system.
+
+One tip: start with -d command line option and watch the messages  
+scroll by.
+
+Cheers,
+Thomas
+
+
+From tbleicher at googlemail.com  Fri Apr 23 15:18:57 2010
+From: tbleicher at googlemail.com (Thomas Bleicher)
+Date: Fri Apr 23 15:18:52 2010
+Subject: [Radiance-dev] Re: [Radiance-general] wxfalsecolor on Mac OS (was:
+	wxfalsecolor v0.1 binary download available)
+In-Reply-To: <EC29EF8C-3E5E-4628-B605-DF0558937D41@panix.com>
+References: <EC29EF8C-3E5E-4628-B605-DF0558937D41@panix.com>
+Message-ID: <j2n89355c0f1004231518p303ea611ra2bd97059af970d0@mail.gmail.com>
+
+Ah. That reminds me ...
+
+Depending on how you start it, you probably don't have the Radiance
+binaries in your PATH. If you use Terminal.app you can use your
+~/.bashrc but if you want to click and perhaps drag an icon you need
+an ~/.MacOSX/environment.plist. But if it can't find the binaries you
+shouldn't be able to load the image in the first place ...
+
+On Fri, Apr 23, 2010 at 8:05 PM, Randolph Fritz <randolph+LD@panix.com> wrote:
+> [moving this to code development]
+>
+> On 10.5.8 / Python.org Python 2.5.4:
+> ?It starts, & I can view images. If I press "convert," however, I get a
+> "broken pipe" message from combineImages.
+>
+> Does this work on 10.6?
+
+It does here. "broken pipe" is usually the result of a binary not
+found or a wrong command line. wxfalsecolor does not check the
+settings in the text boxes, btw. If you give an argument that would
+not work with falsecolor/falsecolor2 it won't work in wxfalsecolor.
+
+If you set the DEBUG property of FalsecolorImage it will report all
+command lines and how they are passed to Popen.
+
+Hth,
+
+Thomas
+
+From pally.sandher at iesve.com  Mon Apr 26 06:27:19 2010
+From: pally.sandher at iesve.com (Pally Sandher)
+Date: Mon Apr 26 06:27:33 2010
+Subject: [Radiance-dev] SCons + Windows for Radiance 4.0?
+Message-ID: <7E4EF7766063EC4091542B5B3E671EC4029AEBA1@MAIL.iesve.com>
+
+I'm also interested in getting Radiance v4.0 to compile on Windows. Ran
+into the same problems as Daniel Macumber.
+
+v3.9 builds fine but the install command fails:
+
+C:\TEMP\rad3R9all\ray>C:\Python26\Scripts\scons install
+scons: Reading SConscript files ...
+
+scons: warning: The env.SourceSignatures() method is deprecated;
+        convert your build to use the env.Decider() method instead.
+File "C:\TEMP\rad3R9all\ray\SConstruct", line 7, in <module>
+Detected platform "win32" (nt).
+Reading configuration "platform\mingw.cfg"
+
+scons: warning: The Options class is deprecated; use the Variables class
+instead
+.
+File "C:\TEMP\rad3R9all\ray\SConstruct", line 10, in set_opts
+Checking for C library GL... (cached) no
+meta
+cv
+gen
+ot
+
+scons: warning: Two different environments were specified for target
+bbox.o,
+        but they appear to have the same action: $CC -o $TARGET -c
+$CFLAGS $CCFLAGS $_CCCOMCOM $SOURCES
+File "C:\TEMP\rad3R9all\ray\src\ot\SConscript", line 18, in <module>
+
+scons: warning: Two different environments were specified for target
+o_face.o,
+        but they appear to have the same action: $CC -o $TARGET -c
+$CFLAGS $CCFLAGS $_CCCOMCOM $SOURCES
+File "C:\TEMP\rad3R9all\ray\src\ot\SConscript", line 18, in <module>
+rt
+px
+hd
+util
+cal
+scons: done reading SConscript files.
+scons: Building targets ...
+Install file: "bin\3ds2mgf.exe" as "C:\radiance3.9\bin\3ds2mgf.exe"
+Install file: "bin\arch2rad.exe" as "C:\radiance3.9\bin\arch2rad.exe"
+Install file: "bin\bgraph.exe" as "C:\radiance3.9\bin\bgraph.exe"
+Install file: "bin\cnt.exe" as "C:\radiance3.9\bin\cnt.exe"
+Install file: "bin\cv.exe" as "C:\radiance3.9\bin\cv.exe"
+Install file: "bin\dgraph.exe" as "C:\radiance3.9\bin\dgraph.exe"
+Install file: "bin\ev.exe" as "C:\radiance3.9\bin\ev.exe"
+Install file: "bin\findglare.exe" as "C:\radiance3.9\bin\findglare.exe"
+Install file: "bin\gcomp.exe" as "C:\radiance3.9\bin\gcomp.exe"
+Install file: "bin\genbeads.exe" as "C:\radiance3.9\bin\genbeads.exe"
+Install file: "bin\genblinds.exe" as "C:\radiance3.9\bin\genblinds.exe"
+Install file: "bin\genbox.exe" as "C:\radiance3.9\bin\genbox.exe"
+Install file: "bin\genbranch.exe" as "C:\radiance3.9\bin\genbranch.exe"
+Install file: "bin\gencatenary.exe" as
+"C:\radiance3.9\bin\gencatenary.exe"
+Install file: "bin\genclock.exe" as "C:\radiance3.9\bin\genclock.exe"
+Install file: "bin\genmarble.exe" as "C:\radiance3.9\bin\genmarble.exe"
+Install file: "bin\genprism.exe" as "C:\radiance3.9\bin\genprism.exe"
+Install file: "bin\genrev.exe" as "C:\radiance3.9\bin\genrev.exe"
+Install file: "bin\gensky.exe" as "C:\radiance3.9\bin\gensky.exe"
+Install file: "bin\gensurf.exe" as "C:\radiance3.9\bin\gensurf.exe"
+Install file: "bin\genworm.exe" as "C:\radiance3.9\bin\genworm.exe"
+Install file: "bin\getbbox.exe" as "C:\radiance3.9\bin\getbbox.exe"
+Install file: "bin\getinfo.exe" as "C:\radiance3.9\bin\getinfo.exe"
+Install file: "bin\glarendx.exe" as "C:\radiance3.9\bin\glarendx.exe"
+Install file: "bin\histo.exe" as "C:\radiance3.9\bin\histo.exe"
+Install file: "bin\icalc.exe" as "C:\radiance3.9\bin\icalc.exe"
+Install file: "bin\ies2rad.exe" as "C:\radiance3.9\bin\ies2rad.exe"
+Install file: "bin\igraph.exe" as "C:\radiance3.9\bin\igraph.exe"
+Install file: "bin\lampcolor.exe" as "C:\radiance3.9\bin\lampcolor.exe"
+Install file: "bin\lookamb.exe" as "C:\radiance3.9\bin\lookamb.exe"
+Install file: "bin\macbethcal.exe" as
+"C:\radiance3.9\bin\macbethcal.exe"
+Install file: "bin\meta2bmp.exe" as "C:\radiance3.9\bin\meta2bmp.exe"
+Install file: "bin\meta2tga.exe" as "C:\radiance3.9\bin\meta2tga.exe"
+Install file: "bin\mgf2inv.exe" as "C:\radiance3.9\bin\mgf2inv.exe"
+Install file: "bin\mgf2rad.exe" as "C:\radiance3.9\bin\mgf2rad.exe"
+Install file: "bin\mgfilt.exe" as "C:\radiance3.9\bin\mgfilt.exe"
+Install file: "bin\mksource.exe" as "C:\radiance3.9\bin\mksource.exe"
+Install file: "bin\neaten.exe" as "C:\radiance3.9\bin\neaten.exe"
+Install file: "bin\nff2rad.exe" as "C:\radiance3.9\bin\nff2rad.exe"
+Install file: "bin\obj2mesh.exe" as "C:\radiance3.9\bin\obj2mesh.exe"
+Install file: "bin\obj2rad.exe" as "C:\radiance3.9\bin\obj2rad.exe"
+Install file: "bin\oconv.exe" as "C:\radiance3.9\bin\oconv.exe"
+Install file: "bin\pcomb.exe" as "C:\radiance3.9\bin\pcomb.exe"
+Install file: "bin\pcompos.exe" as "C:\radiance3.9\bin\pcompos.exe"
+Install file: "bin\pcond.exe" as "C:\radiance3.9\bin\pcond.exe"
+Install file: "bin\pcwarp.exe" as "C:\radiance3.9\bin\pcwarp.exe"
+Install file: "bin\pexpand.exe" as "C:\radiance3.9\bin\pexpand.exe"
+Install file: "bin\pextrem.exe" as "C:\radiance3.9\bin\pextrem.exe"
+Install file: "bin\pfilt.exe" as "C:\radiance3.9\bin\pfilt.exe"
+Install file: "bin\pflip.exe" as "C:\radiance3.9\bin\pflip.exe"
+Install file: "bin\pinterp.exe" as "C:\radiance3.9\bin\pinterp.exe"
+Install file: "bin\plot4.exe" as "C:\radiance3.9\bin\plot4.exe"
+Install file: "bin\plotin.exe" as "C:\radiance3.9\bin\plotin.exe"
+Install file: "bin\protate.exe" as "C:\radiance3.9\bin\protate.exe"
+Install file: "bin\psign.exe" as "C:\radiance3.9\bin\psign.exe"
+Install file: "bin\psmeta.exe" as "C:\radiance3.9\bin\psmeta.exe"
+Install file: "bin\psort.exe" as "C:\radiance3.9\bin\psort.exe"
+Install file: "bin\pvalue.exe" as "C:\radiance3.9\bin\pvalue.exe"
+Install file: "bin\rad.exe" as "C:\radiance3.9\bin\rad.exe"
+Install file: "bin\rad2mgf.exe" as "C:\radiance3.9\bin\rad2mgf.exe"
+Install file: "bin\ranimate.exe" as "C:\radiance3.9\bin\ranimate.exe"
+Install file: "bin\ranimove.exe" as "C:\radiance3.9\bin\ranimove.exe"
+Install file: "bin\ra_bmp.exe" as "C:\radiance3.9\bin\ra_bmp.exe"
+Install file: "bin\ra_gif.exe" as "C:\radiance3.9\bin\ra_gif.exe"
+Install file: "bin\ra_hexbit.exe" as "C:\radiance3.9\bin\ra_hexbit.exe"
+Install file: "bin\ra_pict.exe" as "C:\radiance3.9\bin\ra_pict.exe"
+Install file: "bin\ra_ppm.exe" as "C:\radiance3.9\bin\ra_ppm.exe"
+Install file: "bin\ra_ps.exe" as "C:\radiance3.9\bin\ra_ps.exe"
+Install file: "bin\ra_rgbe.exe" as "C:\radiance3.9\bin\ra_rgbe.exe"
+Install file: "bin\ra_t16.exe" as "C:\radiance3.9\bin\ra_t16.exe"
+Install file: "bin\ra_t8.exe" as "C:\radiance3.9\bin\ra_t8.exe"
+Install file: "bin\ra_xyze.exe" as "C:\radiance3.9\bin\ra_xyze.exe"
+Install file: "bin\rcalc.exe" as "C:\radiance3.9\bin\rcalc.exe"
+Install file: "bin\replmarks.exe" as "C:\radiance3.9\bin\replmarks.exe"
+Install file: "bin\rlam.exe" as "C:\radiance3.9\bin\rlam.exe"
+Install file: "bin\rpict.exe" as "C:\radiance3.9\bin\rpict.exe"
+Install file: "bin\rpiece.exe" as "C:\radiance3.9\bin\rpiece.exe"
+Install file: "bin\rsensor.exe" as "C:\radiance3.9\bin\rsensor.exe"
+Install file: "bin\rtcontrib.exe" as "C:\radiance3.9\bin\rtcontrib.exe"
+Install file: "bin\rtrace.exe" as "C:\radiance3.9\bin\rtrace.exe"
+Install file: "bin\tabfunc.exe" as "C:\radiance3.9\bin\tabfunc.exe"
+Install file: "bin\tmesh2rad.exe" as "C:\radiance3.9\bin\tmesh2rad.exe"
+Install file: "bin\total.exe" as "C:\radiance3.9\bin\total.exe"
+Install file: "bin\ttyimage.exe" as "C:\radiance3.9\bin\ttyimage.exe"
+Install file: "bin\vwrays.exe" as "C:\radiance3.9\bin\vwrays.exe"
+Install file: "bin\vwright.exe" as "C:\radiance3.9\bin\vwright.exe"
+Install file: "bin\xform.exe" as "C:\radiance3.9\bin\xform.exe"
+Install file: "lib\adobe.cal" as "C:\radiance3.9\share\lib\adobe.cal"
+Install file: "lib\alberta.pic" as
+"C:\radiance3.9\share\lib\alberta.pic"
+Install file: "lib\ball.cal" as "C:\radiance3.9\share\lib\ball.cal"
+Install file: "lib\bowl.pic" as "C:\radiance3.9\share\lib\bowl.pic"
+Install file: "lib\bowl.rad" as "C:\radiance3.9\share\lib\bowl.rad"
+Install file: "lib\bowl.rtm" as "C:\radiance3.9\share\lib\bowl.rtm"
+Install file: "lib\brick.cal" as "C:\radiance3.9\share\lib\brick.cal"
+Install file: "lib\brick.pic" as "C:\radiance3.9\share\lib\brick.pic"
+Install file: "lib\brickweave.cal" as
+"C:\radiance3.9\share\lib\brickweave.cal"
+Install file: "lib\brickweave.pic" as
+"C:\radiance3.9\share\lib\brickweave.pic"
+Install file: "lib\cabin.pic" as "C:\radiance3.9\share\lib\cabin.pic"
+Install file: "lib\carpet.cal" as "C:\radiance3.9\share\lib\carpet.cal"
+Install file: "lib\climit.cal" as "C:\radiance3.9\share\lib\climit.cal"
+Install file: "src\gen\clockface.hex" as
+"C:\radiance3.9\share\lib\clockface.hex"
+scons: *** [C:\radiance3.9\share\lib\clockface.hex] AssertionError :
+Installing source ['src\\gen\\clockface.hex', 'lib\\clockface.hex'] into
+target ['C:\\radiance3.9\\share\\lib\\clockface.hex']: target and source
+lists must have same length.
+Traceback (most recent call last):
+  File "C:\Python26\Lib\site-packages\scons-1.2.0\SCons\Action.py", line
+961, in execute
+    result = self.execfunction(target=target, source=rsources, env=env)
+  File
+"C:\Python26\Lib\site-packages\scons-1.2.0\SCons\Tool\install.py", line
+79, in installFunc
+    "Installing source %s into target %s: target and source lists must
+have same length."%(map(str, source), map(str, target))
+AssertionError: Installing source ['src\\gen\\clockface.hex',
+'lib\\clockface.hex'] into target
+['C:\\radiance3.9\\share\\lib\\clockface.hex']: target and source lists
+must have same length.
+scons: building terminated because of errors.
+
+Having never even heard of Scons until I started trying to build
+Radiance I've no idea where to start at trying to fix this. I'm assuming
+the problem is because there are 2 arguments in the source & only one in
+the target but the Sconscript files are far from readable never mind
+finding the actual one where the problem lies.
+
+If it helps I'm building on Windows XP 64-bit using Scons 1.2.0, Python
+2.6.4 & MinGW 5.1.6. Any help will be most appreciated.
+
+Palbinder Sandher 
+Software Deployment & IT Administrator
+T: +44 (0) 141 945 8500 
+F: +44 (0) 141 945 8501 
+
+http://www.iesve.com 
+**Design, Simulate + Innovate with the <Virtual Environment>**
+Integrated Environmental Solutions Limited. Registered in Scotland No.
+SC151456 
+Registered Office - Helix Building, West Of Scotland Science Park,
+Glasgow G20 0SP
+Email Disclaimer
+
+
+-----Original Message-----
+Thomas Bleicher tbleicher at googlemail.com 
+Tue Apr 13 09:45:58 PDT 2010 
+------------------------------------------------------------------------
+--------
+
+Hi Daniel.
+
+I believe the update of the scons scripts for 3.9 is largely due to
+Francesco's efforts with mingw. I tried to compile 4.0 a few weeks ago
+and search the list for mails about compiling on Windows. Most of
+Francesco's comments where already in place.
+
+I didn't get too far with my own efforts although I was surprised that
+most of the core apps did compile fine. I had to change a few bits
+here and there and modify the includes. I also came across the time_gm
+(?) issue and replace it with a function that is part of time.h on
+Windows. I think it's only used to produce a time stamp and at that
+moment I just wanted to see if I could get the stuff to work at all.
+
+In the end I gave up when it came to rtcontrib and all the definitions
+from ray.h where suddenly not available any more. I couldn't find what
+was wrong with my limited knowledge of C and because it was just
+curiosity that made me do it in the first place I gave up.
+
+I hope someone who is actually using Windows will pick it up soon.
+
+Regards,
+Thomas
+
+On Tue, Apr 13, 2010 at 5:15 PM, Macumber, Daniel
+<Daniel.Macumber at nrel.gov> wrote:
+> Hello, I was pleasantly surprised to find that I could compile
+Radiance 3.9
+> with only minor modifications using the SCons scripts and both MSVC
+and
+> MinGW on Windows.  However, the latest release of Radiance 4.0 is
+giving me
+> a lot more trouble.  There is a typo in 'build_utils/find_libs.py'
+where 'v
+> = env.FindFile('Verdana.fnt', './lib')' should be 'v =
+> env.FindFile('Veerdana.fnt', './lib')'; this leads me to believe that
+the
+> SCons scripts weren't even tested for this release, is that right?
+Getting
+> past the minor issues there seem to be some deeper problems for
+Windows (use
+> of timegm function is where I stopped this function is not in the
+standard
+> <time.h>).  So my question is, is anyone planning on trying to get
+Radiance
+> 4.0 compiling using SCons on Windows (either MSVC or MinGW) without
+> requiring cygwin?
+>
+>
+>
+> Thanks a lot,
+> Dan
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+
+
+From randolph+LD at panix.com  Mon Apr 26 06:47:54 2010
+From: randolph+LD at panix.com (Randolph Fritz)
+Date: Mon Apr 26 06:47:59 2010
+Subject: [Radiance-dev] SCons + Windows for Radiance 4.0?
+In-Reply-To: <7E4EF7766063EC4091542B5B3E671EC4029AEBA1@MAIL.iesve.com>
+References: <7E4EF7766063EC4091542B5B3E671EC4029AEBA1@MAIL.iesve.com>
+Message-ID: <D9B4AD75-9C60-45A2-8259-DA32FED1E09F@panix.com>
+
+The SCons community is at <http://www.scons.org/>
+
+I'd take a look at this, but these days I don't have convenient access  
+to a Windows system.  Hmmm.  Maybe...
+
+Randolph
+
+From schorsch at schorsch.com  Mon Apr 26 07:02:03 2010
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Mon Apr 26 07:02:07 2010
+Subject: [Radiance-dev] SCons + Windows for Radiance 4.0?
+In-Reply-To: <7E4EF7766063EC4091542B5B3E671EC4029AEBA1@MAIL.iesve.com>
+References: <7E4EF7766063EC4091542B5B3E671EC4029AEBA1@MAIL.iesve.com>
+Message-ID: <alpine.BSF.2.00.1004260954180.65994@zulle.pair.com>
+
+Pally Sandher wrote:
+
+> I'm also interested in getting Radiance v4.0 to compile on Windows. Ran
+> into the same problems as Daniel Macumber.
+
+
+The main problem is that the scripts were written for an older
+and slightly incompatible version of SCons, which results in the
+deprecation warnings, and probably the error as well.
+Windows vs. unix is not an issue here.
+
+I just moved and DSL isn't conntected yet at my new place, so it
+may take some time until I'm able to look into it. 
+But then, SCons isn't quite as arcane as you seem to think, and
+the tracebacks tell you *exactly* where to look... ;)
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From pally.sandher at iesve.com  Mon Apr 26 07:12:27 2010
+From: pally.sandher at iesve.com (Pally Sandher)
+Date: Mon Apr 26 07:12:31 2010
+Subject: [Radiance-dev] SCons + Windows for Radiance 4.0?
+In-Reply-To: <alpine.BSF.2.00.1004260954180.65994@zulle.pair.com>
+References: <7E4EF7766063EC4091542B5B3E671EC4029AEBA1@MAIL.iesve.com>
+	<alpine.BSF.2.00.1004260954180.65994@zulle.pair.com>
+Message-ID: <7E4EF7766063EC4091542B5B3E671EC4029E0B4F@MAIL.iesve.com>
+
+If you let me know which version of Scons is best to use I'd happily
+track it down & install it as I'm doing all this building on a virtual
+machine anyway.
+
+I was following the How-To guide at
+http://www.bozzograo.net/radiancewiki/doku.php?id=how_to_compile_radianc
+e_using_the_mingw_tools_and_scons & had to figure out that Python 2.x is
+required for Scons, not Python 3.x so picking the right version of Scons
+too would be a great help. Looking at their repository in Sourceforge
+there are 1.1, 1.0.1 & 1.0.0 available. Once I figure it out I'll update
+the Wiki page.
+
+Tried updating to Python 2.6.5 & Scons 1.3.0, still the same issues as
+you'd expect. Going to try Scons 1.1.0 now & see how it goes.
+
+Palbinder Sandher 
+Software Deployment & IT Administrator
+T: +44 (0) 141 945 8500 
+F: +44 (0) 141 945 8501 
+
+http://www.iesve.com 
+**Design, Simulate + Innovate with the <Virtual Environment>**
+Integrated Environmental Solutions Limited. Registered in Scotland No.
+SC151456 
+Registered Office - Helix Building, West Of Scotland Science Park,
+Glasgow G20 0SP
+Email Disclaimer
+
+-----Original Message-----
+From: radiance-dev-bounces@radiance-online.org
+[mailto:radiance-dev-bounces@radiance-online.org] On Behalf Of Georg
+Mischler
+Sent: 26 April 2010 15:02
+To: code development
+Subject: RE: [Radiance-dev] SCons + Windows for Radiance 4.0?
+
+Pally Sandher wrote:
+
+> I'm also interested in getting Radiance v4.0 to compile on Windows. 
+> Ran into the same problems as Daniel Macumber.
+
+
+The main problem is that the scripts were written for an older and
+slightly incompatible version of SCons, which results in the deprecation
+warnings, and probably the error as well.
+Windows vs. unix is not an issue here.
+
+I just moved and DSL isn't conntected yet at my new place, so it may
+take some time until I'm able to look into it. 
+But then, SCons isn't quite as arcane as you seem to think, and the
+tracebacks tell you *exactly* where to look... ;)
+
+
+-schorsch
+
+--
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+From pally.sandher at iesve.com  Mon Apr 26 08:36:43 2010
+From: pally.sandher at iesve.com (Pally Sandher)
+Date: Mon Apr 26 08:36:50 2010
+Subject: [Radiance-dev] SCons + Windows for Radiance 4.0?
+In-Reply-To: <7E4EF7766063EC4091542B5B3E671EC4029E0B4F@MAIL.iesve.com>
+References: <7E4EF7766063EC4091542B5B3E671EC4029AEBA1@MAIL.iesve.com><alpine.BSF.2.00.1004260954180.65994@zulle.pair.com>
+	<7E4EF7766063EC4091542B5B3E671EC4029E0B4F@MAIL.iesve.com>
+Message-ID: <7E4EF7766063EC4091542B5B3E671EC4029E0BE7@MAIL.iesve.com>
+
+Tried 1.1, 1.0.1 & 1.0 of Scons. None work & I bizarrely get more
+deprecation warnings with 1.1 & older versions than I do with 1.2 or
+1.3.
+
+C:\TEMP\rad3R9all\ray>C:\Python26\Scripts\scons install
+scons: Reading SConscript files ...
+C:\Python26\Lib\site-packages\scons-1.1.0\SCons\Platform\posix.py:38:
+DeprecationWarning: The popen2 module is deprecated.  Use the subprocess
+module.
+  import popen2
+C:\Python26\Lib\site-packages\scons-1.1.0\SCons\Tool\msvs.py:37:
+DeprecationWarning: the md5 module is deprecated; use hashlib instead
+  import md5
+
+scons: warning: The env.SourceSignatures() method is deprecated;
+        convert your build to use the env.Decider() method instead.
+File "C:\TEMP\rad3R9all\ray\SConstruct", line 7, in <module>
+Detected platform "win32" (nt).
+Reading configuration "platform\mingw.cfg"
+Checking for C library GL... (cached) no
+meta
+cv
+gen
+ot
+
+scons: warning: Two different environments were specified for target
+bbox.o,
+        but they appear to have the same action: $CC -o $TARGET -c
+$CFLAGS $CCFLAGS $_CCCOMCOM $SOURCES
+File "C:\TEMP\rad3R9all\ray\src\ot\SConscript", line 18, in <module>
+
+scons: warning: Two different environments were specified for target
+o_face.o,
+        but they appear to have the same action: $CC -o $TARGET -c
+$CFLAGS $CCFLAGS $_CCCOMCOM $SOURCES
+File "C:\TEMP\rad3R9all\ray\src\ot\SConscript", line 18, in <module>
+rt
+px
+hd
+util
+cal
+scons: done reading SConscript files.
+scons: Building targets ...
+Install file: "src\gen\clockface.hex" as
+"C:\radiance3.9\share\lib\clockface.hex"
+scons: *** [C:\radiance3.9\share\lib\clockface.hex] Exception
+Traceback (most recent call last):
+  File "C:\Python26\Lib\site-packages\scons-1.1.0\SCons\Taskmaster.py",
+line 220, in execute
+    self.targets[0].build()
+  File
+"C:\Python26\Lib\site-packages\scons-1.1.0\SCons\Node\__init__.py", line
+370, in build
+    apply(self.get_executor(), (self,), kw)
+  File "C:\Python26\Lib\site-packages\scons-1.1.0\SCons\Executor.py",
+line 145, in __call__
+    return self.do_execute(target, kw)
+  File "C:\Python26\Lib\site-packages\scons-1.1.0\SCons\Executor.py",
+line 131, in do_execute
+    status = apply(act, (self.targets, self.get_sources(), env), kw)
+  File "C:\Python26\Lib\site-packages\scons-1.1.0\SCons\Action.py", line
+467, in __call__
+    stat = self.execute(target, source, env)
+  File "C:\Python26\Lib\site-packages\scons-1.1.0\SCons\Action.py", line
+908, in execute
+    result = self.execfunction(target=target, source=rsources, env=env)
+  File
+"C:\Python26\Lib\site-packages\scons-1.1.0\SCons\Tool\install.py", line
+79, in installFunc
+    "Installing source %s into target %s: target and source lists must
+have same length."%(map(str, source), map(str, target))
+AssertionError: Installing source ['src\\gen\\clockface.hex',
+'lib\\clockface.hex'] into target
+['C:\\radiance3.9\\share\\lib\\clockface.hex']: target and source lists
+must have same length.
+scons: building terminated because of errors.
+
+
+Palbinder Sandher 
+Software Deployment & IT Administrator
+T: +44 (0) 141 945 8500 
+F: +44 (0) 141 945 8501 
+
+http://www.iesve.com 
+**Design, Simulate + Innovate with the <Virtual Environment>**
+Integrated Environmental Solutions Limited. Registered in Scotland No.
+SC151456 
+Registered Office - Helix Building, West Of Scotland Science Park,
+Glasgow G20 0SP
+Email Disclaimer
+
+
+-----Original Message-----
+From: radiance-dev-bounces@radiance-online.org
+[mailto:radiance-dev-bounces@radiance-online.org] On Behalf Of Pally
+Sandher
+Sent: 26 April 2010 15:12
+To: code development
+Subject: RE: [Radiance-dev] SCons + Windows for Radiance 4.0?
+
+If you let me know which version of Scons is best to use I'd happily
+track it down & install it as I'm doing all this building on a virtual
+machine anyway.
+
+I was following the How-To guide at
+http://www.bozzograo.net/radiancewiki/doku.php?id=how_to_compile_radianc
+e_using_the_mingw_tools_and_scons & had to figure out that Python 2.x is
+required for Scons, not Python 3.x so picking the right version of Scons
+too would be a great help. Looking at their repository in Sourceforge
+there are 1.1, 1.0.1 & 1.0.0 available. Once I figure it out I'll update
+the Wiki page.
+
+Tried updating to Python 2.6.5 & Scons 1.3.0, still the same issues as
+you'd expect. Going to try Scons 1.1.0 now & see how it goes.
+
+Palbinder Sandher
+Software Deployment & IT Administrator
+T: +44 (0) 141 945 8500
+F: +44 (0) 141 945 8501 
+
+http://www.iesve.com
+**Design, Simulate + Innovate with the <Virtual Environment>**
+Integrated Environmental Solutions Limited. Registered in Scotland No.
+SC151456
+Registered Office - Helix Building, West Of Scotland Science Park,
+Glasgow G20 0SP Email Disclaimer
+
+-----Original Message-----
+From: radiance-dev-bounces@radiance-online.org
+[mailto:radiance-dev-bounces@radiance-online.org] On Behalf Of Georg
+Mischler
+Sent: 26 April 2010 15:02
+To: code development
+Subject: RE: [Radiance-dev] SCons + Windows for Radiance 4.0?
+
+Pally Sandher wrote:
+
+> I'm also interested in getting Radiance v4.0 to compile on Windows. 
+> Ran into the same problems as Daniel Macumber.
+
+
+The main problem is that the scripts were written for an older and
+slightly incompatible version of SCons, which results in the deprecation
+warnings, and probably the error as well.
+Windows vs. unix is not an issue here.
+
+I just moved and DSL isn't conntected yet at my new place, so it may
+take some time until I'm able to look into it. 
+But then, SCons isn't quite as arcane as you seem to think, and the
+tracebacks tell you *exactly* where to look... ;)
+
+
+-schorsch
+
+--
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+From schorsch at schorsch.com  Tue Apr 27 00:57:59 2010
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Tue Apr 27 00:58:03 2010
+Subject: [Radiance-dev] SCons + Windows for Radiance 4.0?
+In-Reply-To: <7E4EF7766063EC4091542B5B3E671EC4029E0BE7@MAIL.iesve.com>
+References: <7E4EF7766063EC4091542B5B3E671EC4029AEBA1@MAIL.iesve.com><alpine.BSF.2.00.1004260954180.65994@zulle.pair.com>
+	<7E4EF7766063EC4091542B5B3E671EC4029E0B4F@MAIL.iesve.com>
+	<7E4EF7766063EC4091542B5B3E671EC4029E0BE7@MAIL.iesve.com>
+Message-ID: <alpine.BSF.2.00.1004270328030.2560@zulle.pair.com>
+
+Pally Sandher wrote:
+
+> Tried 1.1, 1.0.1 & 1.0 of Scons. None work & I bizarrely get more
+> deprecation warnings with 1.1 & older versions than I do with 1.2 or
+> 1.3.
+
+You can ignore the warnings, they are harmless and will be
+dealt with in time.
+
+The real problem is a bug in my scripts, which collides with
+some inconsistencies in the Radiance file tree. Looks like
+I should have tested the installation code more thorougly,
+but I just didn't expect it to suddenly cause trouble.
+
+The problem is hat several files in the Radiance source tree
+exist in identical duplicates. SCons tries to install both of
+them onto the same target, for which it has no solution.
+I don't currently have access to the most current distribution,
+but in my source tree those are:
+
+ray/lib/clockface.hex   ray/src/gen/clockface.hex
+ray/lib/surf.cal        ray/src/gen/surf.cal
+ray/lib/lamp.tab        ray/src/cv/lamp.tab
+
+Solution: The SConscript files in the  the ray/src/gen and
+ray/src/cv directories each have a variable assignment near
+the bottom of the form:
+   LIBFILES=Split('a b c d')
+Ignoring any syntactic variations, the problem files are part
+of the 'a b c d' list. Just remove them one by one (leaving
+some whitspace as seperator for the remaining entries) until
+installation succeeds.
+
+Obviously that is only a stop gap measure for now. The real
+solution would be to eliminate the file duplication. As far
+as I can tell, the makeall script currently installs each of
+them twice, one copy overwriting the other.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+

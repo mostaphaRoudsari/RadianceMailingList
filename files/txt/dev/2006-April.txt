@@ -1,0 +1,212 @@
+From pisuke at blueyonder.co.uk  Mon Apr 24 23:33:01 2006
+From: pisuke at blueyonder.co.uk (Francesco Anselmo)
+Date: Mon Apr 24 23:33:35 2006
+Subject: [Radiance-dev] mingw rtcontrib (under windows)
+Message-ID: <1145914381.8517.20.camel@localhost.localdomain>
+
+Ladies & Gentlemen,
+
+I've hit this little problem with the mingw radiance binaries I've
+compiled last october.
+If I run this command to produce separate pictures for each light
+source:
+
+vwrays -ff -x 1024 -y 1024 -vf v3.vf | rtcontrib -ffc -x 1024 -y 1024 \
+-ld- @render.opt -o c_%s.pic -m solar -m skyglow -m spot testSky.oct
+
+I get the following error:
+-----
+bin/rtrace: consistency - zero ray direction in localhit
+
+This application has requested the Runtime to terminate it in an unusual
+way.
+Please contact the application's support team for more information. 
+rtcontrib: fatal - rtrace process died
+-----
+
+If, instead of using floating point values, I use ASCII, like this:
+
+vwrays -fa -x 1024 -y 1024 -vf v3.vf | rtcontrib -fac -x 1024 -y 1024 \
+-ld- @render.opt -o c_%s.pic -m solar -m skyglow -m spot testSky.oct
+
+everything works smoothly.
+
+Does anybody have any clue about it? I suspect it is directly related to
+the mingw gcc, but it may be something else, you never know what happens
+in Redmond ...
+
+Grazie!
+
+Francesco
+
+
+
+
+
+From gregoryjward at gmail.com  Tue Apr 25 00:28:31 2006
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue Apr 25 00:28:41 2006
+Subject: [Radiance-dev] mingw rtcontrib (under windows)
+In-Reply-To: <1145914381.8517.20.camel@localhost.localdomain>
+References: <1145914381.8517.20.camel@localhost.localdomain>
+Message-ID: <B61EC98C-2F5E-43AA-88C8-A2E45293BDD6@gmail.com>
+
+Hi Francesco,
+
+What is the date on your compile?  I notice I made a change on Oct.  
+11th, where I paid more attention to zero normals on the input.  I'm  
+just speculating, but if your view is a hemispherical fisheye, then  
+all its border rays will be zero vectors, which could accumulate in a  
+bad way using binary i/o and the earlier version of rtcontrib.c,  
+perhaps causing some kind of buffer confusion.  I'm not exactly sure  
+why it would show up in one mode and not the other, though.  Can you  
+reproduce the problem under Unix?
+
+-Greg
+
+> From: Francesco Anselmo <pisuke@blueyonder.co.uk>
+> Date: April 24, 2006 2:33:01 PM PDT
+>
+> Ladies & Gentlemen,
+>
+> I've hit this little problem with the mingw radiance binaries I've
+> compiled last october.
+> If I run this command to produce separate pictures for each light
+> source:
+>
+> vwrays -ff -x 1024 -y 1024 -vf v3.vf | rtcontrib -ffc -x 1024 -y  
+> 1024 \
+> -ld- @render.opt -o c_%s.pic -m solar -m skyglow -m spot testSky.oct
+>
+> I get the following error:
+> -----
+> bin/rtrace: consistency - zero ray direction in localhit
+>
+> This application has requested the Runtime to terminate it in an  
+> unusual
+> way.
+> Please contact the application's support team for more information.
+> rtcontrib: fatal - rtrace process died
+> -----
+>
+> If, instead of using floating point values, I use ASCII, like this:
+>
+> vwrays -fa -x 1024 -y 1024 -vf v3.vf | rtcontrib -fac -x 1024 -y  
+> 1024 \
+> -ld- @render.opt -o c_%s.pic -m solar -m skyglow -m spot testSky.oct
+>
+> everything works smoothly.
+>
+> Does anybody have any clue about it? I suspect it is directly  
+> related to
+> the mingw gcc, but it may be something else, you never know what  
+> happens
+> in Redmond ...
+>
+> Grazie!
+>
+> Francesco
+>
+
+From pisuke at blueyonder.co.uk  Tue Apr 25 09:57:10 2006
+From: pisuke at blueyonder.co.uk (Francesco Anselmo)
+Date: Tue Apr 25 09:57:15 2006
+Subject: [Radiance-dev] mingw rtcontrib (under windows)
+In-Reply-To: <B61EC98C-2F5E-43AA-88C8-A2E45293BDD6@gmail.com>
+References: <1145914381.8517.20.camel@localhost.localdomain>
+	<B61EC98C-2F5E-43AA-88C8-A2E45293BDD6@gmail.com>
+Message-ID: <1145951830.8526.11.camel@localhost.localdomain>
+
+Hi Greg,
+
+> Can you reproduce the problem under Unix?
+
+With Unix everything is working well, that's why i'm thinking of a
+windows shell pipeline problem or directly of mingw gcc.
+BTW, the view specification in my test is not a hemispherical fisheye,
+so the problem you're referring to should not happen in this case.
+In any case I'll recompile a fresh radiance tarball and let you know.
+
+Thanks,
+
+Francesco
+
+
+
+
+
+From pisuke at blueyonder.co.uk  Thu Apr 27 00:01:30 2006
+From: pisuke at blueyonder.co.uk (Francesco Anselmo)
+Date: Thu Apr 27 00:01:49 2006
+Subject: [Radiance-dev] mingw rtcontrib (under windows)
+In-Reply-To: <B61EC98C-2F5E-43AA-88C8-A2E45293BDD6@gmail.com>
+References: <1145914381.8517.20.camel@localhost.localdomain>
+	<B61EC98C-2F5E-43AA-88C8-A2E45293BDD6@gmail.com>
+Message-ID: <1146088891.8657.19.camel@localhost.localdomain>
+
+Hi Greg,
+
+I've just finished recompiling a fresh radiance tarball with mingw, and
+also under cygwin and linux.
+
+The behaviour of vwrays+rtcontrib is similar with both cygwin and
+linux, that is -fa and -ff work perfectly.
+
+It is only with the mingw binaries that I have problems, or I should
+probably say that it is a limitation of the windows command shell,
+that doesn't seem to handle concatenation of binary input/output ...
+The more I use windows, the less I want to use it ...
+
+I think I only need to test the mingw binaries from the cygwin shell
+to identify the problem and prove what my intuition is suggesting ...
+
+Thanks,
+
+Francesco
+
+
+
+
+From gregoryjward at gmail.com  Thu Apr 27 00:20:18 2006
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu Apr 27 00:20:28 2006
+Subject: [Radiance-dev] mingw rtcontrib (under windows)
+In-Reply-To: <1146088891.8657.19.camel@localhost.localdomain>
+References: <1145914381.8517.20.camel@localhost.localdomain>
+	<B61EC98C-2F5E-43AA-88C8-A2E45293BDD6@gmail.com>
+	<1146088891.8657.19.camel@localhost.localdomain>
+Message-ID: <73FD210B-E434-453A-A65B-C331AB3746F6@gmail.com>
+
+Hi Francesco,
+
+I remember this used to be a problem way back in 1990(?) when I first  
+compiled Radiance under MS-DOS, but I would think they'd have fixed  
+it by now...  I guess it wouldn't be the first thing that never got  
+fixed.  Maybe it's a "feature?"
+
+-Greg
+
+> From: Francesco Anselmo <pisuke@blueyonder.co.uk>
+> Date: April 26, 2006 3:01:30 PM PDT
+>
+> Hi Greg,
+>
+> I've just finished recompiling a fresh radiance tarball with mingw,  
+> and
+> also under cygwin and linux.
+>
+> The behaviour of vwrays+rtcontrib is similar with both cygwin and
+> linux, that is -fa and -ff work perfectly.
+>
+> It is only with the mingw binaries that I have problems, or I should
+> probably say that it is a limitation of the windows command shell,
+> that doesn't seem to handle concatenation of binary input/output ...
+> The more I use windows, the less I want to use it ...
+>
+> I think I only need to test the mingw binaries from the cygwin shell
+> to identify the problem and prove what my intuition is suggesting ...
+>
+> Thanks,
+>
+> Francesco
+

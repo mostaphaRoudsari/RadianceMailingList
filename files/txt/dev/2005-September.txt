@@ -1,0 +1,1523 @@
+From francesco.anselmo at arup.com  Sun Sep 11 15:09:37 2005
+From: francesco.anselmo at arup.com (Francesco Anselmo)
+Date: Sun Sep 11 15:10:45 2005
+Subject: [Radiance-dev] Radiance compiled with mingw gcc (windows)
+Message-ID: <2C0020B9EB71CE4281B292F0E16A6DDE09A6F3@ldcexc02.global.arup.com>
+
+Hi all!
+
+I've finally started looking at rtcontrib to replace my own scripts to
+calculate daylight coefficients, and need to use it with windows
+(unfortunately!) and without cygwin, so I've been "forced" to try the mingw
+(http://www.mingw.org/) version of gcc to compile Radiance.
+
+Scons has worked pretty well to compile most of the console programs. 
+I used these variables in platform\win32_custom.cfg:
+
+[build]
+CPPDEFINES: _WIN32 NDEBUG _CONSOLE _MBCS NON_POSIX
+CC:        gcc
+CCFLAGS:   -O2 -DHDSUF=.exe
+
+[code]
+RAD_SPEED: -DSPEED=200 -DHDSUF=.exe
+RAD_COMPAT: fixargv0.c
+RAD_MATHCOMPAT: erf.c
+RAD_MEMCOMPAT: 
+RAD_MLIB:   m
+RAD_PROCESS: win_process.c win_popen.c
+
+and had to manually add some extra RAD_COMPAT inside a couple of SConstruct files
+(maybe somebody can suggest a better CPPDEFINES line ...).
+
+As for the source files: 
+
+1.
+I had to redefine kill() inside rad.c and ranimate.c
+using "RT_PID pid" instead of "int pid":
+
+int
+kill(RT_PID pid, int sig) /* win|unix_process.c should also wait and kill */
+{
+	return 0;
+}
+
+Also, inside win_process.c for the close_process() function:
+was -----------------> int win_kill(pid, 0);
+i've changed it to --> win_kill(pid, 0);
+
+2.
+The mingw version of signal.h doesn't have a definition for SIGALRM, so
+killpersist() inside mkillum.c needs to be changed:
+It is like this:
+if (fscanf(fp, "%*s %d", &pid) != 1 || kill(pid, SIGALRM) < 0)
+but I've used SIGTERM instead of SIGALRM, don't know if this make much sense ...
+
+3.
+rtcontrib was calling rtrace with a wrong command line. It was something like
+this:
+
+c:\radiance\bin/rtrace.exe rtrace [args ...]
+
+After some little searching I used this quick workaround inside win_process.c
+
+	        cmdpath = getpath(av[0], getenv("PATH"), X_OK);
+added by me -->	av[0] = "";
+	        cmdstr = quoted_cmdline(cmdpath, av);
+
+that may have broken something somewhere else, so probably
+a better solution would be to do some extra checks inside the _WIN32 section
+of getpath.c.
+
+I am interested only in rtcontrib right now, so I haven't checked
+if other programs that call open_process() are still working or not.
+
+4.
+Mingw doesn't have fseeko(), and I replaced it with fseek() inside rtcontrib.c.
+This seems to have broken the file output, that is working well with both
+cygwin and linux. Is there an easy workaround for this? I don't have very
+much experience to figure it out myself. Output to stdout now works fine ...
+
+I hope not to have forgotten anything.
+
+Sorry for the long email and thanks in advance,
+
+Francesco
+
+From gregoryjward at gmail.com  Sun Sep 11 20:10:15 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Sun Sep 11 20:11:33 2005
+Subject: [Radiance-dev] Radiance compiled with mingw gcc (windows)
+In-Reply-To: <2C0020B9EB71CE4281B292F0E16A6DDE09A6F3@ldcexc02.global.arup.com>
+References: <2C0020B9EB71CE4281B292F0E16A6DDE09A6F3@ldcexc02.global.arup.com>
+Message-ID: <1AD341A8-3F72-4B9A-800F-3122E8062CDA@gmail.com>
+
+Hi Francesco,
+
+Thanks for giving this a try!
+
+> From: "Francesco Anselmo" <francesco.anselmo@arup.com>
+> Date: September 11, 2005 6:09:37 AM PDT
+>
+> I've finally started looking at rtcontrib to replace my own scripts to
+> calculate daylight coefficients, and need to use it with windows
+> (unfortunately!) and without cygwin, so I've been "forced" to try  
+> the mingw
+> (http://www.mingw.org/) version of gcc to compile Radiance.
+
+Is this the target compiler we had in mind?  I don't know anything  
+about what's available under Windows, if schorsch (Georg Mischler)  
+meant for people to use the more common (and nasty) Visual C  
+standard.  In other words, I'm not sure if by checking in these  
+changes if I'd actually be making matters worse.  For that reason,  
+I'd prefer to leave Windows-related changes to schorsch, though I  
+know he's been busy on other projects lately.
+
+> ...
+> As for the source files:
+>
+> 1.
+> I had to redefine kill() inside rad.c and ranimate.c
+> using "RT_PID pid" instead of "int pid":
+>
+> int
+> kill(RT_PID pid, int sig) /* win|unix_process.c should also wait  
+> and kill */
+> {
+>     return 0;
+> }
+
+This seems a safe enough change, though rtprocess.h, where RT_PID is  
+defined, is not currently included in ranimate.c and will need to be  
+added.
+
+> Also, inside win_process.c for the close_process() function:
+> was -----------------> int win_kill(pid, 0);
+> i've changed it to --> win_kill(pid, 0);
+
+I don't know if this affects compatibility under other compilers, so  
+I'll leave it to schorsch.
+
+> 2.
+> The mingw version of signal.h doesn't have a definition for  
+> SIGALRM, so
+> killpersist() inside mkillum.c needs to be changed:
+> It is like this:
+> if (fscanf(fp, "%*s %d", &pid) != 1 || kill(pid, SIGALRM) < 0)
+> but I've used SIGTERM instead of SIGALRM, don't know if this make  
+> much sense ...
+
+The only difference this will make is that the waiting rtrace process  
+will report an error instead of going quietly.
+
+> 3.
+> rtcontrib was calling rtrace with a wrong command line. It was  
+> something like
+> this:
+>
+> c:\radiance\bin/rtrace.exe rtrace [args ...]
+>
+> After some little searching I used this quick workaround inside  
+> win_process.c
+>
+>             cmdpath = getpath(av[0], getenv("PATH"), X_OK);
+> added by me -->    av[0] = "";
+>             cmdstr = quoted_cmdline(cmdpath, av);
+>
+> that may have broken something somewhere else, so probably
+> a better solution would be to do some extra checks inside the  
+> _WIN32 section
+> of getpath.c.
+>
+> I am interested only in rtcontrib right now, so I haven't checked
+> if other programs that call open_process() are still working or not.
+
+win_process.c is all schorsch's work, so he'll have to respond to  
+this one as well.
+
+> 4.
+> Mingw doesn't have fseeko(), and I replaced it with fseek() inside  
+> rtcontrib.c.
+> This seems to have broken the file output, that is working well  
+> with both
+> cygwin and linux. Is there an easy workaround for this? I don't  
+> have very
+> much experience to figure it out myself. Output to stdout now works  
+> fine ...
+
+The original call:
+
+     if (fseeko((FILE *)e->data, *(off_t *)p, SEEK_CUR) < 0) {
+
+could be replaced by:
+
+     if (fseek((FILE *)e->data, *(off_t *)p, SEEK_CUR) < 0) {
+
+or even -Dfseeko=fseek on the compile line and it should work for  
+files less than 2 GB in size.  I assume that off_t is defined in your  
+system, otherwise you would have had other errors.  If it isn't  
+defined as "long", then you might need another cast, like so:
+
+     if (fseek((FILE *)e->data, (long)*(off_t *)p, SEEK_CUR) < 0) {
+
+Once we find a working substitute, we can add the appropriate macro  
+to platform.h.
+
+-Greg
+
+From francesco.anselmo at arup.com  Mon Sep 12 23:11:52 2005
+From: francesco.anselmo at arup.com (Francesco Anselmo)
+Date: Tue Sep 13 07:07:41 2005
+Subject: [Radiance-dev] Radiance compiled with mingw gcc (windows)
+Message-ID: <2C0020B9EB71CE4281B292F0E16A6DDE09A6F7@ldcexc02.global.arup.com>
+
+Hi Greg,
+
+Thanks for your help.
+
+>Is this the target compiler we had in mind?  I don't know anything  
+>about what's available under Windows, if schorsch (Georg Mischler)  
+>meant for people to use the more common (and nasty) Visual C  
+>standard.  In other words, I'm not sure if by checking in these  
+>changes if I'd actually be making matters worse.  For that reason,  
+>I'd prefer to leave Windows-related changes to schorsch, though I  
+>know he's been busy on other projects lately.
+
+Well, Scons is "smart" enough to figure out what is available
+in the system. Georg prepared a Visual C++ oriented platform
+configuration for windows in the platform folder, so I guess
+it is what he has used so far. Somebody else in this ml has used the
+Borland compiler, if I remember well ...
+Of course I can wait until Georg finds some time to reply.
+
+I've just noticed I forgot to mention that I've also added
+libws2_32 (-lws2_32) to the list of linked libraries to get 
+some programs compiled.
+
+>This seems a safe enough change, though rtprocess.h, where RT_PID is  
+>defined, is not currently included in ranimate.c and will need to be  
+>added.
+
+Oh yes, I had to add it.
+
+>The original call:
+>
+>     if (fseeko((FILE *)e->data, *(off_t *)p, SEEK_CUR) < 0) {
+>
+>could be replaced by:
+>
+>     if (fseek((FILE *)e->data, *(off_t *)p, SEEK_CUR) < 0) {
+>
+>or even -Dfseeko=fseek on the compile line and it should work for  
+>files less than 2 GB in size.  I assume that off_t is defined in your  
+>system, otherwise you would have had other errors.  If it isn't  
+>defined as "long", then you might need another cast, like so:
+
+>     if (fseek((FILE *)e->data, (long)*(off_t *)p, SEEK_CUR) < 0) {
+
+>Once we find a working substitute, we can add the appropriate macro  
+>to platform.h.
+
+I've tried all of them, and they compile. What is strange is that
+if I use both -f somefile.cal and -o somefile.dat, the program 
+exits nicely without writing the file, but if I remember well
+only with windows, not with linux ... strange!
+I don't think I'm doing anything wrong ...
+I will check it twice, but anyway it is not a problem, since output
+to stdout works perfectly to calculate daylight coefficients ...
+
+BTW It looks like the mingw developer are going to add support for large
+file system files at some point, probably later than sooner ...
+
+Thanks again for your quick reply.
+I think rtcontrib will definitely make my "Radiance life" simpler ;) 
+It's oh so good to have all the contributions
+from different light sources calculated separately at the same time !!!
+
+Ciao ciao,
+
+Francesco
+
+
+From schorsch at schorsch.com  Tue Sep 13 11:32:14 2005
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Tue Sep 13 11:33:18 2005
+Subject: [Radiance-dev] Radiance compiled with mingw gcc (windows)
+In-Reply-To: <1AD341A8-3F72-4B9A-800F-3122E8062CDA@gmail.com>
+References: <2C0020B9EB71CE4281B292F0E16A6DDE09A6F3@ldcexc02.global.arup.com>
+	<1AD341A8-3F72-4B9A-800F-3122E8062CDA@gmail.com>
+Message-ID: <Pine.BSF.4.58.0509130457290.89675@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> Francesco wrote:
+>> I've finally started looking at rtcontrib to replace my own scripts to
+>> calculate daylight coefficients, and need to use it with windows
+>> (unfortunately!) and without cygwin, so I've been "forced" to try
+>> the mingw
+>> (http://www.mingw.org/) version of gcc to compile Radiance.
+>
+> Is this the target compiler we had in mind?  I don't know anything
+> about what's available under Windows, if schorsch (Georg Mischler)
+> meant for people to use the more common (and nasty) Visual C
+> standard.
+
+There's no target compiler per se. Compiler specific stuff is
+defined in the platform/*.cfg files, and the SCons magic will
+(hopefully) figure out which one to use.
+
+The only difficulty here is that while we're compiling and
+linking to the standard Windows libraries (apparently), the
+gcc in mingw expects other command line arguments than the
+VC compiler. We should create a seperate platform/mingw.cfg with
+the parameters found. Francesco: Did you find any easy way to
+tell the difference from within SCons/Python? We already have a
+seperate *.cfg file for normal cygwin (using posix libraries),
+but I don't remember how we figured out when to use that.
+
+For the time being, you could try adding the following special
+case to build_utils/load_plat.py (which should work, even if it's
+not really pretty). I already checked in this change so it should
+be in todays HEAD dump:
+
+def load_plat(env, args, platform=None):
+	for k,v in env.items(): print k,v
+	if os.name == 'posix':
+		POSIX_setup(env)
+	if platform == None: # override
+		p = sys.platform
+	else: p = platform
+	if p == 'win32' and 'gcc' in env['TOOLS']: # special case
+		p = 'mingw'
+	pl = []
+	print 'Detected platform "%s" (%s).' % (sys.platform, os.name)
+	[etc...]
+
+
+Printing all items of env might produce better clues. Also, what
+does mingw put in os.name and sys.platform?
+
+
+>> and had to manually add some extra RAD_COMPAT inside a couple
+>> of SConstruct files (maybe somebody can suggest a better
+>> CPPDEFINES line ...).
+
+What were the RAD_COMPAT entries?
+
+
+>> As for the source files:
+>>
+>> 1.
+>> I had to redefine kill() inside rad.c and ranimate.c
+>> using "RT_PID pid" instead of "int pid":
+>> int
+>> kill(RT_PID pid, int sig) /* win|unix_process.c should also wait
+>> and kill */
+>> {
+>>     return 0;
+>> }
+>
+> This seems a safe enough change, though rtprocess.h, where RT_PID is
+> defined, is not currently included in ranimate.c and will need to be
+> added.
+
+Yes, the change as such is safe, although there were a few more
+places where int needed to be replaced by RT_PID (and should have
+been pid_t to start with). Of course, the real fix would be to
+use our own process abstraction open_process() and friends
+instead of fork() and exec(). In other words: both programs may
+compile on Windows with those changes (now in CVS), but will not
+necessarily work as expected yet.
+
+
+>> Also, inside win_process.c for the close_process() function:
+>> was -----------------> int win_kill(pid, 0);
+>> i've changed it to --> win_kill(pid, 0);
+>
+> I don't know if this affects compatibility under other compilers, so
+> I'll leave it to schorsch.
+
+win_kill() is a drop-in replacement for posix kill(), so it
+must return an int for status information (even if it doesn't
+actually do anything useful with it right now).
+
+
+>> 2.
+>> The mingw version of signal.h doesn't have a definition for
+>> SIGALRM, so
+>> killpersist() inside mkillum.c needs to be changed:
+>> It is like this:
+>> if (fscanf(fp, "%*s %d", &pid) != 1 || kill(pid, SIGALRM) < 0)
+>> but I've used SIGTERM instead of SIGALRM, don't know if this make
+>> much sense ...
+>
+> The only difference this will make is that the waiting rtrace process
+> will report an error instead of going quietly.
+
+I'm not sure if I understand this right now (but then, I just
+returned from Mongolia, so don't expect too much).
+
+
+>> 3.
+>> rtcontrib was calling rtrace with a wrong command line. It was
+>> something like
+>> this:
+>>
+>> c:\radiance\bin/rtrace.exe rtrace [args ...]
+>>
+>> After some little searching I used this quick workaround inside
+>> win_process.c
+>>
+>>             cmdpath = getpath(av[0], getenv("PATH"), X_OK);
+>> added by me -->    av[0] = "";
+>>             cmdstr = quoted_cmdline(cmdpath, av);
+>>
+>> that may have broken something somewhere else, so probably
+>> a better solution would be to do some extra checks inside the
+>> _WIN32 section
+>> of getpath.c.
+>>
+>> I am interested only in rtcontrib right now, so I haven't checked
+>> if other programs that call open_process() are still working or not.
+>
+> win_process.c is all schorsch's work, so he'll have to respond to
+> this one as well.
+
+I don't think your change breaks anything, but it's still not
+the nice thing to do. Instead of feeding an empty string (which
+results in a double width space in the command line) just pass
+only the remainder of the argument list to quoted_cmdline():
+
+  cmdstr = quoted_cmdline(cmdpath, av+1);
+
+(Now in CVS)
+I think this is save, because the first item will always be
+the name of the command, and if there are no arguments, then
+the second item will be NULL, which quoted_cmdline() should
+handle correctly (I don't have a Windows system at hand right
+now, though, so it's up to you to try...).
+
+
+>> 4.
+>> Mingw doesn't have fseeko(), and I replaced it with fseek() inside
+>> rtcontrib.c.
+>> This seems to have broken the file output, that is working well
+>> with both
+>> cygwin and linux. Is there an easy workaround for this? I don't
+>> have very
+>> much experience to figure it out myself. Output to stdout now works
+>> fine ...
+> The original call:
+>
+>      if (fseeko((FILE *)e->data, *(off_t *)p, SEEK_CUR) < 0) {
+>
+> could be replaced by:
+>
+>      if (fseek((FILE *)e->data, *(off_t *)p, SEEK_CUR) < 0) {
+>
+> or even -Dfseeko=fseek on the compile line and it should work for
+> files less than 2 GB in size.  I assume that off_t is defined in your
+> system, otherwise you would have had other errors.  If it isn't
+> defined as "long", then you might need another cast, like so:
+>
+>      if (fseek((FILE *)e->data, (long)*(off_t *)p, SEEK_CUR) < 0) {
+>
+> Once we find a working substitute, we can add the appropriate macro
+> to platform.h.
+
+Microsoft only supports long files in the low level _lseeki64(), but
+not in the stream routine(s). In the short term, -Dfseeko=fseek
+looks like a reasonable workaround.
+
+Actually, it seems that eg. recover_output() does both fseeko()
+and lseek(fileno(fp)) on the same file (the latter through
+myseeko()). Is this actually so? And if yes, what does it exactly
+mean? Can we substitute _lseeki64(fileno(fp), offset, origin) for
+fseeko(fd, offset, whence) when _FILE_OFFSET_BITS is set to 64 or
+do the two calls have different semantics?
+
+
+I also updated some of the SConscript files in CVS, most
+prominently to work with the new tifflib, and a few other more
+cosmetic changes.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From schorsch at schorsch.com  Tue Sep 13 13:52:53 2005
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Tue Sep 13 13:53:58 2005
+Subject: [Radiance-dev] Radiance compiled with mingw gcc (windows)
+In-Reply-To: <2C0020B9EB71CE4281B292F0E16A6DDE09A6F7@ldcexc02.global.arup.com>
+References: <2C0020B9EB71CE4281B292F0E16A6DDE09A6F7@ldcexc02.global.arup.com>
+Message-ID: <Pine.BSF.4.58.0509130750070.89675@emancholl.pair.com>
+
+Francesco Anselmo wrote:
+
+> I've just noticed I forgot to mention that I've also added
+> libws2_32 (-lws2_32) to the list of linked libraries to get
+> some programs compiled.
+
+What does this do? Is this a compatility layer added by mingw?
+
+
+I just added a mingw specific config file to CVS:
+
+ray/platform/mingw.cfg:
+----------------------------------------------------
+# platform specific settings for Windows (mingw)
+
+# where you want everything
+[install]
+RAD_BASEDIR:   c:\radiance3.6a
+RAD_BINDIR:    bin
+RAD_RLIBDIR:   share\lib
+RAD_MANDIR:    share\man
+
+# shouldn't need any changes
+[build]
+CC:         gcc
+CPPDEFINES: _WIN32 NDEBUG _CONSOLE _MBCS HDSUF=.exe
+CCFLAGS:    -O2
+LINKFLAGS:  -lws2_32
+
+[debug]
+CC:         gcc
+CPPDEFINES: _WIN32 _DEBUG _CONSOLE _MBCS HDSUF=.exe
+CCFLAGS:    -g
+LINKFLAGS:  -lws2_32
+
+
+# never touch below this
+[code]
+RAD_SPEED: -DSPEED=200
+RAD_ARGSCOMPAT: fixargv0.c
+RAD_MATHCOMPAT: erf.c
+RAD_MEMCOMPAT:
+RAD_PROCESS: win_process.c win_popen.c
+
+----------------------------------------------------
+
+I moved some of your stuff to (hopefully) more appropriate lines,
+and also corrected the other Windows config (VC6 and cygwin) in
+the same way.
+
+
+> I've tried all of them, and they compile. What is strange is that
+> if I use both -f somefile.cal and -o somefile.dat, the program
+> exits nicely without writing the file, but if I remember well
+> only with windows, not with linux ... strange!
+
+Nothing obvious that I can see here, but of course things could
+go wrong in many different ways.
+
+
+> BTW It looks like the mingw developer are going to add support for large
+> file system files at some point, probably later than sooner ...
+
+How are they planning to do this? They would have to extend the
+system libraries, as far as I can tell.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From gregoryjward at gmail.com  Tue Sep 13 18:09:15 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue Sep 13 18:10:27 2005
+Subject: [Radiance-dev] Radiance compiled with mingw gcc (windows)
+In-Reply-To: <2C0020B9EB71CE4281B292F0E16A6DDE09A6F7@ldcexc02.global.arup.com>
+References: <2C0020B9EB71CE4281B292F0E16A6DDE09A6F7@ldcexc02.global.arup.com>
+Message-ID: <3882A8FC-8670-4981-9F0F-EA56CB9E2ADC@gmail.com>
+
+> From: "Francesco Anselmo" <francesco.anselmo@arup.com>
+> Date: September 12, 2005 2:11:52 PM PDT
+
+> I've tried all of them, and they compile. What is strange is that
+> if I use both -f somefile.cal and -o somefile.dat, the program
+> exits nicely without writing the file, but if I remember well
+> only with windows, not with linux ... strange!
+> I don't think I'm doing anything wrong ...
+> I will check it twice, but anyway it is not a problem, since output
+> to stdout works perfectly to calculate daylight coefficients ...
+
+The -o option should work of course, and I would like it to work.   
+It's needed for other things.  If you change the line:
+
+static void closefile(void *p) { fclose((FILE *)p); }
+
+to:
+
+static void closefile(void *p) { fputs("C",stderr); fclose((FILE *)p); }
+
+You should get as many C's on your output as you have -o options.  If  
+that's not happening, it means this call is not being made as it  
+should be.  I'm trying it on my system now to make sure it's working  
+here.
+
+> From: Georg Mischler <schorsch@schorsch.com>
+> Date: September 13, 2005 2:32:14 AM PDT
+>
+> Microsoft only supports long files in the low level _lseeki64(), but
+> not in the stream routine(s). In the short term, -Dfseeko=fseek
+> looks like a reasonable workaround.
+>
+> Actually, it seems that eg. recover_output() does both fseeko()
+> and lseek(fileno(fp)) on the same file (the latter through
+> myseeko()). Is this actually so? And if yes, what does it exactly
+> mean? Can we substitute _lseeki64(fileno(fp), offset, origin) for
+> fseeko(fd, offset, whence) when _FILE_OFFSET_BITS is set to 64 or
+> do the two calls have different semantics?
+
+The lseek() calls work underneath the stdio routines to get the file  
+length, that's all.  It puts the pointer back to the beginning when  
+it's finished, and shouldn't interfere with stdio's notion of file  
+position, which fseeko() is supposed to report.  If this is broken in  
+Windows, we'll have to dig out the other places I use this trick and  
+find a substitute, but there's no indication it is broken as  
+Francesco's problem case doesn't include the -r option, and otherwise  
+recover_output() is never called.
+
+-Greg
+
+From anselmo at dream.unipa.it  Tue Sep 13 23:55:26 2005
+From: anselmo at dream.unipa.it (anselmo@dream.unipa.it)
+Date: Tue Sep 13 23:56:18 2005
+Subject: [Radiance-dev] Radiance compiled with mingw gcc (windows)
+In-Reply-To: <Pine.BSF.4.58.0509130457290.89675@emancholl.pair.com>
+References: <2C0020B9EB71CE4281B292F0E16A6DDE09A6F3@ldcexc02.global.arup.com><1AD341A8-3F72-4B9A-800F-3122E8062CDA@gmail.com>
+	<Pine.BSF.4.58.0509130457290.89675@emancholl.pair.com>
+Message-ID: <1636.82.35.37.51.1126648526.squirrel@www.dream.unipa.it>
+
+Hi Greg + Georg, and thanks!
+
+I'm answering to the questions of both of you within
+this message ...
+
+Schorsch wrote:
+> The only difficulty here is that while we're compiling and
+> linking to the standard Windows libraries (apparently), the
+> gcc in mingw expects other command line arguments than the
+> VC compiler. We should create a seperate platform/mingw.cfg with
+> the parameters found. Francesco: Did you find any easy way to
+> tell the difference from within SCons/Python? We already have a
+> seperate *.cfg file for normal cygwin (using posix libraries),
+> but I don't remember how we figured out when to use that.
+
+Since the platform is recognised as "win32"
+I created my own platform\win32_custom.cfg
+
+> Printing all items of env might produce better clues. Also, what
+> does mingw put in os.name and sys.platform?
+
+It puts "nt" and "win32". It is not like cygwin, that is a unix
+system within windows. I compile from the standard windows C:\ prompt ...
+
+>>> and had to manually add some extra RAD_COMPAT inside a couple
+>>> of SConstruct files (maybe somebody can suggest a better
+>>> CPPDEFINES line ...).
+>
+> What were the RAD_COMPAT entries?
+
+I've added only "fixargv0.c", and copied the actual file inside
+the utils and rt folders.
+
+> I'm not sure if I understand this right now (but then, I just
+> returned from Mongolia, so don't expect too much).
+
+I had noticed the interesting Lighting Wiki sponsor before ;)
+
+> I don't think your change breaks anything, but it's still not
+> the nice thing to do. Instead of feeding an empty string (which
+> results in a double width space in the command line) just pass
+> only the remainder of the argument list to quoted_cmdline():
+>
+>   cmdstr = quoted_cmdline(cmdpath, av+1);
+>
+> (Now in CVS)
+> I think this is save, because the first item will always be
+> the name of the command, and if there are no arguments, then
+> the second item will be NULL, which quoted_cmdline() should
+> handle correctly (I don't have a Windows system at hand right
+> now, though, so it's up to you to try...).
+
+I was sure it was not an elegant solution. Tested and it works
+and doesn't break anything. Thanks!
+
+>> I've just noticed I forgot to mention that I've also added
+>> libws2_32 (-lws2_32) to the list of linked libraries to get
+>> some programs compiled.
+>
+> What does this do? Is this a compatility layer added by mingw?
+
+I haven't understood well it either. It is the winsock library,
+so it may seem unrelated, but before adding it, the linker
+was complaining about many linking errors, and adding it solved the
+situation. I haven't investigated any further.
+
+> I moved some of your stuff to (hopefully) more appropriate lines,
+> and also corrected the other Windows config (VC6 and cygwin) in
+> the same way.
+
+The previous cygwin config file was working well, BTW ...
+
+>> BTW It looks like the mingw developer are going to add support for large
+>> file system files at some point, probably later than sooner ...
+>
+> How are they planning to do this? They would have to extend the
+> system libraries, as far as I can tell.
+
+I don't know exactly the implementation details, but I guess so.
+Cygwin already provides fseeko and ftello.
+
+Greg wrote:
+> The -o option should work of course, and I would like it to work.
+> It's needed for other things.  If you change the line:
+>
+> static void closefile(void *p) { fclose((FILE *)p); }
+> to:
+> static void closefile(void *p) { fputs("C",stderr); fclose((FILE *)p); }
+>
+> You should get as many C's on your output as you have -o options.  If
+> that's not happening, it means this call is not being made as it
+> should be.  I'm trying it on my system now to make sure it's working
+> here.
+
+Unfortunately the call is not made when I use the -f switch.
+It gets called only when I don't use the -f option.
+
+One last thing, that should be unrelated with the other problems:
+if run without any argument, rtcontrib segfaults.
+
+Thank you,
+
+Francesco
+
+
+
+From gregoryjward at gmail.com  Wed Sep 14 01:01:01 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed Sep 14 01:02:17 2005
+Subject: [Radiance-dev] Radiance compiled with mingw gcc (windows)
+In-Reply-To: <1636.82.35.37.51.1126648526.squirrel@www.dream.unipa.it>
+References: <2C0020B9EB71CE4281B292F0E16A6DDE09A6F3@ldcexc02.global.arup.com><1AD341A8-3F72-4B9A-800F-3122E8062CDA@gmail.com>
+	<Pine.BSF.4.58.0509130457290.89675@emancholl.pair.com>
+	<1636.82.35.37.51.1126648526.squirrel@www.dream.unipa.it>
+Message-ID: <C68EA50C-44FF-4CBD-8283-E890B2AB05B2@gmail.com>
+
+Hi Francesco,
+
+> From: anselmo@dream.unipa.it
+> Date: September 13, 2005 2:55:26 PM PDT
+>
+> Unfortunately the call is not made when I use the -f switch.
+> It gets called only when I don't use the -f option.
+
+Then it's probable something is dying in the -f option processing  
+that has nothing to do with fseeko().  I'm checking the library path  
+with a call to getpath(), so if that was screwing up before, maybe  
+it's screwing up during the -f processing as well.
+
+> One last thing, that should be unrelated with the other problems:
+> if run without any argument, rtcontrib segfaults.
+
+Oops -- I added a check for no command-line arguments.  Missed that one.
+
+-Greg
+
+From schorsch at schorsch.com  Wed Sep 14 16:17:21 2005
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Wed Sep 14 18:05:02 2005
+Subject: [Radiance-dev] Radiance compiled with mingw gcc (windows)
+In-Reply-To: <C68EA50C-44FF-4CBD-8283-E890B2AB05B2@gmail.com>
+References: <2C0020B9EB71CE4281B292F0E16A6DDE09A6F3@ldcexc02.global.arup.com><1AD341A8-3F72-4B9A-800F-3122E8062CDA@gmail.com>
+	<Pine.BSF.4.58.0509130457290.89675@emancholl.pair.com>
+	<1636.82.35.37.51.1126648526.squirrel@www.dream.unipa.it>
+	<C68EA50C-44FF-4CBD-8283-E890B2AB05B2@gmail.com>
+Message-ID: <Pine.BSF.4.58.0509141013520.54158@emancholl.pair.com>
+
+Francesco wrote:
+> Georg Mischler wrote:
+>> We should create a seperate platform/mingw.cfg with
+>> the parameters found. Francesco: Did you find any easy way to
+>> tell the difference from within SCons/Python? We already have a
+>> seperate *.cfg file for normal cygwin (using posix libraries),
+>> but I don't remember how we figured out when to use that.
+>
+> Since the platform is recognised as "win32"
+> I created my own platform\win32_custom.cfg
+
+Creating an extra platform\mingw.cfg is the correct way to do it.
+Those files are not just for each platform (despite the directory
+name), they are for each compile environment.
+
+
+>> What were the RAD_COMPAT entries?
+>
+> I've added only "fixargv0.c", and copied the actual file inside
+> the utils and rt folders.
+
+This belongs to the RAD_ARGSCOMPAT config variable, which puts
+the compiled objects into librtargs.a.
+The generic RAD_COMPAT is actually obsolete.
+
+
+>>> I've just noticed I forgot to mention that I've also added
+>>> libws2_32 (-lws2_32) to the list of linked libraries to get
+>>> some programs compiled.
+>>
+>> What does this do? Is this a compatility layer added by mingw?
+>
+> I haven't understood well it either. It is the winsock library,
+> so it may seem unrelated, but before adding it, the linker
+> was complaining about many linking errors, and adding it solved the
+> situation. I haven't investigated any further.
+
+Ah, that are the calls to gethostname().
+VC uses a lot of magic to fund libraries when you include
+certain headers, so very few explicit linker directives are
+necessary. With gcc, we need to be more specific.
+
+I added a new variable RAD_SOCKETLIB, the contents of which are
+always linked to when -lrtnet is also present. This removes the
+-lws2_32 from the generic LINKFLAGS.
+
+
+> The previous cygwin config file was working well, BTW ...
+
+Yes, but it's doing the same things in much cleaner ways now.
+
+
+> Cygwin already provides fseeko and ftello.
+
+And here's the implementation:
+  http://article.gmane.org/gmane.comp.gnu.mingw.user/11984
+Unfortunately, fpos_t may be a struct on *some* Windows systems
+(haven't found out which), and will then cause the build to fail.
+But it seems reasonable to assume that this solution will work on
+systems that support large files. It will probably end up in a
+new file such as common/win_lfs.c.
+
+
+Greg wrote:
+> Then it's probable something is dying in the -f option processing
+> that has nothing to do with fseeko().  I'm checking the library path
+> with a call to getpath(), so if that was screwing up before, maybe
+> it's screwing up during the -f processing as well.
+
+Which means we need to check my Windows version of getpath().
+Francesco, do you have a debugger available to trace through
+this? Or does it get better if you specify fixargv0.c correctly
+with the RAD_ARGSCOMPAT variable? Do you have the RAYPATH set
+correctly? (for getrlibpath(), by default it uses ";c:\ray\lib")
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From schorsch at schorsch.com  Sat Sep 17 10:22:07 2005
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Sat Sep 17 10:23:11 2005
+Subject: [Radiance-dev] SPEED or no SPEED
+Message-ID: <Pine.BSF.4.58.0509170419020.20022@emancholl.pair.com>
+
+Hi all,
+
+the recent efforts to compile under mingw have directed my attention
+to an issue in Radiance that has bothered me for quite a while.
+The makeall script (and consequently my SCons configuration) defines
+a value of SPEED for every known platform. This is used as follows:
+
+In px/clrtab.c, the closest color routines are activated when SPEED > 8.
+The lowest SPEED setting in makeall is 80, so this test has become
+rather pointless.
+
+In px/neuclrtab.c, DEFSMPFAC is defined as 240/SPEED+3.
+With the current values of SPEED, this ends up somewhere between 1 and 3.
+If DEFSMPFAC was already defined before (eg. through a -Dxxx directive),
+then it gets *redefined* to 30. This difference of about an order of
+magnitude makes me thing that this also isn't what was originally
+intended.
+
+In rt/rv3.c, WFLUSH is set depending on SPEED. This is the only case
+where I can still agree with the original intention, even if the
+method fails in similar ways as with the other cases.
+
+By principle, there's no way to determine the performance of the
+target system at compile time. And one of the worst ways to even
+try is by looking at the OS of the compiling system. I'm not sure
+if this ever was a good idea, but it certainly isn't on todays
+hardware/operating systems.
+
+For clrtab.c, the test can be removed without further thought.
+
+For neuclrtab.c, I assume that the original intention was a tradeoff
+between performance and memory use. Since both criteria are not
+really critical anymore, I suggest we find a value of DEFSMPFAC
+that is optimal for the algorithm in most situations and leave
+it at that.
+
+For rv3.c, we could also just set a reasonable fixed value (as the
+Windows version does). If we really want to optimize to the actual
+performance of the machine, then we'll have to test its speed
+at run time. I'm not sure if that's really worth the effort, though.
+
+The goal in any case is to eliminate the compile variable SPEED.
+Any objections or other comments?
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From pisuke at blueyonder.co.uk  Sat Sep 17 23:01:25 2005
+From: pisuke at blueyonder.co.uk (pisuke@blueyonder.co.uk)
+Date: Sat Sep 17 23:02:48 2005
+Subject: [Radiance-dev] Radiance compiled with mingw gcc (windows)
+Message-ID: <1374.195.188.213.35.1126990885.squirrel@195.188.213.35>
+
+Hi again,
+
+I'm sorry for the late reply.
+I wanted to send this message a couple of days
+ago, but I didn't manage to find the time to write.
+
+Georg, thanks for updating the Scons related files,
+the compile process went better than before, only
+a few things to change.
+
+Two days ago I've downloaded the cvs snapshot
+and here is the list of changes I did to get
+Radiance compiled again with mingw (this time
+I'm using diff, so I shouldn't miss anything ...):
+
+diff -r ray/platform/mingw.cfg ray_dev/platform/mingw.cfg
+13c13
+< CPPDEFINES: _WIN32 NDEBUG _CONSOLE _MBCS HDSUF=.exe
+---
+> CPPDEFINES: _WIN32 NDEBUG _CONSOLE _MBCS HDSUF=.exe NON_POSIX
+18c18
+< CPPDEFINES: _WIN32 _DEBUG _CONSOLE _MBCS HDSUF=.exe
+---
+> CPPDEFINES: _WIN32 _DEBUG _CONSOLE _MBCS HDSUF=.exe NON_POSIX
+25c25
+< RAD_ARGSCOMPAT: fixargv0.c
+---
+> RAD_ARGSCOMPAT: getpath.c fixargv0.c
+28c28
+< RAD_PROCESS: win_process.c win_popen.c
+---
+> RAD_PROCESS: gethomedir.c eputs.c getpath.c win_process.c win_popen.c
+29a30
+> RAD_MLIB:   m
+
+
+diff -r ray/src/common/rtprocess.h ray_dev/src/common/rtprocess.h
+24c24
+<   int win_kill(RT_PID pid, int sig /* ignored */);
+---
+>   int win_kill(RT_PID pid, RT_PID sig /* ignored */);
+
+
+diff -r ray/src/common/SConscript ray_dev/src/common/SConscript
+17c17
+< 		font.c mesh.c readmesh.c tmesh.c sceneio.c xf.c''')
+---
+> 		font.c mesh.c readmesh.c tmesh.c sceneio.c xf.c win_popen.c
+win_process.c''')
+
+
+diff -r ray/src/common/win_process.c ray_dev/src/common/win_process.c
+284c284
+< 	cmdstr = quoted_cmdline(cmdpath, av);
+---
+> 	cmdstr = quoted_cmdline(cmdpath, av+1);
+290c290
+< int win_kill(RT_PID pid, int sig) /* we ignore sig... */
+---
+> int win_kill(RT_PID pid, RT_PID sig) /* we ignore sig... */
+328c328
+< 			int win_kill(pid, 0);
+---
+> 			win_kill(pid, 0);
+
+
+diff -r ray/src/gen/mkillum.c ray_dev/src/gen/mkillum.c
+168c168
+< 	if (fscanf(fp, "%*s %d", &pid) != 1 || kill(pid, SIGALRM) < 0)
+---
+> 	if (fscanf(fp, "%*s %d", &pid) != 1 || kill(pid, SIGTERM) < 0)
+
+
+diff -r ray/src/gen/SConscript ray_dev/src/gen/SConscript
+6a7
+> socketlib = env['RAD_SOCKETLIB']
+35c36
+<             source=p[1], LIBS=p[2] + mlib)
+---
+>             source=p[1], LIBS=p[2] + mlib + socketlib)
+
+
+diff -r ray/src/rt/rtrace.c ray_dev/src/rt/rtrace.c
+31a32
+> #include  "random.h"
+
+
+diff -r ray/src/util/ranimate.c ray_dev/src/util/ranimate.c
+338c338,339
+< 		if (errno == ENOENT && mkdir(vval(DIRECTORY), 0777) == 0)
+---
+> /*		if (errno == ENOENT && mkdir(vval(DIRECTORY), 0777) == 0)*/
+> 		if (errno == ENOENT && mkdir(vval(DIRECTORY)) == 0)
+
+
+diff -r ray/src/util/rtcontrib.c ray_dev/src/util/rtcontrib.c
+342c342
+< 	if (fscanf(fp, "%*s %d", &pid) != 1 || kill(pid, SIGALRM) < 0)
+---
+> 	if (fscanf(fp, "%*s %d", &pid) != 1 || kill(pid, SIGTERM) < 0)
+979c979,980
+< 	if (fseeko((FILE *)e->data, *(off_t *)p, SEEK_CUR) < 0) {
+---
+> /*	if (fseeko((FILE *)e->data, *(off_t *)p, SEEK_CUR) < 0) {*/
+> 	if (fseek((FILE *)e->data, (long)*(off_t *)p, SEEK_CUR) < 0) {
+
+
+diff -r ray/src/util/SConscript ray_dev/src/util/SConscript
+24a25,27
+> ('rtcontrib',    Split('rtcontrib.c') + [Version],
+> 	['rttrace', 'rtscene', 'rtpic', 'rtfunc', 'rtproc', 'rtio', 'rtmath',
+> 	'rtargs', 'rtpath', 'rtcont', 'rtmem', 'rterror','ws2_32'])
+34c37
+< 	['rtpic','rtargs','rtio','rtcont','rtmem','rtpath','rtmath',
+---
+> 	['rtproc','rtpic','rtargs','rtio','rtcont','rtmem','rtpath','rtmath',
+
+
+Greg wrote:
+> Then it's probable something is dying in the -f option processing
+> that has nothing to do with fseeko().  I'm checking the library path
+> with a call to getpath(), so if that was screwing up before, maybe
+> it's screwing up during the -f processing as well.
+
+Georg wrote:
+> Which means we need to check my Windows version of getpath().
+> Francesco, do you have a debugger available to trace through
+> this? Or does it get better if you specify fixargv0.c correctly
+> with the RAD_ARGSCOMPAT variable? Do you have the RAYPATH set
+> correctly? (for getrlibpath(), by default it uses ";c:\ray\lib")
+
+Unfortunately it is not working even with the latest changes.
+Yep, the environment variables setup is fine.
+Just to clarify, rtcontrib works well and writes the output file,
+but only when I use the -f and -o options together, it doesn't write the
+output file. If I use the -f option alone, it writes the results
+to stdout, as required ...
+I could use gdb, but probably will need some more days, I'm
+pretty busy at work these days and the next week is going to
+be busier than the previous one ...
+
+Thanks again!
+
+Francesco
+
+
+
+
+
+From gregoryjward at gmail.com  Mon Sep 19 04:16:42 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon Sep 19 04:17:57 2005
+Subject: [Radiance-dev] SPEED or no SPEED
+In-Reply-To: <Pine.BSF.4.58.0509170419020.20022@emancholl.pair.com>
+References: <Pine.BSF.4.58.0509170419020.20022@emancholl.pair.com>
+Message-ID: <0CD0E2B3-C12A-4F35-9414-AEB4CEE6E887@gmail.com>
+
+Hi Schorsch,
+
+I agree that the SPEED macro has outlived its usefulness.  I will go  
+in and make the appropriate changes to remove it from makeall and the  
+source tree, and you can follow by removing it from your SCons  
+configuration.
+
+It is possible within rvu to detect the machine speed using a timer  
+function or something of the sort, but as you say, it's probably not  
+worth the effort.  I'll just fix it at something reasonable and allow  
+the user to redefine it if they like.
+
+-Greg
+
+> From: Georg Mischler <schorsch@schorsch.com>
+> Date: September 17, 2005 1:22:07 AM PDT
+>
+> Hi all,
+>
+> the recent efforts to compile under mingw have directed my attention
+> to an issue in Radiance that has bothered me for quite a while.
+> The makeall script (and consequently my SCons configuration) defines
+> a value of SPEED for every known platform. This is used as follows:
+>
+> In px/clrtab.c, the closest color routines are activated when SPEED  
+> > 8.
+> The lowest SPEED setting in makeall is 80, so this test has become
+> rather pointless.
+>
+> In px/neuclrtab.c, DEFSMPFAC is defined as 240/SPEED+3.
+> With the current values of SPEED, this ends up somewhere between 1  
+> and 3.
+> If DEFSMPFAC was already defined before (eg. through a -Dxxx  
+> directive),
+> then it gets *redefined* to 30. This difference of about an order of
+> magnitude makes me thing that this also isn't what was originally
+> intended.
+>
+> In rt/rv3.c, WFLUSH is set depending on SPEED. This is the only case
+> where I can still agree with the original intention, even if the
+> method fails in similar ways as with the other cases.
+>
+> By principle, there's no way to determine the performance of the
+> target system at compile time. And one of the worst ways to even
+> try is by looking at the OS of the compiling system. I'm not sure
+> if this ever was a good idea, but it certainly isn't on todays
+> hardware/operating systems.
+>
+> For clrtab.c, the test can be removed without further thought.
+>
+> For neuclrtab.c, I assume that the original intention was a tradeoff
+> between performance and memory use. Since both criteria are not
+> really critical anymore, I suggest we find a value of DEFSMPFAC
+> that is optimal for the algorithm in most situations and leave
+> it at that.
+>
+> For rv3.c, we could also just set a reasonable fixed value (as the
+> Windows version does). If we really want to optimize to the actual
+> performance of the machine, then we'll have to test its speed
+> at run time. I'm not sure if that's really worth the effort, though.
+>
+> The goal in any case is to eliminate the compile variable SPEED.
+> Any objections or other comments?
+>
+>
+> -schorsch
+>
+
+From schorsch at schorsch.com  Mon Sep 19 13:35:45 2005
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Mon Sep 19 13:36:50 2005
+Subject: [Radiance-dev] SPEED or no SPEED
+In-Reply-To: <0CD0E2B3-C12A-4F35-9414-AEB4CEE6E887@gmail.com>
+References: <Pine.BSF.4.58.0509170419020.20022@emancholl.pair.com>
+	<0CD0E2B3-C12A-4F35-9414-AEB4CEE6E887@gmail.com>
+Message-ID: <Pine.BSF.4.58.0509190735040.30082@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> Hi Schorsch,
+>
+> I agree that the SPEED macro has outlived its usefulness.  I will go
+> in and make the appropriate changes to remove it from makeall and the
+> source tree, and you can follow by removing it from your SCons
+> configuration.
+
+Thanks, removed all traces of SPEED from the SCons system (yeah,
+I'm sure someone will make a pun out of this... ;)).
+
+I found that it was still mentioned in doc/notes/compile_switches,
+and removed the description there. Doing so, I saw some more
+outdated flags listed:
+
+-DALIGN is not used anymore in the current sources.
+
+-DBSD lost most of its former purpose, although it seems we can't
+remove it completely yet.
+
+I hope my shortened description of the latter is at least half correct.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From schorsch at schorsch.com  Mon Sep 19 13:48:15 2005
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Mon Sep 19 13:49:18 2005
+Subject: [Radiance-dev] Radiance compiled with mingw gcc (windows)
+In-Reply-To: <1374.195.188.213.35.1126990885.squirrel@195.188.213.35>
+References: <1374.195.188.213.35.1126990885.squirrel@195.188.213.35>
+Message-ID: <Pine.BSF.4.58.0509190736360.30082@emancholl.pair.com>
+
+pisuke@blueyonder.co.uk wrote:
+
+> diff -r ray/platform/mingw.cfg ray_dev/platform/mingw.cfg
+> 13c13
+> < CPPDEFINES: _WIN32 NDEBUG _CONSOLE _MBCS HDSUF=.exe
+> ---
+> > CPPDEFINES: _WIN32 NDEBUG _CONSOLE _MBCS HDSUF=.exe NON_POSIX
+
+NON_POSIX is set in common/platform.h based on _WIN32, so there
+is no need to set it here. If you still get errors, then you
+probably need to #include platform.h somewhere.
+
+
+
+> 25c25
+> < RAD_ARGSCOMPAT: fixargv0.c
+> ---
+> > RAD_ARGSCOMPAT: getpath.c fixargv0.c
+> 28c28
+
+getpath.c is always included in librtargs.a. If a program needs it,
+then you should link it to that library.
+
+
+
+> < RAD_PROCESS: win_process.c win_popen.c
+> ---
+> > RAD_PROCESS: gethomedir.c eputs.c getpath.c win_process.c win_popen.c
+
+For gethomedir.c and getpath.c, link to librtpath.a.
+For eputs.c, link to librterror.a.
+For win_process.c and win_popen.c, link to librtproc.a.
+
+With all those libraries, note that some linkers may require them
+to be added in a certain order. So if a specific function isn't
+found, it may be just necessary to reorder the list appropriately.
+
+
+
+> 29a30
+> > RAD_MLIB:   m
+
+This was indeed an omission.
+
+
+
+> diff -r ray/src/common/rtprocess.h ray_dev/src/common/rtprocess.h
+> 24c24
+> <   int win_kill(RT_PID pid, int sig /* ignored */);
+> ---
+> >   int win_kill(RT_PID pid, RT_PID sig /* ignored */);
+
+Ahem, no. The signal number doesn't have the same type as a PID.
+It's rather the "pid" variable in rtcontrib.c:killpersist() that we
+need to change.
+What kind of problem were you trying to fix with this?
+
+
+
+> diff -r ray/src/common/SConscript ray_dev/src/common/SConscript
+> 17c17
+> <               font.c mesh.c readmesh.c tmesh.c sceneio.c xf.c''')
+> ---
+> >               font.c mesh.c readmesh.c tmesh.c sceneio.c xf.c win_popen.c
+> win_process.c''')
+
+Never add platform specific files directly to the argument list.
+That's what the compat variables are there for.
+And those two files clearly have nothing at all to do with scene
+file parsing, so it would be the wrong place to add them anyway.
+Link to librtproc.a instead.
+
+
+
+> diff -r ray/src/common/win_process.c ray_dev/src/common/win_process.c
+> 284c284
+> <       cmdstr = quoted_cmdline(cmdpath, av);
+> ---
+> >       cmdstr = quoted_cmdline(cmdpath, av+1);
+
+Correct as discussed.
+
+
+
+> 290c290
+> < int win_kill(RT_PID pid, int sig) /* we ignore sig... */
+> ---
+> > int win_kill(RT_PID pid, RT_PID sig) /* we ignore sig... */
+
+Again: A signal number doesn't have the same type as a PID.
+
+
+
+> 328c328
+> <                       int win_kill(pid, 0);
+> ---
+> >                       win_kill(pid, 0);
+
+Yeah, that did indeed look strange...
+
+
+
+> diff -r ray/src/gen/SConscript ray_dev/src/gen/SConscript
+> 6a7
+> > socketlib = env['RAD_SOCKETLIB']
+> 35c36
+> <             source=p[1], LIBS=p[2] + mlib)
+> ---
+> >             source=p[1], LIBS=p[2] + mlib + socketlib)
+
+Which programs asked for this?
+You can instead add '$RAD_SOCKETLIB' to those that really need it
+(and tell me which ones those are, so I can put it into CVS).
+
+
+
+> diff -r ray/src/rt/rtrace.c ray_dev/src/rt/rtrace.c
+> 31a32
+> > #include  "random.h"
+
+Looks like Windows does indeed need this.
+
+
+
+> diff -r ray/src/util/ranimate.c ray_dev/src/util/ranimate.c
+> 338c338,339
+> <               if (errno == ENOENT && mkdir(vval(DIRECTORY), 0777) == 0)
+> ---
+> > /*            if (errno == ENOENT && mkdir(vval(DIRECTORY), 0777) == 0)*/
+> >               if (errno == ENOENT && mkdir(vval(DIRECTORY)) == 0)
+
+I added a macro to common/paths.h which should take care of this.
+
+
+
+> diff -r ray/src/gen/mkillum.c ray_dev/src/gen/mkillum.c
+> 168c168
+> <       if (fscanf(fp, "%*s %d", &pid) != 1 || kill(pid, SIGALRM) < 0)
+> ---
+> >       if (fscanf(fp, "%*s %d", &pid) != 1 || kill(pid, SIGTERM) < 0)
+
+> diff -r ray/src/util/rtcontrib.c ray_dev/src/util/rtcontrib.c
+> 342c342
+> <       if (fscanf(fp, "%*s %d", &pid) != 1 || kill(pid, SIGALRM) < 0)
+> ---
+> >       if (fscanf(fp, "%*s %d", &pid) != 1 || kill(pid, SIGTERM) < 0)
+
+For the moment, I added macros that redefines SIGALRM as SIGTERM
+if the former is not known, which is a portable workaround.
+
+There are two things to consider here (for Greg, primarily):
+First, both mkillum and rtcontrib define an identical(!) function
+named killpersist(). This is bad design, because redundant code
+multiplies potential errors.
+
+Second: kill() on Windows is currently equivalent to the brute
+force kill(pid, SIGKILL) on unix, where the actual signal number
+is completely ignored. This means that rtrace can't do the
+cleanup that it otherwise would do.
+
+I think that all this persistence magic should be moved to our
+process management library, so that it can be handled in a
+platform independent manner with all functionality preserved.
+
+
+
+> 979c979,980
+> <       if (fseeko((FILE *)e->data, *(off_t *)p, SEEK_CUR) < 0) {
+> ---
+> > /*    if (fseeko((FILE *)e->data, *(off_t *)p, SEEK_CUR) < 0) {*/
+> >       if (fseek((FILE *)e->data, (long)*(off_t *)p, SEEK_CUR) < 0) {
+
+We better solve this temporarily via -Dfseeko=fseek in mingw.cfg,
+until the actual replacement for fseeko() is ready.
+
+
+
+> diff -r ray/src/util/SConscript ray_dev/src/util/SConscript
+> 24a25,27
+> > ('rtcontrib',    Split('rtcontrib.c') + [Version],
+> >       ['rttrace', 'rtscene', 'rtpic', 'rtfunc', 'rtproc', 'rtio', 'rtmath',
+> >       'rtargs', 'rtpath', 'rtcont', 'rtmem', 'rterror','ws2_32'])
+> 34c37
+> <       ['rtpic','rtargs','rtio','rtcont','rtmem','rtpath','rtmath',
+> ---
+> >       ['rtproc','rtpic','rtargs','rtio','rtcont','rtmem','rtpath','rtmath',
+
+I changed the sequence here a little, which may or may not matter.
+More importantly, I changed 'ws2_32' to '$RAD_SOCKETLIB'.
+
+I also modified the build procedure for ranimate, so that the
+decision between util/netproc.c and util/win_netproc.c is made
+in the *.cfg file through the RAD_NETCOMPAT variable. This has
+moved one more platform specific detail away from the local
+SConscript files.
+
+
+
+I commited all the changes to CVS and checked that it still
+compiles on Linux.  There may be two or three small things that
+you still need to look at more closely for mingw.  I assume that
+all of those changes are also beneficial for compiling with VC,
+so this is a very valueble contribution!
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From gregoryjward at gmail.com  Mon Sep 19 17:27:47 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon Sep 19 17:28:59 2005
+Subject: [Radiance-dev] SPEED or no SPEED
+In-Reply-To: <Pine.BSF.4.58.0509190735040.30082@emancholl.pair.com>
+References: <Pine.BSF.4.58.0509170419020.20022@emancholl.pair.com>
+	<0CD0E2B3-C12A-4F35-9414-AEB4CEE6E887@gmail.com>
+	<Pine.BSF.4.58.0509190735040.30082@emancholl.pair.com>
+Message-ID: <F2CDB8FA-413E-401A-B543-B778E34D8B81@gmail.com>
+
+Hi Schorsch,
+
+Your description of -DBSD is fine.  I forgot about compile_switches.   
+I just noticed (and fixed) the fact that -DALIGN= was changed to - 
+DALIGNT=.  If there's some way to get rid of -DBSD, that would be  
+great.  We seem to need it for the resource stuff at the moment.
+
+-Greg
+
+From randolph at panix.com  Mon Sep 19 18:02:35 2005
+From: randolph at panix.com (Randolph Fritz)
+Date: Mon Sep 19 18:03:57 2005
+Subject: [Radiance-dev] SPEED or no SPEED
+In-Reply-To: <F2CDB8FA-413E-401A-B543-B778E34D8B81@gmail.com>
+References: <Pine.BSF.4.58.0509170419020.20022@emancholl.pair.com>
+	<0CD0E2B3-C12A-4F35-9414-AEB4CEE6E887@gmail.com>
+	<Pine.BSF.4.58.0509190735040.30082@emancholl.pair.com>
+	<F2CDB8FA-413E-401A-B543-B778E34D8B81@gmail.com>
+Message-ID: <EFC9B9C7-630B-47E3-92DA-7BBD633347DC@panix.com>
+
+
+On Sep 19, 2005, at 8:27 AM, Greg Ward wrote:
+
+> Your description of -DBSD is fine.  I forgot about  
+> compile_switches.  I just noticed (and fixed) the fact that - 
+> DALIGN= was changed to -DALIGNT=.  If there's some way to get rid  
+> of -DBSD, that would be great.  We seem to need it for the resource  
+> stuff at the moment.
+
+I think it changes he behavior of some library routines on some  
+systems that support both BSD-like and POSIX-like code, but I'm not  
+entirely sure of that.  On Mac OS X it is actually defined in <sys/ 
+param.h>--anyone know about other implementations?
+
+Randolph, still hiding out
+
+
+From schorsch at schorsch.com  Mon Sep 19 18:16:34 2005
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Mon Sep 19 18:17:38 2005
+Subject: [Radiance-dev] SPEED or no SPEED
+In-Reply-To: <EFC9B9C7-630B-47E3-92DA-7BBD633347DC@panix.com>
+References: <Pine.BSF.4.58.0509170419020.20022@emancholl.pair.com>
+	<0CD0E2B3-C12A-4F35-9414-AEB4CEE6E887@gmail.com>
+	<Pine.BSF.4.58.0509190735040.30082@emancholl.pair.com>
+	<F2CDB8FA-413E-401A-B543-B778E34D8B81@gmail.com>
+	<EFC9B9C7-630B-47E3-92DA-7BBD633347DC@panix.com>
+Message-ID: <Pine.BSF.4.58.0509191213490.30082@emancholl.pair.com>
+
+Randolph Fritz wrote:
+
+> Greg Ward wrote:
+>
+> > Your description of -DBSD is fine.  I forgot about
+> > compile_switches.  I just noticed (and fixed) the fact that -
+> > DALIGN= was changed to -DALIGNT=.  If there's some way to get rid
+> > of -DBSD, that would be great.  We seem to need it for the resource
+> > stuff at the moment.
+>
+> I think it changes he behavior of some library routines on some
+> systems that support both BSD-like and POSIX-like code, but I'm not
+> entirely sure of that.  On Mac OS X it is actually defined in <sys/
+> param.h>--anyone know about other implementations?
+
+FreeBSD has it defined in the same place as follows:
+
+ #define  BSD 199506  /* System version (year & month). */
+
+It doesn't influence anything else as it seems (and I don't
+think it really should, either).
+
+The question is rather how we get rid of those instances
+in our own code where it makes Radiance behave differently.
+
+There seem to be three problem areas:
+
+In rpict.c, it includes resource.h, which is necessary
+for getrusage(). I can't do a comprehensive check, but on
+those BSDish systems I have access to, the SYSV times()
+call is also available, so we could probably switch to that
+on all posix platforms. We still need a seperate report()
+function for Windows, of course.
+
+In random.h, BSD uses random() instead of lrand48()/drand48().
+The latter also seem to be available everywhere nowadays,
+so we could switch this one too.
+
+The last issue is the different behaviour when IO calls are
+interrupted. This is handled by readbuf()/writebuf() in
+process.c, which gets called from various places. I have no
+idea whether this problem still exists (probably) or if there
+are other ways to work around it.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+

@@ -1,0 +1,776 @@
+From michael at coolshadow.com  Mon May 13 11:44:19 2013
+From: michael at coolshadow.com (Michael Martinez)
+Date: Mon, 13 May 2013 11:44:19 -0700
+Subject: [HDRI] hdrgen and photosphere
+Message-ID: <07D77F5C-B7AC-4497-9417-B3C3B9A72ECA@coolshadow.com>
+
+Hi Folks -  
+
+I'm trying to use hdrgen with a response curve created by photosphere. For the image, I have calibration points measured with a luminance meter, and when I make the hdr with photosphere, I get an accurate luminance measurement, but hdrgen gives me a value that's consistently ~10% higher. This is surprising as (I think) I'm using the same response curve for each process. 
+
+Here's my hdrgen command: 
+hdrgen -o ../01.hdr -r canon_5D.rsp -q 100 -f -g *.JPG
+
+Here's what I put into canon_5D.rsp:
+7.135383e-03 -3.556814e-02 2.441168e+00 -5.786777e+00 4.462320e+00
+4.543790e-03  3.363440e-02 1.917460e+00 -4.660105e+00 3.792747e+00
+3.956902e-03  3.244581e-02 1.827308e+00 -4.505138e+00 3.729707e+00
+
+Here's canon_5D.rsp after hdrgen is run:
+3 1.49643 -0.979 0.486712 -0.00413976
+3 1.44009 -0.884479 0.448854 -0.00446749
+3 1.46366 -0.875187 0.414554 -0.00303108
+
+And here's the response curve from Photosphere:
+"Canon"|"Canon EOS 5D Mark II"|"v.0"|{7.135383e-03,-3.556814e-02,2.441168e+00,-5.786777e+00,4.462320e+00}|{4.543790e-03,3.363440e-02,1.917460e+00,-4.660105e+00,3.792747e+00}|{3.956902e-03,3.244581e-02,1.827308e+00,-4.505138e+00,3.729707e+00}
+
+Am I missing any hdrgen options, or perhaps making an error in my .rsp file? Thanks in advance for any insights. 
+
+Mike
+
+
+
+Michael Martinez ~ Associate
+LOISOS + UBBELOHDE
+- - - - - - - - - - - - - - - - - - - - - - - - - - - 
+1917 Clement Avenue  Building 10A
+Alameda, CA  94501 USA
+- - - - - - - - - - - - - - - - - - - - - - - - - - - 
+510 521 3800 VOICE
+510 521 3820 FAX
+- - - - - - - - - - - - - - - - - - - - - - - - - - - 
+www.coolshadow.com
+
+
+
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20130513/8edcb34e/attachment.html>
+
+From jacobs.axel at gmail.com  Mon May 13 12:14:55 2013
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Mon, 13 May 2013 20:14:55 +0100
+Subject: [HDRI] hdrgen and photosphere
+In-Reply-To: <07D77F5C-B7AC-4497-9417-B3C3B9A72ECA@coolshadow.com>
+References: <07D77F5C-B7AC-4497-9417-B3C3B9A72ECA@coolshadow.com>
+Message-ID: <51913BAF.1000300@gmail.com>
+
+Hi Michael,
+ > I'm trying to use hdrgen with a response curve created by photosphere.
+> For the image, I have calibration points measured with a luminance
+> meter, and when I make the hdr with photosphere, I get an accurate
+> luminance measurement, but hdrgen gives me a value that's consistently
+> ~10% higher. This is surprising as (I think) I'm using the same response
+> curve for each process.
+>
+> Here's my hdrgen command:
+> hdrgen -o ../01.hdr -r canon_5D.rsp -q 100 -f -g *.JPG
+>
+> Here's what I put into canon_5D.rsp:
+> 7.135383e-03 -3.556814e-02 2.441168e+00 -5.786777e+00 4.462320e+00
+> 4.543790e-03  3.363440e-02 1.917460e+00 -4.660105e+00 3.792747e+00
+> 3.956902e-03  3.244581e-02 1.827308e+00 -4.505138e+00 3.729707e+00
+
+The first number in each line in an RSP file is the order of the 
+polynome. Since it is missing in the RSP above (the one you hand-crafted 
+from the Photosphere response), hdrgen deems it invalid and overwrites 
+it with a new one. Try pre-pending a '6 ' to all three lines. hdrgen 
+should than be happy and use the RSP that you supplied, rather than 
+generate one from scratch.
+
+> Here's canon_5D.rsp after hdrgen is run:
+> 3 1.49643 -0.979 0.486712 -0.00413976
+> 3 1.44009 -0.884479 0.448854 -0.00446749
+> 3 1.46366 -0.875187 0.414554 -0.00303108
+>
+> And here's the response curve from Photosphere:
+> "Canon"|"Canon EOS 5D Mark
+> II"|"v.0"|{7.135383e-03,-3.556814e-02,2.441168e+00,-5.786777e+00,4.462320e+00}|{4.543790e-03,3.363440e-02,1.917460e+00,-4.660105e+00,3.792747e+00}|{3.956902e-03,3.244581e-02,1.827308e+00,-4.505138e+00,3.729707e+00}
+>
+> Am I missing any hdrgen options, or perhaps making an error in my .rsp
+> file? Thanks in advance for any insights.
+
+More info here:
+http://www.jaloxa.eu/webhdr/calibrate.shtml
+
+Cheers
+
+Axel
+
+
+
+From jacobs.axel at gmail.com  Mon May 13 13:05:54 2013
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Mon, 13 May 2013 21:05:54 +0100
+Subject: [HDRI] hdrgen and photosphere
+In-Reply-To: <07D77F5C-B7AC-4497-9417-B3C3B9A72ECA@coolshadow.com>
+References: <07D77F5C-B7AC-4497-9417-B3C3B9A72ECA@coolshadow.com>
+Message-ID: <519147A2.9020204@gmail.com>
+
+Oops,
+
+try '4 ', not '6 ' as per my last post.
+
+Embarrassingly yours
+
+Axel
+
+
+
+
+From michael at coolshadow.com  Mon May 13 13:06:44 2013
+From: michael at coolshadow.com (Michael Martinez)
+Date: Mon, 13 May 2013 13:06:44 -0700
+Subject: [HDRI] hdrgen and photosphere
+In-Reply-To: <51913BAF.1000300@gmail.com>
+References: <07D77F5C-B7AC-4497-9417-B3C3B9A72ECA@coolshadow.com>
+	<51913BAF.1000300@gmail.com>
+Message-ID: <4203CEC7-DDFA-4EA2-874D-02BD810BE1E1@coolshadow.com>
+
+Hmm - pre-appending with a 6 didn't do the trick. 
+
+It seems like hdrgen really wants a 3rd order polynomial (no matter what I put into the .rsp, hdrgen overwrites it as such), and I'm not too sure how to translate the 5 values for the R, G, and B channels generated by Photosphere. 
+
+As another data point, the other camera curves in my Photosphere preferences file have a variety of values, either 4, 5 or 6 for each channel, depending on the camera. 
+
+As a work around, I can apply a multiplier to the .rsp that hdrgen makes, and that gets me pretty close. But I'd also love to know if there's a more direct way to translate the Photosphere data into hdrgen friendly data. 
+
+Thanks all - 
+
+Mike
+
+
+ 
+
+On May 13, 2013, at 12:14 PM, Axel Jacobs wrote:
+
+> Hi Michael,
+> > I'm trying to use hdrgen with a response curve created by photosphere.
+>> For the image, I have calibration points measured with a luminance
+>> meter, and when I make the hdr with photosphere, I get an accurate
+>> luminance measurement, but hdrgen gives me a value that's consistently
+>> ~10% higher. This is surprising as (I think) I'm using the same response
+>> curve for each process.
+>> 
+>> Here's my hdrgen command:
+>> hdrgen -o ../01.hdr -r canon_5D.rsp -q 100 -f -g *.JPG
+>> 
+>> Here's what I put into canon_5D.rsp:
+>> 7.135383e-03 -3.556814e-02 2.441168e+00 -5.786777e+00 4.462320e+00
+>> 4.543790e-03  3.363440e-02 1.917460e+00 -4.660105e+00 3.792747e+00
+>> 3.956902e-03  3.244581e-02 1.827308e+00 -4.505138e+00 3.729707e+00
+> 
+> The first number in each line in an RSP file is the order of the polynome. Since it is missing in the RSP above (the one you hand-crafted from the Photosphere response), hdrgen deems it invalid and overwrites it with a new one. Try pre-pending a '6 ' to all three lines. hdrgen should than be happy and use the RSP that you supplied, rather than generate one from scratch.
+> 
+>> Here's canon_5D.rsp after hdrgen is run:
+>> 3 1.49643 -0.979 0.486712 -0.00413976
+>> 3 1.44009 -0.884479 0.448854 -0.00446749
+>> 3 1.46366 -0.875187 0.414554 -0.00303108
+>> 
+>> And here's the response curve from Photosphere:
+>> "Canon"|"Canon EOS 5D Mark
+>> II"|"v.0"|{7.135383e-03,-3.556814e-02,2.441168e+00,-5.786777e+00,4.462320e+00}|{4.543790e-03,3.363440e-02,1.917460e+00,-4.660105e+00,3.792747e+00}|{3.956902e-03,3.244581e-02,1.827308e+00,-4.505138e+00,3.729707e+00}
+>> 
+>> Am I missing any hdrgen options, or perhaps making an error in my .rsp
+>> file? Thanks in advance for any insights.
+> 
+> More info here:
+> http://www.jaloxa.eu/webhdr/calibrate.shtml
+> 
+> Cheers
+> 
+> Axel
+> 
+> 
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+
+
+From michael at coolshadow.com  Mon May 13 13:21:21 2013
+From: michael at coolshadow.com (Michael Martinez)
+Date: Mon, 13 May 2013 13:21:21 -0700
+Subject: [HDRI] hdrgen and photosphere
+In-Reply-To: <519147A2.9020204@gmail.com>
+References: <07D77F5C-B7AC-4497-9417-B3C3B9A72ECA@coolshadow.com>
+	<519147A2.9020204@gmail.com>
+Message-ID: <1F6C3DE8-F559-45E8-88F4-5D5BE737EDAB@coolshadow.com>
+
+Using a 4 in front of the Photosphere numbers like this:
+
+4 7.135383e-03 -3.556814e-02 2.441168e+00 -5.786777e+00 4.462320e+00
+4 4.543790e-03  3.363440e-02 1.917460e+00 -4.660105e+00 3.792747e+00
+4 3.956902e-03  3.244581e-02 1.827308e+00 -4.505138e+00 3.729707e+00
+
+unfortunately results in a wonky HDR with garbage luminance values and strage visual artifacts - see screen shot here. 
+
+compared to a screenshot of the photosphere created HDR
+
+
+
+
+
+On May 13, 2013, at 1:05 PM, Axel Jacobs wrote:
+
+> Oops,
+> 
+> try '4 ', not '6 ' as per my last post.
+> 
+> Embarrassingly yours
+> 
+> Axel
+> 
+> 
+> 
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20130513/0e019732/attachment.html>
+
+From jacobs.axel at gmail.com  Mon May 13 13:31:28 2013
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Mon, 13 May 2013 21:31:28 +0100
+Subject: [HDRI] hdrgen and photosphere
+In-Reply-To: <1F6C3DE8-F559-45E8-88F4-5D5BE737EDAB@coolshadow.com>
+References: <07D77F5C-B7AC-4497-9417-B3C3B9A72ECA@coolshadow.com>
+	<519147A2.9020204@gmail.com>
+	<1F6C3DE8-F559-45E8-88F4-5D5BE737EDAB@coolshadow.com>
+Message-ID: <51914DA0.3040809@gmail.com>
+
+Right, so we are on the right track--hdrgen no longer rejects the RSP.
+
+Next question is: how good is the RSP? Try plotting it. If it is smooth 
+and monotonic, without any kinks in it, it's a good one. Otherwise, try 
+generating it from a different sequence. The 5D is used a lot on WebHDR:
+http://www.jaloxa.eu/webhdr/cameras/Canon__Canon_EOS_5D.shtml
+How does your RSP compare with the averaged one? Note that there is no 
+quality control, and even 'wonky' ones make it into the average.
+
+Axel
+
+
+
+On 05/13/2013 09:21 PM, Michael Martinez wrote:
+> Using a 4 in front of the Photosphere numbers like this:
+>
+> 4 7.135383e-03 -3.556814e-02 2.441168e+00 -5.786777e+00 4.462320e+00
+> 4 4.543790e-03  3.363440e-02 1.917460e+00 -4.660105e+00 3.792747e+00
+> 4 3.956902e-03  3.244581e-02 1.827308e+00 -4.505138e+00 3.729707e+00
+>
+> unfortunately results in a wonky HDR with garbage luminance values and
+> strage visual artifacts - see screen shot here
+> <https://dl.dropboxusercontent.com/u/28677369/Screen%20shot%202013-05-13%20at%201.17.33%20PM.png>.
+>
+>
+> compared to a screenshot of the photosphere created HDR
+> <https://dl.dropboxusercontent.com/u/28677369/Screen%20shot%202013-05-13%20at%201.17.55%20PM.png>
+>
+>
+>
+>
+>
+> On May 13, 2013, at 1:05 PM, Axel Jacobs wrote:
+>
+>> Oops,
+>>
+>> try '4 ', not '6 ' as per my last post.
+>>
+>> Embarrassingly yours
+
+
+
+From jacobs.axel at gmail.com  Mon May 13 13:37:23 2013
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Mon, 13 May 2013 21:37:23 +0100
+Subject: [HDRI] hdrgen and photosphere
+In-Reply-To: <1F6C3DE8-F559-45E8-88F4-5D5BE737EDAB@coolshadow.com>
+References: <07D77F5C-B7AC-4497-9417-B3C3B9A72ECA@coolshadow.com>
+	<519147A2.9020204@gmail.com>
+	<1F6C3DE8-F559-45E8-88F4-5D5BE737EDAB@coolshadow.com>
+Message-ID: <51914F03.7000207@gmail.com>
+
+PS: Two more thoughts:
+
+I think hdrgen copes well with scientific notation, but just to 
+double-check: try converting from scientific notation to straight decimal.
+
+Also, I did notice with some of my won sequences that wood with its 
+grain and large areas of non-grey can be tricky. Just for the 
+calibration, I suggest you choose a grey background.
+
+Axel
+
+
+
+On 05/13/2013 09:21 PM, Michael Martinez wrote:
+> Using a 4 in front of the Photosphere numbers like this:
+>
+> 4 7.135383e-03 -3.556814e-02 2.441168e+00 -5.786777e+00 4.462320e+00
+> 4 4.543790e-03  3.363440e-02 1.917460e+00 -4.660105e+00 3.792747e+00
+> 4 3.956902e-03  3.244581e-02 1.827308e+00 -4.505138e+00 3.729707e+00
+>
+> unfortunately results in a wonky HDR with garbage luminance values and
+> strage visual artifacts - see screen shot here
+> <https://dl.dropboxusercontent.com/u/28677369/Screen%20shot%202013-05-13%20at%201.17.33%20PM.png>.
+>
+>
+> compared to a screenshot of the photosphere created HDR
+> <https://dl.dropboxusercontent.com/u/28677369/Screen%20shot%202013-05-13%20at%201.17.55%20PM.png>
+>
+>
+>
+>
+>
+> On May 13, 2013, at 1:05 PM, Axel Jacobs wrote:
+>
+>> Oops,
+>>
+>> try '4 ', not '6 ' as per my last post.
+>>
+>> Embarrassingly yours
+>>
+>> Axel
+>>
+>>
+>>
+>> _______________________________________________
+>> HDRI mailing list
+>> HDRI at radiance-online.org <mailto:HDRI at radiance-online.org>
+>> http://www.radiance-online.org/mailman/listinfo/hdri
+>
+>
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+>
+
+
+
+From michael at coolshadow.com  Mon May 13 15:23:53 2013
+From: michael at coolshadow.com (Michael Martinez)
+Date: Mon, 13 May 2013 15:23:53 -0700
+Subject: [HDRI] hdrgen and photosphere
+In-Reply-To: <51914DA0.3040809@gmail.com>
+References: <07D77F5C-B7AC-4497-9417-B3C3B9A72ECA@coolshadow.com>
+	<519147A2.9020204@gmail.com>
+	<1F6C3DE8-F559-45E8-88F4-5D5BE737EDAB@coolshadow.com>
+	<51914DA0.3040809@gmail.com>
+Message-ID: <D4B3507A-598D-46B4-81DE-8C35E9D22630@coolshadow.com>
+
+The rsp looks good - nice and smooth, which makes sense as Photosphere seems to have no trouble with these values. I also tried straight decimal format, and still no luck...
+
+Very curious...  
+
+
+
+
+On May 13, 2013, at 1:31 PM, Axel Jacobs wrote:
+
+> Right, so we are on the right track--hdrgen no longer rejects the RSP.
+> 
+> Next question is: how good is the RSP? Try plotting it. If it is smooth and monotonic, without any kinks in it, it's a good one. Otherwise, try generating it from a different sequence. The 5D is used a lot on WebHDR:
+> http://www.jaloxa.eu/webhdr/cameras/Canon__Canon_EOS_5D.shtml
+> How does your RSP compare with the averaged one? Note that there is no quality control, and even 'wonky' ones make it into the average.
+> 
+> Axel
+> 
+> 
+> 
+> On 05/13/2013 09:21 PM, Michael Martinez wrote:
+>> Using a 4 in front of the Photosphere numbers like this:
+>> 
+>> 4 7.135383e-03 -3.556814e-02 2.441168e+00 -5.786777e+00 4.462320e+00
+>> 4 4.543790e-03  3.363440e-02 1.917460e+00 -4.660105e+00 3.792747e+00
+>> 4 3.956902e-03  3.244581e-02 1.827308e+00 -4.505138e+00 3.729707e+00
+>> 
+>> unfortunately results in a wonky HDR with garbage luminance values and
+>> strage visual artifacts - see screen shot here
+>> <https://dl.dropboxusercontent.com/u/28677369/Screen%20shot%202013-05-13%20at%201.17.33%20PM.png>.
+>> 
+>> 
+>> compared to a screenshot of the photosphere created HDR
+>> <https://dl.dropboxusercontent.com/u/28677369/Screen%20shot%202013-05-13%20at%201.17.55%20PM.png>
+>> 
+>> 
+>> 
+>> 
+>> 
+>> On May 13, 2013, at 1:05 PM, Axel Jacobs wrote:
+>> 
+>>> Oops,
+>>> 
+>>> try '4 ', not '6 ' as per my last post.
+>>> 
+>>> Embarrassingly yours
+> 
+> 
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+
+
+From inanici at u.washington.edu  Mon May 13 15:36:25 2013
+From: inanici at u.washington.edu (Mehlika Inanici)
+Date: Mon, 13 May 2013 15:36:25 -0700 (PDT)
+Subject: [HDRI] hdrgen and photosphere
+In-Reply-To: <D4B3507A-598D-46B4-81DE-8C35E9D22630@coolshadow.com>
+Message-ID: <alpine.LRH.2.01.1305131536251.969@hymn02.u.washington.edu>
+
+
+
+As I recall, the order is reverse between Photosphere and hdrgen. If the R response is from your Photosphere file is
+7.135383e-03,-3.556814e-02,2.441168e+00,-5.786777e+00,4.462320e+00
+
+it should be a "mirror image" in hdrgen:
+4.462320e+00, -5.786777e+00, 2.441168e+00, -3.556814e-02, 7.135383e-03
+
+Mehlika
+
+
+On Mon, 13 May 2013, Michael Martinez wrote:
+
+> The rsp looks good - nice and smooth, which makes sense as Photosphere seems to have no trouble with these values. I also tried straight decimal format, and still no luck...
+>
+> Very curious...
+>
+>
+>
+>
+> On May 13, 2013, at 1:31 PM, Axel Jacobs wrote:
+>
+>> Right, so we are on the right track--hdrgen no longer rejects the RSP.
+>>
+>> Next question is: how good is the RSP? Try plotting it. If it is smooth and monotonic, without any kinks in it, it's a good one. Otherwise, try generating it from a different sequence. The 5D is used a lot on WebHDR:
+>> http://www.jaloxa.eu/webhdr/cameras/Canon__Canon_EOS_5D.shtml
+>> How does your RSP compare with the averaged one? Note that there is no quality control, and even 'wonky' ones make it into the average.
+>>
+>> Axel
+>>
+>>
+>>
+>> On 05/13/2013 09:21 PM, Michael Martinez wrote:
+>>> Using a 4 in front of the Photosphere numbers like this:
+>>>
+>>> 4 7.135383e-03 -3.556814e-02 2.441168e+00 -5.786777e+00 4.462320e+00
+>>> 4 4.543790e-03  3.363440e-02 1.917460e+00 -4.660105e+00 3.792747e+00
+>>> 4 3.956902e-03  3.244581e-02 1.827308e+00 -4.505138e+00 3.729707e+00
+>>>
+>>> unfortunately results in a wonky HDR with garbage luminance values and
+>>> strage visual artifacts - see screen shot here
+>>> <https://dl.dropboxusercontent.com/u/28677369/Screen%20shot%202013-05-13%20at%201.17.33%20PM.png>.
+>>>
+>>>
+>>> compared to a screenshot of the photosphere created HDR
+>>> <https://dl.dropboxusercontent.com/u/28677369/Screen%20shot%202013-05-13%20at%201.17.55%20PM.png>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>> On May 13, 2013, at 1:05 PM, Axel Jacobs wrote:
+>>>
+>>>> Oops,
+>>>>
+>>>> try '4 ', not '6 ' as per my last post.
+>>>>
+>>>> Embarrassingly yours
+>>
+>>
+>> _______________________________________________
+>> HDRI mailing list
+>> HDRI at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/hdri
+>
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+>
+
+
+
+
+From michael at coolshadow.com  Mon May 13 17:32:13 2013
+From: michael at coolshadow.com (Michael Martinez)
+Date: Mon, 13 May 2013 17:32:13 -0700
+Subject: [HDRI] hdrgen and photosphere
+In-Reply-To: <alpine.LRH.2.01.1305131536251.969@hymn02.u.washington.edu>
+References: <alpine.LRH.2.01.1305131536251.969@hymn02.u.washington.edu>
+Message-ID: <F2213A9E-5ED9-428C-8D37-EEE7603AEEAC@coolshadow.com>
+
+Ah ha!! That's the trick... Things look great now. 
+
+Many thanks, both to Axel and Mehlika. 
+
+MM
+
+
+
+
+
+
+On May 13, 2013, at 3:36 PM, Mehlika Inanici wrote:
+
+> 
+> 
+> As I recall, the order is reverse between Photosphere and hdrgen. If the R response is from your Photosphere file is
+> 7.135383e-03,-3.556814e-02,2.441168e+00,-5.786777e+00,4.462320e+00
+> 
+> it should be a "mirror image" in hdrgen:
+> 4.462320e+00, -5.786777e+00, 2.441168e+00, -3.556814e-02, 7.135383e-03
+> 
+> Mehlika
+> 
+> 
+> On Mon, 13 May 2013, Michael Martinez wrote:
+> 
+>> The rsp looks good - nice and smooth, which makes sense as Photosphere seems to have no trouble with these values. I also tried straight decimal format, and still no luck...
+>> 
+>> Very curious...
+>> 
+>> 
+>> 
+>> 
+>> On May 13, 2013, at 1:31 PM, Axel Jacobs wrote:
+>> 
+>>> Right, so we are on the right track--hdrgen no longer rejects the RSP.
+>>> 
+>>> Next question is: how good is the RSP? Try plotting it. If it is smooth and monotonic, without any kinks in it, it's a good one. Otherwise, try generating it from a different sequence. The 5D is used a lot on WebHDR:
+>>> http://www.jaloxa.eu/webhdr/cameras/Canon__Canon_EOS_5D.shtml
+>>> How does your RSP compare with the averaged one? Note that there is no quality control, and even 'wonky' ones make it into the average.
+>>> 
+>>> Axel
+>>> 
+>>> 
+>>> 
+>>> On 05/13/2013 09:21 PM, Michael Martinez wrote:
+>>>> Using a 4 in front of the Photosphere numbers like this:
+>>>> 
+>>>> 4 7.135383e-03 -3.556814e-02 2.441168e+00 -5.786777e+00 4.462320e+00
+>>>> 4 4.543790e-03  3.363440e-02 1.917460e+00 -4.660105e+00 3.792747e+00
+>>>> 4 3.956902e-03  3.244581e-02 1.827308e+00 -4.505138e+00 3.729707e+00
+>>>> 
+>>>> unfortunately results in a wonky HDR with garbage luminance values and
+>>>> strage visual artifacts - see screen shot here
+>>>> <https://dl.dropboxusercontent.com/u/28677369/Screen%20shot%202013-05-13%20at%201.17.33%20PM.png>.
+>>>> 
+>>>> 
+>>>> compared to a screenshot of the photosphere created HDR
+>>>> <https://dl.dropboxusercontent.com/u/28677369/Screen%20shot%202013-05-13%20at%201.17.55%20PM.png>
+>>>> 
+>>>> 
+>>>> 
+>>>> 
+>>>> 
+>>>> On May 13, 2013, at 1:05 PM, Axel Jacobs wrote:
+>>>> 
+>>>>> Oops,
+>>>>> 
+>>>>> try '4 ', not '6 ' as per my last post.
+>>>>> 
+>>>>> Embarrassingly yours
+>>> 
+>>> 
+>>> _______________________________________________
+>>> HDRI mailing list
+>>> HDRI at radiance-online.org
+>>> http://www.radiance-online.org/mailman/listinfo/hdri
+>> 
+>> 
+>> _______________________________________________
+>> HDRI mailing list
+>> HDRI at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/hdri
+>> 
+> 
+> 
+> 
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+
+
+From reinhard.erik at googlemail.com  Mon May 13 14:24:48 2013
+From: reinhard.erik at googlemail.com (Erik Reinhard)
+Date: Mon, 13 May 2013 23:24:48 +0200
+Subject: [HDRI] hdrgen and photosphere
+In-Reply-To: <51914DA0.3040809@gmail.com>
+References: <07D77F5C-B7AC-4497-9417-B3C3B9A72ECA@coolshadow.com>
+	<519147A2.9020204@gmail.com>
+	<1F6C3DE8-F559-45E8-88F4-5D5BE737EDAB@coolshadow.com>
+	<51914DA0.3040809@gmail.com>
+Message-ID: <BC1C22ED-721A-4223-8416-911D08462893@cs.bris.ac.uk>
+
+
+Hi All,
+
+I am not entirely sure that I remember this correctly, but I once looked at these
+camera curves in photosphere for the purpose of plotting them. I seem to recall
+that the coefficients are reversed relative to how you might expect them.
+
+It may be worth trying to reverse the order of the coefficients, so for the first of
+the three lines this would be:
+
+4 4.462320e+00 -5.786777e+00 2.441168e+00 -3.556814e-02 7.135383e-03
+
+Hope this helps.
+
+Cheers,
+Erik
+
+
+
+On May 13, 2013, at 10:31 PM, Axel Jacobs <jacobs.axel at gmail.com> wrote:
+
+> Right, so we are on the right track--hdrgen no longer rejects the RSP.
+> 
+> Next question is: how good is the RSP? Try plotting it. If it is smooth and monotonic, without any kinks in it, it's a good one. Otherwise, try generating it from a different sequence. The 5D is used a lot on WebHDR:
+> http://www.jaloxa.eu/webhdr/cameras/Canon__Canon_EOS_5D.shtml
+> How does your RSP compare with the averaged one? Note that there is no quality control, and even 'wonky' ones make it into the average.
+> 
+> Axel
+> 
+> 
+> 
+> On 05/13/2013 09:21 PM, Michael Martinez wrote:
+>> Using a 4 in front of the Photosphere numbers like this:
+>> 
+>> 4 7.135383e-03 -3.556814e-02 2.441168e+00 -5.786777e+00 4.462320e+00
+>> 4 4.543790e-03  3.363440e-02 1.917460e+00 -4.660105e+00 3.792747e+00
+>> 4 3.956902e-03  3.244581e-02 1.827308e+00 -4.505138e+00 3.729707e+00
+>> 
+>> unfortunately results in a wonky HDR with garbage luminance values and
+>> strage visual artifacts - see screen shot here
+>> <https://dl.dropboxusercontent.com/u/28677369/Screen%20shot%202013-05-13%20at%201.17.33%20PM.png>.
+>> 
+>> 
+>> compared to a screenshot of the photosphere created HDR
+>> <https://dl.dropboxusercontent.com/u/28677369/Screen%20shot%202013-05-13%20at%201.17.55%20PM.png>
+>> 
+>> 
+>> 
+>> 
+>> 
+>> On May 13, 2013, at 1:05 PM, Axel Jacobs wrote:
+>> 
+>>> Oops,
+>>> 
+>>> try '4 ', not '6 ' as per my last post.
+>>> 
+>>> Embarrassingly yours
+> 
+> 
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+
+
+From gregoryjward at gmail.com  Tue May 14 07:41:48 2013
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue, 14 May 2013 07:41:48 -0700
+Subject: [HDRI] hdrgen and photosphere
+In-Reply-To: <BC1C22ED-721A-4223-8416-911D08462893@cs.bris.ac.uk>
+References: <07D77F5C-B7AC-4497-9417-B3C3B9A72ECA@coolshadow.com>
+	<519147A2.9020204@gmail.com>
+	<1F6C3DE8-F559-45E8-88F4-5D5BE737EDAB@coolshadow.com>
+	<51914DA0.3040809@gmail.com>
+	<BC1C22ED-721A-4223-8416-911D08462893@cs.bris.ac.uk>
+Message-ID: <94F582F9-0B54-4652-83F1-F63EB6F61540@gmail.com>
+
+Erik's post came in after Mehlika's because he got caught in the moderator trap -- his e-mail was not "on the list."
+
+My apologies for not answering the original post, but I was on a plane or two....
+
+Cheers,
+-Greg
+
+> From: Erik Reinhard <reinhard.erik at googlemail.com>
+> Date: May 13, 2013 2:24:48 PM PDT
+> 
+> Hi All,
+> 
+> I am not entirely sure that I remember this correctly, but I once looked at these
+> camera curves in photosphere for the purpose of plotting them. I seem to recall
+> that the coefficients are reversed relative to how you might expect them.
+> 
+> It may be worth trying to reverse the order of the coefficients, so for the first of
+> the three lines this would be:
+> 
+> 4 4.462320e+00 -5.786777e+00 2.441168e+00 -3.556814e-02 7.135383e-03
+> 
+> Hope this helps.
+> 
+> Cheers,
+> Erik
+> 
+> 
+> 
+> On May 13, 2013, at 10:31 PM, Axel Jacobs <jacobs.axel at gmail.com> wrote:
+> 
+>> Right, so we are on the right track--hdrgen no longer rejects the RSP.
+>> 
+>> Next question is: how good is the RSP? Try plotting it. If it is smooth and monotonic, without any kinks in it, it's a good one. Otherwise, try generating it from a different sequence. The 5D is used a lot on WebHDR:
+>> http://www.jaloxa.eu/webhdr/cameras/Canon__Canon_EOS_5D.shtml
+>> How does your RSP compare with the averaged one? Note that there is no quality control, and even 'wonky' ones make it into the average.
+>> 
+>> Axel
+>> 
+>> 
+>> 
+>> On 05/13/2013 09:21 PM, Michael Martinez wrote:
+>>> Using a 4 in front of the Photosphere numbers like this:
+>>> 
+>>> 4 7.135383e-03 -3.556814e-02 2.441168e+00 -5.786777e+00 4.462320e+00
+>>> 4 4.543790e-03  3.363440e-02 1.917460e+00 -4.660105e+00 3.792747e+00
+>>> 4 3.956902e-03  3.244581e-02 1.827308e+00 -4.505138e+00 3.729707e+00
+>>> 
+>>> unfortunately results in a wonky HDR with garbage luminance values and
+>>> strage visual artifacts - see screen shot here
+>>> <https://dl.dropboxusercontent.com/u/28677369/Screen%20shot%202013-05-13%20at%201.17.33%20PM.png>.
+>>> 
+>>> 
+>>> compared to a screenshot of the photosphere created HDR
+>>> <https://dl.dropboxusercontent.com/u/28677369/Screen%20shot%202013-05-13%20at%201.17.55%20PM.png>
+>>> 
+>>> 
+>>> 
+>>> 
+>>> 
+>>> On May 13, 2013, at 1:05 PM, Axel Jacobs wrote:
+>>> 
+>>>> Oops,
+>>>> 
+>>>> try '4 ', not '6 ' as per my last post.
+>>>> 
+>>>> Embarrassingly yours
+>> 
+>> 
+>> _______________________________________________
+>> HDRI mailing list
+>> HDRI at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/hdri
+> 
+> 
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+

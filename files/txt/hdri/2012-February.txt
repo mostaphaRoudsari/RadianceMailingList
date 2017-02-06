@@ -1,0 +1,2621 @@
+From jacobs.axel at gmail.com  Wed Feb  1 02:40:06 2012
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Wed, 1 Feb 2012 10:40:06 +0000
+Subject: [HDRI] pvalue -o
+Message-ID: <CA+dqh638F8-=xs+5MnyQHo3chdphh7fGS-JPgJU5s5FBjNf_2w@mail.gmail.com>
+
+> the -o switch was correct, but to get the luminance, you need to
+> multiply the weighted RGB by 179. Better use -b to get the 'brightness'
+> or luminance, which is weighted RGB * 179.
+
+This is still wrong.  -b just gives you the weighted average. You need
+to multiply times 179 to get luminance (in cd/m2). Sorry if this was
+confusing.
+
+Axel
+
+
+From jacobs.axel at gmail.com  Fri Feb  3 06:27:59 2012
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Fri, 3 Feb 2012 14:27:59 +0000
+Subject: [HDRI] Findglare and HDR photographs
+Message-ID: <CA+dqh63O2hK83NVWohorXsK100uMehrCP-5CS5WX-8RjjM83aA@mail.gmail.com>
+
+Dear list,
+
+I've been exerimenting with Radiance's findglare and glarendx, trying
+to get UGRs from photographic HDRs. I'm using the Sigma 4.5mm on a
+D200, which seems to be quite a popular choice amongst you.
+
+Unlike the FC-E8/Coolpix combo, which produces an equidistant
+projection (-vta), the Sigma 4.5mm results in a 180deg equisolidangle
+view. I gather from this post to the rad-gen list:
+http://www.radiance-online.org/pipermail/radiance-general/2010-April/006709.html
+that the NYT cart was based on a Sigma lens (4.5mm ?), operated at
+F5.6. The code snippet in that post suggests that the HDRs were
+vignetting corrected.
+
+An overall calibration of the image luminance can be carried out (I
+think) by measuring the vertical illuminance at the lens when the
+exposure-bracketed sequence is taken, and then running findglare and
+glarendx -t ver_illu on the HDR, which should give a calibration
+factor that can then be used to fiddle with the EXPOSURE= line. This
+is probably more accurate than calibrating against spot meter
+readings. So far, so good.
+
+What I don't seem to be able to find in the googleable literature, nor
+in the HDR book, is any words of wisdom regarding the impact of the
+lens projection on glare metrics. Radiance doesn't have an
+equisolidangle view type, so using pinterp as detailed in this post:
+http://www.radiance-online.org/pipermail/radiance-general/2011-August/008141.html
+is not an option.
+
+It might be possible to utilse ImageMagick to re-project the JPGs
+prior to running hdrgen, but I'd rather not go there.
+
+The deviation between equisolidangle and -vta is most noticeable for
+high off-axis angles, which is also where glare sources have less of
+an impact (Guth position index). I'm therefore wondering whether
+people just tend to go with the vignetting-corrected and
+luminance-calibrated HDR without worrying too much about re-projecting
+the fisheye. The same question would apply to evalglare's DGP rating,
+which relies on the HDR coming in -vta.  Has anybody looked into this?
+
+Cheers
+
+Axel
+
+
+From gregoryjward at gmail.com  Fri Feb  3 10:48:18 2012
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri, 3 Feb 2012 10:48:18 -0800
+Subject: [HDRI] Findglare and HDR photographs
+In-Reply-To: <CA+dqh63O2hK83NVWohorXsK100uMehrCP-5CS5WX-8RjjM83aA@mail.gmail.com>
+References: <CA+dqh63O2hK83NVWohorXsK100uMehrCP-5CS5WX-8RjjM83aA@mail.gmail.com>
+Message-ID: <BF32451B-3CF5-48FF-B666-2B513609A93D@gmail.com>
+
+Hi Axel,
+
+This is interesting.  I hadn't realized that the Sigma lens used something other than the equidistant projection.  I thought this was the more normal type, and our casual measurements seemed to indicate that it followed this projection.  Perhaps I wasn't as careful as I ought to have been with my observations.  The horizon on the Sigma is enough of a mess that it's difficult to gauge things accurately at the outer rim of the circular image.
+
+Looking at the ever-helpful Wikipedia page on the topic <http://en.wikipedia.org/wiki/Fisheye_lens#Mapping_function>, I see that the equidistant and equisolid-angle projections are fairly similar except at the outer reaches (near +/-90?).  Of course, errors could still be large assuming the wrong projection if your only light sources is out in that part of the view.
+
+In lieu of reprojecting the image with pinterp, which is as you say unsupported, it is possibly to apply a correction to the image values to account for the difference in solid angle at each pixel.  Given that the solid angle of the equisolid-angle projection is the same for each pixel, we really only need the solid angle for the equidistant projection.  This can be computed with a simple expression, which is sin(theta)/theta.
+
+Does this help?
+-Greg
+
+> From: Axel Jacobs <jacobs.axel at gmail.com>
+> Date: February 3, 2012 6:27:59 AM PST
+> 
+> Dear list,
+> 
+> I've been exerimenting with Radiance's findglare and glarendx, trying
+> to get UGRs from photographic HDRs. I'm using the Sigma 4.5mm on a
+> D200, which seems to be quite a popular choice amongst you.
+> 
+> Unlike the FC-E8/Coolpix combo, which produces an equidistant
+> projection (-vta), the Sigma 4.5mm results in a 180deg equisolidangle
+> view. I gather from this post to the rad-gen list:
+> http://www.radiance-online.org/pipermail/radiance-general/2010-April/006709.html
+> that the NYT cart was based on a Sigma lens (4.5mm ?), operated at
+> F5.6. The code snippet in that post suggests that the HDRs were
+> vignetting corrected.
+> 
+> An overall calibration of the image luminance can be carried out (I
+> think) by measuring the vertical illuminance at the lens when the
+> exposure-bracketed sequence is taken, and then running findglare and
+> glarendx -t ver_illu on the HDR, which should give a calibration
+> factor that can then be used to fiddle with the EXPOSURE= line. This
+> is probably more accurate than calibrating against spot meter
+> readings. So far, so good.
+> 
+> What I don't seem to be able to find in the googleable literature, nor
+> in the HDR book, is any words of wisdom regarding the impact of the
+> lens projection on glare metrics. Radiance doesn't have an
+> equisolidangle view type, so using pinterp as detailed in this post:
+> http://www.radiance-online.org/pipermail/radiance-general/2011-August/008141.html
+> is not an option.
+> 
+> It might be possible to utilse ImageMagick to re-project the JPGs
+> prior to running hdrgen, but I'd rather not go there.
+> 
+> The deviation between equisolidangle and -vta is most noticeable for
+> high off-axis angles, which is also where glare sources have less of
+> an impact (Guth position index). I'm therefore wondering whether
+> people just tend to go with the vignetting-corrected and
+> luminance-calibrated HDR without worrying too much about re-projecting
+> the fisheye. The same question would apply to evalglare's DGP rating,
+> which relies on the HDR coming in -vta.  Has anybody looked into this?
+> 
+> Cheers
+> 
+> Axel
+
+
+From jacobs.axel at gmail.com  Fri Feb  3 12:14:36 2012
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Fri, 3 Feb 2012 20:14:36 +0000
+Subject: [HDRI] Findglare and HDR photographs
+In-Reply-To: <BF32451B-3CF5-48FF-B666-2B513609A93D@gmail.com>
+References: <CA+dqh63O2hK83NVWohorXsK100uMehrCP-5CS5WX-8RjjM83aA@mail.gmail.com>
+	<BF32451B-3CF5-48FF-B666-2B513609A93D@gmail.com>
+Message-ID: <CA+dqh62kw_SqC64TxQivovmUs63mXR0s6mjLA411thZ87uOSfw@mail.gmail.com>
+
+Hi Greg,
+
+> This is interesting. ?I hadn't realized that the Sigma lens used something other than the equidistant projection. ?I thought this was the more normal type, and our casual measurements seemed to indicate that it followed this projection. ?Perhaps I wasn't as careful as I ought to have been with my observations. ?The horizon on the Sigma is enough of a mess that it's difficult to gauge things accurately at the outer rim of the circular image.
+
+True, the horizon is a bit messy, but A LOT cleaner than on the Nikon FC-E8.
+
+> Looking at the ever-helpful Wikipedia page on the topic <http://en.wikipedia.org/wiki/Fisheye_lens#Mapping_function>, I see that the equidistant and equisolid-angle projections are fairly similar except at the outer reaches (near +/-90?). ?Of course, errors could still be large assuming the wrong projection if your only light sources is out in that part of the view.
+
+Here's another good page with a helpful diagram (scroll down) to 'fisheye':
+http://www.bobatkins.com/photography/technical/field_of_view.html
+
+> In lieu of reprojecting the image with pinterp, which is as you say unsupported, it is possibly to apply a correction to the image values to account for the difference in solid angle at each pixel. ?Given that the solid angle of the equisolid-angle projection is the same for each pixel, we really only need the solid angle for the equidistant projection. ?This can be computed with a simple expression, which is sin(theta)/theta.
+
+You see, this is where I get a little lost between 'projection',
+'distortion', and 'vignetting'. They are, of course, different things.
+Something like (don't quote me on it):
+- projection: that would be 'equidistant' or 'equisolidangle'
+- distortion: the deviation from the ideal 'projection'. Think pin
+cushion or barrel
+- vignetting: drop-off in image brightness towards the image horizon
+
+Would not the sin(theta)/theta correction account only for the pixel
+brightness? In other words: the pixel 'location' on the photographic
+plate/CCD chip would still be wrong, so that the Guth index in the UGR
+formula would be off?
+
+I can imagine that one could create a pcomb cal file that builds up a
+new image from the corrected radial distance of the pixel in the
+source image. If this get too aliased (blocky), one could average over
+the nearby pixels using the optional x,y offset that pcomb provides,
+e.g. (spaces added for clarity):
+ro=.5*ri(1) + .5*( ri(1,-1,0)+ri(1,1,0)+ri(1,0,-1)+ri(1,0,1) )/4 etc
+which is effectively a box filter. Not tested! Don't try this at home!
+One could fiddle with the pixel/off-pixel multipliers (both .5 in this
+case) to see what would look best. I'm not sure how floating point
+pixel coordiantes are handled by pcomb. Are they just rounded off?
+
+This approach would, of course, smudge out the luminance of the new,
+constructed pixel to a certain extend, but considering that the lens
+rensponse function does this anyhow, it's probably a small price to
+pay for a smooth-as-a-baby's-bottom image.
+
+This would correct the pixel 'position', but where I get confused with
+all this is this: How would one then have to correct the pixel
+brightness (vignetting?) to account for this re-projection of pixel
+locations, while still maintaining photometric integrity of the image
+as a whole (vertical illuminance, say... Or UGR)?
+
+> Does this help?
+> -Greg
+>
+>> From: Axel Jacobs <jacobs.axel at gmail.com>
+>> Date: February 3, 2012 6:27:59 AM PST
+>>
+>> Dear list,
+>>
+>> I've been exerimenting with Radiance's findglare and glarendx, trying
+>> to get UGRs from photographic HDRs. I'm using the Sigma 4.5mm on a
+>> D200, which seems to be quite a popular choice amongst you.
+>>
+>> Unlike the FC-E8/Coolpix combo, which produces an equidistant
+>> projection (-vta), the Sigma 4.5mm results in a 180deg equisolidangle
+>> view. I gather from this post to the rad-gen list:
+>> http://www.radiance-online.org/pipermail/radiance-general/2010-April/006709.html
+>> that the NYT cart was based on a Sigma lens (4.5mm ?), operated at
+>> F5.6. The code snippet in that post suggests that the HDRs were
+>> vignetting corrected.
+>>
+>> An overall calibration of the image luminance can be carried out (I
+>> think) by measuring the vertical illuminance at the lens when the
+>> exposure-bracketed sequence is taken, and then running findglare and
+>> glarendx -t ver_illu on the HDR, which should give a calibration
+>> factor that can then be used to fiddle with the EXPOSURE= line. This
+>> is probably more accurate than calibrating against spot meter
+>> readings. So far, so good.
+>>
+>> What I don't seem to be able to find in the googleable literature, nor
+>> in the HDR book, is any words of wisdom regarding the impact of the
+>> lens projection on glare metrics. Radiance doesn't have an
+>> equisolidangle view type, so using pinterp as detailed in this post:
+>> http://www.radiance-online.org/pipermail/radiance-general/2011-August/008141.html
+>> is not an option.
+>>
+>> It might be possible to utilse ImageMagick to re-project the JPGs
+>> prior to running hdrgen, but I'd rather not go there.
+>>
+>> The deviation between equisolidangle and -vta is most noticeable for
+>> high off-axis angles, which is also where glare sources have less of
+>> an impact (Guth position index). I'm therefore wondering whether
+>> people just tend to go with the vignetting-corrected and
+>> luminance-calibrated HDR without worrying too much about re-projecting
+>> the fisheye. The same question would apply to evalglare's DGP rating,
+>> which relies on the HDR coming in -vta. ?Has anybody looked into this?
+>>
+>> Cheers
+>>
+>> Axel
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+
+From gregoryjward at gmail.com  Fri Feb  3 13:00:53 2012
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri, 3 Feb 2012 13:00:53 -0800
+Subject: [HDRI] Findglare and HDR photographs
+In-Reply-To: <CA+dqh62kw_SqC64TxQivovmUs63mXR0s6mjLA411thZ87uOSfw@mail.gmail.com>
+References: <CA+dqh63O2hK83NVWohorXsK100uMehrCP-5CS5WX-8RjjM83aA@mail.gmail.com>
+	<BF32451B-3CF5-48FF-B666-2B513609A93D@gmail.com>
+	<CA+dqh62kw_SqC64TxQivovmUs63mXR0s6mjLA411thZ87uOSfw@mail.gmail.com>
+Message-ID: <7A4E7732-AE21-4C2A-9C64-DD6C6502E8B1@gmail.com>
+
+Hi Axel,
+
+>> In lieu of reprojecting the image with pinterp, which is as you say unsupported, it is possibly to apply a correction to the image values to account for the difference in solid angle at each pixel.  Given that the solid angle of the equisolid-angle projection is the same for each pixel, we really only need the solid angle for the equidistant projection.  This can be computed with a simple expression, which is sin(theta)/theta.
+> 
+> You see, this is where I get a little lost between 'projection',
+> 'distortion', and 'vignetting'. They are, of course, different things.
+> Something like (don't quote me on it):
+> - projection: that would be 'equidistant' or 'equisolidangle'
+> - distortion: the deviation from the ideal 'projection'. Think pin
+> cushion or barrel
+> - vignetting: drop-off in image brightness towards the image horizon
+> 
+> Would not the sin(theta)/theta correction account only for the pixel
+> brightness? In other words: the pixel 'location' on the photographic
+> plate/CCD chip would still be wrong, so that the Guth index in the UGR
+> formula would be off?
+
+The brightness of the pixel will be correct once you've accounted for vignetting.  The sin(theta)/theta multiplier is used to reweight the pixel so that it contributes the same amount to luminous flux (luminance times steradians) everywhere in the image.  This is what you need for the glare source calculations, I think.  Otherwise, you would be treating the light sources near the view horizon as bigger than they should be.
+
+> I can imagine that one could create a pcomb cal file that builds up a
+> new image from the corrected radial distance of the pixel in the
+> source image. If this get too aliased (blocky), one could average over
+> the nearby pixels using the optional x,y offset that pcomb provides,
+> e.g. (spaces added for clarity):
+> ro=.5*ri(1) + .5*( ri(1,-1,0)+ri(1,1,0)+ri(1,0,-1)+ri(1,0,1) )/4 etc
+> which is effectively a box filter. Not tested! Don't try this at home!
+> One could fiddle with the pixel/off-pixel multipliers (both .5 in this
+> case) to see what would look best. I'm not sure how floating point
+> pixel coordiantes are handled by pcomb. Are they just rounded off?
+
+I suppose this would work, but it seems more work than is necessary.  Yes, floating point pixel coordinates are rounded off.
+
+> This approach would, of course, smudge out the luminance of the new,
+> constructed pixel to a certain extend, but considering that the lens
+> rensponse function does this anyhow, it's probably a small price to
+> pay for a smooth-as-a-baby's-bottom image.
+> 
+> This would correct the pixel 'position', but where I get confused with
+> all this is this: How would one then have to correct the pixel
+> brightness (vignetting?) to account for this re-projection of pixel
+> locations, while still maintaining photometric integrity of the image
+> as a whole (vertical illuminance, say... Or UGR)?
+
+I guess you'd want to correct for vignetting in whatever projection you measured your vignetting error, probably before getting to this reprojection stage.  I still think the easiest thing is to correct for vignetting and pixel size at the same time, then go ahead and treat the image as if its an equidistant projection.  In other words, divide by the solid angle ratio (i.e., multiply each pixel by theta/sin(theta)) and then pass it through findglare as you would normally.
+
+Make sense?
+-Greg
+
+From jacobs.axel at gmail.com  Fri Feb  3 13:21:43 2012
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Fri, 3 Feb 2012 21:21:43 +0000
+Subject: [HDRI] Findglare and HDR photographs
+In-Reply-To: <7A4E7732-AE21-4C2A-9C64-DD6C6502E8B1@gmail.com>
+References: <CA+dqh63O2hK83NVWohorXsK100uMehrCP-5CS5WX-8RjjM83aA@mail.gmail.com>
+	<BF32451B-3CF5-48FF-B666-2B513609A93D@gmail.com>
+	<CA+dqh62kw_SqC64TxQivovmUs63mXR0s6mjLA411thZ87uOSfw@mail.gmail.com>
+	<7A4E7732-AE21-4C2A-9C64-DD6C6502E8B1@gmail.com>
+Message-ID: <CA+dqh63W238J+h0LG60zgbH3faa5Q_-Ag_Pmahsm5X+gXZQmJA@mail.gmail.com>
+
+Thanks for this pat on the back, Greg.
+
+> I guess you'd want to correct for vignetting in whatever projection you measured your vignetting error, probably before getting to this reprojection stage.  I still think the easiest thing is to correct for vignetting and pixel size at the same time, then go ahead and treat the image as if its an equidistant projection.  In other words, divide by the solid angle ratio (i.e., multiply each pixel by theta/sin(theta)) and then pass it through findglare as you would normally.
+
+Will do. I shall report back to this thread. One last sub-question, if I may:
+
+> An overall calibration of the image luminance can be carried out (I
+> think) by measuring the vertical illuminance at the lens when the
+> exposure-bracketed sequence is taken, and then running findglare and
+> glarendx -t ver_illu on the HDR, which should give a calibration
+> factor that can then be used to fiddle with the EXPOSURE= line. This
+> is probably more accurate than calibrating against spot meter
+> readings. So far, so good.
+
+Does this make sense? Is this what the NYT trolley did? Spot luminance
+meter calibrations are a bit messy, because it's very difficult to
+match the target circle of the luminance meter against a pixel value
+('L' in ximage), or against a box average
+('drag-your-mouse-in-ximage', then hit 'L')?
+
+The problem with lux meters, on the other hand, is that cosine
+correction for near-the-horizon-angles is hopeless, even for 'proper'
+illuminance meters. Some manufacturers will not even give you a number
+for angles > 80deg, which is a problem almost identical to the HDR
+projection function. Perfect alignment appears to be critical for
+light sources close to the visible horizon of the meter, irrespective
+of the cos weighting.
+
+Cheers and have a pleasant weekend
+
+Axel
+
+
+From gregoryjward at gmail.com  Fri Feb  3 13:29:01 2012
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri, 3 Feb 2012 13:29:01 -0800
+Subject: [HDRI] Findglare and HDR photographs
+In-Reply-To: <CA+dqh63W238J+h0LG60zgbH3faa5Q_-Ag_Pmahsm5X+gXZQmJA@mail.gmail.com>
+References: <CA+dqh63O2hK83NVWohorXsK100uMehrCP-5CS5WX-8RjjM83aA@mail.gmail.com>
+	<BF32451B-3CF5-48FF-B666-2B513609A93D@gmail.com>
+	<CA+dqh62kw_SqC64TxQivovmUs63mXR0s6mjLA411thZ87uOSfw@mail.gmail.com>
+	<7A4E7732-AE21-4C2A-9C64-DD6C6502E8B1@gmail.com>
+	<CA+dqh63W238J+h0LG60zgbH3faa5Q_-Ag_Pmahsm5X+gXZQmJA@mail.gmail.com>
+Message-ID: <2EC79608-8372-4845-A05B-DF756792B790@gmail.com>
+
+Hi Axel,
+
+> From: Axel Jacobs <jacobs.axel at gmail.com>
+> Date: February 3, 2012 1:21:43 PM PST
+...
+> 
+> Will do. I shall report back to this thread. One last sub-question, if I may:
+> 
+>> An overall calibration of the image luminance can be carried out (I
+>> think) by measuring the vertical illuminance at the lens when the
+>> exposure-bracketed sequence is taken, and then running findglare and
+>> glarendx -t ver_illu on the HDR, which should give a calibration
+>> factor that can then be used to fiddle with the EXPOSURE= line. This
+>> is probably more accurate than calibrating against spot meter
+>> readings. So far, so good.
+> 
+> Does this make sense? Is this what the NYT trolley did? Spot luminance
+> meter calibrations are a bit messy, because it's very difficult to
+> match the target circle of the luminance meter against a pixel value
+> ('L' in ximage), or against a box average
+> ('drag-your-mouse-in-ximage', then hit 'L')?
+
+Yes, but you need to do it after all the spatial corrections have been applied (solid angle + vignetting).
+
+> The problem with lux meters, on the other hand, is that cosine
+> correction for near-the-horizon-angles is hopeless, even for 'proper'
+> illuminance meters. Some manufacturers will not even give you a number
+> for angles > 80deg, which is a problem almost identical to the HDR
+> projection function. Perfect alignment appears to be critical for
+> light sources close to the visible horizon of the meter, irrespective
+> of the cos weighting.
+
+I guess this doesn't surprise me.  Having the bright areas in front rather than off to the side should improve things.  You may be better off using a patch calibration, which is what they did at LBNL in their advance glazings test facility.  I don't recall what we did on the NYT trolly as far as calibration goes.
+
+Cheers,
+-Greg
+
+From jacobs.axel at gmail.com  Fri Feb  3 13:35:37 2012
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Fri, 3 Feb 2012 21:35:37 +0000
+Subject: [HDRI] Findglare and HDR photographs
+In-Reply-To: <2EC79608-8372-4845-A05B-DF756792B790@gmail.com>
+References: <CA+dqh63O2hK83NVWohorXsK100uMehrCP-5CS5WX-8RjjM83aA@mail.gmail.com>
+	<BF32451B-3CF5-48FF-B666-2B513609A93D@gmail.com>
+	<CA+dqh62kw_SqC64TxQivovmUs63mXR0s6mjLA411thZ87uOSfw@mail.gmail.com>
+	<7A4E7732-AE21-4C2A-9C64-DD6C6502E8B1@gmail.com>
+	<CA+dqh63W238J+h0LG60zgbH3faa5Q_-Ag_Pmahsm5X+gXZQmJA@mail.gmail.com>
+	<2EC79608-8372-4845-A05B-DF756792B790@gmail.com>
+Message-ID: <CA+dqh61FrSymgRVFKFZ=W1pY2PFXHON-r-iNTztYLd6ju4bUCQ@mail.gmail.com>
+
+Thanks, Greg
+
+Enjoy your well-deserved weekend.
+
+Over and out.
+
+Axel
+
+On 3 February 2012 21:29, Gregory J. Ward <gregoryjward at gmail.com> wrote:
+> Hi Axel,
+>
+>> From: Axel Jacobs <jacobs.axel at gmail.com>
+>> Date: February 3, 2012 1:21:43 PM PST
+> ...
+>>
+>> Will do. I shall report back to this thread. One last sub-question, if I may:
+>>
+>>> An overall calibration of the image luminance can be carried out (I
+>>> think) by measuring the vertical illuminance at the lens when the
+>>> exposure-bracketed sequence is taken, and then running findglare and
+>>> glarendx -t ver_illu on the HDR, which should give a calibration
+>>> factor that can then be used to fiddle with the EXPOSURE= line. This
+>>> is probably more accurate than calibrating against spot meter
+>>> readings. So far, so good.
+>>
+>> Does this make sense? Is this what the NYT trolley did? Spot luminance
+>> meter calibrations are a bit messy, because it's very difficult to
+>> match the target circle of the luminance meter against a pixel value
+>> ('L' in ximage), or against a box average
+>> ('drag-your-mouse-in-ximage', then hit 'L')?
+>
+> Yes, but you need to do it after all the spatial corrections have been applied (solid angle + vignetting).
+>
+>> The problem with lux meters, on the other hand, is that cosine
+>> correction for near-the-horizon-angles is hopeless, even for 'proper'
+>> illuminance meters. Some manufacturers will not even give you a number
+>> for angles > 80deg, which is a problem almost identical to the HDR
+>> projection function. Perfect alignment appears to be critical for
+>> light sources close to the visible horizon of the meter, irrespective
+>> of the cos weighting.
+>
+> I guess this doesn't surprise me. ?Having the bright areas in front rather than off to the side should improve things. ?You may be better off using a patch calibration, which is what they did at LBNL in their advance glazings test facility. ?I don't recall what we did on the NYT trolly as far as calibration goes.
+>
+> Cheers,
+> -Greg
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+
+From ytyukhova at unomaha.edu  Sun Feb 19 21:34:25 2012
+From: ytyukhova at unomaha.edu (Tyukhova, Yulia)
+Date: Sun, 19 Feb 2012 23:34:25 -0600
+Subject: [HDRI] HDRI capture of LED
+Message-ID: <CAJYAbgqVPo9E_SBCPNEkWYr3RyHQEO=NzScC33RBkvdZzYtEEA@mail.gmail.com>
+
+Hello everybody!
+
+
+
+I?ll provide the summary of my research and have questions within the
+summary. I would appreciate any of your help!
+
+
+
+My research investigates if HDRI technique can precisely capture luminances
+of small bright light sources (e.g. LED garage fixtures) with narrow light
+distributions.
+
+
+
+I was able to figure out luminance values for a single LED, which can be
+compared to the ones from HDR images. But I have a couple of
+questions/concerns on HDRI technique and Photosphere.
+
+
+
+At first, I?ve used ?regular? scene to retrieve response curve of the
+camera (large smooth gradients with very dark and bright areas, and had
+reflectance standards for the absolute calibration).
+
+Camera: EOS T1i Rebel with 28-105mm lens, at 28mm
+
+Calibrated at the grey reflectance sample 186.45 cd/m2
+
+CF=0.957
+
+*
+*
+
+I?ve got the following RC for RGB:
+
+red(r) = -6.434199e-03+ 4.518039e-01*r + 1.291426e+00*r^2 + 1.802896e+00
+*r^3;
+
+green(g) = -5.804720e-03+ 4.175837e-01*g + 1.176582e+00*g^2 + 1.721643e+00
+*g^3;
+
+blue(b) = -4.376831e-03+ 3.784418e-01*b + 1.075695e+00*b^2 + 1.658471e+00
+*b^3
+
+
+
+If I look at the histogram of the scene, maximum luminance within the scene
+is 60,291 cd/m2.
+
+
+
+Then I use this RC to analyze HDRI of a captured LED. The value is 230,000
+cd/m2 for a single LED, which is low (it?s has to be around 7*106 cd/m2).
+So, it underestimates the luminance.
+
+
+
+It seems like calibration point is critical here. I?ve decided to try to
+capture a different scene for deriving RC with a wider range. It would make
+sense that camera has to see higher luminance values in order to accurately
+measure them later. The dynamic range has to cover measured values.
+
+1.   1. How does Photosphere deals/approximates/calculates the upper end of
+the curve? I assume it gives more weight to mid tone values? But what
+happens with high luminance values?
+
+
+
+So, the new brighter scene was picked with the direct sun! But in order to
+avoid the damage of the camera?s sensor, measurements were taken before the
+sunset.
+
+
+
+In the new brighter captured scene without the calibration all values for
+reflectance standards were overestimated, while the value for the sun
+underestimated. Then I decided to calibrate my scene at the sun!
+
+But when I apply absolute calibration, it simply multiplies CF to all
+values.
+
+2.     I assumed when CF is applied, it does not equally change all values,
+but does it proportionally to RC (since it is not linear).  Why does it do
+it equally for the whole range?
+
+Lsun=80*106 cd/m2. And of course CF is very big 391.
+
+
+
+New RC:
+
+red(r) = 3.219064e+00+ -2.655078e+01*r + 9.351069e+02*r^2 + -2.115052e+03
+*r^3+1.594538e+03*r^4;
+
+green(g) = 2.094164e+00+ -1.468109e+00*g + 7.306838e+02*g^2 + -1.720743e+03
+*g^3+1.380693e+03*g^4;
+
+blue(b) = 1.049078e+00+ 1.591820e+01*b + 5.848958e+02*b^2 + -1.461635e+03
+*b^3+1.251033e+03*b^4
+
+
+
+But then something interesting happened. When I analyze LED, it gives a
+value of 79*106 cd/m2. So, it jumps to this upper limit calibrated with the
+sun previously.
+
+(I had similar results for EOS 7D with the lens 16-35mm, at 16mm)
+
+3.     Does photosphere compress the response curve, so at the upper end
+all values above certain threshold will have the same number?
+
+4.     Any additional suggestions on properly obtaining and calibrating
+HDRI for this purpose?
+
+-- 
+Thank you,
+*Yulia Tyukhova*
+*
+*
+Fulbright Scholar, "Intern LC"
+Architectural Engineering Graduate Student, UNL-Omaha, NE, USA
+B.E. and M.E. in Lighting Engineering (MPEI), Moscow, Russia
+jtyukhova at yahoo.com
+ytyukhova at unomaha.edu
++1 (402) 996 0910
+PKI 247
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20120219/6ac8e4be/attachment.html>
+
+From jacobs.axel at gmail.com  Mon Feb 20 03:08:50 2012
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Mon, 20 Feb 2012 11:08:50 +0000
+Subject: [HDRI] HDRI capture of LED
+In-Reply-To: <CAJYAbgqVPo9E_SBCPNEkWYr3RyHQEO=NzScC33RBkvdZzYtEEA@mail.gmail.com>
+References: <CAJYAbgqVPo9E_SBCPNEkWYr3RyHQEO=NzScC33RBkvdZzYtEEA@mail.gmail.com>
+Message-ID: <CA+dqh60B-hN7G5_Kk5srYGVm6SA688EdioSpwZpWCSyFtxg+7w@mail.gmail.com>
+
+Hi Yulia,
+
+I, too, am looking at HDR measurements of artificial light sources in
+the hope of measuring glare. The results I've been getting are rather
+inconsistent, so I've been doing some googling and reading.
+
+> I was able to figure out luminance values for a single LED, which can be
+> compared to the ones from HDR images. But I have a couple of
+> questions/concerns on HDRI technique and Photosphere.
+
+> At first, I?ve used ?regular? scene to retrieve response curve of the camera
+> (large smooth gradients with very dark and bright areas, and had reflectance
+> standards for the absolute calibration).
+>
+> Camera: EOS T1i Rebel with 28-105mm lens, at 28mm
+> Calibrated at the grey reflectance sample 186.45 cd/m2
+> CF=0.957
+
+> Then I use this RC to analyze HDRI of a captured LED. The value is 230,000
+> cd/m2 for a single LED, which is low (it?s has to be around 7*106 cd/m2).
+> So, it underestimates the luminance.
+
+McCann and Rizzi have done some quite comprehensive research into the
+dynamic range of cameras and how it is limited by veiling glare. They
+have published an HDR book
+"The Art and Science of HDR Imaging" (Wiley, 2011), and many of their
+papers are available on
+http://web.mac.com/mccanns/HDR/Glare_Limits_HDRI.html
+
+To wet your appetite, I recommend
+http://web.mac.com/mccanns/HDR/Glare_Limits_HDRI_files/07EI%206492-41_1.pdf
+Their conclusion is that accurate HDR luminance measurements are not
+actually possible because veiling glare that is generated within the
+lens limits the dynamic range of the optical system. Apparently, there
+is actually an ISO standard (9358:1994) that comes to the same
+conclusion: The higher the dynamic range of the scene, the more
+inaccurate the HDR measurement.
+
+You will be aware of the 'flare removal' option in hdrgen (-f switch).
+I'm not entirely sure where 'flare' sits between 'point spread
+function' and 'veiling glare', but I believe it to be closer to the
+former. The PSF is a funciton of any optical system that results in
+the image to become 'smudged' out. Back a few years ago when the
+megapixel race was in full swing, many observers correctly stated that
+the lenses on cheap digital cameras can't actually provide a
+resolution that a would justify, say, 12MP on a digital snap shot
+camera. This is the PSF they were talking about--it's how a pixel
+affects the neighbouring pixels.
+
+While the PSF can be estimated (or even calculated, given enough
+information about the lenses and their optical properties? Not
+sure...), veiling glare, on the other hand, cannot because it depends
+on the scene. Every 'pixel' of the scene affects every pixel of the
+image. It's even worse than that: Even scene objects outside of the
+field of view of the optical system have an impact on the sensor
+image.
+
+Hoefflinger (Ed.) "High-Dynamic-Range (HDR) Vision" (Springer, 2007)
+has an entire section dedicated to HDR lenses. While true HDR low-res
+(video-) cameras are actually becoming commercially available (they
+have a logarithmic response, with a dynamic range far exceeding that
+of the human vision), the problem is that they require special HDR
+lenses that have to be carefully designed to minimise veiling glare.
+Digial camera lenses (even pro-level DSLR ones) are not optimised for
+this.
+
+So there is nothing wrong with the camera calibration that you carried
+out with a LDR scene. This is how it should be done. The problem
+you're facing is not specific to Photosphere or the Mitsunaga RSP
+recovery algorithm. The RSP is not compressed at the upper end--it's
+just Physics that you're up against.
+
+> It seems like calibration point is critical here. I?ve decided to try to
+> capture a different scene for deriving RC with a wider range. It would make
+> sense that camera has to see higher luminance values in order to accurately
+> measure them later. The dynamic range has to cover measured values.
+>
+> 1.? ?1. How does Photosphere deals/approximates/calculates the upper end of
+> the curve? I assume it gives more weight to mid tone values? But what
+> happens with high luminance values?
+
+> 2.???? I assumed when CF is applied, it does not equally change all values,
+> but does it proportionally to RC (since it is not linear). ?Why does it do
+> it equally for the whole range?
+>
+> Lsun=80*106 cd/m2. And of course CF is very big 391.
+
+> 3.???? Does photosphere compress the response curve, so at the upper end all
+> values above certain threshold will have the same number?
+>
+> 4.???? Any additional suggestions on properly obtaining and calibrating HDRI
+> for this purpose?
+
+I'm afraid you have to lower your expectations with regards to the
+achievable accuracy when it comes to HDR scenes that include bright
+light sources.
+
+Light modulation ('flicker') is another problem with HDR measurements
+of electric light sources. Unless you are certain that your light
+source is driven by a HF driver or ballast, I recommend you actually
+measure the modulation of the light source. If the LEDs are mains
+driven, they will flicker with 100 or 120 Hz, depending on your mains
+frequency. If the modulation factor is high, e.g. if the LEDs
+effectively switch on and off with this frequency, HDR measurements at
+short exposure times will be unpredictable. You can test this by
+taking a number of photographs of the same scene (with light source in
+it) at short exposure times. There is no need to go HDR. If all images
+have the same overall 'brightness', you're all right. If the images
+are noticeably different, you've got yet another problem.
+
+Cheers
+
+Axel
+
+
+From grobe at gmx.net  Mon Feb 20 03:13:47 2012
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Mon, 20 Feb 2012 12:13:47 +0100
+Subject: [HDRI] HDRI capture of LED
+In-Reply-To: <CAJYAbgqVPo9E_SBCPNEkWYr3RyHQEO=NzScC33RBkvdZzYtEEA@mail.gmail.com>
+References: <CAJYAbgqVPo9E_SBCPNEkWYr3RyHQEO=NzScC33RBkvdZzYtEEA@mail.gmail.com>
+Message-ID: <4F422AEB.1040601@gmx.net>
+
+Hi,
+
+did you consider using a filter to work with higher luminances at still
+reasonable shutter speeds?
+
+Cheers, Lars.
+
+
+From jacobs.axel at gmail.com  Mon Feb 20 03:24:44 2012
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Mon, 20 Feb 2012 11:24:44 +0000
+Subject: [HDRI] HDRI capture of LED
+In-Reply-To: <4F422AEB.1040601@gmx.net>
+References: <CAJYAbgqVPo9E_SBCPNEkWYr3RyHQEO=NzScC33RBkvdZzYtEEA@mail.gmail.com>
+	<4F422AEB.1040601@gmx.net>
+Message-ID: <CA+dqh62bjsWFd1rghj478GBSjLzZaKzwechoYOAyy5j=3y-pfA@mail.gmail.com>
+
+Lars, if this is a question to me--then yes, I did consider using an
+ND filter, but no, I can't use one because the lens I'm using is a
+4.5mm fisheye lens that doesn't allow the use of filters, AFAIK.
+
+Either way--you'd want to expose (much) longer than a full cycle which
+is only 1/100 sec. This severely limits the range of exposure times
+available for the HDR sequence. If I remember correctly, Santiago
+Torres captured sunny skies in his PhD thesis, and he had to use two
+identical cameras for this, one of which was fitted with an ND filter.
+Aligning the two must have been a nightmare.
+
+Axel
+
+
+On 20 February 2012 11:13, Lars O. Grobe <grobe at gmx.net> wrote:
+> Hi,
+>
+> did you consider using a filter to work with higher luminances at still
+> reasonable shutter speeds?
+>
+> Cheers, Lars.
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+
+From grobe at gmx.net  Mon Feb 20 03:43:17 2012
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Mon, 20 Feb 2012 12:43:17 +0100
+Subject: [HDRI] HDRI capture of LED
+In-Reply-To: <CA+dqh62bjsWFd1rghj478GBSjLzZaKzwechoYOAyy5j=3y-pfA@mail.gmail.com>
+References: <CAJYAbgqVPo9E_SBCPNEkWYr3RyHQEO=NzScC33RBkvdZzYtEEA@mail.gmail.com>
+	<4F422AEB.1040601@gmx.net>
+	<CA+dqh62bjsWFd1rghj478GBSjLzZaKzwechoYOAyy5j=3y-pfA@mail.gmail.com>
+Message-ID: <4F4231D5.5030801@gmx.net>
+
+Hi Axel!
+
+> Lars, if this is a question to me--then yes, I did consider using an
+> ND filter, but no, I can't use one because the lens I'm using is a
+> 4.5mm fisheye lens that doesn't allow the use of filters, AFAIK.
+
+Ok that sounds scary. Probably it would be possible to get a setup with
+a filter wheel behind the lens - but that would not be a small handy
+device to be carried around outdoors any more.
+
+For capturing a LED, there is no need for a fisheye though, so here one
+or more filters might be an option. Of course one would have a very
+close look at how "neutral" that density filter actually is.
+
+> Either way--you'd want to expose (much) longer than a full cycle which
+> is only 1/100 sec. This severely limits the range of exposure times
+> available for the HDR sequence. If I remember correctly, Santiago
+> Torres captured sunny skies in his PhD thesis, and he had to use two
+> identical cameras for this, one of which was fitted with an ND filter.
+> Aligning the two must have been a nightmare.
+
+Actually there are codes around doing the alignment by the use of shared
+keypoints. I mentioned Hugin before - I have not used it to get
+photometric values from images, but it claims to handle HDR formats,
+includes a lot of alignment functionality, and is free. Maybe worth to
+try it? Another question is how close two "identical" cameras can get...
+
+Cheers, Lars.
+
+
+From jacobs.axel at gmail.com  Mon Feb 20 04:20:16 2012
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Mon, 20 Feb 2012 12:20:16 +0000
+Subject: [HDRI] HDRI capture of LED
+In-Reply-To: <4F4231D5.5030801@gmx.net>
+References: <CAJYAbgqVPo9E_SBCPNEkWYr3RyHQEO=NzScC33RBkvdZzYtEEA@mail.gmail.com>
+	<4F422AEB.1040601@gmx.net>
+	<CA+dqh62bjsWFd1rghj478GBSjLzZaKzwechoYOAyy5j=3y-pfA@mail.gmail.com>
+	<4F4231D5.5030801@gmx.net>
+Message-ID: <CA+dqh61GiTuNptpyJcC24QfmtB4=ZrpoqSxiQYh2dxTGEJ11=g@mail.gmail.com>
+
+Hi Lars,
+
+> For capturing a LED, there is no need for a fisheye though, so here one
+> or more filters might be an option. Of course one would have a very
+> close look at how "neutral" that density filter actually is.
+
+True enough. I need a 180deg lens for the glare, though. The veiling
+glare might be less of a problem with non-fisheye lenses. Note that
+McCann and Rizzi use an 'ordinary' lens, not a fisheye.
+
+>> Either way--you'd want to expose (much) longer than a full cycle which
+>> is only 1/100 sec. This severely limits the range of exposure times
+>> available for the HDR sequence. If I remember correctly, Santiago
+>> Torres captured sunny skies in his PhD thesis, and he had to use two
+>> identical cameras for this, one of which was fitted with an ND filter.
+>> Aligning the two must have been a nightmare.
+>
+> Actually there are codes around doing the alignment by the use of shared
+> keypoints. I mentioned Hugin before - I have not used it to get
+> photometric values from images, but it claims to handle HDR formats,
+> includes a lot of alignment functionality, and is free. Maybe worth to
+> try it? Another question is how close two "identical" cameras can get...
+
+I'm trying to use Hugin for vignetting calibration. The results so far
+are not very consistent between themselves (different apertures), and
+with what little is published on vignetting of the Sigma 4.5mm. I have
+to say that I have not explored all options yet. Using two or more
+cameras is not an option in my case--I only got one.
+
+Axel
+
+
+From geotrupes at mac.com  Mon Feb 20 04:43:10 2012
+From: geotrupes at mac.com (giulio antonutto)
+Date: Mon, 20 Feb 2012 14:43:10 +0200
+Subject: [HDRI] HDRI capture of LED
+In-Reply-To: <CA+dqh60B-hN7G5_Kk5srYGVm6SA688EdioSpwZpWCSyFtxg+7w@mail.gmail.com>
+References: <CAJYAbgqVPo9E_SBCPNEkWYr3RyHQEO=NzScC33RBkvdZzYtEEA@mail.gmail.com>
+	<CA+dqh60B-hN7G5_Kk5srYGVm6SA688EdioSpwZpWCSyFtxg+7w@mail.gmail.com>
+Message-ID: <FEAC7AC4-F4CA-461A-8090-4EB812E22E78@mac.com>
+
+To compensate for flicker you could take several shots at the same shutter speed and average between them.
+You can go as high as 1/8000 if you do so. 
+Next is to measure the low and the high values within the picture set and determine how you are set within the flicker fluctuation of that source (just to check you are covering the fluctuation nicely).
+The overall picture average should be reasonably close the the long integration time exposure.
+This seems a lot to write (in matlab) but it is not rocket science if you have the lamp data sheet and a camera with a lot of fps?.
+
+Using a ND filter is an option but is not going to get you close enough to the sort of luminance you are looking to measure.
+Adding multiple filters is going to make the lens performance worst and in the end will not work.
+
+And about lenses? you may need to consider some good one, like symmetrical lens designs for large format or range finders (look at Zeiss/Leica to start with).
+They usually correct a lot of aberrations very well and flare is just one of the set?
+
+G
+
+
+
+
+On 20 Feb 2012, at 13:08, Axel Jacobs wrote:
+
+> Hi Yulia,
+> 
+> I, too, am looking at HDR measurements of artificial light sources in
+> the hope of measuring glare. The results I've been getting are rather
+> inconsistent, so I've been doing some googling and reading.
+> 
+>> I was able to figure out luminance values for a single LED, which can be
+>> compared to the ones from HDR images. But I have a couple of
+>> questions/concerns on HDRI technique and Photosphere.
+> 
+>> At first, I?ve used ?regular? scene to retrieve response curve of the camera
+>> (large smooth gradients with very dark and bright areas, and had reflectance
+>> standards for the absolute calibration).
+>> 
+>> Camera: EOS T1i Rebel with 28-105mm lens, at 28mm
+>> Calibrated at the grey reflectance sample 186.45 cd/m2
+>> CF=0.957
+> 
+>> Then I use this RC to analyze HDRI of a captured LED. The value is 230,000
+>> cd/m2 for a single LED, which is low (it?s has to be around 7*106 cd/m2).
+>> So, it underestimates the luminance.
+> 
+> McCann and Rizzi have done some quite comprehensive research into the
+> dynamic range of cameras and how it is limited by veiling glare. They
+> have published an HDR book
+> "The Art and Science of HDR Imaging" (Wiley, 2011), and many of their
+> papers are available on
+> http://web.mac.com/mccanns/HDR/Glare_Limits_HDRI.html
+> 
+> To wet your appetite, I recommend
+> http://web.mac.com/mccanns/HDR/Glare_Limits_HDRI_files/07EI%206492-41_1.pdf
+> Their conclusion is that accurate HDR luminance measurements are not
+> actually possible because veiling glare that is generated within the
+> lens limits the dynamic range of the optical system. Apparently, there
+> is actually an ISO standard (9358:1994) that comes to the same
+> conclusion: The higher the dynamic range of the scene, the more
+> inaccurate the HDR measurement.
+> 
+> You will be aware of the 'flare removal' option in hdrgen (-f switch).
+> I'm not entirely sure where 'flare' sits between 'point spread
+> function' and 'veiling glare', but I believe it to be closer to the
+> former. The PSF is a funciton of any optical system that results in
+> the image to become 'smudged' out. Back a few years ago when the
+> megapixel race was in full swing, many observers correctly stated that
+> the lenses on cheap digital cameras can't actually provide a
+> resolution that a would justify, say, 12MP on a digital snap shot
+> camera. This is the PSF they were talking about--it's how a pixel
+> affects the neighbouring pixels.
+> 
+> While the PSF can be estimated (or even calculated, given enough
+> information about the lenses and their optical properties? Not
+> sure...), veiling glare, on the other hand, cannot because it depends
+> on the scene. Every 'pixel' of the scene affects every pixel of the
+> image. It's even worse than that: Even scene objects outside of the
+> field of view of the optical system have an impact on the sensor
+> image.
+> 
+> Hoefflinger (Ed.) "High-Dynamic-Range (HDR) Vision" (Springer, 2007)
+> has an entire section dedicated to HDR lenses. While true HDR low-res
+> (video-) cameras are actually becoming commercially available (they
+> have a logarithmic response, with a dynamic range far exceeding that
+> of the human vision), the problem is that they require special HDR
+> lenses that have to be carefully designed to minimise veiling glare.
+> Digial camera lenses (even pro-level DSLR ones) are not optimised for
+> this.
+> 
+> So there is nothing wrong with the camera calibration that you carried
+> out with a LDR scene. This is how it should be done. The problem
+> you're facing is not specific to Photosphere or the Mitsunaga RSP
+> recovery algorithm. The RSP is not compressed at the upper end--it's
+> just Physics that you're up against.
+> 
+>> It seems like calibration point is critical here. I?ve decided to try to
+>> capture a different scene for deriving RC with a wider range. It would make
+>> sense that camera has to see higher luminance values in order to accurately
+>> measure them later. The dynamic range has to cover measured values.
+>> 
+>> 1.   1. How does Photosphere deals/approximates/calculates the upper end of
+>> the curve? I assume it gives more weight to mid tone values? But what
+>> happens with high luminance values?
+> 
+>> 2.     I assumed when CF is applied, it does not equally change all values,
+>> but does it proportionally to RC (since it is not linear).  Why does it do
+>> it equally for the whole range?
+>> 
+>> Lsun=80*106 cd/m2. And of course CF is very big 391.
+> 
+>> 3.     Does photosphere compress the response curve, so at the upper end all
+>> values above certain threshold will have the same number?
+>> 
+>> 4.     Any additional suggestions on properly obtaining and calibrating HDRI
+>> for this purpose?
+> 
+> I'm afraid you have to lower your expectations with regards to the
+> achievable accuracy when it comes to HDR scenes that include bright
+> light sources.
+> 
+> Light modulation ('flicker') is another problem with HDR measurements
+> of electric light sources. Unless you are certain that your light
+> source is driven by a HF driver or ballast, I recommend you actually
+> measure the modulation of the light source. If the LEDs are mains
+> driven, they will flicker with 100 or 120 Hz, depending on your mains
+> frequency. If the modulation factor is high, e.g. if the LEDs
+> effectively switch on and off with this frequency, HDR measurements at
+> short exposure times will be unpredictable. You can test this by
+> taking a number of photographs of the same scene (with light source in
+> it) at short exposure times. There is no need to go HDR. If all images
+> have the same overall 'brightness', you're all right. If the images
+> are noticeably different, you've got yet another problem.
+> 
+> Cheers
+> 
+> Axel
+> 
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+
+
+From Santiago.Torres at arup.com  Mon Feb 20 05:07:13 2012
+From: Santiago.Torres at arup.com (Santiago Torres)
+Date: Mon, 20 Feb 2012 13:07:13 +0000
+Subject: [HDRI] HDRI capture of LED
+In-Reply-To: <CA+dqh62bjsWFd1rghj478GBSjLzZaKzwechoYOAyy5j=3y-pfA@mail.gmail.com>
+References: <CAJYAbgqVPo9E_SBCPNEkWYr3RyHQEO=NzScC33RBkvdZzYtEEA@mail.gmail.com>
+	<4F422AEB.1040601@gmx.net>,
+	<CA+dqh62bjsWFd1rghj478GBSjLzZaKzwechoYOAyy5j=3y-pfA@mail.gmail.com>
+Message-ID: <F680DBC15ACC484FA2089674923B4C8903008558@EURXMBS07.global.arup.com>
+
+Hi all!
+
+Indeed, the alignment of the cameras was far from perfect, and I had to do some post-processing to correct this, which was done simply by shifting pixels with some reference point. Still it was ok for what I needed (using the hdr as light source), but I wouldn't use the same approach again.
+
+Flare from the sun was quite a problem, especially as I was using a filter behind the fish-eye. I'm still not sure if the filter in front would reduce it, as the less flare would be compensated by the need of a longer exposure... Still, the flare affects the lower end of the dynamic range, so it shouldn't be an issue for the measurement of the LED itself.
+
+A note about ND filters, I've had very bad experiences with photography filters, especially at high ND values. It really needs to be an optical filter (I ended up using a combination of filters from Edmund Optics). 
+
+Also, a very good reference is a thesis by Jessi Stumpfel, from USC (working with Paul Debevec) available here:
+http://gl.ict.usc.edu/skyprobes/
+
+Hope this helps,
+Santiago
+
+
+________________________________________
+From: Axel Jacobs [jacobs.axel at gmail.com]
+Sent: Monday, February 20, 2012 11:24 AM
+To: High Dynamic Range Imaging
+Subject: Re: [HDRI] HDRI capture of LED
+
+Lars, if this is a question to me--then yes, I did consider using an
+ND filter, but no, I can't use one because the lens I'm using is a
+4.5mm fisheye lens that doesn't allow the use of filters, AFAIK.
+
+Either way--you'd want to expose (much) longer than a full cycle which
+is only 1/100 sec. This severely limits the range of exposure times
+available for the HDR sequence. If I remember correctly, Santiago
+Torres captured sunny skies in his PhD thesis, and he had to use two
+identical cameras for this, one of which was fitted with an ND filter.
+Aligning the two must have been a nightmare.
+
+Axel
+
+
+On 20 February 2012 11:13, Lars O. Grobe <grobe at gmx.net> wrote:
+> Hi,
+>
+> did you consider using a filter to work with higher luminances at still
+> reasonable shutter speeds?
+>
+> Cheers, Lars.
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+_______________________________________________
+HDRI mailing list
+HDRI at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/hdri
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+
+
+
+From gregoryjward at gmail.com  Mon Feb 20 10:10:40 2012
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Mon, 20 Feb 2012 10:10:40 -0800
+Subject: [HDRI] HDRI capture of LED
+In-Reply-To: <CAJYAbgqVPo9E_SBCPNEkWYr3RyHQEO=NzScC33RBkvdZzYtEEA@mail.gmail.com>
+References: <CAJYAbgqVPo9E_SBCPNEkWYr3RyHQEO=NzScC33RBkvdZzYtEEA@mail.gmail.com>
+Message-ID: <76975D9C-4971-428F-B69C-BA8563DC25DA@gmail.com>
+
+Hello Yulia,
+
+Seems your question has spawned quite a bit of interesting discussion...
+
+My main recommendation is to use camera RAW images for critical photometry, especially when there are saturated colors involved.  It is impossible to correct the color of JPEG images and undo what the camera maker has done, so you need to start from the sensor data.
+
+Photosphere does not accept camera RAW as input, but I have written a Perl script that uses dcraw with the command-line HDR image builder hdrgen to overcome this limitation.  It also requires the use of another third-party program, exiftool, which I have packaged together for you at:
+
+	http://www.anyhere.com/gward/pickup/raw2hdr.tgz
+
+Unfortunately, I don't have a good set of documentation to go with it.  Typing "raw2hdr" by itself shows the basic syntax:
+
+	Usage: raw2hdr [hdrgen opts][-h][-w][-C calib][-c cspace] -o output.hdr input1.raw ..
+
+If your images are taken on a tripod (aligned exposures), you can use the default settings:
+
+	raw2hdr -o output.hdr expos1.cr2 expos2.cr2 expos3.cr2 ...
+
+The hdrgen settings can be found in the included HTML man page, and so can the -h and -w option meanings in the included dcraw man page.  The -C option is to provide a linear factor to correct the overall exposure based on previous calibrations.  The -c option is to specify an output color space.  The default is "sRGB" which is actually linear CCIR-709 primaries.  The only other output color space I would recommend is AdobeRGB.  There is a CIE XYZ space supported by dcraw, but I have found it to be somewhat unreliable, and I don't know where the fault lies in this.
+
+Regarding Axel's mention of camera flare, this is less of an issue for sources that are brighter than the rest of the scene.  It mostly affects darker, surrounding regions.  The -f option will attempt to estimate the camera/lens PSF and remove it, but it cannot be relied upon to remove this source of error completely.  Your problem with the accuracy of the LED sources is due no doubt (as others have said) to limitations in your short exposures combined with the color issues inherent to JPEG processing.
+
+Other responses inline....
+
+> From: "Tyukhova, Yulia" <ytyukhova at unomaha.edu>
+> Date: February 19, 2012 9:34:25 PM PST
+> 
+> Hello everybody!
+> I?ll provide the summary of my research and have questions within the summary. I would appreciate any of your help!
+> My research investigates if HDRI technique can precisely capture luminances of small bright light sources (e.g. LED garage fixtures) with narrow light distributions.
+> I was able to figure out luminance values for a single LED, which can be compared to the ones from HDR images. But I have a couple of questions/concerns on HDRI technique and Photosphere. 
+> At first, I?ve used ?regular? scene to retrieve response curve of the camera (large smooth gradients with very dark and bright areas, and had reflectance standards for the absolute calibration).
+> Camera: EOS T1i Rebel with 28-105mm lens, at 28mm
+> Calibrated at the grey reflectance sample 186.45 cd/m2
+> CF=0.957
+> 
+> I?ve got the following RC for RGB:
+> red(r) = -6.434199e-03+ 4.518039e-01*r + 1.291426e+00*r^2 + 1.802896e+00*r^3;
+> green(g) = -5.804720e-03+ 4.175837e-01*g + 1.176582e+00*g^2 + 1.721643e+00*g^3;
+> blue(b) = -4.376831e-03+ 3.784418e-01*b + 1.075695e+00*b^2 + 1.658471e+00*b^3
+> If I look at the histogram of the scene, maximum luminance within the scene is 60,291 cd/m2. 
+> Then I use this RC to analyze HDRI of a captured LED. The value is 230,000 cd/m2 for a single LED, which is low (it?s has to be around 7*106 cd/m2). So, it underestimates the luminance.
+> It seems like calibration point is critical here. I?ve decided to try to capture a different scene for deriving RC with a wider range. It would make sense that camera has to see higher luminance values in order to accurately measure them later. The dynamic range has to cover measured values. 
+> 1.    How does Photosphere deals/approximates/calculates the upper end of the curve? I assume it gives more weight to mid tone values? But what happens with high luminance values?
+Photosphere (and hdrgen) use all the brightest pixels from the shortest exposure and all the darkest pixels from the longest exposure.  Middle exposures have their brightest and darkest pixels downgraded.
+> So, the new brighter scene was picked with the direct sun! But in order to avoid the damage of the camera?s sensor, measurements were taken before the sunset.
+> In the new brighter captured scene without the calibration all values for reflectance standards were overestimated, while the value for the sun underestimated. Then I decided to calibrate my scene at the sun!
+> But when I apply absolute calibration, it simply multiplies CF to all values.
+> 2.     I assumed when CF is applied, it does not equally change all values, but does it proportionally to RC (since it is not linear).  Why does it do it equally for the whole range?
+> Lsun=80*106 cd/m2. And of course CF is very big 391.
+> New RC:
+> red(r) = 3.219064e+00+ -2.655078e+01*r + 9.351069e+02*r^2 + -2.115052e+03*r^3+1.594538e+03*r^4;
+> green(g) = 2.094164e+00+ -1.468109e+00*g + 7.306838e+02*g^2 + -1.720743e+03*g^3+1.380693e+03*g^4;
+> blue(b) = 1.049078e+00+ 1.591820e+01*b + 5.848958e+02*b^2 + -1.461635e+03*b^3+1.251033e+03*b^4
+> But then something interesting happened. When I analyze LED, it gives a value of 79*106 cd/m2. So, it jumps to this upper limit calibrated with the sun previously.
+> (I had similar results for EOS 7D with the lens 16-35mm, at 16mm)
+> 
+
+I don't think your shortest exposure properly captured the LED, and maybe didn't capture the sun, either. 
+> 3.     Does photosphere compress the response curve, so at the upper end all values above certain threshold will have the same number?
+
+Photosphere does not compress the curve.
+> 4.     Any additional suggestions on properly obtaining and calibrating HDRI for this purpose?
+
+I would only reiterate others' suggestion to use a neutral density filter, and using raw2hdr rather than Photosphere.
+
+> -- 
+> Thank you,
+> Yulia Tyukhova
+
+Best,
+-Greg
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20120220/254a998e/attachment-0001.html>
+
+From ytyukhova at unomaha.edu  Mon Feb 20 12:48:37 2012
+From: ytyukhova at unomaha.edu (Tyukhova, Yulia)
+Date: Mon, 20 Feb 2012 14:48:37 -0600
+Subject: [HDRI] HDRI capture of LED
+Message-ID: <CAJYAbgpa_tQtuxLAvgFeOQXzC0X8F25D6haBdt1uOqT=4NHiJg@mail.gmail.com>
+
+Everybody,
+
+Thank you for fast responses/tools and suggestions!
+
+Greg,
+
+Thank you for your suggestions and files!
+I am new to Radiance, and I assume that this is what I need to have
+installed on my computer in order to use suggested Perl scripts.
+If you can provide me with the link/info how to run it, that would be
+really helpful!
+
+Let me restate the question about the compression of the curve in
+Photosphere.
+1. Do manufactures compress the response curve or maybe it is limited by
+camera/optics/sensor saturation itself on the upper end?
+
+2. And I'm still curious, how CF is applied in Photosphere?
+
+I've been using ND filter t=0.0094 on the luminance meter, because
+otherwise it is impossible to measure such high luminances. I assume, you
+suggest to use it on the camera as well.
+
+I'm looking forward to analyze my images with the suggested
+hdrgen. Luckily, I've been taken them in both formats jpeg and raw.
+Greg, will you recommend to have regular calibration scene calibrated at
+the grey card instead of using brighter scene?
+
+Thank you,
+Yulia
+
+Hello Yulia,
+
+Seems your question has spawned quite a bit of interesting discussion...
+
+My main recommendation is to use camera RAW images for critical photometry,
+especially when there are saturated colors involved.  It is impossible to
+correct the color of JPEG images and undo what the camera maker has done,
+so you need to start from the sensor data.
+
+Photosphere does not accept camera RAW as input, but I have written a Perl
+script that uses dcraw with the command-line HDR image builder hdrgen to
+overcome this limitation.  It also requires the use of another third-party
+program, exiftool, which I have packaged together for you at:
+
+       http://www.anyhere.com/gward/pickup/raw2hdr.tgz
+
+Unfortunately, I don't have a good set of documentation to go with it.
+ Typing "raw2hdr" by itself shows the basic syntax:
+
+       Usage: raw2hdr [hdrgen opts][-h][-w][-C calib][-c cspace] -o
+output.hdr input1.raw ..
+
+If your images are taken on a tripod (aligned exposures), you can use the
+default settings:
+
+       raw2hdr -o output.hdr expos1.cr2 expos2.cr2 expos3.cr2 ...
+
+The hdrgen settings can be found in the included HTML man page, and so can
+the -h and -w option meanings in the included dcraw man page.  The -C
+option is to provide a linear factor to correct the overall exposure based
+on previous calibrations.  The -c option is to specify an output color
+space.  The default is "sRGB" which is actually linear CCIR-709 primaries.
+ The only other output color space I would recommend is AdobeRGB.  There is
+a CIE XYZ space supported by dcraw, but I have found it to be somewhat
+unreliable, and I don't know where the fault lies in this.
+
+Regarding Axel's mention of camera flare, this is less of an issue for
+sources that are brighter than the rest of the scene.  It mostly affects
+darker, surrounding regions.  The -f option will attempt to estimate the
+camera/lens PSF and remove it, but it cannot be relied upon to remove this
+source of error completely.  Your problem with the accuracy of the LED
+sources is due no doubt (as others have said) to limitations in your short
+exposures combined with the color issues inherent to JPEG processing.
+
+Other responses inline....
+
+> From: "Tyukhova, Yulia" <ytyukhova at unomaha.edu>
+> Date: February 19, 2012 9:34:25 PM PST
+>
+> Hello everybody!
+> I?ll provide the summary of my research and have questions within the
+summary. I would appreciate any of your help!
+> My research investigates if HDRI technique can precisely capture
+luminances of small bright light sources (e.g. LED garage fixtures) with
+narrow light distributions.
+> I was able to figure out luminance values for a single LED, which can be
+compared to the ones from HDR images. But I have a couple of
+questions/concerns on HDRI technique and Photosphere.
+> At first, I?ve used ?regular? scene to retrieve response curve of the
+camera (large smooth gradients with very dark and bright areas, and had
+reflectance standards for the absolute calibration).
+> Camera: EOS T1i Rebel with 28-105mm lens, at 28mm
+> Calibrated at the grey reflectance sample 186.45 cd/m2
+> CF=0.957
+>
+> I?ve got the following RC for RGB:
+> red(r) = -6.434199e-03+ 4.518039e-01*r + 1.291426e+00*r^2 +
+1.802896e+00*r^3;
+> green(g) = -5.804720e-03+ 4.175837e-01*g + 1.176582e+00*g^2 +
+1.721643e+00*g^3;
+> blue(b) = -4.376831e-03+ 3.784418e-01*b + 1.075695e+00*b^2 +
+1.658471e+00*b^3
+> If I look at the histogram of the scene, maximum luminance within the
+scene is 60,291 cd/m2.
+> Then I use this RC to analyze HDRI of a captured LED. The value is
+230,000 cd/m2 for a single LED, which is low (it?s has to be around 7*106
+cd/m2). So, it underestimates the luminance.
+> It seems like calibration point is critical here. I?ve decided to try to
+capture a different scene for deriving RC with a wider range. It would make
+sense that camera has to see higher luminance values in order to accurately
+measure them later. The dynamic range has to cover measured values.
+> 1.    How does Photosphere deals/approximates/calculates the upper end of
+the curve? I assume it gives more weight to mid tone values? But what
+happens with high luminance values?
+Photosphere (and hdrgen) use all the brightest pixels from the shortest
+exposure and all the darkest pixels from the longest exposure.  Middle
+exposures have their brightest and darkest pixels downgraded.
+> So, the new brighter scene was picked with the direct sun! But in order
+to avoid the damage of the camera?s sensor, measurements were taken before
+the sunset.
+> In the new brighter captured scene without the calibration all values for
+reflectance standards were overestimated, while the value for the sun
+underestimated. Then I decided to calibrate my scene at the sun!
+> But when I apply absolute calibration, it simply multiplies CF to all
+values.
+> 2.     I assumed when CF is applied, it does not equally change all
+values, but does it proportionally to RC (since it is not linear).  Why
+does it do it equally for the whole range?
+> Lsun=80*106 cd/m2. And of course CF is very big 391.
+> New RC:
+> red(r) = 3.219064e+00+ -2.655078e+01*r + 9.351069e+02*r^2 +
+-2.115052e+03*r^3+1.594538e+03*r^4;
+> green(g) = 2.094164e+00+ -1.468109e+00*g + 7.306838e+02*g^2 +
+-1.720743e+03*g^3+1.380693e+03*g^4;
+> blue(b) = 1.049078e+00+ 1.591820e+01*b + 5.848958e+02*b^2 +
+-1.461635e+03*b^3+1.251033e+03*b^4
+> But then something interesting happened. When I analyze LED, it gives a
+value of 79*106 cd/m2. So, it jumps to this upper limit calibrated with the
+sun previously.
+> (I had similar results for EOS 7D with the lens 16-35mm, at 16mm)
+>
+
+I don't think your shortest exposure properly captured the LED, and maybe
+didn't capture the sun, either.
+> 3.     Does photosphere compress the response curve, so at the upper end
+all values above certain threshold will have the same number?
+
+Photosphere does not compress the curve.
+> 4.     Any additional suggestions on properly obtaining and calibrating
+HDRI for this purpose?
+
+I would only reiterate others' suggestion to use a neutral density filter,
+and using raw2hdr rather than Photosphere.
+
+> --
+> Thank you,
+> Yulia Tyukhova
+
+Best,
+-Greg
+
+-- 
+Thank you,
+*Yulia Tyukhova*
+*
+*
+Fulbright Scholar, "Intern LC"
+Architectural Engineering Graduate Student, UNL-Omaha, NE, USA
+B.E. and M.E. in Lighting Engineering (MPEI), Moscow, Russia
+jtyukhova at yahoo.com
+ytyukhova at unomaha.edu
++1 (402) 996 0910
+PKI 247
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20120220/3cf4d57d/attachment.html>
+
+From gregoryjward at gmail.com  Mon Feb 20 13:14:15 2012
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Mon, 20 Feb 2012 13:14:15 -0800
+Subject: [HDRI] HDRI capture of LED
+In-Reply-To: <CAJYAbgpa_tQtuxLAvgFeOQXzC0X8F25D6haBdt1uOqT=4NHiJg@mail.gmail.com>
+References: <CAJYAbgpa_tQtuxLAvgFeOQXzC0X8F25D6haBdt1uOqT=4NHiJg@mail.gmail.com>
+Message-ID: <7B0CB6E2-C816-4FB9-A3E0-9672B4101EC0@gmail.com>
+
+Responses inline...
+
+> From: "Tyukhova, Yulia" <ytyukhova at unomaha.edu>
+> Date: February 20, 2012 12:48:37 PM PST
+> 
+> Everybody, 
+> 
+> Thank you for fast responses/tools and suggestions!
+> 
+> Greg,
+> 
+> Thank you for your suggestions and files!
+> I am new to Radiance, and I assume that this is what I need to have installed on my computer in order to use suggested Perl scripts. 
+> If you can provide me with the link/info how to run it, that would be really helpful! 
+ 
+Actually, you don't need to have Radiance installed.  You just need to move the executables (non-HTML files) from the unpacked directory to /usr/bin or /usr/local/bin or some other directory in your shell's PATH variable.  These are command-line tools that must be run from the Terminal application under /Applications/Utilities.  I.e., start Terminal and copy the files from your Downloads folder with:
+
+	cd Downloads
+	tar xzf raw2hdr.tgz
+	cd raw2hdr
+	cp raw2hdr dcraw exiftool /usr/bin
+	cd
+	raw2hdr
+
+This should give you the usage message I wrote you earlier if it all goes well.  Some basic commands and pointers for Unix are available many places online.  Googling "basic unix tutorial" gave this page at the head of the list:
+
+	http://www.ee.surrey.ac.uk/Teaching/Unix/
+
+> Let me restate the question about the compression of the curve in Photosphere. 
+> 1. Do manufactures compress the response curve or maybe it is limited by camera/optics/sensor saturation itself on the upper end?
+
+Some camera makers do compress the top end of the response curve, and do funny things at the bottom as well.  Photosphere attempts to discover the tone curve and correct for these manipulations, but it isn't perfect and if the camera is changing the tone curve dynamically, it's pretty hopeless.  There are settings you can use on a DSLR to disable such manipulations, but using RAW files bypasses the problems entirely because the data is linear.
+
+> 2. And I'm still curious, how CF is applied in Photosphere?
+
+A calibration factor is applied equally to all coefficients in the polynomial, which is exactly the same as applying a linear scale factor after the HDR merge operation.
+
+> I've been using ND filter t=0.0094 on the luminance meter, because otherwise it is impossible to measure such high luminances. I assume, you suggest to use it on the camera as well.
+
+Whatever gives you a short exposure that is past the integration time of your source (1/60th second is acceptable) and not saturated is OK.  Specifically, all values in the short exposure's histogram should be be below 245.
+
+> I'm looking forward to analyze my images with the suggested hdrgen. Luckily, I've been taken them in both formats jpeg and raw. 
+> Greg, will you recommend to have regular calibration scene calibrated at the grey card instead of using brighter scene?
+
+The best scene for calibration is a white card in a scene with no bright sources directed at the camera.  The calibration should hold in other scenes where lens flare is not problematic.
+
+> Thank you,
+> Yulia
+
+Certainly,
+-Greg
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20120220/276e1ec6/attachment-0001.html>
+
+From ytyukhova at unomaha.edu  Mon Feb 20 14:41:11 2012
+From: ytyukhova at unomaha.edu (Tyukhova, Yulia)
+Date: Mon, 20 Feb 2012 16:41:11 -0600
+Subject: [HDRI] HDRI capture of LED
+Message-ID: <CAJYAbgpudFXmkg44tib8PfO3YOGxMXsFVjhLn5p-zi_og=MFOg@mail.gmail.com>
+
+Greg,
+I apologize for so many questions!
+
+Are those executables for Linux OS?
+I use Windows 7 32-bit OS.
+
+
+Message: 1
+> Date: Mon, 20 Feb 2012 14:48:37 -0600
+> From: "Tyukhova, Yulia" <ytyukhova at unomaha.edu>
+> To: hdri at radiance-online.org
+> Subject: [HDRI] HDRI capture of LED
+> Message-ID:
+>        <CAJYAbgpa_tQtuxLAvgFeOQXzC0X8F25D6haBdt1uOqT=4NHiJg at mail.gmail.com
+> >
+> Content-Type: text/plain; charset="iso-8859-1"
+>
+> Everybody,
+>
+> Thank you for fast responses/tools and suggestions!
+>
+> Greg,
+>
+> Thank you for your suggestions and files!
+> I am new to Radiance, and I assume that this is what I need to have
+> installed on my computer in order to use suggested Perl scripts.
+> If you can provide me with the link/info how to run it, that would be
+> really helpful!
+>
+> Let me restate the question about the compression of the curve in
+> Photosphere.
+> 1. Do manufactures compress the response curve or maybe it is limited by
+> camera/optics/sensor saturation itself on the upper end?
+>
+> 2. And I'm still curious, how CF is applied in Photosphere?
+>
+> I've been using ND filter t=0.0094 on the luminance meter, because
+> otherwise it is impossible to measure such high luminances. I assume, you
+> suggest to use it on the camera as well.
+>
+> I'm looking forward to analyze my images with the suggested
+> hdrgen. Luckily, I've been taken them in both formats jpeg and raw.
+> Greg, will you recommend to have regular calibration scene calibrated at
+> the grey card instead of using brighter scene?
+>
+> Thank you,
+> Yulia
+>
+> Hello Yulia,
+>
+> Seems your question has spawned quite a bit of interesting discussion...
+>
+> My main recommendation is to use camera RAW images for critical photometry,
+> especially when there are saturated colors involved.  It is impossible to
+> correct the color of JPEG images and undo what the camera maker has done,
+> so you need to start from the sensor data.
+>
+> Photosphere does not accept camera RAW as input, but I have written a Perl
+> script that uses dcraw with the command-line HDR image builder hdrgen to
+> overcome this limitation.  It also requires the use of another third-party
+> program, exiftool, which I have packaged together for you at:
+>
+>       http://www.anyhere.com/gward/pickup/raw2hdr.tgz
+>
+> Unfortunately, I don't have a good set of documentation to go with it.
+>  Typing "raw2hdr" by itself shows the basic syntax:
+>
+>       Usage: raw2hdr [hdrgen opts][-h][-w][-C calib][-c cspace] -o
+> output.hdr input1.raw ..
+>
+> If your images are taken on a tripod (aligned exposures), you can use the
+> default settings:
+>
+>       raw2hdr -o output.hdr expos1.cr2 expos2.cr2 expos3.cr2 ...
+>
+> The hdrgen settings can be found in the included HTML man page, and so can
+> the -h and -w option meanings in the included dcraw man page.  The -C
+> option is to provide a linear factor to correct the overall exposure based
+> on previous calibrations.  The -c option is to specify an output color
+> space.  The default is "sRGB" which is actually linear CCIR-709 primaries.
+>  The only other output color space I would recommend is AdobeRGB.  There is
+> a CIE XYZ space supported by dcraw, but I have found it to be somewhat
+> unreliable, and I don't know where the fault lies in this.
+>
+> Regarding Axel's mention of camera flare, this is less of an issue for
+> sources that are brighter than the rest of the scene.  It mostly affects
+> darker, surrounding regions.  The -f option will attempt to estimate the
+> camera/lens PSF and remove it, but it cannot be relied upon to remove this
+> source of error completely.  Your problem with the accuracy of the LED
+> sources is due no doubt (as others have said) to limitations in your short
+> exposures combined with the color issues inherent to JPEG processing.
+>
+> Other responses inline....
+>
+> > From: "Tyukhova, Yulia" <ytyukhova at unomaha.edu>
+> > Date: February 19, 2012 9:34:25 PM PST
+> >
+> > Hello everybody!
+> > I?ll provide the summary of my research and have questions within the
+> summary. I would appreciate any of your help!
+> > My research investigates if HDRI technique can precisely capture
+> luminances of small bright light sources (e.g. LED garage fixtures) with
+> narrow light distributions.
+> > I was able to figure out luminance values for a single LED, which can be
+> compared to the ones from HDR images. But I have a couple of
+> questions/concerns on HDRI technique and Photosphere.
+> > At first, I?ve used ?regular? scene to retrieve response curve of the
+> camera (large smooth gradients with very dark and bright areas, and had
+> reflectance standards for the absolute calibration).
+> > Camera: EOS T1i Rebel with 28-105mm lens, at 28mm
+> > Calibrated at the grey reflectance sample 186.45 cd/m2
+> > CF=0.957
+> >
+> > I?ve got the following RC for RGB:
+> > red(r) = -6.434199e-03+ 4.518039e-01*r + 1.291426e+00*r^2 +
+> 1.802896e+00*r^3;
+> > green(g) = -5.804720e-03+ 4.175837e-01*g + 1.176582e+00*g^2 +
+> 1.721643e+00*g^3;
+> > blue(b) = -4.376831e-03+ 3.784418e-01*b + 1.075695e+00*b^2 +
+> 1.658471e+00*b^3
+> > If I look at the histogram of the scene, maximum luminance within the
+> scene is 60,291 cd/m2.
+> > Then I use this RC to analyze HDRI of a captured LED. The value is
+> 230,000 cd/m2 for a single LED, which is low (it?s has to be around 7*106
+> cd/m2). So, it underestimates the luminance.
+> > It seems like calibration point is critical here. I?ve decided to try to
+> capture a different scene for deriving RC with a wider range. It would make
+> sense that camera has to see higher luminance values in order to accurately
+> measure them later. The dynamic range has to cover measured values.
+> > 1.    How does Photosphere deals/approximates/calculates the upper end of
+> the curve? I assume it gives more weight to mid tone values? But what
+> happens with high luminance values?
+> Photosphere (and hdrgen) use all the brightest pixels from the shortest
+> exposure and all the darkest pixels from the longest exposure.  Middle
+> exposures have their brightest and darkest pixels downgraded.
+> > So, the new brighter scene was picked with the direct sun! But in order
+> to avoid the damage of the camera?s sensor, measurements were taken before
+> the sunset.
+> > In the new brighter captured scene without the calibration all values for
+> reflectance standards were overestimated, while the value for the sun
+> underestimated. Then I decided to calibrate my scene at the sun!
+> > But when I apply absolute calibration, it simply multiplies CF to all
+> values.
+> > 2.     I assumed when CF is applied, it does not equally change all
+> values, but does it proportionally to RC (since it is not linear).  Why
+> does it do it equally for the whole range?
+> > Lsun=80*106 cd/m2. And of course CF is very big 391.
+> > New RC:
+> > red(r) = 3.219064e+00+ -2.655078e+01*r + 9.351069e+02*r^2 +
+> -2.115052e+03*r^3+1.594538e+03*r^4;
+> > green(g) = 2.094164e+00+ -1.468109e+00*g + 7.306838e+02*g^2 +
+> -1.720743e+03*g^3+1.380693e+03*g^4;
+> > blue(b) = 1.049078e+00+ 1.591820e+01*b + 5.848958e+02*b^2 +
+> -1.461635e+03*b^3+1.251033e+03*b^4
+> > But then something interesting happened. When I analyze LED, it gives a
+> value of 79*106 cd/m2. So, it jumps to this upper limit calibrated with the
+> sun previously.
+> > (I had similar results for EOS 7D with the lens 16-35mm, at 16mm)
+> >
+>
+> I don't think your shortest exposure properly captured the LED, and maybe
+> didn't capture the sun, either.
+> > 3.     Does photosphere compress the response curve, so at the upper end
+> all values above certain threshold will have the same number?
+>
+> Photosphere does not compress the curve.
+> > 4.     Any additional suggestions on properly obtaining and calibrating
+> HDRI for this purpose?
+>
+> I would only reiterate others' suggestion to use a neutral density filter,
+> and using raw2hdr rather than Photosphere.
+>
+> > --
+> > Thank you,
+> > Yulia Tyukhova
+>
+> Best,
+> -Greg
+>
+> --
+> Thank you,
+> *Yulia Tyukhova*
+> *
+> *
+> Fulbright Scholar, "Intern LC"
+> Architectural Engineering Graduate Student, UNL-Omaha, NE, USA
+> B.E. and M.E. in Lighting Engineering (MPEI), Moscow, Russia
+> jtyukhova at yahoo.com
+> ytyukhova at unomaha.edu
+> +1 (402) 996 0910
+> PKI 247
+> -------------- next part --------------
+> An HTML attachment was scrubbed...
+> URL: <
+> http://www.radiance-online.org/pipermail/hdri/attachments/20120220/3cf4d57d/attachment-0001.html
+> >
+>
+> ------------------------------
+>
+> Message: 2
+> Date: Mon, 20 Feb 2012 13:14:15 -0800
+> From: "Gregory J. Ward" <gregoryjward at gmail.com>
+> To: High Dynamic Range Imaging <hdri at radiance-online.org>
+> Subject: Re: [HDRI] HDRI capture of LED
+> Message-ID: <7B0CB6E2-C816-4FB9-A3E0-9672B4101EC0 at gmail.com>
+> Content-Type: text/plain; charset="us-ascii"
+>
+> Responses inline...
+>
+> > From: "Tyukhova, Yulia" <ytyukhova at unomaha.edu>
+> > Date: February 20, 2012 12:48:37 PM PST
+> >
+> > Everybody,
+> >
+> > Thank you for fast responses/tools and suggestions!
+> >
+> > Greg,
+> >
+> > Thank you for your suggestions and files!
+> > I am new to Radiance, and I assume that this is what I need to have
+> installed on my computer in order to use suggested Perl scripts.
+> > If you can provide me with the link/info how to run it, that would be
+> really helpful!
+>
+> Actually, you don't need to have Radiance installed.  You just need to
+> move the executables (non-HTML files) from the unpacked directory to
+> /usr/bin or /usr/local/bin or some other directory in your shell's PATH
+> variable.  These are command-line tools that must be run from the Terminal
+> application under /Applications/Utilities.  I.e., start Terminal and copy
+> the files from your Downloads folder with:
+>
+>        cd Downloads
+>        tar xzf raw2hdr.tgz
+>        cd raw2hdr
+>        cp raw2hdr dcraw exiftool /usr/bin
+>        cd
+>        raw2hdr
+>
+>
+
+
+> This should give you the usage message I wrote you earlier if it all goes
+> well.  Some basic commands and pointers for Unix are available many places
+> online.  Googling "basic unix tutorial" gave this page at the head of the
+> list:
+>
+>        http://www.ee.surrey.ac.uk/Teaching/Unix/
+>
+> > Let me restate the question about the compression of the curve in
+> Photosphere.
+> > 1. Do manufactures compress the response curve or maybe it is limited by
+> camera/optics/sensor saturation itself on the upper end?
+>
+> Some camera makers do compress the top end of the response curve, and do
+> funny things at the bottom as well.  Photosphere attempts to discover the
+> tone curve and correct for these manipulations, but it isn't perfect and if
+> the camera is changing the tone curve dynamically, it's pretty hopeless.
+>  There are settings you can use on a DSLR to disable such manipulations,
+> but using RAW files bypasses the problems entirely because the data is
+> linear.
+>
+> > 2. And I'm still curious, how CF is applied in Photosphere?
+>
+> A calibration factor is applied equally to all coefficients in the
+> polynomial, which is exactly the same as applying a linear scale factor
+> after the HDR merge operation.
+>
+> > I've been using ND filter t=0.0094 on the luminance meter, because
+> otherwise it is impossible to measure such high luminances. I assume, you
+> suggest to use it on the camera as well.
+>
+> Whatever gives you a short exposure that is past the integration time of
+> your source (1/60th second is acceptable) and not saturated is OK.
+>  Specifically, all values in the short exposure's histogram should be be
+> below 245.
+>
+> > I'm looking forward to analyze my images with the suggested hdrgen.
+> Luckily, I've been taken them in both formats jpeg and raw.
+> > Greg, will you recommend to have regular calibration scene calibrated at
+> the grey card instead of using brighter scene?
+>
+> The best scene for calibration is a white card in a scene with no bright
+> sources directed at the camera.  The calibration should hold in other
+> scenes where lens flare is not problematic.
+>
+> > Thank you,
+> > Yulia
+>
+> Certainly,
+> -Greg
+> -------------- next part --------------
+> An HTML attachment was scrubbed...
+> URL: <
+> http://www.radiance-online.org/pipermail/hdri/attachments/20120220/276e1ec6/attachment.html
+> >
+>
+> ------------------------------
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+>
+>
+> End of HDRI Digest, Vol 46, Issue 7
+> ***********************************
+>
+
+
+
+-- 
+Thank you,
+*Yulia Tyukhova*
+*
+*
+Fulbright Scholar, "Intern LC"
+Architectural Engineering Graduate Student, UNL-Omaha, NE, USA
+B.E. and M.E. in Lighting Engineering (MPEI), Moscow, Russia
+jtyukhova at yahoo.com
+ytyukhova at unomaha.edu
++1 (402) 996 0910
+PKI 247
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20120220/a6ec09c5/attachment-0001.html>
+
+From gregoryjward at gmail.com  Mon Feb 20 15:04:50 2012
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Mon, 20 Feb 2012 15:04:50 -0800
+Subject: [HDRI] HDRI capture of LED
+In-Reply-To: <CAJYAbgpudFXmkg44tib8PfO3YOGxMXsFVjhLn5p-zi_og=MFOg@mail.gmail.com>
+References: <CAJYAbgpudFXmkg44tib8PfO3YOGxMXsFVjhLn5p-zi_og=MFOg@mail.gmail.com>
+Message-ID: <C1F153DE-AD50-4CA0-A84D-910B0809ACD4@gmail.com>
+
+Oh, oops!  I assumed since you said you were using Photosphere that you were on a Mac.  These are for Apple's OS X (Snow Leopard).  I don't have versions for Linux or Windows.
+
+-Greg
+
+> From: "Tyukhova, Yulia" <ytyukhova at unomaha.edu>
+> Date: February 20, 2012 2:41:11 PM PST
+> 
+> Greg, 
+> I apologize for so many questions!
+> 
+> Are those executables for Linux OS?
+> I use Windows 7 32-bit OS.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20120220/0830cd63/attachment.html>
+
+From jacobs.axel at gmail.com  Mon Feb 20 17:38:13 2012
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Tue, 21 Feb 2012 01:38:13 +0000
+Subject: [HDRI] HDRI capture of LED
+In-Reply-To: <F680DBC15ACC484FA2089674923B4C8903008558@EURXMBS07.global.arup.com>
+References: <CAJYAbgqVPo9E_SBCPNEkWYr3RyHQEO=NzScC33RBkvdZzYtEEA@mail.gmail.com>
+	<4F422AEB.1040601@gmx.net>
+	<CA+dqh62bjsWFd1rghj478GBSjLzZaKzwechoYOAyy5j=3y-pfA@mail.gmail.com>
+	<F680DBC15ACC484FA2089674923B4C8903008558@EURXMBS07.global.arup.com>
+Message-ID: <CA+dqh61Dn-Mp5Z6b40jEDh0TA2DdHU8Urjv-O0fk_83dhf71Ww@mail.gmail.com>
+
+Hi Santiago,
+
+good to hear from you. May I ask you to elaborate this:
+
+> Flare from the sun was quite a problem, especially as I was using a filter behind the fish-eye. I'm still not sure if the filter in front would reduce it, as the less flare would be compensated by the need of a longer exposure... Still, the flare affects the lower end of the dynamic range, so it shouldn't be an issue for the measurement of the LED itself.
+
+How did you attach the filter behind the fisheye lens? Did you simply
+stick it there with some glue or silicone? Or onto the sensor?
+
+> A note about ND filters, I've had very bad experiences with photography filters, especially at high ND values. It really needs to be an optical filter (I ended up using a combination of filters from Edmund Optics).
+
+Do you mean that the light attenuation was not what was written on the
+box? Or were there other issues? I assume you calibrated even the EO
+filter, or did you just take it at face value?
+
+Thanks for sharing your insights.
+
+Cheers
+
+Axel
+
+
+From rob.guglielmetti at gmail.com  Mon Feb 20 19:53:11 2012
+From: rob.guglielmetti at gmail.com (Rob Guglielmetti)
+Date: Mon, 20 Feb 2012 20:53:11 -0700
+Subject: [HDRI] HDRI capture of LED
+In-Reply-To: <C1F153DE-AD50-4CA0-A84D-910B0809ACD4@gmail.com>
+References: <CAJYAbgpudFXmkg44tib8PfO3YOGxMXsFVjhLn5p-zi_og=MFOg@mail.gmail.com>
+	<C1F153DE-AD50-4CA0-A84D-910B0809ACD4@gmail.com>
+Message-ID: <915BAD1D-8042-4552-9543-5BCD809C6356@gmail.com>
+
+Yulia,
+
+First of all, good on ya for dipping your toes into the HDR list with such informed questions! I think you, me, Jennifer, and Clarence can work together to get you applying Greg's advice at Lincoln. I am pretty sure Clarence thought there was a Mac available in the school, and he will of course be back from NREL full time in May-ish and has his own Mac too. 
+
+This has been a great discussion, all.
+
+- Rob
+
+
+
+On Feb 20, 2012, at 4:04 PM, Gregory J. Ward wrote:
+
+> Oh, oops!  I assumed since you said you were using Photosphere that you were on a Mac.  These are for Apple's OS X (Snow Leopard).  I don't have versions for Linux or Windows.
+> 
+> -Greg
+> 
+>> From: "Tyukhova, Yulia" <ytyukhova at unomaha.edu>
+>> Date: February 20, 2012 2:41:11 PM PST
+>> 
+>> Greg, 
+>> I apologize for so many questions!
+>> 
+>> Are those executables for Linux OS?
+>> I use Windows 7 32-bit OS.
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20120220/072f4994/attachment.html>
+
+From ytyukhova at unomaha.edu  Tue Feb 21 13:21:05 2012
+From: ytyukhova at unomaha.edu (Tyukhova, Yulia)
+Date: Tue, 21 Feb 2012 15:21:05 -0600
+Subject: [HDRI] HDRI capture of LED
+Message-ID: <CAJYAbgp3zDK5dLaMKK=vSHmjMhX4_dt8b8i2LswMuC8p2Q1Fgw@mail.gmail.com>
+
+Greg,
+
+Following up your suggestions...
+
+I was able to run your scripts, but now I have more questions on what's
+behind them.
+
+1. I assume after combining raw images into one, I can analyze obtained hdr
+image in Photosphere.
+
+>> ?r *cam.rsp*
+Use the given file for the camera?s response curves.  If this file exists,
+it must contain the coefficients of three polynomials, one for each color
+primary.  If the file does not exist, hdrgen will use its principal
+algorithm to derive these coefficients and write them out to this file for
+later use.
+
+2. So, if I will combine my images for the calibration scene, hdrgen will
+derive the coefficients to the file. Is there a way to see those
+coefficients and to know what the response curve looks like?
+
+>>The -C option is to provide a linear factor to correct the overall
+exposure based on previous calibrations.
+
+3. How do I make the absolute calibration? Usually it is a luminance value
+of a reflectance standard measured with luminance meter applied in
+Photosphere. But how do I do it with the given script?
+
+>>The -c option is to specify an output color space. The default is "sRGB"
+which is actually linear CCIR-709 primaries. The only other output color
+space I would recommend is AdobeRGB. There is a CIE XYZ space supported by
+dcraw, but I have found it to be somewhat unreliable, and I don't know
+where the fault lies in this.
+
+4. In order to have luminance values Photosphere has an algorithm that does
+color calculations from sRGB to CIE XYZ (standard illuminant D65), where Y
+is the luminance value. Here I can specify an output color space, let's say
+sRGB, but how would I get luminance values?
+
+>>?s *stonits*
+*
+*
+5.What is this option about?
+*
+*
+*Thank you!*
+5.
+5.
+
+
+-- 
+Thank you,
+*Yulia Tyukhova*
+*
+*
+Fulbright Scholar, "Intern LC"
+Architectural Engineering Graduate Student, UNL-Omaha, NE, USA
+B.E. and M.E. in Lighting Engineering (MPEI), Moscow, Russia
+jtyukhova at yahoo.com
+ytyukhova at unomaha.edu
++1 (402) 996 0910
+PKI 247
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20120221/ecba6987/attachment.html>
+
+From Santiago.Torres at arup.com  Tue Feb 21 13:48:35 2012
+From: Santiago.Torres at arup.com (Santiago Torres)
+Date: Tue, 21 Feb 2012 21:48:35 +0000
+Subject: [HDRI] HDRI capture of LED
+In-Reply-To: <CA+dqh61Dn-Mp5Z6b40jEDh0TA2DdHU8Urjv-O0fk_83dhf71Ww@mail.gmail.com>
+References: <CAJYAbgqVPo9E_SBCPNEkWYr3RyHQEO=NzScC33RBkvdZzYtEEA@mail.gmail.com>
+	<4F422AEB.1040601@gmx.net>
+	<CA+dqh62bjsWFd1rghj478GBSjLzZaKzwechoYOAyy5j=3y-pfA@mail.gmail.com>
+	<F680DBC15ACC484FA2089674923B4C8903008558@EURXMBS07.global.arup.com>,
+	<CA+dqh61Dn-Mp5Z6b40jEDh0TA2DdHU8Urjv-O0fk_83dhf71Ww@mail.gmail.com>
+Message-ID: <F680DBC15ACC484FA2089674923B4C8903019C57@EURXMBS05.global.arup.com>
+
+Hi Axel,
+
+About the filter, actually it was attached with tape to the back of the FC-E8 adapter (and in front of the camera lens). So it was in the middle of the optics. I think this may have helped. The back lens of the adapter does not protrude, so it was easy to fix it parallel to the other lenses.
+
+The problems with the nd filters were mostly with colour shifting. The cheaper darker filters get everything too green (and these were the best I could get from a photography shop, not that cheap). The calibration was done with the filters in place and compensated with measurements. If I remember correctly, the stated tolerance for the transmissivity was about 5% (for an ND3, that's 1/20 000th?), but I didn't verify whether the real one was within this.
+
+Cheers,
+Santiago
+
+
+
+________________________________________
+From: Axel Jacobs [jacobs.axel at gmail.com]
+Sent: Tuesday, February 21, 2012 1:38 AM
+To: High Dynamic Range Imaging
+Subject: Re: [HDRI] HDRI capture of LED
+
+Hi Santiago,
+
+good to hear from you. May I ask you to elaborate this:
+
+> Flare from the sun was quite a problem, especially as I was using a filter behind the fish-eye. I'm still not sure if the filter in front would reduce it, as the less flare would be compensated by the need of a longer exposure... Still, the flare affects the lower end of the dynamic range, so it shouldn't be an issue for the measurement of the LED itself.
+
+How did you attach the filter behind the fisheye lens? Did you simply
+stick it there with some glue or silicone? Or onto the sensor?
+
+> A note about ND filters, I've had very bad experiences with photography filters, especially at high ND values. It really needs to be an optical filter (I ended up using a combination of filters from Edmund Optics).
+
+Do you mean that the light attenuation was not what was written on the
+box? Or were there other issues? I assume you calibrated even the EO
+filter, or did you just take it at face value?
+
+Thanks for sharing your insights.
+
+Cheers
+
+Axel
+
+_______________________________________________
+HDRI mailing list
+HDRI at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/hdri
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+
+
+
+From gregoryjward at gmail.com  Tue Feb 21 13:55:58 2012
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue, 21 Feb 2012 13:55:58 -0800
+Subject: [HDRI] HDRI capture of LED
+In-Reply-To: <CAJYAbgp3zDK5dLaMKK=vSHmjMhX4_dt8b8i2LswMuC8p2Q1Fgw@mail.gmail.com>
+References: <CAJYAbgp3zDK5dLaMKK=vSHmjMhX4_dt8b8i2LswMuC8p2Q1Fgw@mail.gmail.com>
+Message-ID: <CCEBE359-ACB3-4403-9819-C3A52077425A@gmail.com>
+
+Hi Yulia,
+
+Not all of the options of hdrgen are relevant for raw2hdr.  See inline....
+
+> From: "Tyukhova, Yulia" <ytyukhova at unomaha.edu>
+> Date: February 21, 2012 1:21:05 PM PST
+> 
+> Greg,
+> 
+> Following up your suggestions...
+> 
+> I was able to run your scripts, but now I have more questions on what's behind them.
+> 
+> 1. I assume after combining raw images into one, I can analyze obtained hdr image in Photosphere.
+
+Yes, of course.
+
+> >> ?r cam.rsp
+> Use the given file for the camera?s response curves.  If this file exists, it must contain the coefficients of three polynomials, one for each color primary.  If the file does not exist, hdrgen will use its principal algorithm to derive these coefficients and write them out to this file for later use. 
+> 
+> 2. So, if I will combine my images for the calibration scene, hdrgen will derive the coefficients to the file. Is there a way to see those coefficients and to know what the response curve looks like?
+
+The raw2hdr script doesn't need to derive a response curve, since the sensor data is linear.  Instead, it creates an output from dcraw that follows a 2.0 gamma and creates an artificial response curve of x^2 to decode it.  This reduces quantization errors from the 8-bit intermediate images.
+
+> >>The -C option is to provide a linear factor to correct the overall exposure based on previous calibrations.  
+> 
+> 3. How do I make the absolute calibration? Usually it is a luminance value of a reflectance standard measured with luminance meter applied in Photosphere. But how do I do it with the given script? 
+
+Look at your raw2hdr result in Photosphere and select the measured area.  Divide your measurement by the value Photosphere gives you.  This is the calibration factor to use with the -C option for conversions for this camera and lens.
+
+> >>The -c option is to specify an output color space.  The default is "sRGB" which is actually linear CCIR-709 primaries.  The only other output color space I would recommend is AdobeRGB.  There is a CIE XYZ space supported by dcraw, but I have found it to be somewhat unreliable, and I don't know where the fault lies in this.
+> 
+> 4. In order to have luminance values Photosphere has an algorithm that does color calculations from sRGB to CIE XYZ (standard illuminant D65), where Y is the luminance value. Here I can specify an output color space, let's say sRGB, but how would I get luminance values?
+
+As I mentioned, the sRGB and AdobeRGB spaces will both work, and Photosphere will adjust its Y value calculations accordingly.  The color space is recorded in the HDR output.
+
+> >>?s stonits
+> 
+> 5.What is this option about?
+
+You do not need it -- this option is for when the camera doesn't record the necessary aperture, asa and shutter speed settings in the image file.
+
+Best,
+-Greg
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20120221/018de200/attachment.html>
+
+From ytyukhova at unomaha.edu  Wed Feb 22 12:59:45 2012
+From: ytyukhova at unomaha.edu (Tyukhova, Yulia)
+Date: Wed, 22 Feb 2012 14:59:45 -0600
+Subject: [HDRI] HDRI capture of LED
+Message-ID: <CAJYAbgpFjWCoqAO_nMYQRf93C8M=5T7JJ1ndkT-16KY5=5WTgg@mail.gmail.com>
+
+Hello Greg!
+
+I was able to compile my images of LED with ND filter with raw2hdr, but I
+need to clarify a couple of things.
+
+As the intermediate step of combining the images I have the following:
+
+Writing data to standard output ...
+Can't locate Image/ExifTool.pm in @INC (@INC contains: /usr/bin/lib
+/Library/Perl/5.12/darwin-thread-multi-2level /Library/Perl/5.12
+/Network/Library/Perl/5.12/darwin-thread-multi-2level
+/Network/Library/Perl/5.12 /Library/Perl/Updates/5.12.3
+/System/Library/Perl/5.12/darwin-thread-multi-2level
+/System/Library/Perl/5.12
+/System/Library/Perl/Extras/5.12/darwin-thread-multi-2level
+/System/Library/Perl/Extras/5.12 .) at /usr/bin/exiftool line 30.
+BEGIN failed--compilation aborted at /usr/bin/exiftool line 30.
+Loading Canon EOS 7D image from IMG_0279.CR2 ...
+
+1. What does it mean? Is there a problem with data input/output? I just
+want to make sure that the data is processed properly.
+
+2. At first it didn't make sense why do I need hdrgen, since it uses tiff
+or jpeg as an input while I'm combining hdr from raw. But then I've noticed
+that raw2hdr generates temporary tiff photos and then uses them in hdrgen
+function. But if I want to include some additional settings for hdrgen
+(like flare removal) besides the default ones I have to following error:
+raw2hdr hdrgen -f -o output6.hdr IMG_02??.CR2
+Missing -o output file specification
+How do I write my settings?
+
+Thank you!
+Yulia
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20120222/7fdf646c/attachment.html>
+
+From gregoryjward at gmail.com  Wed Feb 22 13:50:59 2012
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed, 22 Feb 2012 13:50:59 -0800
+Subject: [HDRI] HDRI capture of LED
+In-Reply-To: <CAJYAbgpFjWCoqAO_nMYQRf93C8M=5T7JJ1ndkT-16KY5=5WTgg@mail.gmail.com>
+References: <CAJYAbgpFjWCoqAO_nMYQRf93C8M=5T7JJ1ndkT-16KY5=5WTgg@mail.gmail.com>
+Message-ID: <FD330496-62B8-4710-A403-E196D7F963D3@gmail.com>
+
+Hi Yulia,
+
+The error with Exiftool is my fault, I'm afraid.  I naively thought that the program was self-contained, when it is not.  You need to download and install it on your machine via the following URL:
+
+	http://www.sno.phy.queensu.ca/~phil/exiftool/install.html
+
+As for your second question, you can use other hdrgen options, but you don't need to write "hdrgen" on the command line as you have done.  The raw2hdr script knows how to sort out the various options.
+
+Best,
+-Greg
+
+> From: "Tyukhova, Yulia" <ytyukhova at unomaha.edu>
+> Date: February 22, 2012 12:59:45 PM PST
+> 
+> Hello Greg!
+> 
+> I was able to compile my images of LED with ND filter with raw2hdr, but I need to clarify a couple of things.
+> 
+> As the intermediate step of combining the images I have the following:
+> 
+> Writing data to standard output ...
+> Can't locate Image/ExifTool.pm in @INC (@INC contains: /usr/bin/lib /Library/Perl/5.12/darwin-thread-multi-2level /Library/Perl/5.12 /Network/Library/Perl/5.12/darwin-thread-multi-2level /Network/Library/Perl/5.12 /Library/Perl/Updates/5.12.3 /System/Library/Perl/5.12/darwin-thread-multi-2level /System/Library/Perl/5.12 /System/Library/Perl/Extras/5.12/darwin-thread-multi-2level /System/Library/Perl/Extras/5.12 .) at /usr/bin/exiftool line 30.
+> BEGIN failed--compilation aborted at /usr/bin/exiftool line 30.
+> Loading Canon EOS 7D image from IMG_0279.CR2 ...
+> 
+> 1. What does it mean? Is there a problem with data input/output? I just want to make sure that the data is processed properly.
+> 
+> 2. At first it didn't make sense why do I need hdrgen, since it uses tiff or jpeg as an input while I'm combining hdr from raw. But then I've noticed that raw2hdr generates temporary tiff photos and then uses them in hdrgen function. But if I want to include some additional settings for hdrgen (like flare removal) besides the default ones I have to following error:
+> raw2hdr hdrgen -f -o output6.hdr IMG_02??.CR2
+> Missing -o output file specification
+> How do I write my settings?
+> 
+> Thank you!
+> Yulia
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20120222/5fa321de/attachment.html>
+
+From ytyukhova at unomaha.edu  Thu Feb 23 09:10:13 2012
+From: ytyukhova at unomaha.edu (Tyukhova, Yulia)
+Date: Thu, 23 Feb 2012 11:10:13 -0600
+Subject: [HDRI] HDRI LED capture interesting artifacts
+Message-ID: <CAJYAbgrRLQqCDSkYVgkTh3xLPVSfojTt1dj9772-sDGUfR-KTw@mail.gmail.com>
+
+Hello!
+
+I've got some interesting artifacts on my images of a single LED, and I'm
+curious how to interpret and overcome them.
+
+Please see two images at:
+http://www.mediafire.com/?6w6tfmpoqtpipap,c0e69acf1x51ndu
+
+The settings for taking both are the following:
+
+*1 ND filter output7.jpg*
+
+Range of shutter speed 1/8000 to 1/15?? with aperture f16
+
+Range 1/30?? to 15?? with aperture f4
+
+ Luminance of reflectance standards:
+
+99%   197.2 cd/m^2
+
+40%     99.3 cd/m^2
+
+ ND filter t =0.0094
+
+ *
+2 ND filters output14.jpg*
+
+Range 1/8000 to 1/15?? with aperture f16
+
+Range 1/30?? to 15?? with aperture f4
+
+Ambient light level (illuminance meter) E=667 lx
+
+Luminance of reflectance standards:
+
+99%   215 cd/m^2
+
+40%    106.3 cd/m^2
+
+ND filter t =0.0094
+
+2nd ND filter t2=0.4375
+
+Thank you,
+Yulia
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20120223/6d591c9e/attachment.html>
+
+From gregoryjward at gmail.com  Thu Feb 23 09:42:59 2012
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu, 23 Feb 2012 09:42:59 -0800
+Subject: [HDRI] HDRI LED capture interesting artifacts
+In-Reply-To: <CAJYAbgrRLQqCDSkYVgkTh3xLPVSfojTt1dj9772-sDGUfR-KTw@mail.gmail.com>
+References: <CAJYAbgrRLQqCDSkYVgkTh3xLPVSfojTt1dj9772-sDGUfR-KTw@mail.gmail.com>
+Message-ID: <505E8D50-50BF-4C2F-AA4D-BADE9C33AB7D@gmail.com>
+
+Hi Yulia,
+
+There is an occasional issue with dcraw where it doesn't quite handle the highlights correctly, leaving this pink area near the brightest part of the exposure.  The only fix I've found is to set the -b option to a larger value.  You should try this with raw2hdr.  Try "raw2hdr -b 1.3 ..." adding your other options as usual.  If that doesn't get rid of the pink haloes, keep increasing the value until it does.
+
+If this doesn't work, then maybe you need more exposures.  I'm not really sure unless I can play with your original RAW files what else it could be.
+
+Best,
+-Greg
+
+> From: "Tyukhova, Yulia" <ytyukhova at unomaha.edu>
+> Date: February 23, 2012 9:10:13 AM PST
+> 
+> Hello!
+> 
+> I've got some interesting artifacts on my images of a single LED, and I'm curious how to interpret and overcome them.
+> 
+> Please see two images at:
+> http://www.mediafire.com/?6w6tfmpoqtpipap,c0e69acf1x51ndu
+> 
+> The settings for taking both are the following:
+> 1 ND filter output7.jpg
+> Range of shutter speed 1/8000 to 1/15?? with aperture f16
+> Range 1/30?? to 15?? with aperture f4
+> Luminance of reflectance standards:
+> 99%   197.2 cd/m^2
+> 40%     99.3 cd/m^2
+> ND filter t =0.0094
+> 
+> 2 ND filters output14.jpg
+> Range 1/8000 to 1/15?? with aperture f16
+> Range 1/30?? to 15?? with aperture f4
+> Ambient light level (illuminance meter) E=667 lx
+> Luminance of reflectance standards:
+> 99%   215 cd/m^2
+> 40%    106.3 cd/m^2
+> ND filter t =0.0094
+> 2nd ND filter t2=0.4375
+> 
+> Thank you,
+> Yulia
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20120223/c1768c76/attachment-0001.html>
+
+From jacobs.axel at gmail.com  Mon Feb 27 15:49:40 2012
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Mon, 27 Feb 2012 23:49:40 +0000
+Subject: [HDRI] hdrgen's -x option
+Message-ID: <4F4C1694.7060608@gmail.com>
+
+Dear list and Hi Greg,
+
+In the recent raw2hdr bundle you packaged for Yulia
+http://www.radiance-online.org/pipermail/hdri/2012-February/000363.html
+there's a man page for hdrgen that list some options which do not appear 
+in the man page that comes with the LINUX download you have on 
+http://anyhere.com/
+
+I have just discovered that the -x option does actually exist in the 
+LINUX version of hdrgen, which is from around 2006, I think.
+
+In the more recent (MacOS) version, the -x option is described as
+"-x         Toggle over- and under-exposed image removal.  Normally 
+?off,? this option causes unnecessary exposures that are too light or 
+too dark to contribute useful information to be automatically ignored."
+
+I have always lived under the impression that 'useful information' is 
+limited by pixel values of 200 in the darkest JPEG, and 20 (out of 255) 
+in the brightest. I really don't remember where I took this from, but it 
+must have been a post on the hdri list which I am unable to find now. Sorry.
+
+In your message to hdri just recently,
+http://www.radiance-online.org/pipermail/hdri/2012-February/000365.html
+you stated
+"Specifically, all values in the short exposure's histogram should be be 
+below 245."
+which is different to the 200 threshold I mentioned above.
+
+I have been experimenting with HDR photography for glare studies (think 
+UGR), and have noticed some discrepancies in the results that one gets 
+if hdrgen is run with and without the -x option. I was therefore 
+wondering what hdrgen considers as
+"too light or too dark to contribute useful information". I would think 
+that this is decision is made based on the value of the 
+darkest/brightest pixel in the image. Is this assumption correct, and if 
+so, what are the threshold values that are used with the -x option?
+
+Kind regards
+
+Axel
+
+
+From gregoryjward at gmail.com  Mon Feb 27 17:04:46 2012
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Mon, 27 Feb 2012 17:04:46 -0800
+Subject: [HDRI] hdrgen's -x option
+In-Reply-To: <4F4C1694.7060608@gmail.com>
+References: <4F4C1694.7060608@gmail.com>
+Message-ID: <66B88590-1550-4201-8CB2-A53EDDC4A5D6@gmail.com>
+
+Hi Axel,
+
+I tend not to use the -x option for critical work, as it's mostly a time-saver as opposed to a way to improve accuracy.
+
+That said, the value range I consider "safe" extends from 27 to 228 in the 8-bit domain.  I have found this empirically to be above the noise floor (provided the ISO setting is not too high) and below where some cameras introduce highlight roll-off.
+
+I cannot use a strict cut-off for image values.  Up to 0.2% of the pixels below the minimum are ignored and 0.05% of pixels above the maximum, likewise.  This avoids issues with stuck pixels, which would otherwise make the -x option useless.  This is also why it is better not to use -x for critical work, because you may lose the peak highlight in your image if it happens to be very small.
+
+Note also that hdrgen would never discard an input exposure off the end because it was "in range."  Only the exposures shorter than first one below the safe maximum and the exposures longer than last one above the safe minimum that are considered superfluous.
+
+I have a Lubuntu installation running under VMWare with gcc version 4.6.1-9ubuntu3.  I could use it to recompile hdrgen if you like, but I'm not sure what machines it would run on....
+
+Cheers,
+-Greg
+
+> From: Axel Jacobs <jacobs.axel at gmail.com>
+> Date: February 27, 2012 3:49:40 PM PST
+> 
+> Dear list and Hi Greg,
+> 
+> In the recent raw2hdr bundle you packaged for Yulia
+> http://www.radiance-online.org/pipermail/hdri/2012-February/000363.html
+> there's a man page for hdrgen that list some options which do not appear in the man page that comes with the LINUX download you have on http://anyhere.com/
+> 
+> I have just discovered that the -x option does actually exist in the LINUX version of hdrgen, which is from around 2006, I think.
+> 
+> In the more recent (MacOS) version, the -x option is described as
+> "-x         Toggle over- and under-exposed image removal.  Normally ?off,? this option causes unnecessary exposures that are too light or too dark to contribute useful information to be automatically ignored."
+> 
+> I have always lived under the impression that 'useful information' is limited by pixel values of 200 in the darkest JPEG, and 20 (out of 255) in the brightest. I really don't remember where I took this from, but it must have been a post on the hdri list which I am unable to find now. Sorry.
+> 
+> In your message to hdri just recently,
+> http://www.radiance-online.org/pipermail/hdri/2012-February/000365.html
+> you stated
+> "Specifically, all values in the short exposure's histogram should be be below 245."
+> which is different to the 200 threshold I mentioned above.
+> 
+> I have been experimenting with HDR photography for glare studies (think UGR), and have noticed some discrepancies in the results that one gets if hdrgen is run with and without the -x option. I was therefore wondering what hdrgen considers as
+> "too light or too dark to contribute useful information". I would think that this is decision is made based on the value of the darkest/brightest pixel in the image. Is this assumption correct, and if so, what are the threshold values that are used with the -x option?
+> 
+> Kind regards
+> 
+> Axel
+
+
+From jacobs.axel at gmail.com  Mon Feb 27 23:42:09 2012
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Tue, 28 Feb 2012 07:42:09 +0000
+Subject: [HDRI] hdrgen's -x option
+In-Reply-To: <66B88590-1550-4201-8CB2-A53EDDC4A5D6@gmail.com>
+References: <4F4C1694.7060608@gmail.com>
+	<66B88590-1550-4201-8CB2-A53EDDC4A5D6@gmail.com>
+Message-ID: <CA+dqh63X7JU9=kK2PiWS7CewvsWW_EtwF0nqjJkpU6LLxHEcjA@mail.gmail.com>
+
+Hello Greg,
+
+> I tend not to use the -x option for critical work, as it's mostly a time-saver as opposed to a way to improve accuracy.
+>
+> That said, the value range I consider "safe" extends from 27 to 228 in the 8-bit domain. ?I have found this empirically to be above the noise floor (provided the ISO setting is not too high) and below where some cameras introduce highlight roll-off.
+
+Interesting. Will have to update the heat map on WebHDR, then. It's
+set to 20 and 200 at the moment.
+
+> I cannot use a strict cut-off for image values. ?Up to 0.2% of the pixels below the minimum are ignored and 0.05% of pixels above the maximum, likewise. ?This avoids issues with stuck pixels, which would otherwise make the -x option useless. ?This is also why it is better not to use -x for critical work, because you may lose the peak highlight in your image if it happens to be very small.
+
+This is probably what happened with my sequences. Since hdrgen copes
+admirably with completely black frames (as far as the human eye can
+tell), it's probably best to use them all, rather than make a
+pre-selection.
+
+> Note also that hdrgen would never discard an input exposure off the end because it was "in range." ?Only the exposures shorter than first one below the safe maximum and the exposures longer than last one above the safe minimum that are considered superfluous.
+>
+> I have a Lubuntu installation running under VMWare with gcc version 4.6.1-9ubuntu3. ?I could use it to recompile hdrgen if you like, but I'm not sure what machines it would run on....
+
+That would be absolutely super-fantastic. I understand from
+http://www.hdrlabs.com/news/index.php?id=8369771879810293991
+that the ghost removal in Photosphere is now second to none, and that
+it can even handle breaking waves and swaying palm trees on tropical
+beaches. This is really exciting!
+
+I volunteer to update the man page, if you like.
+
+Thank you so much
+
+Axel
+
+
+From gregoryjward at gmail.com  Tue Feb 28 08:21:33 2012
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue, 28 Feb 2012 08:21:33 -0800
+Subject: [HDRI] hdrgen's -x option
+In-Reply-To: <CA+dqh63X7JU9=kK2PiWS7CewvsWW_EtwF0nqjJkpU6LLxHEcjA@mail.gmail.com>
+References: <4F4C1694.7060608@gmail.com>
+	<66B88590-1550-4201-8CB2-A53EDDC4A5D6@gmail.com>
+	<CA+dqh63X7JU9=kK2PiWS7CewvsWW_EtwF0nqjJkpU6LLxHEcjA@mail.gmail.com>
+Message-ID: <4BA2E03B-CCC2-4E25-BC2C-D2209E2D7956@gmail.com>
+
+Hi Axel,
+
+Responses inline...
+
+> From: Axel Jacobs <jacobs.axel at gmail.com>
+> Date: February 27, 2012 11:42:09 PM PST
+> 
+> ...
+>> I cannot use a strict cut-off for image values.  Up to 0.2% of the pixels below the minimum are ignored and 0.05% of pixels above the maximum, likewise.  This avoids issues with stuck pixels, which would otherwise make the -x option useless.  This is also why it is better not to use -x for critical work, because you may lose the peak highlight in your image if it happens to be very small.
+> 
+> This is probably what happened with my sequences. Since hdrgen copes
+> admirably with completely black frames (as far as the human eye can
+> tell), it's probably best to use them all, rather than make a
+> pre-selection.
+
+This is more true of the latest code.  In some cases, the old version would allow noise from short exposures to leak into the final result.  The new code has a couple of different strategies to mitigate this problem.
+
+
+>> Note also that hdrgen would never discard an input exposure off the end because it was "in range."  Only the exposures shorter than first one below the safe maximum and the exposures longer than last one above the safe minimum that are considered superfluous.
+>> 
+>> I have a Lubuntu installation running under VMWare with gcc version 4.6.1-9ubuntu3.  I could use it to recompile hdrgen if you like, but I'm not sure what machines it would run on....
+> 
+> That would be absolutely super-fantastic. I understand from
+> http://www.hdrlabs.com/news/index.php?id=8369771879810293991
+> that the ghost removal in Photosphere is now second to none, and that
+> it can even handle breaking waves and swaying palm trees on tropical
+> beaches. This is really exciting!
+
+I don't fully agree with the comment on Christian Bloch's site.  I worked on the Photoshop CS5 ghost removal as well, and the algorithm is very similar, with the added ability to control which exposure serves as reference in CS5.  It may have worked better on this one example, but I sometimes find myself using Photoshop when Photosphere doesn't do what I want it to.
+
+I've fooled around with compiling a bit now, and I don't know that I can get the TIFF library to build for me under Lubuntu.  It will probably be easiest to compile a Linux version of hdrgen that only produces Radiance (.hdr) output.  Would this be sufficient?
+
+> I volunteer to update the man page, if you like.
+
+I think I have one already, but any fixes you have would be welcome!
+
+Cheers,
+-Greg
+
+From jacobs.axel at gmail.com  Tue Feb 28 08:33:08 2012
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Tue, 28 Feb 2012 16:33:08 +0000
+Subject: [HDRI] hdrgen's -x option
+In-Reply-To: <4BA2E03B-CCC2-4E25-BC2C-D2209E2D7956@gmail.com>
+References: <4F4C1694.7060608@gmail.com>
+	<66B88590-1550-4201-8CB2-A53EDDC4A5D6@gmail.com>
+	<CA+dqh63X7JU9=kK2PiWS7CewvsWW_EtwF0nqjJkpU6LLxHEcjA@mail.gmail.com>
+	<4BA2E03B-CCC2-4E25-BC2C-D2209E2D7956@gmail.com>
+Message-ID: <CA+dqh60iMsU7b1YDWEPSGuOTpkx7E-VFBY5Rmzao=08BZPzgpg@mail.gmail.com>
+
+Hi Greg,
+
+> I've fooled around with compiling a bit now, and I don't know that I can get the TIFF library to build for me under Lubuntu. ?It will probably be easiest to compile a Linux version of hdrgen that only produces Radiance (.hdr) output. ?Would this be sufficient?
+
+Yes, it would. I have never churned out TIFFs -- quite happy with
+RGBE. Guess that means it can only read JPEGs, too?
+
+Cheers
+
+Axel
+
+
+From Blochi at EdenFX.com  Tue Feb 28 08:51:17 2012
+From: Blochi at EdenFX.com (Christian Bloch)
+Date: Tue, 28 Feb 2012 08:51:17 -0800
+Subject: [HDRI] hdrgen's -x option
+In-Reply-To: <4BA2E03B-CCC2-4E25-BC2C-D2209E2D7956@gmail.com>
+References: <4F4C1694.7060608@gmail.com>
+	<66B88590-1550-4201-8CB2-A53EDDC4A5D6@gmail.com>
+	<CA+dqh63X7JU9=kK2PiWS7CewvsWW_EtwF0nqjJkpU6LLxHEcjA@mail.gmail.com>
+	<4BA2E03B-CCC2-4E25-BC2C-D2209E2D7956@gmail.com>
+Message-ID: <FBEBBF9C-4DC2-4A17-AE1C-D1E63E96F5D3@EdenFX.com>
+
+Hi Greg,
+
+On Feb 28, 2012, at 8:21 AM, Gregory J. Ward wrote:
+
+> I don't fully agree with the comment on Christian Bloch's site.  I worked on the Photoshop CS5 ghost removal as well, and the algorithm is very similar, with the added ability to control which exposure serves as reference in CS5.  It may have worked better on this one example, but I sometimes find myself using Photoshop when Photosphere doesn't do what I want it to.
+
+Sorry to disappoint you, Greg. The brevity of the blog format often forces me to simplify facts in a black-and-white manner, and leave out the more subtle nuances. In this case I was purposely trying to raise awareness for Photosphere, because it is rather underrated among my photographer audience.
+From observation it seems that Photoshop tends take the chosen hero exposure very literal, eventually dismissing useful information from the side exposures. Whereas Photosphere seems to be more adaptive in the choice of hero exposures and may pick different ones for different image areas.
+
+Christian Bloch
+
+From gregoryjward at gmail.com  Tue Feb 28 08:57:33 2012
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue, 28 Feb 2012 08:57:33 -0800
+Subject: [HDRI] hdrgen's -x option
+In-Reply-To: <FBEBBF9C-4DC2-4A17-AE1C-D1E63E96F5D3@EdenFX.com>
+References: <4F4C1694.7060608@gmail.com>
+	<66B88590-1550-4201-8CB2-A53EDDC4A5D6@gmail.com>
+	<CA+dqh63X7JU9=kK2PiWS7CewvsWW_EtwF0nqjJkpU6LLxHEcjA@mail.gmail.com>
+	<4BA2E03B-CCC2-4E25-BC2C-D2209E2D7956@gmail.com>
+	<FBEBBF9C-4DC2-4A17-AE1C-D1E63E96F5D3@EdenFX.com>
+Message-ID: <2A6AF2D3-F7A6-4030-B628-1AB7735527C3@gmail.com>
+
+No problem, Christian -- I'll take any publicity I can get!
+
+And yes, Photosphere *used* to use different hero exposures for different regions, but I eventually abandoned the approach for something more similar to what I implemented in Photoshop.  It doesn't always work better, but 90% of the time it does.
+
+Cheers,
+-Greg
+
+> From: Christian Bloch <Blochi at EdenFX.com>
+> Date: February 28, 2012 8:51:17 AM PST
+> 
+> Hi Greg,
+> 
+> On Feb 28, 2012, at 8:21 AM, Gregory J. Ward wrote:
+> 
+>> I don't fully agree with the comment on Christian Bloch's site.  I worked on the Photoshop CS5 ghost removal as well, and the algorithm is very similar, with the added ability to control which exposure serves as reference in CS5.  It may have worked better on this one example, but I sometimes find myself using Photoshop when Photosphere doesn't do what I want it to.
+> 
+> Sorry to disappoint you, Greg. The brevity of the blog format often forces me to simplify facts in a black-and-white manner, and leave out the more subtle nuances. In this case I was purposely trying to raise awareness for Photosphere, because it is rather underrated among my photographer audience.
+> From observation it seems that Photoshop tends take the chosen hero exposure very literal, eventually dismissing useful information from the side exposures. Whereas Photosphere seems to be more adaptive in the choice of hero exposures and may pick different ones for different image areas.
+> 
+> Christian Bloch
+
+
+From ccox at adobe.com  Tue Feb 28 12:06:25 2012
+From: ccox at adobe.com (Chris Cox)
+Date: Tue, 28 Feb 2012 12:06:25 -0800
+Subject: [HDRI] hdrgen's -x option
+In-Reply-To: <FBEBBF9C-4DC2-4A17-AE1C-D1E63E96F5D3@EdenFX.com>
+Message-ID: <CB7273C1.4E42C%ccox@adobe.com>
+
+>> From observation it seems that Photoshop tends take the chosen hero exposure
+very literal, eventually dismissing useful information from the side exposures.
+
+No, that is not the case.  Photoshop uses all the exposures that aren't
+close to clipped as part of a best fit function.
+
+
+Chris
+ 
+
+
+On 2/28/12 8:51 AM, "Christian Bloch" <Blochi at EdenFX.com> wrote:
+
+> From observation it seems that Photoshop tends take the chosen hero exposure
+> very literal, eventually dismissing useful information from the side
+> exposures.
+
+
+
+From jtyukhova at yahoo.com  Sun Feb 19 21:31:32 2012
+From: jtyukhova at yahoo.com (Yulia Tyukhova)
+Date: Mon, 20 Feb 2012 05:31:32 -0000
+Subject: [HDRI] HDRI capture of LED
+Message-ID: <1329715883.85055.YahooMailNeo@web162303.mail.bf1.yahoo.com>
+
+Hello everybody!
+?
+I?ll provide the summary of my research and have questions within the
+summary.I would appreciate any of your help!
+?
+My research investigates if HDRI technique can precisely capture
+luminances of small bright light sources (e.g. LED garage fixtures) with narrow
+light distributions.
+?
+I was able to figure out luminance values for a single LED, which can be
+compared to the ones from HDR images. But I have a couple of questions/concerns on HDRI technique and Photosphere. 
+?
+At first, I?ve used ?regular? scene to retrieve response
+curve of the camera (large smooth gradients with very dark and bright areas,
+and had reflectance standards for the absolute calibration).
+Camera: EOS T1i Rebel with 28-105mm lens, at 28mm
+Calibrated at the grey reflectance sample 186.45 cd/m2
+CF=0.957
+
+I?ve got the following RC for RGB:
+red(r) = -6.434199e-03+ 4.518039e-01*r + 1.291426e+00*r^2 + 1.802896e+00*r^3;
+green(g) = -5.804720e-03+ 4.175837e-01*g + 1.176582e+00*g^2 + 1.721643e+00*g^3;
+blue(b) = -4.376831e-03+ 3.784418e-01*b + 1.075695e+00*b^2 + 1.658471e+00*b^3
+?
+If I look at the histogram of the scene, maximum
+luminance within the scene is 60,291 cd/m2. 
+?
+Then I use this RC to analyze HDRI of a captured LED.
+The value is 230,000 cd/m2 for a single LED, which is low (it?s has
+to be around 7*106 cd/m2). So, it underestimates the
+luminance. 
+?
+It seems like calibration point is critical here. I?ve
+decided to try to capture a different scene for deriving RC with a wider range.
+It would make sense that camera has to see higher luminance values in order to
+accurately measure them later. The dynamic range has to cover measured values.
+?
+1.? ? ?1.?How does
+Photosphere deals/approximates/calculates the upper end of the curve? I assume
+it gives more weight to mid tone values? But what happens with high luminance
+values? 
+?
+So, the new brighter scene was picked with the direct
+sun! But in order to avoid the damage of the camera?s sensor, measurements were
+taken before the sunset. 
+?
+In the new brighter captured scene without the
+calibration all values for reflectance standards were overestimated, while the
+value for the sun underestimated. Then I decided to calibrate my scene at the
+sun!
+But when I apply absolute calibration, it simply
+multiplies CF to all values.
+?
+2.? ? ?2.?I assumed when CF
+is applied, it does not equally change all values, but does it proportionally
+to RC (since it is not linear). ?Why does
+it do it equally for the whole range?
+?
+Lsun=80*106 cd/m2. And of course
+CF is very big 391. 
+?
+New RC:
+
+red(r) = 3.219064e+00+ -2.655078e+01*r + 9.351069e+02*r^2 + -2.115052e+03*r^3+1.594538e+03*r^4;
+green(g) = 2.094164e+00+ -1.468109e+00*g + 7.306838e+02*g^2 + -1.720743e+03*g^3+1.380693e+03*g^4;
+blue(b) = 1.049078e+00+ 1.591820e+01*b + 5.848958e+02*b^2 + -1.461635e+03*b^3+1.251033e+03*b^4
+?
+But then something interesting happened. When I
+analyze LED, it gives a value of 79*106 cd/m2. So, it
+jumps to this upper limit calibrated with the sun previously. 
+(I had similar results for EOS 7D with the lens 16-35mm,
+at 16mm)
+
+?
+3.? ? ?3.?Does photosphere
+compress the response curve, so at the upper end all values above certain
+threshold will have the same number?
+?
+4.? ? 4. ?Any additional
+suggestions on properly obtaining and calibrating HDRI for this purpose?
+?
+Thank you,
+Yulia Tyukhova
+
+
+Fulbright Scholar, "Intern LC"
+Architectural Engineering Graduate Student, UNL-Omaha, NE, USA
+B.E. and M.E. in Lighting Engineering (MPEI), Moscow, Russia
+jtyukhova at yahoo.com
+ytyukhova at unomaha.edu
++1 (402) 996 0910 ?
+PKI 247
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20120220/8e97ade3/attachment.html>
+

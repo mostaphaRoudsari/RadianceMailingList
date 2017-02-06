@@ -1,0 +1,758 @@
+From mstock at umich.edu  Fri Nov 10 21:59:54 2006
+From: mstock at umich.edu (Mark Stock)
+Date: Fri Nov 10 21:59:58 2006
+Subject: [Radiance-dev] Build problem on FC5
+Message-ID: <Pine.LNX.4.64.0611101550420.3522@rygar.gpcc.itd.umich.edu>
+
+Gang,
+
+I encountered a Radiance build problem on my upgraded FC5 
+install. With only my optimizations added to the default options, 
+every compilation returned something like:
+
+gcc -I../common -L../lib -O2 -march=athlon-xp -ffast-math 
+-mno-ieee-fp -Dlinux -D_FILE_OFFSET_BITS=64 -Dfseeko=fseek 
+-L/usr/X11R6/lib -I/usr/include/X11 -DNOSTEREO   -c -o nff2rad.o 
+nff2rad.c
+In file included from nff2rad.c:70:
+/usr/include/stdio.h:688: error: conflicting types for fseek
+/usr/include/stdio.h:656: error: previous declaration of fseek 
+was here
+make: *** [nff2rad.o] Error 1
+
+So I removed "-Dfseeko=fseek" from the build command and 
+everything progressed nicely. This is with gcc (GCC) 4.1.1 
+20060525 and Linux zeus.localdomain 2.6.16-1.2133_FC5 #1 Tue Jun 
+6 00:52:14 EDT 2006 i686 athlon i386 GNU/Linux.
+
+My older machine, with Fedora Core 1 and gcc (GCC) 3.3.2 20031022 
+did not encounter that problem. Radiance built beautifully on the 
+first try.
+
+
+Now, the only "bad" stuff that I get is the usual
+
+pfilt.c:(.text+0x144f): warning: the use of `mktemp' is 
+dangerous, better use `mkstemp'
+
+which doesn't affect compilation or execution.
+
+Mark
+
+From gregoryjward at gmail.com  Fri Nov 10 22:19:35 2006
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri Nov 10 22:19:22 2006
+Subject: [Radiance-dev] Build problem on FC5
+In-Reply-To: <Pine.LNX.4.64.0611101550420.3522@rygar.gpcc.itd.umich.edu>
+References: <Pine.LNX.4.64.0611101550420.3522@rygar.gpcc.itd.umich.edu>
+Message-ID: <17A253FD-DE47-4859-8AFA-4C46AA7CAA74@gmail.com>
+
+Thanks, Mark.  Jack de Valpine also spotted this problem, and the  
+updated version of makeall takes away the -Dfseeko=fseek compile  
+line.  Apparently, this bug has been fixed in most versions of Linux.
+
+-Greg
+
+> From: Mark Stock <mstock@umich.edu>
+> Date: November 10, 2006 1:59:54 PM MST
+>
+> Gang,
+>
+> I encountered a Radiance build problem on my upgraded FC5 install.  
+> With only my optimizations added to the default options, every  
+> compilation returned something like:
+>
+> gcc -I../common -L../lib -O2 -march=athlon-xp -ffast-math -mno-ieee- 
+> fp -Dlinux -D_FILE_OFFSET_BITS=64 -Dfseeko=fseek -L/usr/X11R6/lib - 
+> I/usr/include/X11 -DNOSTEREO   -c -o nff2rad.o nff2rad.c
+> In file included from nff2rad.c:70:
+> /usr/include/stdio.h:688: error: conflicting types for fseek
+> /usr/include/stdio.h:656: error: previous declaration of fseek was  
+> here
+> make: *** [nff2rad.o] Error 1
+>
+> So I removed "-Dfseeko=fseek" from the build command and everything  
+> progressed nicely. This is with gcc (GCC) 4.1.1 20060525 and Linux  
+> zeus.localdomain 2.6.16-1.2133_FC5 #1 Tue Jun 6 00:52:14 EDT 2006  
+> i686 athlon i386 GNU/Linux.
+>
+> My older machine, with Fedora Core 1 and gcc (GCC) 3.3.2 20031022  
+> did not encounter that problem. Radiance built beautifully on the  
+> first try.
+>
+>
+> Now, the only "bad" stuff that I get is the usual
+>
+> pfilt.c:(.text+0x144f): warning: the use of `mktemp' is dangerous,  
+> better use `mkstemp'
+>
+> which doesn't affect compilation or execution.
+>
+> Mark
+
+From jedev at visarc.com  Fri Nov 10 22:38:03 2006
+From: jedev at visarc.com (Jack de Valpine)
+Date: Fri Nov 10 22:38:41 2006
+Subject: [Radiance-dev] Build problem on FC5
+In-Reply-To: <Pine.LNX.4.64.0611101550420.3522@rygar.gpcc.itd.umich.edu>
+References: <Pine.LNX.4.64.0611101550420.3522@rygar.gpcc.itd.umich.edu>
+Message-ID: <4554F13B.7030306@visarc.com>
+
+Skipped content of type multipart/alternative-------------- next part --------------
+/*
+ * Check of stdio fseeko() function for large files.
+ * If the -b option is used, a BIG (> 2 GB file) is created.
+ *
+ *	Greg Ward (gward at lmi dot net)
+ *	4 Nov. 2006
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+
+static const char       BEcodeBase64[65] =
+	"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@+";
+
+#define hash64(ll)	(int)(((ll)>>30 ^ (ll)>>24 ^ (ll)>>18 ^ \
+				(ll)>>12 ^ (ll)>>6 ^ (ll)) & 0x3f)
+int
+main(int argc, const char *argv[])
+{
+	int		nseeks = 1000;
+	FILE		*fp = tmpfile();
+	off_t		flen = 18000;
+	off_t		fpos;
+	int		i, c;
+	
+	if (argc == 2 && !strcmp(argv[1], "-b")) {
+		flen = 2500000000LL;		/* enlarge file */
+		nseeks = 8000;
+	}
+	
+	for (fpos = 0; fpos < flen; fpos++)	/* write file */
+		putc(BEcodeBase64[hash64(fpos)], fp);
+	
+	for (i = 0; i < nseeks; i++) {		/* random seek checks */
+		fpos = (off_t)lrand48() << 16 ^ lrand48();
+		fpos %= flen;
+		if (fseeko(fp, fpos, SEEK_SET) == EOF) {
+			fprintf(stderr, "fseeko(%lld) failed!\n", fpos);
+			exit(1);
+		}
+		c = getc(fp);
+		if (c == EOF) {
+			fprintf(stderr, "Read at %lld failed!\n", fpos);
+			exit(1);
+		}
+		if (c != BEcodeBase64[hash64(fpos)]) {
+			fprintf(stderr,
+		"Incorrect seek to %lld (%d successful) -- fseeko(3) BUG!\n",
+					fpos, i);
+			exit(1);
+		}
+	}
+	fprintf(stderr, "fseeko(3) appears to be working\n");
+	return 0;
+}
+From a.jacobs at londonmet.ac.uk  Wed Nov 22 21:29:09 2006
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Wed Nov 22 21:29:25 2006
+Subject: [Radiance-dev] radiance-online changes in June 2006
+Message-ID: <10246.213.58.97.224.1164227349.squirrel@webmail2.londonmet.ac.uk>
+
+Hi all,
+
+worn out by the painstaking process of configuring default apps for
+RADIANCE-specific files for LEARNIX in multiple desktop environments, I'm
+contemplating submitting some new MIME types to
+http://www.freedesktop.org,
+to make this somewhat less painful next year. I'v no idea if this is used
+at all on Mac OS, but on LINUX it seems to be the next BIG thing. It is
+already used by XFCE4, although KDE (still?) seems to do it's own thing.
+
+Since my last post regarding the configuration of web servers to put a
+sensible MIME-type to HDR images didn't give any conclusions, I'm making
+another attempt at this.
+
+Basically, what it is is this: When an app is installed that can handle
+certain file types, it updates the system's MIME configuration. In theory,
+all desktop environment, file managers etc. should then be able to assign
+the correct double-click action to those files.
+
+The tutorial for submitting MIME types to freedesktop.org is here:
+http://www.freedesktop.org/wiki/Standards_2fAddingMIMETutor
+
+The issues are:
+
+- I don't think there is any way of putting MIME magick into the plain
+text files, e.g. .rad, .rif, .mat, .vf, but since they are opened in a
+text editor, there is not much of a problem. Yes, different icons would be
+nice, but then...
+
+- What we CAN do is do this for the binary files, e.g. RADIANCE images,
+octrees (holodeck?, meta data?)
+
+- The MIME type can be determined by two means:
+
+-- the first few bytes of a file. This is referred to as MIME magick. This
+should be straight-forward for octrees and pics
+
+-- file extensions
+I won't attempt to work out a common file naming scheme for rad,rif,mat
+etc, since they don't have any 'magick' in them, anyway. What I would like
+to do is to just fire off ximage when a .pic file is double-clicked one.
+
+So here is my question: What do you guys use as default file name
+extensions in your RADIANCE projects? Those are my preferences:
+.pic for synthetic RADIANCE RGBE images
+.hdr for HDRs assembled from photos
+.oct for octrees
+
+BTW: I know this is a UNIX thing (we don't need no friggin' extensions)
+but some of the file in the RADIANCE examples, e.g. the cabin scene, are
+not gonna go through...
+
+There might potentially a bit of confusion with the RADIANCE XYZE, which I
+don't tend to use. I think that RBGE and XYZE should really have different
+extensions. Do you think there is any way of having a 'RADIANCE standard'?
+
+How about just going for .rgbe and .xyze? Dirty four-letter extensions are
+no-longer a problem, it seems...
+
+Please comment.
+
+Cheers
+
+Axel
+
+PS: In the long run, it wouldn't hurt have a set of default extensions...
+
+
+
+From gregoryjward at gmail.com  Wed Nov 22 21:50:54 2006
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed Nov 22 21:51:04 2006
+Subject: [Radiance-dev] radiance-online changes in June 2006
+In-Reply-To: <10246.213.58.97.224.1164227349.squirrel@webmail2.londonmet.ac.uk>
+References: <10246.213.58.97.224.1164227349.squirrel@webmail2.londonmet.ac.uk>
+Message-ID: <25179477-17B9-401B-9663-A7D60F1356BE@gmail.com>
+
+Hi Axel,
+
+> - The MIME type can be determined by two means:
+>
+> -- the first few bytes of a file. This is referred to as MIME  
+> magick. This
+> should be straight-forward for octrees and pics
+
+All binary Radiance files should begin with the two characters '#?'  
+followed (usually) by 'RADIANCE\n'.  To get the subtype, you either  
+have to look for a FORMAT= line in the header, or go by file  
+extension, which is only a convention.
+
+> -- file extensions
+> I won't attempt to work out a common file naming scheme for  
+> rad,rif,mat
+> etc, since they don't have any 'magick' in them, anyway. What I  
+> would like
+> to do is to just fire off ximage when a .pic file is double-clicked  
+> one.
+>
+> So here is my question: What do you guys use as default file name
+> extensions in your RADIANCE projects? Those are my preferences:
+> .pic for synthetic RADIANCE RGBE images
+> .hdr for HDRs assembled from photos
+> .oct for octrees
+
+This agrees with what I've been using.
+
+> There might potentially a bit of confusion with the RADIANCE XYZE,  
+> which I
+> don't tend to use. I think that RBGE and XYZE should really have  
+> different
+> extensions. Do you think there is any way of having a 'RADIANCE  
+> standard'?
+
+Different color spaces in the same image type are quite common.  TIFF  
+supports many different color spaces internally, and the files all  
+end in '.tif'.  Again, the FORMAT= line in the Radiance header tells  
+you what data is enclosed.  Since the byte appearance of the data is  
+identical between RGBE and XYZE, it doesn't warrant a different file  
+type, following other people's traditions.
+
+> How about just going for .rgbe and .xyze? Dirty four-letter  
+> extensions are
+> no-longer a problem, it seems...
+
+This is not an unreasonable suggestion.  Photosphere considers the  
+following extensions all to indicate a Radiance image:
+
+	.hdr
+	.pic
+	.rgbe
+	.xyze
+	.radiance
+
+The last one is probably a bit much...
+
+-Greg
+
+From a.jacobs at londonmet.ac.uk  Wed Nov 22 22:08:02 2006
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Wed Nov 22 22:08:19 2006
+Subject: [Radiance-dev] MIME types
+Message-ID: <10013.213.58.97.1.1164229682.squirrel@webmail2.londonmet.ac.uk>
+
+Apologies for the last copy-n-paste exercise. Here is a new thread...
+
+Hi all,
+
+worn out by the painstaking process of configuring default apps for
+RADIANCE-specific files for LEARNIX in multiple desktop environments, I'm
+contemplating submitting some new MIME types to
+http://www.freedesktop.org,
+to make this somewhat less painful next year. I'v no idea if this is used
+at all on Mac OS, but on LINUX it seems to be the next BIG thing. It is
+already used by XFCE4, although KDE (still?) seems to do it's own thing.
+
+Since my last post regarding the configuration of web servers to put a
+sensible MIME-type to HDR images didn't give any conclusions, I'm making
+another attempt at this.
+
+Basically, what it is is this: When an app is installed that can handle
+certain file types, it updates the system's MIME configuration. In theory,
+all desktop environment, file managers etc. should then be able to assign
+the correct double-click action to those files.
+
+The tutorial for submitting MIME types to freedesktop.org is here:
+http://www.freedesktop.org/wiki/Standards_2fAddingMIMETutor
+
+The issues are:
+
+- I don't think there is any way of putting MIME magick into the plain
+text files, e.g. .rad, .rif, .mat, .vf, but since they are opened in a
+text editor, there is not much of a problem. Yes, different icons would be
+nice, but then...
+
+- What we CAN do is do this for the binary files, e.g. RADIANCE images,
+octrees (holodeck?, meta data?)
+
+- The MIME type can be determined by two means:
+
+-- the first few bytes of a file. This is referred to as MIME magick. This
+should be straight-forward for octrees and pics
+
+-- file extensions
+I won't attempt to work out a common file naming scheme for rad,rif,mat
+etc, since they don't have any 'magick' in them, anyway. What I would like
+to do is to just fire off ximage when a .pic file is double-clicked one.
+
+So here is my question: What do you guys use as default file name
+extensions in your RADIANCE projects? Those are my preferences:
+.pic for synthetic RADIANCE RGBE images
+.hdr for HDRs assembled from photos
+.oct for octrees
+
+BTW: I know this is a UNIX thing (we don't need no friggin' extensions)
+but some of the file in the RADIANCE examples, e.g. the cabin scene, are
+not gonna go through...
+
+There might potentially a bit of confusion with the RADIANCE XYZE, which I
+don't tend to use. I think that RBGE and XYZE should really have different
+extensions. Do you think there is any way of having a 'RADIANCE standard'?
+
+How about just going for .rgbe and .xyze? Dirty four-letter extensions are
+no-longer a problem, it seems...
+
+Please comment.
+
+Cheers
+
+Axel
+
+PS: In the long run, it wouldn't hurt have a set of default extensions...
+
+
+
+From ian at testers.homelinux.net  Wed Nov 22 22:15:05 2006
+From: ian at testers.homelinux.net (Ian Tester)
+Date: Wed Nov 22 22:15:27 2006
+Subject: [Radiance-dev] radiance-online changes in June 2006
+In-Reply-To: <10246.213.58.97.224.1164227349.squirrel@webmail2.londonmet.ac.uk>
+References: <10246.213.58.97.224.1164227349.squirrel@webmail2.londonmet.ac.uk>
+Message-ID: <20061123081505.25b2cc1d@saavik.ian.testers.net.au>
+
+On Wed, 22 Nov 2006 20:29:09 -0000 (GMT)
+"Axel Jacobs" <a.jacobs@londonmet.ac.uk> wrote:
+
+> So here is my question: What do you guys use as default file name
+> extensions in your RADIANCE projects? Those are my preferences:
+> .pic for synthetic RADIANCE RGBE images
+> .hdr for HDRs assembled from photos
+
+The problem with *.pic is that it's so generic and many programs have used
+that 'extension' over the years. Most seem to have died now, but I've
+found on my family's Windows machines that Apple Quicktime wants to
+associate its picture viewer with *.pic files.
+
+I'd prefer it if we just stuck to one extension for Radiance images,
+probably '.hdr' because of the problems with '.pic'. What is the
+point of using two different extensions for the same format?
+They're both images. Are we really going to associate different programs
+with .pic and .hdr?
+
+bye
+
+From a.jacobs at londonmet.ac.uk  Thu Nov 23 12:35:02 2006
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Thu Nov 23 12:35:33 2006
+Subject: [Radiance-dev] Re: MIME types
+Message-ID: <10142.213.58.97.111.1164281702.squirrel@webmail1.londonmet.ac.uk>
+
+Hi,
+
+> 	.hdr
+> 	.pic
+> 	.rgbe
+> 	.xyze
+
+That's a nice selection. For backward-compatibility I would prefer to keep
+.pic for now. Many examples you find on the web use this extension.
+
+> Different color spaces in the same image type are quite common.  TIFF
+> supports many different color spaces internally, and the files all
+> end in '.tif'.  Again, the FORMAT= line in the Radiance header tells
+> you what data is enclosed.  Since the byte appearance of the data is
+> identical between RGBE and XYZE, it doesn't warrant a different file
+> type, following other people's traditions.
+
+All right. I wasn't quite sure. Thanks for this clarification.
+
+> I'd prefer it if we just stuck to one extension for Radiance images,
+> probably '.hdr' because of the problems with '.pic'. What is the
+> point of using two different extensions for the same format?
+> They're both images. Are we really going to associate different programs
+> with .pic and .hdr?
+
+For some reason, I actually do: For synthetic .pic I use ximage, and for
+assembled .hdr I tend to fire off the excellent pfsv from the pfstools,
+with all the extra functionality. Having said that, I haven't included it
+into LEARNIX (yet?)
+
+There are actually two sides to the MIME coin:
+1) Define what the files are
+2) Configure default apps for 1)
+
+Irrespective of the actual extension, with regards to RADIANCE we're
+pretty clear as to what the 'double-click action' should be for an RGBE or
+XYZE image file: ximage.
+
+If I wanted to define a default app for an octree, what would be sensible
+thing to do:
+- rvu,
+- a shell with getinfo
+- nothing
+- ???
+
+Other then images and octrees, is there a file type that I've forgotten to
+mention, one that has a bullet-proof definition thanks to some standard
+file header? Like some holodeck stuff?
+
+Finally, any thoughts on the actual TYPE I should define? This is the
+biggest problem I'm facing. On the WebHDR server, I defined the HDR images
+as image/x-radiance. Is this sensible? And what would an octree be?
+
+Thanks for your feedback
+
+Cheers
+
+Axel
+
+
+
+From ian at testers.homelinux.net  Thu Nov 23 12:59:18 2006
+From: ian at testers.homelinux.net (Ian Tester)
+Date: Thu Nov 23 12:59:41 2006
+Subject: [Radiance-dev] Re: MIME types
+In-Reply-To: <10142.213.58.97.111.1164281702.squirrel@webmail1.londonmet.ac.uk>
+References: <10142.213.58.97.111.1164281702.squirrel@webmail1.londonmet.ac.uk>
+Message-ID: <20061123225918.1347ae09@saavik.ian.testers.net.au>
+
+On Thu, 23 Nov 2006 11:35:02 -0000 (GMT)
+"Axel Jacobs" <a.jacobs@londonmet.ac.uk> wrote:
+
+> If I wanted to define a default app for an octree, what would be sensible
+> thing to do:
+> - rvu,
+> - a shell with getinfo
+> - nothing
+> - ???
+
+I'd say "nothing". An octree is an internal file/format. Do people pass
+around octree files?
+
+> Finally, any thoughts on the actual TYPE I should define? This is the
+> biggest problem I'm facing. On the WebHDR server, I defined the HDR
+> images as image/x-radiance. Is this sensible? And what would an octree
+> be?
+
+hmmm, I'm guessing "application/x-radiance-octree".
+
+I notice there's a model/* hierachy in my mime.types file, with types
+defined for IGES, mesh (?), and VRML. Perhaps you can use
+"model/x-radiance" for Radiance scene/object files?
+
+What about the .rif files used by the rad frontend?
+Perhaps "application/x-radiance-rif", and fire up "rad -o x11"?
+
+Just some ideas,
+bye
+
+From gregoryjward at gmail.com  Thu Nov 23 18:05:15 2006
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu Nov 23 18:30:36 2006
+Subject: [Radiance-dev] Re: MIME types
+In-Reply-To: <20061123225918.1347ae09@saavik.ian.testers.net.au>
+References: <10142.213.58.97.111.1164281702.squirrel@webmail1.londonmet.ac.uk>
+	<20061123225918.1347ae09@saavik.ian.testers.net.au>
+Message-ID: <D701ADF8-220E-4DE3-8C91-F870746D42A7@gmail.com>
+
+> From: Ian Tester <ian@testers.homelinux.net>
+> Date: November 23, 2006 3:59:18 AM PST
+>
+> On Thu, 23 Nov 2006 11:35:02 -0000 (GMT)
+> "Axel Jacobs" <a.jacobs@londonmet.ac.uk> wrote:
+>
+>> If I wanted to define a default app for an octree, what would be  
+>> sensible
+>> thing to do:
+>> - rvu,
+>> - a shell with getinfo
+>> - nothing
+>> - ???
+>
+> I'd say "nothing". An octree is an internal file/format. Do people  
+> pass
+> around octree files?
+
+Octrees are a compiled form of a Radiance scene, and may be used to  
+convey geometry and materials in a self-contained form.  As such,  
+octrees (compiled iwth -f) frequently appear in Radiance object  
+libraries.  Running getinfo is a reasonable action.  Rvu requires a  
+default view, which isn't included in the octree.  Starting rvu may  
+be a sensible thing to do with a rad input file (i.e., run "rad -o  
+x11 $inp").
+
+>> Other then images and octrees, is there a file type that I've  
+>> forgotten to
+>> mention, one that has a bullet-proof definition thanks to some  
+>> standard
+>> file header? Like some holodeck stuff?
+
+The holodeck files end in .hdk, but are not universally  
+transportable, like the other binary files in Radiance.
+
+We should have a MIME type for Radiance triangle meshes (.rtm) and we  
+could include a type for ambient files (.amb), but here we really are  
+getting very application-specific.
+
+>> Finally, any thoughts on the actual TYPE I should define? This is the
+>> biggest problem I'm facing. On the WebHDR server, I defined the HDR
+>> images as image/x-radiance. Is this sensible? And what would an  
+>> octree
+>> be?
+>
+> hmmm, I'm guessing "application/x-radiance-octree".
+
+Sounds reasonable, but I don't know anything about MIME types.  I  
+recall that Peter A-B was one of the early adopters.  We should also  
+ask him.
+
+-Greg
+
+From a.jacobs at londonmet.ac.uk  Thu Nov 23 23:22:45 2006
+From: a.jacobs at londonmet.ac.uk (Axel Jacobs)
+Date: Thu Nov 23 23:23:12 2006
+Subject: [Radiance-dev] Re: MIME types
+Message-ID: <10133.213.58.97.202.1164320565.squirrel@webmail1.londonmet.ac.uk>
+
+Hi guys,
+
+I've hit the first wall before I've even dug into the full subject. Greg,
+maybe you can clarify:
+
+Both, RGBE and XYZE come in flat and in RLE flavours. However, the
+official file specs only mention two FORMAT= string, i.e. 32-bit_rle_rgbe
+and 32-bit_rle_xyze. How does this work?
+
+> I recall that Peter A-B was one of the early adopters.  We
+> should also ask him.
+
+I've been in touch with him about rshow on LEARNIX. He appears to be
+extremely busy
+
+The MIME specs have the notion of subclasses. So would RGBE and XYZE be
+subclasses of RADIANCE HDR?
+
+"A type is a subclass of another type if any instance of the first type is
+also an instance of the second. For example, all image/svg files are also
+text/xml, text/plain and application/octet-stream files. Subclassing is
+about the format, rather than the catagory of the data (for example, there
+is no 'generic spreadsheet' class that all spreadsheets inherit from)."
+
+They would both go into image/x-radiance
+
+Finally, I have only glimpsed at the naming conventions, but as you say,
+Ian, there are those model things:
+
+model/radiance-material
+model/radiance-geometry
+model/radiance-view
+model/radiance-triangle-mesh
+
+Finally, octrees and ambient files.
+They are not strictly speaking model types. Here is what we can pick from:
+
+    application
+    audio
+    example
+    image
+    message
+    model
+    multipart
+    text
+    video
+
+So we are probably stuck with 'model'.
+
+The good news is that a MIME definition doesn't seem to require magic,
+e.g. VRML is only defined by the glob:
+
+  <mime-type type="model/vrml">
+    <comment>VRML document</comment>
+    <comment xml:lang="de">VRML-Dokument</comment>
+    <glob pattern="*.wrl"/>
+  </mime-type>
+
+So there should be no problem with the old .rad, .mat, .vf
+Those seem to be the more important ones. I won't get too carried away for
+now (.cal .bgraph .norm etc)
+
+Does any-one uses .sky for gensky generated output? I remember seeing this
+somewhere a long time ago...
+
+I'm leaving for London on Fri, and will be fairly busy. Thanks for your
+input so far. It might be a few days before I can read up on the subject a
+little bit more.
+
+What I haven't worked out yet is why some types are x-soandso, other only
+soandso. There are also alias and round robins. Oh, well...
+
+Cheers
+
+Axel
+
+
+
+From ian at testers.homelinux.net  Fri Nov 24 00:44:38 2006
+From: ian at testers.homelinux.net (Ian Tester)
+Date: Fri Nov 24 00:45:20 2006
+Subject: [Radiance-dev] Re: MIME types
+In-Reply-To: <10133.213.58.97.202.1164320565.squirrel@webmail1.londonmet.ac.uk>
+References: <10133.213.58.97.202.1164320565.squirrel@webmail1.londonmet.ac.uk>
+Message-ID: <20061124104438.61014526@saavik.ian.testers.net.au>
+
+On Thu, 23 Nov 2006 22:22:45 -0000 (GMT)
+"Axel Jacobs" <a.jacobs@londonmet.ac.uk> wrote:
+
+> What I haven't worked out yet is why some types are x-soandso, other only
+> soandso. There are also alias and round robins. Oh, well...
+
+It's an old internet convention also used in email and HTTP headers (and
+probably lots of other places). Anything prefixed with 'x-' is
+non-standard. I guess it originally stood for 'experimental'. Just look at
+the source of any of these emails and you'll see lots of headers starting
+with 'x-'. They were added by the sender's email client and possibly
+systems the email travelled through e.g your ISP might add spam-detection
+headers. They're not part of the standard and can be almost anything.
+
+In the MIME world it, types have to be officially approved. For example,
+PNG originally used image/x-png before image/png was officially allocated.
+
+bye
+
+From gregoryjward at gmail.com  Fri Nov 24 05:31:52 2006
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri Nov 24 07:49:56 2006
+Subject: [Radiance-dev] Re: MIME types
+In-Reply-To: <10133.213.58.97.202.1164320565.squirrel@webmail1.londonmet.ac.uk>
+References: <10133.213.58.97.202.1164320565.squirrel@webmail1.londonmet.ac.uk>
+Message-ID: <A57539B6-2E8D-431D-B5AE-A87183B18C87@gmail.com>
+
+Hi Axel,
+
+> From: "Axel Jacobs" <a.jacobs@londonmet.ac.uk>
+> Date: November 23, 2006 2:22:45 PM PST
+>
+> I've hit the first wall before I've even dug into the full subject.  
+> Greg,
+> maybe you can clarify:
+>
+> Both, RGBE and XYZE come in flat and in RLE flavours. However, the
+> official file specs only mention two FORMAT= string, i.e. 32- 
+> bit_rle_rgbe
+> and 32-bit_rle_xyze. How does this work?
+
+I decided not to sub-type based on the presence or absence of run- 
+length encoding.  Since the reader routines identify RLE on a per  
+scanline basis (and in fact there can be a mix of RLE and  
+uncompressed scanlines), there seemed no need for a separate format  
+specifier.
+
+> The MIME specs have the notion of subclasses. So would RGBE and  
+> XYZE be
+> subclasses of RADIANCE HDR?
+
+Again, I wouldn't bother to distinguish these within MIME.  It would  
+be like distinguishing between different classes of TIFF.  Any  
+software that opens an RGBE file will also open an XYZE file, even if  
+it won't display the colors correctly.
+
+> Finally, octrees and ambient files.
+> They are not strictly speaking model types. Here is what we can  
+> pick from:
+>
+>     application
+>     audio
+>     example
+>     image
+>     message
+>     model
+>     multipart
+>     text
+>     video
+>
+> So we are probably stuck with 'model'.
+
+An octree is a compiled model, so nothing wrong with that designation.
+
+> So there should be no problem with the old .rad, .mat, .vf
+> Those seem to be the more important ones. I won't get too carried  
+> away for
+> now (.cal .bgraph .norm etc)
+
+I'm not sure why we're classifying textfiles with MIME, but then, I  
+don't understand the whole thing very well anyway.  I would  
+think .cal files to be more important (and more standard) than .vf  
+files.
+
+> Does any-one uses .sky for gensky generated output? I remember  
+> seeing this
+> somewhere a long time ago...
+
+I don't think this was ever used with any regularity.  A gensky  
+output is a .rad file.
+
+-Greg
+

@@ -1,0 +1,789 @@
+From jjwilson at unomaha.edu  Fri Apr 11 06:32:11 2014
+From: jjwilson at unomaha.edu (Joshua Wilson)
+Date: Fri, 11 Apr 2014 08:32:11 -0500
+Subject: [HDRI] Vignetting Correction Using a ULS
+Message-ID: <CAH3D6q+vTW0Y_BJVxLuFiH4bRTyTXYy-Tped97fHJPNKM21MCw@mail.gmail.com>
+
+Dear List,
+
+I am looking to find a method for correcting vignetting occurring in HDR
+images using radiance as part of an undergraduate research study. I am
+using a Uniform Luminance Sphere to create a uniformly lit background in
+order to create a reference image.
+
+I have used radiance to create the HDR images, and I am wondering if there
+is a way to take the HDR image and divide each pixel intensity by that of
+its optical center. This would create an image/mask of fractional pixel
+values that can be divided into another image to correct for the cameras
+specific vignetting.
+
+Other suggestions would be greatly appreciated as well.
+
+Thanks,
+Josh
+
+-- 
+*Joshua Wilson*
+
+4th year Architectural Engineering Student (Lighting/Electrical)
+Durham School of Architectural Engineering and Construction
+UNL College of Engineering (Omaha Campus)
+jjwilson at unomaha.edu
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20140411/1ac92cd2/attachment.html>
+
+From grobe at gmx.net  Fri Apr 11 08:01:39 2014
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Fri, 11 Apr 2014 17:01:39 +0200
+Subject: [HDRI] Vignetting Correction Using a ULS
+In-Reply-To: <CAH3D6q+vTW0Y_BJVxLuFiH4bRTyTXYy-Tped97fHJPNKM21MCw@mail.gmail.com>
+References: <CAH3D6q+vTW0Y_BJVxLuFiH4bRTyTXYy-Tped97fHJPNKM21MCw@mail.gmail.com>
+Message-ID: <534803D3.4070907@gmx.net>
+
+Dear Joshua,
+
+the command pcomb allow you to do that. However, there are some caveats 
+to be aware of:
+
+1) The center of the image in the meaning of x_max / 2, y_max / 2 is not 
+(exactly) the centre of the lens. There is no perfectly aligned camera, 
+the optical axis will almost never pass the sensor exactly in its 
+center. So your "zero" coordinates will be at x_max / 2 + x_off, y_max / 
+2 + y_off.
+
+2) Do you have any information how uniform your sphere actually is? 
+Relying on the uniformity of the source for such calibrations seams to 
+be a bit risky, unless the uncertainties are known.
+
+Neglecting these, with pcomb, you can create an image describing the 
+vignetting such that for each pixel you have the ratio of pixel values 
+pv_observed / pv_uniform, with this ration being expected as one for the 
+centre and decreasing towards the edges. In this example, I avoid all 
+calculations regarding the fall-off from an image center, instead this 
+would simply divide the uncorrected image pixel-wise by the "reference 
+image", with all pixels having the value pv_max. You can get pv_max 
+using e.g. rvu, which allows you to select an area and get the average 
+of the contained pixel values.
+
+1) create a "reference image" of uniform pixel values pv_max as 
+"measured" at the centre of your image, e.g. using rvu (replace <max_x> 
+<max_y> by the resolution of your images, and use your readings at the 
+image centre instead of 1,1,1 when assigning ro, go and bo):
+
+pcomb -x <max_x> -y <max_y> -e 'ro=1; go=1; bo=1' > reference.hdr
+
+2) create a correction frame, where pixel values are pv_observed / 
+pv_max (so ration of observed pixel value when taking a picture of the 
+sphere / pixel value measured at centre):
+
+pcomb -e 'ro=ri(1)/ri(2); go=gi(1)/gi(2); bo=bi(1)/bi(2)' -o 
+observed.hdr -o reference.hdr > correction.hdr
+
+3) you may delete the reference frame now...
+
+rm reference.hdr
+
+4) apply the correction by dividing each uncorrected image you have by 
+the correction frame:
+
+pcomb -e 'ro=ri(1)/ri(2); go=gi(1)/gi(2); bo=bi(1)/bi(2)' -o 
+uncorrected.hdr -o correction.hdr > corrected.hdr
+
+It is a bit paranoid but I got used to add the -o to all calls of pcomb 
+- just in case I had exposure corrections applied to my images. It has 
+been a while that I did such pixel corrections, so I hope I did not do 
+anything wrong here, but basically this approach works well if you can 
+rely on the readings for the image centre.
+
+Cheers, Lars.
+> Dear List,
+>
+> I am looking to find a method for correcting vignetting occurring in 
+> HDR images using radiance as part of an undergraduate research study. 
+> I am using a Uniform Luminance Sphere to create a uniformly lit 
+> background in order to create a reference image.
+>
+> I have used radiance to create the HDR images, and I am wondering if 
+> there is a way to take the HDR image and divide each pixel intensity 
+> by that of its optical center. This would create an image/mask of 
+> fractional pixel values that can be divided into another image to 
+> correct for the cameras specific vignetting.
+>
+> Other suggestions would be greatly appreciated as well.
+>
+> Thanks,
+> Josh
+>
+> -- 
+> *Joshua Wilson*
+>
+> 4th year Architectural Engineering Student (Lighting/Electrical)
+> Durham School of Architectural Engineering and Construction
+> UNL College of Engineering (Omaha Campus)
+> jjwilson at unomaha.edu <mailto:jjwilson at unomaha.edu>
+>
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20140411/3eace5d3/attachment.html>
+
+From fatemeh.deldarabdolmaleki at gmail.com  Tue Apr 15 19:57:21 2014
+From: fatemeh.deldarabdolmaleki at gmail.com (Fatemeh Deldarabdolmaleki)
+Date: Wed, 16 Apr 2014 10:57:21 +0800
+Subject: [HDRI] HDR for Glare Analysis
+Message-ID: <CAAjZ4i7MsL9yKA-TwSO4AA7cq62zFG_poWn6DmhkxM1qV9necg@mail.gmail.com>
+
+Hi there:
+I have a question that concerns HDR photo and Glare analysis.
+
+Can I use Adobe Photoshop CC (which has the Camera Raw plugin) to prepare
+my HDR images?
+after that calibrate it with the use of HDRSCOPE that is proposed by Mehlika
+Inanici. Instead of Photosphere?
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20140416/5544b8ec/attachment.html>
+
+From gs33070 at mutiara.upm.edu.my  Tue Apr 15 22:34:33 2014
+From: gs33070 at mutiara.upm.edu.my (gs33070)
+Date: Wed, 16 Apr 2014 13:34:33 +0800
+Subject: [HDRI] HDR for Glare Analysis
+Message-ID: <ad498b51ae7ae1427e3d7b769b406555@mutiara.upm.edu.my>
+
+Hi there:
+I have a question that concerns HDR photo and Glare analysis.
+
+Can I use Adobe Photoshop CC (which has the Camera Raw plugin) to 
+prepare my HDR images?
+after that calibrate it with the use of HDRSCOPE that is proposed by 
+Mehlika Inanici. Instead of Photosphere?
+Regards
+Fatemeh
+M.Arch
+University Putra Malaysia
+
+
+From grobe at gmx.net  Thu Apr 17 03:14:35 2014
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Thu, 17 Apr 2014 12:14:35 +0200
+Subject: [HDRI] HDR for Glare Analysis
+In-Reply-To: <ad498b51ae7ae1427e3d7b769b406555@mutiara.upm.edu.my>
+References: <ad498b51ae7ae1427e3d7b769b406555@mutiara.upm.edu.my>
+Message-ID: <534FA98B.5040009@gmx.net>
+
+Hi Fatemeh,
+
+I do not know wether the dynamic range of the raw images you get from 
+your camera matches the requirements of what you intend to do with those 
+images. The wide dynamic range in typical daylid scenes led folks here 
+to use exposure series. About the software, I have some doubts that 
+Adobe will tell you about the internals of their HDR code. So it will be 
+difficult to get support or any information about the meaning of pixel 
+values in the resulting images. Does Adobe claim the resulting HDR 
+images to have physically correct values?
+
+Cheers, Lars.
+
+> Hi there:
+> I have a question that concerns HDR photo and Glare analysis.
+>
+> Can I use Adobe Photoshop CC (which has the Camera Raw plugin) to 
+> prepare my HDR images?
+> after that calibrate it with the use of HDRSCOPE that is proposed by 
+> Mehlika Inanici. Instead of Photosphere?
+> Regards
+> Fatemeh
+> M.Arch
+> University Putra Malaysia
+
+
+From gregoryjward at gmail.com  Thu Apr 17 08:37:18 2014
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu, 17 Apr 2014 08:37:18 -0700
+Subject: [HDRI] HDR for Glare Analysis
+In-Reply-To: <534FA98B.5040009@gmx.net>
+References: <ad498b51ae7ae1427e3d7b769b406555@mutiara.upm.edu.my>
+	<534FA98B.5040009@gmx.net>
+Message-ID: <B3ABE9C2-A524-4067-8C9F-CCED10742082@gmail.com>
+
+While you *might* be able to use Adobe's CameraRAW processor to convert the original images to JPEGs, later to be combined using hdrgen or similar, Lars is right that Photoshop itself does not maintain absolute photometric calibration throughout its processing.
+
+Adobe actually hired me to improve their HDR image merge process, so CS3 and later (I think) derive a camera curve and maintain correct relative values in the images, similar to Photosphere, but I never convinced Adobe to include calibration information in their output.  So, you would need to include a gray card or something whose luminance you measured when you captured the image and use this to correct the final output using a scale factor.  (It is usually a good idea to do this, anyway.)  The procedure for doing this can be found on Mehlika Inanici's site, and also in other posts to this mailing list.
+
+Cheers,
+-Greg
+
+> From: "Lars O. Grobe" <grobe at gmx.net>
+> Subject: Re: [HDRI] HDR for Glare Analysis
+> Date: April 17, 2014 3:14:35 AM PDT
+> 
+> Hi Fatemeh,
+> 
+> I do not know wether the dynamic range of the raw images you get from your camera matches the requirements of what you intend to do with those images. The wide dynamic range in typical daylid scenes led folks here to use exposure series. About the software, I have some doubts that Adobe will tell you about the internals of their HDR code. So it will be difficult to get support or any information about the meaning of pixel values in the resulting images. Does Adobe claim the resulting HDR images to have physically correct values?
+> 
+> Cheers, Lars.
+> 
+>> Hi there:
+>> I have a question that concerns HDR photo and Glare analysis.
+>> 
+>> Can I use Adobe Photoshop CC (which has the Camera Raw plugin) to prepare my HDR images?
+>> after that calibrate it with the use of HDRSCOPE that is proposed by Mehlika Inanici. Instead of Photosphere?
+>> Regards
+>> Fatemeh
+>> M.Arch
+>> University Putra Malaysia
+> 
+
+
+From gs33070 at mutiara.upm.edu.my  Fri Apr 18 21:29:04 2014
+From: gs33070 at mutiara.upm.edu.my (gs33070)
+Date: Sat, 19 Apr 2014 12:29:04 +0800
+Subject: [HDRI] HDRI Digest, Vol 70, Issue 3
+In-Reply-To: <mailman.1.1397761200.30536.hdri@radiance-online.org>
+References: <mailman.1.1397761200.30536.hdri@radiance-online.org>
+Message-ID: <26abe49d1df7e0e4a44888d55c095a43@mutiara.upm.edu.my>
+
+On Thu, 17 Apr 2014 12:00:00 -0700, hdri-request at radiance-online.org 
+wrote:
+> Send HDRI mailing list submissions to
+> 	hdri at radiance-online.org
+>
+> To subscribe or unsubscribe via the World Wide Web, visit
+> 	http://www.radiance-online.org/mailman/listinfo/hdri
+> or, via email, send a message with subject or body 'help' to
+> 	hdri-request at radiance-online.org
+>
+> You can reach the person managing the list at
+> 	hdri-owner at radiance-online.org
+>
+> When replying, please edit your Subject line so it is more specific
+> than "Re: Contents of HDRI digest..."
+>
+>
+> Today's Topics:
+>
+>    1. Re: HDR for Glare Analysis (Lars O. Grobe)
+>    2. Re: HDR for Glare Analysis (Gregory J. Ward)
+>
+>
+> 
+> ----------------------------------------------------------------------
+>
+> Message: 1
+> Date: Thu, 17 Apr 2014 12:14:35 +0200
+> From: "Lars O. Grobe" <grobe at gmx.net>
+> To: High Dynamic Range Imaging <hdri at radiance-online.org>
+> Subject: Re: [HDRI] HDR for Glare Analysis
+> Message-ID: <534FA98B.5040009 at gmx.net>
+> Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+>
+> Hi Fatemeh,
+>
+> I do not know wether the dynamic range of the raw images you get from
+> your camera matches the requirements of what you intend to do with 
+> those
+> images. The wide dynamic range in typical daylid scenes led folks 
+> here
+> to use exposure series. About the software, I have some doubts that
+> Adobe will tell you about the internals of their HDR code. So it will 
+> be
+> difficult to get support or any information about the meaning of 
+> pixel
+> values in the resulting images. Does Adobe claim the resulting HDR
+> images to have physically correct values?
+>
+> Cheers, Lars.
+>
+>> Hi there:
+>> I have a question that concerns HDR photo and Glare analysis.
+>>
+>> Can I use Adobe Photoshop CC (which has the Camera Raw plugin) to
+>> prepare my HDR images?
+>> after that calibrate it with the use of HDRSCOPE that is proposed by
+>> Mehlika Inanici. Instead of Photosphere?
+>> Regards
+>> Fatemeh
+>> M.Arch
+>> University Putra Malaysia
+>
+>
+>
+> ------------------------------
+>
+> Message: 2
+> Date: Thu, 17 Apr 2014 08:37:18 -0700
+> From: "Gregory J. Ward" <gregoryjward at gmail.com>
+> To: High Dynamic Range Imaging <hdri at radiance-online.org>
+> Subject: Re: [HDRI] HDR for Glare Analysis
+> Message-ID: <B3ABE9C2-A524-4067-8C9F-CCED10742082 at gmail.com>
+> Content-Type: text/plain; charset=us-ascii
+>
+> While you *might* be able to use Adobe's CameraRAW processor to
+> convert the original images to JPEGs, later to be combined using
+> hdrgen or similar, Lars is right that Photoshop itself does not
+> maintain absolute photometric calibration throughout its processing.
+>
+> Adobe actually hired me to improve their HDR image merge process, so
+> CS3 and later (I think) derive a camera curve and maintain correct
+> relative values in the images, similar to Photosphere, but I never
+> convinced Adobe to include calibration information in their output.
+> So, you would need to include a gray card or something whose 
+> luminance
+> you measured when you captured the image and use this to correct the
+> final output using a scale factor.  (It is usually a good idea to do
+> this, anyway.)  The procedure for doing this can be found on Mehlika
+> Inanici's site, and also in other posts to this mailing list.
+>
+> Cheers,
+> -Greg
+>
+>> From: "Lars O. Grobe" <grobe at gmx.net>
+>> Subject: Re: [HDRI] HDR for Glare Analysis
+>> Date: April 17, 2014 3:14:35 AM PDT
+>>
+>> Hi Fatemeh,
+>>
+>> I do not know wether the dynamic range of the raw images you get 
+>> from your camera matches the requirements of what you intend to do 
+>> with those images. The wide dynamic range in typical daylid scenes led 
+>> folks here to use exposure series. About the software, I have some 
+>> doubts that Adobe will tell you about the internals of their HDR code. 
+>> So it will be difficult to get support or any information about the 
+>> meaning of pixel values in the resulting images. Does Adobe claim the 
+>> resulting HDR images to have physically correct values?
+>>
+>> Cheers, Lars.
+>>
+>>> Hi there:
+>>> I have a question that concerns HDR photo and Glare analysis.
+>>>
+>>> Can I use Adobe Photoshop CC (which has the Camera Raw plugin) to 
+>>> prepare my HDR images?
+>>> after that calibrate it with the use of HDRSCOPE that is proposed 
+>>> by Mehlika Inanici. Instead of Photosphere?
+>>> Regards
+>>> Fatemeh
+>>> M.Arch
+>>> University Putra Malaysia
+>>
+>
+>
+>
+> ------------------------------
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+>
+>
+> End of HDRI Digest, Vol 70, Issue 3
+> ***********************************
+Thank you guys for your reply:
+
+I think I will go for Greg solution, including a gray card or something 
+whose luminance that I captured the image and use this to correct the 
+output using a scale factor.
+I wish there was a Photosphere for windows also.
+cheers
+Fatemeh
+
+
+From grobe at gmx.net  Sat Apr 19 07:25:31 2014
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Sat, 19 Apr 2014 16:25:31 +0200
+Subject: [HDRI] HDRI Digest, Vol 70, Issue 3
+In-Reply-To: <26abe49d1df7e0e4a44888d55c095a43@mutiara.upm.edu.my>
+References: <mailman.1.1397761200.30536.hdri@radiance-online.org>
+	<26abe49d1df7e0e4a44888d55c095a43@mutiara.upm.edu.my>
+Message-ID: <ECDA05E5-FAF6-417E-A327-945C68564B2F@gmx.net>
+
+Hi Fatemeh,
+
+are you aware of alternatives such as pfstools and webhdr?
+
+Cheers, Lars.
+
+
+From gs33070 at mutiara.upm.edu.my  Sun Apr 20 21:16:36 2014
+From: gs33070 at mutiara.upm.edu.my (gs33070)
+Date: Mon, 21 Apr 2014 12:16:36 +0800
+Subject: [HDRI] HDRI Digest, Vol 70, Issue 4
+In-Reply-To: <mailman.1.1397934000.1056.hdri@radiance-online.org>
+References: <mailman.1.1397934000.1056.hdri@radiance-online.org>
+Message-ID: <4c013fb39fdcd1c3fb4c79304dfba01d@mutiara.upm.edu.my>
+
+On Sat, 19 Apr 2014 12:00:00 -0700, hdri-request at radiance-online.org 
+wrote:
+> Send HDRI mailing list submissions to
+> 	hdri at radiance-online.org
+>
+> To subscribe or unsubscribe via the World Wide Web, visit
+> 	http://www.radiance-online.org/mailman/listinfo/hdri
+> or, via email, send a message with subject or body 'help' to
+> 	hdri-request at radiance-online.org
+>
+> You can reach the person managing the list at
+> 	hdri-owner at radiance-online.org
+>
+> When replying, please edit your Subject line so it is more specific
+> than "Re: Contents of HDRI digest..."
+>
+>
+> Today's Topics:
+>
+>    1. Re: HDRI Digest, Vol 70, Issue 3 (gs33070)
+>    2. Re: HDRI Digest, Vol 70, Issue 3 (Lars O. Grobe)
+>
+>
+> 
+> ----------------------------------------------------------------------
+>
+> Message: 1
+> Date: Sat, 19 Apr 2014 12:29:04 +0800
+> From: gs33070 <gs33070 at mutiara.upm.edu.my>
+> To: <hdri at radiance-online.org>
+> Subject: Re: [HDRI] HDRI Digest, Vol 70, Issue 3
+> Message-ID: <26abe49d1df7e0e4a44888d55c095a43 at mutiara.upm.edu.my>
+> Content-Type: text/plain; charset=UTF-8; format=flowed
+>
+> On Thu, 17 Apr 2014 12:00:00 -0700, hdri-request at radiance-online.org
+> wrote:
+>> Send HDRI mailing list submissions to
+>> 	hdri at radiance-online.org
+>>
+>> To subscribe or unsubscribe via the World Wide Web, visit
+>> 	http://www.radiance-online.org/mailman/listinfo/hdri
+>> or, via email, send a message with subject or body 'help' to
+>> 	hdri-request at radiance-online.org
+>>
+>> You can reach the person managing the list at
+>> 	hdri-owner at radiance-online.org
+>>
+>> When replying, please edit your Subject line so it is more specific
+>> than "Re: Contents of HDRI digest..."
+>>
+>>
+>> Today's Topics:
+>>
+>>    1. Re: HDR for Glare Analysis (Lars O. Grobe)
+>>    2. Re: HDR for Glare Analysis (Gregory J. Ward)
+>>
+>>
+>>
+>> 
+>> ----------------------------------------------------------------------
+>>
+>> Message: 1
+>> Date: Thu, 17 Apr 2014 12:14:35 +0200
+>> From: "Lars O. Grobe" <grobe at gmx.net>
+>> To: High Dynamic Range Imaging <hdri at radiance-online.org>
+>> Subject: Re: [HDRI] HDR for Glare Analysis
+>> Message-ID: <534FA98B.5040009 at gmx.net>
+>> Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+>>
+>> Hi Fatemeh,
+>>
+>> I do not know wether the dynamic range of the raw images you get 
+>> from
+>> your camera matches the requirements of what you intend to do with
+>> those
+>> images. The wide dynamic range in typical daylid scenes led folks
+>> here
+>> to use exposure series. About the software, I have some doubts that
+>> Adobe will tell you about the internals of their HDR code. So it 
+>> will
+>> be
+>> difficult to get support or any information about the meaning of
+>> pixel
+>> values in the resulting images. Does Adobe claim the resulting HDR
+>> images to have physically correct values?
+>>
+>> Cheers, Lars.
+>>
+>>> Hi there:
+>>> I have a question that concerns HDR photo and Glare analysis.
+>>>
+>>> Can I use Adobe Photoshop CC (which has the Camera Raw plugin) to
+>>> prepare my HDR images?
+>>> after that calibrate it with the use of HDRSCOPE that is proposed 
+>>> by
+>>> Mehlika Inanici. Instead of Photosphere?
+>>> Regards
+>>> Fatemeh
+>>> M.Arch
+>>> University Putra Malaysia
+>>
+>>
+>>
+>> ------------------------------
+>>
+>> Message: 2
+>> Date: Thu, 17 Apr 2014 08:37:18 -0700
+>> From: "Gregory J. Ward" <gregoryjward at gmail.com>
+>> To: High Dynamic Range Imaging <hdri at radiance-online.org>
+>> Subject: Re: [HDRI] HDR for Glare Analysis
+>> Message-ID: <B3ABE9C2-A524-4067-8C9F-CCED10742082 at gmail.com>
+>> Content-Type: text/plain; charset=us-ascii
+>>
+>> While you *might* be able to use Adobe's CameraRAW processor to
+>> convert the original images to JPEGs, later to be combined using
+>> hdrgen or similar, Lars is right that Photoshop itself does not
+>> maintain absolute photometric calibration throughout its processing.
+>>
+>> Adobe actually hired me to improve their HDR image merge process, so
+>> CS3 and later (I think) derive a camera curve and maintain correct
+>> relative values in the images, similar to Photosphere, but I never
+>> convinced Adobe to include calibration information in their output.
+>> So, you would need to include a gray card or something whose
+>> luminance
+>> you measured when you captured the image and use this to correct the
+>> final output using a scale factor.  (It is usually a good idea to do
+>> this, anyway.)  The procedure for doing this can be found on Mehlika
+>> Inanici's site, and also in other posts to this mailing list.
+>>
+>> Cheers,
+>> -Greg
+>>
+>>> From: "Lars O. Grobe" <grobe at gmx.net>
+>>> Subject: Re: [HDRI] HDR for Glare Analysis
+>>> Date: April 17, 2014 3:14:35 AM PDT
+>>>
+>>> Hi Fatemeh,
+>>>
+>>> I do not know wether the dynamic range of the raw images you get
+>>> from your camera matches the requirements of what you intend to do
+>>> with those images. The wide dynamic range in typical daylid scenes 
+>>> led
+>>> folks here to use exposure series. About the software, I have some
+>>> doubts that Adobe will tell you about the internals of their HDR 
+>>> code.
+>>> So it will be difficult to get support or any information about the
+>>> meaning of pixel values in the resulting images. Does Adobe claim 
+>>> the
+>>> resulting HDR images to have physically correct values?
+>>>
+>>> Cheers, Lars.
+>>>
+>>>> Hi there:
+>>>> I have a question that concerns HDR photo and Glare analysis.
+>>>>
+>>>> Can I use Adobe Photoshop CC (which has the Camera Raw plugin) to
+>>>> prepare my HDR images?
+>>>> after that calibrate it with the use of HDRSCOPE that is proposed
+>>>> by Mehlika Inanici. Instead of Photosphere?
+>>>> Regards
+>>>> Fatemeh
+>>>> M.Arch
+>>>> University Putra Malaysia
+>>>
+>>
+>>
+>>
+>> ------------------------------
+>>
+>> _______________________________________________
+>> HDRI mailing list
+>> HDRI at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/hdri
+>>
+>>
+>> End of HDRI Digest, Vol 70, Issue 3
+>> ***********************************
+> Thank you guys for your reply:
+>
+> I think I will go for Greg solution, including a gray card or 
+> something
+> whose luminance that I captured the image and use this to correct the
+> output using a scale factor.
+> I wish there was a Photosphere for windows also.
+> cheers
+> Fatemeh
+>
+>
+>
+> ------------------------------
+>
+> Message: 2
+> Date: Sat, 19 Apr 2014 16:25:31 +0200
+> From: "Lars O. Grobe" <grobe at gmx.net>
+> To: High Dynamic Range Imaging <hdri at radiance-online.org>
+> Subject: Re: [HDRI] HDRI Digest, Vol 70, Issue 3
+> Message-ID: <ECDA05E5-FAF6-417E-A327-945C68564B2F at gmx.net>
+> Content-Type: text/plain;	charset=us-ascii
+>
+> Hi Fatemeh,
+>
+> are you aware of alternatives such as pfstools and webhdr?
+>
+> Cheers, Lars.
+>
+>
+>
+> ------------------------------
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+>
+>
+> End of HDRI Digest, Vol 70, Issue 4
+> ***********************************
+
+Dear Lars:
+
+Thank you for your proposed alternatives. Webhdr is a great, user 
+friendly tool and I was not aware of that.
+I have one more question regarding the calibration.
+
+V. Kumaragurubaran and M. Inanici have proposed two methods for 
+calibration. one is based on measuring the absolute luminance of the 
+graycard and the other one is based one measuring the illuminance at the 
+camera level in the scene that they suggest it for special cases such as 
+sun and sky capture.
+
+I am doing daylight research in an office area with alternative 
+shadings (artificial lighting is off during the study).
+Is using the  Illuminance calibration that utilizes captured 
+illuminance of the camera level with the handhold illuminance meter 
+(proposed in hdrscope) a correct way of calibrating the  HDR photos In 
+my case?
+
+Regards
+Fatemeh
+M.ARCH
+UNIVERSITY PUTRA MALAYSIA
+
+
+From gregoryjward at gmail.com  Mon Apr 21 09:04:51 2014
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Mon, 21 Apr 2014 09:04:51 -0700
+Subject: [HDRI] HDRI Digest, Vol 70, Issue 4
+In-Reply-To: <4c013fb39fdcd1c3fb4c79304dfba01d@mutiara.upm.edu.my>
+References: <mailman.1.1397934000.1056.hdri@radiance-online.org>
+	<4c013fb39fdcd1c3fb4c79304dfba01d@mutiara.upm.edu.my>
+Message-ID: <8B3DB40E-46A0-4910-98F8-563427E0FB2B@gmail.com>
+
+Just a request to make reading posts easier -- please do NOT include an entire digest with your post.
+
+Write what you have to say at the beginning, and paste in whatever *relevant* information people might want who haven't been following the recent conversation.  
+
+As a general rule, keep it short and sweet and avoid a lot of redundant information.
+
+Thanks!
+-Greg
+
+> From: gs33070 <gs33070 at mutiara.upm.edu.my>
+> Subject: Re: [HDRI] HDRI Digest, Vol 70, Issue 4
+> Date: April 20, 2014 9:16:36 PM PDT
+>> ***********************************
+> 
+> Dear Lars:
+> 
+> Thank you for your proposed alternatives. Webhdr is a great, user friendly tool and I was not aware of that.
+> I have one more question regarding the calibration.
+> 
+> V. Kumaragurubaran and M. Inanici have proposed two methods for calibration. one is based on measuring the absolute luminance of the graycard and the other one is based one measuring the illuminance at the camera level in the scene that they suggest it for special cases such as sun and sky capture.
+> 
+> I am doing daylight research in an office area with alternative shadings (artificial lighting is off during the study).
+> Is using the  Illuminance calibration that utilizes captured illuminance of the camera level with the handhold illuminance meter (proposed in hdrscope) a correct way of calibrating the  HDR photos In my case?
+> 
+> Regards
+> Fatemeh
+> M.ARCH
+> UNIVERSITY PUTRA MALAYSIA
+> 
+
+
+From gs33070 at mutiara.upm.edu.my  Mon Apr 21 19:59:13 2014
+From: gs33070 at mutiara.upm.edu.my (gs33070)
+Date: Tue, 22 Apr 2014 10:59:13 +0800
+Subject: [HDRI] HDRI Digest, Vol 70, Issue 5
+Message-ID: <5c66147871b86f47359848973d684e60@mutiara.upm.edu.my>
+
+
+
+
+I have one more question regarding the calibration:
+
+I am doing daylight research in an office area with alternative 
+shadings (artificial lighting is off during the study).
+Is using the  Illuminance calibration with the help of handhold 
+illuminance meter a correct way of calibrating the  HDR photos In my 
+case?
+
+V. Kumaragurubaran and M. Inanici have proposed this method for special 
+cases such as sun and sky capture.
+
+Dear Lars:Thank you for your proposed alternatives. Webhdr is a great, 
+user friendly tool and I was not aware of that.
+
+Thanks Greg. I've tried to make it short.
+
+Regards
+Fatemeh
+M.ARCH
+UNIVERSITY PUTRA MALAYSIA
+
+
+From jacobs.axel at gmail.com  Tue Apr 22 01:07:46 2014
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Tue, 22 Apr 2014 10:07:46 +0200
+Subject: [HDRI] HDRI Digest, Vol 70, Issue 5
+In-Reply-To: <5c66147871b86f47359848973d684e60@mutiara.upm.edu.my>
+References: <5c66147871b86f47359848973d684e60@mutiara.upm.edu.my>
+Message-ID: <CA+dqh62w0XRAdoExjHwje6DWHSkxKGU7d0Sq7Jzen=zSTCAFig@mail.gmail.com>
+
+Hi Fatemeh,
+
+It is possible to calibrate HDR images against the illuminance at the
+lens.  I have found, however, that calibrating against the luminance
+of an object that's in the image is more reliable.
+
+See page 9 of my presentation from the 2012 Radiance workshop:
+http://radiance-online.org/community/workshops/2012-copenhagen
+
+the columns labelled CF_lumi and CF_illu list the calibration factors
+for that scene, a photo of which is on the previous page.  You can see
+that luminance-based CFs are much more consistent.
+
+The story might change for sky capture, but I am not familiar with the
+methodology proposed by Kumaragurubaran and Inanici.
+
+Regards
+
+Axel
+
+
+On 22 April 2014 04:59, gs33070 <gs33070 at mutiara.upm.edu.my> wrote:
+>
+>
+>
+> I have one more question regarding the calibration:
+>
+> I am doing daylight research in an office area with alternative shadings
+> (artificial lighting is off during the study).
+> Is using the  Illuminance calibration with the help of handhold illuminance
+> meter a correct way of calibrating the  HDR photos In my case?
+>
+> V. Kumaragurubaran and M. Inanici have proposed this method for special
+> cases such as sun and sky capture.
+>
+> Dear Lars:Thank you for your proposed alternatives. Webhdr is a great, user
+> friendly tool and I was not aware of that.
+>
+> Thanks Greg. I've tried to make it short.
+>
+> Regards
+> Fatemeh
+> M.ARCH
+> UNIVERSITY PUTRA MALAYSIA
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+

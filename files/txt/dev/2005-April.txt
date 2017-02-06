@@ -1,0 +1,235 @@
+From grobe at gmx.net  Fri Apr  1 12:33:54 2005
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Fri Apr  1 12:34:23 2005
+Subject: [Radiance-dev] Re: [Radiance-general] how to filter objects by
+	modifier?
+In-Reply-To: <26715.1112097767@www39.gmx.net>
+References: <42491B9F.7070608@t-online.de> <26715.1112097767@www39.gmx.net>
+Message-ID: <6c50e0066cb8c16c7450583a4f165ecd@gmx.net>
+
+Hi!
+
+I have written a little bash script that will filter radiance scene 
+files by modifier. It has two modes, -i and -e (similar to rpict). -i 
+<modifier> will write ONLY geometry modified by <modifier> to STDOUT, 
+-e <modifier> will output everything but geometry modified by 
+<modifier>. This is a rather simple script, using sed and awk, and as I 
+am not very good in using the text utilities, there is certainly a lot 
+of overhead. However, it is useable, and can be found here:
+
+http://130.83.168.34/lars/rad/rad_filter.sh.gz
+
+CU Lars.
+
+
+From ian at testers.homelinux.net  Fri Apr  1 16:17:35 2005
+From: ian at testers.homelinux.net (Ian Tester)
+Date: Fri Apr  1 16:18:27 2005
+Subject: [Radiance-dev] Re: [Radiance-general] how to filter objects by
+	modifier?
+In-Reply-To: <6c50e0066cb8c16c7450583a4f165ecd@gmx.net>
+References: <42491B9F.7070608@t-online.de> <26715.1112097767@www39.gmx.net>
+	<6c50e0066cb8c16c7450583a4f165ecd@gmx.net>
+Message-ID: <424D57FF.1000707@testers.homelinux.net>
+
+Here's my contribution to the Radiance community. It looked like you guys 
+needed the help of a good Perl programmer :)
+
+It's not heavily tested, I only threw it together in a few hours. I've put 
+in little comments to help anyone trying to follow the code. I know that 
+Perl has a bad reputation, but I try to make my perl code neat and consistent.
+*sigh* back in the day I was actually paid to code perl...
+
+I added the feature of "following" modifiers with the -s option. When this 
+option is specified, non-surface primitives (i.e materials, textures, 
+patterns, or mixtures) will be matched by their modifier and their id will 
+be added to the list of modifiers that are being matched. Make sense? This 
+will allow the user to specify the name of one modifier that is then 
+"modified" by other materials, etc.
+
+Anyway, let me know how it goes. I've probably screwed up somewhere.
+bye
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: rad_filter.pl.gz
+Type: application/x-gzip
+Size: 1303 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-dev/attachments/20050402/d4ca8ca8/rad_filter.pl.bin
+From ian at testers.homelinux.net  Sat Apr  2 08:17:34 2005
+From: ian at testers.homelinux.net (Ian Tester)
+Date: Sat Apr  2 08:18:11 2005
+Subject: [Radiance-dev] Re: [Radiance-general] how to filter objects by
+	modifier?
+In-Reply-To: <424D57FF.1000707@testers.homelinux.net>
+References: <42491B9F.7070608@t-online.de>
+	<26715.1112097767@www39.gmx.net>	<6c50e0066cb8c16c7450583a4f165ecd@gmx.net>
+	<424D57FF.1000707@testers.homelinux.net>
+Message-ID: <424E38FE.8010305@testers.homelinux.net>
+
+After a problem report from Lars, here's an updated version of the filter 
+script. It wasn't handling the rare alias declaration. I've tested it 
+against a few scene files in the standard distribution, both 
+virtual/illumoff.rad and cabin/lvfurn.rad. The second one put a spanner in 
+the works because it contained this:
+
+alberta_image alias alberta_photo
+         photo_paper
+
+So there's extra logic to handle having the reference on the following 
+line. How lenient is the Radiance parser with respect to newlines? Can 
+regular primitives also contain newlines in odd places, or is it just with 
+aliases?
+
+e.g
+white sphere
+	ball	<== is this accepted as well??
+0
+0
+4	0	0	0
+	1
+
+I really hope that isn't allowed. Otherwise my perl code will become really 
+ugly... :(
+
+bye
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: rad_filter.pl.gz
+Type: application/x-gzip
+Size: 1396 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-dev/attachments/20050402/55eb69d9/rad_filter.pl.bin
+From grobe at gmx.net  Sat Apr  2 12:17:00 2005
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Sat Apr  2 13:33:36 2005
+Subject: [Radiance-dev] Re: [Radiance-general] how to filter objects by
+	modifier?
+In-Reply-To: <6c50e0066cb8c16c7450583a4f165ecd@gmx.net>
+References: <42491B9F.7070608@t-online.de> <26715.1112097767@www39.gmx.net>
+	<6c50e0066cb8c16c7450583a4f165ecd@gmx.net>
+Message-ID: <782852f55ce9ce56738b3ea23a93ba05@gmx.net>
+
+> However, it is useable, and can be found here:
+
+Sorry, that was not true, it worked only with some files here, there is 
+a bad bug. Don't use it, I will put a useable script to the url asap. 
+Lars.
+
+
+From gregoryjward at gmail.com  Sat Apr  2 15:35:40 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Sat Apr  2 15:36:09 2005
+Subject: [Radiance-dev] Re: [Radiance-general] how to filter objects by
+	modifier?
+In-Reply-To: <424E38FE.8010305@testers.homelinux.net>
+References: <42491B9F.7070608@t-online.de>
+	<26715.1112097767@www39.gmx.net>	<6c50e0066cb8c16c7450583a4f165ecd@gmx.net>
+	<424D57FF.1000707@testers.homelinux.net>
+	<424E38FE.8010305@testers.homelinux.net>
+Message-ID: <54f2e22c3d44bdd8787d9f2713fd9aab@gmail.com>
+
+Hi Ian,
+
+Unfortunately, Radiance input files are designed to be read with 
+scanf(), which doesn't differentiate between spaces, tabs, and 
+newlines.  That means that the formatting of primitives in Radiance is 
+almost entirely by convention.  The only exceptions to this are for 
+inline commands and comments, which must appear on a single line.  (In 
+the case of inline commands, the newline may be escaped with '\'.)
+
+This is all spelled out pretty clearly in the basic reference manual:
+
+	http://radsite.lbl.gov/radiance/refer/ray.html
+
+You should probably consult it.
+-Greg
+
+
+From gregoryjward at gmail.com  Thu Apr 14 01:25:33 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu Apr 14 01:32:55 2005
+Subject: [Radiance-dev] thoughts brewing...
+Message-ID: <de24ddd4e486964a25832245f61554d3@gmail.com>
+
+As most of you know, Christoph Reinhart's Daysim program offers an 
+efficient means to perform annual simulations based on a modified 
+version of Radiance.  I am planning to meet with Christoph (for the 
+first time) on Monday to discuss how this calculation might be 
+incorporated into the main distribution.  I confess that I haven't 
+spent much time looking at the modifications, but from my understanding 
+of the method, it requires conditional compiles in a lot of different 
+routines, which makes me nervous.
+
+So, I was thinking there might be a less invasive approach that would 
+enable not only programs like Daysim but other applications as well, 
+such as optical and daylighting systems design.
+
+The basic idea I'm considering is to introduce some new "recording" 
+material type(s) that will output ray path "relationships" discovered 
+during the rendering/tracing process.  Each ray that intersects a 
+surface with the given material will be stored in a named data file as:
+
+origin_x origin_y origin_z	odir_x odir_y odir_z
+dest_x dest_y dest_z	ddir_x ddir_y ddir_z
+weight_r weight_g weight_b
+
+The origin and direction would correspond to the initial primary ray, 
+and the RGB weights could be computed accurately, corresponding to the 
+transmission and reflection of all surfaces encountered along the way.  
+Using floats, this data amounts to 60 bytes/ray, which is going to add 
+up quickly, so I'd probably offer the option of outputting to a program 
+rather than a file, which could do the processing on the fly.
+
+In a program like Daysim, we might create a recording source that 
+captures the sky intersections and correlates them to particular origin 
+points, either on an image or a workplane or whatever.  These 
+correlations could then be applied in a daylight coefficient approach.
+
+Note that the above will not work for diffuse interreflection unless 
+-aa is set to 0, so we don't hide contributions by the caching process. 
+  However, I think this is something we can live with -- it's still more 
+efficient than computing a great many runs for different sky sources, 
+as John Mardaljevic and others have been doing successfully for years.
+
+This method has the advantage that it requires only minimal, isolated, 
+and easy to maintain changes to the source code.  The main change is in 
+the use of the rcol member of the RAY struct, which will now mean one 
+thing going out (the ray coefficient) and another thing coming back 
+(the ray value -- its current meaning).  To this we add a material type 
+and corresponding module to record the ray relationships -- not a big 
+deal.
+
+With such an addition, it should also be possible to use Radiance for 
+certain optical design problems that it hasn't been able to do before 
+-- ones where we are attempting to characterize some complex 
+input/output relationship.  However, not having thought about these 
+problems before, I'm hoping to get some feedback before I do this as to 
+things I might be forgetting.
+
+-Greg
+
+
+From gregoryjward at gmail.com  Tue Apr 19 04:16:31 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue Apr 19 04:17:46 2005
+Subject: [Radiance-dev] Re: thoughts brewing...
+In-Reply-To: <10C94843061E094A98C02EB77CFC328713A5D009@nrcmrdex1d.imsb.nrc.ca>
+References: <10C94843061E094A98C02EB77CFC328713A5D009@nrcmrdex1d.imsb.nrc.ca>
+Message-ID: <16d3e6f468466b6ae838e4b53c588e7a@gmail.com>
+
+Well, I have a first cut at a more general method for tracking ray 
+contributions in rtrace, which I just checked into CVS.  I think I just 
+missed the midnight dump in Freiburg, so you may have to wait until 
+tomorrow for it (big deal), but it's in CVS.  The basic idea is to use 
+the new -oTW option for rtrace, which then reports contribution factors 
+for each ray traced.  These may be used together with the surfaces and 
+intersection points or directions to accumulate a transfer function for 
+use in a daylight coefficient or optical analysis.
+
+If anyone is interested in applying this new functionality, or wants a 
+better explanation of what it can do, please write to the list.
+
+-Greg
+
+

@@ -1,0 +1,1330 @@
+From nathanieljon at gmail.com  Tue Jul 14 13:47:24 2015
+From: nathanieljon at gmail.com (Nathaniel Jones)
+Date: Tue, 14 Jul 2015 16:47:24 -0400
+Subject: [Radiance-dev] erf and erfc warnings
+Message-ID: <CAJR73tvxuPhVapWGBB9vP-znWsfCNRkjxMO6ZQNk1Cjg=n2oZA@mail.gmail.com>
+
+When I compile the Radiance suite using VS2013 on Windows, I get a bunch of
+warnings like the following:
+
+d:\nljones\radiance\src\common\rtmath.h(50): warning C4273: 'erf' :
+inconsistent dll linkage
+          C:\Program Files (x86)\Microsoft Visual Studio
+12.0\VC\include\math.h(486) : see previous definition of 'erf'
+d:\nljones\radiance\src\common\rtmath.h(51): warning C4273: 'erfc' :
+inconsistent dll linkage
+          C:\Program Files (x86)\Microsoft Visual Studio
+12.0\VC\include\math.h(487) : see previous definition of 'erfc'
+
+It looks to me like the functions erf and erfc are declared both in math.h
+and rtmath.h, so the compiler isn't sure which one to use. Does anyone know
+which error function definition is being used?
+
+Thanks,
+
+Nathaniel
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20150714/11208c1f/attachment.html>
+
+From jan.wienold at epfl.ch  Fri Jul 24 02:36:52 2015
+From: jan.wienold at epfl.ch (Jan Wienold)
+Date: Fri, 24 Jul 2015 11:36:52 +0200
+Subject: [Radiance-dev] MacOS Yosemite
+In-Reply-To: <AA07E01F-5714-4EEA-B726-E6372632284C@noback.info>
+References: <55C06953-C9FC-4391-AC5A-053DC085CF70@noback.info>	<5E17FEA2-B727-470B-B05B-A2A2B92BB699@gmail.com>	<993B9327-E932-40F9-8FC5-39DE68900638@gmail.com>
+	<AA07E01F-5714-4EEA-B726-E6372632284C@noback.info>
+Message-ID: <55B20734.7070401@epfl.ch>
+
+Hi all,
+
+is this problem still existent ? We are currently re-installing several 
+mac-machines and I'm wondering if I still should go for Maverick to 
+avoid this problem.
+
+thanks!
+
+Best,
+
+Jan
+
+Am 11/18/14 um 7:15 PM schrieb Andreas Noback:
+> Hi Greg,
+>
+> thank you for the quick response. I suspected that it is a bug from Apple and was hoping that the update today (10.10.1) would change something, but it does not. In general the Yosemite release seems to me buggier that the last couple of major updates, so it could be wise to avoid it for a while ...
+>
+> Best,
+> Andreas
+>
+>
+>> Am 18.11.2014 um 18:58 schrieb Gregory J. Ward <gregoryjward at gmail.com>:
+>>
+>> Hi Andreas,
+>>
+>> A quick follow-up to this.  I tried it out on my copy of Yosemite, and confirmed the problem.  It seems to be an intermittent problem with the system select() call, which means there's little I can do about it except hope Apple recognizes the issue and posts a patch at some point.  The last change I made in this code related to a hanging condition was in 1997, and it's been working across Unix implementations since then.
+>>
+>> For now, I can only suggest you avoid multiprocessing until the next patch release.  You can try reporting a bug to Apple, but without a simple test case to reproduce it, they are unlikely to do anything other than register the complaint.  I haven't seen anything on the net about it, yet.
+>>
+>> Cheers,
+>> -Greg
+>>
+>>> From: "Gregory J. Ward" <gregoryjward at gmail.com>
+>>> Subject: Re: [Radiance-dev] MacOS Yosemite
+>>> Date: November 18, 2014 8:10:48 AM PST
+>>>
+>>> HI Andreas,
+>>>
+>>> I am sorry to hear about this issue, and it is unlikely that there is any way to debug it.  A hung process doesn't respond to debugging, either!
+>>>
+>>> The best approach is to kill one of the processes using "kill -QUIT" and seeing if it leaves behind a diagnostic file in $HOME/Library/Logs/CrashReporter/.  Then at least, we may find out what routine it is hanging in.
+>>>
+>>> The only other idea I had is to disable "App Nap" system-wide to see if this is causing the problem.  See:
+>>>
+>>> 	http://www.defaults-write.com/10-9-disable-app-nap-in-os-x
+>>>
+>>> I don't know why this would affect non-application processes, or why it would present an issue in 10.10 if it wasn't an issue in 10.9, but it's worth a try.
+>>>
+>>> I will see if I can reproduce this on my copy of Yosemite as well.
+>>>
+>>> Best,
+>>> -Greg
+>>>
+>>>> From: Andreas Noback <mail at noback.info>
+>>>> Subject: [Radiance-dev] MacOS Yosemite
+>>>> Date: November 18, 2014 1:25:27 AM PST
+>>>>
+>>>> Dear List,
+>>>>
+>>>> has someone experience with radiance and new MacOS 10.10? I tried it and got some unpleasant results: If you start rad with the -N option (for example: rad -N 4 -o x11 -v hem test.rif) it start as usual, but after a few seconds it seems to stuck, i. e. not responding to input, no further refining, no processor load. The processes seem to be waiting for something (forever):
+>>>>
+>>>> 1447 s000  S+     0:00.00 rad -N 4 -o x11 -v hem test.rif
+>>>> 1450 s000  S+     0:00.03 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>>>> 1452 s000  S+     0:00.25 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>>>> 1453 s000  S+     0:00.24 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>>>> 1454 s000  S+     0:00.24 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>>>> 1455 s000  S+     0:00.28 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>>>>
+>>>> Similar things happen if you use it without -o x11 (rad -N 4 -v hem test.rif): some process start, parts of the image will be rendered. Than the load goes to zero and nothing happens any more. Here you can see some zombies:
+>>>>
+>>>> 1315 s000  S+     0:00.01 rad -N 4 -v hem test.rif
+>>>> 1318 s000  Z+     0:00.00 (rad)
+>>>> 1325 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>>>> 1408 s000  S+     0:00.00 rad -N 4 -v hem test.rif
+>>>> 1409 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+>>>> 1410 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>>>> 1411 s000  Z+     0:00.00 (rpict)
+>>>> 1412 s000  S+     0:00.00 rad -N 4 -v hem test.rif
+>>>> 1413 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+>>>> 1414 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>>>> 1416 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+>>>> 1417 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>>>>
+>>>> There is nothing in the logs. I got the same results with the precompiled binaries and binaries compiled from the head revision under 10.10 with Xcode 6.1.
+>>>>
+>>>> Any suggestions?
+>>>>
+>>>> Andreas Noback
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-- 
+Dr.-Ing.  Jan Wienold
+Ecole Polytechnique F?d?rale de Lausanne (EPFL)
+EPFL ENAC IA LIPID
+
+http://people.epfl.ch/jan.wienold
+LE 1 111 (Office)
+Phone    +41 21 69 30849
+
+
+
+From gregoryjward at gmail.com  Fri Jul 24 09:04:58 2015
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri, 24 Jul 2015 09:04:58 -0700
+Subject: [Radiance-dev] MacOS Yosemite
+In-Reply-To: <55B20734.7070401@epfl.ch>
+References: <55C06953-C9FC-4391-AC5A-053DC085CF70@noback.info>	<5E17FEA2-B727-470B-B05B-A2A2B92BB699@gmail.com>	<993B9327-E932-40F9-8FC5-39DE68900638@gmail.com>
+	<AA07E01F-5714-4EEA-B726-E6372632284C@noback.info>
+	<55B20734.7070401@epfl.ch>
+Message-ID: <1F4C7147-9E0A-4384-B89F-B973B864723F@gmail.com>
+
+Hi Jan,
+
+It's really difficult to find any information on low-level system calls in Mac OS X.  Unfortunately, searching for "select" comes up with many irrelevant hits, and bug fixes tend to list applications and behavior rather that root causes.  The only really way to tell if the bug has been fixed is to update to the latest version of Yosemite on one machine and run some tests using rpiece to see if it hangs.  (It's easy enough to test by running "rad -N 4 -v 1 scene.rif" or similar.)
+
+I can perform such a test tomorrow or the next day if no one else has a current version of Yosemite to try it on.  I'm still running Lion, which is the *oldest* version of Mac OS X that my laptop supports....
+
+Cheers,
+-Greg
+
+> From: Jan Wienold <jan.wienold at epfl.ch>
+> Subject: Re: [Radiance-dev] MacOS Yosemite
+> Date: July 24, 2015 2:36:52 AM PDT
+> 
+> Hi all,
+> 
+> is this problem still existent ? We are currently re-installing several mac-machines and I'm wondering if I still should go for Maverick to avoid this problem.
+> 
+> thanks!
+> 
+> Best,
+> 
+> Jan
+> 
+> Am 11/18/14 um 7:15 PM schrieb Andreas Noback:
+>> Hi Greg,
+>> 
+>> thank you for the quick response. I suspected that it is a bug from Apple and was hoping that the update today (10.10.1) would change something, but it does not. In general the Yosemite release seems to me buggier that the last couple of major updates, so it could be wise to avoid it for a while ...
+>> 
+>> Best,
+>> Andreas
+>> 
+>> 
+>>> Am 18.11.2014 um 18:58 schrieb Gregory J. Ward <gregoryjward at gmail.com>:
+>>> 
+>>> Hi Andreas,
+>>> 
+>>> A quick follow-up to this.  I tried it out on my copy of Yosemite, and confirmed the problem.  It seems to be an intermittent problem with the system select() call, which means there's little I can do about it except hope Apple recognizes the issue and posts a patch at some point.  The last change I made in this code related to a hanging condition was in 1997, and it's been working across Unix implementations since then.
+>>> 
+>>> For now, I can only suggest you avoid multiprocessing until the next patch release.  You can try reporting a bug to Apple, but without a simple test case to reproduce it, they are unlikely to do anything other than register the complaint.  I haven't seen anything on the net about it, yet.
+>>> 
+>>> Cheers,
+>>> -Greg
+>>> 
+>>>> From: "Gregory J. Ward" <gregoryjward at gmail.com>
+>>>> Subject: Re: [Radiance-dev] MacOS Yosemite
+>>>> Date: November 18, 2014 8:10:48 AM PST
+>>>> 
+>>>> HI Andreas,
+>>>> 
+>>>> I am sorry to hear about this issue, and it is unlikely that there is any way to debug it.  A hung process doesn't respond to debugging, either!
+>>>> 
+>>>> The best approach is to kill one of the processes using "kill -QUIT" and seeing if it leaves behind a diagnostic file in $HOME/Library/Logs/CrashReporter/.  Then at least, we may find out what routine it is hanging in.
+>>>> 
+>>>> The only other idea I had is to disable "App Nap" system-wide to see if this is causing the problem.  See:
+>>>> 
+>>>> 	http://www.defaults-write.com/10-9-disable-app-nap-in-os-x
+>>>> 
+>>>> I don't know why this would affect non-application processes, or why it would present an issue in 10.10 if it wasn't an issue in 10.9, but it's worth a try.
+>>>> 
+>>>> I will see if I can reproduce this on my copy of Yosemite as well.
+>>>> 
+>>>> Best,
+>>>> -Greg
+>>>> 
+>>>>> From: Andreas Noback <mail at noback.info>
+>>>>> Subject: [Radiance-dev] MacOS Yosemite
+>>>>> Date: November 18, 2014 1:25:27 AM PST
+>>>>> 
+>>>>> Dear List,
+>>>>> 
+>>>>> has someone experience with radiance and new MacOS 10.10? I tried it and got some unpleasant results: If you start rad with the -N option (for example: rad -N 4 -o x11 -v hem test.rif) it start as usual, but after a few seconds it seems to stuck, i. e. not responding to input, no further refining, no processor load. The processes seem to be waiting for something (forever):
+>>>>> 
+>>>>> 1447 s000  S+     0:00.00 rad -N 4 -o x11 -v hem test.rif
+>>>>> 1450 s000  S+     0:00.03 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>>>>> 1452 s000  S+     0:00.25 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>>>>> 1453 s000  S+     0:00.24 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>>>>> 1454 s000  S+     0:00.24 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>>>>> 1455 s000  S+     0:00.28 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>>>>> 
+>>>>> Similar things happen if you use it without -o x11 (rad -N 4 -v hem test.rif): some process start, parts of the image will be rendered. Than the load goes to zero and nothing happens any more. Here you can see some zombies:
+>>>>> 
+>>>>> 1315 s000  S+     0:00.01 rad -N 4 -v hem test.rif
+>>>>> 1318 s000  Z+     0:00.00 (rad)
+>>>>> 1325 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>>>>> 1408 s000  S+     0:00.00 rad -N 4 -v hem test.rif
+>>>>> 1409 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+>>>>> 1410 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>>>>> 1411 s000  Z+     0:00.00 (rpict)
+>>>>> 1412 s000  S+     0:00.00 rad -N 4 -v hem test.rif
+>>>>> 1413 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+>>>>> 1414 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>>>>> 1416 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+>>>>> 1417 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>>>>> 
+>>>>> There is nothing in the logs. I got the same results with the precompiled binaries and binaries compiled from the head revision under 10.10 with Xcode 6.1.
+>>>>> 
+>>>>> Any suggestions?
+>>>>> 
+>>>>> Andreas Noback
+>>> _______________________________________________
+>>> Radiance-dev mailing list
+>>> Radiance-dev at radiance-online.org
+>>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>> 
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+> 
+> -- 
+> Dr.-Ing.  Jan Wienold
+> Ecole Polytechnique F?d?rale de Lausanne (EPFL)
+> EPFL ENAC IA LIPID
+> 
+> http://people.epfl.ch/jan.wienold
+> LE 1 111 (Office)
+> Phone    +41 21 69 30849
+> 
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+From gregoryjward at gmail.com  Fri Jul 24 12:12:12 2015
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri, 24 Jul 2015 12:12:12 -0700
+Subject: [Radiance-dev] MacOS Yosemite
+In-Reply-To: <1F4C7147-9E0A-4384-B89F-B973B864723F@gmail.com>
+References: <55C06953-C9FC-4391-AC5A-053DC085CF70@noback.info>	<5E17FEA2-B727-470B-B05B-A2A2B92BB699@gmail.com>	<993B9327-E932-40F9-8FC5-39DE68900638@gmail.com>
+	<AA07E01F-5714-4EEA-B726-E6372632284C@noback.info>
+	<55B20734.7070401@epfl.ch>
+	<1F4C7147-9E0A-4384-B89F-B973B864723F@gmail.com>
+Message-ID: <930011FB-7D8A-4363-96BC-3F97E6D27263@gmail.com>
+
+Hi Jan,
+
+I went ahead and tried it out, and can confirm that as of Yosemite 10.10.4 (the latest), multi-processing is still very seriously broken.  Processes freeze and you are forced to kill them as the only remaining option.
+
+The good news is that multi-processing seems to work find under Mavericks.  I ran the same test and didn't encounter any problems.  I recommend that no one using Radiance upgrade past 10.9 at this stage.
+
+Cheers,
+-Greg
+
+> From: "Gregory J. Ward" <gregoryjward at gmail.com>
+> Subject: Re: [Radiance-dev] MacOS Yosemite
+> Date: July 24, 2015 9:04:58 AM PDT
+> 
+> Hi Jan,
+> 
+> It's really difficult to find any information on low-level system calls in Mac OS X.  Unfortunately, searching for "select" comes up with many irrelevant hits, and bug fixes tend to list applications and behavior rather that root causes.  The only really way to tell if the bug has been fixed is to update to the latest version of Yosemite on one machine and run some tests using rpiece to see if it hangs.  (It's easy enough to test by running "rad -N 4 -v 1 scene.rif" or similar.)
+> 
+> I can perform such a test tomorrow or the next day if no one else has a current version of Yosemite to try it on.  I'm still running Lion, which is the *oldest* version of Mac OS X that my laptop supports....
+> 
+> Cheers,
+> -Greg
+> 
+>> From: Jan Wienold <jan.wienold at epfl.ch>
+>> Subject: Re: [Radiance-dev] MacOS Yosemite
+>> Date: July 24, 2015 2:36:52 AM PDT
+>> 
+>> Hi all,
+>> 
+>> is this problem still existent ? We are currently re-installing several mac-machines and I'm wondering if I still should go for Maverick to avoid this problem.
+>> 
+>> thanks!
+>> 
+>> Best,
+>> 
+>> Jan
+>> 
+>> Am 11/18/14 um 7:15 PM schrieb Andreas Noback:
+>>> Hi Greg,
+>>> 
+>>> thank you for the quick response. I suspected that it is a bug from Apple and was hoping that the update today (10.10.1) would change something, but it does not. In general the Yosemite release seems to me buggier that the last couple of major updates, so it could be wise to avoid it for a while ...
+>>> 
+>>> Best,
+>>> Andreas
+>>> 
+>>> 
+>>>> Am 18.11.2014 um 18:58 schrieb Gregory J. Ward <gregoryjward at gmail.com>:
+>>>> 
+>>>> Hi Andreas,
+>>>> 
+>>>> A quick follow-up to this.  I tried it out on my copy of Yosemite, and confirmed the problem.  It seems to be an intermittent problem with the system select() call, which means there's little I can do about it except hope Apple recognizes the issue and posts a patch at some point.  The last change I made in this code related to a hanging condition was in 1997, and it's been working across Unix implementations since then.
+>>>> 
+>>>> For now, I can only suggest you avoid multiprocessing until the next patch release.  You can try reporting a bug to Apple, but without a simple test case to reproduce it, they are unlikely to do anything other than register the complaint.  I haven't seen anything on the net about it, yet.
+>>>> 
+>>>> Cheers,
+>>>> -Greg
+>>>> 
+>>>>> From: "Gregory J. Ward" <gregoryjward at gmail.com>
+>>>>> Subject: Re: [Radiance-dev] MacOS Yosemite
+>>>>> Date: November 18, 2014 8:10:48 AM PST
+>>>>> 
+>>>>> HI Andreas,
+>>>>> 
+>>>>> I am sorry to hear about this issue, and it is unlikely that there is any way to debug it.  A hung process doesn't respond to debugging, either!
+>>>>> 
+>>>>> The best approach is to kill one of the processes using "kill -QUIT" and seeing if it leaves behind a diagnostic file in $HOME/Library/Logs/CrashReporter/.  Then at least, we may find out what routine it is hanging in.
+>>>>> 
+>>>>> The only other idea I had is to disable "App Nap" system-wide to see if this is causing the problem.  See:
+>>>>> 
+>>>>> 	http://www.defaults-write.com/10-9-disable-app-nap-in-os-x
+>>>>> 
+>>>>> I don't know why this would affect non-application processes, or why it would present an issue in 10.10 if it wasn't an issue in 10.9, but it's worth a try.
+>>>>> 
+>>>>> I will see if I can reproduce this on my copy of Yosemite as well.
+>>>>> 
+>>>>> Best,
+>>>>> -Greg
+>>>>> 
+>>>>>> From: Andreas Noback <mail at noback.info>
+>>>>>> Subject: [Radiance-dev] MacOS Yosemite
+>>>>>> Date: November 18, 2014 1:25:27 AM PST
+>>>>>> 
+>>>>>> Dear List,
+>>>>>> 
+>>>>>> has someone experience with radiance and new MacOS 10.10? I tried it and got some unpleasant results: If you start rad with the -N option (for example: rad -N 4 -o x11 -v hem test.rif) it start as usual, but after a few seconds it seems to stuck, i. e. not responding to input, no further refining, no processor load. The processes seem to be waiting for something (forever):
+>>>>>> 
+>>>>>> 1447 s000  S+     0:00.00 rad -N 4 -o x11 -v hem test.rif
+>>>>>> 1450 s000  S+     0:00.03 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>>>>>> 1452 s000  S+     0:00.25 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>>>>>> 1453 s000  S+     0:00.24 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>>>>>> 1454 s000  S+     0:00.24 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>>>>>> 1455 s000  S+     0:00.28 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>>>>>> 
+>>>>>> Similar things happen if you use it without -o x11 (rad -N 4 -v hem test.rif): some process start, parts of the image will be rendered. Than the load goes to zero and nothing happens any more. Here you can see some zombies:
+>>>>>> 
+>>>>>> 1315 s000  S+     0:00.01 rad -N 4 -v hem test.rif
+>>>>>> 1318 s000  Z+     0:00.00 (rad)
+>>>>>> 1325 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>>>>>> 1408 s000  S+     0:00.00 rad -N 4 -v hem test.rif
+>>>>>> 1409 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+>>>>>> 1410 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>>>>>> 1411 s000  Z+     0:00.00 (rpict)
+>>>>>> 1412 s000  S+     0:00.00 rad -N 4 -v hem test.rif
+>>>>>> 1413 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+>>>>>> 1414 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>>>>>> 1416 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+>>>>>> 1417 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>>>>>> 
+>>>>>> There is nothing in the logs. I got the same results with the precompiled binaries and binaries compiled from the head revision under 10.10 with Xcode 6.1.
+>>>>>> 
+>>>>>> Any suggestions?
+>>>>>> 
+>>>>>> Andreas Noback
+>>>> _______________________________________________
+>>>> Radiance-dev mailing list
+>>>> Radiance-dev at radiance-online.org
+>>>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>>> 
+>>> _______________________________________________
+>>> Radiance-dev mailing list
+>>> Radiance-dev at radiance-online.org
+>>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>> 
+>> -- 
+>> Dr.-Ing.  Jan Wienold
+>> Ecole Polytechnique F?d?rale de Lausanne (EPFL)
+>> EPFL ENAC IA LIPID
+>> 
+>> http://people.epfl.ch/jan.wienold
+>> LE 1 111 (Office)
+>> Phone    +41 21 69 30849
+>> 
+>> 
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+From jan.wienold at epfl.ch  Fri Jul 24 12:28:50 2015
+From: jan.wienold at epfl.ch (Jan Wienold)
+Date: Fri, 24 Jul 2015 21:28:50 +0200
+Subject: [Radiance-dev] MacOS Yosemite
+In-Reply-To: <930011FB-7D8A-4363-96BC-3F97E6D27263@gmail.com>
+References: <55C06953-C9FC-4391-AC5A-053DC085CF70@noback.info>
+	<5E17FEA2-B727-470B-B05B-A2A2B92BB699@gmail.com>
+	<993B9327-E932-40F9-8FC5-39DE68900638@gmail.com>
+	<AA07E01F-5714-4EEA-B726-E6372632284C@noback.info>
+	<55B20734.7070401@epfl.ch>
+	<1F4C7147-9E0A-4384-B89F-B973B864723F@gmail.com>
+	<930011FB-7D8A-4363-96BC-3F97E6D27263@gmail.com>
+Message-ID: <55B291F2.7010608@epfl.ch>
+
+Hi Greg,
+
+thank you so much for your test- so we will install Mavericks on all our 
+machines now.
+yes, I can confirm that Mavericks works fine regarding multiprocessing 
+(since my desktop machine has it installed as well and I often use 
+rtrace -n ...).
+It is also a wise decision to keep older systems as long as possible - 
+some simple tools are harder to install on the newer systems. E.g. it 
+took me several hours to install the netpbm - package (e.g. for 
+pnmtojpeg ) on Mavericks (but got it finally by the usage of macports).
+
+thanks again!
+
+cheers,
+
+Jan
+
+On 07/24/2015 09:12 PM, Gregory J. Ward wrote:
+> Hi Jan,
+>
+> I went ahead and tried it out, and can confirm that as of Yosemite 10.10.4 (the latest), multi-processing is still very seriously broken.  Processes freeze and you are forced to kill them as the only remaining option.
+>
+> The good news is that multi-processing seems to work find under Mavericks.  I ran the same test and didn't encounter any problems.  I recommend that no one using Radiance upgrade past 10.9 at this stage.
+>
+> Cheers,
+> -Greg
+>
+>> From: "Gregory J. Ward" <gregoryjward at gmail.com>
+>> Subject: Re: [Radiance-dev] MacOS Yosemite
+>> Date: July 24, 2015 9:04:58 AM PDT
+>>
+>> Hi Jan,
+>>
+>> It's really difficult to find any information on low-level system calls in Mac OS X.  Unfortunately, searching for "select" comes up with many irrelevant hits, and bug fixes tend to list applications and behavior rather that root causes.  The only really way to tell if the bug has been fixed is to update to the latest version of Yosemite on one machine and run some tests using rpiece to see if it hangs.  (It's easy enough to test by running "rad -N 4 -v 1 scene.rif" or similar.)
+>>
+>> I can perform such a test tomorrow or the next day if no one else has a current version of Yosemite to try it on.  I'm still running Lion, which is the *oldest* version of Mac OS X that my laptop supports....
+>>
+>> Cheers,
+>> -Greg
+>>
+>>> From: Jan Wienold <jan.wienold at epfl.ch>
+>>> Subject: Re: [Radiance-dev] MacOS Yosemite
+>>> Date: July 24, 2015 2:36:52 AM PDT
+>>>
+>>> Hi all,
+>>>
+>>> is this problem still existent ? We are currently re-installing several mac-machines and I'm wondering if I still should go for Maverick to avoid this problem.
+>>>
+>>> thanks!
+>>>
+>>> Best,
+>>>
+>>> Jan
+>>>
+>>> Am 11/18/14 um 7:15 PM schrieb Andreas Noback:
+>>>> Hi Greg,
+>>>>
+>>>> thank you for the quick response. I suspected that it is a bug from Apple and was hoping that the update today (10.10.1) would change something, but it does not. In general the Yosemite release seems to me buggier that the last couple of major updates, so it could be wise to avoid it for a while ...
+>>>>
+>>>> Best,
+>>>> Andreas
+>>>>
+>>>>
+>>>>> Am 18.11.2014 um 18:58 schrieb Gregory J. Ward <gregoryjward at gmail.com>:
+>>>>>
+>>>>> Hi Andreas,
+>>>>>
+>>>>> A quick follow-up to this.  I tried it out on my copy of Yosemite, and confirmed the problem.  It seems to be an intermittent problem with the system select() call, which means there's little I can do about it except hope Apple recognizes the issue and posts a patch at some point.  The last change I made in this code related to a hanging condition was in 1997, and it's been working across Unix implementations since then.
+>>>>>
+>>>>> For now, I can only suggest you avoid multiprocessing until the next patch release.  You can try reporting a bug to Apple, but without a simple test case to reproduce it, they are unlikely to do anything other than register the complaint.  I haven't seen anything on the net about it, yet.
+>>>>>
+>>>>> Cheers,
+>>>>> -Greg
+>>>>>
+>>>>>> From: "Gregory J. Ward" <gregoryjward at gmail.com>
+>>>>>> Subject: Re: [Radiance-dev] MacOS Yosemite
+>>>>>> Date: November 18, 2014 8:10:48 AM PST
+>>>>>>
+>>>>>> HI Andreas,
+>>>>>>
+>>>>>> I am sorry to hear about this issue, and it is unlikely that there is any way to debug it.  A hung process doesn't respond to debugging, either!
+>>>>>>
+>>>>>> The best approach is to kill one of the processes using "kill -QUIT" and seeing if it leaves behind a diagnostic file in $HOME/Library/Logs/CrashReporter/.  Then at least, we may find out what routine it is hanging in.
+>>>>>>
+>>>>>> The only other idea I had is to disable "App Nap" system-wide to see if this is causing the problem.  See:
+>>>>>>
+>>>>>> 	http://www.defaults-write.com/10-9-disable-app-nap-in-os-x
+>>>>>>
+>>>>>> I don't know why this would affect non-application processes, or why it would present an issue in 10.10 if it wasn't an issue in 10.9, but it's worth a try.
+>>>>>>
+>>>>>> I will see if I can reproduce this on my copy of Yosemite as well.
+>>>>>>
+>>>>>> Best,
+>>>>>> -Greg
+>>>>>>
+>>>>>>> From: Andreas Noback <mail at noback.info>
+>>>>>>> Subject: [Radiance-dev] MacOS Yosemite
+>>>>>>> Date: November 18, 2014 1:25:27 AM PST
+>>>>>>>
+>>>>>>> Dear List,
+>>>>>>>
+>>>>>>> has someone experience with radiance and new MacOS 10.10? I tried it and got some unpleasant results: If you start rad with the -N option (for example: rad -N 4 -o x11 -v hem test.rif) it start as usual, but after a few seconds it seems to stuck, i. e. not responding to input, no further refining, no processor load. The processes seem to be waiting for something (forever):
+>>>>>>>
+>>>>>>> 1447 s000  S+     0:00.00 rad -N 4 -o x11 -v hem test.rif
+>>>>>>> 1450 s000  S+     0:00.03 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>>>>>>> 1452 s000  S+     0:00.25 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>>>>>>> 1453 s000  S+     0:00.24 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>>>>>>> 1454 s000  S+     0:00.24 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>>>>>>> 1455 s000  S+     0:00.28 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>>>>>>>
+>>>>>>> Similar things happen if you use it without -o x11 (rad -N 4 -v hem test.rif): some process start, parts of the image will be rendered. Than the load goes to zero and nothing happens any more. Here you can see some zombies:
+>>>>>>>
+>>>>>>> 1315 s000  S+     0:00.01 rad -N 4 -v hem test.rif
+>>>>>>> 1318 s000  Z+     0:00.00 (rad)
+>>>>>>> 1325 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>>>>>>> 1408 s000  S+     0:00.00 rad -N 4 -v hem test.rif
+>>>>>>> 1409 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+>>>>>>> 1410 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>>>>>>> 1411 s000  Z+     0:00.00 (rpict)
+>>>>>>> 1412 s000  S+     0:00.00 rad -N 4 -v hem test.rif
+>>>>>>> 1413 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+>>>>>>> 1414 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>>>>>>> 1416 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+>>>>>>> 1417 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>>>>>>>
+>>>>>>> There is nothing in the logs. I got the same results with the precompiled binaries and binaries compiled from the head revision under 10.10 with Xcode 6.1.
+>>>>>>>
+>>>>>>> Any suggestions?
+>>>>>>>
+>>>>>>> Andreas Noback
+>>>>> _______________________________________________
+>>>>> Radiance-dev mailing list
+>>>>> Radiance-dev at radiance-online.org
+>>>>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>>>> _______________________________________________
+>>>> Radiance-dev mailing list
+>>>> Radiance-dev at radiance-online.org
+>>>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>>> -- 
+>>> Dr.-Ing.  Jan Wienold
+>>> Ecole Polytechnique F?d?rale de Lausanne (EPFL)
+>>> EPFL ENAC IA LIPID
+>>>
+>>> http://people.epfl.ch/jan.wienold
+>>> LE 1 111 (Office)
+>>> Phone    +41 21 69 30849
+>>>
+>>>
+>>> _______________________________________________
+>>> Radiance-dev mailing list
+>>> Radiance-dev at radiance-online.org
+>>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+-- 
+Dr.-Ing.  Jan Wienold
+Ecole Polytechnique F?d?rale de Lausanne (EPFL)
+EPFL ENAC IA LIPID
+
+http://people.epfl.ch/jan.wienold
+LE 1 111 (Office)
+Phone    +41 21 69 30849
+
+
+
+From stephen at coolshadow.com  Fri Jul 24 20:24:44 2015
+From: stephen at coolshadow.com (Stephen Wasilewski)
+Date: Fri, 24 Jul 2015 20:24:44 -0700
+Subject: [Radiance-dev] Radiance-dev Digest, Vol 102, Issue 2
+In-Reply-To: <mailman.1.1437764400.65801.radiance-dev@radiance-online.org>
+References: <mailman.1.1437764400.65801.radiance-dev@radiance-online.org>
+Message-ID: <CAK5mS-9OA_dAY1OSa+uxOM5pQZD+pDFGRs7eFYBDUPWx96K=3A@mail.gmail.com>
+
+we recently tested this on a new IMac (which will not accept a mavericks
+install) and while calling rad with -N option still hangs, making an rpiece
+call directly works.  If you redirect rad with a  -n into a shell file and
+then run, it works.
+On Jul 24, 2015 2:00 PM, <radiance-dev-request at radiance-online.org> wrote:
+
+> Send Radiance-dev mailing list submissions to
+>         radiance-dev at radiance-online.org
+>
+> To subscribe or unsubscribe via the World Wide Web, visit
+>         http://www.radiance-online.org/mailman/listinfo/radiance-dev
+> or, via email, send a message with subject or body 'help' to
+>         radiance-dev-request at radiance-online.org
+>
+> You can reach the person managing the list at
+>         radiance-dev-owner at radiance-online.org
+>
+> When replying, please edit your Subject line so it is more specific
+> than "Re: Contents of Radiance-dev digest..."
+>
+>
+> Today's Topics:
+>
+>    1. Re: MacOS Yosemite (Jan Wienold)
+>    2. Re: MacOS Yosemite (Gregory J. Ward)
+>
+>
+> ----------------------------------------------------------------------
+>
+> Message: 1
+> Date: Fri, 24 Jul 2015 11:36:52 +0200
+> From: Jan Wienold <jan.wienold at epfl.ch>
+> To: code development <radiance-dev at radiance-online.org>
+> Subject: Re: [Radiance-dev] MacOS Yosemite
+> Message-ID: <55B20734.7070401 at epfl.ch>
+> Content-Type: text/plain; charset=windows-1252; format=flowed
+>
+> Hi all,
+>
+> is this problem still existent ? We are currently re-installing several
+> mac-machines and I'm wondering if I still should go for Maverick to
+> avoid this problem.
+>
+> thanks!
+>
+> Best,
+>
+> Jan
+>
+> Am 11/18/14 um 7:15 PM schrieb Andreas Noback:
+> > Hi Greg,
+> >
+> > thank you for the quick response. I suspected that it is a bug from
+> Apple and was hoping that the update today (10.10.1) would change
+> something, but it does not. In general the Yosemite release seems to me
+> buggier that the last couple of major updates, so it could be wise to avoid
+> it for a while ...
+> >
+> > Best,
+> > Andreas
+> >
+> >
+> >> Am 18.11.2014 um 18:58 schrieb Gregory J. Ward <gregoryjward at gmail.com
+> >:
+> >>
+> >> Hi Andreas,
+> >>
+> >> A quick follow-up to this.  I tried it out on my copy of Yosemite, and
+> confirmed the problem.  It seems to be an intermittent problem with the
+> system select() call, which means there's little I can do about it except
+> hope Apple recognizes the issue and posts a patch at some point.  The last
+> change I made in this code related to a hanging condition was in 1997, and
+> it's been working across Unix implementations since then.
+> >>
+> >> For now, I can only suggest you avoid multiprocessing until the next
+> patch release.  You can try reporting a bug to Apple, but without a simple
+> test case to reproduce it, they are unlikely to do anything other than
+> register the complaint.  I haven't seen anything on the net about it, yet.
+> >>
+> >> Cheers,
+> >> -Greg
+> >>
+> >>> From: "Gregory J. Ward" <gregoryjward at gmail.com>
+> >>> Subject: Re: [Radiance-dev] MacOS Yosemite
+> >>> Date: November 18, 2014 8:10:48 AM PST
+> >>>
+> >>> HI Andreas,
+> >>>
+> >>> I am sorry to hear about this issue, and it is unlikely that there is
+> any way to debug it.  A hung process doesn't respond to debugging, either!
+> >>>
+> >>> The best approach is to kill one of the processes using "kill -QUIT"
+> and seeing if it leaves behind a diagnostic file in
+> $HOME/Library/Logs/CrashReporter/.  Then at least, we may find out what
+> routine it is hanging in.
+> >>>
+> >>> The only other idea I had is to disable "App Nap" system-wide to see
+> if this is causing the problem.  See:
+> >>>
+> >>>     http://www.defaults-write.com/10-9-disable-app-nap-in-os-x
+> >>>
+> >>> I don't know why this would affect non-application processes, or why
+> it would present an issue in 10.10 if it wasn't an issue in 10.9, but it's
+> worth a try.
+> >>>
+> >>> I will see if I can reproduce this on my copy of Yosemite as well.
+> >>>
+> >>> Best,
+> >>> -Greg
+> >>>
+> >>>> From: Andreas Noback <mail at noback.info>
+> >>>> Subject: [Radiance-dev] MacOS Yosemite
+> >>>> Date: November 18, 2014 1:25:27 AM PST
+> >>>>
+> >>>> Dear List,
+> >>>>
+> >>>> has someone experience with radiance and new MacOS 10.10? I tried it
+> and got some unpleasant results: If you start rad with the -N option (for
+> example: rad -N 4 -o x11 -v hem test.rif) it start as usual, but after a
+> few seconds it seems to stuck, i. e. not responding to input, no further
+> refining, no processor load. The processes seem to be waiting for something
+> (forever):
+> >>>>
+> >>>> 1447 s000  S+     0:00.00 rad -N 4 -o x11 -v hem test.rif
+> >>>> 1450 s000  S+     0:00.03 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0
+> -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+> >>>> 1452 s000  S+     0:00.25 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0
+> -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+> >>>> 1453 s000  S+     0:00.24 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0
+> -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+> >>>> 1454 s000  S+     0:00.24 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0
+> -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+> >>>> 1455 s000  S+     0:00.28 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0
+> -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+> >>>>
+> >>>> Similar things happen if you use it without -o x11 (rad -N 4 -v hem
+> test.rif): some process start, parts of the image will be rendered. Than
+> the load goes to zero and nothing happens any more. Here you can see some
+> zombies:
+> >>>>
+> >>>> 1315 s000  S+     0:00.01 rad -N 4 -v hem test.rif
+> >>>> 1318 s000  Z+     0:00.00 (rad)
+> >>>> 1325 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms
+> 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+> >>>> 1408 s000  S+     0:00.00 rad -N 4 -v hem test.rif
+> >>>> 1409 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj
+> -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+> >>>> 1410 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms
+> 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+> >>>> 1411 s000  Z+     0:00.00 (rpict)
+> >>>> 1412 s000  S+     0:00.00 rad -N 4 -v hem test.rif
+> >>>> 1413 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj
+> -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+> >>>> 1414 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms
+> 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+> >>>> 1416 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj
+> -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+> >>>> 1417 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms
+> 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+> >>>>
+> >>>> There is nothing in the logs. I got the same results with the
+> precompiled binaries and binaries compiled from the head revision under
+> 10.10 with Xcode 6.1.
+> >>>>
+> >>>> Any suggestions?
+> >>>>
+> >>>> Andreas Noback
+> >> _______________________________________________
+> >> Radiance-dev mailing list
+> >> Radiance-dev at radiance-online.org
+> >> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+> >
+> > _______________________________________________
+> > Radiance-dev mailing list
+> > Radiance-dev at radiance-online.org
+> > http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+> --
+> Dr.-Ing.  Jan Wienold
+> Ecole Polytechnique F?d?rale de Lausanne (EPFL)
+> EPFL ENAC IA LIPID
+>
+> http://people.epfl.ch/jan.wienold
+> LE 1 111 (Office)
+> Phone    +41 21 69 30849
+>
+>
+>
+>
+> ------------------------------
+>
+> Message: 2
+> Date: Fri, 24 Jul 2015 09:04:58 -0700
+> From: "Gregory J. Ward" <gregoryjward at gmail.com>
+> To: code development <radiance-dev at radiance-online.org>
+> Subject: Re: [Radiance-dev] MacOS Yosemite
+> Message-ID: <1F4C7147-9E0A-4384-B89F-B973B864723F at gmail.com>
+> Content-Type: text/plain; charset=windows-1252
+>
+> Hi Jan,
+>
+> It's really difficult to find any information on low-level system calls in
+> Mac OS X.  Unfortunately, searching for "select" comes up with many
+> irrelevant hits, and bug fixes tend to list applications and behavior
+> rather that root causes.  The only really way to tell if the bug has been
+> fixed is to update to the latest version of Yosemite on one machine and run
+> some tests using rpiece to see if it hangs.  (It's easy enough to test by
+> running "rad -N 4 -v 1 scene.rif" or similar.)
+>
+> I can perform such a test tomorrow or the next day if no one else has a
+> current version of Yosemite to try it on.  I'm still running Lion, which is
+> the *oldest* version of Mac OS X that my laptop supports....
+>
+> Cheers,
+> -Greg
+>
+> > From: Jan Wienold <jan.wienold at epfl.ch>
+> > Subject: Re: [Radiance-dev] MacOS Yosemite
+> > Date: July 24, 2015 2:36:52 AM PDT
+> >
+> > Hi all,
+> >
+> > is this problem still existent ? We are currently re-installing several
+> mac-machines and I'm wondering if I still should go for Maverick to avoid
+> this problem.
+> >
+> > thanks!
+> >
+> > Best,
+> >
+> > Jan
+> >
+> > Am 11/18/14 um 7:15 PM schrieb Andreas Noback:
+> >> Hi Greg,
+> >>
+> >> thank you for the quick response. I suspected that it is a bug from
+> Apple and was hoping that the update today (10.10.1) would change
+> something, but it does not. In general the Yosemite release seems to me
+> buggier that the last couple of major updates, so it could be wise to avoid
+> it for a while ...
+> >>
+> >> Best,
+> >> Andreas
+> >>
+> >>
+> >>> Am 18.11.2014 um 18:58 schrieb Gregory J. Ward <gregoryjward at gmail.com
+> >:
+> >>>
+> >>> Hi Andreas,
+> >>>
+> >>> A quick follow-up to this.  I tried it out on my copy of Yosemite, and
+> confirmed the problem.  It seems to be an intermittent problem with the
+> system select() call, which means there's little I can do about it except
+> hope Apple recognizes the issue and posts a patch at some point.  The last
+> change I made in this code related to a hanging condition was in 1997, and
+> it's been working across Unix implementations since then.
+> >>>
+> >>> For now, I can only suggest you avoid multiprocessing until the next
+> patch release.  You can try reporting a bug to Apple, but without a simple
+> test case to reproduce it, they are unlikely to do anything other than
+> register the complaint.  I haven't seen anything on the net about it, yet.
+> >>>
+> >>> Cheers,
+> >>> -Greg
+> >>>
+> >>>> From: "Gregory J. Ward" <gregoryjward at gmail.com>
+> >>>> Subject: Re: [Radiance-dev] MacOS Yosemite
+> >>>> Date: November 18, 2014 8:10:48 AM PST
+> >>>>
+> >>>> HI Andreas,
+> >>>>
+> >>>> I am sorry to hear about this issue, and it is unlikely that there is
+> any way to debug it.  A hung process doesn't respond to debugging, either!
+> >>>>
+> >>>> The best approach is to kill one of the processes using "kill -QUIT"
+> and seeing if it leaves behind a diagnostic file in
+> $HOME/Library/Logs/CrashReporter/.  Then at least, we may find out what
+> routine it is hanging in.
+> >>>>
+> >>>> The only other idea I had is to disable "App Nap" system-wide to see
+> if this is causing the problem.  See:
+> >>>>
+> >>>>    http://www.defaults-write.com/10-9-disable-app-nap-in-os-x
+> >>>>
+> >>>> I don't know why this would affect non-application processes, or why
+> it would present an issue in 10.10 if it wasn't an issue in 10.9, but it's
+> worth a try.
+> >>>>
+> >>>> I will see if I can reproduce this on my copy of Yosemite as well.
+> >>>>
+> >>>> Best,
+> >>>> -Greg
+> >>>>
+> >>>>> From: Andreas Noback <mail at noback.info>
+> >>>>> Subject: [Radiance-dev] MacOS Yosemite
+> >>>>> Date: November 18, 2014 1:25:27 AM PST
+> >>>>>
+> >>>>> Dear List,
+> >>>>>
+> >>>>> has someone experience with radiance and new MacOS 10.10? I tried it
+> and got some unpleasant results: If you start rad with the -N option (for
+> example: rad -N 4 -o x11 -v hem test.rif) it start as usual, but after a
+> few seconds it seems to stuck, i. e. not responding to input, no further
+> refining, no processor load. The processes seem to be waiting for something
+> (forever):
+> >>>>>
+> >>>>> 1447 s000  S+     0:00.00 rad -N 4 -o x11 -v hem test.rif
+> >>>>> 1450 s000  S+     0:00.03 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0
+> -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+> >>>>> 1452 s000  S+     0:00.25 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0
+> -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+> >>>>> 1453 s000  S+     0:00.24 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0
+> -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+> >>>>> 1454 s000  S+     0:00.24 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0
+> -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+> >>>>> 1455 s000  S+     0:00.28 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0
+> -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+> >>>>>
+> >>>>> Similar things happen if you use it without -o x11 (rad -N 4 -v hem
+> test.rif): some process start, parts of the image will be rendered. Than
+> the load goes to zero and nothing happens any more. Here you can see some
+> zombies:
+> >>>>>
+> >>>>> 1315 s000  S+     0:00.01 rad -N 4 -v hem test.rif
+> >>>>> 1318 s000  Z+     0:00.00 (rad)
+> >>>>> 1325 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms
+> 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+> >>>>> 1408 s000  S+     0:00.00 rad -N 4 -v hem test.rif
+> >>>>> 1409 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj
+> -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+> >>>>> 1410 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms
+> 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+> >>>>> 1411 s000  Z+     0:00.00 (rpict)
+> >>>>> 1412 s000  S+     0:00.00 rad -N 4 -v hem test.rif
+> >>>>> 1413 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj
+> -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+> >>>>> 1414 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms
+> 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+> >>>>> 1416 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj
+> -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+> >>>>> 1417 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms
+> 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+> >>>>>
+> >>>>> There is nothing in the logs. I got the same results with the
+> precompiled binaries and binaries compiled from the head revision under
+> 10.10 with Xcode 6.1.
+> >>>>>
+> >>>>> Any suggestions?
+> >>>>>
+> >>>>> Andreas Noback
+> >>> _______________________________________________
+> >>> Radiance-dev mailing list
+> >>> Radiance-dev at radiance-online.org
+> >>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+> >>
+> >> _______________________________________________
+> >> Radiance-dev mailing list
+> >> Radiance-dev at radiance-online.org
+> >> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+> >
+> > --
+> > Dr.-Ing.  Jan Wienold
+> > Ecole Polytechnique F?d?rale de Lausanne (EPFL)
+> > EPFL ENAC IA LIPID
+> >
+> > http://people.epfl.ch/jan.wienold
+> > LE 1 111 (Office)
+> > Phone    +41 21 69 30849
+> >
+> >
+> > _______________________________________________
+> > Radiance-dev mailing list
+> > Radiance-dev at radiance-online.org
+> > http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+>
+> ------------------------------
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+> End of Radiance-dev Digest, Vol 102, Issue 2
+> ********************************************
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20150724/299f2adb/attachment-0001.html>
+
+From gregoryjward at gmail.com  Fri Jul 24 22:08:04 2015
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri, 24 Jul 2015 22:08:04 -0700
+Subject: [Radiance-dev] Radiance-dev Digest, Vol 102, Issue 2
+In-Reply-To: <CAK5mS-9OA_dAY1OSa+uxOM5pQZD+pDFGRs7eFYBDUPWx96K=3A@mail.gmail.com>
+References: <mailman.1.1437764400.65801.radiance-dev@radiance-online.org>
+	<CAK5mS-9OA_dAY1OSa+uxOM5pQZD+pDFGRs7eFYBDUPWx96K=3A@mail.gmail.com>
+Message-ID: <4734E74C-CA8F-4EDA-B8F0-9254B7920055@gmail.com>
+
+The bug seems to be an intermittent problem with the system select() call, for which there is no substitute. Almost all multiprocessing methods in Radiance rely on it. It's difficult to investigate as the main process hangs in the system call and there is no way to determine why except by putting printf() statements in the OS X (Darwin) kernel, assuming you know how to recompile it.  Even coming up with a simple test case to reproduce the problem is challenging. I'm really at a loss on this one....
+
+-Greg
+
+Sent from my iPad
+
+> On Jul 24, 2015, at 8:24 PM, Stephen Wasilewski <stephen at coolshadow.com> wrote:
+> 
+> we recently tested this on a new IMac (which will not accept a mavericks install) and while calling rad with -N option still hangs, making an rpiece call directly works.  If you redirect rad with a  -n into a shell file and then run, it works.
+> 
+>> On Jul 24, 2015 2:00 PM, <radiance-dev-request at radiance-online.org> wrote:
+>> Send Radiance-dev mailing list submissions to
+>>         radiance-dev at radiance-online.org
+>> 
+>> To subscribe or unsubscribe via the World Wide Web, visit
+>>         http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>> or, via email, send a message with subject or body 'help' to
+>>         radiance-dev-request at radiance-online.org
+>> 
+>> You can reach the person managing the list at
+>>         radiance-dev-owner at radiance-online.org
+>> 
+>> When replying, please edit your Subject line so it is more specific
+>> than "Re: Contents of Radiance-dev digest..."
+>> 
+>> 
+>> Today's Topics:
+>> 
+>>    1. Re: MacOS Yosemite (Jan Wienold)
+>>    2. Re: MacOS Yosemite (Gregory J. Ward)
+>> 
+>> 
+>> ----------------------------------------------------------------------
+>> 
+>> Message: 1
+>> Date: Fri, 24 Jul 2015 11:36:52 +0200
+>> From: Jan Wienold <jan.wienold at epfl.ch>
+>> To: code development <radiance-dev at radiance-online.org>
+>> Subject: Re: [Radiance-dev] MacOS Yosemite
+>> Message-ID: <55B20734.7070401 at epfl.ch>
+>> Content-Type: text/plain; charset=windows-1252; format=flowed
+>> 
+>> Hi all,
+>> 
+>> is this problem still existent ? We are currently re-installing several
+>> mac-machines and I'm wondering if I still should go for Maverick to
+>> avoid this problem.
+>> 
+>> thanks!
+>> 
+>> Best,
+>> 
+>> Jan
+>> 
+>> Am 11/18/14 um 7:15 PM schrieb Andreas Noback:
+>> > Hi Greg,
+>> >
+>> > thank you for the quick response. I suspected that it is a bug from Apple and was hoping that the update today (10.10.1) would change something, but it does not. In general the Yosemite release seems to me buggier that the last couple of major updates, so it could be wise to avoid it for a while ...
+>> >
+>> > Best,
+>> > Andreas
+>> >
+>> >
+>> >> Am 18.11.2014 um 18:58 schrieb Gregory J. Ward <gregoryjward at gmail.com>:
+>> >>
+>> >> Hi Andreas,
+>> >>
+>> >> A quick follow-up to this.  I tried it out on my copy of Yosemite, and confirmed the problem.  It seems to be an intermittent problem with the system select() call, which means there's little I can do about it except hope Apple recognizes the issue and posts a patch at some point.  The last change I made in this code related to a hanging condition was in 1997, and it's been working across Unix implementations since then.
+>> >>
+>> >> For now, I can only suggest you avoid multiprocessing until the next patch release.  You can try reporting a bug to Apple, but without a simple test case to reproduce it, they are unlikely to do anything other than register the complaint.  I haven't seen anything on the net about it, yet.
+>> >>
+>> >> Cheers,
+>> >> -Greg
+>> >>
+>> >>> From: "Gregory J. Ward" <gregoryjward at gmail.com>
+>> >>> Subject: Re: [Radiance-dev] MacOS Yosemite
+>> >>> Date: November 18, 2014 8:10:48 AM PST
+>> >>>
+>> >>> HI Andreas,
+>> >>>
+>> >>> I am sorry to hear about this issue, and it is unlikely that there is any way to debug it.  A hung process doesn't respond to debugging, either!
+>> >>>
+>> >>> The best approach is to kill one of the processes using "kill -QUIT" and seeing if it leaves behind a diagnostic file in $HOME/Library/Logs/CrashReporter/.  Then at least, we may find out what routine it is hanging in.
+>> >>>
+>> >>> The only other idea I had is to disable "App Nap" system-wide to see if this is causing the problem.  See:
+>> >>>
+>> >>>     http://www.defaults-write.com/10-9-disable-app-nap-in-os-x
+>> >>>
+>> >>> I don't know why this would affect non-application processes, or why it would present an issue in 10.10 if it wasn't an issue in 10.9, but it's worth a try.
+>> >>>
+>> >>> I will see if I can reproduce this on my copy of Yosemite as well.
+>> >>>
+>> >>> Best,
+>> >>> -Greg
+>> >>>
+>> >>>> From: Andreas Noback <mail at noback.info>
+>> >>>> Subject: [Radiance-dev] MacOS Yosemite
+>> >>>> Date: November 18, 2014 1:25:27 AM PST
+>> >>>>
+>> >>>> Dear List,
+>> >>>>
+>> >>>> has someone experience with radiance and new MacOS 10.10? I tried it and got some unpleasant results: If you start rad with the -N option (for example: rad -N 4 -o x11 -v hem test.rif) it start as usual, but after a few seconds it seems to stuck, i. e. not responding to input, no further refining, no processor load. The processes seem to be waiting for something (forever):
+>> >>>>
+>> >>>> 1447 s000  S+     0:00.00 rad -N 4 -o x11 -v hem test.rif
+>> >>>> 1450 s000  S+     0:00.03 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>> >>>> 1452 s000  S+     0:00.25 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>> >>>> 1453 s000  S+     0:00.24 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>> >>>> 1454 s000  S+     0:00.24 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>> >>>> 1455 s000  S+     0:00.28 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>> >>>>
+>> >>>> Similar things happen if you use it without -o x11 (rad -N 4 -v hem test.rif): some process start, parts of the image will be rendered. Than the load goes to zero and nothing happens any more. Here you can see some zombies:
+>> >>>>
+>> >>>> 1315 s000  S+     0:00.01 rad -N 4 -v hem test.rif
+>> >>>> 1318 s000  Z+     0:00.00 (rad)
+>> >>>> 1325 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>> >>>> 1408 s000  S+     0:00.00 rad -N 4 -v hem test.rif
+>> >>>> 1409 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+>> >>>> 1410 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>> >>>> 1411 s000  Z+     0:00.00 (rpict)
+>> >>>> 1412 s000  S+     0:00.00 rad -N 4 -v hem test.rif
+>> >>>> 1413 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+>> >>>> 1414 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>> >>>> 1416 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+>> >>>> 1417 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>> >>>>
+>> >>>> There is nothing in the logs. I got the same results with the precompiled binaries and binaries compiled from the head revision under 10.10 with Xcode 6.1.
+>> >>>>
+>> >>>> Any suggestions?
+>> >>>>
+>> >>>> Andreas Noback
+>> >> _______________________________________________
+>> >> Radiance-dev mailing list
+>> >> Radiance-dev at radiance-online.org
+>> >> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>> >
+>> > _______________________________________________
+>> > Radiance-dev mailing list
+>> > Radiance-dev at radiance-online.org
+>> > http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>> 
+>> --
+>> Dr.-Ing.  Jan Wienold
+>> Ecole Polytechnique F?d?rale de Lausanne (EPFL)
+>> EPFL ENAC IA LIPID
+>> 
+>> http://people.epfl.ch/jan.wienold
+>> LE 1 111 (Office)
+>> Phone    +41 21 69 30849
+>> 
+>> 
+>> 
+>> 
+>> ------------------------------
+>> 
+>> Message: 2
+>> Date: Fri, 24 Jul 2015 09:04:58 -0700
+>> From: "Gregory J. Ward" <gregoryjward at gmail.com>
+>> To: code development <radiance-dev at radiance-online.org>
+>> Subject: Re: [Radiance-dev] MacOS Yosemite
+>> Message-ID: <1F4C7147-9E0A-4384-B89F-B973B864723F at gmail.com>
+>> Content-Type: text/plain; charset=windows-1252
+>> 
+>> Hi Jan,
+>> 
+>> It's really difficult to find any information on low-level system calls in Mac OS X.  Unfortunately, searching for "select" comes up with many irrelevant hits, and bug fixes tend to list applications and behavior rather that root causes.  The only really way to tell if the bug has been fixed is to update to the latest version of Yosemite on one machine and run some tests using rpiece to see if it hangs.  (It's easy enough to test by running "rad -N 4 -v 1 scene.rif" or similar.)
+>> 
+>> I can perform such a test tomorrow or the next day if no one else has a current version of Yosemite to try it on.  I'm still running Lion, which is the *oldest* version of Mac OS X that my laptop supports....
+>> 
+>> Cheers,
+>> -Greg
+>> 
+>> > From: Jan Wienold <jan.wienold at epfl.ch>
+>> > Subject: Re: [Radiance-dev] MacOS Yosemite
+>> > Date: July 24, 2015 2:36:52 AM PDT
+>> >
+>> > Hi all,
+>> >
+>> > is this problem still existent ? We are currently re-installing several mac-machines and I'm wondering if I still should go for Maverick to avoid this problem.
+>> >
+>> > thanks!
+>> >
+>> > Best,
+>> >
+>> > Jan
+>> >
+>> > Am 11/18/14 um 7:15 PM schrieb Andreas Noback:
+>> >> Hi Greg,
+>> >>
+>> >> thank you for the quick response. I suspected that it is a bug from Apple and was hoping that the update today (10.10.1) would change something, but it does not. In general the Yosemite release seems to me buggier that the last couple of major updates, so it could be wise to avoid it for a while ...
+>> >>
+>> >> Best,
+>> >> Andreas
+>> >>
+>> >>
+>> >>> Am 18.11.2014 um 18:58 schrieb Gregory J. Ward <gregoryjward at gmail.com>:
+>> >>>
+>> >>> Hi Andreas,
+>> >>>
+>> >>> A quick follow-up to this.  I tried it out on my copy of Yosemite, and confirmed the problem.  It seems to be an intermittent problem with the system select() call, which means there's little I can do about it except hope Apple recognizes the issue and posts a patch at some point.  The last change I made in this code related to a hanging condition was in 1997, and it's been working across Unix implementations since then.
+>> >>>
+>> >>> For now, I can only suggest you avoid multiprocessing until the next patch release.  You can try reporting a bug to Apple, but without a simple test case to reproduce it, they are unlikely to do anything other than register the complaint.  I haven't seen anything on the net about it, yet.
+>> >>>
+>> >>> Cheers,
+>> >>> -Greg
+>> >>>
+>> >>>> From: "Gregory J. Ward" <gregoryjward at gmail.com>
+>> >>>> Subject: Re: [Radiance-dev] MacOS Yosemite
+>> >>>> Date: November 18, 2014 8:10:48 AM PST
+>> >>>>
+>> >>>> HI Andreas,
+>> >>>>
+>> >>>> I am sorry to hear about this issue, and it is unlikely that there is any way to debug it.  A hung process doesn't respond to debugging, either!
+>> >>>>
+>> >>>> The best approach is to kill one of the processes using "kill -QUIT" and seeing if it leaves behind a diagnostic file in $HOME/Library/Logs/CrashReporter/.  Then at least, we may find out what routine it is hanging in.
+>> >>>>
+>> >>>> The only other idea I had is to disable "App Nap" system-wide to see if this is causing the problem.  See:
+>> >>>>
+>> >>>>    http://www.defaults-write.com/10-9-disable-app-nap-in-os-x
+>> >>>>
+>> >>>> I don't know why this would affect non-application processes, or why it would present an issue in 10.10 if it wasn't an issue in 10.9, but it's worth a try.
+>> >>>>
+>> >>>> I will see if I can reproduce this on my copy of Yosemite as well.
+>> >>>>
+>> >>>> Best,
+>> >>>> -Greg
+>> >>>>
+>> >>>>> From: Andreas Noback <mail at noback.info>
+>> >>>>> Subject: [Radiance-dev] MacOS Yosemite
+>> >>>>> Date: November 18, 2014 1:25:27 AM PST
+>> >>>>>
+>> >>>>> Dear List,
+>> >>>>>
+>> >>>>> has someone experience with radiance and new MacOS 10.10? I tried it and got some unpleasant results: If you start rad with the -N option (for example: rad -N 4 -o x11 -v hem test.rif) it start as usual, but after a few seconds it seems to stuck, i. e. not responding to input, no further refining, no processor load. The processes seem to be waiting for something (forever):
+>> >>>>>
+>> >>>>> 1447 s000  S+     0:00.00 rad -N 4 -o x11 -v hem test.rif
+>> >>>>> 1450 s000  S+     0:00.03 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>> >>>>> 1452 s000  S+     0:00.25 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>> >>>>> 1453 s000  S+     0:00.24 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>> >>>>> 1454 s000  S+     0:00.24 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>> >>>>> 1455 s000  S+     0:00.28 rvu -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0 -dp 512 -
+>> >>>>>
+>> >>>>> Similar things happen if you use it without -o x11 (rad -N 4 -v hem test.rif): some process start, parts of the image will be rendered. Than the load goes to zero and nothing happens any more. Here you can see some zombies:
+>> >>>>>
+>> >>>>> 1315 s000  S+     0:00.01 rad -N 4 -v hem test.rif
+>> >>>>> 1318 s000  Z+     0:00.00 (rad)
+>> >>>>> 1325 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>> >>>>> 1408 s000  S+     0:00.00 rad -N 4 -v hem test.rif
+>> >>>>> 1409 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+>> >>>>> 1410 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>> >>>>> 1411 s000  Z+     0:00.00 (rpict)
+>> >>>>> 1412 s000  S+     0:00.00 rad -N 4 -v hem test.rif
+>> >>>>> 1413 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+>> >>>>> 1414 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>> >>>>> 1416 s000  S+     0:00.01 rpiece -F test_hem_rpsync.txt -PP pfM4wGSj -vth -vp 0 0 0.001 -vd 0 0 1 -vu 0 1 0 -vh 180 -v
+>> >>>>> 1417 s000  S+     0:00.00 rpict -S 1 -PP pfM4wGSj -dp 512 -ar 32 -ms 0.05 -ds .3 -dt .1 -dc .5 -dr 1 -ss 1 -st .1 -ab
+>> >>>>>
+>> >>>>> There is nothing in the logs. I got the same results with the precompiled binaries and binaries compiled from the head revision under 10.10 with Xcode 6.1.
+>> >>>>>
+>> >>>>> Any suggestions?
+>> >>>>>
+>> >>>>> Andreas Noback
+>> >>> _______________________________________________
+>> >>> Radiance-dev mailing list
+>> >>> Radiance-dev at radiance-online.org
+>> >>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>> >>
+>> >> _______________________________________________
+>> >> Radiance-dev mailing list
+>> >> Radiance-dev at radiance-online.org
+>> >> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>> >
+>> > --
+>> > Dr.-Ing.  Jan Wienold
+>> > Ecole Polytechnique F?d?rale de Lausanne (EPFL)
+>> > EPFL ENAC IA LIPID
+>> >
+>> > http://people.epfl.ch/jan.wienold
+>> > LE 1 111 (Office)
+>> > Phone    +41 21 69 30849
+>> >
+>> >
+>> > _______________________________________________
+>> > Radiance-dev mailing list
+>> > Radiance-dev at radiance-online.org
+>> > http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>> 
+>> 
+>> 
+>> ------------------------------
+>> 
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>> 
+>> 
+>> End of Radiance-dev Digest, Vol 102, Issue 2
+>> ********************************************
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20150724/0e212b93/attachment-0001.html>
+

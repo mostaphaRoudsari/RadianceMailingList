@@ -1,0 +1,1389 @@
+From pally.sandher at iesve.com  Thu Sep  6 09:10:41 2012
+From: pally.sandher at iesve.com (Pally Sandher)
+Date: Thu, 6 Sep 2012 16:10:41 +0000
+Subject: [Radiance-dev] Compiling from source on Windows platforms
+Message-ID: <A7E25FADF831E94DBBD5904D7E58486517C698@GL-EXC-01.iesve.com>
+
+As http://radiance-online.org/download-install/installation-information/windows-installation.html has nothing other than a placeholder for a link and neither does http://openstudio.nrel.gov/getting-started-developer/getting-started-radiance I thought I'd post my experience with this now that I've had some time to give it a go.
+
+Building a project which implements CMake on Windows is usually quite straightforward but this ultimately depends on the project being built. Thankfully Radiance isn't much of an exception to this.
+
+Stuff you'll need:
+1 - A Windows system (obviously). I used Windows 7 x64.
+2 - A compiler (obviously). I used Visual Studio 2010 SP1 but the steps should be similar for Visual Studio 2008. minGW will likely require extra hoops as it doesn't have an IDE to simplify the build process.
+3 - CMake (obviously). I used CMake 2.8.9 since it's the latest release as of 9th August -> http://www.cmake.org/cmake/resources/software.html 
+4 - The Radiance source including CMake files. Easiest way to get these is to go to http://public.kitware.com/gitweb?p=radiance.git;a=tree & click the "snapshot" link in the top left corner to download a .tar.gz archive. The 4.1 release of the source doesn't have any of the CMake files so you have to use the latest from the repository until an official 4.2 is released.
+5 - Qt libraries. These can either be installed using the pre-built packages or built from source, all of which are available from http://qt.nokia.com/downloads. I had built the Qt v4.8.2 libraries from source previously so used that.
+6 - Tiff library for Windows. Again this can either be installed using a pre-built package or built from source. You can find this at http://gnuwin32.sourceforge.net/packages/tiff.htm I used the pre-built package as the sources are configured to be built with Visual Studio 6 & wasn't in the mood to update it just to build a .lib file.
+
+You should then be able to load up CMake, point it at the root of the Radiance source tree, give it a build directory (I suggest something like "build" inside the extracted source directory to keep things together) & click Configure. Assuming no errors, you should then be able to click Generate & you'll get a load of projects & solutions built. You can then open the solution and build the projects. It will output the files to <build directory>\bin\Release or <build directory>\bin\Debug\
+
+At this point I suggest you download the zip archive of binaries and library files from https://openstudio.nrel.gov/getting-started-developer/getting-started-radiance as you only have a load of binaries which is great but you'll be missing crucial library files so you can't really do anything with your binaries (and no manuals either).
+
+A few issues I have with the above are as follows:
+1 - Qt and libtiff are *required* for CMake to generate a build source. They should be optional & when not available the relevant projects which require them (rvu, ra_tiff etc) should be omitted from the generated source. Zlib can be omitted without issue (not sure which project uses it though).
+
+2 - CMake generates projects using Absolute paths rather than Relative paths. Major failure point as this requires manual updating of over 100 projects with a minimum of 5 paths per project if you wish to fix this otherwise you must replicate the file structure on every machine you want to use the CMake generated build source. All other projects I've used which implement CMake will give you the option of using relative paths if you so wish.
+
+3 - falsecolor , genBSDF, genklemsamp, genskyvec & objview don't exist in the CMake build source. I assume this is due to them being Perl & Ruby scripts in the NREL binaries archive (falsecolor appears to have C source code available?)
+
+4 - manuals are in unix man/postscript format which unsurprisingly isn't widely supported on Windows. Should preferably be Compiled HTML Help (.chm) or at the very least converted to HTML or PDF to make them more readable.
+
+5 - Radiance source is littered with the now defunct Scons build files. Not a massive issue but they should probably be cleaned out since they're no longer relevant.
+
+6 - Building using Shared libraries doesn't work. Code is generated but attempting to build generates loads of linker errors. Again not a massive issue since static builds work fine & the compiled binaries are small enough that they're unlikely to save much anyway but I thought I should mention it.
+
+7 - 2107 warnings during build. Some of these may be due to me using VS 2010 while NREL use VS 2008 however but even still it's rather high for such a small code base. 
+
+
+That's it so far. I have to say it's a giant leap from the old decrepit Scons system. Building now takes minutes once you've downloaded the code rather than hours (and actually works 'out of the box' without requiring a load of manual tweaking).
+
+Palbinder Sandher 
+Software Platform Engineer 
+T: +44 (0) 141 945 8500
+F: +44 (0) 141 945 8501
+http://www.iesve.com 
+
+**Design, Simulate + Innovate with the <Virtual Environment>** 
+Integrated Environmental Solutions Limited. Registered in Scotland No. SC151456
+Registered Office - Helix Building, West Of Scotland Science Park, Glasgow G20 0SP
+Email Disclaimer 
+
+
+
+
+From jacobs.axel at gmail.com  Thu Sep  6 09:26:26 2012
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Thu, 6 Sep 2012 17:26:26 +0100
+Subject: [Radiance-dev] Compiling from source on Windows platforms
+In-Reply-To: <A7E25FADF831E94DBBD5904D7E58486517C698@GL-EXC-01.iesve.com>
+References: <A7E25FADF831E94DBBD5904D7E58486517C698@GL-EXC-01.iesve.com>
+Message-ID: <CA+dqh60AtUd7pMS3vXh69fiwYusyOre3_UK_xP-Pc31RKg6UJg@mail.gmail.com>
+
+> 3 - falsecolor , genBSDF, genklemsamp, genskyvec & objview don't exist in the CMake build source. I assume this is due to them being Perl & Ruby scripts in the NREL binaries archive (falsecolor appears to have C source code available?)
+
+falsecolor , genBSDF, genklemsamp, genskyvec are all Perl scripts. At
+present, they require a Perl interpreter to be installed. It is
+possible to compile them into exe files using PAR::Packer. I've
+successfully done this with falsecolor, but this is not part of the
+build system yet (not in Classic and not in NREL). I believe it's one
+of Rob's nice-but-not-essential items on his to-do list.
+
+objview for Windows is a Ruby script. This should probably be
+re-written in Perl to avoid unnecessary folking of the source tree and
+extra deps for non-OpenStudio users.
+
+Cheers
+
+Axel
+
+
+From Robert.Guglielmetti at nrel.gov  Thu Sep  6 11:13:42 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Thu, 6 Sep 2012 12:13:42 -0600
+Subject: [Radiance-dev] Compiling from source on Windows platforms
+In-Reply-To: <A7E25FADF831E94DBBD5904D7E58486517C698@GL-EXC-01.iesve.com>
+Message-ID: <CC6E362C.141C7%robert.guglielmetti@nrel.gov>
+
+Thanks Pally for this nice summary overview. I am very remiss in getting
+something like this posted to the OpenStudio support page. Thanks Axel for
+your responses as well. Replies to both of you within...
+
+- Rob
+
+
+On 9/6/12 10:10 AM, "Pally Sandher" <pally.sandher at iesve.com> wrote:
+>4 - The Radiance source including CMake files. Easiest way to get these
+>is to go to http://public.kitware.com/gitweb?p=radiance.git;a=tree &
+>click the "snapshot" link in the top left corner to download a .tar.gz
+>archive. The 4.1 release of the source doesn't have any of the CMake
+>files so you have to use the latest from the repository until an official
+>4.2 is released.
+
+Actually the easiest way to grab the latest source tree is to install git
+and just make a clone of the repo on your system:
+
+$ git clone http://public.kitware.com/radiance.git
+
+This is a copy of the CVS repository, and it's updated nightly. To update
+your git clone after the initial download, simply do a git pull while in
+the CVS directory:
+
+$ git pull
+
+NREL plans to host a repo on Github which will allow me to update the repo
+manually whenever Greg checks in a change. But for now the Kitware repo is
+at least updated every evening at midnight.
+
+
+>5 - Qt libraries. These can either be installed using the pre-built
+>packages or built from source, all of which are available from
+>http://qt.nokia.com/downloads. I had built the Qt v4.8.2 libraries from
+>source previously so used that.
+
+The installer works fine too.
+
+>6 - Tiff library for Windows. Again this can either be installed using a
+>pre-built package or built from source. You can find this at
+>http://gnuwin32.sourceforge.net/packages/tiff.htm I used the pre-built
+>package as the sources are configured to be built with Visual Studio 6 &
+>wasn't in the mood to update it just to build a .lib file.
+
+Yup, I use the installer for this as well. Easier.
+
+>You should then be able to load up CMake, point it at the root of the
+>Radiance source tree, give it a build directory (I suggest something like
+>"build" inside the extracted source directory to keep things together) &
+>click Configure. Assuming no errors, you should then be able to click
+>Generate & you'll get a load of projects & solutions built. You can then
+>open the solution and build the projects. It will output the files to
+><build directory>\bin\Release or <build directory>\bin\Debug\
+>
+>At this point I suggest you download the zip archive of binaries and
+>library files from
+>https://openstudio.nrel.gov/getting-started-developer/getting-started-radi
+>ance as you only have a load of binaries which is great but you'll be
+>missing crucial library files so you can't really do anything with your
+>binaries (and no manuals either).
+
+
+Make by default merely builds the executables. If you build the INSTALL
+target, everything will be installed, including libraries, manual pages
+and all the scripts (Perl and Ruby only on Windows, of course). This is
+the same on the other platforms. "make install" will build all the
+executables and copy everything else. The default behavior is to do this:
+
+Binaries in /usr/local/radiance/bin
+Library files in /usr/local/radiance/lib
+Manpages in /usr/local/radiance/man
+
+
+>A few issues I have with the above are as follows:
+>1 - Qt and libtiff are *required* for CMake to generate a build source.
+>They should be optional & when not available the relevant projects which
+>require them (rvu, ra_tiff etc) should be omitted from the generated
+>source. Zlib can be omitted without issue (not sure which project uses it
+>though).
+
+It would be more user-friendly to do that Pally, but honestly a LOT of the
+effort around this project was to give Windows users access to programs
+like rvu. I consider ra_tiff and rvu to be critical programs in the
+Radiance suite and to include them was a major goal of this project. We
+can re-write the CMakeLists.txt files to function as you state, but it's
+way down there on my priority list.
+
+>2 - CMake generates projects using Absolute paths rather than Relative
+>paths. Major failure point as this requires manual updating of over 100
+>projects with a minimum of 5 paths per project if you wish to fix this
+>otherwise you must replicate the file structure on every machine you want
+>to use the CMake generated build source. All other projects I've used
+>which implement CMake will give you the option of using relative paths if
+>you so wish.
+
+I'm not sure I follow you here, but if you explain maybe I can fix what's
+busted for you. 
+
+>3 - falsecolor , genBSDF, genklemsamp, genskyvec & objview don't exist in
+>the CMake build source. I assume this is due to them being Perl & Ruby
+>scripts in the NREL binaries archive (falsecolor appears to have C source
+>code available?)
+
+Right. Again, these are installed and suffixed per convention (i.e. The
+suffixes are removed on UNIX systems), when the INSTALL target is made.
+
+>4 - manuals are in unix man/postscript format which unsurprisingly isn't
+>widely supported on Windows. Should preferably be Compiled HTML Help
+>(.chm) or at the very least converted to HTML or PDF to make them more
+>readable.
+
+Totally agree. This is also on the list of nice-to-haves, I just haven't
+had time to figure out an automated way to do that on Windows. The
+manpages are updated on the radiance-online.org site, however. Maybe we
+should just generate a link to them in the  /man directory on Windows
+builds for now. (?)
+
+Andy, how do those updates work? I can't access the radiance-online.org
+site from work because of our firewall crap, but I'm pretty sure there's a
+link there with links to pdf versions of all the manpages, right?
+
+>5 - Radiance source is littered with the now defunct Scons build files.
+>Not a massive issue but they should probably be cleaned out since they're
+>no longer relevant.
+
+This was discussed when the CMake system was implemented and it was agreed
+that it is absolutely still relevant. They are not defunct, and Georg
+Mischler for one still uses them. So, they should stay.
+
+>6 - Building using Shared libraries doesn't work. Code is generated but
+>attempting to build generates loads of linker errors. Again not a massive
+>issue since static builds work fine & the compiled binaries are small
+>enough that they're unlikely to save much anyway but I thought I should
+>mention it.
+
+Good point. Something else for the to-do list.
+
+>7 - 2107 warnings during build. Some of these may be due to me using VS
+>2010 while NREL use VS 2008 however but even still it's rather high for
+>such a small code base.
+
+Mmm, I generally don't get too worked up about warnings, but maybe we can
+look into this at some point.
+
+>That's it so far. I have to say it's a giant leap from the old decrepit
+>Scons system. Building now takes minutes once you've downloaded the code
+>rather than hours (and actually works 'out of the box' without requiring
+>a load of manual tweaking).
+
+Good news Pally, glad you're able to make use of it. I just got a new
+MacBook Pro and the very first thing I installed on it was CMake, and
+grabbed the Radiance source. The whole project built in 11 seconds (using
+all "eight" cores), no kidding.
+
+Thanks very much for this summary. I would like to use some of your info
+when I eventually get around to making a HOWTO for this.
+
+On 9/6/12 10:26 AM, "Axel Jacobs" <jacobs.axel at gmail.com> wrote:
+
+>falsecolor , genBSDF, genklemsamp, genskyvec are all Perl scripts. At
+>present, they require a Perl interpreter to be installed. It is
+>possible to compile them into exe files using PAR::Packer. I've
+>successfully done this with falsecolor, but this is not part of the
+>build system yet (not in Classic and not in NREL). I believe it's one
+>of Rob's nice-but-not-essential items on his to-do list.
+
+Yeah, it would be nice to compile all of those, but then again since there
+are still a great many Radiance bits implemented as csh scripts, I sorta
+feel like converting those should be more of a priority than eliminating a
+couple of simple deps. Believe it or not, I just got an email from someone
+yesterday asking where "phisto" was in his Windows installation. I didn't
+even know that one was a csh script until I looked!
+
+>objview for Windows is a Ruby script. This should probably be
+>re-written in Perl to avoid unnecessary folking of the source tree and
+>extra deps for non-OpenStudio users.
+
+I respectfully disagree, Axel. I think reimplementing objview in Perl
+would be a step backwards, and just another duplicated effort. I'd rather
+see other csh scripts get converted (and then compiled, at which point the
+language of choice becomes moot), personally.
+
+- Rob
+
+
+
+
+From Robert.Guglielmetti at nrel.gov  Thu Sep  6 18:55:56 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Thu, 6 Sep 2012 19:55:56 -0600
+Subject: [Radiance-dev] Compiling from source on Windows platforms
+In-Reply-To: <CC6E362C.141C7%robert.guglielmetti@nrel.gov>
+References: <A7E25FADF831E94DBBD5904D7E58486517C698@GL-EXC-01.iesve.com>,
+	<CC6E362C.141C7%robert.guglielmetti@nrel.gov>
+Message-ID: <FFF56A6D37A3A54F91A03601AC22DA3225FDC07A92@MAILBOX2.nrel.gov>
+
+Following up on my post from earlier today, this project seems promising for making Windows executables from Ruby code:
+
+http://ocra.rubyforge.org
+
+It's not cross platform, but it's something.
+
+Andy, here is the page I was thinking about:
+
+http://www.radiance-online.org/learning/documentation/manual-pages
+
+We could easily make a link to this page in the /man folder for Windows installs. The thing is I see that rcontrib is not linked on that page. What is the mechanism for updating that page and the linked pages? We'd only want to link to something that's always up to date. Alternatively, does anyone have any ideas or workflows for automatically generating pdfs of manpages on Windows? I'd much rather just include pdf versions on the Windows installers (or as Pally mentioned, maybe there's a way to build a Windows help file from them? I know nothing about Windows help files).
+
+Just thinking out loud. 
+
+- Rob
+
+
+
+________________________________________
+From: Guglielmetti, Robert
+Sent: Thursday, September 06, 2012 12:13 PM
+To: code development; Andrew McNeil
+Subject: Re: [Radiance-dev] Compiling from source on Windows platforms
+
+Thanks Pally for this nice summary overview. I am very remiss in getting
+something like this posted to the OpenStudio support page. Thanks Axel for
+your responses as well. Replies to both of you within...
+
+- Rob
+
+
+On 9/6/12 10:10 AM, "Pally Sandher" <pally.sandher at iesve.com> wrote:
+>4 - The Radiance source including CMake files. Easiest way to get these
+>is to go to http://public.kitware.com/gitweb?p=radiance.git;a=tree &
+>click the "snapshot" link in the top left corner to download a .tar.gz
+>archive. The 4.1 release of the source doesn't have any of the CMake
+>files so you have to use the latest from the repository until an official
+>4.2 is released.
+
+Actually the easiest way to grab the latest source tree is to install git
+and just make a clone of the repo on your system:
+
+$ git clone http://public.kitware.com/radiance.git
+
+This is a copy of the CVS repository, and it's updated nightly. To update
+your git clone after the initial download, simply do a git pull while in
+the CVS directory:
+
+$ git pull
+
+NREL plans to host a repo on Github which will allow me to update the repo
+manually whenever Greg checks in a change. But for now the Kitware repo is
+at least updated every evening at midnight.
+
+
+>5 - Qt libraries. These can either be installed using the pre-built
+>packages or built from source, all of which are available from
+>http://qt.nokia.com/downloads. I had built the Qt v4.8.2 libraries from
+>source previously so used that.
+
+The installer works fine too.
+
+>6 - Tiff library for Windows. Again this can either be installed using a
+>pre-built package or built from source. You can find this at
+>http://gnuwin32.sourceforge.net/packages/tiff.htm I used the pre-built
+>package as the sources are configured to be built with Visual Studio 6 &
+>wasn't in the mood to update it just to build a .lib file.
+
+Yup, I use the installer for this as well. Easier.
+
+>You should then be able to load up CMake, point it at the root of the
+>Radiance source tree, give it a build directory (I suggest something like
+>"build" inside the extracted source directory to keep things together) &
+>click Configure. Assuming no errors, you should then be able to click
+>Generate & you'll get a load of projects & solutions built. You can then
+>open the solution and build the projects. It will output the files to
+><build directory>\bin\Release or <build directory>\bin\Debug\
+>
+>At this point I suggest you download the zip archive of binaries and
+>library files from
+>https://openstudio.nrel.gov/getting-started-developer/getting-started-radi
+>ance as you only have a load of binaries which is great but you'll be
+>missing crucial library files so you can't really do anything with your
+>binaries (and no manuals either).
+
+
+Make by default merely builds the executables. If you build the INSTALL
+target, everything will be installed, including libraries, manual pages
+and all the scripts (Perl and Ruby only on Windows, of course). This is
+the same on the other platforms. "make install" will build all the
+executables and copy everything else. The default behavior is to do this:
+
+Binaries in /usr/local/radiance/bin
+Library files in /usr/local/radiance/lib
+Manpages in /usr/local/radiance/man
+
+
+>A few issues I have with the above are as follows:
+>1 - Qt and libtiff are *required* for CMake to generate a build source.
+>They should be optional & when not available the relevant projects which
+>require them (rvu, ra_tiff etc) should be omitted from the generated
+>source. Zlib can be omitted without issue (not sure which project uses it
+>though).
+
+It would be more user-friendly to do that Pally, but honestly a LOT of the
+effort around this project was to give Windows users access to programs
+like rvu. I consider ra_tiff and rvu to be critical programs in the
+Radiance suite and to include them was a major goal of this project. We
+can re-write the CMakeLists.txt files to function as you state, but it's
+way down there on my priority list.
+
+>2 - CMake generates projects using Absolute paths rather than Relative
+>paths. Major failure point as this requires manual updating of over 100
+>projects with a minimum of 5 paths per project if you wish to fix this
+>otherwise you must replicate the file structure on every machine you want
+>to use the CMake generated build source. All other projects I've used
+>which implement CMake will give you the option of using relative paths if
+>you so wish.
+
+I'm not sure I follow you here, but if you explain maybe I can fix what's
+busted for you.
+
+>3 - falsecolor , genBSDF, genklemsamp, genskyvec & objview don't exist in
+>the CMake build source. I assume this is due to them being Perl & Ruby
+>scripts in the NREL binaries archive (falsecolor appears to have C source
+>code available?)
+
+Right. Again, these are installed and suffixed per convention (i.e. The
+suffixes are removed on UNIX systems), when the INSTALL target is made.
+
+>4 - manuals are in unix man/postscript format which unsurprisingly isn't
+>widely supported on Windows. Should preferably be Compiled HTML Help
+>(.chm) or at the very least converted to HTML or PDF to make them more
+>readable.
+
+Totally agree. This is also on the list of nice-to-haves, I just haven't
+had time to figure out an automated way to do that on Windows. The
+manpages are updated on the radiance-online.org site, however. Maybe we
+should just generate a link to them in the  /man directory on Windows
+builds for now. (?)
+
+Andy, how do those updates work? I can't access the radiance-online.org
+site from work because of our firewall crap, but I'm pretty sure there's a
+link there with links to pdf versions of all the manpages, right?
+
+>5 - Radiance source is littered with the now defunct Scons build files.
+>Not a massive issue but they should probably be cleaned out since they're
+>no longer relevant.
+
+This was discussed when the CMake system was implemented and it was agreed
+that it is absolutely still relevant. They are not defunct, and Georg
+Mischler for one still uses them. So, they should stay.
+
+>6 - Building using Shared libraries doesn't work. Code is generated but
+>attempting to build generates loads of linker errors. Again not a massive
+>issue since static builds work fine & the compiled binaries are small
+>enough that they're unlikely to save much anyway but I thought I should
+>mention it.
+
+Good point. Something else for the to-do list.
+
+>7 - 2107 warnings during build. Some of these may be due to me using VS
+>2010 while NREL use VS 2008 however but even still it's rather high for
+>such a small code base.
+
+Mmm, I generally don't get too worked up about warnings, but maybe we can
+look into this at some point.
+
+>That's it so far. I have to say it's a giant leap from the old decrepit
+>Scons system. Building now takes minutes once you've downloaded the code
+>rather than hours (and actually works 'out of the box' without requiring
+>a load of manual tweaking).
+
+Good news Pally, glad you're able to make use of it. I just got a new
+MacBook Pro and the very first thing I installed on it was CMake, and
+grabbed the Radiance source. The whole project built in 11 seconds (using
+all "eight" cores), no kidding.
+
+Thanks very much for this summary. I would like to use some of your info
+when I eventually get around to making a HOWTO for this.
+
+On 9/6/12 10:26 AM, "Axel Jacobs" <jacobs.axel at gmail.com> wrote:
+
+>falsecolor , genBSDF, genklemsamp, genskyvec are all Perl scripts. At
+>present, they require a Perl interpreter to be installed. It is
+>possible to compile them into exe files using PAR::Packer. I've
+>successfully done this with falsecolor, but this is not part of the
+>build system yet (not in Classic and not in NREL). I believe it's one
+>of Rob's nice-but-not-essential items on his to-do list.
+
+Yeah, it would be nice to compile all of those, but then again since there
+are still a great many Radiance bits implemented as csh scripts, I sorta
+feel like converting those should be more of a priority than eliminating a
+couple of simple deps. Believe it or not, I just got an email from someone
+yesterday asking where "phisto" was in his Windows installation. I didn't
+even know that one was a csh script until I looked!
+
+>objview for Windows is a Ruby script. This should probably be
+>re-written in Perl to avoid unnecessary folking of the source tree and
+>extra deps for non-OpenStudio users.
+
+I respectfully disagree, Axel. I think reimplementing objview in Perl
+would be a step backwards, and just another duplicated effort. I'd rather
+see other csh scripts get converted (and then compiled, at which point the
+language of choice becomes moot), personally.
+
+- Rob
+
+
+From amcneil at lbl.gov  Fri Sep  7 10:01:15 2012
+From: amcneil at lbl.gov (Andrew McNeil)
+Date: Fri, 7 Sep 2012 10:01:15 -0700
+Subject: [Radiance-dev] Compiling from source on Windows platforms
+In-Reply-To: <FFF56A6D37A3A54F91A03601AC22DA3225FDC07A92@MAILBOX2.nrel.gov>
+References: <A7E25FADF831E94DBBD5904D7E58486517C698@GL-EXC-01.iesve.com>
+	<CC6E362C.141C7%robert.guglielmetti@nrel.gov>
+	<FFF56A6D37A3A54F91A03601AC22DA3225FDC07A92@MAILBOX2.nrel.gov>
+Message-ID: <CAOG+Nix5F1QymuO9UNrtS0-N6NA2TT6NgXJZHot_1xa4sYO0pg@mail.gmail.com>
+
+I have a script that creates all the pdfs, then I upload them.  New
+programs require manually adding new links.  Not ideal, but not difficult.
+ I was only planning to update the man page pdfs at each official release.
+ I figured those using the online pdf's were probably also using official
+releases ? using the HEAD used to require compiling so HEAD users were
+likely familiar with the "man" command.
+
+Installers of the HEAD release changes all my assumptions, so maybe pdfs
+need to be automatically updated.
+
+Andy
+
+
+On Thu, Sep 6, 2012 at 6:55 PM, Guglielmetti, Robert <
+Robert.Guglielmetti at nrel.gov> wrote:
+
+> Following up on my post from earlier today, this project seems promising
+> for making Windows executables from Ruby code:
+>
+> http://ocra.rubyforge.org
+>
+> It's not cross platform, but it's something.
+>
+> Andy, here is the page I was thinking about:
+>
+> http://www.radiance-online.org/learning/documentation/manual-pages
+>
+> We could easily make a link to this page in the /man folder for Windows
+> installs. The thing is I see that rcontrib is not linked on that page. What
+> is the mechanism for updating that page and the linked pages? We'd only
+> want to link to something that's always up to date. Alternatively, does
+> anyone have any ideas or workflows for automatically generating pdfs of
+> manpages on Windows? I'd much rather just include pdf versions on the
+> Windows installers (or as Pally mentioned, maybe there's a way to build a
+> Windows help file from them? I know nothing about Windows help files).
+>
+> Just thinking out loud.
+>
+> - Rob
+>
+>
+>
+> ________________________________________
+> From: Guglielmetti, Robert
+> Sent: Thursday, September 06, 2012 12:13 PM
+> To: code development; Andrew McNeil
+> Subject: Re: [Radiance-dev] Compiling from source on Windows platforms
+>
+> Thanks Pally for this nice summary overview. I am very remiss in getting
+> something like this posted to the OpenStudio support page. Thanks Axel for
+> your responses as well. Replies to both of you within...
+>
+> - Rob
+>
+>
+> On 9/6/12 10:10 AM, "Pally Sandher" <pally.sandher at iesve.com> wrote:
+> >4 - The Radiance source including CMake files. Easiest way to get these
+> >is to go to http://public.kitware.com/gitweb?p=radiance.git;a=tree &
+> >click the "snapshot" link in the top left corner to download a .tar.gz
+> >archive. The 4.1 release of the source doesn't have any of the CMake
+> >files so you have to use the latest from the repository until an official
+> >4.2 is released.
+>
+> Actually the easiest way to grab the latest source tree is to install git
+> and just make a clone of the repo on your system:
+>
+> $ git clone http://public.kitware.com/radiance.git
+>
+> This is a copy of the CVS repository, and it's updated nightly. To update
+> your git clone after the initial download, simply do a git pull while in
+> the CVS directory:
+>
+> $ git pull
+>
+> NREL plans to host a repo on Github which will allow me to update the repo
+> manually whenever Greg checks in a change. But for now the Kitware repo is
+> at least updated every evening at midnight.
+>
+>
+> >5 - Qt libraries. These can either be installed using the pre-built
+> >packages or built from source, all of which are available from
+> >http://qt.nokia.com/downloads. I had built the Qt v4.8.2 libraries from
+> >source previously so used that.
+>
+> The installer works fine too.
+>
+> >6 - Tiff library for Windows. Again this can either be installed using a
+> >pre-built package or built from source. You can find this at
+> >http://gnuwin32.sourceforge.net/packages/tiff.htm I used the pre-built
+> >package as the sources are configured to be built with Visual Studio 6 &
+> >wasn't in the mood to update it just to build a .lib file.
+>
+> Yup, I use the installer for this as well. Easier.
+>
+> >You should then be able to load up CMake, point it at the root of the
+> >Radiance source tree, give it a build directory (I suggest something like
+> >"build" inside the extracted source directory to keep things together) &
+> >click Configure. Assuming no errors, you should then be able to click
+> >Generate & you'll get a load of projects & solutions built. You can then
+> >open the solution and build the projects. It will output the files to
+> ><build directory>\bin\Release or <build directory>\bin\Debug\
+> >
+> >At this point I suggest you download the zip archive of binaries and
+> >library files from
+> >
+> https://openstudio.nrel.gov/getting-started-developer/getting-started-radi
+> >ance as you only have a load of binaries which is great but you'll be
+> >missing crucial library files so you can't really do anything with your
+> >binaries (and no manuals either).
+>
+>
+> Make by default merely builds the executables. If you build the INSTALL
+> target, everything will be installed, including libraries, manual pages
+> and all the scripts (Perl and Ruby only on Windows, of course). This is
+> the same on the other platforms. "make install" will build all the
+> executables and copy everything else. The default behavior is to do this:
+>
+> Binaries in /usr/local/radiance/bin
+> Library files in /usr/local/radiance/lib
+> Manpages in /usr/local/radiance/man
+>
+>
+> >A few issues I have with the above are as follows:
+> >1 - Qt and libtiff are *required* for CMake to generate a build source.
+> >They should be optional & when not available the relevant projects which
+> >require them (rvu, ra_tiff etc) should be omitted from the generated
+> >source. Zlib can be omitted without issue (not sure which project uses it
+> >though).
+>
+> It would be more user-friendly to do that Pally, but honestly a LOT of the
+> effort around this project was to give Windows users access to programs
+> like rvu. I consider ra_tiff and rvu to be critical programs in the
+> Radiance suite and to include them was a major goal of this project. We
+> can re-write the CMakeLists.txt files to function as you state, but it's
+> way down there on my priority list.
+>
+> >2 - CMake generates projects using Absolute paths rather than Relative
+> >paths. Major failure point as this requires manual updating of over 100
+> >projects with a minimum of 5 paths per project if you wish to fix this
+> >otherwise you must replicate the file structure on every machine you want
+> >to use the CMake generated build source. All other projects I've used
+> >which implement CMake will give you the option of using relative paths if
+> >you so wish.
+>
+> I'm not sure I follow you here, but if you explain maybe I can fix what's
+> busted for you.
+>
+> >3 - falsecolor , genBSDF, genklemsamp, genskyvec & objview don't exist in
+> >the CMake build source. I assume this is due to them being Perl & Ruby
+> >scripts in the NREL binaries archive (falsecolor appears to have C source
+> >code available?)
+>
+> Right. Again, these are installed and suffixed per convention (i.e. The
+> suffixes are removed on UNIX systems), when the INSTALL target is made.
+>
+> >4 - manuals are in unix man/postscript format which unsurprisingly isn't
+> >widely supported on Windows. Should preferably be Compiled HTML Help
+> >(.chm) or at the very least converted to HTML or PDF to make them more
+> >readable.
+>
+> Totally agree. This is also on the list of nice-to-haves, I just haven't
+> had time to figure out an automated way to do that on Windows. The
+> manpages are updated on the radiance-online.org site, however. Maybe we
+> should just generate a link to them in the  /man directory on Windows
+> builds for now. (?)
+>
+> Andy, how do those updates work? I can't access the radiance-online.org
+> site from work because of our firewall crap, but I'm pretty sure there's a
+> link there with links to pdf versions of all the manpages, right?
+>
+> >5 - Radiance source is littered with the now defunct Scons build files.
+> >Not a massive issue but they should probably be cleaned out since they're
+> >no longer relevant.
+>
+> This was discussed when the CMake system was implemented and it was agreed
+> that it is absolutely still relevant. They are not defunct, and Georg
+> Mischler for one still uses them. So, they should stay.
+>
+> >6 - Building using Shared libraries doesn't work. Code is generated but
+> >attempting to build generates loads of linker errors. Again not a massive
+> >issue since static builds work fine & the compiled binaries are small
+> >enough that they're unlikely to save much anyway but I thought I should
+> >mention it.
+>
+> Good point. Something else for the to-do list.
+>
+> >7 - 2107 warnings during build. Some of these may be due to me using VS
+> >2010 while NREL use VS 2008 however but even still it's rather high for
+> >such a small code base.
+>
+> Mmm, I generally don't get too worked up about warnings, but maybe we can
+> look into this at some point.
+>
+> >That's it so far. I have to say it's a giant leap from the old decrepit
+> >Scons system. Building now takes minutes once you've downloaded the code
+> >rather than hours (and actually works 'out of the box' without requiring
+> >a load of manual tweaking).
+>
+> Good news Pally, glad you're able to make use of it. I just got a new
+> MacBook Pro and the very first thing I installed on it was CMake, and
+> grabbed the Radiance source. The whole project built in 11 seconds (using
+> all "eight" cores), no kidding.
+>
+> Thanks very much for this summary. I would like to use some of your info
+> when I eventually get around to making a HOWTO for this.
+>
+> On 9/6/12 10:26 AM, "Axel Jacobs" <jacobs.axel at gmail.com> wrote:
+>
+> >falsecolor , genBSDF, genklemsamp, genskyvec are all Perl scripts. At
+> >present, they require a Perl interpreter to be installed. It is
+> >possible to compile them into exe files using PAR::Packer. I've
+> >successfully done this with falsecolor, but this is not part of the
+> >build system yet (not in Classic and not in NREL). I believe it's one
+> >of Rob's nice-but-not-essential items on his to-do list.
+>
+> Yeah, it would be nice to compile all of those, but then again since there
+> are still a great many Radiance bits implemented as csh scripts, I sorta
+> feel like converting those should be more of a priority than eliminating a
+> couple of simple deps. Believe it or not, I just got an email from someone
+> yesterday asking where "phisto" was in his Windows installation. I didn't
+> even know that one was a csh script until I looked!
+>
+> >objview for Windows is a Ruby script. This should probably be
+> >re-written in Perl to avoid unnecessary folking of the source tree and
+> >extra deps for non-OpenStudio users.
+>
+> I respectfully disagree, Axel. I think reimplementing objview in Perl
+> would be a step backwards, and just another duplicated effort. I'd rather
+> see other csh scripts get converted (and then compiled, at which point the
+> language of choice becomes moot), personally.
+>
+> - Rob
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20120907/1ce5f9fd/attachment-0001.html>
+
+From Robert.Guglielmetti at nrel.gov  Fri Sep  7 10:25:54 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Fri, 7 Sep 2012 11:25:54 -0600
+Subject: [Radiance-dev] Compiling from source on Windows platforms
+In-Reply-To: <CAOG+Nix5F1QymuO9UNrtS0-N6NA2TT6NgXJZHot_1xa4sYO0pg@mail.gmail.com>
+Message-ID: <CC6F8930.14413%robert.guglielmetti@nrel.gov>
+
+Mmm. Definitely a fair assumption, but for sure our HEAD installers turn that on its head. Well, this is definitely an item for the ole' todo list. I just don't know when we'll get around to it.
+
+Pally, if you have any good leads on how to create chm files from manpages, I'm all ears?
+
+Rob Guglielmetti
+National Renewable Energy Laboratory (NREL)
+Commercial Buildings Research Group
+15013 Denver West Parkway MS:RSF202
+Golden, CO 80401
+303.275.4319
+robert.guglielmetti at nrel.gov
+
+
+
+On 9/7/12 11:01 AM, "Andrew McNeil" <amcneil at lbl.gov<mailto:amcneil at lbl.gov>> wrote:
+
+I have a script that creates all the pdfs, then I upload them.  New programs require manually adding new links.  Not ideal, but not difficult.  I was only planning to update the man page pdfs at each official release.  I figured those using the online pdf's were probably also using official releases ? using the HEAD used to require compiling so HEAD users were likely familiar with the "man" command.
+
+Installers of the HEAD release changes all my assumptions, so maybe pdfs need to be automatically updated.
+
+Andy
+
+
+On Thu, Sep 6, 2012 at 6:55 PM, Guglielmetti, Robert <Robert.Guglielmetti at nrel.gov<mailto:Robert.Guglielmetti at nrel.gov>> wrote:
+Following up on my post from earlier today, this project seems promising for making Windows executables from Ruby code:
+
+http://ocra.rubyforge.org
+
+It's not cross platform, but it's something.
+
+Andy, here is the page I was thinking about:
+
+http://www.radiance-online.org/learning/documentation/manual-pages
+
+We could easily make a link to this page in the /man folder for Windows installs. The thing is I see that rcontrib is not linked on that page. What is the mechanism for updating that page and the linked pages? We'd only want to link to something that's always up to date. Alternatively, does anyone have any ideas or workflows for automatically generating pdfs of manpages on Windows? I'd much rather just include pdf versions on the Windows installers (or as Pally mentioned, maybe there's a way to build a Windows help file from them? I know nothing about Windows help files).
+
+Just thinking out loud.
+
+- Rob
+
+
+
+________________________________________
+From: Guglielmetti, Robert
+Sent: Thursday, September 06, 2012 12:13 PM
+To: code development; Andrew McNeil
+Subject: Re: [Radiance-dev] Compiling from source on Windows platforms
+
+Thanks Pally for this nice summary overview. I am very remiss in getting
+something like this posted to the OpenStudio support page. Thanks Axel for
+your responses as well. Replies to both of you within...
+
+- Rob
+
+
+On 9/6/12 10:10 AM, "Pally Sandher" <pally.sandher at iesve.com<mailto:pally.sandher at iesve.com>> wrote:
+>4 - The Radiance source including CMake files. Easiest way to get these
+>is to go to http://public.kitware.com/gitweb?p=radiance.git;a=tree &
+>click the "snapshot" link in the top left corner to download a .tar.gz
+>archive. The 4.1 release of the source doesn't have any of the CMake
+>files so you have to use the latest from the repository until an official
+>4.2 is released.
+
+Actually the easiest way to grab the latest source tree is to install git
+and just make a clone of the repo on your system:
+
+$ git clone http://public.kitware.com/radiance.git
+
+This is a copy of the CVS repository, and it's updated nightly. To update
+your git clone after the initial download, simply do a git pull while in
+the CVS directory:
+
+$ git pull
+
+NREL plans to host a repo on Github which will allow me to update the repo
+manually whenever Greg checks in a change. But for now the Kitware repo is
+at least updated every evening at midnight.
+
+
+>5 - Qt libraries. These can either be installed using the pre-built
+>packages or built from source, all of which are available from
+>http://qt.nokia.com/downloads. I had built the Qt v4.8.2 libraries from
+>source previously so used that.
+
+The installer works fine too.
+
+>6 - Tiff library for Windows. Again this can either be installed using a
+>pre-built package or built from source. You can find this at
+>http://gnuwin32.sourceforge.net/packages/tiff.htm I used the pre-built
+>package as the sources are configured to be built with Visual Studio 6 &
+>wasn't in the mood to update it just to build a .lib file.
+
+Yup, I use the installer for this as well. Easier.
+
+>You should then be able to load up CMake, point it at the root of the
+>Radiance source tree, give it a build directory (I suggest something like
+>"build" inside the extracted source directory to keep things together) &
+>click Configure. Assuming no errors, you should then be able to click
+>Generate & you'll get a load of projects & solutions built. You can then
+>open the solution and build the projects. It will output the files to
+><build directory>\bin\Release or <build directory>\bin\Debug\
+>
+>At this point I suggest you download the zip archive of binaries and
+>library files from
+>https://openstudio.nrel.gov/getting-started-developer/getting-started-radi
+>ance as you only have a load of binaries which is great but you'll be
+>missing crucial library files so you can't really do anything with your
+>binaries (and no manuals either).
+
+
+Make by default merely builds the executables. If you build the INSTALL
+target, everything will be installed, including libraries, manual pages
+and all the scripts (Perl and Ruby only on Windows, of course). This is
+the same on the other platforms. "make install" will build all the
+executables and copy everything else. The default behavior is to do this:
+
+Binaries in /usr/local/radiance/bin
+Library files in /usr/local/radiance/lib
+Manpages in /usr/local/radiance/man
+
+
+>A few issues I have with the above are as follows:
+>1 - Qt and libtiff are *required* for CMake to generate a build source.
+>They should be optional & when not available the relevant projects which
+>require them (rvu, ra_tiff etc) should be omitted from the generated
+>source. Zlib can be omitted without issue (not sure which project uses it
+>though).
+
+It would be more user-friendly to do that Pally, but honestly a LOT of the
+effort around this project was to give Windows users access to programs
+like rvu. I consider ra_tiff and rvu to be critical programs in the
+Radiance suite and to include them was a major goal of this project. We
+can re-write the CMakeLists.txt files to function as you state, but it's
+way down there on my priority list.
+
+>2 - CMake generates projects using Absolute paths rather than Relative
+>paths. Major failure point as this requires manual updating of over 100
+>projects with a minimum of 5 paths per project if you wish to fix this
+>otherwise you must replicate the file structure on every machine you want
+>to use the CMake generated build source. All other projects I've used
+>which implement CMake will give you the option of using relative paths if
+>you so wish.
+
+I'm not sure I follow you here, but if you explain maybe I can fix what's
+busted for you.
+
+>3 - falsecolor , genBSDF, genklemsamp, genskyvec & objview don't exist in
+>the CMake build source. I assume this is due to them being Perl & Ruby
+>scripts in the NREL binaries archive (falsecolor appears to have C source
+>code available?)
+
+Right. Again, these are installed and suffixed per convention (i.e. The
+suffixes are removed on UNIX systems), when the INSTALL target is made.
+
+>4 - manuals are in unix man/postscript format which unsurprisingly isn't
+>widely supported on Windows. Should preferably be Compiled HTML Help
+>(.chm) or at the very least converted to HTML or PDF to make them more
+>readable.
+
+Totally agree. This is also on the list of nice-to-haves, I just haven't
+had time to figure out an automated way to do that on Windows. The
+manpages are updated on the radiance-online.org<http://radiance-online.org> site, however. Maybe we
+should just generate a link to them in the  /man directory on Windows
+builds for now. (?)
+
+Andy, how do those updates work? I can't access the radiance-online.org<http://radiance-online.org>
+site from work because of our firewall crap, but I'm pretty sure there's a
+link there with links to pdf versions of all the manpages, right?
+
+>5 - Radiance source is littered with the now defunct Scons build files.
+>Not a massive issue but they should probably be cleaned out since they're
+>no longer relevant.
+
+This was discussed when the CMake system was implemented and it was agreed
+that it is absolutely still relevant. They are not defunct, and Georg
+Mischler for one still uses them. So, they should stay.
+
+>6 - Building using Shared libraries doesn't work. Code is generated but
+>attempting to build generates loads of linker errors. Again not a massive
+>issue since static builds work fine & the compiled binaries are small
+>enough that they're unlikely to save much anyway but I thought I should
+>mention it.
+
+Good point. Something else for the to-do list.
+
+>7 - 2107 warnings during build. Some of these may be due to me using VS
+>2010 while NREL use VS 2008 however but even still it's rather high for
+>such a small code base.
+
+Mmm, I generally don't get too worked up about warnings, but maybe we can
+look into this at some point.
+
+>That's it so far. I have to say it's a giant leap from the old decrepit
+>Scons system. Building now takes minutes once you've downloaded the code
+>rather than hours (and actually works 'out of the box' without requiring
+>a load of manual tweaking).
+
+Good news Pally, glad you're able to make use of it. I just got a new
+MacBook Pro and the very first thing I installed on it was CMake, and
+grabbed the Radiance source. The whole project built in 11 seconds (using
+all "eight" cores), no kidding.
+
+Thanks very much for this summary. I would like to use some of your info
+when I eventually get around to making a HOWTO for this.
+
+On 9/6/12 10:26 AM, "Axel Jacobs" <jacobs.axel at gmail.com<mailto:jacobs.axel at gmail.com>> wrote:
+
+>falsecolor , genBSDF, genklemsamp, genskyvec are all Perl scripts. At
+>present, they require a Perl interpreter to be installed. It is
+>possible to compile them into exe files using PAR::Packer. I've
+>successfully done this with falsecolor, but this is not part of the
+>build system yet (not in Classic and not in NREL). I believe it's one
+>of Rob's nice-but-not-essential items on his to-do list.
+
+Yeah, it would be nice to compile all of those, but then again since there
+are still a great many Radiance bits implemented as csh scripts, I sorta
+feel like converting those should be more of a priority than eliminating a
+couple of simple deps. Believe it or not, I just got an email from someone
+yesterday asking where "phisto" was in his Windows installation. I didn't
+even know that one was a csh script until I looked!
+
+>objview for Windows is a Ruby script. This should probably be
+>re-written in Perl to avoid unnecessary folking of the source tree and
+>extra deps for non-OpenStudio users.
+
+I respectfully disagree, Axel. I think reimplementing objview in Perl
+would be a step backwards, and just another duplicated effort. I'd rather
+see other csh scripts get converted (and then compiled, at which point the
+language of choice becomes moot), personally.
+
+- Rob
+
+
+
+From muellner at transsolar.com  Tue Sep 18 02:34:09 2012
+From: muellner at transsolar.com (Katrin Muellner)
+Date: Tue, 18 Sep 2012 11:34:09 +0200
+Subject: [Radiance-dev] Radiance 4.2 under CentOS 5.5
+Message-ID: <H000008b00d07c7c.1347960848.scalix.transgmbh.local@MHS>
+
+Dear List,
+
+ 
+
+I am a bloody beginner concerning LINUX, but would like to install
+Radiance 4.2 on our machine, that is based on CentOS 5.5. The problem I
+am facing is that the GLIBC_2.7 is not found, because CentOS 5.5 is
+using GLIBC_2.5. Has anyone of you compiled Radiance 4.2 for CentOS 5.5?
+If so, would it be possible to send me the adopted Radiance 4.2 Files?
+
+Thanks a lot for your help and suggestions,
+
+Katrin
+
+ 
+
+Dr. Katrin M?llner
+
+TRANSSOLAR Energietechnik GmbH
+
+Stuttgart - M?nchen -  New York
+
+Tel. +49. (0)89 590 688 - 49 Fax +49. (0)89 590 688 - 59
+
+mailto: muellner at transsolar.com
+
+http://www.transsolar.de
+
+Transsolar KlimaEngineering - Technologien f?r energieeffizientes Bauen
+und Nutzerkomfort in Geb?uden
+
+Transsolar Energietechnik GmbH, Curiestrasse 2, 70563 Stuttgart 
+
+Gesch?ftsf?hrer Diplom-Ingenieur Matthias Schuler, Diplom-Ingenieur
+Thomas Auer, Diplom-Physiker Stefan Holst, Prof. Diplom-Ingenieur
+Volkmar Bleicher
+
+Eingetragen beim Amtsgericht Stuttgart HRB 23347, Steuernummer:
+99073/00911, USt-IdNr.: DE 152272639
+
+ 
+
+ 
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20120918/b0b70c2a/attachment.html>
+
+From jacobs.axel at gmail.com  Tue Sep 18 05:15:01 2012
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Tue, 18 Sep 2012 13:15:01 +0100
+Subject: [Radiance-dev] Radiance 4.2 under CentOS 5.5
+In-Reply-To: <H000008b00d07c7c.1347960848.scalix.transgmbh.local@MHS>
+References: <H000008b00d07c7c.1347960848.scalix.transgmbh.local@MHS>
+Message-ID: <CA+dqh61F2-nd9W1=xDpuX-1hgbPc+_0w8s=gUoqAOx=R47QGUg@mail.gmail.com>
+
+Hi Katrin,
+
+Radiance compiles without problems on Fedora, which is very similar to
+CentOS/RHEL. Just make sure you have the necessary prerequisites
+installed. From memory, these are:
+
+- tcl
+- tk
+- libX11-devel
+- gcc
+- gcc-c++
+- make
+
+You don't need to adjust any of the files.
+
+If the compilation fails, please post the lines around the first error
+message from the output of makeall. Error lines are marked by a
+leading '*' sign (or two?) to make them easier to spot.
+
+Try with the default options first. If this goes smoothly, you can
+change OPT=-O2 to OPT=-O3 in the rmake settings. This should make the
+code a little faster.
+
+Cheers
+
+Axel
+
+
+On 18 September 2012 10:34, Katrin Muellner <muellner at transsolar.com> wrote:
+> Dear List,
+>
+>
+>
+> I am a bloody beginner concerning LINUX, but would like to install Radiance
+> 4.2 on our machine, that is based on CentOS 5.5. The problem I am facing is
+> that the GLIBC_2.7 is not found, because CentOS 5.5 is using GLIBC_2.5. Has
+> anyone of you compiled Radiance 4.2 for CentOS 5.5? If so, would it be
+> possible to send me the adopted Radiance 4.2 Files?
+>
+> Thanks a lot for your help and suggestions,
+>
+> Katrin
+>
+>
+>
+> Dr. Katrin M?llner
+>
+> TRANSSOLAR Energietechnik GmbH
+>
+> Stuttgart - M?nchen -  New York
+>
+> Tel. +49. (0)89 590 688 - 49 Fax +49. (0)89 590 688 - 59
+>
+> mailto: muellner at transsolar.com
+>
+> http://www.transsolar.de
+>
+> Transsolar KlimaEngineering - Technologien f?r energieeffizientes Bauen und
+> Nutzerkomfort in Geb?uden
+>
+> Transsolar Energietechnik GmbH, Curiestrasse 2, 70563 Stuttgart
+>
+> Gesch?ftsf?hrer Diplom-Ingenieur Matthias Schuler, Diplom-Ingenieur Thomas
+> Auer, Diplom-Physiker Stefan Holst, Prof. Diplom-Ingenieur Volkmar Bleicher
+>
+> Eingetragen beim Amtsgericht Stuttgart HRB 23347, Steuernummer: 99073/00911,
+> USt-IdNr.: DE 152272639
+>
+>
+>
+>
+>
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+
+
+From jedev at visarc.com  Tue Sep 18 05:29:50 2012
+From: jedev at visarc.com (Jack de Valpine)
+Date: Tue, 18 Sep 2012 08:29:50 -0400
+Subject: [Radiance-dev] Radiance 4.2 under CentOS 5.5
+In-Reply-To: <H000008b00d07c7c.1347960848.scalix.transgmbh.local@MHS>
+References: <H000008b00d07c7c.1347960848.scalix.transgmbh.local@MHS>
+Message-ID: <5058693E.9030604@visarc.com>
+
+Hi Katrin,
+
+Depending on your CentOS configuration you will probably need to install 
+additional packages in order to compile radiance from source. I have not 
+used CentOS which is based on Red Hat I believe for quite some time. I 
+know that for Ubuntu, I need to install the following packages for a 
+clean compile:
+
+*
+
+     1. csh - needed by radiance
+     2. emacs - this is my preference for a text editor
+     3. libX11-dev - for X11 related elements
+     4. g++
+     5. tk
+
+*
+Based on what you tell us, my guess is that you need to install 
+something called glibc-devel. To do this you will need to use a package 
+manager, something like "rpm" or "yum." Note if the machine running 
+CentOS 5.5 is not "yours" to do with as you please (eg break) it would 
+make good sense to seek assistance from a sys admin if available.
+
+As an alternative to compiling from source, it might be easier to try 
+using pre-compiled binaries that people have made available. For example:
+
+    http://www.radiance-online.org/download-install/installation-information/linux
+    https://openstudio.nrel.gov/getting-started-developer/getting-started-radiance
+
+Hope this helps,
+
+-Jack de Valpine
+
+
+
+On 9/18/2012 5:34 AM, Katrin Muellner wrote:
+>
+> Dear List,
+>
+> I am a bloody beginner concerning LINUX, but would like to install 
+> Radiance 4.2 on our machine, that is based on CentOS 5.5. The problem 
+> I am facing is that the GLIBC_2.7 is not found, because CentOS 5.5 is 
+> using GLIBC_2.5. Has anyone of you compiled Radiance 4.2 for CentOS 
+> 5.5? If so, would it be possible to send me the adopted Radiance 4.2 
+> Files?
+>
+> Thanks a lot for your help and suggestions,
+>
+> Katrin
+>
+> Dr. Katrin M?llner
+>
+> **TRANSSOLAR Energietechnik GmbH**
+>
+> Stuttgart - M?nchen - New York
+>
+> Tel. +49. (0)89 590 688 - 49 Fax +49. (0)89 590 688 - 59
+>
+> _mailto: muellner at transsolar.com <mailto:muellner at transsolar.com>_
+>
+> _http://_www.transsolar.de <http://www.transsolar.de/>
+>
+> Transsolar KlimaEngineering - Technologien f?r energieeffizientes 
+> Bauen und Nutzerkomfort in Geb?uden
+>
+> Transsolar Energietechnik GmbH, Curiestrasse 2, 70563 Stuttgart
+>
+> Gesch?ftsf?hrer Diplom-Ingenieur Matthias Schuler, Diplom-Ingenieur 
+> Thomas Auer, Diplom-Physiker Stefan Holst, Prof. Diplom-Ingenieur 
+> Volkmar Bleicher
+>
+> Eingetragen beim Amtsgericht Stuttgart HRB 23347, Steuernummer: 
+> 99073/00911, USt-IdNr.: DE 152272639
+>
+>
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20120918/5b040496/attachment-0001.html>
+
+From tim.v2.0 at gmail.com  Wed Sep 19 12:05:19 2012
+From: tim.v2.0 at gmail.com (Tim Perry)
+Date: Wed, 19 Sep 2012 12:05:19 -0700
+Subject: [Radiance-dev] genBSDF bug?
+Message-ID: <CAFVgASVqg6_7bu83hfP3Z8i4GW_hpNPg2u18QBoXCpYsmPrM9w@mail.gmail.com>
+
+Andy told me there was a bug in genBSDF when a BSDF is referenced in
+the geometry.
+
+I'm curious if this has been fixed in the current HEAD. Also, can I
+test to see if a version of genBSDF is affected by the bug:
+1) Run:      genBSDF +forward +backward +geom foot
+windowAssemblyTest.rad > genBSDFOut.xml
+2) Visually compare output from "genBSDFOut.xml" to "70_NoBlinds.xml"
+
+"windowAssemblyTest.rad" contains:
+void BSDF testBSDF
+6 0 70_NoBlinds.xml 0 1 0 .
+0
+0
+
+testBSDF polygon testPane
+0
+0
+12
+      0    0  0
+     30    0  0
+     30   30  0
+      0   30  0
+
+
+
+The base BSDF file is available at
+http://www.shuman.org/~tperry/70_NoBlinds.xml  It is meant to
+represent 70% clear glass.
+
+Thanks for your time.
+
+Tim
+
+
+From tim.v2.0 at gmail.com  Wed Sep 19 17:15:30 2012
+From: tim.v2.0 at gmail.com (Tim Perry)
+Date: Wed, 19 Sep 2012 17:15:30 -0700
+Subject: [Radiance-dev] genBSDF bug?
+In-Reply-To: <CAFVgASVqg6_7bu83hfP3Z8i4GW_hpNPg2u18QBoXCpYsmPrM9w@mail.gmail.com>
+References: <CAFVgASVqg6_7bu83hfP3Z8i4GW_hpNPg2u18QBoXCpYsmPrM9w@mail.gmail.com>
+Message-ID: <CAFVgASW5ObksLTVbhhke-e9y_kTK0MpFjhNWkswf8rNQmFTBeg@mail.gmail.com>
+
+Andy and Greg did some tests and confirmed this bug has been fixed.
+
+The oddity I found with the test described below is not related to the
+bug.  The oddity is simply due to spreading of the distribution during
+sampling. This is to be expected with the Klems representation.  The
+lesson I've learned from this is that you are better off rebuilding
+the geometry from scratch rather than using a BSDF with-in a run of
+genBSDF. The lack of granularity in the Klems BSDF causes increasing
+noise when you iterate through successive Klems BSDF representations.
+
+Good night and good luck.
+Tim
+
+
+On Wed, Sep 19, 2012 at 12:05 PM, Tim Perry <tim.v2.0 at gmail.com> wrote:
+> Andy told me there was a bug in genBSDF when a BSDF is referenced in
+> the geometry.
+>
+> I'm curious if this has been fixed in the current HEAD. Also, can I
+> test to see if a version of genBSDF is affected by the bug:
+> 1) Run:      genBSDF +forward +backward +geom foot
+> windowAssemblyTest.rad > genBSDFOut.xml
+> 2) Visually compare output from "genBSDFOut.xml" to "70_NoBlinds.xml"
+>
+> "windowAssemblyTest.rad" contains:
+> void BSDF testBSDF
+> 6 0 70_NoBlinds.xml 0 1 0 .
+> 0
+> 0
+>
+> testBSDF polygon testPane
+> 0
+> 0
+> 12
+>       0    0  0
+>      30    0  0
+>      30   30  0
+>       0   30  0
+>
+>
+>
+> The base BSDF file is available at
+> http://www.shuman.org/~tperry/70_NoBlinds.xml  It is meant to
+> represent 70% clear glass.
+>
+> Thanks for your time.
+>
+> Tim
+
+
+From jacobs.axel at gmail.com  Wed Sep 19 23:46:37 2012
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Thu, 20 Sep 2012 07:46:37 +0100
+Subject: [Radiance-dev] Radiance 4.2 under CentOS 5.5
+In-Reply-To: <H000008b00d0d42d.1348072157.scalix.transgmbh.local@MHS>
+References: <H000008b00d0d42d.1348072157.scalix.transgmbh.local@MHS>
+Message-ID: <505ABBCD.1090704@gmail.com>
+
+Hi Katrin,
+
+> Thanks a lot for your great response and sorry for the late answer. My
+> first approach was to use pre-compiled versions of Radiance 4.2 from the
+> NREL website, but I got some failure messages after the installation. I
+> have asked our system administrator and he has told me that the Radiance
+> 4.2 files from the NREL website for Linux are somehow linked to a newer
+> version of CentOS than we have at the moment. This linkage would occur
+> during the compilation process of the Radiance version offered at the
+> NREL website. I have hoped, that I am facing maybe a common problem that
+> some of you have already solved. But in the meantime I wonder what the
+> advantage would be to use Radiance 4.2 to the 4.1 version? Are there any
+> obvious reasons? Because we have now also tried to install the 4.1
+> version and the installation worked out fine.
+
+The Radiance release notes are available on the official web site:
+http://radsite.lbl.gov/radiance/refer/Notes/ReleaseNotes.html
+
+It's probably a good idea to always use the latest version. There are 
+always some bugs that get fixed, and new functionality that gets added.
+
+If you intend to use rtcontrib, you might even want to consider living 
+at the cutting edge with the nightly HEAD releases. I've never had 
+problems with instability etc.
+
+Cheers
+
+Axel
+
+
+
+
+From Robert.Guglielmetti at nrel.gov  Thu Sep 20 09:20:28 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Thu, 20 Sep 2012 10:20:28 -0600
+Subject: [Radiance-dev] Radiance 4.2 under CentOS 5.5
+In-Reply-To: <505ABBCD.1090704@gmail.com>
+Message-ID: <CC809D76.14FF8%robert.guglielmetti@nrel.gov>
+
+On 9/20/12 12:46 AM, "Axel Jacobs" <jacobs.axel at gmail.com> wrote:
+
+
+>Hi Katrin,
+>
+>> Thanks a lot for your great response and sorry for the late answer. My
+>> first approach was to use pre-compiled versions of Radiance 4.2 from the
+>> NREL website, but I got some failure messages after the installation. I
+>> have asked our system administrator and he has told me that the Radiance
+>> 4.2 files from the NREL website for Linux are somehow linked to a newer
+>> version of CentOS than we have at the moment. This linkage would occur
+>> during the compilation process of the Radiance version offered at the
+>> NREL website. 
+
+I'm seeing a few issues like this now and think we will be doing static
+linking in the next round of packages. Chris Humann, if you're listening,
+I also now have universal libtiff.a and zlib.a libraries so I will be able
+to offer you a universal installer that'll run on OS X 10.5.
+
+Sorry for all the incompatibilities and inconsistencies, I'm still
+learning, here. Hopefully, the NREL offerings will only improve over time,
+both in quality and frequency.
+
+- Rob 
+
+
+

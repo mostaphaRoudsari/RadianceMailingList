@@ -1,0 +1,2567 @@
+From perhaugaard at yahoo.dk  Wed Jan  4 01:25:39 2017
+From: perhaugaard at yahoo.dk (Per Haugaard)
+Date: Wed, 4 Jan 2017 09:25:39 +0000 (UTC)
+Subject: [Radiance-general] Representation of a solar sceen in radiance
+References: <1665200051.10350177.1483521939683.ref@mail.yahoo.com>
+Message-ID: <1665200051.10350177.1483521939683@mail.yahoo.com>
+
+Dear users,
+Happy New Year.?I am looking for the best way to represent a gray semi transparent solar screen in radiance. Would it be to represent is as a sheet of glass with the total light transmissions or?The screen is placed on the exterior side of the window and has a solartransmission of 6%, light transmission of 6% and an openness factor of 4%.The colour rendering index is 100.The total light transmissions of the screen and glass is 4%.
+
+Any input is appreciated.
+Best regardsPer Haugaard
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170104/5def2751/attachment.html>
+
+From Christopher.Rush at arup.com  Wed Jan  4 06:40:14 2017
+From: Christopher.Rush at arup.com (Christopher Rush)
+Date: Wed, 4 Jan 2017 14:40:14 +0000
+Subject: [Radiance-general] Representation of a solar sceen in radiance
+In-Reply-To: <1665200051.10350177.1483521939683@mail.yahoo.com>
+References: <1665200051.10350177.1483521939683.ref@mail.yahoo.com>
+ <1665200051.10350177.1483521939683@mail.yahoo.com>
+Message-ID: <88079A360FAC7441AE93ECBF61998236470662FE@AMXExMb01.global.arup.com>
+
+If you use the ?glass? material type, you would get varying reflection/transmission at certain angles based on Snell?s law, refractive index, critical angle, etc. ? on both sides of the glass, which might not be representative of your system. You could consider one surface/layer to represent the glass (?glass? material type might be good enough approximation) and another layer to represent the screen (maybe ?trans? material type unless you want to specify angular-dependent properties). If you want to combine the effect of glass with screen into one surface/layer then you probably need to consider something more complex if the different reflective properties on each side of the system are important. There are also more accurate ways to model glass if it has specific coatings, etc. that are important to the results.
+
+-Chris
+
+
+From: Per Haugaard [mailto:perhaugaard at yahoo.dk]
+Sent: Wednesday, January 04, 2017 4:26 AM
+To: Radiance Radiance
+Subject: [Radiance-general] Representation of a solar sceen in radiance
+
+Dear users,
+
+Happy New Year.
+I am looking for the best way to represent a gray semi transparent solar screen in radiance. Would it be to represent is as a sheet of glass with the total light transmissions or?
+The screen is placed on the exterior side of the window and has a solartransmission of 6%, light transmission of 6% and an openness factor of 4%.The colour rendering index is 100.
+The total light transmissions of the screen and glass is 4%.
+
+Any input is appreciated.
+
+Best regards
+Per Haugaard
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170104/c02464f1/attachment.html>
+
+From gregoryjward at gmail.com  Wed Jan  4 14:21:44 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed, 4 Jan 2017 14:21:44 -0800
+Subject: [Radiance-general] Representation of a solar sceen in radiance
+In-Reply-To: <88079A360FAC7441AE93ECBF61998236470662FE@AMXExMb01.global.arup.com>
+References: <1665200051.10350177.1483521939683.ref@mail.yahoo.com>
+ <1665200051.10350177.1483521939683@mail.yahoo.com>
+ <88079A360FAC7441AE93ECBF61998236470662FE@AMXExMb01.global.arup.com>
+Message-ID: <6EC446E2-2498-43F0-833D-F8558AC697DB@lmi.net>
+
+Hi Per,
+
+The Radiance "BRTDfunc" material offers the most control over these parameters, and can be done with a single surface.  The "glaze" script can get you pretty close to what you want by simulating your system as a single-pane fritted glazing.  I generated the following using a 95% coverage (corresponding roughly to a 4% visibility factor):
+
+% glaze
+###
+### NOTE: Using internal demo database!
+###
+
+Enter the number of panes in the system: 1
+
+Window normal faces interior
+
+  | |
+  | |
+  | |
+  | |-->
+  | |
+  | |
+  | |
+ s1 s2
+
+Supported surface types are:
+   1 - clear glass
+   2 - VE1-2M low-E coating
+   3 - PVB laminated
+   4 - V-175 white frit
+   5 - V-933 warm gray frit
+
+What is the type of s1? 5
+What is the type of s2? 1
+Enter fraction coverage for s1 (0-1): .95
+
+############################################
+# Glazing produced by Radiance glaze script
+# $Revision: 2.8 $
+# Material surface normal points to interior
+# Number of panes in system: 1
+# Exterior surface s1 type: V-933 warm gray frit
+# s1 coating coverage: .95
+# Interior surface s2 type: clear glass
+# Exterior normal hemispherical reflectance: 0.20331675
+# Interior normal hemispherical reflectance: 0.14631675
+# Normal hemispherical transmittance: 0.129616
+#
+void BRTDfunc glaze1_unnamed
+10
+	sr_frit_r sr_frit_g sr_frit_b
+	st_frit_r st_frit_g st_frit_b
+	0 0 0
+	glaze1.cal
+0
+11
+0.0722
+0.06935
+0.06745
+0.1995
+0.1995
+0.1995
+0.0855
+0.0855
+0.0855
+	1	.95
+
+--------
+Based on the output above, the gray frit I used (V-933) is not dark enough to simulate your system, since the tranmission is about twice too high (0.129616 instead of 0.06).  This is mostly in the diffuse transmitted part, so you can probably adjust the 0.0855 values above to something like 0.02 (three times) to get close to your 6% total transmission.  I have no idea what the diffuse reflection values should be, since you didn't give us those measurements.
+
+Cheers,
+-Greg
+
+> From: Christopher Rush <Christopher.Rush at arup.com>
+> Date: January 4, 2017 6:40:14 AM PST
+> 
+> If you use the ?glass? material type, you would get varying reflection/transmission at certain angles based on Snell?s law, refractive index, critical angle, etc. ? on both sides of the glass, which might not be representative of your system. You could consider one surface/layer to represent the glass (?glass? material type might be good enough approximation) and another layer to represent the screen (maybe ?trans? material type unless you want to specify angular-dependent properties). If you want to combine the effect of glass with screen into one surface/layer then you probably need to consider something more complex if the different reflective properties on each side of the system are important. There are also more accurate ways to model glass if it has specific coatings, etc. that are important to the results.
+>  
+> -Chris
+>  
+>  
+> From: Per Haugaard [mailto:perhaugaard at yahoo.dk] 
+> Sent: Wednesday, January 04, 2017 4:26 AM
+> To: Radiance Radiance
+> Subject: [Radiance-general] Representation of a solar sceen in radiance
+>  
+> Dear users,
+>  
+> Happy New Year. 
+> I am looking for the best way to represent a gray semi transparent solar screen in radiance. Would it be to represent is as a sheet of glass with the total light transmissions or?
+> The screen is placed on the exterior side of the window and has a solartransmission of 6%, light transmission of 6% and an openness factor of 4%.The colour rendering index is 100.
+> The total light transmissions of the screen and glass is 4%.
+>  
+> Any input is appreciated.
+>  
+> Best regards
+> Per Haugaard
+>  
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170104/5424dbb3/attachment.html>
+
+From gregoryjward at gmail.com  Fri Jan  6 10:10:34 2017
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri, 6 Jan 2017 10:10:34 -0800
+Subject: [Radiance-general] Representation of a solar sceen in radiance
+In-Reply-To: <1221714108.1650642.1483707833283@mail.yahoo.com>
+References: <mailman.1.1483646400.18981.radiance-general@radiance-online.org>
+ <1221714108.1650642.1483707833283@mail.yahoo.com>
+Message-ID: <8C4C55DC-CD34-46B7-96C9-CAA7ED252F4E@gmail.com>
+
+HI Per,
+
+I changed the subject back to the original, but I see that you sent this reply to me alone.
+
+The BRTDfunc type is a material in Radiance, so it should modify a surface directly, not another material.  Therefore, you should apply your "glaze1_unnamed" material directly to the polygon of your window.
+
+Your changes to the arguments are as I suggested to get the desired total transmission.  If light reflection is 76% and our frit coverage is 95%, that means that the "back side" diffuse reflection should be much higher -- around 78% or so.  I would suggest changing the specification as follows:
+
+void BRTDfunc glaze1_unnamed
+10
+    sr_frit_r sr_frit_g sr_frit_b
+    st_frit_r st_frit_g st_frit_b
+    0 0 0
+    glaze1.cal
+0
+11 0.0722 0.06935 0.06745 0.78 0.78 0.78 0.02 0.02 0.02 1    .95
+
+The actual reflection on the exterior of the building will matter more to outside views than inside views and illumination.  Do they give any information about interior reflection for the shading system?  This would affect what we specify for the first three arguments.
+
+Cheers,
+-Greg
+
+> From: Per Haugaard <perhaugaard at yahoo.dk>
+> Date: January 6, 2017 5:03:53 AM PST
+> 
+> Hi Greg,
+> 
+> Thank you for your answer.
+> The data sheet does not say anything about the diffuse reflection but the solar reflection is listed to 77% and the light reflection is listed to 76%. Can this lead us to a more precise description?.
+> 
+> I am not familiar with the BRTDfunc or glaze script but it looks interesting. Would the description in the material file be:
+> 
+> void BRTDfunc glaze1_unnamed
+> 10
+>     sr_frit_r sr_frit_g sr_frit_b
+>     st_frit_r st_frit_g st_frit_b
+>     0 0 0
+>     glaze1.cal
+> 0
+> 11 0.0722 0.06935 0.06745 0.1995 0.1995 0.1995 0.02 0.02 0.02 1    .95
+> 
+> glaze1_unnamed glass clear_glass_with_screen
+> 0
+> 0
+> 3 0.06 0.06 0.06
+> 
+> What should the specular reflection and specular transmission be in the description of the material?
+> 
+> I would much appreciate if you could help me or point me in the direction of better understanding the BRTDfunc and how to use it.
+> 
+> 
+> Best regards
+> 
+> Per Haugaard
+> 
+> 
+> Date: Wed, 4 Jan 2017 14:21:44 -0800
+> From: Greg Ward <gregoryjward at gmail.com>
+> 
+> 
+> Hi Per,
+> 
+> The Radiance "BRTDfunc" material offers the most control over these parameters, and can be done with a single surface.  The "glaze" script can get you pretty close to what you want by simulating your system as a single-pane fritted glazing.  I generated the following using a 95% coverage (corresponding roughly to a 4% visibility factor):
+> 
+> % glaze
+> ###
+> ### NOTE: Using internal demo database!
+> ###
+> 
+> Enter the number of panes in the system: 1
+> 
+> Window normal faces interior
+> 
+>   | |
+>   | |
+>   | |
+>   | |-->
+>   | |
+>   | |
+>   | |
+> s1 s2
+> 
+> Supported surface types are:
+>   1 - clear glass
+>   2 - VE1-2M low-E coating
+>   3 - PVB laminated
+>   4 - V-175 white frit
+>   5 - V-933 warm gray frit
+> 
+> What is the type of s1? 5
+> What is the type of s2? 1
+> Enter fraction coverage for s1 (0-1): .95
+> 
+> ############################################
+> # Glazing produced by Radiance glaze script
+> # $Revision: 2.8 $
+> # Material surface normal points to interior
+> # Number of panes in system: 1
+> # Exterior surface s1 type: V-933 warm gray frit
+> # s1 coating coverage: .95
+> # Interior surface s2 type: clear glass
+> # Exterior normal hemispherical reflectance: 0.20331675
+> # Interior normal hemispherical reflectance: 0.14631675
+> # Normal hemispherical transmittance: 0.129616
+> #
+> void BRTDfunc glaze1_unnamed
+> 10
+>     sr_frit_r sr_frit_g sr_frit_b
+>     st_frit_r st_frit_g st_frit_b
+>     0 0 0
+>     glaze1.cal
+> 0
+> 11
+> 0.0722
+> 0.06935
+> 0.06745
+> 0.1995
+> 0.1995
+> 0.1995
+> 0.0855
+> 0.0855
+> 0.0855
+>     1    .95
+> 
+> --------
+> Based on the output above, the gray frit I used (V-933) is not dark enough to simulate your system, since the tranmission is about twice too high (0.129616 instead of 0.06).  This is mostly in the diffuse transmitted part, so you can probably adjust the 0.0855 values above to something like 0.02 (three times) to get close to your 6% total transmission.  I have no idea what the diffuse reflection values should be, since you didn't give us those measurements.
+> 
+> Cheers,
+> -Greg
+> 
+> > From: Christopher Rush <Christopher.Rush at arup.com>
+> > Date: January 4, 2017 6:40:14 AM PST
+> > 
+> > If you use the ?glass? material type, you would get varying reflection/transmission at certain angles based on Snell?s law, refractive index, critical angle, etc. ? on both sides of the glass, which might not be representative of your system. You could consider one surface/layer to represent the glass (?glass? material type might be good enough approximation) and another layer to represent the screen (maybe ?trans? material type unless you want to specify angular-dependent properties). If you want to combine the effect of glass with screen into one surface/layer then you probably need to consider something more complex if the different reflective properties on each side of the system are important. There are also more accurate ways to model glass if it has specific coatings, etc. that are important to the results.
+> >  
+> > -Chris
+> >  
+> >  
+> > From: Per Haugaard [mailto:perhaugaard at yahoo.dk] 
+> > Sent: Wednesday, January 04, 2017 4:26 AM
+> > To: Radiance Radiance
+> > Subject: [Radiance-general] Representation of a solar sceen in radiance
+> >  
+> > Dear users,
+> >  
+> > Happy New Year. 
+> > I am looking for the best way to represent a gray semi transparent solar screen in radiance. Would it be to represent is as a sheet of glass with the total light transmissions or?
+> > The screen is placed on the exterior side of the window and has a solartransmission of 6%, light transmission of 6% and an openness factor of 4%.The colour rendering index is 100.
+> > The total light transmissions of the screen and glass is 4%.
+> >  
+> > Any input is appreciated.
+> >  
+> > Best regards
+> > Per Haugaard
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170106/6d2e9524/attachment-0001.html>
+
+From mmartinez at integralgroup.com  Fri Jan  6 14:18:13 2017
+From: mmartinez at integralgroup.com (Michael Martinez)
+Date: Fri, 6 Jan 2017 22:18:13 +0000
+Subject: [Radiance-general] Linear electric light reflections
+Message-ID: <MWHPR18MB1198DE9B7548CF1E06419316BB630@MWHPR18MB1198.namprd18.prod.outlook.com>
+
+Hi folks,
+
+When simulating linear electric lights, setting -ds 1 seems to spread the luminous flux over the entire emitting surface. When those sources are reflected however, the reflection shows the output as if -ds isn't set, like this:
+https://www.dropbox.com/s/6lddahgf716yzip/reflection.JPG?dl=0
+
+Is there a way to force direct sampling into reflected sources? Or perhaps something else is going on I'm confused by... Thanks for any tips!
+
+MM
+
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170106/4e355c20/attachment-0001.html>
+
+From gregoryjward at gmail.com  Fri Jan  6 14:58:02 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri, 6 Jan 2017 14:58:02 -0800
+Subject: [Radiance-general] Linear electric light reflections
+In-Reply-To: <MWHPR18MB1198DE9B7548CF1E06419316BB630@MWHPR18MB1198.namprd18.prod.outlook.com>
+References: <MWHPR18MB1198DE9B7548CF1E06419316BB630@MWHPR18MB1198.namprd18.prod.outlook.com>
+Message-ID: <9CD0226B-F1DD-4109-97E3-086B5AA12702@lmi.net>
+
+Hi Michael,
+
+You may be confusing your options.  The -ds option subdivides light sources, and -ds 1 is a rather large value to apply.  Better to use a smaller-than-default value if you want better soft shadows.  The default is "-ds 0.25" and you could try "-ds 0.1".  You should also try setting the "-dj" option to randomly sample your light sources.  Setting "-dj 1" should sample the full source area, which is why I think you may be confusing your options based on what you said.
+
+This is not the reason you are seeing stuff in the reflections, however.  You are seeing them there because the reflections are maybe 4% as bright as the non-reflected portions, and the latter are clipped so as not to be visible.  If you reduced your exposure, I expect the pattern would look the same.
+
+Cheers,
+-Greg
+
+> From: Michael Martinez <mmartinez at integralgroup.com>
+> Date: January 6, 2017 2:18:13 PM PST
+> 
+> Hi folks,
+>  
+> When simulating linear electric lights, setting ?ds 1 seems to spread the luminous flux over the entire emitting surface. When those sources are reflected however, the reflection shows the output as if ?ds isn?t set, like this:
+> https://www.dropbox.com/s/6lddahgf716yzip/reflection.JPG?dl=0
+>  
+> Is there a way to force direct sampling into reflected sources? Or perhaps something else is going on I?m confused by? Thanks for any tips!
+>  
+> MM
+> 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170106/c2d8a3f5/attachment-0001.html>
+
+From mmartinez at integralgroup.com  Fri Jan  6 17:55:28 2017
+From: mmartinez at integralgroup.com (Michael Martinez)
+Date: Sat, 7 Jan 2017 01:55:28 +0000
+Subject: [Radiance-general] Linear electric light reflections
+In-Reply-To: <9CD0226B-F1DD-4109-97E3-086B5AA12702@lmi.net>
+References: <MWHPR18MB1198DE9B7548CF1E06419316BB630@MWHPR18MB1198.namprd18.prod.outlook.com>
+ <9CD0226B-F1DD-4109-97E3-086B5AA12702@lmi.net>
+Message-ID: <MWHPR18MB119855519502EC22DC03F74FBB620@MWHPR18MB1198.namprd18.prod.outlook.com>
+
+Ah, thanks Greg. For many settings I often mix up low quality vs high quality limits (is -ds 1 really good? or is it -ds .01 that's really good?...)
+
+Your reminder got me on the right track, and -ds did in fact solve the reflected source issues:
+https://www.dropbox.com/s/as336wx434x1gbi/reflection_ds.JPG?dl=0
+
+For my future search of this question on the archives - when simulating reflected linear electric sources, set -ds to .1 or less (but not 0)!
+
+Mike
+
+
+
+
+From: Greg Ward [mailto:gregoryjward at gmail.com]
+Sent: Friday, January 06, 2017 2:58 PM
+To: Radiance general discussion <radiance-general at radiance-online.org>
+Subject: Re: [Radiance-general] Linear electric light reflections
+
+Hi Michael,
+
+You may be confusing your options.  The -ds option subdivides light sources, and -ds 1 is a rather large value to apply.  Better to use a smaller-than-default value if you want better soft shadows.  The default is "-ds 0.25" and you could try "-ds 0.1".  You should also try setting the "-dj" option to randomly sample your light sources.  Setting "-dj 1" should sample the full source area, which is why I think you may be confusing your options based on what you said.
+
+This is not the reason you are seeing stuff in the reflections, however.  You are seeing them there because the reflections are maybe 4% as bright as the non-reflected portions, and the latter are clipped so as not to be visible.  If you reduced your exposure, I expect the pattern would look the same.
+
+Cheers,
+-Greg
+
+
+
+From: Michael Martinez <mmartinez at integralgroup.com<mailto:mmartinez at integralgroup.com>>
+
+Date: January 6, 2017 2:18:13 PM PST
+
+
+Hi folks,
+
+When simulating linear electric lights, setting -ds 1 seems to spread the luminous flux over the entire emitting surface. When those sources are reflected however, the reflection shows the output as if -ds isn't set, like this:
+https://www.dropbox.com/s/6lddahgf716yzip/reflection.JPG?dl=0
+
+Is there a way to force direct sampling into reflected sources? Or perhaps something else is going on I'm confused by... Thanks for any tips!
+
+MM
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170107/561ec630/attachment-0001.html>
+
+From perhaugaard at yahoo.dk  Sat Jan  7 00:27:12 2017
+From: perhaugaard at yahoo.dk (Per Haugaard)
+Date: Sat, 7 Jan 2017 08:27:12 +0000 (UTC)
+Subject: [Radiance-general] Radiance-general Digest, Vol 155, Issue 3
+In-Reply-To: <mailman.256.1483726254.12160.radiance-general@radiance-online.org>
+References: <mailman.256.1483726254.12160.radiance-general@radiance-online.org>
+Message-ID: <1297430861.74293.1483777632961@mail.yahoo.com>
+
+Hi Greg,
+Thank you for your reply. It is much helpful.The data sheet holds no information on the interior reflection so no help there. The material composition is 64% PVC & 36% fibreglass if that is of any help based on you experience.
+
+Best regards
+Per Haugaard 
+
+    Den 19:12 fredag den 6. januar 2017 skrev "radiance-general-request at radiance-online.org" <radiance-general-request at radiance-online.org>:
+ 
+
+ Send Radiance-general mailing list submissions to
+??? radiance-general at radiance-online.org
+
+To subscribe or unsubscribe via the World Wide Web, visit
+??? http://www.radiance-online.org/mailman/listinfo/radiance-general
+or, via email, send a message with subject or body 'help' to
+??? radiance-general-request at radiance-online.org
+
+You can reach the person managing the list at
+??? radiance-general-owner at radiance-online.org
+
+When replying, please edit your Subject line so it is more specific
+than "Re: Contents of Radiance-general digest..."
+
+
+Today's Topics:
+
+? 1. Re: Representation of a solar sceen in radiance (Gregory J. Ward)
+
+
+----------------------------------------------------------------------
+
+Message: 1
+Date: Fri, 6 Jan 2017 10:10:34 -0800
+From: "Gregory J. Ward" <gregoryjward at gmail.com>
+To: Radiance general discussion <radiance-general at radiance-online.org>
+Cc: Per Haugaard <perhaugaard at yahoo.dk>
+Subject: Re: [Radiance-general] Representation of a solar sceen in
+??? radiance
+Message-ID: <8C4C55DC-CD34-46B7-96C9-CAA7ED252F4E at gmail.com>
+Content-Type: text/plain; charset="us-ascii"
+
+HI Per,
+
+I changed the subject back to the original, but I see that you sent this reply to me alone.
+
+The BRTDfunc type is a material in Radiance, so it should modify a surface directly, not another material.? Therefore, you should apply your "glaze1_unnamed" material directly to the polygon of your window.
+
+Your changes to the arguments are as I suggested to get the desired total transmission.? If light reflection is 76% and our frit coverage is 95%, that means that the "back side" diffuse reflection should be much higher -- around 78% or so.? I would suggest changing the specification as follows:
+
+void BRTDfunc glaze1_unnamed
+10
+? ? sr_frit_r sr_frit_g sr_frit_b
+? ? st_frit_r st_frit_g st_frit_b
+? ? 0 0 0
+? ? glaze1.cal
+0
+11 0.0722 0.06935 0.06745 0.78 0.78 0.78 0.02 0.02 0.02 1? ? .95
+
+The actual reflection on the exterior of the building will matter more to outside views than inside views and illumination.? Do they give any information about interior reflection for the shading system?? This would affect what we specify for the first three arguments.
+
+Cheers,
+-Greg
+
+> From: Per Haugaard <perhaugaard at yahoo.dk>
+> Date: January 6, 2017 5:03:53 AM PST
+> 
+> Hi Greg,
+> 
+> Thank you for your answer.
+> The data sheet does not say anything about the diffuse reflection but the solar reflection is listed to 77% and the light reflection is listed to 76%. Can this lead us to a more precise description?.
+> 
+> I am not familiar with the BRTDfunc or glaze script but it looks interesting. Would the description in the material file be:
+> 
+> void BRTDfunc glaze1_unnamed
+> 10
+>? ? sr_frit_r sr_frit_g sr_frit_b
+>? ? st_frit_r st_frit_g st_frit_b
+>? ? 0 0 0
+>? ? glaze1.cal
+> 0
+> 11 0.0722 0.06935 0.06745 0.1995 0.1995 0.1995 0.02 0.02 0.02 1? ? .95
+> 
+> glaze1_unnamed glass clear_glass_with_screen
+> 0
+> 0
+> 3 0.06 0.06 0.06
+> 
+> What should the specular reflection and specular transmission be in the description of the material?
+> 
+> I would much appreciate if you could help me or point me in the direction of better understanding the BRTDfunc and how to use it.
+> 
+> 
+> Best regards
+> 
+> Per Haugaard
+> 
+> 
+> Date: Wed, 4 Jan 2017 14:21:44 -0800
+> From: Greg Ward <gregoryjward at gmail.com>
+> 
+> 
+> Hi Per,
+> 
+> The Radiance "BRTDfunc" material offers the most control over these parameters, and can be done with a single surface.? The "glaze" script can get you pretty close to what you want by simulating your system as a single-pane fritted glazing.? I generated the following using a 95% coverage (corresponding roughly to a 4% visibility factor):
+> 
+> % glaze
+> ###
+> ### NOTE: Using internal demo database!
+> ###
+> 
+> Enter the number of panes in the system: 1
+> 
+> Window normal faces interior
+> 
+>? | |
+>? | |
+>? | |
+>? | |-->
+>? | |
+>? | |
+>? | |
+> s1 s2
+> 
+> Supported surface types are:
+>? 1 - clear glass
+>? 2 - VE1-2M low-E coating
+>? 3 - PVB laminated
+>? 4 - V-175 white frit
+>? 5 - V-933 warm gray frit
+> 
+> What is the type of s1? 5
+> What is the type of s2? 1
+> Enter fraction coverage for s1 (0-1): .95
+> 
+> ############################################
+> # Glazing produced by Radiance glaze script
+> # $Revision: 2.8 $
+> # Material surface normal points to interior
+> # Number of panes in system: 1
+> # Exterior surface s1 type: V-933 warm gray frit
+> # s1 coating coverage: .95
+> # Interior surface s2 type: clear glass
+> # Exterior normal hemispherical reflectance: 0.20331675
+> # Interior normal hemispherical reflectance: 0.14631675
+> # Normal hemispherical transmittance: 0.129616
+> #
+> void BRTDfunc glaze1_unnamed
+> 10
+>? ? sr_frit_r sr_frit_g sr_frit_b
+>? ? st_frit_r st_frit_g st_frit_b
+>? ? 0 0 0
+>? ? glaze1.cal
+> 0
+> 11
+> 0.0722
+> 0.06935
+> 0.06745
+> 0.1995
+> 0.1995
+> 0.1995
+> 0.0855
+> 0.0855
+> 0.0855
+>? ? 1? ? .95
+> 
+> --------
+> Based on the output above, the gray frit I used (V-933) is not dark enough to simulate your system, since the tranmission is about twice too high (0.129616 instead of 0.06).? This is mostly in the diffuse transmitted part, so you can probably adjust the 0.0855 values above to something like 0.02 (three times) to get close to your 6% total transmission.? I have no idea what the diffuse reflection values should be, since you didn't give us those measurements.
+> 
+> Cheers,
+> -Greg
+> 
+> > From: Christopher Rush <Christopher.Rush at arup.com>
+> > Date: January 4, 2017 6:40:14 AM PST
+> > 
+> > If you use the ?glass? material type, you would get varying reflection/transmission at certain angles based on Snell?s law, refractive index, critical angle, etc. ? on both sides of the glass, which might not be representative of your system. You could consider one surface/layer to represent the glass (?glass? material type might be good enough approximation) and another layer to represent the screen (maybe ?trans? material type unless you want to specify angular-dependent properties). If you want to combine the effect of glass with screen into one surface/layer then you probably need to consider something more complex if the different reflective properties on each side of the system are important. There are also more accurate ways to model glass if it has specific coatings, etc. that are important to the results.
+> >? 
+> > -Chris
+> >? 
+> >? 
+> > From: Per Haugaard [mailto:perhaugaard at yahoo.dk] 
+> > Sent: Wednesday, January 04, 2017 4:26 AM
+> > To: Radiance Radiance
+> > Subject: [Radiance-general] Representation of a solar sceen in radiance
+> >? 
+> > Dear users,
+> >? 
+> > Happy New Year. 
+> > I am looking for the best way to represent a gray semi transparent solar screen in radiance. Would it be to represent is as a sheet of glass with the total light transmissions or?
+> > The screen is placed on the exterior side of the window and has a solartransmission of 6%, light transmission of 6% and an openness factor of 4%.The colour rendering index is 100.
+> > The total light transmissions of the screen and glass is 4%.
+> >? 
+> > Any input is appreciated.
+> >? 
+> > Best regards
+> > Per Haugaard
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170106/6d2e9524/attachment.html>
+
+------------------------------
+
+Subject: Digest Footer
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+------------------------------
+
+End of Radiance-general Digest, Vol 155, Issue 3
+************************************************
+
+
+   
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170107/28379b97/attachment.html>
+
+From gregoryjward at gmail.com  Sat Jan  7 07:35:57 2017
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Sat, 7 Jan 2017 07:35:57 -0800
+Subject: [Radiance-general] Representation of a solar sceen in radiance
+In-Reply-To: <1297430861.74293.1483777632961@mail.yahoo.com>
+References: <mailman.256.1483726254.12160.radiance-general@radiance-online.org>
+ <1297430861.74293.1483777632961@mail.yahoo.com>
+Message-ID: <A33E5677-F458-49A4-B0C2-B72F4E3C0226@gmail.com>
+
+Hi Per,
+
+I am re-editing your subject line again.  Please, when responding to the mailing list especially, make sure that your subject line stays consistent for searches, and it is best *not* to include the entire digest, as it often contains different threads (though not in this case).  The instructions regarding the subject line are repeated below, so no excuses.
+
+Unfortunately, I cannot glean much useful information based on the material composition.  I'm not a material scientist, but presumably they could put any number of dyes and pigments in their PVC/fiberglass mix.  If the exterior reflectance is 76%, however, I would expect the interior reflectance to be similar unless there is something unusual about the construction.  The glass will reduce this slightly (88% squared), so it is probably reasonable to set the interior diffuse reflectance to something like 0.66 for the first three values:
+
+void BRTDfunc glaze1_unnamed
+10
+    sr_frit_r sr_frit_g sr_frit_b
+    st_frit_r st_frit_g st_frit_b
+    0 0 0
+    glaze1.cal
+0
+11 0.66 0.66 0.66 0.78 0.78 0.78 0.02 0.02 0.02 1    .95
+
+The above is a reasonable guess, I believe.
+
+Cheers,
+-Greg
+
+> From: Per Haugaard <perhaugaard at yahoo.dk>
+> Subject: Re: [Radiance-general] Radiance-general Digest, Vol 155, Issue 3
+> Date: January 7, 2017 12:27:12 AM PST
+> 
+> Hi Greg,
+> 
+> Thank you for your reply. It is much helpful.
+> The data sheet holds no information on the interior reflection so no help there. The material composition is 64% PVC & 36% fibreglass if that is of any help based on you experience.
+> 
+> 
+> Best regards
+> 
+> Per Haugaard
+> 
+> 
+> Den 19:12 fredag den 6. januar 2017 skrev "radiance-general-request at radiance-online.org" <radiance-general-request at radiance-online.org>:
+> 
+> 
+> Send Radiance-general mailing list submissions to
+>     radiance-general at radiance-online.org
+> 
+> To subscribe or unsubscribe via the World Wide Web, visit
+>     http://www.radiance-online.org/mailman/listinfo/radiance-general
+> or, via email, send a message with subject or body 'help' to
+>     radiance-general-request at radiance-online.org
+> 
+> You can reach the person managing the list at
+>     radiance-general-owner at radiance-online.org
+> 
+> When replying, please edit your Subject line so it is more specific
+> than "Re: Contents of Radiance-general digest..."
+> 
+> 
+> Today's Topics:
+> 
+>   1. Re: Representation of a solar sceen in radiance (Gregory J. Ward)
+> 
+> 
+> ----------------------------------------------------------------------
+> 
+> Message: 1
+> Date: Fri, 6 Jan 2017 10:10:34 -0800
+> From: "Gregory J. Ward" <gregoryjward at gmail.com>
+> To: Radiance general discussion <radiance-general at radiance-online.org>
+> Cc: Per Haugaard <perhaugaard at yahoo.dk>
+> Subject: Re: [Radiance-general] Representation of a solar sceen in
+>     radiance
+> Message-ID: <8C4C55DC-CD34-46B7-96C9-CAA7ED252F4E at gmail.com>
+> Content-Type: text/plain; charset="us-ascii"
+> 
+> HI Per,
+> 
+> I changed the subject back to the original, but I see that you sent this reply to me alone.
+> 
+> The BRTDfunc type is a material in Radiance, so it should modify a surface directly, not another material.  Therefore, you should apply your "glaze1_unnamed" material directly to the polygon of your window.
+> 
+> Your changes to the arguments are as I suggested to get the desired total transmission.  If light reflection is 76% and our frit coverage is 95%, that means that the "back side" diffuse reflection should be much higher -- around 78% or so.  I would suggest changing the specification as follows:
+> 
+> void BRTDfunc glaze1_unnamed
+> 10
+>     sr_frit_r sr_frit_g sr_frit_b
+>     st_frit_r st_frit_g st_frit_b
+>     0 0 0
+>     glaze1.cal
+> 0
+> 11 0.0722 0.06935 0.06745 0.78 0.78 0.78 0.02 0.02 0.02 1    .95
+> 
+> The actual reflection on the exterior of the building will matter more to outside views than inside views and illumination.  Do they give any information about interior reflection for the shading system?  This would affect what we specify for the first three arguments.
+> 
+> Cheers,
+> -Greg
+> 
+> > From: Per Haugaard <perhaugaard at yahoo.dk>
+> > Date: January 6, 2017 5:03:53 AM PST
+> > 
+> > Hi Greg,
+> > 
+> > Thank you for your answer.
+> > The data sheet does not say anything about the diffuse reflection but the solar reflection is listed to 77% and the light reflection is listed to 76%. Can this lead us to a more precise description?.
+> > 
+> > I am not familiar with the BRTDfunc or glaze script but it looks interesting. Would the description in the material file be:
+> > 
+> > void BRTDfunc glaze1_unnamed
+> > 10
+> >    sr_frit_r sr_frit_g sr_frit_b
+> >    st_frit_r st_frit_g st_frit_b
+> >    0 0 0
+> >    glaze1.cal
+> > 0
+> > 11 0.0722 0.06935 0.06745 0.1995 0.1995 0.1995 0.02 0.02 0.02 1    .95
+> > 
+> > glaze1_unnamed glass clear_glass_with_screen
+> > 0
+> > 0
+> > 3 0.06 0.06 0.06
+> > 
+> > What should the specular reflection and specular transmission be in the description of the material?
+> > 
+> > I would much appreciate if you could help me or point me in the direction of better understanding the BRTDfunc and how to use it.
+> > 
+> > 
+> > Best regards
+> > 
+> > Per Haugaard
+> > 
+> > 
+> > Date: Wed, 4 Jan 2017 14:21:44 -0800
+> > From: Greg Ward <gregoryjward at gmail.com>
+> > 
+> > 
+> > Hi Per,
+> > 
+> > The Radiance "BRTDfunc" material offers the most control over these parameters, and can be done with a single surface.  The "glaze" script can get you pretty close to what you want by simulating your system as a single-pane fritted glazing.  I generated the following using a 95% coverage (corresponding roughly to a 4% visibility factor):
+> > 
+> > % glaze
+> > ###
+> > ### NOTE: Using internal demo database!
+> > ###
+> > 
+> > Enter the number of panes in the system: 1
+> > 
+> > Window normal faces interior
+> > 
+> >  | |
+> >  | |
+> >  | |
+> >  | |-->
+> >  | |
+> >  | |
+> >  | |
+> > s1 s2
+> > 
+> > Supported surface types are:
+> >  1 - clear glass
+> >  2 - VE1-2M low-E coating
+> >  3 - PVB laminated
+> >  4 - V-175 white frit
+> >  5 - V-933 warm gray frit
+> > 
+> > What is the type of s1? 5
+> > What is the type of s2? 1
+> > Enter fraction coverage for s1 (0-1): .95
+> > 
+> > ############################################
+> > # Glazing produced by Radiance glaze script
+> > # $Revision: 2.8 $
+> > # Material surface normal points to interior
+> > # Number of panes in system: 1
+> > # Exterior surface s1 type: V-933 warm gray frit
+> > # s1 coating coverage: .95
+> > # Interior surface s2 type: clear glass
+> > # Exterior normal hemispherical reflectance: 0.20331675
+> > # Interior normal hemispherical reflectance: 0.14631675
+> > # Normal hemispherical transmittance: 0.129616
+> > #
+> > void BRTDfunc glaze1_unnamed
+> > 10
+> >    sr_frit_r sr_frit_g sr_frit_b
+> >    st_frit_r st_frit_g st_frit_b
+> >    0 0 0
+> >    glaze1.cal
+> > 0
+> > 11
+> > 0.0722
+> > 0.06935
+> > 0.06745
+> > 0.1995
+> > 0.1995
+> > 0.1995
+> > 0.0855
+> > 0.0855
+> > 0.0855
+> >    1    .95
+> > 
+> > --------
+> > Based on the output above, the gray frit I used (V-933) is not dark enough to simulate your system, since the tranmission is about twice too high (0.129616 instead of 0.06).  This is mostly in the diffuse transmitted part, so you can probably adjust the 0.0855 values above to something like 0.02 (three times) to get close to your 6% total transmission.  I have no idea what the diffuse reflection values should be, since you didn't give us those measurements.
+> > 
+> > Cheers,
+> > -Greg
+> > 
+> > > From: Christopher Rush <Christopher.Rush at arup.com>
+> > > Date: January 4, 2017 6:40:14 AM PST
+> > > 
+> > > If you use the ?glass? material type, you would get varying reflection/transmission at certain angles based on Snell?s law, refractive index, critical angle, etc. ? on both sides of the glass, which might not be representative of your system. You could consider one surface/layer to represent the glass (?glass? material type might be good enough approximation) and another layer to represent the screen (maybe ?trans? material type unless you want to specify angular-dependent properties). If you want to combine the effect of glass with screen into one surface/layer then you probably need to consider something more complex if the different reflective properties on each side of the system are important. There are also more accurate ways to model glass if it has specific coatings, etc. that are important to the results.
+> > >  
+> > > -Chris
+> > >  
+> > >  
+> > > From: Per Haugaard [mailto:perhaugaard at yahoo.dk] 
+> > > Sent: Wednesday, January 04, 2017 4:26 AM
+> > > To: Radiance Radiance
+> > > Subject: [Radiance-general] Representation of a solar sceen in radiance
+> > >  
+> > > Dear users,
+> > >  
+> > > Happy New Year. 
+> > > I am looking for the best way to represent a gray semi transparent solar screen in radiance. Would it be to represent is as a sheet of glass with the total light transmissions or?
+> > > The screen is placed on the exterior side of the window and has a solartransmission of 6%, light transmission of 6% and an openness factor of 4%.The colour rendering index is 100.
+> > > The total light transmissions of the screen and glass is 4%.
+> > >  
+> > > Any input is appreciated.
+> > >  
+> > > Best regards
+> > > Per Haugaard
+> -------------- next part --------------
+> An HTML attachment was scrubbed...
+> URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170106/6d2e9524/attachment.html>
+> 
+> ------------------------------
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170107/0b67b1bd/attachment-0001.html>
+
+From tito_ at mit.edu  Sun Jan  8 12:12:30 2017
+From: tito_ at mit.edu (Christoph Reinhart)
+Date: Sun, 8 Jan 2017 20:12:30 +0000
+Subject: [Radiance-general] DIVA DAY 2017 - Mark your calendar
+Message-ID: <1B23446CBF250648A2FC775DE3FE7E80011391731C@OC11expo28.exchange.mit.edu>
+
+
+[cid:image001.png at 01D269C1.9A852F70]<http://solemma.net/DivaDay2017.html>
+
+[cid:image003.jpg at 01D269C1.9A852F70]
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170108/b146d68e/attachment-0001.html>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: image001.png
+Type: image/png
+Size: 1062654 bytes
+Desc: image001.png
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170108/b146d68e/attachment-0001.png>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: image003.jpg
+Type: image/jpeg
+Size: 4650 bytes
+Desc: image003.jpg
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170108/b146d68e/attachment-0001.jpg>
+
+From p.khademagha at gmail.com  Wed Jan 11 01:25:33 2017
+From: p.khademagha at gmail.com (parisa khademagha)
+Date: Wed, 11 Jan 2017 10:25:33 +0100
+Subject: [Radiance-general] Picture resolution
+Message-ID: <CAPysv6AxNZV9KbibY0Yz4KeefE99hQtxJNxyipUEkW+MmhDtRA@mail.gmail.com>
+
+Hi all,
+
+Does anyone know how can I get size (x-size, y-size) and number of pixels
+of an 1) HDR picture which was made in Radiance but these parameters have
+not been defined when 'rpict' was used to make them, and 2) HDR pictures
+that were not made in Radiance?
+
+Cheers,
+Parisa
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170111/4cfea297/attachment.html>
+
+From shakespe at indiana.edu  Wed Jan 11 13:48:59 2017
+From: shakespe at indiana.edu (Shakespeare, Robert A.)
+Date: Wed, 11 Jan 2017 21:48:59 +0000
+Subject: [Radiance-general] Picture resolution
+In-Reply-To: <CAPysv6AxNZV9KbibY0Yz4KeefE99hQtxJNxyipUEkW+MmhDtRA@mail.gmail.com>
+References: <CAPysv6AxNZV9KbibY0Yz4KeefE99hQtxJNxyipUEkW+MmhDtRA@mail.gmail.com>
+Message-ID: <D49C1247.3F2E7%shakespe@indiana.edu>
+
+Dear Parisa,
+ getinfo  -d   pic-name.hdr
+
+-Rob
+
+From: parisa khademagha <p.khademagha at gmail.com<mailto:p.khademagha at gmail.com>>
+Reply-To: Radiance discussion <radiance-general at radiance-online.org<mailto:radiance-general at radiance-online.org>>
+Date: Wednesday, January 11, 2017 at 4:25 AM
+To: Radiance discussion <radiance-general at radiance-online.org<mailto:radiance-general at radiance-online.org>>
+Subject: [Radiance-general] Picture resolution
+
+Hi all,
+
+Does anyone know how can I get size (x-size, y-size) and number of pixels of an 1) HDR picture which was made in Radiance but these parameters have not been defined when 'rpict' was used to make them, and 2) HDR pictures that were not made in Radiance?
+
+Cheers,
+Parisa
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170111/b24e86ee/attachment.html>
+
+From p.khademagha at gmail.com  Thu Jan 12 01:22:00 2017
+From: p.khademagha at gmail.com (parisa khademagha)
+Date: Thu, 12 Jan 2017 10:22:00 +0100
+Subject: [Radiance-general] Picture resolution
+In-Reply-To: <D49C1247.3F2E7%shakespe@indiana.edu>
+References: <CAPysv6AxNZV9KbibY0Yz4KeefE99hQtxJNxyipUEkW+MmhDtRA@mail.gmail.com>
+ <D49C1247.3F2E7%shakespe@indiana.edu>
+Message-ID: <CAPysv6DauP5MovBZ17K0V8Q0bD=Yjapyf=HwbTsdc2dxTnrSPA@mail.gmail.com>
+
+Thank you so much Rob!
+
+On 11 January 2017 at 22:48, Shakespeare, Robert A. <shakespe at indiana.edu>
+wrote:
+
+> Dear Parisa,
+>  *getinfo * *-d*   pic-name.hdr
+>
+> -Rob
+>
+> From: parisa khademagha <p.khademagha at gmail.com>
+> Reply-To: Radiance discussion <radiance-general at radiance-online.org>
+> Date: Wednesday, January 11, 2017 at 4:25 AM
+> To: Radiance discussion <radiance-general at radiance-online.org>
+> Subject: [Radiance-general] Picture resolution
+>
+> Hi all,
+>
+> Does anyone know how can I get size (x-size, y-size) and number of pixels
+> of an 1) HDR picture which was made in Radiance but these parameters have
+> not been defined when 'rpict' was used to make them, and 2) HDR pictures
+> that were not made in Radiance?
+>
+> Cheers,
+> Parisa
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170112/1217e3da/attachment.html>
+
+From xiyang at FosterandPartners.com  Fri Jan 20 11:28:34 2017
+From: xiyang at FosterandPartners.com (Xiaoming Yang)
+Date: Fri, 20 Jan 2017 19:28:34 +0000
+Subject: [Radiance-general] Color definition in Plastic material
+Message-ID: <AM2PR02MB042086360DB8ABC0E45BDBD8DA710@AM2PR02MB0420.eurprd02.prod.outlook.com>
+
+Hi,
+
+I have a rather basic question about color definition for plastic material and hope someone could help me.
+
+mod plastic id
+0
+0
+5 red green blue spec rough
+
+Does the red, green and blue define diffuse reflection or total reflection?
+
+For example, if a material reflect 40% light diffusely and 10% specularly, is it correct to define this material as:
+Void plastic testMaterial
+0
+0
+5 0.4 0.4 0.4 0.1 0
+
+I was checking with the spectrum data from SUTD http://www.lighting-materials.com/materials/648
+
+And it seems they are using the other approach which defines R G and B with total reflection and the material will be
+Void plastic testMaterial
+0
+0
+5 0.5 0.5 0.5 0.1 0
+
+Xiaoming
+
+
+Foster + Partners Limited | Registered in England and Wales | CRN 01644989
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170120/2c41fee5/attachment.html>
+
+From germolinal at gmail.com  Fri Jan 20 12:49:48 2017
+From: germolinal at gmail.com (=?UTF-8?Q?Germ=C3=A1n_Molina_Larrain?=)
+Date: Fri, 20 Jan 2017 17:49:48 -0300
+Subject: [Radiance-general] Color definition in Plastic material
+In-Reply-To: <AM2PR02MB042086360DB8ABC0E45BDBD8DA710@AM2PR02MB0420.eurprd02.prod.outlook.com>
+References: <AM2PR02MB042086360DB8ABC0E45BDBD8DA710@AM2PR02MB0420.eurprd02.prod.outlook.com>
+Message-ID: <CAF-iH4KQ1x9TF1c=rjHRuDSXGB2-dLWFP1hpvrpNA8Jr7+n=mg@mail.gmail.com>
+
+Hello Xiaoming,
+
+If I understand the Materials documentation
+<http://radsite.lbl.gov/radiance/refer/materials.pdf> correctly, I would
+say that the Red, Green and Blue are total reflection. If specularity is
+non-zero, the diffuse reflection is reduced by this amount:
+
+rho_d = p*C*(1-specularity)
+
+At least, that would be my guess.
+
+Best!
+
+2017-01-20 16:28 GMT-03:00 Xiaoming Yang <xiyang at fosterandpartners.com>:
+
+> Hi,
+>
+>
+>
+> I have a rather basic question about color definition for plastic material
+> and hope someone could help me.
+>
+>
+>
+> mod plastic id
+>
+> 0
+>
+> 0
+>
+> 5 red green blue spec rough
+>
+>
+>
+> *Does the red, green and blue define diffuse reflection or total
+> reflection?*
+>
+>
+>
+> For example, if a material reflect 40% light diffusely and 10% specularly,
+> is it correct to define this material as:
+>
+> Void plastic testMaterial
+>
+> 0
+>
+> 0
+>
+> 5 0.4 0.4 0.4 0.1 0
+>
+>
+>
+> I was checking with the spectrum data from SUTD
+> http://www.lighting-materials.com/materials/648
+>
+>
+>
+> And it seems they are using the other approach which defines R G and B
+> with total reflection and the material will be
+>
+> Void plastic testMaterial
+>
+> 0
+>
+> 0
+>
+> 5 0.5 0.5 0.5 0.1 0
+>
+>
+>
+> Xiaoming
+>
+>
+> Foster + Partners Limited | Registered in England and Wales | CRN +
+> 01644989
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170120/37220503/attachment.html>
+
+From xiyang at FosterandPartners.com  Mon Jan 23 03:24:29 2017
+From: xiyang at FosterandPartners.com (Xiaoming Yang)
+Date: Mon, 23 Jan 2017 11:24:29 +0000
+Subject: [Radiance-general] Color definition in Plastic material
+In-Reply-To: <CAF-iH4KQ1x9TF1c=rjHRuDSXGB2-dLWFP1hpvrpNA8Jr7+n=mg@mail.gmail.com>
+References: <AM2PR02MB042086360DB8ABC0E45BDBD8DA710@AM2PR02MB0420.eurprd02.prod.outlook.com>
+ <CAF-iH4KQ1x9TF1c=rjHRuDSXGB2-dLWFP1hpvrpNA8Jr7+n=mg@mail.gmail.com>
+Message-ID: <AM2PR02MB04206F531D2F5420422C8487DA720@AM2PR02MB0420.eurprd02.prod.outlook.com>
+
+Hi Germ?n,
+
+Thank you very for your reply and suggestions. I am still not sure what values I should put in the material definition. According to the definition in:
+rho_d = p*C*(1-specularity)
+
+For a material with 50% of incoming light reflected diffusely and 10% specularly then
+
+C= 0.5/(1-0.1) = 0.555
+
+Shall I define the material as follow?
+
+Void plastic diffuse_50
+0
+0
+5 0.555 0.555 0.555 0.1 0
+
+Regards,
+Xiaoming
+
+From: Germ?n Molina Larrain [mailto:germolinal at gmail.com]
+Sent: 20 January 2017 20:50
+To: Radiance general discussion <radiance-general at radiance-online.org>
+Subject: Re: [Radiance-general] Color definition in Plastic material
+
+Hello Xiaoming,
+If I understand the Materials documentation<http://radsite.lbl.gov/radiance/refer/materials.pdf> correctly, I would say that the Red, Green and Blue are total reflection. If specularity is non-zero, the diffuse reflection is reduced by this amount:
+rho_d = p*C*(1-specularity)
+
+At least, that would be my guess.
+
+Best!
+
+2017-01-20 16:28 GMT-03:00 Xiaoming Yang <xiyang at fosterandpartners.com<mailto:xiyang at fosterandpartners.com>>:
+Hi,
+
+I have a rather basic question about color definition for plastic material and hope someone could help me.
+
+mod plastic id
+0
+0
+5 red green blue spec rough
+
+Does the red, green and blue define diffuse reflection or total reflection?
+
+For example, if a material reflect 40% light diffusely and 10% specularly, is it correct to define this material as:
+Void plastic testMaterial
+0
+0
+5 0.4 0.4 0.4 0.1 0
+
+I was checking with the spectrum data from SUTD http://www.lighting-materials.com/materials/648
+
+And it seems they are using the other approach which defines R G and B with total reflection and the material will be
+Void plastic testMaterial
+0
+0
+5 0.5 0.5 0.5 0.1 0
+
+Xiaoming
+
+Foster + Partners Limited | Registered in England and Wales | CRN + 01644989
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general at radiance-online.org<mailto:Radiance-general at radiance-online.org>
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170123/e357a962/attachment.html>
+
+From germolinal at gmail.com  Mon Jan 23 05:20:22 2017
+From: germolinal at gmail.com (=?UTF-8?Q?Germ=C3=A1n_Molina_Larrain?=)
+Date: Mon, 23 Jan 2017 10:20:22 -0300
+Subject: [Radiance-general] Color definition in Plastic material
+In-Reply-To: <AM2PR02MB04206F531D2F5420422C8487DA720@AM2PR02MB0420.eurprd02.prod.outlook.com>
+References: <AM2PR02MB042086360DB8ABC0E45BDBD8DA710@AM2PR02MB0420.eurprd02.prod.outlook.com>
+ <CAF-iH4KQ1x9TF1c=rjHRuDSXGB2-dLWFP1hpvrpNA8Jr7+n=mg@mail.gmail.com>
+ <AM2PR02MB04206F531D2F5420422C8487DA720@AM2PR02MB0420.eurprd02.prod.outlook.com>
+Message-ID: <CAF-iH4KOyZcKtR6zNur1mdJULS961cUN+AqPqZbB+AG2FzryKQ@mail.gmail.com>
+
+Hi Xiaoming,
+
+mmm... I would say you are looking for a 60% reflective material (10%
+specular, 50% diffuse).
+
+In that case, I would choose a1, a2, a3 = 60% and the specularity would be
+(C-rho_d)/C = 16,666%. (16.6666%*60% = 10%).
+
+It seems that I have the same issue as you, though.... my calculation of
+total reflectance is not correct when comparing to Lighting Materials
+website.
+
+Anyone actually know these things?
+
+Kind regards,
+
+
+2017-01-23 8:24 GMT-03:00 Xiaoming Yang <xiyang at fosterandpartners.com>:
+
+> Hi Germ?n,
+>
+>
+>
+> Thank you very for your reply and suggestions. I am still not sure what
+> values I should put in the material definition. According to the definition
+> in:
+>
+> rho_d = p*C*(1-specularity)
+>
+>
+>
+> For a material with 50% of incoming light reflected diffusely and 10%
+> specularly then
+>
+>
+>
+> C= 0.5/(1-0.1) = 0.555
+>
+>
+>
+> Shall I define the material as follow?
+>
+>
+>
+> Void plastic diffuse_50
+>
+> 0
+>
+> 0
+>
+> 5 0.555 0.555 0.555 0.1 0
+>
+>
+>
+> Regards,
+>
+> Xiaoming
+>
+>
+>
+> *From:* Germ?n Molina Larrain [mailto:germolinal at gmail.com]
+> *Sent:* 20 January 2017 20:50
+> *To:* Radiance general discussion <radiance-general at radiance-online.org>
+> *Subject:* Re: [Radiance-general] Color definition in Plastic material
+>
+>
+>
+> Hello Xiaoming,
+>
+> If I understand the Materials documentation
+> <http://radsite.lbl.gov/radiance/refer/materials.pdf> correctly, I would
+> say that the Red, Green and Blue are total reflection. If specularity is
+> non-zero, the diffuse reflection is reduced by this amount:
+>
+> rho_d = p*C*(1-specularity)
+>
+> At least, that would be my guess.
+>
+> Best!
+>
+>
+>
+> 2017-01-20 16:28 GMT-03:00 Xiaoming Yang <xiyang at fosterandpartners.com>:
+>
+> Hi,
+>
+>
+>
+> I have a rather basic question about color definition for plastic material
+> and hope someone could help me.
+>
+>
+>
+> mod plastic id
+>
+> 0
+>
+> 0
+>
+> 5 red green blue spec rough
+>
+>
+>
+> *Does the red, green and blue define diffuse reflection or total
+> reflection?*
+>
+>
+>
+> For example, if a material reflect 40% light diffusely and 10% specularly,
+> is it correct to define this material as:
+>
+> Void plastic testMaterial
+>
+> 0
+>
+> 0
+>
+> 5 0.4 0.4 0.4 0.1 0
+>
+>
+>
+> I was checking with the spectrum data from SUTD
+> http://www.lighting-materials.com/materials/648
+>
+>
+>
+> And it seems they are using the other approach which defines R G and B
+> with total reflection and the material will be
+>
+> Void plastic testMaterial
+>
+> 0
+>
+> 0
+>
+> 5 0.5 0.5 0.5 0.1 0
+>
+>
+>
+> Xiaoming
+>
+>
+>
+> Foster + Partners Limited | Registered in England and Wales | CRN +
+> 01644989
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170123/28800524/attachment-0001.html>
+
+From gregoryjward at gmail.com  Mon Jan 23 07:09:32 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon, 23 Jan 2017 07:09:32 -0800
+Subject: [Radiance-general] Color definition in Plastic material
+In-Reply-To: <CAF-iH4KOyZcKtR6zNur1mdJULS961cUN+AqPqZbB+AG2FzryKQ@mail.gmail.com>
+References: <AM2PR02MB042086360DB8ABC0E45BDBD8DA710@AM2PR02MB0420.eurprd02.prod.outlook.com>
+ <CAF-iH4KQ1x9TF1c=rjHRuDSXGB2-dLWFP1hpvrpNA8Jr7+n=mg@mail.gmail.com>
+ <AM2PR02MB04206F531D2F5420422C8487DA720@AM2PR02MB0420.eurprd02.prod.outlook.com>
+ <CAF-iH4KOyZcKtR6zNur1mdJULS961cUN+AqPqZbB+AG2FzryKQ@mail.gmail.com>
+Message-ID: <413107AB-8B70-42C7-BD43-FBD3BD82CA47@lmi.net>
+
+Xiaoming -- the calculation you performed based on the correct formula Germ?n gave you should yield a material with 50% diffuse and 10% specular reflectance.
+
+The reason the Radiance material parameters are defined as they are, and "trans" is much more confusing than "plastic" or "metal", is so that there are clearly physical and non-physical ranges for each value.  As long as you are between 0 and 1 in the first four parameters for "plastic" or "metal," you know your material will not reflect more light than reaches it.
+
+Cheers,
+-Greg
+
+> From: Germ?n Molina Larrain <germolinal at gmail.com>
+> Date: January 23, 2017 5:20:22 AM PST
+> 
+> Hi Xiaoming, 
+> 
+> mmm... I would say you are looking for a 60% reflective material (10% specular, 50% diffuse). 
+> 
+> In that case, I would choose a1, a2, a3 = 60% and the specularity would be (C-rho_d)/C = 16,666%. (16.6666%*60% = 10%).
+> 
+> It seems that I have the same issue as you, though.... my calculation of total reflectance is not correct when comparing to Lighting Materials website.
+> 
+> Anyone actually know these things?
+> 
+> Kind regards,
+> 
+> 
+> 2017-01-23 8:24 GMT-03:00 Xiaoming Yang <xiyang at fosterandpartners.com>:
+> Hi Germ?n,
+> 
+>  
+> 
+> Thank you very for your reply and suggestions. I am still not sure what values I should put in the material definition. According to the definition in:
+> 
+> rho_d = p*C*(1-specularity)
+> 
+>  
+> 
+> For a material with 50% of incoming light reflected diffusely and 10% specularly then
+> 
+>  
+> 
+> C= 0.5/(1-0.1) = 0.555
+> 
+>  
+> 
+> Shall I define the material as follow?
+> 
+>  
+> 
+> Void plastic diffuse_50
+> 
+> 0
+> 
+> 0
+> 
+> 5 0.555 0.555 0.555 0.1 0
+> 
+>  
+> 
+> Regards,
+> 
+> Xiaoming
+> 
+>  
+> 
+> From: Germ?n Molina Larrain [mailto:germolinal at gmail.com] 
+> Sent: 20 January 2017 20:50
+> To: Radiance general discussion <radiance-general at radiance-online.org>
+> Subject: Re: [Radiance-general] Color definition in Plastic material
+> 
+>  
+> 
+> Hello Xiaoming,
+> 
+> If I understand the Materials documentation correctly, I would say that the Red, Green and Blue are total reflection. If specularity is non-zero, the diffuse reflection is reduced by this amount:
+> 
+> rho_d = p*C*(1-specularity)
+> 
+> At least, that would be my guess.
+> 
+> Best!
+> 
+>  
+> 
+> 2017-01-20 16:28 GMT-03:00 Xiaoming Yang <xiyang at fosterandpartners.com>:
+> 
+> Hi,
+> 
+>  
+> 
+> I have a rather basic question about color definition for plastic material and hope someone could help me.
+> 
+>  
+> 
+> mod plastic id
+> 
+> 0
+> 
+> 0
+> 
+> 5 red green blue spec rough
+> 
+>  
+> 
+> Does the red, green and blue define diffuse reflection or total reflection?
+> 
+>  
+> 
+> For example, if a material reflect 40% light diffusely and 10% specularly, is it correct to define this material as:
+> 
+> Void plastic testMaterial
+> 
+> 0
+> 
+> 0
+> 
+> 5 0.4 0.4 0.4 0.1 0
+> 
+>  
+> 
+> I was checking with the spectrum data from SUTD http://www.lighting-materials.com/materials/648
+> 
+>  
+> 
+> And it seems they are using the other approach which defines R G and B with total reflection and the material will be
+> 
+> Void plastic testMaterial
+> 
+> 0
+> 
+> 0
+> 
+> 5 0.5 0.5 0.5 0.1 0
+> 
+>  
+> 
+> Xiaoming
+> 
+> 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170123/350e1ced/attachment.html>
+
+From alstan at jakubiec.net  Mon Jan 23 07:12:17 2017
+From: alstan at jakubiec.net (J. Alstan Jakubiec)
+Date: Mon, 23 Jan 2017 23:12:17 +0800
+Subject: [Radiance-general] Color definition in Plastic material
+In-Reply-To: <CAF-iH4KOyZcKtR6zNur1mdJULS961cUN+AqPqZbB+AG2FzryKQ@mail.gmail.com>
+References: <AM2PR02MB042086360DB8ABC0E45BDBD8DA710@AM2PR02MB0420.eurprd02.prod.outlook.com>
+ <CAF-iH4KQ1x9TF1c=rjHRuDSXGB2-dLWFP1hpvrpNA8Jr7+n=mg@mail.gmail.com>
+ <AM2PR02MB04206F531D2F5420422C8487DA720@AM2PR02MB0420.eurprd02.prod.outlook.com>
+ <CAF-iH4KOyZcKtR6zNur1mdJULS961cUN+AqPqZbB+AG2FzryKQ@mail.gmail.com>
+Message-ID: <994cd769-a391-f4c5-d8fa-446a85178912@jakubiec.net>
+
+Hi Germ?n, Xiaoming,
+
+Thank you both for pointing this out and having me go back to check the 
+work on specular materials. I indeed made a pretty critical mistake by 
+momentarily forgetting the tricky procedural nature of Radiance 
+materials... and then never noticing. This is rather a shame after 
+spending a long time getting a trans material just perfect earlier in 
+the week. First of all, big apologies for the mistake. All diffuse 
+materials, metals, and the specialized PV materials should be correct on 
+the website. Things with specularity will have some errors, and I will 
+fix this soon.
+
+In the interim, the specularity and total reflectance values on the 
+website are correct, and you can fix individual R, G or B coefficients 
+with a little math:
+
+(R_Website - Specularity_Website) / (1-Specularity_Website) = R
+
+So in the case of the material referenced earlier 
+<http://www.lighting-materials.com/materials/648>,
+
+R = (0.3517 - 0.0218) / (1 - 0.0218) = 0.3373
+G = (0.3480 - 0.0218) / (1 - 0.0218) = 0.3335
+B = (0.3313 - 0.0218) / (1 - 0.0218) = 0.3164
+
+Again, I apologize for the mistake. I will post a public message here 
+when all is corrected on the website.
+
+Germ?n, I owe you a separate e-mail and will reply soon afterwards :).
+
+Xiaoming, to answer your question: If you want a 50% diffuse and 10% 
+specular material, then indeed the R/G/B coefficients are 0.5556 and the 
+specularity is 0.1 as far as I understand the functioning of the 
+material models. Germ?n, R_specular is simply equal to the specularity 
+in the plastic material. In that sense, Red, Green and Blue are not the 
+total reflection (that's the mistake I made). Rather they represent the 
+percentage of the leftover light after specular reflection that is then 
+reflected diffusely.
+R_diffuse = 0.5556*(1-0.1) = 0.5
+R_specular = 0.1
+R_total = R_diffuse + R_specular
+
+Best,
+Alstan
+
+On 1/23/2017 9:20 PM, Germ?n Molina Larrain wrote:
+> Hi Xiaoming,
+>
+> mmm... I would say you are looking for a 60% reflective material (10% 
+> specular, 50% diffuse).
+>
+> In that case, I would choose a1, a2, a3 = 60% and the specularity 
+> would be (C-rho_d)/C = 16,666%. (16.6666%*60% = 10%).
+>
+> It seems that I have the same issue as you, though.... my calculation 
+> of total reflectance is not correct when comparing to Lighting 
+> Materials website.
+>
+> Anyone actually know these things?
+>
+> Kind regards,
+>
+>
+> 2017-01-23 8:24 GMT-03:00 Xiaoming Yang <xiyang at fosterandpartners.com 
+> <mailto:xiyang at fosterandpartners.com>>:
+>
+>     Hi Germ?n,
+>
+>     Thank you very for your reply and suggestions. I am still not sure
+>     what values I should put in the material definition. According to
+>     the definition in:
+>
+>     rho_d = p*C*(1-specularity)
+>
+>     For a material with 50% of incoming light reflected diffusely and
+>     10% specularly then
+>
+>     C= 0.5/(1-0.1) = 0.555
+>
+>     Shall I define the material as follow?
+>
+>     Void plastic diffuse_50
+>
+>     0
+>
+>     0
+>
+>     5 0.555 0.555 0.555 0.1 0
+>
+>     Regards,
+>
+>     Xiaoming
+>
+>     *From:*Germ?n Molina Larrain [mailto:germolinal at gmail.com
+>     <mailto:germolinal at gmail.com>]
+>     *Sent:* 20 January 2017 20:50
+>     *To:* Radiance general discussion
+>     <radiance-general at radiance-online.org
+>     <mailto:radiance-general at radiance-online.org>>
+>     *Subject:* Re: [Radiance-general] Color definition in Plastic material
+>
+>     Hello Xiaoming,
+>
+>     If I understand the Materials documentation
+>     <http://radsite.lbl.gov/radiance/refer/materials.pdf> correctly, I
+>     would say that the Red, Green and Blue are total reflection. If
+>     specularity is non-zero, the diffuse reflection is reduced by this
+>     amount:
+>
+>     rho_d = p*C*(1-specularity)
+>
+>     At least, that would be my guess.
+>
+>     Best!
+>
+>     2017-01-20 16:28 GMT-03:00 Xiaoming Yang
+>     <xiyang at fosterandpartners.com <mailto:xiyang at fosterandpartners.com>>:
+>
+>         Hi,
+>
+>         I have a rather basic question about color definition for
+>         plastic material and hope someone could help me.
+>
+>         mod plastic id
+>
+>         0
+>
+>         0
+>
+>         5 red green blue spec rough
+>
+>         *Does the red, green and blue define diffuse reflection or
+>         total reflection?*
+>
+>         For example, if a material reflect 40% light diffusely and 10%
+>         specularly, is it correct to define this material as:
+>
+>         Void plastic testMaterial
+>
+>         0
+>
+>         0
+>
+>         5 0.4 0.4 0.4 0.1 0
+>
+>         I was checking with the spectrum data from SUTD
+>         http://www.lighting-materials.com/materials/648
+>         <http://www.lighting-materials.com/materials/648>
+>
+>         And it seems they are using the other approach which defines R
+>         G and B with total reflection and the material will be
+>
+>         Void plastic testMaterial
+>
+>         0
+>
+>         0
+>
+>         5 0.5 0.5 0.5 0.1 0
+>
+>         Xiaoming
+>
+>         Foster + Partners Limited | Registered in England and Wales |
+>         CRN + 01644989
+>
+>
+>         _______________________________________________
+>         Radiance-general mailing list
+>         Radiance-general at radiance-online.org
+>         <mailto:Radiance-general at radiance-online.org>
+>         http://www.radiance-online.org/mailman/listinfo/radiance-general
+>         <http://www.radiance-online.org/mailman/listinfo/radiance-general>
+>
+>
+>     _______________________________________________
+>     Radiance-general mailing list
+>     Radiance-general at radiance-online.org
+>     <mailto:Radiance-general at radiance-online.org>
+>     http://www.radiance-online.org/mailman/listinfo/radiance-general
+>     <http://www.radiance-online.org/mailman/listinfo/radiance-general>
+>
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170123/0b7cfed0/attachment-0001.html>
+
+From andrei.kolomenski at nasa.gov  Tue Jan 24 07:17:14 2017
+From: andrei.kolomenski at nasa.gov (Kolomenski, Andrei (JSC-SF311)[WYLE LABORATORIES, INC.])
+Date: Tue, 24 Jan 2017 15:17:14 +0000
+Subject: [Radiance-general] Color definition in Plastic material
+In-Reply-To: <994cd769-a391-f4c5-d8fa-446a85178912@jakubiec.net>
+References: <AM2PR02MB042086360DB8ABC0E45BDBD8DA710@AM2PR02MB0420.eurprd02.prod.outlook.com>
+ <CAF-iH4KQ1x9TF1c=rjHRuDSXGB2-dLWFP1hpvrpNA8Jr7+n=mg@mail.gmail.com>
+ <AM2PR02MB04206F531D2F5420422C8487DA720@AM2PR02MB0420.eurprd02.prod.outlook.com>
+ <CAF-iH4KOyZcKtR6zNur1mdJULS961cUN+AqPqZbB+AG2FzryKQ@mail.gmail.com>
+ <994cd769-a391-f4c5-d8fa-446a85178912@jakubiec.net>
+Message-ID: <AE55A995167B224DBBFA16500E3AB9B306E0403D@NDJSMBX202.ndc.nasa.gov>
+
+Hello All,
+
+Thank you for sharing a link to the http://www.lighting-materials.com/ database. This is a useful reference to have.
+
+I want to understand how R_reflectance, G_reflectance, B_reflectance are calculated, as defined for a material in the online database. Can someone please explain how these were calculated? Is the Radiance RGB triplet (as obtained from xyz_rgb.cal) simply scaled by total reflectance to obtain these?
+
+Radiance 5.0 official release contains a script, colorcal.csh, does this script convert spectral reflectance straight to a RGB material primitive definition, or does the resulting RGB triplet need to be scaled by total or diffuse reflectance?
+
+As I understand from previous posts for the red channel, R_material definition = (R_website - Specularity_website) / (1 - Specularity_website). Can someone please clarify how R_website was determined.
+
+I want to clearly understand how a Radiance material definition is generated from spectral reflectance.
+
+Thank you for the help,
+Andrei Kolomenski
+
+From: J. Alstan Jakubiec [mailto:alstan at jakubiec.net]
+Sent: Monday, January 23, 2017 9:12 AM
+To: radiance-general at radiance-online.org
+Subject: Re: [Radiance-general] Color definition in Plastic material
+
+
+Hi Germ?n, Xiaoming,
+
+Thank you both for pointing this out and having me go back to check the work on specular materials. I indeed made a pretty critical mistake by momentarily forgetting the tricky procedural nature of Radiance materials... and then never noticing. This is rather a shame after spending a long time getting a trans material just perfect earlier in the week. First of all, big apologies for the mistake. All diffuse materials, metals, and the specialized PV materials should be correct on the website. Things with specularity will have some errors, and I will fix this soon.
+
+In the interim, the specularity and total reflectance values on the website are correct, and you can fix individual R, G or B coefficients with a little math:
+
+(R_Website - Specularity_Website) / (1-Specularity_Website) = R
+So in the case of the material referenced earlier<http://www.lighting-materials.com/materials/648>,
+
+R = (0.3517 - 0.0218) / (1 - 0.0218) = 0.3373
+G = (0.3480 - 0.0218) / (1 - 0.0218) = 0.3335
+B = (0.3313 - 0.0218) / (1 - 0.0218) = 0.3164
+
+Again, I apologize for the mistake. I will post a public message here when all is corrected on the website.
+
+Germ?n, I owe you a separate e-mail and will reply soon afterwards :).
+
+Xiaoming, to answer your question: If you want a 50% diffuse and 10% specular material, then indeed the R/G/B coefficients are 0.5556 and the specularity is 0.1 as far as I understand the functioning of the material models. Germ?n, R_specular is simply equal to the specularity in the plastic material. In that sense, Red, Green and Blue are not the total reflection (that's the mistake I made). Rather they represent the percentage of the leftover light after specular reflection that is then reflected diffusely.
+R_diffuse = 0.5556*(1-0.1) = 0.5
+R_specular = 0.1
+R_total = R_diffuse + R_specular
+
+Best,
+Alstan
+On 1/23/2017 9:20 PM, Germ?n Molina Larrain wrote:
+Hi Xiaoming,
+
+mmm... I would say you are looking for a 60% reflective material (10% specular, 50% diffuse).
+
+In that case, I would choose a1, a2, a3 = 60% and the specularity would be (C-rho_d)/C = 16,666%. (16.6666%*60% = 10%).
+It seems that I have the same issue as you, though.... my calculation of total reflectance is not correct when comparing to Lighting Materials website.
+Anyone actually know these things?
+Kind regards,
+
+
+2017-01-23 8:24 GMT-03:00 Xiaoming Yang <xiyang at fosterandpartners.com<mailto:xiyang at fosterandpartners.com>>:
+Hi Germ?n,
+
+Thank you very for your reply and suggestions. I am still not sure what values I should put in the material definition. According to the definition in:
+rho_d = p*C*(1-specularity)
+
+For a material with 50% of incoming light reflected diffusely and 10% specularly then
+
+C= 0.5/(1-0.1) = 0.555
+
+Shall I define the material as follow?
+
+Void plastic diffuse_50
+0
+0
+5 0.555 0.555 0.555 0.1 0
+
+Regards,
+Xiaoming
+
+From: Germ?n Molina Larrain [mailto:germolinal at gmail.com<mailto:germolinal at gmail.com>]
+Sent: 20 January 2017 20:50
+To: Radiance general discussion <radiance-general at radiance-online.org<mailto:radiance-general at radiance-online.org>>
+Subject: Re: [Radiance-general] Color definition in Plastic material
+
+Hello Xiaoming,
+If I understand the Materials documentation<http://radsite.lbl.gov/radiance/refer/materials.pdf> correctly, I would say that the Red, Green and Blue are total reflection. If specularity is non-zero, the diffuse reflection is reduced by this amount:
+rho_d = p*C*(1-specularity)
+
+At least, that would be my guess.
+
+Best!
+
+2017-01-20 16:28 GMT-03:00 Xiaoming Yang <xiyang at fosterandpartners.com<mailto:xiyang at fosterandpartners.com>>:
+Hi,
+
+I have a rather basic question about color definition for plastic material and hope someone could help me.
+
+mod plastic id
+0
+0
+5 red green blue spec rough
+
+Does the red, green and blue define diffuse reflection or total reflection?
+
+For example, if a material reflect 40% light diffusely and 10% specularly, is it correct to define this material as:
+Void plastic testMaterial
+0
+0
+5 0.4 0.4 0.4 0.1 0
+
+I was checking with the spectrum data from SUTD http://www.lighting-materials.com/materials/648
+
+And it seems they are using the other approach which defines R G and B with total reflection and the material will be
+Void plastic testMaterial
+0
+0
+5 0.5 0.5 0.5 0.1 0
+
+Xiaoming
+
+Foster + Partners Limited | Registered in England and Wales | CRN + 01644989
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general at radiance-online.org<mailto:Radiance-general at radiance-online.org>
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general at radiance-online.org<mailto:Radiance-general at radiance-online.org>
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+
+
+
+_______________________________________________
+
+Radiance-general mailing list
+
+Radiance-general at radiance-online.org<mailto:Radiance-general at radiance-online.org>
+
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170124/72df4f74/attachment-0001.html>
+
+From alstan at jakubiec.net  Tue Jan 24 07:58:26 2017
+From: alstan at jakubiec.net (J. Alstan Jakubiec)
+Date: Tue, 24 Jan 2017 23:58:26 +0800
+Subject: [Radiance-general] Color definition in Plastic material
+In-Reply-To: <AE55A995167B224DBBFA16500E3AB9B306E0403D@NDJSMBX202.ndc.nasa.gov>
+References: <AM2PR02MB042086360DB8ABC0E45BDBD8DA710@AM2PR02MB0420.eurprd02.prod.outlook.com>
+ <CAF-iH4KQ1x9TF1c=rjHRuDSXGB2-dLWFP1hpvrpNA8Jr7+n=mg@mail.gmail.com>
+ <AM2PR02MB04206F531D2F5420422C8487DA720@AM2PR02MB0420.eurprd02.prod.outlook.com>
+ <CAF-iH4KOyZcKtR6zNur1mdJULS961cUN+AqPqZbB+AG2FzryKQ@mail.gmail.com>
+ <994cd769-a391-f4c5-d8fa-446a85178912@jakubiec.net>
+ <AE55A995167B224DBBFA16500E3AB9B306E0403D@NDJSMBX202.ndc.nasa.gov>
+Message-ID: <43eb4b2f-749c-6c31-0a6a-2e652e7be06f@jakubiec.net>
+
+Hi Andrei,
+
+The R, G, and B triplets on the website (at least those measured by me) 
+are directly translated from explicit photometric measurements using a 
+KM 2600d spectrophotometer. We use the same scripts that are in the 
+Rendering with Radiance book for doing this. If I recall correctly, the 
+X, Y and Z tristimulus values are calculated simply by using the 
+spectral measurements with the color matching functions (via 
+cieresp.cal), and then xyz_rgb.cal is invoked.
+
+The spectrophotometer takes measurements with specular component 
+included (SCI) and with specular component excluded (SCE). Since plastic 
+specularity is equal energy, specularity is simply Reflectance_SCI - 
+Reflectance_SCE. The error in the database I referred to was something 
+naive I wrote long ago and never noticed: the R, G and B values 
+displayed currently (R_website) come directly from the SCI measurement; 
+therefore, they contain the specular portions of the measurements. They 
+should be based on SCE values (diffuse reflections) and be further 
+scaled by 1/(1-Specularity) in order to be photometrically correct. 
+Hence the correction equation I posted earlier in this thread. Come 
+tomorrow morning (Singapore time), the issue should be fixed.
+
+In good news, for 99% of the materials on the website, this makes little 
+or no difference. For highly specular plastics, the extra diffuse 
+reflection which results can be moderately large.
+
+Roughness values are not calibrated for most materials, and if they have 
+been, it is simply by an eye test.
+
+Best,
+Alstan
+
+On 1/24/2017 11:17 PM, Kolomenski, Andrei (JSC-SF311)[WYLE LABORATORIES, 
+INC.] wrote:
+>
+> Hello All,
+>
+> Thank you for sharing a link to the http://www.lighting-materials.com/ 
+> database. This is a useful reference to have.
+>
+> I want to understand how R_reflectance, G_reflectance, B_reflectance 
+> are calculated, as defined for a material in the online database. Can 
+> someone please explain how these were calculated? Is the Radiance RGB 
+> triplet (as obtained from xyz_rgb.cal) simply scaled by total 
+> reflectance to obtain these?
+>
+> Radiance 5.0 official release contains a script, colorcal.csh, does 
+> this script convert spectral reflectance straight to a RGB material 
+> primitive definition, or does the resulting RGB triplet need to be 
+> scaled by total or diffuse reflectance?
+>
+> As I understand from previous posts for the red channel, R_material 
+> definition = (R_website ? Specularity_website) / (1 ? 
+> Specularity_website). Can someone please clarify how R_website was 
+> determined.
+>
+> I want to clearly understand how a Radiance material definition is 
+> generated from spectral reflectance.
+>
+> Thank you for the help,
+>
+> Andrei Kolomenski
+>
+> *From:*J. Alstan Jakubiec [mailto:alstan at jakubiec.net]
+> *Sent:* Monday, January 23, 2017 9:12 AM
+> *To:* radiance-general at radiance-online.org
+> *Subject:* Re: [Radiance-general] Color definition in Plastic material
+>
+> Hi Germ?n, Xiaoming,
+>
+> Thank you both for pointing this out and having me go back to check 
+> the work on specular materials. I indeed made a pretty critical 
+> mistake by momentarily forgetting the tricky procedural nature of 
+> Radiance materials... and then never noticing. This is rather a shame 
+> after spending a long time getting a trans material just perfect 
+> earlier in the week. First of all, big apologies for the mistake. All 
+> diffuse materials, metals, and the specialized PV materials should be 
+> correct on the website. Things with specularity will have some errors, 
+> and I will fix this soon.
+>
+> In the interim, the specularity and total reflectance values on the 
+> website are correct, and you can fix individual R, G or B coefficients 
+> with a little math:
+>
+> (R_Website - Specularity_Website) / (1-Specularity_Website) = R
+>
+> So in the case of the material referenced earlier 
+> <http://www.lighting-materials.com/materials/648>,
+>
+> R = (0.3517 - 0.0218) / (1 - 0.0218) = 0.3373
+> G = (0.3480 - 0.0218) / (1 - 0.0218) = 0.3335
+> B = (0.3313 - 0.0218) / (1 - 0.0218) = 0.3164
+>
+> Again, I apologize for the mistake. I will post a public message here 
+> when all is corrected on the website.
+>
+> Germ?n, I owe you a separate e-mail and will reply soon afterwards :).
+>
+> Xiaoming, to answer your question: If you want a 50% diffuse and 10% 
+> specular material, then indeed the R/G/B coefficients are 0.5556 and 
+> the specularity is 0.1 as far as I understand the functioning of the 
+> material models. Germ?n, R_specular is simply equal to the specularity 
+> in the plastic material. In that sense, Red, Green and Blue are not 
+> the total reflection (that's the mistake I made). Rather they 
+> represent the percentage of the leftover light after specular 
+> reflection that is then reflected diffusely.
+> R_diffuse = 0.5556*(1-0.1) = 0.5
+> R_specular = 0.1
+> R_total = R_diffuse + R_specular
+>
+> Best,
+> Alstan
+>
+> On 1/23/2017 9:20 PM, Germ?n Molina Larrain wrote:
+>
+>     Hi Xiaoming,
+>
+>     mmm... I would say you are looking for a 60% reflective material
+>     (10% specular, 50% diffuse).
+>
+>     In that case, I would choose a1, a2, a3 = 60% and the specularity
+>     would be (C-rho_d)/C = 16,666%. (16.6666%*60% = 10%).
+>
+>     It seems that I have the same issue as you, though.... my
+>     calculation of total reflectance is not correct when comparing to
+>     Lighting Materials website.
+>
+>     Anyone actually know these things?
+>
+>     Kind regards,
+>
+>     2017-01-23 8:24 GMT-03:00 Xiaoming Yang
+>     <xiyang at fosterandpartners.com <mailto:xiyang at fosterandpartners.com>>:
+>
+>         Hi Germ?n,
+>
+>         Thank you very for your reply and suggestions. I am still not
+>         sure what values I should put in the material definition.
+>         According to the definition in:
+>
+>         rho_d = p*C*(1-specularity)
+>
+>         For a material with 50% of incoming light reflected diffusely
+>         and 10% specularly then
+>
+>         C= 0.5/(1-0.1) = 0.555
+>
+>         Shall I define the material as follow?
+>
+>         Void plastic diffuse_50
+>
+>         0
+>
+>         0
+>
+>         5 0.555 0.555 0.555 0.1 0
+>
+>         Regards,
+>
+>         Xiaoming
+>
+>         *From:*Germ?n Molina Larrain [mailto:germolinal at gmail.com
+>         <mailto:germolinal at gmail.com>]
+>         *Sent:* 20 January 2017 20:50
+>         *To:* Radiance general discussion
+>         <radiance-general at radiance-online.org
+>         <mailto:radiance-general at radiance-online.org>>
+>         *Subject:* Re: [Radiance-general] Color definition in Plastic
+>         material
+>
+>         Hello Xiaoming,
+>
+>         If I understand the Materials documentation
+>         <http://radsite.lbl.gov/radiance/refer/materials.pdf>
+>         correctly, I would say that the Red, Green and Blue are total
+>         reflection. If specularity is non-zero, the diffuse reflection
+>         is reduced by this amount:
+>
+>         rho_d = p*C*(1-specularity)
+>
+>         At least, that would be my guess.
+>
+>         Best!
+>
+>         2017-01-20 16:28 GMT-03:00 Xiaoming Yang
+>         <xiyang at fosterandpartners.com
+>         <mailto:xiyang at fosterandpartners.com>>:
+>
+>             Hi,
+>
+>             I have a rather basic question about color definition for
+>             plastic material and hope someone could help me.
+>
+>             mod plastic id
+>
+>             0
+>
+>             0
+>
+>             5 red green blue spec rough
+>
+>             *Does the red, green and blue define diffuse reflection or
+>             total reflection?*
+>
+>             For example, if a material reflect 40% light diffusely and
+>             10% specularly, is it correct to define this material as:
+>
+>             Void plastic testMaterial
+>
+>             0
+>
+>             0
+>
+>             5 0.4 0.4 0.4 0.1 0
+>
+>             I was checking with the spectrum data from SUTD
+>             http://www.lighting-materials.com/materials/648
+>
+>             And it seems they are using the other approach which
+>             defines R G and B with total reflection and the material
+>             will be
+>
+>             Void plastic testMaterial
+>
+>             0
+>
+>             0
+>
+>             5 0.5 0.5 0.5 0.1 0
+>
+>             Xiaoming
+>
+>             Foster + Partners Limited | Registered in England and
+>             Wales | CRN + 01644989
+>
+>
+>             _______________________________________________
+>             Radiance-general mailing list
+>             Radiance-general at radiance-online.org
+>             <mailto:Radiance-general at radiance-online.org>
+>             http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>         _______________________________________________
+>         Radiance-general mailing list
+>         Radiance-general at radiance-online.org
+>         <mailto:Radiance-general at radiance-online.org>
+>         http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>
+>
+>     _______________________________________________
+>
+>     Radiance-general mailing list
+>
+>     Radiance-general at radiance-online.org
+>     <mailto:Radiance-general at radiance-online.org>
+>
+>     http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170124/ecce3e69/attachment-0001.html>
+
+From alstan at jakubiec.net  Tue Jan 24 21:31:29 2017
+From: alstan at jakubiec.net (J. Alstan Jakubiec)
+Date: Wed, 25 Jan 2017 13:31:29 +0800
+Subject: [Radiance-general] Color definition in Plastic material
+In-Reply-To: <43eb4b2f-749c-6c31-0a6a-2e652e7be06f@jakubiec.net>
+References: <AM2PR02MB042086360DB8ABC0E45BDBD8DA710@AM2PR02MB0420.eurprd02.prod.outlook.com>
+ <CAF-iH4KQ1x9TF1c=rjHRuDSXGB2-dLWFP1hpvrpNA8Jr7+n=mg@mail.gmail.com>
+ <AM2PR02MB04206F531D2F5420422C8487DA720@AM2PR02MB0420.eurprd02.prod.outlook.com>
+ <CAF-iH4KOyZcKtR6zNur1mdJULS961cUN+AqPqZbB+AG2FzryKQ@mail.gmail.com>
+ <994cd769-a391-f4c5-d8fa-446a85178912@jakubiec.net>
+ <AE55A995167B224DBBFA16500E3AB9B306E0403D@NDJSMBX202.ndc.nasa.gov>
+ <43eb4b2f-749c-6c31-0a6a-2e652e7be06f@jakubiec.net>
+Message-ID: <9c043080-625d-41c3-48cc-46c619d279dc@jakubiec.net>
+
+Hello everyone,
+
+I am happy to report that the lighting materials website 
+<http://lighting-materials.com/> is back up, and specular plastics now 
+reflect the correct diffuse values. Thank you to everyone for the 
+helpful discussion, and I will also be uploading some new materials soon!
+
+Picking a random, highly specular measurement (Greg's stainless steel 
+sink in 1995 <http://lighting-materials.com/materials/1444>) should show 
+that the diffuse characteristics are now correct.
+
+    R_diffuse = (0.3937*0.265 + 0.3734*0.670 + 0.3281*0.065)*(1-0.0821)
+    = 0.345
+    R_specular = 0.0821
+    R_total = R_diffuse + R_specular = 0.4271
+
+Best wishes,
+Alstan
+
+On 1/24/2017 11:58 PM, J. Alstan Jakubiec wrote:
+> Hi Andrei,
+>
+> The R, G, and B triplets on the website (at least those measured by 
+> me) are directly translated from explicit photometric measurements 
+> using a KM 2600d spectrophotometer. We use the same scripts that are 
+> in the Rendering with Radiance book for doing this. If I recall 
+> correctly, the X, Y and Z tristimulus values are calculated simply by 
+> using the spectral measurements with the color matching functions (via 
+> cieresp.cal), and then xyz_rgb.cal is invoked.
+>
+> The spectrophotometer takes measurements with specular component 
+> included (SCI) and with specular component excluded (SCE). Since 
+> plastic specularity is equal energy, specularity is simply 
+> Reflectance_SCI - Reflectance_SCE. The error in the database I 
+> referred to was something naive I wrote long ago and never noticed: 
+> the R, G and B values displayed currently (R_website) come directly 
+> from the SCI measurement; therefore, they contain the specular 
+> portions of the measurements. They should be based on SCE values 
+> (diffuse reflections) and be further scaled by 1/(1-Specularity) in 
+> order to be photometrically correct. Hence the correction equation I 
+> posted earlier in this thread. Come tomorrow morning (Singapore time), 
+> the issue should be fixed.
+>
+> In good news, for 99% of the materials on the website, this makes 
+> little or no difference. For highly specular plastics, the extra 
+> diffuse reflection which results can be moderately large.
+>
+> Roughness values are not calibrated for most materials, and if they 
+> have been, it is simply by an eye test.
+>
+> Best,
+> Alstan
+>
+> On 1/24/2017 11:17 PM, Kolomenski, Andrei (JSC-SF311)[WYLE 
+> LABORATORIES, INC.] wrote:
+>>
+>> Hello All,
+>>
+>> Thank you for sharing a link to the 
+>> http://www.lighting-materials.com/ database. This is a useful 
+>> reference to have.
+>>
+>> I want to understand how R_reflectance, G_reflectance, B_reflectance 
+>> are calculated, as defined for a material in the online database. Can 
+>> someone please explain how these were calculated? Is the Radiance RGB 
+>> triplet (as obtained from xyz_rgb.cal) simply scaled by total 
+>> reflectance to obtain these?
+>>
+>> Radiance 5.0 official release contains a script, colorcal.csh, does 
+>> this script convert spectral reflectance straight to a RGB material 
+>> primitive definition, or does the resulting RGB triplet need to be 
+>> scaled by total or diffuse reflectance?
+>>
+>> As I understand from previous posts for the red channel, R_material 
+>> definition = (R_website ? Specularity_website) / (1 ? 
+>> Specularity_website). Can someone please clarify how R_website was 
+>> determined.
+>>
+>> I want to clearly understand how a Radiance material definition is 
+>> generated from spectral reflectance.
+>>
+>> Thank you for the help,
+>>
+>> Andrei Kolomenski
+>>
+>> *From:*J. Alstan Jakubiec [mailto:alstan at jakubiec.net]
+>> *Sent:* Monday, January 23, 2017 9:12 AM
+>> *To:* radiance-general at radiance-online.org
+>> *Subject:* Re: [Radiance-general] Color definition in Plastic material
+>>
+>> Hi Germ?n, Xiaoming,
+>>
+>> Thank you both for pointing this out and having me go back to check 
+>> the work on specular materials. I indeed made a pretty critical 
+>> mistake by momentarily forgetting the tricky procedural nature of 
+>> Radiance materials... and then never noticing. This is rather a shame 
+>> after spending a long time getting a trans material just perfect 
+>> earlier in the week. First of all, big apologies for the mistake. All 
+>> diffuse materials, metals, and the specialized PV materials should be 
+>> correct on the website. Things with specularity will have some 
+>> errors, and I will fix this soon.
+>>
+>> In the interim, the specularity and total reflectance values on the 
+>> website are correct, and you can fix individual R, G or B 
+>> coefficients with a little math:
+>>
+>> (R_Website - Specularity_Website) / (1-Specularity_Website) = R
+>>
+>> So in the case of the material referenced earlier 
+>> <http://www.lighting-materials.com/materials/648>,
+>>
+>> R = (0.3517 - 0.0218) / (1 - 0.0218) = 0.3373
+>> G = (0.3480 - 0.0218) / (1 - 0.0218) = 0.3335
+>> B = (0.3313 - 0.0218) / (1 - 0.0218) = 0.3164
+>>
+>> Again, I apologize for the mistake. I will post a public message here 
+>> when all is corrected on the website.
+>>
+>> Germ?n, I owe you a separate e-mail and will reply soon afterwards :).
+>>
+>> Xiaoming, to answer your question: If you want a 50% diffuse and 10% 
+>> specular material, then indeed the R/G/B coefficients are 0.5556 and 
+>> the specularity is 0.1 as far as I understand the functioning of the 
+>> material models. Germ?n, R_specular is simply equal to the 
+>> specularity in the plastic material. In that sense, Red, Green and 
+>> Blue are not the total reflection (that's the mistake I made). Rather 
+>> they represent the percentage of the leftover light after specular 
+>> reflection that is then reflected diffusely.
+>> R_diffuse = 0.5556*(1-0.1) = 0.5
+>> R_specular = 0.1
+>> R_total = R_diffuse + R_specular
+>>
+>> Best,
+>> Alstan
+>>
+>> On 1/23/2017 9:20 PM, Germ?n Molina Larrain wrote:
+>>
+>>     Hi Xiaoming,
+>>
+>>     mmm... I would say you are looking for a 60% reflective material
+>>     (10% specular, 50% diffuse).
+>>
+>>     In that case, I would choose a1, a2, a3 = 60% and the specularity
+>>     would be (C-rho_d)/C = 16,666%. (16.6666%*60% = 10%).
+>>
+>>     It seems that I have the same issue as you, though.... my
+>>     calculation of total reflectance is not correct when comparing to
+>>     Lighting Materials website.
+>>
+>>     Anyone actually know these things?
+>>
+>>     Kind regards,
+>>
+>>     2017-01-23 8:24 GMT-03:00 Xiaoming Yang
+>>     <xiyang at fosterandpartners.com <mailto:xiyang at fosterandpartners.com>>:
+>>
+>>         Hi Germ?n,
+>>
+>>         Thank you very for your reply and suggestions. I am still not
+>>         sure what values I should put in the material definition.
+>>         According to the definition in:
+>>
+>>         rho_d = p*C*(1-specularity)
+>>
+>>         For a material with 50% of incoming light reflected diffusely
+>>         and 10% specularly then
+>>
+>>         C= 0.5/(1-0.1) = 0.555
+>>
+>>         Shall I define the material as follow?
+>>
+>>         Void plastic diffuse_50
+>>
+>>         0
+>>
+>>         0
+>>
+>>         5 0.555 0.555 0.555 0.1 0
+>>
+>>         Regards,
+>>
+>>         Xiaoming
+>>
+>>         *From:*Germ?n Molina Larrain [mailto:germolinal at gmail.com
+>>         <mailto:germolinal at gmail.com>]
+>>         *Sent:* 20 January 2017 20:50
+>>         *To:* Radiance general discussion
+>>         <radiance-general at radiance-online.org
+>>         <mailto:radiance-general at radiance-online.org>>
+>>         *Subject:* Re: [Radiance-general] Color definition in Plastic
+>>         material
+>>
+>>         Hello Xiaoming,
+>>
+>>         If I understand the Materials documentation
+>>         <http://radsite.lbl.gov/radiance/refer/materials.pdf>
+>>         correctly, I would say that the Red, Green and Blue are total
+>>         reflection. If specularity is non-zero, the diffuse
+>>         reflection is reduced by this amount:
+>>
+>>         rho_d = p*C*(1-specularity)
+>>
+>>         At least, that would be my guess.
+>>
+>>         Best!
+>>
+>>         2017-01-20 16:28 GMT-03:00 Xiaoming Yang
+>>         <xiyang at fosterandpartners.com
+>>         <mailto:xiyang at fosterandpartners.com>>:
+>>
+>>             Hi,
+>>
+>>             I have a rather basic question about color definition for
+>>             plastic material and hope someone could help me.
+>>
+>>             mod plastic id
+>>
+>>             0
+>>
+>>             0
+>>
+>>             5 red green blue spec rough
+>>
+>>             *Does the red, green and blue define diffuse reflection
+>>             or total reflection?*
+>>
+>>             For example, if a material reflect 40% light diffusely
+>>             and 10% specularly, is it correct to define this material as:
+>>
+>>             Void plastic testMaterial
+>>
+>>             0
+>>
+>>             0
+>>
+>>             5 0.4 0.4 0.4 0.1 0
+>>
+>>             I was checking with the spectrum data from SUTD
+>>             http://www.lighting-materials.com/materials/648
+>>
+>>             And it seems they are using the other approach which
+>>             defines R G and B with total reflection and the material
+>>             will be
+>>
+>>             Void plastic testMaterial
+>>
+>>             0
+>>
+>>             0
+>>
+>>             5 0.5 0.5 0.5 0.1 0
+>>
+>>             Xiaoming
+>>
+>>             Foster + Partners Limited | Registered in England and
+>>             Wales | CRN + 01644989
+>>
+>>
+>>             _______________________________________________
+>>             Radiance-general mailing list
+>>             Radiance-general at radiance-online.org
+>>             <mailto:Radiance-general at radiance-online.org>
+>>             http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>
+>>
+>>         _______________________________________________
+>>         Radiance-general mailing list
+>>         Radiance-general at radiance-online.org
+>>         <mailto:Radiance-general at radiance-online.org>
+>>         http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>
+>>
+>>
+>>
+>>     _______________________________________________
+>>
+>>     Radiance-general mailing list
+>>
+>>     Radiance-general at radiance-online.org
+>>     <mailto:Radiance-general at radiance-online.org>
+>>
+>>     http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>
+>>
+>>
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170125/047eafcf/attachment-0001.html>
+
+From ianseifs at gmail.com  Tue Jan 31 14:36:01 2017
+From: ianseifs at gmail.com (Ian Seiferling)
+Date: Tue, 31 Jan 2017 17:36:01 -0500
+Subject: [Radiance-general] DEM to .rad pipeline
+Message-ID: <CAFPP+oKiS=Yzw6s-paROSRaf+B=_67yD1PP9sLXOXsJ149i_Ng@mail.gmail.com>
+
+Hello Radiance community,
+
+I am very new to radiance and thus this may come across as a novice or
+naive question. I hope to use radiance to model daylight on exterior
+surfaces. The geometry I work with are DEMs typically coming in raster
+(geotiff) format.
+
+Can anyone suggest a most efficient (or path of least resistance) workflow
+to translate the DEMs into Radiance scene description file?
+
+I can convert the raster DEM into one of the many vectorized mesh-based
+formats (i.e., some type of CAD format); but am hoping the community may
+have some insight here to help narrow this down for me (best CAD file
+type). It seems a triangle-mesh file would be ideal; wonder if there is
+software that export this file type?
+
+Any advice, references to plug-ins or tips would be most appreciated!
+
+Sincerely,
+Ian
+
+-- 
+*I A N  S E I F E R L I N G *PhD
+ianseifs at mit.edu
+Postdoctoral Fellow | MIT Senseable City Laboratory
+<http://senseable.mit.edu>
+
+77 Massachusetts Avenue 9-209
+Cambridge, MA 02139 USA
+ianseiferling.com <http://www.ianseiferling.com/>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170131/c20b5dda/attachment.html>
+

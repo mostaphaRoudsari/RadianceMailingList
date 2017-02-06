@@ -1,0 +1,306 @@
+From guy.vaessen at gmail.com  Sun Oct  3 11:28:42 2010
+From: guy.vaessen at gmail.com (Guy Vaessen)
+Date: Sun Oct  3 11:28:34 2010
+Subject: [Radiance-dev] Compiling Radiance 4.0 HEAD on Windows
+Message-ID: <AANLkTimAYUfftX64xfRaRWfqWvDegWWnTo4c3kbZPQ0C@mail.gmail.com>
+
+Today I succeeded in compiling Radiance 4.0 HEAD snapshot on Windows.
+I had to make to following modifications to make it work:
+
+*Gendaylit*
+To make Gendaylit compile I had to add the following line in:
+ray\src\gen\SConscript under the section PROGS = (
+*('gendaylit',   Split('gendaylit.c sun.c',), ['rtlamps']),
+
+*I changed the following line in: ray\src\common\SConscript*
+*RTLAMPS = Split('''fropen.c rexpr.c lamps.c''')*+ [getlibpath]*
+
+*Dctimestep*
+To make dctimestep compile I had to add the following line to:
+ray\src\common\SConscript under the section # build libraries*:
+rtall = env.StaticLibrary(target=radlib('rtall'), source=ALL)**
+*
+I changed in ray\src\util\SConscript
+('dctimestep', ['dctimestep.c'],
+    *['rtall'])*
+
+(I think that including all library functions for dctimestep probably is way
+to much, but I don't know the minimal set to include. This way dctimestep
+compiles fine.)
+
+Another problem I ran into:
+
+When compiling tmapluv.c the compiler complained about a variable
+declaration that was already declared elsewhere.
+tmapluv.c includes tiffio.h, which inturn (on Windows) includes windows.h,
+which includes windef.h
+In windef.h the the following declaration is made: typedef unsigned char
+BYTE
+This declaration gives problems with tmapluv.c where BYTE is also declared.
+
+As a workaround I commented typedef unsigned char BYTE out in windef.h.
+After that the compiler compiles tmapluv.c
+After that the compiles continues, but very soon fails again I then removed
+the comments from windef.h and the compiler finally finisches building
+Radiance.
+
+Question: is it possible to change the declaration of BYTE in tmapluv.c or
+tell the compiler to not include windef.h without producing errors? (I am
+not a programmer, so I didn't dare mess with it myself)
+
+For compilation I used:
+Radiance 4.0 + latest snapshot of the HEAD archive
+MinGW with gcc 4.5.0
+Phyton 2.7 + scons 1.3.1
+compiler optimalisations: -O3 -march=native (for a core2duo)
+
+I hope this is helpfull.
+
+Best Regards,
+
+Guy
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20101003/71dd7282/attachment.html
+From gregoryjward at gmail.com  Sun Oct  3 12:16:17 2010
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Sun Oct  3 12:15:41 2010
+Subject: [Radiance-dev] Compiling Radiance 4.0 HEAD on Windows
+In-Reply-To: <AANLkTimAYUfftX64xfRaRWfqWvDegWWnTo4c3kbZPQ0C@mail.gmail.com>
+References: <AANLkTimAYUfftX64xfRaRWfqWvDegWWnTo4c3kbZPQ0C@mail.gmail.com>
+Message-ID: <45E98348-FA4F-444D-9FB3-61D8A5A6988F@gmail.com>
+
+Hi Guy,
+
+Thanks very much for these changes -- what happens if you change the include order in tmapluv.c to put "tiffio.h" above "tmprivat.h"?  I think this might resolve the conflict.
+
+Cheers,
+-Greg
+From guy.vaessen at gmail.com  Sun Oct  3 12:42:03 2010
+From: guy.vaessen at gmail.com (Guy Vaessen)
+Date: Sun Oct  3 12:41:52 2010
+Subject: [Radiance-dev] Compiling Radiance 4.0 HEAD on Windows
+Message-ID: <AANLkTikTrGGgHrcfU64AO-YXXXm1zyJ99oHrZ+-RNmro@mail.gmail.com>
+
+Hi Greg,
+
+Thanks! That worked + the solution was easier than I thought it could
+possibly be!
+I also had to do the same trick on tmaptiff.c (put tiffio.h above tmprivat.h)
+and on tmapcolrs.c I had to move rtprocess.h also to be also above tmprivat.h
+
+After these changes compiling went like a charm.
+
+Best Regards.
+
+Guy
+
+(No idea how to reply on a message on the mailing list, I hope this works)
+
+
+> Hi Guy,
+
+> Thanks very much for these changes -- what happens if you change the include order in tmapluv.c to put "tiffio.h" above "tmprivat.h"?  I think this might resolve the conflict.
+
+> Cheers,
+> -Greg
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20101003/1d3c3739/attachment.htm
+From gregoryjward at gmail.com  Sun Oct  3 14:19:50 2010
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Sun Oct  3 14:19:14 2010
+Subject: [Radiance-dev] Compiling Radiance 4.0 HEAD on Windows
+In-Reply-To: <AANLkTikTrGGgHrcfU64AO-YXXXm1zyJ99oHrZ+-RNmro@mail.gmail.com>
+References: <AANLkTikTrGGgHrcfU64AO-YXXXm1zyJ99oHrZ+-RNmro@mail.gmail.com>
+Message-ID: <450512B6-FC45-4469-8A1D-81C8FD175B3F@gmail.com>
+
+Great!
+
+Can someone else verify Guy's suggested changes to the SConscript files.  I still have no idea how any of Schorsch's build system is supposed to work, so I'm relying on the mailing list for recommended changes.
+
+Cheers,
+-Greg
+
+> From: Guy Vaessen <guy.vaessen@gmail.com>
+> Date: October 3, 2010 12:42:03 PM PDT
+> 
+> Hi Greg,
+> 
+> Thanks! That worked + the solution was easier than I thought it could possibly be!
+> I also had to do the same trick on tmaptiff.c (put tiffio.h above tmprivat.h)
+> 
+> and on tmapcolrs.c I had to move rtprocess.h also to be also above tmprivat.h
+> 
+> 
+> After these changes compiling went like a charm.
+> 
+> Best Regards.
+> 
+> Guy
+
+From maricanis at gmail.com  Tue Oct  5 02:50:49 2010
+From: maricanis at gmail.com (Marija Velickovic)
+Date: Tue Oct  5 02:51:00 2010
+Subject: [Radiance-dev] Compiling Radiance 4.0 HEAD on Windows
+In-Reply-To: <450512B6-FC45-4469-8A1D-81C8FD175B3F@gmail.com>
+References: <AANLkTikTrGGgHrcfU64AO-YXXXm1zyJ99oHrZ+-RNmro@mail.gmail.com>
+	<450512B6-FC45-4469-8A1D-81C8FD175B3F@gmail.com>
+Message-ID: <AANLkTi=ch+YprJOeSJQ+LtRM_AWtrVFWvL6LkkCCDmz2@mail.gmail.com>
+
+Hi,
+
+I've managed to install latest HEAD Radiance in Windows 7, after changes
+suggested by Guy.
+All Radiance programs are compiled correctly.
+
+General procedure for installation I use, is the one described on
+Francesco's Wiki page
+How to compile Radiance using the MinGW tools and
+Scons<http://www.bozzograo.net/radiancewiki/doku.php?id=how_to_compile_radiance_using_the_mingw_tools_and_scons>
+
+So when Radiance site is updated, notes about compilation procedure should
+be put on the site and also Windows installation file (for those who don't
+want to compile files manually).
+
+Cheers,
+Marija
+
+On Sun, Oct 3, 2010 at 11:19 PM, Gregory J. Ward <gregoryjward@gmail.com>wrote:
+
+> Great!
+>
+> Can someone else verify Guy's suggested changes to the SConscript files.  I
+> still have no idea how any of Schorsch's build system is supposed to work,
+> so I'm relying on the mailing list for recommended changes.
+>
+> Cheers,
+> -Greg
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20101005/b87d3810/attachment.htm
+From guy.vaessen at gmail.com  Tue Oct  5 10:44:11 2010
+From: guy.vaessen at gmail.com (Guy Vaessen)
+Date: Tue Oct  5 10:44:02 2010
+Subject: [Radiance-dev] Compiling Radiance 4.0 HEAD on Windows
+Message-ID: <AANLkTinchspGnweso=FR=6eKrU07JSMh8USiFAfYGz8i@mail.gmail.com>
+
+Hello,
+
+Thanks for trying. And I am glad that everything compiled correctly,
+however:
+
+For Gendaylit you also need a library file called: 'perezlum.cal'
+
+I added this also to ray\scr\gen\SConscript the line should be:
+LIBFILES = Split('illum.cal rev.cal skybright.cal glaze1.cal glaze2.cal
+perezlum.cal')
+
+This way the file perezlum.cal is also copied when doing a scons install and
+Radiance will be able to interpreted and use the output of Gendaylit.
+
+Best Regards,
+
+Guy
+
+
+Hi,
+
+I've managed to install latest HEAD Radiance in Windows 7, after changes
+suggested by Guy.
+All Radiance programs are compiled correctly.
+
+General procedure for installation I use, is the one described on
+Francesco's Wiki page
+How to compile Radiance using the MinGW tools and
+Scons<http://www.bozzograo.net/radiancewiki/doku.php?id=how_to_compile_radiance_using_the_mingw_tools_and_scons>
+
+So when Radiance site is updated, notes about compilation procedure should
+be put on the site and also Windows installation file (for those who don't
+want to compile files manually).
+
+Cheers,
+Marija
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20101005/fbcde589/attachment.html
+From maricanis at gmail.com  Thu Oct  7 03:41:55 2010
+From: maricanis at gmail.com (Marija Velickovic)
+Date: Thu Oct  7 03:42:07 2010
+Subject: [Radiance-dev] Compiling Radiance 4.0 HEAD on Windows
+In-Reply-To: <AANLkTinchspGnweso=FR=6eKrU07JSMh8USiFAfYGz8i@mail.gmail.com>
+References: <AANLkTinchspGnweso=FR=6eKrU07JSMh8USiFAfYGz8i@mail.gmail.com>
+Message-ID: <AANLkTimPQRZ-W=S54k9vVeRpiS_8VLQY41Z_P6yP3W17@mail.gmail.com>
+
+Hi,
+
+One more note:
+platform/*.cfg files should be updated so that installation paths aren't
+"c:\radiance3.6" or so.
+
+For example next can be changed:
+[install]
+RAD_BASEDIR:   c:\radiance4.0
+RAD_BINDIR:    bin
+RAD_RLIBDIR:   lib
+RAD_MANDIR:    man
+
++
+after installation user has to set RAYPATH environment variable to Radiance
+libraries' path.
+Maybe it can be done from Scons script (if somebody knows how it can be
+done).
+
+Marija
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20101007/70e10098/attachment.html
+From apian at pab-opto.de  Tue Oct 19 21:56:53 2010
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Tue Oct 19 22:00:47 2010
+Subject: [Radiance-dev] BRTF measurements & some thoughts
+Message-ID: <201010200500.o9K50x3S014561@mta2.lbl.gov>
+
+Hi all,
+
+since the Radiance 2010 workshop CD, in which it was planned to be 
+added, seems still in the making, and in light of Andy McNeil's nicely 
+done and informative three-phase tutorial, it might be worthwhile to 
+mention that the workshop talk on 
+bidirectional-reflection-transmission-data (BRTF, BSDF, BTDF, etc) 
+basics, measurement and modelling had already been put at 
+http://www.pab-opto.de/radiance/pab-brtf-talk.web.pdf . It gives some 
+compact summary from solid angle to BRTF, some basics on measurements 
+and some thoughts based on previous experience with Radiance BRTF models.
+
+For those who are primarily concerned about how to get measured BRTF 
+into Radiance at all, LBL's newly introduced, matrix based approach is 
+certainly a big step forward, that is vital to handle measured BRTF + 
+Radiance in a general, project oriented, way.
+
+For folks who endeavour to explore the BRTF world closer, and without 
+going into too much detail here, there still seems good reason to 
+consider a matrix based approach as not quite optimal for many of the 
+most interesting materials. For the entertainment of the curious, 
+reasons are given in the last 10 pages or so of the talk. Funny bit to 
+mention: Both views are based on the same data generating measurement 
+gonio-photometer (http://www.brtf.info/?d=/gonio-photometer).
+Whether or not this will influence any further and/or additional ways of 
+getting BRTF data into the Radiance simulation program in an adaptive 
+and sleek way, with less  steps on the user-side, is to be seen. 
+Technically, there are one or two fairly major programming tweaks to 
+this, and both are inside the current rendering core code.
+
+happy rendering,
+feedback appreciated
+
+Peter
+
+PS: cross-posted to radiance-dev, in case of further technical threads
+
+-- 
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+

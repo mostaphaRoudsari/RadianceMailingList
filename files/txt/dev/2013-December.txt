@@ -1,0 +1,1486 @@
+From jacobs.axel at gmail.com  Sun Dec  1 13:41:34 2013
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Sun, 01 Dec 2013 21:41:34 +0000
+Subject: [Radiance-dev] bgraph.exe
+Message-ID: <529BAD0E.8000909@gmail.com>
+
+Evening, all
+
+This is about Windows Radiance, and of possible interest to 
+rad-openstudio, although I'm not cross-posting.
+
+When attempting to use bgraph.exe with the following lux.plt file:
+
+----------------- 8< -----------------
+include=line.plt
+title="Working Plane Illuminance"
+xlabel="Distance from Window"
+ylabel="Illuminance [lux]"
+Adata=lux.csv
+Acolor=2
+----------------- 8< -----------------
+
+I get this error message:
+bgraph: lux.plt: File not found: line.plt
+
+Under LINUX, line.plt is stored under $RAYPATH/meta
+
+The Windows (as in NREL) Radiance distribution doesn't come with 
+lib/meta, so I copied it across. Still no luck.
+
+echo %RAYPATH%
+.;C:\Program Files\Radiance\lib
+
+I have found that there is a bit of inconsistency with file paths under 
+Windows, so I also tried
+
+set RAYPATH=.;C:/Program Files/Radiance/lib
+echo %RAYPATH%
+.;C:/Program Files/Radiance/lib
+
+but again to no avail.
+
+My questions therefore are:
+a) Where does bgraph.exe look for line.plt?
+b) Windows radiance ships with bgraph.exe, but not with the 
+$RAYPATH/meta dir. Does this mean that bgraph.exe (with psmeta and 
+ghostview, of course) isn't actually that useful? What can it do?
+
+Many thanks for your thoughts.
+
+Have a lovely Sunday evening
+
+Axel
+
+
+From jacobs.axel at gmail.com  Sun Dec  1 14:06:39 2013
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Sun, 01 Dec 2013 22:06:39 +0000
+Subject: [Radiance-dev] X-plat Perl versions of objview, objpict, ltview
+Message-ID: <529BB2EF.7060800@gmail.com>
+
+Dear list,
+
+this might be of interest to rad-openstudio, but I am refraining from 
+cross-posting.
+
+Whilst doing a bit of Radiance teaching last Friday, I got caught 
+red-face in my attempt to use objview.rb. Installing ruby.zip from the 
+NREL web site (and making sure %PATH% picks it up) did not 
+help--objview.rb kept complaining about missing input files. It appears 
+that somehow, ARGV is completely ignored by the parser once the options 
+are dealt with. However, I know little about Ruby.
+
+Since I need a working objview next Friday, I finished the re-write of 
+objview in Perl, which I started some time ago, but never polished off.
+
+Whilst at it, I also completed a Perl port of objpict.csh.
+
+Both appear to work under LINUX and Windows Vista. Zip archive with 
+Windows exe files is here:
+http://www.jaloxa.eu/pickup/win_objpict_objview.zip
+
+Your feedback would be much appreciated.
+
+Since the Windows objview.rb has some extra functionality over the UNIX 
+csh version (namely ltview), I started work on a x-plat ltview.pl, but 
+have I admit that I'm not sure what it is meant to do:
+
+a) if ltview is meant to show the actual luminaire (or fixture for you 
+non-Europeans), then are not objview or objpict good enough?
+
+b) if, on the other hand, it is the actual photometric distribution that 
+matters, then would it not be better to extract the dat file of the 
+distribution, and suspend a little disk or square with that distribution 
+applied to it. The command line parser could then be extended to
+- include an option that might cause it to put the disk inside a sphere 
+rather than a box; and/or
+- render a -vta fisheye view from just below this disk, so that the 
+entire photometric distribution might be appreciated.
+
+I'm happy enough to look into this if it is felt that the Windows 
+version of objview and the 'official' one should be based on the same 
+code. Would need some guidance, though as to what ltview should do.
+
+Good night and good luck
+
+Axel
+
+PS: I'd love to call it 'iesview', but this name is already taken by an 
+add-on to AGI32. Works pretty well, actually (under Windows).
+@Ian, we probably have to thank you for this little gem?
+
+
+
+From rob.guglielmetti at gmail.com  Sun Dec  1 18:07:50 2013
+From: rob.guglielmetti at gmail.com (Rob Guglielmetti)
+Date: Sun, 1 Dec 2013 19:07:50 -0700
+Subject: [Radiance-dev] X-plat Perl versions of objview, objpict, ltview
+In-Reply-To: <529BB2EF.7060800@gmail.com>
+References: <529BB2EF.7060800@gmail.com>
+Message-ID: <ADD95E9E-2B6A-4890-9B8B-3C02281AB81F@gmail.com>
+
+Hi Axel, et al.,
+
+objview.rb works fine on my Mac, I tested this on Linux and Win too (since Win compatibility was the whole point). It's expecting a .rad file which references a .dat file (products of the ies2rad program). Maybe we could work offline to find the source of your error? Otherwise...
+
+The purpose of ltview was to show both the luminaire (or fitting, for you U.K. people) and the distribution. It worked for me, and I thought it might be useful for others. You can see the shape of the luminous aperture polygon, the size, the orientation, and the general distribution. You could also ping surfaces in the box for radiance or irradiance, learning a little more about the distribution and the scaling. Since ltview was a copy of objview, it seemed to make sense to shove it all into one place when I wrote the Ruby port. While no one was happy to have another dependency, it WAS nice to have objview available to Windows users. If your Perl port(s) works, we should probably drop the Ruby port, since objview/ltview is the only reason for installing Ruby if you merely want to use the Radiance binaries (using OpenStudio is a different matter). 
+
+I wouldn't call it iesview though, since what we're looking at is a Radiance light description -- which may or may not be derived from an ies file. =8-)
+
+- Rob
+
+
+On Dec 1, 2013, at 3:06 PM, Axel Jacobs <jacobs.axel at gmail.com> wrote:
+
+> Dear list,
+> 
+> this might be of interest to rad-openstudio, but I am refraining from cross-posting.
+> 
+> Whilst doing a bit of Radiance teaching last Friday, I got caught red-face in my attempt to use objview.rb. Installing ruby.zip from the NREL web site (and making sure %PATH% picks it up) did not help--objview.rb kept complaining about missing input files. It appears that somehow, ARGV is completely ignored by the parser once the options are dealt with. However, I know little about Ruby.
+> 
+> Since I need a working objview next Friday, I finished the re-write of objview in Perl, which I started some time ago, but never polished off.
+> 
+> Whilst at it, I also completed a Perl port of objpict.csh.
+> 
+> Both appear to work under LINUX and Windows Vista. Zip archive with Windows exe files is here:
+> http://www.jaloxa.eu/pickup/win_objpict_objview.zip
+> 
+> Your feedback would be much appreciated.
+> 
+> Since the Windows objview.rb has some extra functionality over the UNIX csh version (namely ltview), I started work on a x-plat ltview.pl, but have I admit that I'm not sure what it is meant to do:
+> 
+> a) if ltview is meant to show the actual luminaire (or fixture for you non-Europeans), then are not objview or objpict good enough?
+> 
+> b) if, on the other hand, it is the actual photometric distribution that matters, then would it not be better to extract the dat file of the distribution, and suspend a little disk or square with that distribution applied to it. The command line parser could then be extended to
+> - include an option that might cause it to put the disk inside a sphere rather than a box; and/or
+> - render a -vta fisheye view from just below this disk, so that the entire photometric distribution might be appreciated.
+> 
+> I'm happy enough to look into this if it is felt that the Windows version of objview and the 'official' one should be based on the same code. Would need some guidance, though as to what ltview should do.
+> 
+> Good night and good luck
+> 
+> Axel
+> 
+> PS: I'd love to call it 'iesview', but this name is already taken by an add-on to AGI32. Works pretty well, actually (under Windows).
+> @Ian, we probably have to thank you for this little gem?
+> 
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+From rob.guglielmetti at gmail.com  Sun Dec  1 18:10:27 2013
+From: rob.guglielmetti at gmail.com (Rob Guglielmetti)
+Date: Sun, 1 Dec 2013 19:10:27 -0700
+Subject: [Radiance-dev] bgraph.exe
+In-Reply-To: <529BAD0E.8000909@gmail.com>
+References: <529BAD0E.8000909@gmail.com>
+Message-ID: <D071F108-5770-49AD-B038-3D188A4F2DCE@gmail.com>
+
+Hi again,
+
+Pretty sure we fixed the missing lib/meta in the packages a while ago. WHat vintage of installer are you using? I have to admit, I haven't used graph in like ten years. Lemme see if I can test this out tomorrow. 
+
+- Rob
+
+
+On Dec 1, 2013, at 2:41 PM, Axel Jacobs <jacobs.axel at gmail.com> wrote:
+
+> Evening, all
+> 
+> This is about Windows Radiance, and of possible interest to rad-openstudio, although I'm not cross-posting.
+> 
+> When attempting to use bgraph.exe with the following lux.plt file:
+> 
+> ----------------- 8< -----------------
+> include=line.plt
+> title="Working Plane Illuminance"
+> xlabel="Distance from Window"
+> ylabel="Illuminance [lux]"
+> Adata=lux.csv
+> Acolor=2
+> ----------------- 8< -----------------
+> 
+> I get this error message:
+> bgraph: lux.plt: File not found: line.plt
+> 
+> Under LINUX, line.plt is stored under $RAYPATH/meta
+> 
+> The Windows (as in NREL) Radiance distribution doesn't come with lib/meta, so I copied it across. Still no luck.
+> 
+> echo %RAYPATH%
+> .;C:\Program Files\Radiance\lib
+> 
+> I have found that there is a bit of inconsistency with file paths under Windows, so I also tried
+> 
+> set RAYPATH=.;C:/Program Files/Radiance/lib
+> echo %RAYPATH%
+> .;C:/Program Files/Radiance/lib
+> 
+> but again to no avail.
+> 
+> My questions therefore are:
+> a) Where does bgraph.exe look for line.plt?
+> b) Windows radiance ships with bgraph.exe, but not with the $RAYPATH/meta dir. Does this mean that bgraph.exe (with psmeta and ghostview, of course) isn't actually that useful? What can it do?
+> 
+> Many thanks for your thoughts.
+> 
+> Have a lovely Sunday evening
+> 
+> Axel
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+From Wendelin.Sprenger at ise.fraunhofer.de  Sun Dec  1 19:02:51 2013
+From: Wendelin.Sprenger at ise.fraunhofer.de (Wendelin.Sprenger at ise.fraunhofer.de)
+Date: Mon, 2 Dec 2013 04:02:51 +0100
+Subject: [Radiance-dev] AUTO: AUTO: Wendelin Sprenger is not in the office
+Message-ID: <OFF61A8A7F.560BAD26-ONC1257C35.0010BDD6-C1257C35.0010BDD6@ise.fhg.de>
+
+
+Ich bin von Mi, 23.10.2013 bis Mi, 05.02.2014 abwesend.
+
+
+I am absent until February 5th, 2014.
+Only in urgent cases, please call Helen Rose Wilson: 0049/761/4588-5149
+
+
+
+
+
+Hinweis: Dies ist eine automatische Antwort auf Ihre Nachricht
+"[Radiance-dev] bgraph.exe" gesendet am 01.12.2013 22:41:34.
+
+Diese ist die einzige Benachrichtigung, die Sie empfangen werden, w?hrend
+diese Person abwesend ist.
+
+
+
+From jacobs.axel at gmail.com  Sun Dec  1 23:15:37 2013
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Mon, 02 Dec 2013 07:15:37 +0000
+Subject: [Radiance-dev] bgraph.exe
+In-Reply-To: <D071F108-5770-49AD-B038-3D188A4F2DCE@gmail.com>
+References: <529BAD0E.8000909@gmail.com>
+	<D071F108-5770-49AD-B038-3D188A4F2DCE@gmail.com>
+Message-ID: <529C3399.5090601@gmail.com>
+
+Hi Rob,
+
+I'm using rad9ance-4.2a.exe from just a few days ago. When it didn't 
+work, I downloaded the very latest one.
+
+Axel
+
+
+On 02/12/13 02:10, Rob Guglielmetti wrote:
+> Hi again,
+>
+> Pretty sure we fixed the missing lib/meta in the packages a while ago. WHat vintage of installer are you using? I have to admit, I haven't used graph in like ten years. Lemme see if I can test this out tomorrow.
+>
+> - Rob
+>
+>
+> On Dec 1, 2013, at 2:41 PM, Axel Jacobs <jacobs.axel at gmail.com> wrote:
+>
+>> Evening, all
+>>
+>> This is about Windows Radiance, and of possible interest to rad-openstudio, although I'm not cross-posting.
+>>
+>> When attempting to use bgraph.exe with the following lux.plt file:
+>>
+>> ----------------- 8< -----------------
+>> include=line.plt
+>> title="Working Plane Illuminance"
+>> xlabel="Distance from Window"
+>> ylabel="Illuminance [lux]"
+>> Adata=lux.csv
+>> Acolor=2
+>> ----------------- 8< -----------------
+>>
+>> I get this error message:
+>> bgraph: lux.plt: File not found: line.plt
+>>
+>> Under LINUX, line.plt is stored under $RAYPATH/meta
+>>
+>> The Windows (as in NREL) Radiance distribution doesn't come with lib/meta, so I copied it across. Still no luck.
+>>
+>> echo %RAYPATH%
+>> .;C:\Program Files\Radiance\lib
+>>
+>> I have found that there is a bit of inconsistency with file paths under Windows, so I also tried
+>>
+>> set RAYPATH=.;C:/Program Files/Radiance/lib
+>> echo %RAYPATH%
+>> .;C:/Program Files/Radiance/lib
+>>
+>> but again to no avail.
+>>
+>> My questions therefore are:
+>> a) Where does bgraph.exe look for line.plt?
+>> b) Windows radiance ships with bgraph.exe, but not with the $RAYPATH/meta dir. Does this mean that bgraph.exe (with psmeta and ghostview, of course) isn't actually that useful? What can it do?
+>>
+>> Many thanks for your thoughts.
+>>
+>> Have a lovely Sunday evening
+>>
+>> Axel
+>>
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+
+
+
+From gregoryjward at gmail.com  Wed Dec  4 12:09:29 2013
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed, 4 Dec 2013 12:09:29 -0800
+Subject: [Radiance-dev] X-plat Perl versions of objview, objpict, ltview
+In-Reply-To: <529BB2EF.7060800@gmail.com>
+References: <529BB2EF.7060800@gmail.com>
+Message-ID: <B993B62A-BA59-4F26-BB67-FE45D28E36CF@gmail.com>
+
+Since this is automatically an improvement over the existing shell scripts, I've gone ahead and checked your new objpict.pl and objview.pl into the CVS HEAD.  I did a couple of checks to make sure they worked as advertised (finding a bug in rad in the process).
+
+Many thanks, Axel!
+
+-Greg
+
+> From: Axel Jacobs <jacobs.axel at gmail.com>
+> Date: December 1, 2013 2:06:39 PM PST
+> 
+> Dear list,
+> 
+> this might be of interest to rad-openstudio, but I am refraining from cross-posting.
+> 
+> Whilst doing a bit of Radiance teaching last Friday, I got caught red-face in my attempt to use objview.rb. Installing ruby.zip from the NREL web site (and making sure %PATH% picks it up) did not help--objview.rb kept complaining about missing input files. It appears that somehow, ARGV is completely ignored by the parser once the options are dealt with. However, I know little about Ruby.
+> 
+> Since I need a working objview next Friday, I finished the re-write of objview in Perl, which I started some time ago, but never polished off.
+> 
+> Whilst at it, I also completed a Perl port of objpict.csh.
+> 
+> Both appear to work under LINUX and Windows Vista. Zip archive with Windows exe files is here:
+> http://www.jaloxa.eu/pickup/win_objpict_objview.zip
+> 
+> Your feedback would be much appreciated.
+> 
+> Since the Windows objview.rb has some extra functionality over the UNIX csh version (namely ltview), I started work on a x-plat ltview.pl, but have I admit that I'm not sure what it is meant to do:
+> 
+> a) if ltview is meant to show the actual luminaire (or fixture for you non-Europeans), then are not objview or objpict good enough?
+> 
+> b) if, on the other hand, it is the actual photometric distribution that matters, then would it not be better to extract the dat file of the distribution, and suspend a little disk or square with that distribution applied to it. The command line parser could then be extended to
+> - include an option that might cause it to put the disk inside a sphere rather than a box; and/or
+> - render a -vta fisheye view from just below this disk, so that the entire photometric distribution might be appreciated.
+> 
+> I'm happy enough to look into this if it is felt that the Windows version of objview and the 'official' one should be based on the same code. Would need some guidance, though as to what ltview should do.
+> 
+> Good night and good luck
+> 
+> Axel
+> 
+> PS: I'd love to call it 'iesview', but this name is already taken by an add-on to AGI32. Works pretty well, actually (under Windows).
+> @Ian, we probably have to thank you for this little gem?
+> 
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+From jacobs.axel at gmail.com  Wed Dec  4 14:13:15 2013
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Wed, 04 Dec 2013 22:13:15 +0000
+Subject: [Radiance-dev] X-plat Perl versions of objview, objpict, ltview
+In-Reply-To: <B993B62A-BA59-4F26-BB67-FE45D28E36CF@gmail.com>
+References: <529BB2EF.7060800@gmail.com>
+	<B993B62A-BA59-4F26-BB67-FE45D28E36CF@gmail.com>
+Message-ID: <529FA8FB.2070508@gmail.com>
+
+Thanks, Greg,
+
+I am humbled by your faith in my apprentice Perl wizardry. The proof of 
+the pudding will be this Friday, when I'm giving another Radiance class. 
+I'll let you know if things do not go according to plan.
+
+Best
+
+Axel
+
+
+On 04/12/13 20:09, Gregory J. Ward wrote:
+> Since this is automatically an improvement over the existing shell scripts, I've gone ahead and checked your new objpict.pl and objview.pl into the CVS HEAD.  I did a couple of checks to make sure they worked as advertised (finding a bug in rad in the process).
+>
+> Many thanks, Axel!
+>
+> -Greg
+>
+>> From: Axel Jacobs <jacobs.axel at gmail.com>
+>> Date: December 1, 2013 2:06:39 PM PST
+>>
+>> Dear list,
+>>
+>> this might be of interest to rad-openstudio, but I am refraining from cross-posting.
+>>
+>> Whilst doing a bit of Radiance teaching last Friday, I got caught red-face in my attempt to use objview.rb. Installing ruby.zip from the NREL web site (and making sure %PATH% picks it up) did not help--objview.rb kept complaining about missing input files. It appears that somehow, ARGV is completely ignored by the parser once the options are dealt with. However, I know little about Ruby.
+>>
+>> Since I need a working objview next Friday, I finished the re-write of objview in Perl, which I started some time ago, but never polished off.
+>>
+>> Whilst at it, I also completed a Perl port of objpict.csh.
+>>
+>> Both appear to work under LINUX and Windows Vista. Zip archive with Windows exe files is here:
+>> http://www.jaloxa.eu/pickup/win_objpict_objview.zip
+>>
+>> Your feedback would be much appreciated.
+>>
+>> Since the Windows objview.rb has some extra functionality over the UNIX csh version (namely ltview), I started work on a x-plat ltview.pl, but have I admit that I'm not sure what it is meant to do:
+>>
+>> a) if ltview is meant to show the actual luminaire (or fixture for you non-Europeans), then are not objview or objpict good enough?
+>>
+>> b) if, on the other hand, it is the actual photometric distribution that matters, then would it not be better to extract the dat file of the distribution, and suspend a little disk or square with that distribution applied to it. The command line parser could then be extended to
+>> - include an option that might cause it to put the disk inside a sphere rather than a box; and/or
+>> - render a -vta fisheye view from just below this disk, so that the entire photometric distribution might be appreciated.
+>>
+>> I'm happy enough to look into this if it is felt that the Windows version of objview and the 'official' one should be based on the same code. Would need some guidance, though as to what ltview should do.
+>>
+>> Good night and good luck
+>>
+>> Axel
+>>
+>> PS: I'd love to call it 'iesview', but this name is already taken by an add-on to AGI32. Works pretty well, actually (under Windows).
+>> @Ian, we probably have to thank you for this little gem?
+>>
+>>
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+
+
+
+From axel at jaloxa.eu  Sun Dec 15 15:26:15 2013
+From: axel at jaloxa.eu (Axel Jacobs)
+Date: Sun, 15 Dec 2013 23:26:15 +0000
+Subject: [Radiance-dev] epw2wea in Perl
+Message-ID: <52AE3A97.2040201@jaloxa.eu>
+
+--------
+WARNING: At least one of the links in the message below goes to an .exe file, 
+which could be malicious. To learn how to protect yourself, please go here:
+https://commons.lbl.gov/x/_591B
+--------
+
+Dear devs,
+
+I have put up a work-in-progress version of epw2wea:
+
+http://www.jaloxa.eu/pickup/epw2wea.exe
+http://www.jaloxa.eu/pickup/epw2wea.pl
+
+The output is almost identical to the Windows version of epw2wea.exe. I 
+am not entirely sure where this is from, but it is in the NREL version 
+of Radiance for Windows.
+
+There are three minor differences to the original Windows version:
+
+a) there is a -c (as in 'CSV') option that simply dumps the entire file 
+as a text spreadsheet with header. The delimiter defaults to ' ' 
+(space), but can selected with the -d option. Please note that if you 
+wish to have a tab-sep output, then '\t' won't do. Still working out how 
+to do this. For now, you'll need to give it -c 'CTRL-v TAB' to actually 
+insert a tab on the command line.
+
+I would like to think that a CSV dump of the EPW weather data will make 
+it a little easier to do a bit of QA on the data. Hence this extra option.
+
+b) the 'meridian' bug of the original epw2wea is fixed. Places such as 
+Delhi (GMT + 5:30 hrs) or Kathmandu (GMT +5:45 hrs) are correctly 
+represented in the time_zone row of the wea header.
+
+c) input can be from STDIN
+
+epw2wea.pl is tested on LINUX and Windows Vista.
+
+Any feedback is very much appreciated. Particularly, I'd love to know 
+your preferred naming convention for the columns in the CSV output. The 
+radiation stuff tends to follow CIE conventions. For instance, global 
+horizontal irradiance is headed as Eeg. I kinda improvised with others, 
+but tended to be rather verbose with those column headers that I would 
+consider a little obscure, for the simple reason that I don't tend to 
+use them. Please do get in touch if there are any other de-facto naming 
+convention that should be adapted.
+
+dev site:
+http://www.jaloxa.eu/devel/csh2perl/
+
+Good night to you all
+
+Axel
+
+
+
+
+From Robert.Guglielmetti at nrel.gov  Mon Dec 16 10:59:40 2013
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Mon, 16 Dec 2013 11:59:40 -0700
+Subject: [Radiance-dev] epw2wea in Perl
+In-Reply-To: <52AE3A97.2040201@jaloxa.eu>
+References: <52AE3A97.2040201@jaloxa.eu>
+Message-ID: <FFF56A6D37A3A54F91A03601AC22DA32263ADB1411@MAILBOX2.nrel.gov>
+
+--------
+WARNING: At least one of the links in the message below goes to an .exe file, 
+which could be malicious. To learn how to protect yourself, please go here:
+https://commons.lbl.gov/x/_591B
+--------
+
+Hi Axel, 
+
+Epw2wea was forked from the Daysim project and with Christoph Reinhart's consent was added -- along with proper changes to make and CMake build files -- to the Radiance cvs. NREL did this because with the addition of gendaymtx, and its expected weather data input format, we felt it was almost a necessity for the general Radiance user. If a user grabs any of the NREL packages, or builds Radiance from source using the makeall script or standard tools, they will have a copy of epw2wea(.exe) in their Radiance build. 
+
+I considered it a bonus that this util was now available to all users, and that it was deployed as a c program and not another script. On the other hand, your additions make epw2wea even more useful and I think it makes sense to replace epw2wea.c with epw2wea.pl. My free opinion. Worth every penny. 
+
+Should we go this route, we'd need an update for the skeletal manpage. 
+
+- Rob
+
+-----Original Message-----
+From: Axel Jacobs [mailto:axel at jaloxa.eu] 
+Sent: Sunday, December 15, 2013 4:26 PM
+To: radiance-dev at radiance-online.org
+Subject: [Radiance-dev] epw2wea in Perl
+
+--------
+WARNING: At least one of the links in the message below goes to an .exe file, which could be malicious. To learn how to protect yourself, please go here:
+https://commons.lbl.gov/x/_591B
+--------
+
+Dear devs,
+
+I have put up a work-in-progress version of epw2wea:
+
+http://www.jaloxa.eu/pickup/epw2wea.exe
+http://www.jaloxa.eu/pickup/epw2wea.pl
+
+The output is almost identical to the Windows version of epw2wea.exe. I am not entirely sure where this is from, but it is in the NREL version of Radiance for Windows.
+
+There are three minor differences to the original Windows version:
+
+a) there is a -c (as in 'CSV') option that simply dumps the entire file as a text spreadsheet with header. The delimiter defaults to ' ' 
+(space), but can selected with the -d option. Please note that if you wish to have a tab-sep output, then '\t' won't do. Still working out how to do this. For now, you'll need to give it -c 'CTRL-v TAB' to actually insert a tab on the command line.
+
+I would like to think that a CSV dump of the EPW weather data will make it a little easier to do a bit of QA on the data. Hence this extra option.
+
+b) the 'meridian' bug of the original epw2wea is fixed. Places such as Delhi (GMT + 5:30 hrs) or Kathmandu (GMT +5:45 hrs) are correctly represented in the time_zone row of the wea header.
+
+c) input can be from STDIN
+
+epw2wea.pl is tested on LINUX and Windows Vista.
+
+Any feedback is very much appreciated. Particularly, I'd love to know your preferred naming convention for the columns in the CSV output. The radiation stuff tends to follow CIE conventions. For instance, global horizontal irradiance is headed as Eeg. I kinda improvised with others, but tended to be rather verbose with those column headers that I would consider a little obscure, for the simple reason that I don't tend to use them. Please do get in touch if there are any other de-facto naming convention that should be adapted.
+
+dev site:
+http://www.jaloxa.eu/devel/csh2perl/
+
+Good night to you all
+
+Axel
+
+
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+From gmolina1 at uc.cl  Mon Dec 16 11:12:30 2013
+From: gmolina1 at uc.cl (=?ISO-8859-1?Q?Germ=E1n_Molina_Larrain?=)
+Date: Mon, 16 Dec 2013 16:12:30 -0300
+Subject: [Radiance-dev] epw2wea in Perl
+In-Reply-To: <FFF56A6D37A3A54F91A03601AC22DA32263ADB1411@MAILBOX2.nrel.gov>
+References: <52AE3A97.2040201@jaloxa.eu>
+	<FFF56A6D37A3A54F91A03601AC22DA32263ADB1411@MAILBOX2.nrel.gov>
+Message-ID: <CAF-iH4Ko0fyHMeVZxOMeMfmgfh4edAv3LFqZ+Xpwtxyxw6cwEw@mail.gmail.com>
+
+Some time ago I compiled epw2wea in Mac... it was done without any consent,
+so I have not shared it. I also modified it in order to make an epw2daymtx
+program. Are you interested on that program, Rob?
+
+
+
+
+2013/12/16 Guglielmetti, Robert <Robert.Guglielmetti at nrel.gov>
+
+> --------
+> WARNING: At least one of the links in the message below goes to an .exe
+> file,
+> which could be malicious. To learn how to protect yourself, please go here:
+> https://commons.lbl.gov/x/_591B
+> --------
+>
+> Hi Axel,
+>
+> Epw2wea was forked from the Daysim project and with Christoph Reinhart's
+> consent was added -- along with proper changes to make and CMake build
+> files -- to the Radiance cvs. NREL did this because with the addition of
+> gendaymtx, and its expected weather data input format, we felt it was
+> almost a necessity for the general Radiance user. If a user grabs any of
+> the NREL packages, or builds Radiance from source using the makeall script
+> or standard tools, they will have a copy of epw2wea(.exe) in their Radiance
+> build.
+>
+> I considered it a bonus that this util was now available to all users, and
+> that it was deployed as a c program and not another script. On the other
+> hand, your additions make epw2wea even more useful and I think it makes
+> sense to replace epw2wea.c with epw2wea.pl. My free opinion. Worth every
+> penny.
+>
+> Should we go this route, we'd need an update for the skeletal manpage.
+>
+> - Rob
+>
+> -----Original Message-----
+> From: Axel Jacobs [mailto:axel at jaloxa.eu]
+> Sent: Sunday, December 15, 2013 4:26 PM
+> To: radiance-dev at radiance-online.org
+> Subject: [Radiance-dev] epw2wea in Perl
+>
+> --------
+> WARNING: At least one of the links in the message below goes to an .exe
+> file, which could be malicious. To learn how to protect yourself, please go
+> here:
+> https://commons.lbl.gov/x/_591B
+> --------
+>
+> Dear devs,
+>
+> I have put up a work-in-progress version of epw2wea:
+>
+> http://www.jaloxa.eu/pickup/epw2wea.exe
+> http://www.jaloxa.eu/pickup/epw2wea.pl
+>
+> The output is almost identical to the Windows version of epw2wea.exe. I am
+> not entirely sure where this is from, but it is in the NREL version of
+> Radiance for Windows.
+>
+> There are three minor differences to the original Windows version:
+>
+> a) there is a -c (as in 'CSV') option that simply dumps the entire file as
+> a text spreadsheet with header. The delimiter defaults to ' '
+> (space), but can selected with the -d option. Please note that if you wish
+> to have a tab-sep output, then '\t' won't do. Still working out how to do
+> this. For now, you'll need to give it -c 'CTRL-v TAB' to actually insert a
+> tab on the command line.
+>
+> I would like to think that a CSV dump of the EPW weather data will make it
+> a little easier to do a bit of QA on the data. Hence this extra option.
+>
+> b) the 'meridian' bug of the original epw2wea is fixed. Places such as
+> Delhi (GMT + 5:30 hrs) or Kathmandu (GMT +5:45 hrs) are correctly
+> represented in the time_zone row of the wea header.
+>
+> c) input can be from STDIN
+>
+> epw2wea.pl is tested on LINUX and Windows Vista.
+>
+> Any feedback is very much appreciated. Particularly, I'd love to know your
+> preferred naming convention for the columns in the CSV output. The
+> radiation stuff tends to follow CIE conventions. For instance, global
+> horizontal irradiance is headed as Eeg. I kinda improvised with others, but
+> tended to be rather verbose with those column headers that I would consider
+> a little obscure, for the simple reason that I don't tend to use them.
+> Please do get in touch if there are any other de-facto naming convention
+> that should be adapted.
+>
+> dev site:
+> http://www.jaloxa.eu/devel/csh2perl/
+>
+> Good night to you all
+>
+> Axel
+>
+>
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20131216/59729064/attachment.html>
+
+From jacobs.axel at gmail.com  Mon Dec 16 11:48:25 2013
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Mon, 16 Dec 2013 19:48:25 +0000
+Subject: [Radiance-dev] epw2wea in Perl
+In-Reply-To: <FFF56A6D37A3A54F91A03601AC22DA32263ADB1411@MAILBOX2.nrel.gov>
+References: <52AE3A97.2040201@jaloxa.eu>
+	<FFF56A6D37A3A54F91A03601AC22DA32263ADB1411@MAILBOX2.nrel.gov>
+Message-ID: <CA+dqh61Akz+SbaxqUhx74Ao9d9eHUZ8GVJRo9X7y1-NZ19w-PQ@mail.gmail.com>
+
+Hi Rob,
+
+I've just downloaded the latest HEAD, and found that there is now an epw2wea.c
+Well done. When did this happen? This kinda makes my Perl version
+superfluous. Might be better to fix the meridian bug (time zones that
+are not offset from GMT by a full hour), and forget about the CSV
+output. I'ts probably trivial to implement, but my C coding skills are
+non-existent.
+
+Best
+
+Axel
+
+
+On 16 December 2013 18:59, Guglielmetti, Robert
+<Robert.Guglielmetti at nrel.gov> wrote:
+> --------
+> WARNING: At least one of the links in the message below goes to an .exe file,
+> which could be malicious. To learn how to protect yourself, please go here:
+> https://commons.lbl.gov/x/_591B
+> --------
+>
+> Hi Axel,
+>
+> Epw2wea was forked from the Daysim project and with Christoph Reinhart's consent was added -- along with proper changes to make and CMake build files -- to the Radiance cvs. NREL did this because with the addition of gendaymtx, and its expected weather data input format, we felt it was almost a necessity for the general Radiance user. If a user grabs any of the NREL packages, or builds Radiance from source using the makeall script or standard tools, they will have a copy of epw2wea(.exe) in their Radiance build.
+>
+> I considered it a bonus that this util was now available to all users, and that it was deployed as a c program and not another script. On the other hand, your additions make epw2wea even more useful and I think it makes sense to replace epw2wea.c with epw2wea.pl. My free opinion. Worth every penny.
+>
+> Should we go this route, we'd need an update for the skeletal manpage.
+>
+> - Rob
+>
+> -----Original Message-----
+> From: Axel Jacobs [mailto:axel at jaloxa.eu]
+> Sent: Sunday, December 15, 2013 4:26 PM
+> To: radiance-dev at radiance-online.org
+> Subject: [Radiance-dev] epw2wea in Perl
+>
+> --------
+> WARNING: At least one of the links in the message below goes to an .exe file, which could be malicious. To learn how to protect yourself, please go here:
+> https://commons.lbl.gov/x/_591B
+> --------
+>
+> Dear devs,
+>
+> I have put up a work-in-progress version of epw2wea:
+>
+> http://www.jaloxa.eu/pickup/epw2wea.exe
+> http://www.jaloxa.eu/pickup/epw2wea.pl
+>
+> The output is almost identical to the Windows version of epw2wea.exe. I am not entirely sure where this is from, but it is in the NREL version of Radiance for Windows.
+>
+> There are three minor differences to the original Windows version:
+>
+> a) there is a -c (as in 'CSV') option that simply dumps the entire file as a text spreadsheet with header. The delimiter defaults to ' '
+> (space), but can selected with the -d option. Please note that if you wish to have a tab-sep output, then '\t' won't do. Still working out how to do this. For now, you'll need to give it -c 'CTRL-v TAB' to actually insert a tab on the command line.
+>
+> I would like to think that a CSV dump of the EPW weather data will make it a little easier to do a bit of QA on the data. Hence this extra option.
+>
+> b) the 'meridian' bug of the original epw2wea is fixed. Places such as Delhi (GMT + 5:30 hrs) or Kathmandu (GMT +5:45 hrs) are correctly represented in the time_zone row of the wea header.
+>
+> c) input can be from STDIN
+>
+> epw2wea.pl is tested on LINUX and Windows Vista.
+>
+> Any feedback is very much appreciated. Particularly, I'd love to know your preferred naming convention for the columns in the CSV output. The radiation stuff tends to follow CIE conventions. For instance, global horizontal irradiance is headed as Eeg. I kinda improvised with others, but tended to be rather verbose with those column headers that I would consider a little obscure, for the simple reason that I don't tend to use them. Please do get in touch if there are any other de-facto naming convention that should be adapted.
+>
+> dev site:
+> http://www.jaloxa.eu/devel/csh2perl/
+>
+> Good night to you all
+>
+> Axel
+>
+>
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+From Robert.Guglielmetti at nrel.gov  Mon Dec 16 13:56:58 2013
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Mon, 16 Dec 2013 14:56:58 -0700
+Subject: [Radiance-dev] epw2wea in Perl
+In-Reply-To: <CA+dqh61Akz+SbaxqUhx74Ao9d9eHUZ8GVJRo9X7y1-NZ19w-PQ@mail.gmail.com>
+References: <52AE3A97.2040201@jaloxa.eu>
+	<FFF56A6D37A3A54F91A03601AC22DA32263ADB1411@MAILBOX2.nrel.gov>
+	<CA+dqh61Akz+SbaxqUhx74Ao9d9eHUZ8GVJRo9X7y1-NZ19w-PQ@mail.gmail.com>
+Message-ID: <FFF56A6D37A3A54F91A03601AC22DA32263ADB143E@MAILBOX2.nrel.gov>
+
+--------
+WARNING: At least one of the links in the message below goes to an .exe file, 
+which could be malicious. To learn how to protect yourself, please go here:
+https://commons.lbl.gov/x/_591B
+--------
+
+Yeah, we have our contract engineer to thank for that; we needed the epw2wea functionality in OpenStudio -- for all platforms -- and he made it happen. Christoph was nice enough to share it in the Radiance trunk a few months ago, so yeah there it is. I would prefer to keep the c version too, the thing is I don't know how to implement your meridian fix either. I can ask our contractor how much of a deal it would be for him to implement it, using your perl version as a template. 
+
+-----Original Message-----
+From: Axel Jacobs [mailto:jacobs.axel at gmail.com] 
+Sent: Monday, December 16, 2013 12:48 PM
+To: code development
+Subject: Re: [Radiance-dev] epw2wea in Perl
+
+Hi Rob,
+
+I've just downloaded the latest HEAD, and found that there is now an epw2wea.c Well done. When did this happen? This kinda makes my Perl version superfluous. Might be better to fix the meridian bug (time zones that are not offset from GMT by a full hour), and forget about the CSV output. I'ts probably trivial to implement, but my C coding skills are non-existent.
+
+Best
+
+Axel
+
+
+On 16 December 2013 18:59, Guglielmetti, Robert <Robert.Guglielmetti at nrel.gov> wrote:
+> --------
+> WARNING: At least one of the links in the message below goes to an 
+> .exe file, which could be malicious. To learn how to protect yourself, please go here:
+> https://commons.lbl.gov/x/_591B
+> --------
+>
+> Hi Axel,
+>
+> Epw2wea was forked from the Daysim project and with Christoph Reinhart's consent was added -- along with proper changes to make and CMake build files -- to the Radiance cvs. NREL did this because with the addition of gendaymtx, and its expected weather data input format, we felt it was almost a necessity for the general Radiance user. If a user grabs any of the NREL packages, or builds Radiance from source using the makeall script or standard tools, they will have a copy of epw2wea(.exe) in their Radiance build.
+>
+> I considered it a bonus that this util was now available to all users, and that it was deployed as a c program and not another script. On the other hand, your additions make epw2wea even more useful and I think it makes sense to replace epw2wea.c with epw2wea.pl. My free opinion. Worth every penny.
+>
+> Should we go this route, we'd need an update for the skeletal manpage.
+>
+> - Rob
+>
+> -----Original Message-----
+> From: Axel Jacobs [mailto:axel at jaloxa.eu]
+> Sent: Sunday, December 15, 2013 4:26 PM
+> To: radiance-dev at radiance-online.org
+> Subject: [Radiance-dev] epw2wea in Perl
+>
+> --------
+> WARNING: At least one of the links in the message below goes to an .exe file, which could be malicious. To learn how to protect yourself, please go here:
+> https://commons.lbl.gov/x/_591B
+> --------
+>
+> Dear devs,
+>
+> I have put up a work-in-progress version of epw2wea:
+>
+> http://www.jaloxa.eu/pickup/epw2wea.exe
+> http://www.jaloxa.eu/pickup/epw2wea.pl
+>
+> The output is almost identical to the Windows version of epw2wea.exe. I am not entirely sure where this is from, but it is in the NREL version of Radiance for Windows.
+>
+> There are three minor differences to the original Windows version:
+>
+> a) there is a -c (as in 'CSV') option that simply dumps the entire file as a text spreadsheet with header. The delimiter defaults to ' '
+> (space), but can selected with the -d option. Please note that if you wish to have a tab-sep output, then '\t' won't do. Still working out how to do this. For now, you'll need to give it -c 'CTRL-v TAB' to actually insert a tab on the command line.
+>
+> I would like to think that a CSV dump of the EPW weather data will make it a little easier to do a bit of QA on the data. Hence this extra option.
+>
+> b) the 'meridian' bug of the original epw2wea is fixed. Places such as Delhi (GMT + 5:30 hrs) or Kathmandu (GMT +5:45 hrs) are correctly represented in the time_zone row of the wea header.
+>
+> c) input can be from STDIN
+>
+> epw2wea.pl is tested on LINUX and Windows Vista.
+>
+> Any feedback is very much appreciated. Particularly, I'd love to know your preferred naming convention for the columns in the CSV output. The radiation stuff tends to follow CIE conventions. For instance, global horizontal irradiance is headed as Eeg. I kinda improvised with others, but tended to be rather verbose with those column headers that I would consider a little obscure, for the simple reason that I don't tend to use them. Please do get in touch if there are any other de-facto naming convention that should be adapted.
+>
+> dev site:
+> http://www.jaloxa.eu/devel/csh2perl/
+>
+> Good night to you all
+>
+> Axel
+>
+>
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+From gregoryjward at gmail.com  Mon Dec 16 14:08:53 2013
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Mon, 16 Dec 2013 14:08:53 -0800
+Subject: [Radiance-dev] epw2wea in Perl
+In-Reply-To: <FFF56A6D37A3A54F91A03601AC22DA32263ADB143E@MAILBOX2.nrel.gov>
+References: <52AE3A97.2040201@jaloxa.eu>
+	<FFF56A6D37A3A54F91A03601AC22DA32263ADB1411@MAILBOX2.nrel.gov>
+	<CA+dqh61Akz+SbaxqUhx74Ao9d9eHUZ8GVJRo9X7y1-NZ19w-PQ@mail.gmail.com>
+	<FFF56A6D37A3A54F91A03601AC22DA32263ADB143E@MAILBOX2.nrel.gov>
+Message-ID: <878B865D-0B42-47B9-A063-3752DA05F318@gmail.com>
+
+Try changing line 74 in epw2wea.c from:
+
+	fprintf(WEA_FILE,"time_zone %.0f\n",-15.0*atoi(time_zone)); 
+
+to:
+	fprintf(WEA_FILE,"time_zone %.0f\n",-15.0*atof(time_zone)); 
+
+Does this fix the problem?
+
+-Greg
+
+> From: "Guglielmetti, Robert" <Robert.Guglielmetti at nrel.gov>
+> Date: December 16, 2013 1:56:58 PM PST
+> 
+> Yeah, we have our contract engineer to thank for that; we needed the epw2wea functionality in OpenStudio -- for all platforms -- and he made it happen. Christoph was nice enough to share it in the Radiance trunk a few months ago, so yeah there it is. I would prefer to keep the c version too, the thing is I don't know how to implement your meridian fix either. I can ask our contractor how much of a deal it would be for him to implement it, using your perl version as a template. 
+> 
+> -----Original Message-----
+> From: Axel Jacobs [mailto:jacobs.axel at gmail.com] 
+> Sent: Monday, December 16, 2013 12:48 PM
+> To: code development
+> Subject: Re: [Radiance-dev] epw2wea in Perl
+> 
+> Hi Rob,
+> 
+> I've just downloaded the latest HEAD, and found that there is now an epw2wea.c Well done. When did this happen? This kinda makes my Perl version superfluous. Might be better to fix the meridian bug (time zones that are not offset from GMT by a full hour), and forget about the CSV output. I'ts probably trivial to implement, but my C coding skills are non-existent.
+> 
+> Best
+> 
+> Axel
+> 
+> 
+> On 16 December 2013 18:59, Guglielmetti, Robert <Robert.Guglielmetti at nrel.gov> wrote:
+>> --------
+>> WARNING: At least one of the links in the message below goes to an 
+>> .exe file, which could be malicious. To learn how to protect yourself, please go here:
+>> https://commons.lbl.gov/x/_591B
+>> --------
+>> 
+>> Hi Axel,
+>> 
+>> Epw2wea was forked from the Daysim project and with Christoph Reinhart's consent was added -- along with proper changes to make and CMake build files -- to the Radiance cvs. NREL did this because with the addition of gendaymtx, and its expected weather data input format, we felt it was almost a necessity for the general Radiance user. If a user grabs any of the NREL packages, or builds Radiance from source using the makeall script or standard tools, they will have a copy of epw2wea(.exe) in their Radiance build.
+>> 
+>> I considered it a bonus that this util was now available to all users, and that it was deployed as a c program and not another script. On the other hand, your additions make epw2wea even more useful and I think it makes sense to replace epw2wea.c with epw2wea.pl. My free opinion. Worth every penny.
+>> 
+>> Should we go this route, we'd need an update for the skeletal manpage.
+>> 
+>> - Rob
+>> 
+>> -----Original Message-----
+>> From: Axel Jacobs [mailto:axel at jaloxa.eu]
+>> Sent: Sunday, December 15, 2013 4:26 PM
+>> To: radiance-dev at radiance-online.org
+>> Subject: [Radiance-dev] epw2wea in Perl
+>> 
+>> --------
+>> WARNING: At least one of the links in the message below goes to an .exe file, which could be malicious. To learn how to protect yourself, please go here:
+>> https://commons.lbl.gov/x/_591B
+>> --------
+>> 
+>> Dear devs,
+>> 
+>> I have put up a work-in-progress version of epw2wea:
+>> 
+>> http://www.jaloxa.eu/pickup/epw2wea.exe
+>> http://www.jaloxa.eu/pickup/epw2wea.pl
+>> 
+>> The output is almost identical to the Windows version of epw2wea.exe. I am not entirely sure where this is from, but it is in the NREL version of Radiance for Windows.
+>> 
+>> There are three minor differences to the original Windows version:
+>> 
+>> a) there is a -c (as in 'CSV') option that simply dumps the entire file as a text spreadsheet with header. The delimiter defaults to ' '
+>> (space), but can selected with the -d option. Please note that if you wish to have a tab-sep output, then '\t' won't do. Still working out how to do this. For now, you'll need to give it -c 'CTRL-v TAB' to actually insert a tab on the command line.
+>> 
+>> I would like to think that a CSV dump of the EPW weather data will make it a little easier to do a bit of QA on the data. Hence this extra option.
+>> 
+>> b) the 'meridian' bug of the original epw2wea is fixed. Places such as Delhi (GMT + 5:30 hrs) or Kathmandu (GMT +5:45 hrs) are correctly represented in the time_zone row of the wea header.
+>> 
+>> c) input can be from STDIN
+>> 
+>> epw2wea.pl is tested on LINUX and Windows Vista.
+>> 
+>> Any feedback is very much appreciated. Particularly, I'd love to know your preferred naming convention for the columns in the CSV output. The radiation stuff tends to follow CIE conventions. For instance, global horizontal irradiance is headed as Eeg. I kinda improvised with others, but tended to be rather verbose with those column headers that I would consider a little obscure, for the simple reason that I don't tend to use them. Please do get in touch if there are any other de-facto naming convention that should be adapted.
+>> 
+>> dev site:
+>> http://www.jaloxa.eu/devel/csh2perl/
+>> 
+>> Good night to you all
+>> 
+>> Axel
+
+
+From jacobs.axel at gmail.com  Mon Dec 16 14:47:37 2013
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Mon, 16 Dec 2013 22:47:37 +0000
+Subject: [Radiance-dev] epw2wea in Perl
+In-Reply-To: <52AF8138.60709@gmail.com>
+References: <52AE3A97.2040201@jaloxa.eu>	<FFF56A6D37A3A54F91A03601AC22DA32263ADB1411@MAILBOX2.nrel.gov>	<CA+dqh61Akz+SbaxqUhx74Ao9d9eHUZ8GVJRo9X7y1-NZ19w-PQ@mail.gmail.com>	<FFF56A6D37A3A54F91A03601AC22DA32263ADB143E@MAILBOX2.nrel.gov>
+	<878B865D-0B42-47B9-A063-3752DA05F318@gmail.com>
+	<52AF8138.60709@gmail.com>
+Message-ID: <52AF8309.1040604@gmail.com>
+
+Correction: I copied the wrong line. Should be float:
+
+fprintf(WEA_FILE,"time_zone %.2f\n",-15.0*atof(time_zone));
+
+A
+
+On 16/12/13 22:39, Axel Jacobs wrote:
+> Nearly there. Just to keep the Dalai Lama happy, we need to output with
+> 2 decimal places: 15 / 4 = 3.75
+>
+> fprintf(WEA_FILE,"time_zone %.2f\n",-15.0*atoi(time_zone));
+>
+> Job done. Thanks, Greg
+>
+> Regards
+>
+> Axel
+>
+>
+> On 16/12/13 22:08, Gregory J. Ward wrote:
+>> Try changing line 74 in epw2wea.c from:
+>>
+>>     fprintf(WEA_FILE,"time_zone %.0f\n",-15.0*atoi(time_zone));
+>>
+>> to:
+>>     fprintf(WEA_FILE,"time_zone %.0f\n",-15.0*atof(time_zone));
+>>
+>> Does this fix the problem?
+>>
+>> -Greg
+>>
+>>> From: "Guglielmetti, Robert" <Robert.Guglielmetti at nrel.gov>
+>>> Date: December 16, 2013 1:56:58 PM PST
+>>>
+>>> Yeah, we have our contract engineer to thank for that; we needed the
+>>> epw2wea functionality in OpenStudio -- for all platforms -- and he
+>>> made it happen. Christoph was nice enough to share it in the Radiance
+>>> trunk a few months ago, so yeah there it is. I would prefer to keep
+>>> the c version too, the thing is I don't know how to implement your
+>>> meridian fix either. I can ask our contractor how much of a deal it
+>>> would be for him to implement it, using your perl version as a template.
+>>>
+>>> -----Original Message-----
+>>> From: Axel Jacobs [mailto:jacobs.axel at gmail.com]
+>>> Sent: Monday, December 16, 2013 12:48 PM
+>>> To: code development
+>>> Subject: Re: [Radiance-dev] epw2wea in Perl
+>>>
+>>> Hi Rob,
+>>>
+>>> I've just downloaded the latest HEAD, and found that there is now an
+>>> epw2wea.c Well done. When did this happen? This kinda makes my Perl
+>>> version superfluous. Might be better to fix the meridian bug (time
+>>> zones that are not offset from GMT by a full hour), and forget about
+>>> the CSV output. I'ts probably trivial to implement, but my C coding
+>>> skills are non-existent.
+>>>
+>>> Best
+>>>
+>>> Axel
+>>>
+>>>
+>>> On 16 December 2013 18:59, Guglielmetti, Robert
+>>> <Robert.Guglielmetti at nrel.gov> wrote:
+>>>> --------
+>>>> WARNING: At least one of the links in the message below goes to an
+>>>> .exe file, which could be malicious. To learn how to protect
+>>>> yourself, please go here:
+>>>> https://commons.lbl.gov/x/_591B
+>>>> --------
+>>>>
+>>>> Hi Axel,
+>>>>
+>>>> Epw2wea was forked from the Daysim project and with Christoph
+>>>> Reinhart's consent was added -- along with proper changes to make
+>>>> and CMake build files -- to the Radiance cvs. NREL did this because
+>>>> with the addition of gendaymtx, and its expected weather data input
+>>>> format, we felt it was almost a necessity for the general Radiance
+>>>> user. If a user grabs any of the NREL packages, or builds Radiance
+>>>> from source using the makeall script or standard tools, they will
+>>>> have a copy of epw2wea(.exe) in their Radiance build.
+>>>>
+>>>> I considered it a bonus that this util was now available to all
+>>>> users, and that it was deployed as a c program and not another
+>>>> script. On the other hand, your additions make epw2wea even more
+>>>> useful and I think it makes sense to replace epw2wea.c with
+>>>> epw2wea.pl. My free opinion. Worth every penny.
+>>>>
+>>>> Should we go this route, we'd need an update for the skeletal manpage.
+>>>>
+>>>> - Rob
+>>>>
+>>>> -----Original Message-----
+>>>> From: Axel Jacobs [mailto:axel at jaloxa.eu]
+>>>> Sent: Sunday, December 15, 2013 4:26 PM
+>>>> To: radiance-dev at radiance-online.org
+>>>> Subject: [Radiance-dev] epw2wea in Perl
+>>>>
+>>>> --------
+>>>> WARNING: At least one of the links in the message below goes to an
+>>>> .exe file, which could be malicious. To learn how to protect
+>>>> yourself, please go here:
+>>>> https://commons.lbl.gov/x/_591B
+>>>> --------
+>>>>
+>>>> Dear devs,
+>>>>
+>>>> I have put up a work-in-progress version of epw2wea:
+>>>>
+>>>> http://www.jaloxa.eu/pickup/epw2wea.exe
+>>>> http://www.jaloxa.eu/pickup/epw2wea.pl
+>>>>
+>>>> The output is almost identical to the Windows version of
+>>>> epw2wea.exe. I am not entirely sure where this is from, but it is in
+>>>> the NREL version of Radiance for Windows.
+>>>>
+>>>> There are three minor differences to the original Windows version:
+>>>>
+>>>> a) there is a -c (as in 'CSV') option that simply dumps the entire
+>>>> file as a text spreadsheet with header. The delimiter defaults to ' '
+>>>> (space), but can selected with the -d option. Please note that if
+>>>> you wish to have a tab-sep output, then '\t' won't do. Still working
+>>>> out how to do this. For now, you'll need to give it -c 'CTRL-v TAB'
+>>>> to actually insert a tab on the command line.
+>>>>
+>>>> I would like to think that a CSV dump of the EPW weather data will
+>>>> make it a little easier to do a bit of QA on the data. Hence this
+>>>> extra option.
+>>>>
+>>>> b) the 'meridian' bug of the original epw2wea is fixed. Places such
+>>>> as Delhi (GMT + 5:30 hrs) or Kathmandu (GMT +5:45 hrs) are correctly
+>>>> represented in the time_zone row of the wea header.
+>>>>
+>>>> c) input can be from STDIN
+>>>>
+>>>> epw2wea.pl is tested on LINUX and Windows Vista.
+>>>>
+>>>> Any feedback is very much appreciated. Particularly, I'd love to
+>>>> know your preferred naming convention for the columns in the CSV
+>>>> output. The radiation stuff tends to follow CIE conventions. For
+>>>> instance, global horizontal irradiance is headed as Eeg. I kinda
+>>>> improvised with others, but tended to be rather verbose with those
+>>>> column headers that I would consider a little obscure, for the
+>>>> simple reason that I don't tend to use them. Please do get in touch
+>>>> if there are any other de-facto naming convention that should be
+>>>> adapted.
+>>>>
+>>>> dev site:
+>>>> http://www.jaloxa.eu/devel/csh2perl/
+>>>>
+>>>> Good night to you all
+>>>>
+>>>> Axel
+>>
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>>
+>
+
+
+
+From jacobs.axel at gmail.com  Mon Dec 16 14:39:52 2013
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Mon, 16 Dec 2013 22:39:52 +0000
+Subject: [Radiance-dev] epw2wea in Perl
+In-Reply-To: <878B865D-0B42-47B9-A063-3752DA05F318@gmail.com>
+References: <52AE3A97.2040201@jaloxa.eu>	<FFF56A6D37A3A54F91A03601AC22DA32263ADB1411@MAILBOX2.nrel.gov>	<CA+dqh61Akz+SbaxqUhx74Ao9d9eHUZ8GVJRo9X7y1-NZ19w-PQ@mail.gmail.com>	<FFF56A6D37A3A54F91A03601AC22DA32263ADB143E@MAILBOX2.nrel.gov>
+	<878B865D-0B42-47B9-A063-3752DA05F318@gmail.com>
+Message-ID: <52AF8138.60709@gmail.com>
+
+Nearly there. Just to keep the Dalai Lama happy, we need to output with 
+2 decimal places: 15 / 4 = 3.75
+
+fprintf(WEA_FILE,"time_zone %.2f\n",-15.0*atoi(time_zone));
+
+Job done. Thanks, Greg
+
+Regards
+
+Axel
+
+
+On 16/12/13 22:08, Gregory J. Ward wrote:
+> Try changing line 74 in epw2wea.c from:
+>
+> 	fprintf(WEA_FILE,"time_zone %.0f\n",-15.0*atoi(time_zone));
+>
+> to:
+> 	fprintf(WEA_FILE,"time_zone %.0f\n",-15.0*atof(time_zone));
+>
+> Does this fix the problem?
+>
+> -Greg
+>
+>> From: "Guglielmetti, Robert" <Robert.Guglielmetti at nrel.gov>
+>> Date: December 16, 2013 1:56:58 PM PST
+>>
+>> Yeah, we have our contract engineer to thank for that; we needed the epw2wea functionality in OpenStudio -- for all platforms -- and he made it happen. Christoph was nice enough to share it in the Radiance trunk a few months ago, so yeah there it is. I would prefer to keep the c version too, the thing is I don't know how to implement your meridian fix either. I can ask our contractor how much of a deal it would be for him to implement it, using your perl version as a template.
+>>
+>> -----Original Message-----
+>> From: Axel Jacobs [mailto:jacobs.axel at gmail.com]
+>> Sent: Monday, December 16, 2013 12:48 PM
+>> To: code development
+>> Subject: Re: [Radiance-dev] epw2wea in Perl
+>>
+>> Hi Rob,
+>>
+>> I've just downloaded the latest HEAD, and found that there is now an epw2wea.c Well done. When did this happen? This kinda makes my Perl version superfluous. Might be better to fix the meridian bug (time zones that are not offset from GMT by a full hour), and forget about the CSV output. I'ts probably trivial to implement, but my C coding skills are non-existent.
+>>
+>> Best
+>>
+>> Axel
+>>
+>>
+>> On 16 December 2013 18:59, Guglielmetti, Robert <Robert.Guglielmetti at nrel.gov> wrote:
+>>> --------
+>>> WARNING: At least one of the links in the message below goes to an
+>>> .exe file, which could be malicious. To learn how to protect yourself, please go here:
+>>> https://commons.lbl.gov/x/_591B
+>>> --------
+>>>
+>>> Hi Axel,
+>>>
+>>> Epw2wea was forked from the Daysim project and with Christoph Reinhart's consent was added -- along with proper changes to make and CMake build files -- to the Radiance cvs. NREL did this because with the addition of gendaymtx, and its expected weather data input format, we felt it was almost a necessity for the general Radiance user. If a user grabs any of the NREL packages, or builds Radiance from source using the makeall script or standard tools, they will have a copy of epw2wea(.exe) in their Radiance build.
+>>>
+>>> I considered it a bonus that this util was now available to all users, and that it was deployed as a c program and not another script. On the other hand, your additions make epw2wea even more useful and I think it makes sense to replace epw2wea.c with epw2wea.pl. My free opinion. Worth every penny.
+>>>
+>>> Should we go this route, we'd need an update for the skeletal manpage.
+>>>
+>>> - Rob
+>>>
+>>> -----Original Message-----
+>>> From: Axel Jacobs [mailto:axel at jaloxa.eu]
+>>> Sent: Sunday, December 15, 2013 4:26 PM
+>>> To: radiance-dev at radiance-online.org
+>>> Subject: [Radiance-dev] epw2wea in Perl
+>>>
+>>> --------
+>>> WARNING: At least one of the links in the message below goes to an .exe file, which could be malicious. To learn how to protect yourself, please go here:
+>>> https://commons.lbl.gov/x/_591B
+>>> --------
+>>>
+>>> Dear devs,
+>>>
+>>> I have put up a work-in-progress version of epw2wea:
+>>>
+>>> http://www.jaloxa.eu/pickup/epw2wea.exe
+>>> http://www.jaloxa.eu/pickup/epw2wea.pl
+>>>
+>>> The output is almost identical to the Windows version of epw2wea.exe. I am not entirely sure where this is from, but it is in the NREL version of Radiance for Windows.
+>>>
+>>> There are three minor differences to the original Windows version:
+>>>
+>>> a) there is a -c (as in 'CSV') option that simply dumps the entire file as a text spreadsheet with header. The delimiter defaults to ' '
+>>> (space), but can selected with the -d option. Please note that if you wish to have a tab-sep output, then '\t' won't do. Still working out how to do this. For now, you'll need to give it -c 'CTRL-v TAB' to actually insert a tab on the command line.
+>>>
+>>> I would like to think that a CSV dump of the EPW weather data will make it a little easier to do a bit of QA on the data. Hence this extra option.
+>>>
+>>> b) the 'meridian' bug of the original epw2wea is fixed. Places such as Delhi (GMT + 5:30 hrs) or Kathmandu (GMT +5:45 hrs) are correctly represented in the time_zone row of the wea header.
+>>>
+>>> c) input can be from STDIN
+>>>
+>>> epw2wea.pl is tested on LINUX and Windows Vista.
+>>>
+>>> Any feedback is very much appreciated. Particularly, I'd love to know your preferred naming convention for the columns in the CSV output. The radiation stuff tends to follow CIE conventions. For instance, global horizontal irradiance is headed as Eeg. I kinda improvised with others, but tended to be rather verbose with those column headers that I would consider a little obscure, for the simple reason that I don't tend to use them. Please do get in touch if there are any other de-facto naming convention that should be adapted.
+>>>
+>>> dev site:
+>>> http://www.jaloxa.eu/devel/csh2perl/
+>>>
+>>> Good night to you all
+>>>
+>>> Axel
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+
+
+
+From gregoryjward at gmail.com  Mon Dec 16 15:03:02 2013
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Mon, 16 Dec 2013 15:03:02 -0800
+Subject: [Radiance-dev] epw2wea in Perl
+In-Reply-To: <52AF8138.60709@gmail.com>
+References: <52AE3A97.2040201@jaloxa.eu>	<FFF56A6D37A3A54F91A03601AC22DA32263ADB1411@MAILBOX2.nrel.gov>	<CA+dqh61Akz+SbaxqUhx74Ao9d9eHUZ8GVJRo9X7y1-NZ19w-PQ@mail.gmail.com>	<FFF56A6D37A3A54F91A03601AC22DA32263ADB143E@MAILBOX2.nrel.gov>
+	<878B865D-0B42-47B9-A063-3752DA05F318@gmail.com>
+	<52AF8138.60709@gmail.com>
+Message-ID: <364B5CC9-1B33-4862-858D-F17794ADAEFC@gmail.com>
+
+Ah, yes.  Didn't notice the sinister "%.0f" in the format.  Will check a corrected version into the HEAD release momentarily.
+
+Incidentally, you can see what has been checked in of significance at one central location in CVS:
+
+	http://www.radiance-online.org/cgi-bin/viewcvs.cgi/ray/doc/notes/ReleaseNotes
+
+Obviously, you need to scroll to the end, unless you want to read the full change history of Radiance since 1990.
+
+Cheers,
+-Greg
+
+> From: Axel Jacobs <jacobs.axel at gmail.com>
+> Date: December 16, 2013 2:39:52 PM PST
+> 
+> Nearly there. Just to keep the Dalai Lama happy, we need to output with 2 decimal places: 15 / 4 = 3.75
+> 
+> fprintf(WEA_FILE,"time_zone %.2f\n",-15.0*atoi(time_zone));
+> 
+> Job done. Thanks, Greg
+> 
+> Regards
+> 
+> Axel
+> 
+> 
+> On 16/12/13 22:08, Gregory J. Ward wrote:
+>> Try changing line 74 in epw2wea.c from:
+>> 
+>> 	fprintf(WEA_FILE,"time_zone %.0f\n",-15.0*atoi(time_zone));
+>> 
+>> to:
+>> 	fprintf(WEA_FILE,"time_zone %.0f\n",-15.0*atof(time_zone));
+>> 
+>> Does this fix the problem?
+>> 
+>> -Greg
+>> 
+>>> From: "Guglielmetti, Robert" <Robert.Guglielmetti at nrel.gov>
+>>> Date: December 16, 2013 1:56:58 PM PST
+>>> 
+>>> Yeah, we have our contract engineer to thank for that; we needed the epw2wea functionality in OpenStudio -- for all platforms -- and he made it happen. Christoph was nice enough to share it in the Radiance trunk a few months ago, so yeah there it is. I would prefer to keep the c version too, the thing is I don't know how to implement your meridian fix either. I can ask our contractor how much of a deal it would be for him to implement it, using your perl version as a template.
+>>> 
+>>> -----Original Message-----
+>>> From: Axel Jacobs [mailto:jacobs.axel at gmail.com]
+>>> Sent: Monday, December 16, 2013 12:48 PM
+>>> To: code development
+>>> Subject: Re: [Radiance-dev] epw2wea in Perl
+>>> 
+>>> Hi Rob,
+>>> 
+>>> I've just downloaded the latest HEAD, and found that there is now an epw2wea.c Well done. When did this happen? This kinda makes my Perl version superfluous. Might be better to fix the meridian bug (time zones that are not offset from GMT by a full hour), and forget about the CSV output. I'ts probably trivial to implement, but my C coding skills are non-existent.
+>>> 
+>>> Best
+>>> 
+>>> Axel
+>>> 
+>>> 
+>>> On 16 December 2013 18:59, Guglielmetti, Robert <Robert.Guglielmetti at nrel.gov> wrote:
+>>>> --------
+>>>> WARNING: At least one of the links in the message below goes to an
+>>>> .exe file, which could be malicious. To learn how to protect yourself, please go here:
+>>>> https://commons.lbl.gov/x/_591B
+>>>> --------
+>>>> 
+>>>> Hi Axel,
+>>>> 
+>>>> Epw2wea was forked from the Daysim project and with Christoph Reinhart's consent was added -- along with proper changes to make and CMake build files -- to the Radiance cvs. NREL did this because with the addition of gendaymtx, and its expected weather data input format, we felt it was almost a necessity for the general Radiance user. If a user grabs any of the NREL packages, or builds Radiance from source using the makeall script or standard tools, they will have a copy of epw2wea(.exe) in their Radiance build.
+>>>> 
+>>>> I considered it a bonus that this util was now available to all users, and that it was deployed as a c program and not another script. On the other hand, your additions make epw2wea even more useful and I think it makes sense to replace epw2wea.c with epw2wea.pl. My free opinion. Worth every penny.
+>>>> 
+>>>> Should we go this route, we'd need an update for the skeletal manpage.
+>>>> 
+>>>> - Rob
+>>>> 
+>>>> -----Original Message-----
+>>>> From: Axel Jacobs [mailto:axel at jaloxa.eu]
+>>>> Sent: Sunday, December 15, 2013 4:26 PM
+>>>> To: radiance-dev at radiance-online.org
+>>>> Subject: [Radiance-dev] epw2wea in Perl
+>>>> 
+>>>> --------
+>>>> WARNING: At least one of the links in the message below goes to an .exe file, which could be malicious. To learn how to protect yourself, please go here:
+>>>> https://commons.lbl.gov/x/_591B
+>>>> --------
+>>>> 
+>>>> Dear devs,
+>>>> 
+>>>> I have put up a work-in-progress version of epw2wea:
+>>>> 
+>>>> http://www.jaloxa.eu/pickup/epw2wea.exe
+>>>> http://www.jaloxa.eu/pickup/epw2wea.pl
+>>>> 
+>>>> The output is almost identical to the Windows version of epw2wea.exe. I am not entirely sure where this is from, but it is in the NREL version of Radiance for Windows.
+>>>> 
+>>>> There are three minor differences to the original Windows version:
+>>>> 
+>>>> a) there is a -c (as in 'CSV') option that simply dumps the entire file as a text spreadsheet with header. The delimiter defaults to ' '
+>>>> (space), but can selected with the -d option. Please note that if you wish to have a tab-sep output, then '\t' won't do. Still working out how to do this. For now, you'll need to give it -c 'CTRL-v TAB' to actually insert a tab on the command line.
+>>>> 
+>>>> I would like to think that a CSV dump of the EPW weather data will make it a little easier to do a bit of QA on the data. Hence this extra option.
+>>>> 
+>>>> b) the 'meridian' bug of the original epw2wea is fixed. Places such as Delhi (GMT + 5:30 hrs) or Kathmandu (GMT +5:45 hrs) are correctly represented in the time_zone row of the wea header.
+>>>> 
+>>>> c) input can be from STDIN
+>>>> 
+>>>> epw2wea.pl is tested on LINUX and Windows Vista.
+>>>> 
+>>>> Any feedback is very much appreciated. Particularly, I'd love to know your preferred naming convention for the columns in the CSV output. The radiation stuff tends to follow CIE conventions. For instance, global horizontal irradiance is headed as Eeg. I kinda improvised with others, but tended to be rather verbose with those column headers that I would consider a little obscure, for the simple reason that I don't tend to use them. Please do get in touch if there are any other de-facto naming convention that should be adapted.
+>>>> 
+>>>> dev site:
+>>>> http://www.jaloxa.eu/devel/csh2perl/
+>>>> 
+>>>> Good night to you all
+>>>> 
+>>>> Axel
+>> 
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>> 
+> 
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+

@@ -1,0 +1,717 @@
+From mike at cityscape3d.com  Thu Dec  9 17:11:20 2004
+From: mike at cityscape3d.com (Michael Kruger)
+Date: Thu Dec  9 17:12:29 2004
+Subject: [Radiance-dev] Radiance developer beginner
+In-Reply-To: <mailman.0.1102591298.14369.radiance-dev@radiance-online.org>
+Message-ID: <200412091558.iB9Fw34u023733@server.cityscape3d.com>
+
+Howdy :)
+
+I'm having a go at creating a texture baking program and need to get to the
+details of the polygons being baked. I'm planning to take <rendering
+options>, <octree>, & <a list of polygon_ids to bake> as params to my
+program, but I'm not sure that the octree stores the info I need. (Each
+specified polygon needs to have its own viewpoint to create a rendered
+image.)
+
+In short, could someone tell me how if it is possible (& how) to retrieve a
+face by polygon_id from <CUBE thescene>, or whichever structure I need to
+look in? 
+
+Many thanks,
+mike
+
+
+From Giulio.Antonutto at arup.com  Thu Dec  9 17:27:48 2004
+From: Giulio.Antonutto at arup.com (Giulio Antonutto)
+Date: Thu Dec  9 17:27:57 2004
+Subject: [Radiance-dev] Radiance developer beginner
+Message-ID: <DC0CAEEA090E984C911D3B85B16C3F900302C253@l-gnts05>
+
+I would suggest you to use .rad files instead octree, I have a feeling that
+it's simpler.
+You can write a program (or just a unix script) to read radiance scenes, use
+the polygon id and vertex position to create a view direction and finally an
+image.
+
+The structure of a polygon based radiance file is not far from this:
+(assuming no other entities are present but polygons and material are
+defined in another file)
+
+material polygon polygon_id
+0
+0
+number of vertex (n)
+x1 y1 z1
+x2 y2 z2
+........
+xn yn zn
+
+you could also instruct the program to create images with different
+resolution, dependong on the area of the polygon....
+looking forward to ear news about!
+
+giulio
+
+
+> ----------
+> From: 	radiance-dev-bounces@radiance-online.org on behalf of
+> Michael Kruger
+> Reply To: 	code development
+> Sent: 	Thursday, December 9, 2004 4:11 PM
+> To: 	radiance-dev@radiance-online.org
+> Subject: 	[Radiance-dev] Radiance developer beginner
+> 
+> Howdy :)
+> 
+> I'm having a go at creating a texture baking program and need to get to
+> the
+> details of the polygons being baked. I'm planning to take <rendering
+> options>, <octree>, & <a list of polygon_ids to bake> as params to my
+> program, but I'm not sure that the octree stores the info I need. (Each
+> specified polygon needs to have its own viewpoint to create a rendered
+> image.)
+> 
+> In short, could someone tell me how if it is possible (& how) to retrieve
+> a
+> face by polygon_id from <CUBE thescene>, or whichever structure I need to
+> look in? 
+> 
+> Many thanks,
+> mike
+> 
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+> 
+> 
+> 
+___________________________________________________________________
+Electronic mail messages entering and leaving Arup business
+systems are scanned for acceptability of content and viruses.
+
+From gregoryjward at gmail.com  Thu Dec  9 17:36:35 2004
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu Dec  9 17:36:53 2004
+Subject: [Radiance-dev] Radiance developer beginner
+In-Reply-To: <200412091558.iB9Fw34u023733@server.cityscape3d.com>
+References: <200412091558.iB9Fw34u023733@server.cityscape3d.com>
+Message-ID: <7D9CE3AD-4A00-11D9-ADD1-00306540F848@gmail.com>
+
+Start by looking in src/common/readoct.c -- but only if you're 
+determined!
+
+-Greg
+
+> From: "Michael Kruger" <mike@cityscape3d.com>
+> Date: December 9, 2004 8:11:20 AM PST
+>
+> Howdy :)
+>
+> I'm having a go at creating a texture baking program and need to get 
+> to the
+> details of the polygons being baked. I'm planning to take <rendering
+> options>, <octree>, & <a list of polygon_ids to bake> as params to my
+> program, but I'm not sure that the octree stores the info I need. (Each
+> specified polygon needs to have its own viewpoint to create a rendered
+> image.)
+>
+> In short, could someone tell me how if it is possible (& how) to 
+> retrieve a
+> face by polygon_id from <CUBE thescene>, or whichever structure I need 
+> to
+> look in?
+>
+> Many thanks,
+> mike
+
+
+From mike at cityscape3d.com  Thu Dec  9 19:10:35 2004
+From: mike at cityscape3d.com (Michael Kruger)
+Date: Thu Dec  9 19:11:41 2004
+Subject: [Radiance-dev] Radiance developer beginner
+In-Reply-To: <DC0CAEEA090E984C911D3B85B16C3F900302C253@l-gnts05>
+Message-ID: <200412091757.iB9HvKRf025426@server.cityscape3d.com>
+
+Thanks for the advice. :) I think I'll go with Greg's suggestion for now -
+reading the data from the octree would be preferable to parsing it from the
+rad file.
+
+I like the idea of having variable texture sizes for the polygons, but then
+packing the texture set becomes a little bit tricky. :)
+
+Anyone with experience packing atlas maps who wants to lend me some advice
+would be appreciated!
+
+mike 
+
+-----Original Message-----
+From: radiance-dev-bounces@radiance-online.org
+[mailto:radiance-dev-bounces@radiance-online.org] On Behalf Of Giulio
+Antonutto
+Sent: Thursday, December 09, 2004 4:28 PM
+To: 'code development'
+Subject: RE: [Radiance-dev] Radiance developer beginner
+
+I would suggest you to use .rad files instead octree, I have a feeling that
+it's simpler.
+You can write a program (or just a unix script) to read radiance scenes, use
+the polygon id and vertex position to create a view direction and finally an
+image.
+
+The structure of a polygon based radiance file is not far from this:
+(assuming no other entities are present but polygons and material are
+defined in another file)
+
+material polygon polygon_id
+0
+0
+number of vertex (n)
+x1 y1 z1
+x2 y2 z2
+........
+xn yn zn
+
+you could also instruct the program to create images with different
+resolution, dependong on the area of the polygon....
+looking forward to ear news about!
+
+giulio
+
+
+> ----------
+> From: 	radiance-dev-bounces@radiance-online.org on behalf of
+> Michael Kruger
+> Reply To: 	code development
+> Sent: 	Thursday, December 9, 2004 4:11 PM
+> To: 	radiance-dev@radiance-online.org
+> Subject: 	[Radiance-dev] Radiance developer beginner
+> 
+> Howdy :)
+> 
+> I'm having a go at creating a texture baking program and need to get 
+> to the details of the polygons being baked. I'm planning to take 
+> <rendering
+> options>, <octree>, & <a list of polygon_ids to bake> as params to my
+> program, but I'm not sure that the octree stores the info I need. 
+> (Each specified polygon needs to have its own viewpoint to create a 
+> rendered
+> image.)
+> 
+> In short, could someone tell me how if it is possible (& how) to 
+> retrieve a face by polygon_id from <CUBE thescene>, or whichever 
+> structure I need to look in?
+> 
+> Many thanks,
+> mike
+> 
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+> 
+> 
+> 
+___________________________________________________________________
+Electronic mail messages entering and leaving Arup business systems are
+scanned for acceptability of content and viruses.
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+From gvn at retena.com  Thu Dec 23 10:19:03 2004
+From: gvn at retena.com (=?iso-8859-1?Q?Ignacio_Mun=E1rriz?=)
+Date: Thu Dec 23 10:28:30 2004
+Subject: [Radiance-dev] x11 events
+Message-ID: <001801c4e8d0$720924e0$53000080@pnac>
+
+   I'm thinking to program an interactive viewer based on rview, i like it more than rholo, and i think it's possile to make some improvements calculating an opengl depth and color map from viewpoint and from light sources. Now i'm starting with x11 and i have not found a way to use events with callbacks or signals so as not to use a loop that waste a lot cpu. is there any way?
+
+thanks and sorry for my english, 
+Ignacio Munarriz
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20041223/ecaec08b/attachment.html
+From gregoryjward at gmail.com  Thu Dec 23 16:47:39 2004
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu Dec 23 16:47:57 2004
+Subject: [Radiance-dev] x11 events
+In-Reply-To: <001801c4e8d0$720924e0$53000080@pnac>
+References: <001801c4e8d0$720924e0$53000080@pnac>
+Message-ID: <F9CB6D04-54F9-11D9-A52B-000A95BB392A@gmail.com>
+
+Is the problem that you want to check for input occasionally while 
+continuing the ray calculation?  In such a circustance, polling works 
+just fine, so long as you don't do it too often.  Rview already has 
+such a mechanism in place in its X11 driver.  What is the problem, 
+exactly?
+
+-Greg
+
+Begin forwarded message:
+
+> From: Ignacio Mun?rriz <gvn@retena.com>
+> Date: December 23, 2004 1:19:03 AM PST
+>
+???I'm thinking to?program an interactive viewer?based?on?rview, i like 
+it more than rholo, and i think it's possile to make some 
+improvements?calculating?an?opengl?depth and color?map?from viewpoint 
+and from light sources. Now i'm starting with x11 and i have not found 
+a way to use events with callbacks or signals so as not to use a loop 
+that waste a lot cpu. is there any way?
+?
+thanks and sorry?for my english,
+  Ignacio Munarriz
+
+
+From gvn at retena.com  Fri Dec 24 10:57:00 2004
+From: gvn at retena.com (=?iso-8859-1?Q?Ignacio_Mun=E1rriz?=)
+Date: Fri Dec 24 11:06:42 2004
+Subject: [Radiance-dev] x11 events
+References: <001801c4e8d0$720924e0$53000080@pnac>
+	<F9CB6D04-54F9-11D9-A52B-000A95BB392A@gmail.com>
+Message-ID: <001701c4e99e$e9de48a0$53000080@pnac>
+
+Greg, unfortunately, although polling is very simple, it is also very
+inefficient. The CPU can waste an awful lot of time just waiting for input.
+And i need that time for ray calculation. I think that rholo start a fork
+process and the processor divide the time between ray calculation and
+visualization-events. The best way would be that the hardware interrupt call
+diretly the event function so dont need a loop to search for input
+
+----- Original Message -----
+From: "Greg Ward" <gregoryjward@gmail.com>
+To: "code development" <radiance-dev@radiance-online.org>
+Sent: Thursday, December 23, 2004 4:47 PM
+Subject: Re: [Radiance-dev] x11 events
+
+
+Is the problem that you want to check for input occasionally while
+continuing the ray calculation?  In such a circustance, polling works
+just fine, so long as you don't do it too often.  Rview already has
+such a mechanism in place in its X11 driver.  What is the problem,
+exactly?
+
+-Greg
+
+Begin forwarded message:
+
+> From: Ignacio Mun?rriz <gvn@retena.com>
+> Date: December 23, 2004 1:19:03 AM PST
+>
+I'm thinking to program an interactive viewer based on rview, i like
+it more than rholo, and i think it's possile to make some
+improvements calculating an opengl depth and color map from viewpoint
+and from light sources. Now i'm starting with x11 and i have not found
+a way to use events with callbacks or signals so as not to use a loop
+that waste a lot cpu. is there any way?
+
+thanks and sorry for my english,
+  Ignacio Munarriz
+
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+From apian at pab-opto.de  Fri Dec 24 12:04:13 2004
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Fri Dec 24 12:05:16 2004
+Subject: [Radiance-dev] x11 events
+In-Reply-To: <001701c4e99e$e9de48a0$53000080@pnac>
+References: <001801c4e8d0$720924e0$53000080@pnac>	<F9CB6D04-54F9-11D9-A52B-000A95BB392A@gmail.com>
+	<001701c4e99e$e9de48a0$53000080@pnac>
+Message-ID: <41CBF7AD.4030804@pab-opto.de>
+
+Ignacio Mun?rriz wrote:
+
+>Greg, unfortunately, although polling is very simple, it is also very
+>inefficient. The CPU can waste an awful lot of time just waiting for input.
+>And i need that time for ray calculation. I think that rholo start a fork
+>process and the processor divide the time between ray calculation and
+>visualization-events. The best way would be that the hardware interrupt call
+>diretly the event function so dont need a loop to search for input
+>  
+>
+IRQ handling with X11 ? Hm. IRQ handling is approximately half-a-dozen 
+layers underneath the X11 library calls. So these are really two very 
+different worlds.
+Anyway; X11 has ways to specify call-backs, but as far as I remember 
+interleaving them with other, non-X11 tasks is cumbersome. So using the 
+X11 polling calls is likely the easiest way to go.
+Your program wouldn't waste CPU cycles because it does the raytracing. 
+Just check for pending user input every 30 to 100 milliseconds is 
+practically enough for interactive update rates (provides your program 
+collects all pending input then and not just the last one) and that time 
+interval could be given by querying some clock (man gettimeofday)  or 
+set a timer (man ualarm), which should both have neglectable overhead.
+
+my 2-euro-cents thoughts
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+
+
+From schorsch at schorsch.com  Fri Dec 24 12:28:12 2004
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Fri Dec 24 12:28:27 2004
+Subject: [Radiance-dev] x11 events
+In-Reply-To: <41CBF7AD.4030804@pab-opto.de>
+References: <001801c4e8d0$720924e0$53000080@pnac>
+	<F9CB6D04-54F9-11D9-A52B-000A95BB392A@gmail.com>
+	<001701c4e99e$e9de48a0$53000080@pnac> <41CBF7AD.4030804@pab-opto.de>
+Message-ID: <Pine.BSF.4.58.0412240623240.7132@emancholl.pair.com>
+
+Peter Apian-Bennewitz wrote:
+
+> Ignacio Mun?rriz wrote:
+>
+> >Greg, unfortunately, although polling is very simple, it is also very
+> >inefficient. The CPU can waste an awful lot of time just waiting for input.
+> >And i need that time for ray calculation. I think that rholo start a fork
+> >process and the processor divide the time between ray calculation and
+> >visualization-events. The best way would be that the hardware interrupt call
+> >diretly the event function so dont need a loop to search for input
+> >
+> >
+> IRQ handling with X11 ? Hm. IRQ handling is approximately half-a-dozen
+> layers underneath the X11 library calls. So these are really two very
+> different worlds.
+
+
+Speaking about layers of abstraction...
+Have you considered a cross-platform solution?
+
+I have recommended Python and/or WxWidgets before, and I'll
+continue to do so. I really like the enthusiasm people put into
+such projects, but if you develop for X11, then that will just
+perpetuate the porting problems we already have.
+
+Of course, abstract toolkits like WxWidgets also have the
+advantage that programming with them is *much* easier and more
+convenient than with any platform specific API.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From gvn at retena.com  Sat Dec 25 10:52:16 2004
+From: gvn at retena.com (=?iso-8859-1?Q?Ignacio_Mun=E1rriz?=)
+Date: Sat Dec 25 11:02:07 2004
+Subject: [Radiance-dev] x11 events
+References: <001801c4e8d0$720924e0$53000080@pnac><F9CB6D04-54F9-11D9-A52B-000A95BB392A@gmail.com><001701c4e99e$e9de48a0$53000080@pnac>
+	<41CBF7AD.4030804@pab-opto.de>
+	<Pine.BSF.4.58.0412240623240.7132@emancholl.pair.com>
+Message-ID: <001601c4ea67$6c8c94a0$53000080@pnac>
+
+Maybe, the best way is using a timer. I worked with wxwidgets and i did a
+first aproximation of the viewer adding a orbit and a pan function to glrad
+but  I would not like to soil Gregs code with new libraries, and probably
+wxwidgets also use a timer on x11.
+I am only starting with the viewer, learning greg's code (it's amazing). I
+would like to do an interactive viewer althougth it works at small
+resolutions (300x300 px or so) starting from rview. I think rview can be
+optimized for architecture visualization on some ways:
+
+- adding interactive orbit, pan and walkthrough functions
+- using opengl to obtain point(color=object number,z buffer=distance)
+intersections from viewer
+- using opengl to make shadow maps from light points and using them or
+forcing the ray calculation in function of the distance to the shadow (to
+avoid too small shadow pictures)
+- using the irradiance caching but adding to the file all the values cached
+from all the hemisphere and using them to the ambient component (indirect
+irradiance) and also for the rough specular component
+- using opengl objects duplication in the plane of simmetry and stencil
+buffer to calculate points intersections of reflections(specular
+sampling)(color=object, zbuffer=distance)
+
+The viewer will try to optimize time but maintaining all greg's light and
+material calculation
+
+thanks peter and georg
+
+
+----- Original Message -----
+From: "Georg Mischler" <schorsch@schorsch.com>
+To: "code development" <radiance-dev@radiance-online.org>
+Sent: Friday, December 24, 2004 12:28 PM
+Subject: Re: [Radiance-dev] x11 events
+
+
+Peter Apian-Bennewitz wrote:
+
+> Ignacio Mun?rriz wrote:
+>
+> >Greg, unfortunately, although polling is very simple, it is also very
+> >inefficient. The CPU can waste an awful lot of time just waiting for
+input.
+> >And i need that time for ray calculation. I think that rholo start a fork
+> >process and the processor divide the time between ray calculation and
+> >visualization-events. The best way would be that the hardware interrupt
+call
+> >diretly the event function so dont need a loop to search for input
+> >
+> >
+> IRQ handling with X11 ? Hm. IRQ handling is approximately half-a-dozen
+> layers underneath the X11 library calls. So these are really two very
+> different worlds.
+
+
+Speaking about layers of abstraction...
+Have you considered a cross-platform solution?
+
+I have recommended Python and/or WxWidgets before, and I'll
+continue to do so. I really like the enthusiasm people put into
+such projects, but if you develop for X11, then that will just
+perpetuate the porting problems we already have.
+
+Of course, abstract toolkits like WxWidgets also have the
+advantage that programming with them is *much* easier and more
+convenient than with any platform specific API.
+
+
+-schorsch
+
+--
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+From apian at pab-opto.de  Sat Dec 25 13:04:11 2004
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Sat Dec 25 13:05:09 2004
+Subject: [Radiance-dev] x11 events
+In-Reply-To: <001601c4ea67$6c8c94a0$53000080@pnac>
+References: <001801c4e8d0$720924e0$53000080@pnac><F9CB6D04-54F9-11D9-A52B-000A95BB392A@gmail.com><001701c4e99e$e9de48a0$53000080@pnac>	<41CBF7AD.4030804@pab-opto.de>	<Pine.BSF.4.58.0412240623240.7132@emancholl.pair.com>
+	<001601c4ea67$6c8c94a0$53000080@pnac>
+Message-ID: <41CD573B.60208@pab-opto.de>
+
+Ignacio Mun?rriz wrote:
+
+>...
+>I am only starting with the viewer, learning greg's code (it's amazing). I
+>would like to do an interactive viewer althougth it works at small
+>resolutions (300x300 px or so) starting from rview. I think rview can be
+>optimized for architecture visualization on some ways:
+>
+>- adding interactive orbit, pan and walkthrough functions
+>- using opengl to obtain point(color=object number,z buffer=distance)
+>intersections from viewer
+>- using opengl to make shadow maps from light points and using them or
+>forcing the ray calculation in function of the distance to the shadow (to
+>avoid too small shadow pictures)
+>- using the irradiance caching but adding to the file all the values cached
+>from all the hemisphere and using them to the ambient component (indirect
+>irradiance) and also for the rough specular component
+>- using opengl objects duplication in the plane of simmetry and stencil
+>buffer to calculate points intersections of reflections(specular
+>sampling)(color=object, zbuffer=distance)
+>
+>The viewer will try to optimize time but maintaining all greg's light and
+>material calculation
+>  
+>
+Hi Ignacio
+
+very noble and good ideas. If you want more two-cents thoughts on 
+merging raytracing and Open-GL from an old chap:
+It has been tried before, one is rshow (nudge-nudge,wink-wink to use a 
+Python phrase) the other was an LBNL project approx 6 years ago which 
+aimed at achieving realtime RT with a Cray as backend (there may very 
+well be other projects that I'm not aware of). The later had been 
+original fueled by a proposal written by Greg (than at LBNL), but 
+apparently the thing didn't take off (a good part being that Greg wasn't 
+at LBNL anymore).
+ From these, one core problem seemed to be that Open-GL and the Radiance 
+engine differ vastly on how they are able to handle large sets of 
+objects. Naked Open-GL scales badly with the number of objects to 
+display, while the Radiance engine scales well but throws away all 
+values (in rview at least). Rholo re-uses the values, but doesn't seem 
+to implement Open-GL to its maximum use (e.g. it doesn't try to use HW 
+accelerated rendering to fill time wise intermediate gaps in RT data, it 
+doesn't map any values to 3d polygons in the scene, etc.). Due to the 
+first fact, that Open-GL doesn't scale well, such a hybrid approach 
+seems tricky, as a straight 1:1 use of existing geometry would 
+potentially dead-lock on complex geometries (the location of that 
+boundary depends on the power of the graphic card).
+A meta-3D-structure that envelopes the core structures of the 3d model 
+and thereby de-douples the Open-GL rendering from the complexity of the 
+underlying input geometry, while offering surfaces to map RT generated 
+data onto, is conceivable. And left as an exercise to the reader....
+I'm not current with computer graphics at all, just some thoughts where 
+green gras *may* be over the hill in another valley.
+
+Now- where are those Xmas cookies, and what's on for dinner tonight -
+cheers
+Peter
+
+-- 
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+
+
+From gvn at retena.com  Sat Dec 25 13:38:35 2004
+From: gvn at retena.com (=?iso-8859-1?Q?Ignacio_Mun=E1rriz?=)
+Date: Sat Dec 25 13:48:22 2004
+Subject: [Radiance-dev] x11 events
+References: <001801c4e8d0$720924e0$53000080@pnac><F9CB6D04-54F9-11D9-A52B-000A95BB392A@gmail.com><001701c4e99e$e9de48a0$53000080@pnac>	<41CBF7AD.4030804@pab-opto.de>	<Pine.BSF.4.58.0412240623240.7132@emancholl.pair.com><001601c4ea67$6c8c94a0$53000080@pnac>
+	<41CD573B.60208@pab-opto.de>
+Message-ID: <000701c4ea7e$a6d93c50$53000080@pnac>
+
+Thanks Peter, i will not try to make an universal viewer, i?ll try to
+optimize it to architecture visualization(withot nature), so the number of
+objects will be small (walls, ceiling.. big polygons) and the reflections
+will be planar (windows, floor...opengl mirror solution), it could be a good
+solution for www interior buildings walktroughs,
+
+happy Xmas and don?t eat too much "Pl?tzchen"
+
+
+
+----- Original Message -----
+From: "Peter Apian-Bennewitz" <apian@pab-opto.de>
+To: "code development" <radiance-dev@radiance-online.org>
+Sent: Saturday, December 25, 2004 1:04 PM
+Subject: Re: [Radiance-dev] x11 events
+
+
+Ignacio Mun?rriz wrote:
+
+>...
+>I am only starting with the viewer, learning greg's code (it's amazing). I
+>would like to do an interactive viewer althougth it works at small
+>resolutions (300x300 px or so) starting from rview. I think rview can be
+>optimized for architecture visualization on some ways:
+>
+>- adding interactive orbit, pan and walkthrough functions
+>- using opengl to obtain point(color=object number,z buffer=distance)
+>intersections from viewer
+>- using opengl to make shadow maps from light points and using them or
+>forcing the ray calculation in function of the distance to the shadow (to
+>avoid too small shadow pictures)
+>- using the irradiance caching but adding to the file all the values cached
+>from all the hemisphere and using them to the ambient component (indirect
+>irradiance) and also for the rough specular component
+>- using opengl objects duplication in the plane of simmetry and stencil
+>buffer to calculate points intersections of reflections(specular
+>sampling)(color=object, zbuffer=distance)
+>
+>The viewer will try to optimize time but maintaining all greg's light and
+>material calculation
+>
+>
+Hi Ignacio
+
+very noble and good ideas. If you want more two-cents thoughts on
+merging raytracing and Open-GL from an old chap:
+It has been tried before, one is rshow (nudge-nudge,wink-wink to use a
+Python phrase) the other was an LBNL project approx 6 years ago which
+aimed at achieving realtime RT with a Cray as backend (there may very
+well be other projects that I'm not aware of). The later had been
+original fueled by a proposal written by Greg (than at LBNL), but
+apparently the thing didn't take off (a good part being that Greg wasn't
+at LBNL anymore).
+ From these, one core problem seemed to be that Open-GL and the Radiance
+engine differ vastly on how they are able to handle large sets of
+objects. Naked Open-GL scales badly with the number of objects to
+display, while the Radiance engine scales well but throws away all
+values (in rview at least). Rholo re-uses the values, but doesn't seem
+to implement Open-GL to its maximum use (e.g. it doesn't try to use HW
+accelerated rendering to fill time wise intermediate gaps in RT data, it
+doesn't map any values to 3d polygons in the scene, etc.). Due to the
+first fact, that Open-GL doesn't scale well, such a hybrid approach
+seems tricky, as a straight 1:1 use of existing geometry would
+potentially dead-lock on complex geometries (the location of that
+boundary depends on the power of the graphic card).
+A meta-3D-structure that envelopes the core structures of the 3d model
+and thereby de-douples the Open-GL rendering from the complexity of the
+underlying input geometry, while offering surfaces to map RT generated
+data onto, is conceivable. And left as an exercise to the reader....
+I'm not current with computer graphics at all, just some thoughts where
+green gras *may* be over the hill in another valley.
+
+Now- where are those Xmas cookies, and what's on for dinner tonight -
+cheers
+Peter
+
+--
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+From apian at pab-opto.de  Wed Dec 29 15:55:15 2004
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Wed Dec 29 15:55:46 2004
+Subject: [Radiance-dev] feedback form online
+Message-ID: <41D2C553.9040602@pab-opto.de>
+
+Hi folks,
+
+hope you all got well through Christmas time.
+
+For those of you not on holiday and with tube-time to spare, you could 
+be the first to try the new online feedback form at
+    http://www.radiance-online.org/survey1/
+My motivation for it was to get some more info on the Radiance 
+community, especially from the majority of users who silently read the 
+mailing list, use Radiance and may have some views and ideas just below 
+their level of actively posting to the list. E.g.: There's got to be a 
+couple of students at Universities worldwide who are confronted with 
+Radiance each course and from which we never hear. Especially when they 
+/don't/ like it.
+The whole thing is planned to be used continuously other the next years, 
+rather than being a one-time snapshot.
+Werther the idea works out, I can't say, but hey, at least it's worth a try.
+Technically each entry is stored in MySQL, together with a time stamp 
+and the client IP. The latter is handy in case some bored "script-kid" 
+floods the entry form, otherwise it won't be made public. The time stamp 
+allows for a time dependent analysis over the next years, while the 
+database allows for correlations like "what do architects see as missing".
+
+Feedback on the idea or form is welcomed, otherwise I post a note next 
+week on the general list,
+cheers & a happy start into 2005
+-Peter
+
+PS: "Limits felt" doesn't list "user interface missing", since that 
+could be hardwired to "on" under any circumstance, a catch-all from 
+"rpict is a drag" to "Radiance doesn't automagically deploy lamps in the 
+optimal way in a room".
+
+-- 
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+
+

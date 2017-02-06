@@ -1,0 +1,1570 @@
+From graphichart65 at gmail.com  Mon Jan  4 06:55:17 2016
+From: graphichart65 at gmail.com (Dmytro Radomtsev)
+Date: Mon, 4 Jan 2016 16:55:17 +0200
+Subject: [Radiance-general] CIE general sky model questions
+Message-ID: <CAC1tUQT9Q4D0xUxrdY8XGQBTCGbyCmMTAnDfAT5ehNguYy3Z+Q@mail.gmail.com>
+
+Hello dear Radiance community,
+
+I have a question about implementation of CIE general sky model into
+Radiance. At the meantime I'm working on way of usage of this standard in
+national building daylighting practise and very interested in it.
+Please correct me if I'm wrong but as I understand this model is not
+presented in latest release of Radiance software and cal-file "SSLDLum.cal"
+of Dr. Phillip Greenup wasn't include. How do you think is there a possible
+to write in addition source code of CIE sky luminance distribution in
+"gensky.c"? If the Radiance licence and community allow maybe I can help
+with it but need some clarifications about the existing
+in "gensky.c" source code.
+
+Thank You.
+
+Sincerely,
+Dmytriy Radomtsev.
+Postgraduate, MArch, at Architectural constructions department,
+Kiev national university of construction and architecture.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160104/ad9abba8/attachment.html>
+
+From andrei.kolomenski at nasa.gov  Wed Jan  6 08:05:59 2016
+From: andrei.kolomenski at nasa.gov (Kolomenski, Andrei (JSC-SF311)[WYLE LABORATORIES, INC.])
+Date: Wed, 6 Jan 2016 16:05:59 +0000
+Subject: [Radiance-general] Irradiance due to a sphere and circular surface
+	light sources
+Message-ID: <AE55A995167B224DBBFA16500E3AB9B306D25857@NDJSMBX202.ndc.nasa.gov>
+
+Dear Radiance/Radiometry Experts,
+I need help understanding the rtrace/rpict irradiance output for a sphere light source. The sphere has a radius of 1 mm. and it is projecting light onto a planar surface, 1 m. away. For this geometry, a point source approximation can be used to represent the light source.
+The irradiance falling onto the planar surface is governed by the analytical relation:
+               E(theta) = I(theta=0)*cos(theta)*(1/d^2).
+I(theta=0) is the radiant intensity falling perpendicular to the surface. I(theta=0) = L*A, where L=10, is the radiance of the light source and A=4*pi*r^2, is the surface area of the sphere light source. Plugging the numbers into the irradiance formula for sphere at theta=0 (normal projection) yields:
+               E_sphere(theta=0) = (L * A * 1)/(1) = 10 * 4 * pi * (0.01)^2 = 0.012566 W/m^2
+I ran Radiance with this geometry, both rpict(-i) and rtrace (-i -I) produced the irradiance of 0.003141 W/m^2 for theta=0. This result is consistent with the analytical solution if a circle surface is used for the light source, instead of a sphere.
+               E_circle(theta=0) = (L * A * 1)/(1) = 10 * pi * (0.01)^2 = 0.003141 W/m^2
+I changed my Radiance simulation to use a circle (ring with no inner radius) for the light source. For this case, rpict & rtrace both produced that same answer (0.003141), equal to the case of a sphere light source..
+Why is the irradiance the same for both light source geometries? The sphere emanates light in all directions (4pi sr.), unlike the circular surface which emanates light into a hemisphere (2pi sr.). Since both light geometries were given the same radiance definition (Lr=10, Lg=10, Lb=10), why do they yield the same result in Radiance? While their analytical solutions are different, by a factor of 4.
+I did not use the brighdata primitive to assign a beam pattern to the sphere or circle light sources. I'm assuming a Lambertian light distribution is default, if no beam pattern is provided. Anyway, I would really appreciate your explanation on why these two different geometries produce the same irradiance.
+
+Thank you very much for your insight,
+Andrei Kolomenski
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160106/5b60dc28/attachment.html>
+
+From gregoryjward at gmail.com  Wed Jan  6 10:18:30 2016
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed, 6 Jan 2016 10:18:30 -0800
+Subject: [Radiance-general] Irradiance due to a sphere and circular
+	surface light sources
+In-Reply-To: <AE55A995167B224DBBFA16500E3AB9B306D25857@NDJSMBX202.ndc.nasa.gov>
+References: <AE55A995167B224DBBFA16500E3AB9B306D25857@NDJSMBX202.ndc.nasa.gov>
+Message-ID: <49C49E1E-533D-4B3E-A163-1CC60CB28165@lmi.net>
+
+Hi Andrei,
+
+While it may seem confusing, it is the projected solid angle that matters to irradiance, and this corresponds to the visible disc of the light source rather than the total surface area, which is why you get the same answer for a ring as a sphere light source in Radiance.  If you think about it, the emitted radiance of a diffuse source does not change with position or inclination on the emitter, so all that matters is the shape as visible from the point on the surface where you are calculating irradiance.  In either case, that point sees a disk off in the distance -- it can't tell if it's a circle or a sphere.  The light that arrives from either is the same.
+
+What *is* different is the total light emitted from the two sources.  The sphere will emit 4 times as much light because it will have the same effective brightness in all directions, where the total light from the ring will fall off as the cosine of the angle to its normal, and will be zero for the back-side.
+
+Cheers,
+-Greg
+
+> From: "Kolomenski, Andrei (JSC-SF311)[WYLE LABORATORIES, INC.]" <andrei.kolomenski at nasa.gov>
+> Subject: [Radiance-general] Irradiance due to a sphere and circular surface light sources
+> Date: January 6, 2016 8:05:59 AM PST
+> 
+> Dear Radiance/Radiometry Experts,
+> 
+> I need help understanding the rtrace/rpict irradiance output for a sphere light source. The sphere has a radius of 1 mm. and it is projecting light onto a planar surface, 1 m. away. For this geometry, a point source approximation can be used to represent the light source.
+> 
+> The irradiance falling onto the planar surface is governed by the analytical relation:
+> 
+>                E(theta) = I(theta=0)*cos(theta)*(1/d^2).
+> 
+> I(theta=0) is the radiant intensity falling perpendicular to the surface. I(theta=0) = L*A, where L=10, is the radiance of the light source and A=4*pi*r^2, is the surface area of the sphere light source. Plugging the numbers into the irradiance formula for sphere at theta=0 (normal projection) yields:
+> 
+>                E_sphere(theta=0) = (L * A * 1)/(1) = 10 * 4 * pi * (0.01)^2 = 0.012566 W/m^2
+> 
+> I ran Radiance with this geometry, both rpict(-i) and rtrace (-i ?I) produced the irradiance of 0.003141 W/m^2 for theta=0. This result is consistent with the analytical solution if a circle surface is used for the light source, instead of a sphere.
+> 
+>                E_circle(theta=0) = (L * A * 1)/(1) = 10 * pi * (0.01)^2 = 0.003141 W/m^2
+> 
+> I changed my Radiance simulation to use a circle (ring with no inner radius) for the light source. For this case, rpict & rtrace both produced that same answer (0.003141), equal to the case of a sphere light source..
+> 
+> Why is the irradiance the same for both light source geometries? The sphere emanates light in all directions (4pi sr.), unlike the circular surface which emanates light into a hemisphere (2pi sr.). Since both light geometries were given the same radiance definition (Lr=10, Lg=10, Lb=10), why do they yield the same result in Radiance? While their analytical solutions are different, by a factor of 4.
+> 
+> I did not use the brighdata primitive to assign a beam pattern to the sphere or circle light sources. I?m assuming a Lambertian light distribution is default, if no beam pattern is provided. Anyway, I would really appreciate your explanation on why these two different geometries produce the same irradiance.
+> 
+>  
+> 
+> Thank you very much for your insight,
+> 
+> Andrei Kolomenski
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160106/4cff8d9f/attachment.html>
+
+From andrei.kolomenski at nasa.gov  Wed Jan  6 12:24:15 2016
+From: andrei.kolomenski at nasa.gov (Kolomenski, Andrei (JSC-SF311)[WYLE LABORATORIES, INC.])
+Date: Wed, 6 Jan 2016 20:24:15 +0000
+Subject: [Radiance-general] Irradiance due to a sphere and
+	circular	surface light sources
+In-Reply-To: <49C49E1E-533D-4B3E-A163-1CC60CB28165@lmi.net>
+References: <AE55A995167B224DBBFA16500E3AB9B306D25857@NDJSMBX202.ndc.nasa.gov>
+	<49C49E1E-533D-4B3E-A163-1CC60CB28165@lmi.net>
+Message-ID: <AE55A995167B224DBBFA16500E3AB9B306D2594E@NDJSMBX202.ndc.nasa.gov>
+
+Hi Greg,
+Thank you for the response!
+Intuitively, I do understand the detector sees the same circular shape and the same subtended solid angle for both a sphere and a ring. My confusion comes from the way the light primitive is applied to the geometry. In both cases I assign a radiance value of 10 W/sr.m^2 to the light source geometry. My misconception was I assumed that the given radiance value is evenly distributed across the entire geometry surface and accompanying solid angle. Apparently, it is not. It appears to me that the assigned radiance value is a constant radiance value assigned to each infinitesimal surface area element on the light source surface, or pixel if viewing with rpict. Does this interpretation sound correct?
+
+I appreciate your help,
+Andrei
+
+From: Greg Ward [mailto:gregoryjward at gmail.com]
+Sent: Wednesday, January 06, 2016 12:19 PM
+To: Radiance general discussion
+Cc: Maida, James C. (JSC-SF311); Clark, Toni A. (JSC-SF)[WYLE LABORATORIES, INC.]
+Subject: Re: [Radiance-general] Irradiance due to a sphere and circular surface light sources
+
+Hi Andrei,
+
+While it may seem confusing, it is the projected solid angle that matters to irradiance, and this corresponds to the visible disc of the light source rather than the total surface area, which is why you get the same answer for a ring as a sphere light source in Radiance.  If you think about it, the emitted radiance of a diffuse source does not change with position or inclination on the emitter, so all that matters is the shape as visible from the point on the surface where you are calculating irradiance.  In either case, that point sees a disk off in the distance -- it can't tell if it's a circle or a sphere.  The light that arrives from either is the same.
+
+What *is* different is the total light emitted from the two sources.  The sphere will emit 4 times as much light because it will have the same effective brightness in all directions, where the total light from the ring will fall off as the cosine of the angle to its normal, and will be zero for the back-side.
+
+Cheers,
+-Greg
+
+
+
+From: "Kolomenski, Andrei (JSC-SF311)[WYLE LABORATORIES, INC.]" <andrei.kolomenski at nasa.gov<mailto:andrei.kolomenski at nasa.gov>>
+
+Subject: [Radiance-general] Irradiance due to a sphere and circular surface light sources
+
+Date: January 6, 2016 8:05:59 AM PST
+
+
+Dear Radiance/Radiometry Experts,
+I need help understanding the rtrace/rpict irradiance output for a sphere light source. The sphere has a radius of 1 mm. and it is projecting light onto a planar surface, 1 m. away. For this geometry, a point source approximation can be used to represent the light source.
+The irradiance falling onto the planar surface is governed by the analytical relation:
+               E(theta) = I(theta=0)*cos(theta)*(1/d^2).
+I(theta=0) is the radiant intensity falling perpendicular to the surface. I(theta=0) = L*A, where L=10, is the radiance of the light source and A=4*pi*r^2, is the surface area of the sphere light source. Plugging the numbers into the irradiance formula for sphere at theta=0 (normal projection) yields:
+               E_sphere(theta=0) = (L * A * 1)/(1) = 10 * 4 * pi * (0.01)^2 = 0.012566 W/m^2
+I ran Radiance with this geometry, both rpict(-i) and rtrace (-i -I) produced the irradiance of 0.003141 W/m^2 for theta=0. This result is consistent with the analytical solution if a circle surface is used for the light source, instead of a sphere.
+               E_circle(theta=0) = (L * A * 1)/(1) = 10 * pi * (0.01)^2 = 0.003141 W/m^2
+I changed my Radiance simulation to use a circle (ring with no inner radius) for the light source. For this case, rpict & rtrace both produced that same answer (0.003141), equal to the case of a sphere light source..
+Why is the irradiance the same for both light source geometries? The sphere emanates light in all directions (4pi sr.), unlike the circular surface which emanates light into a hemisphere (2pi sr.). Since both light geometries were given the same radiance definition (Lr=10, Lg=10, Lb=10), why do they yield the same result in Radiance? While their analytical solutions are different, by a factor of 4.
+I did not use the brighdata primitive to assign a beam pattern to the sphere or circle light sources. I'm assuming a Lambertian light distribution is default, if no beam pattern is provided. Anyway, I would really appreciate your explanation on why these two different geometries produce the same irradiance.
+
+Thank you very much for your insight,
+Andrei Kolomenski
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160106/fa01e021/attachment.html>
+
+From gregoryjward at gmail.com  Wed Jan  6 14:42:08 2016
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed, 6 Jan 2016 14:42:08 -0800
+Subject: [Radiance-general] Irradiance due to a sphere and
+	circular	surface light sources
+In-Reply-To: <AE55A995167B224DBBFA16500E3AB9B306D2594E@NDJSMBX202.ndc.nasa.gov>
+References: <AE55A995167B224DBBFA16500E3AB9B306D25857@NDJSMBX202.ndc.nasa.gov>
+	<49C49E1E-533D-4B3E-A163-1CC60CB28165@lmi.net>
+	<AE55A995167B224DBBFA16500E3AB9B306D2594E@NDJSMBX202.ndc.nasa.gov>
+Message-ID: <E2FBE2EA-3393-4F75-9965-14AEBAA5D0C7@lmi.net>
+
+Hi Andrei,
+
+That's correct.  Radiance is not just a nice name for a lighting simulation, it's also a handy unit that doesn't depend on geometry.  Had I used watts (for flux) directly in the specification of light sources, then the values would have to be modified with every change in length units or geometric scale.  Instead, we use watts/steradian/meter^2 (radiance) and the value is constant for a diffuse light source and doesn't change with scale or direction (unless you create a pattern on top of it).
+
+Cheers,
+-Greg
+
+> From: "Kolomenski, Andrei (JSC-SF311)[WYLE LABORATORIES, INC.]" <andrei.kolomenski at nasa.gov>
+> Subject: Re: [Radiance-general] Irradiance due to a sphere and circular	surface light sources
+> Date: January 6, 2016 12:24:15 PM PST
+> 
+> Hi Greg,
+> 
+> Thank you for the response!
+> 
+> Intuitively, I do understand the detector sees the same circular shape and the same subtended solid angle for both a sphere and a ring. My confusion comes from the way the light primitive is applied to the geometry. In both cases I assign a radiance value of 10 W/sr.m^2 to the light source geometry. My misconception was I assumed that the given radiance value is evenly distributed across the entire geometry surface and accompanying solid angle. Apparently, it is not. It appears to me that the assigned radiance value is a constant radiance value assigned to each infinitesimal surface area element on the light source surface, or pixel if viewing with rpict. Does this interpretation sound correct?
+> 
+>  
+> 
+> I appreciate your help,
+> 
+> Andrei
+> 
+>  
+> 
+> From: Greg Ward [mailto:gregoryjward at gmail.com] 
+> Sent: Wednesday, January 06, 2016 12:19 PM
+> To: Radiance general discussion
+> Cc: Maida, James C. (JSC-SF311); Clark, Toni A. (JSC-SF)[WYLE LABORATORIES, INC.]
+> Subject: Re: [Radiance-general] Irradiance due to a sphere and circular surface light sources
+>  
+> 
+> Hi Andrei,
+> 
+>  
+> 
+> While it may seem confusing, it is the projected solid angle that matters to irradiance, and this corresponds to the visible disc of the light source rather than the total surface area, which is why you get the same answer for a ring as a sphere light source in Radiance.  If you think about it, the emitted radiance of a diffuse source does not change with position or inclination on the emitter, so all that matters is the shape as visible from the point on the surface where you are calculating irradiance.  In either case, that point sees a disk off in the distance -- it can't tell if it's a circle or a sphere.  The light that arrives from either is the same.
+> 
+>  
+> 
+> What *is* different is the total light emitted from the two sources.  The sphere will emit 4 times as much light because it will have the same effective brightness in all directions, where the total light from the ring will fall off as the cosine of the angle to its normal, and will be zero for the back-side.
+> 
+>  
+> 
+> Cheers,
+> 
+> -Greg
+> 
+> 
+> 
+> 
+> From: "Kolomenski, Andrei (JSC-SF311)[WYLE LABORATORIES, INC.]" <andrei.kolomenski at nasa.gov>
+> Subject: [Radiance-general] Irradiance due to a sphere and circular surface light sources
+> Date: January 6, 2016 8:05:59 AM PST
+>  
+> Dear Radiance/Radiometry Experts,
+> 
+> I need help understanding the rtrace/rpict irradiance output for a sphere light source. The sphere has a radius of 1 mm. and it is projecting light onto a planar surface, 1 m. away. For this geometry, a point source approximation can be used to represent the light source.
+> 
+> The irradiance falling onto the planar surface is governed by the analytical relation:
+> 
+>                E(theta) = I(theta=0)*cos(theta)*(1/d^2).
+> 
+> I(theta=0) is the radiant intensity falling perpendicular to the surface. I(theta=0) = L*A, where L=10, is the radiance of the light source and A=4*pi*r^2, is the surface area of the sphere light source. Plugging the numbers into the irradiance formula for sphere at theta=0 (normal projection) yields:
+> 
+>                E_sphere(theta=0) = (L * A * 1)/(1) = 10 * 4 * pi * (0.01)^2 = 0.012566 W/m^2
+> 
+> I ran Radiance with this geometry, both rpict(-i) and rtrace (-i ?I) produced the irradiance of 0.003141 W/m^2 for theta=0. This result is consistent with the analytical solution if a circle surface is used for the light source, instead of a sphere.
+> 
+>                E_circle(theta=0) = (L * A * 1)/(1) = 10 * pi * (0.01)^2 = 0.003141 W/m^2
+> 
+> I changed my Radiance simulation to use a circle (ring with no inner radius) for the light source. For this case, rpict & rtrace both produced that same answer (0.003141), equal to the case of a sphere light source..
+> 
+> Why is the irradiance the same for both light source geometries? The sphere emanates light in all directions (4pi sr.), unlike the circular surface which emanates light into a hemisphere (2pi sr.). Since both light geometries were given the same radiance definition (Lr=10, Lg=10, Lb=10), why do they yield the same result in Radiance? While their analytical solutions are different, by a factor of 4.
+> 
+> I did not use the brighdata primitive to assign a beam pattern to the sphere or circle light sources. I?m assuming a Lambertian light distribution is default, if no beam pattern is provided. Anyway, I would really appreciate your explanation on why these two different geometries produce the same irradiance.
+> 
+>  
+> 
+> Thank you very much for your insight,
+> 
+> Andrei Kolomenski
+> 
+> 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160106/622894fe/attachment-0001.html>
+
+From rmfritz3 at gmail.com  Wed Jan  6 19:06:05 2016
+From: rmfritz3 at gmail.com (Randolph M. Fritz)
+Date: Wed, 6 Jan 2016 19:06:05 -0800
+Subject: [Radiance-general] Setting file number limit on Ubuntu Linux,
+	Linux Mint, and Debian Linux
+Message-ID: <CANeAMoJsf=8iHiDpZv2q9_EuG-PdsXTkpyJNKAE90hNWEGhcKw@mail.gmail.com>
+
+The system default limits are in /etc/security/limits.conf.
+
+To change the limit for a particular user, add a line:
+  <user>         hard    nofile          10000
+
+To change the limit for all users except root, add a line:
+  *         hard    nofile          10000
+
+The file is protected, and you must have administrator permissions to edit
+it.
+
+"ulimit -n 9999" must still be issued in your scripts or your rc file.
+
+In the latest version of Ubuntu, Vivid Vervet, this can also be done with
+the "prlimit" command, an administrator password, and some trickery.
+-- 
+Randolph M. Fritz, Lighting Design and Simulation
++1 206 659-8617 || rmfritz3 at gmail.com
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160106/d227b5b0/attachment.html>
+
+From andrei.kolomenski at nasa.gov  Thu Jan  7 06:26:54 2016
+From: andrei.kolomenski at nasa.gov (Kolomenski, Andrei (JSC-SF311)[WYLE LABORATORIES, INC.])
+Date: Thu, 7 Jan 2016 14:26:54 +0000
+Subject: [Radiance-general] Irradiance due to a sphere
+	and	circular	surface light sources
+In-Reply-To: <E2FBE2EA-3393-4F75-9965-14AEBAA5D0C7@lmi.net>
+References: <AE55A995167B224DBBFA16500E3AB9B306D25857@NDJSMBX202.ndc.nasa.gov>
+	<49C49E1E-533D-4B3E-A163-1CC60CB28165@lmi.net>
+	<AE55A995167B224DBBFA16500E3AB9B306D2594E@NDJSMBX202.ndc.nasa.gov>
+	<E2FBE2EA-3393-4F75-9965-14AEBAA5D0C7@lmi.net>
+Message-ID: <AE55A995167B224DBBFA16500E3AB9B306D259AB@NDJSMBX202.ndc.nasa.gov>
+
+Hi Greg,
+Thank you for the confirmation. This mostly clears up my misunderstanding of radiance, the radiometry term.
+Kind Regards,
+Andrei
+
+From: Greg Ward [mailto:gregoryjward at gmail.com]
+Sent: Wednesday, January 06, 2016 4:42 PM
+To: Radiance general discussion
+Subject: Re: [Radiance-general] Irradiance due to a sphere and circular surface light sources
+
+Hi Andrei,
+
+That's correct.  Radiance is not just a nice name for a lighting simulation, it's also a handy unit that doesn't depend on geometry.  Had I used watts (for flux) directly in the specification of light sources, then the values would have to be modified with every change in length units or geometric scale.  Instead, we use watts/steradian/meter^2 (radiance) and the value is constant for a diffuse light source and doesn't change with scale or direction (unless you create a pattern on top of it).
+
+Cheers,
+-Greg
+
+
+
+From: "Kolomenski, Andrei (JSC-SF311)[WYLE LABORATORIES, INC.]" <andrei.kolomenski at nasa.gov<mailto:andrei.kolomenski at nasa.gov>>
+
+Subject: Re: [Radiance-general] Irradiance due to a sphere and circular    surface light sources
+
+Date: January 6, 2016 12:24:15 PM PST
+
+
+Hi Greg,
+Thank you for the response!
+Intuitively, I do understand the detector sees the same circular shape and the same subtended solid angle for both a sphere and a ring. My confusion comes from the way the light primitive is applied to the geometry. In both cases I assign a radiance value of 10 W/sr.m^2 to the light source geometry. My misconception was I assumed that the given radiance value is evenly distributed across the entire geometry surface and accompanying solid angle. Apparently, it is not. It appears to me that the assigned radiance value is a constant radiance value assigned to each infinitesimal surface area element on the light source surface, or pixel if viewing with rpict. Does this interpretation sound correct?
+
+I appreciate your help,
+Andrei
+
+From: Greg Ward [mailto:gregoryjward at gmail.com]
+Sent: Wednesday, January 06, 2016 12:19 PM
+To: Radiance general discussion
+Cc: Maida, James C. (JSC-SF311); Clark, Toni A. (JSC-SF)[WYLE LABORATORIES, INC.]
+Subject: Re: [Radiance-general] Irradiance due to a sphere and circular surface light sources
+
+Hi Andrei,
+
+While it may seem confusing, it is the projected solid angle that matters to irradiance, and this corresponds to the visible disc of the light source rather than the total surface area, which is why you get the same answer for a ring as a sphere light source in Radiance.  If you think about it, the emitted radiance of a diffuse source does not change with position or inclination on the emitter, so all that matters is the shape as visible from the point on the surface where you are calculating irradiance.  In either case, that point sees a disk off in the distance -- it can't tell if it's a circle or a sphere.  The light that arrives from either is the same.
+
+What *is* different is the total light emitted from the two sources.  The sphere will emit 4 times as much light because it will have the same effective brightness in all directions, where the total light from the ring will fall off as the cosine of the angle to its normal, and will be zero for the back-side.
+
+Cheers,
+-Greg
+
+
+
+
+From: "Kolomenski, Andrei (JSC-SF311)[WYLE LABORATORIES, INC.]" <andrei.kolomenski at nasa.gov<mailto:andrei.kolomenski at nasa.gov>>
+
+Subject: [Radiance-general] Irradiance due to a sphere and circular surface light sources
+
+Date: January 6, 2016 8:05:59 AM PST
+
+
+Dear Radiance/Radiometry Experts,
+I need help understanding the rtrace/rpict irradiance output for a sphere light source. The sphere has a radius of 1 mm. and it is projecting light onto a planar surface, 1 m. away. For this geometry, a point source approximation can be used to represent the light source.
+The irradiance falling onto the planar surface is governed by the analytical relation:
+               E(theta) = I(theta=0)*cos(theta)*(1/d^2).
+I(theta=0) is the radiant intensity falling perpendicular to the surface. I(theta=0) = L*A, where L=10, is the radiance of the light source and A=4*pi*r^2, is the surface area of the sphere light source. Plugging the numbers into the irradiance formula for sphere at theta=0 (normal projection) yields:
+               E_sphere(theta=0) = (L * A * 1)/(1) = 10 * 4 * pi * (0.01)^2 = 0.012566 W/m^2
+I ran Radiance with this geometry, both rpict(-i) and rtrace (-i -I) produced the irradiance of 0.003141 W/m^2 for theta=0. This result is consistent with the analytical solution if a circle surface is used for the light source, instead of a sphere.
+               E_circle(theta=0) = (L * A * 1)/(1) = 10 * pi * (0.01)^2 = 0.003141 W/m^2
+I changed my Radiance simulation to use a circle (ring with no inner radius) for the light source. For this case, rpict & rtrace both produced that same answer (0.003141), equal to the case of a sphere light source..
+Why is the irradiance the same for both light source geometries? The sphere emanates light in all directions (4pi sr.), unlike the circular surface which emanates light into a hemisphere (2pi sr.). Since both light geometries were given the same radiance definition (Lr=10, Lg=10, Lb=10), why do they yield the same result in Radiance? While their analytical solutions are different, by a factor of 4.
+I did not use the brighdata primitive to assign a beam pattern to the sphere or circle light sources. I'm assuming a Lambertian light distribution is default, if no beam pattern is provided. Anyway, I would really appreciate your explanation on why these two different geometries produce the same irradiance.
+
+Thank you very much for your insight,
+Andrei Kolomenski
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160107/842f92e8/attachment.html>
+
+From stefanie.madriz at three.com.mx  Thu Jan  7 13:44:49 2016
+From: stefanie.madriz at three.com.mx (Stefanie Madriz)
+Date: Thu, 7 Jan 2016 15:44:49 -0600
+Subject: [Radiance-general] Radiance for Spatial Daylight Autonomy
+Message-ID: <000f01d14994$a2849380$e78dba80$@three.com.mx>
+
+Hello,
+
+My name is Stefanie, I work in the Green Building sector in Mexico with LEED
+project certification. This year we are trying to take our daylight models
+to the next level and be able to achieve all options of LEED v4 EQ Credit:
+Daylight. For Option 1, we have to prove a Spatial Daylight Autonomy of
+300lx for 50% of occupied hours per year as well as analyze the Annual
+sunlight Exposure of 1000lx for 250h (ASE1000,250).
+
+We are familiar with working with RADIANCE but we are not sure if it is
+possible to carry out this analyses and get both results needed. Could you
+help me with this doubt?
+
+Hope to hear from you soon.
+
+Regards,
+
+ 
+
+ 
+
+
+
+ 
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160107/7eec4df2/attachment.html>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: image001.jpg
+Type: image/jpeg
+Size: 15220 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160107/7eec4df2/attachment.jpg>
+
+From tim.v2.0 at gmail.com  Thu Jan  7 16:12:15 2016
+From: tim.v2.0 at gmail.com (Tim Perry)
+Date: Thu, 7 Jan 2016 16:12:15 -0800
+Subject: [Radiance-general] Radiance for Spatial Daylight Autonomy
+In-Reply-To: <000f01d14994$a2849380$e78dba80$@three.com.mx>
+References: <000f01d14994$a2849380$e78dba80$@three.com.mx>
+Message-ID: <CAFVgASWcR6Dq644FZnF9+iR3twvYJr=O1Gi9RWF70ZN49nATzQ@mail.gmail.com>
+
+Dear Stefanie,
+
+The radiance results need to be analyzed to show that you meet the
+requirements, but it can be done. Mudit Saxena at Vistar Energy Consulting
+managed previous work at HMG and TRC using Radiance to perform the
+necessary calculations. I recommend getting in touch with him:
+
+Mudit Saxena
+(916) 543-7186
+msaxena at vistar-energy.com
+http://www.vistar-energy.com
+
+In the interests of full disclosure, I have worked for Mudit in the past.
+
+Good luck,
+Tim
+
+On Thu, Jan 7, 2016 at 1:44 PM, Stefanie Madriz <
+stefanie.madriz at three.com.mx> wrote:
+
+> Hello,
+>
+> My name is Stefanie, I work in the Green Building sector in Mexico with
+> LEED project certification. This year we are trying to take our daylight
+> models to the next level and be able to achieve all options of LEED v4 EQ
+> Credit: Daylight. For Option 1, we have to prove a Spatial Daylight
+> Autonomy of 300lx for 50% of occupied hours per year as well as analyze the
+> Annual sunlight Exposure of 1000lx for 250h (ASE1000,250).
+>
+> We are familiar with working with RADIANCE but we are not sure if it is
+> possible to carry out this analyses and get both results needed. Could you
+> help me with this doubt?
+>
+> Hope to hear from you soon.
+>
+> Regards,
+>
+>
+>
+>
+>
+> [image: Stefanie]
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160107/ac0a06dc/attachment-0001.html>
+
+From achapin at 3rsustainability.com  Fri Jan  8 06:26:39 2016
+From: achapin at 3rsustainability.com (Alex Chapin)
+Date: Fri, 8 Jan 2016 09:26:39 -0500
+Subject: [Radiance-general] Radiance for Spatial Daylight Autonomy
+Message-ID: <CAHH4dSdReYER7=0azs41vcN4er7HQ7Gi-vQSrSPMo4a5VmR2Dw@mail.gmail.com>
+
+Hi Stefanie,
+
+You might want to check out the answers to a similar question posted on
+unmethours.com here (
+https://unmethours.com/question/627/daylight-simulation-for-leed-v40-ieqc7/
+).
+
+In summary, people indicate that IES-VE, SPOT, Daysim (or potential fork of
+Daysim by CBEI), and Openstudio are either capable of doing what you ask or
+will be soon. Note that I believe most if not all of these tools use
+Radiance in the background.
+
+Thanks,
+Alex
+
+*Alex N. Chapin, LEED AP BD+C, BEMP, LEED Project Reviewer*
+
+*Principal*
+
+*3R Building Sustainability*
+
+www.3Rsustainability.com <http://www.3rsustainability.com/>
+
+achapin at 3Rsustainability.com
+
+T: (724) 741-9900 x619
+
+
+
+*High-Performance Building Consulting*
+This message and any included attachments are from 3R Building
+Sustainability, and are intended only for the addressee. The information
+contained herein may include privileged or confidential information.
+Unauthorized review, forwarding, printing, copying, distributing or using
+such information is strictly prohibited and may be unlawful. If you have
+received this message in error, or have reason to believe that you are not
+authorized to receive it, please promptly delete it and notify the sender
+by e-mail with a copy to info at 3Rsustainability.com.  Thank you.
+
+To: <radiance-general at radiance-online.org>
+Subject: [Radiance-general] Radiance for Spatial Daylight Autonomy
+Hello,
+My name is Stefanie, I work in the Green Building sector in Mexico with
+LEED project certification. This year we are trying to take our daylight
+models to the next level and be able to achieve all options of LEED v4 EQ
+Credit: Daylight. For Option 1, we have to prove a Spatial Daylight
+Autonomy of 300lx for 50% of occupied hours per year as well as analyze the
+Annual sunlight Exposure of 1000lx for 250h (ASE1000,250).
+We are familiar with working with RADIANCE but we are not sure if it is
+possible to carry out this analyses and get both results needed. Could you
+help me with this doubt?
+Hope to hear from you soon.
+Regards,
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160108/61f1913d/attachment.html>
+
+From b.stolk at gmail.com  Fri Jan  8 14:38:07 2016
+From: b.stolk at gmail.com (Bram Stolk)
+Date: Fri, 8 Jan 2016 14:38:07 -0800
+Subject: [Radiance-general] Light Solutions.
+Message-ID: <CABYXEkuVAXO1dNAmwtk0V1yrSFdZv4O2Uxd0505vckC8LB3qeA@mail.gmail.com>
+
+Hello Radiance community,
+
+A newbie here...
+After briefly going through the documentation of Radiance, it appears that
+Radiance is foremost a tool to generate images from scene descriptions.
+
+But what I would like to know:
+Can Radiance be used to generate a, let's say radiosity solution, for a
+scene, outputting not a projected image, but a description of the light
+distribution in the scene.
+
+So typically: the collection of polygon faces in the scene with a measure
+for the incoming light for that face.
+Or alternatively, a light-value per vertex, maybe, or even lightmap
+textures?
+
+Adaptive subdivision of faces would be a big bonus.
+
+Or is Radiance simply not intended for this kind of purpose?
+
+Yours Sincerely,
+
+Bram Stolk
+
+-- 
+Owner/Director of Game Studio Abraham Stolk Inc.
+Vancouver BC, Canada
+b.stolk at gmail.com
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160108/1fde672e/attachment.html>
+
+From gregoryjward at gmail.com  Fri Jan  8 19:34:29 2016
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri, 8 Jan 2016 19:34:29 -0800
+Subject: [Radiance-general] Light Solutions.
+In-Reply-To: <CABYXEkuVAXO1dNAmwtk0V1yrSFdZv4O2Uxd0505vckC8LB3qeA@mail.gmail.com>
+References: <CABYXEkuVAXO1dNAmwtk0V1yrSFdZv4O2Uxd0505vckC8LB3qeA@mail.gmail.com>
+Message-ID: <36817528-62A0-416C-A10B-A80F7E1FC4DE@lmi.net>
+
+Hi Bram,
+
+People have done what you're asking using Radiance, but it is neither easy nor straightforward.  Radiance utilizes some curved primitives (spheres and cones mostly) that do not have a polygonal equivalent.  And while you can generate irradiance values at arbitrary points, which when multiplied by diffuse reflectance and divided by pi give you radiosity, you would have to specify where the points were.
+
+If you start with a list of triangles, you can write a script or program to create a list of points where you want to compute radiosity, but then you need to re-associate the calculated values with the appropriate diffuse reflectances to get radiosity.  Generating textures with mappings to polygons is a lot more work, but there are ways to do that as well.  Unfortunately, none of it is done for you.
+
+I have a vague memory of Richard Gillibrand working on this problem some 12 years ago or so, but I can't find where he wrote any of it up.  Others have worked on it as well, so maybe they can chime in.
+
+Cheers,
+-Greg
+
+> From: Bram Stolk <b.stolk at gmail.com>
+> Subject: [Radiance-general] Light Solutions.
+> Date: January 8, 2016 2:38:07 PM PST
+> 
+> Hello Radiance community,
+> 
+> A newbie here...
+> After briefly going through the documentation of Radiance, it appears that Radiance is foremost a tool to generate images from scene descriptions.
+> 
+> But what I would like to know:
+> Can Radiance be used to generate a, let's say radiosity solution, for a scene, outputting not a projected image, but a description of the light distribution in the scene.
+> 
+> So typically: the collection of polygon faces in the scene with a measure for the incoming light for that face.
+> Or alternatively, a light-value per vertex, maybe, or even lightmap textures?
+> 
+> Adaptive subdivision of faces would be a big bonus.
+> 
+> Or is Radiance simply not intended for this kind of purpose?
+> 
+> Yours Sincerely,
+> 
+> Bram Stolk
+> 
+> -- 
+> Owner/Director of Game Studio Abraham Stolk Inc.
+> Vancouver BC, Canada
+> b.stolk at gmail.com
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160108/6b2dc40e/attachment.html>
+
+From geotrupes at me.com  Sat Jan  9 01:55:39 2016
+From: geotrupes at me.com (Giulio Antonutto)
+Date: Sat, 09 Jan 2016 09:55:39 +0000
+Subject: [Radiance-general] Light Solutions.
+In-Reply-To: <36817528-62A0-416C-A10B-A80F7E1FC4DE@lmi.net>
+References: <CABYXEkuVAXO1dNAmwtk0V1yrSFdZv4O2Uxd0505vckC8LB3qeA@mail.gmail.com>
+	<36817528-62A0-416C-A10B-A80F7E1FC4DE@lmi.net>
+Message-ID: <D37B441D-84B0-4B10-B699-C93D529BE3A6@me.com>
+
+Hi,
+Try here for UV:
+Light maps with Radiance <https://www.google.co.uk/url?sa=t&rct=j&q=&esrc=s&source=web&cd=2&cad=rja&uact=8&ved=0ahUKEwjM67G3upzKAhWKchQKHecRCEAQFggpMAE&url=http%3A%2F%2Fwww.radiance-online.org%2Fcommunity%2Fworkshops%2F2008-fribourg%2FContent%2FGuilio%2FLightmaps_Radiance_Arup_GA_2008.pdf&usg=AFQjCNEarDRiEnCFfLXRTPE1YZLqKJlY4g>
+and same few years after:
+http://www.radiance-online.org/community/workshops/2014-london/presentations/day2/Antonutto_SummerSale.pdf <http://www.radiance-online.org/community/workshops/2014-london/presentations/day2/Antonutto_SummerSale.pdf>
+with the associated octave script for using:
+Article 4 <http://www.radiance-online.org/community/workshops/2014-london/presentations/day2/Article4.zip>
+let me know if you have troubles
+G
+
+
+> On 9 Jan 2016, at 03:34, Greg Ward <gregoryjward at gmail.com> wrote:
+> 
+> Hi Bram,
+> 
+> People have done what you're asking using Radiance, but it is neither easy nor straightforward.  Radiance utilizes some curved primitives (spheres and cones mostly) that do not have a polygonal equivalent.  And while you can generate irradiance values at arbitrary points, which when multiplied by diffuse reflectance and divided by pi give you radiosity, you would have to specify where the points were.
+> 
+> If you start with a list of triangles, you can write a script or program to create a list of points where you want to compute radiosity, but then you need to re-associate the calculated values with the appropriate diffuse reflectances to get radiosity.  Generating textures with mappings to polygons is a lot more work, but there are ways to do that as well.  Unfortunately, none of it is done for you.
+> 
+> I have a vague memory of Richard Gillibrand working on this problem some 12 years ago or so, but I can't find where he wrote any of it up.  Others have worked on it as well, so maybe they can chime in.
+> 
+> Cheers,
+> -Greg
+> 
+>> From: Bram Stolk <b.stolk at gmail.com <mailto:b.stolk at gmail.com>>
+>> Subject: [Radiance-general] Light Solutions.
+>> Date: January 8, 2016 2:38:07 PM PST
+>> 
+>> Hello Radiance community,
+>> 
+>> A newbie here...
+>> After briefly going through the documentation of Radiance, it appears that Radiance is foremost a tool to generate images from scene descriptions.
+>> 
+>> But what I would like to know:
+>> Can Radiance be used to generate a, let's say radiosity solution, for a scene, outputting not a projected image, but a description of the light distribution in the scene.
+>> 
+>> So typically: the collection of polygon faces in the scene with a measure for the incoming light for that face.
+>> Or alternatively, a light-value per vertex, maybe, or even lightmap textures?
+>> 
+>> Adaptive subdivision of faces would be a big bonus.
+>> 
+>> Or is Radiance simply not intended for this kind of purpose?
+>> 
+>> Yours Sincerely,
+>> 
+>> Bram Stolk
+>> 
+>> -- 
+>> Owner/Director of Game Studio Abraham Stolk Inc.
+>> Vancouver BC, Canada
+>> b.stolk at gmail.com <mailto:b.stolk at gmail.com>_______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160109/25b9d9a0/attachment.html>
+
+From sadeghipour at gmail.com  Sun Jan 10 16:47:11 2016
+From: sadeghipour at gmail.com (Mostapha Sadeghipour)
+Date: Sun, 10 Jan 2016 19:47:11 -0500
+Subject: [Radiance-general] Tutorial for genBSDF
+In-Reply-To: <CAEFJVk95swodMzFZmDxWrkgfAA56RXJiuu3=ANorHt94UbQ_OA@mail.gmail.com>
+References: <CAEFJVk95swodMzFZmDxWrkgfAA56RXJiuu3=ANorHt94UbQ_OA@mail.gmail.com>
+Message-ID: <CAAd_PgREzbB5NW+rWErGQA5WmeJuJibADaGkx1pzr1DykGysqQ@mail.gmail.com>
+
+Hi Andy,
+
+I think everyone waited for someone else to say thank you for sharing such
+a great tutorial. Very helpful and informative. Thank you!
+
+Best,
+Mostapha
+
+
+On Tue, Sep 29, 2015 at 11:26 PM, Andy McNeil <mcneil.andrew at gmail.com>
+wrote:
+
+> Hi Everyone,
+>
+> I've uploaded a tutorial for genBSDF. It's second to last on the
+> radiance-online tutorial page (
+> http://www.radiance-online.org/learning/tutorials/tutorials.html). I
+> welcome your feedback.
+>
+> Best,
+> Andy
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160110/b022ba4e/attachment.html>
+
+From kalyanam at rhrk.uni-kl.de  Fri Jan 15 08:06:16 2016
+From: kalyanam at rhrk.uni-kl.de (Raghuram Kalyanam)
+Date: Fri, 15 Jan 2016 17:06:16 +0100
+Subject: [Radiance-general] Coupling ESP-r and Radiance
+Message-ID: <0C865112-3C18-4F45-B5DB-EE7AFBEE9B56@rhrk.uni-kl.de>
+
+Hi Everyone,
+
+As part of my project I need to export a ESP-r model of a house to Radiance and calculate luminance of Windows for some view points. I have heard that there is a coupling of ESP-r and Radiance which allows this to done. Could any throw some light on this or provide some related documentation. Thanks in Advance. 
+
+Best Regards,
+Raghu
+
+
+
+From germolinal at gmail.com  Fri Jan 15 12:13:07 2016
+From: germolinal at gmail.com (=?UTF-8?Q?Germ=C3=A1n_Molina_Larrain?=)
+Date: Fri, 15 Jan 2016 17:13:07 -0300
+Subject: [Radiance-general] Coupling ESP-r and Radiance
+In-Reply-To: <0C865112-3C18-4F45-B5DB-EE7AFBEE9B56@rhrk.uni-kl.de>
+References: <0C865112-3C18-4F45-B5DB-EE7AFBEE9B56@rhrk.uni-kl.de>
+Message-ID: <CAF-iH4JCG4U=5DxcEr4zJt5Ewq5xxFAfwZJ4NVUWSS=y85V_mA@mail.gmail.com>
+
+Hi Raghu,
+
+I worked coupling Thermal and Lighting software. During that time I found
+out that Janak did some very interesting work coupling ESP-r and Radiance,
+and that Wienold and Frontini (et al.) worked with Daysim and ESPr with
+similar purpose. After quite a long while after ending my Literature
+review, I heard that there is a way of coupling both programs using
+Daylight Coefficients... still haven't found the documentation.
+
+Sorry for the ambiguous answer, but what I am trying to say is that YES,
+there has been some work on those topics, however, it is not really written
+in many places. *I believe you will get more answers in the ESP-r mailing
+list than in this one.*
+
+In my case, I ended up coupling EnergyPlus with Radiance mainly because I
+found much more tutorials and documentation for that program... and because
+E+ was at that time adopting the BSDF format, which was directly related to
+my work.
+
+Best,
+
+Germ?n
+
+2016-01-15 13:06 GMT-03:00 Raghuram Kalyanam <kalyanam at rhrk.uni-kl.de>:
+
+> Hi Everyone,
+>
+> As part of my project I need to export a ESP-r model of a house to
+> Radiance and calculate luminance of Windows for some view points. I have
+> heard that there is a coupling of ESP-r and Radiance which allows this to
+> done. Could any throw some light on this or provide some related
+> documentation. Thanks in Advance.
+>
+> Best Regards,
+> Raghu
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160115/add5ffdf/attachment.html>
+
+From achim.geissler at intergga.ch  Sat Jan 16 02:54:36 2016
+From: achim.geissler at intergga.ch (Achim Geissler)
+Date: Sat, 16 Jan 2016 11:54:36 +0100
+Subject: [Radiance-general] Coupling ESP-r and Radiance
+In-Reply-To: <CAF-iH4JCG4U=5DxcEr4zJt5Ewq5xxFAfwZJ4NVUWSS=y85V_mA@mail.gmail.com>
+References: <0C865112-3C18-4F45-B5DB-EE7AFBEE9B56@rhrk.uni-kl.de>
+	<CAF-iH4JCG4U=5DxcEr4zJt5Ewq5xxFAfwZJ4NVUWSS=y85V_mA@mail.gmail.com>
+Message-ID: <0A657655-B5B5-4529-BB32-57C4139F81D8@intergga.ch>
+
+Dear Raghu,
+
+in general, this is possible, yes. What is not quite clear to me is what you are actually looking for. You write ?export an ESP-r model?. The simple model export can be done via ?visualization? in ESP-r. This generates a Radiance model and allows for viewing and so on. This makes sense if you have an ESP-r model and are looking for a quick way to generate a Radiance model. Only quite recently this feature was enhanced such that you can easily add ?office clutter? for example to your ESP-r model. Shading obstructions are also exported to the Radiance model.
+
+If you are looking for coupled simulations, this is also possible. You set this up in the ?controlled casual gains? part of ESP-r. Then, the Radiance model takes over calculation of lighting levels in the ESP-r zones on a time step basis. This generally works well, but of course simulation run times increase.
+
+I am not aware of any explicit documentation on this, however, in the ESP-r community (mailing list) there should be some expertise available. Have you looked into Jon Hands very good ?CookBook??
+
+Best
+Achim
+
+
+> On 15 Jan 2016, at 21:13, Germ?n Molina Larrain <germolinal at gmail.com> wrote:
+> 
+> Hi Raghu, 
+> 
+> I worked coupling Thermal and Lighting software. During that time I found out that Janak did some very interesting work coupling ESP-r and Radiance, and that Wienold and Frontini (et al.) worked with Daysim and ESPr with similar purpose. After quite a long while after ending my Literature review, I heard that there is a way of coupling both programs using Daylight Coefficients... still haven't found the documentation.
+> 
+> Sorry for the ambiguous answer, but what I am trying to say is that YES, there has been some work on those topics, however, it is not really written in many places. I believe you will get more answers in the ESP-r mailing list than in this one.
+> 
+> In my case, I ended up coupling EnergyPlus with Radiance mainly because I found much more tutorials and documentation for that program... and because E+ was at that time adopting the BSDF format, which was directly related to my work.
+> 
+> Best, 
+> 
+> Germ?n
+> 
+> 2016-01-15 13:06 GMT-03:00 Raghuram Kalyanam <kalyanam at rhrk.uni-kl.de <mailto:kalyanam at rhrk.uni-kl.de>>:
+> Hi Everyone,
+> 
+> As part of my project I need to export a ESP-r model of a house to Radiance and calculate luminance of Windows for some view points. I have heard that there is a coupling of ESP-r and Radiance which allows this to done. Could any throw some light on this or provide some related documentation. Thanks in Advance.
+> 
+> Best Regards,
+> Raghu
+> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org <mailto:Radiance-general at radiance-online.org>
+> http://www.radiance-online.org/mailman/listinfo/radiance-general <http://www.radiance-online.org/mailman/listinfo/radiance-general>
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+achim.geissler at intergga.ch
+
+
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160116/61bffdbd/attachment.html>
+
+From kalyanam at rhrk.uni-kl.de  Tue Jan 19 04:13:50 2016
+From: kalyanam at rhrk.uni-kl.de (Raghuram Kalyanam)
+Date: Tue, 19 Jan 2016 13:13:50 +0100
+Subject: [Radiance-general] Coupling ESP-r and Radiance
+In-Reply-To: <0A657655-B5B5-4529-BB32-57C4139F81D8@intergga.ch>
+References: <0C865112-3C18-4F45-B5DB-EE7AFBEE9B56@rhrk.uni-kl.de>
+	<CAF-iH4JCG4U=5DxcEr4zJt5Ewq5xxFAfwZJ4NVUWSS=y85V_mA@mail.gmail.com>
+	<0A657655-B5B5-4529-BB32-57C4139F81D8@intergga.ch>
+Message-ID: <4F7598F1-C21E-4C52-865F-A93CEAAE32BD@rhrk.uni-kl.de>
+
+Dear Achim,
+
+Thanks for the info, your answer gives a good overview to me. I will look into cookbook as well.
+
+Best Regards,
+Raghu
+
+> On Jan 16, 2016, at 11:54 AM, Achim Geissler <achim.geissler at intergga.ch> wrote:
+> 
+> Dear Raghu,
+> 
+> in general, this is possible, yes. What is not quite clear to me is what you are actually looking for. You write ?export an ESP-r model?. The simple model export can be done via ?visualization? in ESP-r. This generates a Radiance model and allows for viewing and so on. This makes sense if you have an ESP-r model and are looking for a quick way to generate a Radiance model. Only quite recently this feature was enhanced such that you can easily add ?office clutter? for example to your ESP-r model. Shading obstructions are also exported to the Radiance model.
+> 
+> If you are looking for coupled simulations, this is also possible. You set this up in the ?controlled casual gains? part of ESP-r. Then, the Radiance model takes over calculation of lighting levels in the ESP-r zones on a time step basis. This generally works well, but of course simulation run times increase.
+> 
+> I am not aware of any explicit documentation on this, however, in the ESP-r community (mailing list) there should be some expertise available. Have you looked into Jon Hands very good ?CookBook??
+> 
+> Best
+> Achim
+> 
+> 
+>> On 15 Jan 2016, at 21:13, Germ?n Molina Larrain <germolinal at gmail.com <mailto:germolinal at gmail.com>> wrote:
+>> 
+>> Hi Raghu, 
+>> 
+>> I worked coupling Thermal and Lighting software. During that time I found out that Janak did some very interesting work coupling ESP-r and Radiance, and that Wienold and Frontini (et al.) worked with Daysim and ESPr with similar purpose. After quite a long while after ending my Literature review, I heard that there is a way of coupling both programs using Daylight Coefficients... still haven't found the documentation.
+>> 
+>> Sorry for the ambiguous answer, but what I am trying to say is that YES, there has been some work on those topics, however, it is not really written in many places. I believe you will get more answers in the ESP-r mailing list than in this one.
+>> 
+>> In my case, I ended up coupling EnergyPlus with Radiance mainly because I found much more tutorials and documentation for that program... and because E+ was at that time adopting the BSDF format, which was directly related to my work.
+>> 
+>> Best, 
+>> 
+>> Germ?n
+>> 
+>> 2016-01-15 13:06 GMT-03:00 Raghuram Kalyanam <kalyanam at rhrk.uni-kl.de <mailto:kalyanam at rhrk.uni-kl.de>>:
+>> Hi Everyone,
+>> 
+>> As part of my project I need to export a ESP-r model of a house to Radiance and calculate luminance of Windows for some view points. I have heard that there is a coupling of ESP-r and Radiance which allows this to done. Could any throw some light on this or provide some related documentation. Thanks in Advance.
+>> 
+>> Best Regards,
+>> Raghu
+>> 
+>> 
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general at radiance-online.org <mailto:Radiance-general at radiance-online.org>
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general <http://www.radiance-online.org/mailman/listinfo/radiance-general>
+>> 
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general at radiance-online.org <mailto:Radiance-general at radiance-online.org>
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+> achim.geissler at intergga.ch <mailto:achim.geissler at intergga.ch>
+> 
+> 
+> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160119/979ac8a2/attachment.html>
+
+From Rammig at Transsolar.com  Wed Jan 20 00:37:05 2016
+From: Rammig at Transsolar.com (Matthias Rammig)
+Date: Wed, 20 Jan 2016 08:37:05 +0000
+Subject: [Radiance-general] -aa and -ar parameter
+Message-ID: <75CBF6BF66352947A05ABC2ECDAA19135A71D51D@SRV-EX01.transsolar.local>
+
+Hi Radiance Community,
+
+I have a quick question regarding the -aa and the -ar parameter settings:
+In the radiance book and several tutorials it is written, that those parameters are controlling the "sphere of influence" of the pixels in a picture. But how do these parameters influence rtrace simulations, where I don't have a picture but sensor points?
+
+Thanks and happy simulations
+Matthias
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160120/047f40ad/attachment.html>
+
+From grobe at gmx.net  Wed Jan 20 03:39:46 2016
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Wed, 20 Jan 2016 12:39:46 +0100
+Subject: [Radiance-general] -aa and -ar parameter
+In-Reply-To: <75CBF6BF66352947A05ABC2ECDAA19135A71D51D@SRV-EX01.transsolar.local>
+References: <75CBF6BF66352947A05ABC2ECDAA19135A71D51D@SRV-EX01.transsolar.local>
+Message-ID: <569F7202.2060608@gmx.net>
+
+Hi Matthias,
+
+the "sphere of influence" relates to the resolution of the ambient 
+cache, not a picture. -ar defines the initial resolution, -aa gives a 
+criteria when to refine. The ambient cache aims at reducing the 
+calculation of illuminance on surfaces in the diffuse-indirect 
+calculation. It is enabled in rtrace and rpict as a default, but not in 
+rcontrib.
+
+Cheers, Lars.
+>
+> Hi Radiance Community,
+>
+> I have a quick question regarding the ?aa and the ?ar parameter settings:
+>
+> In the radiance book and several tutorials it is written, that those 
+> parameters are controlling the ?sphere of influence? of the pixels in 
+> a picture. But how do these parameters influence rtrace simulations, 
+> where I don?t have a picture but sensor points?
+>
+> Thanks and happy simulations
+>
+> Matthias
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160120/a5383618/attachment.html>
+
+From gregoryjward at gmail.com  Wed Jan 20 08:53:38 2016
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed, 20 Jan 2016 08:53:38 -0800
+Subject: [Radiance-general] -aa and -ar parameter
+In-Reply-To: <569F7202.2060608@gmx.net>
+References: <75CBF6BF66352947A05ABC2ECDAA19135A71D51D@SRV-EX01.transsolar.local>
+	<569F7202.2060608@gmx.net>
+Message-ID: <15C47B35-3A3B-44D5-A44F-6B3B515510EE@lmi.net>
+
+Yes -- just a minor wording correction.  The -ar parameter sets the minimum ambient value spacing for full-accuracy, which is the specified parameter divided into the octree size.  You can determine the octree size using the getinfo -d command on the octree, and it is reported as the fourth number in world distance units.
+
+If you want there to be no limit to the minimum ambient value spacing, you can set -ar 0.
+
+If you set -aa 0, you turn off the ambient cache and get a straight Monte Carlo path tracing method.  This is sometimes preferable if you are computing just a few values in rtrace.  (With -aa 0, the -ar settings has no effect.)
+
+Cheers,
+-Greg
+
+> From: "Lars O. Grobe" <grobe at gmx.net>
+> Subject: Re: [Radiance-general] -aa and -ar parameter
+> Date: January 20, 2016 3:39:46 AM PST
+> 
+> Hi Matthias,
+> 
+> the "sphere of influence" relates to the resolution of the ambient cache, not a picture. -ar defines the initial resolution, -aa gives a criteria when to refine. The ambient cache aims at reducing the calculation of illuminance on surfaces in the diffuse-indirect calculation. It is enabled in rtrace and rpict as a default, but not in rcontrib.
+> 
+> Cheers, Lars.
+>> Hi Radiance Community,
+>>  
+>> I have a quick question regarding the ?aa and the ?ar parameter settings:
+>> In the radiance book and several tutorials it is written, that those parameters are controlling the ?sphere of influence? of the pixels in a picture. But how do these parameters influence rtrace simulations, where I don?t have a picture but sensor points?
+>>  
+>> Thanks and happy simulations
+>> Matthias
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160120/00a31206/attachment.html>
+
+From germolinal at gmail.com  Wed Jan 27 07:32:14 2016
+From: germolinal at gmail.com (=?UTF-8?Q?Germ=C3=A1n_Molina_Larrain?=)
+Date: Wed, 27 Jan 2016 12:32:14 -0300
+Subject: [Radiance-general] How to calculate Direct,
+ Specular Indirect and Diffuse Indirect components in image
+Message-ID: <CAF-iH4Jpe2Xg5p_M801DaUUaeh11i6Fz0nmbL1PwDf0Kf2+jKQ@mail.gmail.com>
+
+Hi everyone, just a simple question with an, I expect, simple answer.
+
+I am preparing a course, for which I am attempting to reproduce THIS IMAGE
+<https://drive.google.com/file/d/0B2NfkTSl19hQamlwLTE5RWxrRE0/view?usp=sharing>
+(presented
+by John Mardaljevic in London's Workshop), but I have not been able to do
+it.
+
+Could you guys guide me on how to do it?  I think I understand the
+"mechanics" of Radiance, but this has been impossible to me.
+
+Thanks very much in advance,
+
+Germ?n
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160127/0b6ed467/attachment.html>
+
+From gregoryjward at gmail.com  Wed Jan 27 09:29:01 2016
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed, 27 Jan 2016 09:29:01 -0800
+Subject: [Radiance-general] How to calculate Direct,
+	Specular Indirect and Diffuse Indirect components in image
+In-Reply-To: <CAF-iH4Jpe2Xg5p_M801DaUUaeh11i6Fz0nmbL1PwDf0Kf2+jKQ@mail.gmail.com>
+References: <CAF-iH4Jpe2Xg5p_M801DaUUaeh11i6Fz0nmbL1PwDf0Kf2+jKQ@mail.gmail.com>
+Message-ID: <248D6A12-49AD-4DBB-A06D-3F5C32908975@lmi.net>
+
+Hi Germ?n,
+
+I had to hack the code to produce it -- there's no way to set the options to get the components out, otherwise.
+
+I don't have the hacked code, and would need to recreate it.
+
+-Greg
+
+> From: Germ?n Molina Larrain <germolinal at gmail.com>
+> Subject: [Radiance-general] How to calculate Direct, Specular Indirect and Diffuse Indirect components in image
+> Date: January 27, 2016 7:32:14 AM PST
+> 
+> Hi everyone, just a simple question with an, I expect, simple answer.
+> 
+> I am preparing a course, for which I am attempting to reproduce THIS IMAGE (presented by John Mardaljevic in London's Workshop), but I have not been able to do it.
+> 
+> Could you guys guide me on how to do it?  I think I understand the "mechanics" of Radiance, but this has been impossible to me.
+> 
+> Thanks very much in advance, 
+> 
+> Germ?n
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160127/92d77be1/attachment.html>
+
+From germolinal at gmail.com  Wed Jan 27 09:33:56 2016
+From: germolinal at gmail.com (=?UTF-8?Q?Germ=C3=A1n_Molina_Larrain?=)
+Date: Wed, 27 Jan 2016 14:33:56 -0300
+Subject: [Radiance-general] How to calculate Direct,
+ Specular Indirect and Diffuse Indirect components in image
+In-Reply-To: <248D6A12-49AD-4DBB-A06D-3F5C32908975@lmi.net>
+References: <CAF-iH4Jpe2Xg5p_M801DaUUaeh11i6Fz0nmbL1PwDf0Kf2+jKQ@mail.gmail.com>
+	<248D6A12-49AD-4DBB-A06D-3F5C32908975@lmi.net>
+Message-ID: <CAF-iH4LMQUxdZmEi=xL_Ttn89PCsFJb-jatn-h7rC_yrAp-bFg@mail.gmail.com>
+
+O, well.... nevermind. I thought I was missing something, so I am relieved
+now. Thanks, as usual!
+
+Best,
+
+German
+
+2016-01-27 14:29 GMT-03:00 Greg Ward <gregoryjward at gmail.com>:
+
+> Hi Germ?n,
+>
+> I had to hack the code to produce it -- there's no way to set the options
+> to get the components out, otherwise.
+>
+> I don't have the hacked code, and would need to recreate it.
+>
+> -Greg
+>
+> *From: *Germ?n Molina Larrain <germolinal at gmail.com>
+>
+> *Subject: *[Radiance-general] How to calculate Direct, Specular Indirect
+> and Diffuse Indirect components in image
+>
+> *Date: *January 27, 2016 7:32:14 AM PST
+>
+>
+> Hi everyone, just a simple question with an, I expect, simple answer.
+>
+> I am preparing a course, for which I am attempting to reproduce THIS IMAGE
+> <https://drive.google.com/file/d/0B2NfkTSl19hQamlwLTE5RWxrRE0/view?usp=sharing> (presented
+> by John Mardaljevic in London's Workshop), but I have not been able to do
+> it.
+>
+> Could you guys guide me on how to do it?  I think I understand the
+> "mechanics" of Radiance, but this has been impossible to me.
+>
+> Thanks very much in advance,
+>
+> Germ?n
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160127/89685d6e/attachment.html>
+
+From ery.mailinglist at gmail.com  Fri Jan 29 03:33:15 2016
+From: ery.mailinglist at gmail.com (Ery Mailing-List)
+Date: Fri, 29 Jan 2016 18:33:15 +0700
+Subject: [Radiance-general] Radiance for Spatial Daylight Autonomy
+In-Reply-To: <000f01d14994$a2849380$e78dba80$@three.com.mx>
+References: <000f01d14994$a2849380$e78dba80$@three.com.mx>
+Message-ID: <CAK01WzY3hO1rpVcVGyPzo1HsNPSfLtsN8WKjvUFvp=Of9eiaeA@mail.gmail.com>
+
+Stefanie
+
+When I was at the UI-IDL Boise, I implemented LM-83 procedure (exactly what
+you asked) in Radiance. Yes it can be done. The implementation is using
+bash script. The result was presented in Radiance Workshop at NREL:
+http://www.radiance-online.org/community/workshops/2013-golden-co/Djunaedy_vdw_mahic_lm83.pdf
+
+Please email me via my other email (cc) if you have questions.
+
+Ery
+
+
+On Fri, Jan 8, 2016 at 4:44 AM, Stefanie Madriz <
+stefanie.madriz at three.com.mx> wrote:
+
+> Hello,
+>
+> My name is Stefanie, I work in the Green Building sector in Mexico with
+> LEED project certification. This year we are trying to take our daylight
+> models to the next level and be able to achieve all options of LEED v4 EQ
+> Credit: Daylight. For Option 1, we have to prove a Spatial Daylight
+> Autonomy of 300lx for 50% of occupied hours per year as well as analyze the
+> Annual sunlight Exposure of 1000lx for 250h (ASE1000,250).
+>
+> We are familiar with working with RADIANCE but we are not sure if it is
+> possible to carry out this analyses and get both results needed. Could you
+> help me with this doubt?
+>
+> Hope to hear from you soon.
+>
+> Regards,
+>
+>
+>
+>
+>
+> [image: Stefanie]
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160129/0571c6aa/attachment.html>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: image001.jpg
+Type: image/jpeg
+Size: 15220 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160129/0571c6aa/attachment.jpg>
+
+From kalyanam at rhrk.uni-kl.de  Fri Jan 29 08:36:29 2016
+From: kalyanam at rhrk.uni-kl.de (Raghuram Kalyanam)
+Date: Fri, 29 Jan 2016 17:36:29 +0100
+Subject: [Radiance-general] Sky.rad Automation for Different days and times
+Message-ID: <BBB35A10-476C-4FBF-B74D-7E6998D36EAA@rhrk.uni-kl.de>
+
+Hi Everyone,
+
+I am using a Sky.rad which looks like this 
+
+gensky 1 29 12:00CET +s -a 49.42 -o 7.75
+
+skyfunc glow sky_glow 
+0
+0
+4 .9 .9 1.15 0
+sky_glow source sky 
+0
+0
+4 0 0 1 180
+skyfunc glow ground_glow 
+0
+0
+4 1.4 .9 .6 0
+ground_glow source ground 
+0
+0
+4 0 0 -1 180
+
+Then i used 'rad' command to render the images with that particular Sky.rad file for my scene.
+
+If I want to render images for 4 particular days(each day in a season) in a year from 8:00 to 15:00(lets suppose), do we have any function in Radiance  which can do this or do we have to write a custom script? If a script is to be written let me know your ideas.
+
+Best Regards,
+Raghu
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160129/d8ac0733/attachment-0001.html>
+
+From Robert.Guglielmetti at nrel.gov  Fri Jan 29 08:46:14 2016
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Fri, 29 Jan 2016 16:46:14 +0000
+Subject: [Radiance-general] Sky.rad Automation for Different days and
+ times
+In-Reply-To: <BBB35A10-476C-4FBF-B74D-7E6998D36EAA@rhrk.uni-kl.de>
+References: <BBB35A10-476C-4FBF-B74D-7E6998D36EAA@rhrk.uni-kl.de>
+Message-ID: <D2D0E4DD.22072%Robert.Guglielmetti@nrel.gov>
+
+There is no function in Radiance to do this, you are on the right track with a script to repeatedly call gensky/gendaylit to make the skies you want. There is an example (written in csh) in "Rendering With Radiance", and there are tons of other examples out there, probably even some on this list's archives.
+
+- Rob
+
+On 1/29/16, 9:36 AM, "Raghuram Kalyanam" <kalyanam at rhrk.uni-kl.de<mailto:kalyanam at rhrk.uni-kl.de>> wrote:
+
+Hi Everyone,
+
+I am using a Sky.rad which looks like this
+
+gensky 1 29 12:00CET +s -a 49.42 -o 7.75
+
+skyfunc glow sky_glow
+0
+0
+4 .9 .9 1.15 0
+sky_glow source sky
+0
+0
+4 0 0 1 180
+skyfunc glow ground_glow
+0
+0
+4 1.4 .9 .6 0
+ground_glow source ground
+0
+0
+4 0 0 -1 180
+
+Then i used 'rad' command to render the images with that particular Sky.rad file for my scene.
+
+If I want to render images for 4 particular days(each day in a season) in a year from 8:00 to 15:00(lets suppose), do we have any function in Radiance  which can do this or do we have to write a custom script? If a script is to be written let me know your ideas.
+
+Best Regards,
+Raghu
+
+
+
+From alireh at uw.edu  Sat Jan 30 20:18:15 2016
+From: alireh at uw.edu (Alireza Hashemloo)
+Date: Sat, 30 Jan 2016 20:18:15 -0800
+Subject: [Radiance-general] Five-phase Method: Proxy Geometry and BSDF
+	material type
+Message-ID: <CADjcreiPhX+mmuJG9ZKugKUAps+qDmWdBQyeG5s6PJUfyLyR8A@mail.gmail.com>
+
+Hello,
+
+I have five questions about the five-phase method tutorial (version 2.2)
+(available at:
+http://www.radiance-online.org/learning/tutorials/fivephasetutorialfiles/Tutorial-FivePhaseMethod_v2.pdf)
+that I would appreciate if you could help me with:
+
+1- In the tutorial, a single polygon (relative to the outline of the
+glazing surface) is modeled in the scene at the exterior side of the
+window. This polygon is referenced to generate the daylight matrix. A
+second polygon is modeled in the scene on the interior side of the window
+and it is referenced to calculate the view matrix.
+
+I was wondering if I could generate two identical co-planar polygons  where
+the normal vector of one polygon is looking at the interior side  and the
+normal vector of the other polygon looks at the exterior side to be
+referenced, respectively, for the view matrix and daylight matrix
+calculations? if so, would it still be necessary to model the thickness of
+the walls hosting fenestration systems in the simulation scene?
+
+2- What is the "proxy geometry" in the five-phase method? is the "proxy
+geometry" exclusively a reference to the polygon at the interior side of
+the window system that is assigned a BSDF material?
+or is the "proxy geometry" a reference to the 3D geometry of the  venetian
+blinds (or any other type of shading layer of the fenestration system) in
+the scene?
+
+3- what is the "thickness" as the first parameter in the Radiance BSDF
+material type referring to? is it measured as the distance between the
+daylight matrix polygon on the exterior side of the window and the view
+matrix polygon at the interior side?
+
+or does "thickness" refer to the depth of the entire fenestration system
+including the glazing panes and any shading layers?
+
+4- If I model the mullions defining the edge condition of any individual
+glazing pane in 3D scene, what would be the difference between using LBNL's
+Window to generate a BSDF file and using genBSDF?
+
+5- What would be the difference between using a BSDF file based on Klem's
+division scheme with higher resolution (where each Klem's patch is
+subdivided to 4 new patches) and using a tensor tree BSDF?
+
+Thank you,
+Alireza
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160130/4580203f/attachment.html>
+
+From rob.guglielmetti at gmail.com  Sun Jan 31 08:40:17 2016
+From: rob.guglielmetti at gmail.com (Rob Guglielmetti)
+Date: Sun, 31 Jan 2016 09:40:17 -0700
+Subject: [Radiance-general] Five-phase Method: Proxy Geometry and BSDF
+	material type
+In-Reply-To: <CADjcreiPhX+mmuJG9ZKugKUAps+qDmWdBQyeG5s6PJUfyLyR8A@mail.gmail.com>
+References: <CADjcreiPhX+mmuJG9ZKugKUAps+qDmWdBQyeG5s6PJUfyLyR8A@mail.gmail.com>
+Message-ID: <C7F2CCBD-E8B2-4A86-86DA-661BC3B614ED@gmail.com>
+
+Lots of questions, I think I can answer some of them?
+
+
+> 
+> 1- In the tutorial, a single polygon (relative to the outline of the glazing surface) is modeled in the scene at the exterior side of the window. This polygon is referenced to generate the daylight matrix. A second polygon is modeled in the scene on the interior side of the window and it is referenced to calculate the view matrix. 
+> 
+> I was wondering if I could generate two identical co-planar polygons  where the normal vector of one polygon is looking at the interior side  and the normal vector of the other polygon looks at the exterior side to be referenced, respectively, for the view matrix and daylight matrix calculations? if so, would it still be necessary to model the thickness of the walls hosting fenestration systems in the simulation scene?
+
+
+You could do that, just make sure that your octrees for the view and daylight matrices only contain one the other polygon. If you have a coincident pair of polys in the same octree, it?s up to chance which one is hit by each ray traced. It?s already critical that every ray be counted toward something meaningful (this is the reason for the phases in the first place, with complex fenestration systems). 
+
+
+> 2- What is the "proxy geometry" in the five-phase method? is the "proxy geometry" exclusively a reference to the polygon at the interior side of the window system that is assigned a BSDF material?
+> or is the "proxy geometry" a reference to the 3D geometry of the  venetian blinds (or any other type of shading layer of the fenestration system) in the scene?
+
+
+It?s the latter. That geometry serves to block the direct light, in that phase of the workflow.
+
+> 
+> 3- what is the "thickness" as the first parameter in the Radiance BSDF material type referring to? is it measured as the distance between the daylight matrix polygon on the exterior side of the window and the view matrix polygon at the interior side?
+
+Yes.
+
+
+> 
+> or does "thickness" refer to the depth of the entire fenestration system including the glazing panes and any shading layers?
+> 
+> 4- If I model the mullions defining the edge condition of any individual glazing pane in 3D scene, what would be the difference between using LBNL's Window to generate a BSDF file and using genBSDF?
+
+
+Hmm, I don?t think there would be a difference in terms of the Radiance BSDF and calculations. 
+
+> 
+> 5- What would be the difference between using a BSDF file based on Klem's division scheme with higher resolution (where each Klem's patch is subdivided to 4 new patches) and using a tensor tree BSDF?
+
+
+The difference would be higher accuracy in the case of the tensor tree BSDFs, at the expense of longer stimulation times, much larger files (both the input and output), and longer BSDF generation times.
+
+- Rob
+
+From mcneil.andrew at gmail.com  Sun Jan 31 12:00:32 2016
+From: mcneil.andrew at gmail.com (Andy McNeil)
+Date: Sun, 31 Jan 2016 12:00:32 -0800
+Subject: [Radiance-general] Five-phase Method: Proxy Geometry and BSDF
+ material type
+In-Reply-To: <C7F2CCBD-E8B2-4A86-86DA-661BC3B614ED@gmail.com>
+References: <CADjcreiPhX+mmuJG9ZKugKUAps+qDmWdBQyeG5s6PJUfyLyR8A@mail.gmail.com>
+	<C7F2CCBD-E8B2-4A86-86DA-661BC3B614ED@gmail.com>
+Message-ID: <CAEFJVk_-M8XXHfaEm9sSgOx9czSNh1K3rxHSvVV9FP1hH2pL7Q@mail.gmail.com>
+
+Alireza - Five great questions.
+Rob - Five great responses.
+
+I've done these simulations with and without spacing. There are probably
+examples I've produced of both ways floating around. So I'll try to explain
+why you'd want to do it one way or the other.
+
+The basic idea is to make sure that you account for the window thickness
+and edge condition once and only once in your simulation. The genBSDF
+tutorial touches on the difference between a system specific BSDF, which
+includes edge conditions, and an infinite layer BSDF, which has no edge
+conditions. If your BSDF does not include the edge condition, then you want
+your sending and receiving surfaces to be coincident, so that the edge
+condition is accounted for in the view and daylight matrices. If your BSDF
+does include the edge conditions, then you want a space between your
+sending and receiving surfaces so that the edge condition is not duplicated
+in the view and daylight matrix.
+
+So how do you know whether you have an infinite layer BSDF or a BSDF with
+edge conditions?
+If your BSDF is generated by Window then it is an infinite layer, without
+edge conditions.
+If your BSDF is generated by genBSDF then it contains edge conditions,
+unless you took care to minimize sampling of edges (see genBSDF tutorial).
+
+If you're using proxied geometry, than your sender and receiver geometry
+needs to be spaced (the thickness of the geometry) so you should make sure
+that your BSDFs contain the edge effects.
+
+For the 5-phase method, your strategy starts with what you want to do for
+the direct sun coefficient matrix.
+If you want to use proxied geometry than the sender and receiver must be
+spaced apart and the BSDF should include edge effects specific to your
+model.
+
+If you want to use a tensor tree BSDF, then it depends on what you did to
+create the BSDF. If it is a typical genBSDF tensor tree run, then edge
+conditions are included in the BSDF and you should include a space between
+your sending and receiving surfaces. If however you took care to create an
+infinite layer BSDF (tensor tree) with genBSDF then your sender and
+receiver surfaces can be coincident.
+
+Hopefully this gives a little bit of backgroud to the whole space or no
+space between sending and receiving surfaces.
+
+Best,
+Andy
+
+
+
+On Sun, Jan 31, 2016 at 8:40 AM, Rob Guglielmetti <
+rob.guglielmetti at gmail.com> wrote:
+
+> Lots of questions, I think I can answer some of them?
+>
+>
+> >
+> > 1- In the tutorial, a single polygon (relative to the outline of the
+> glazing surface) is modeled in the scene at the exterior side of the
+> window. This polygon is referenced to generate the daylight matrix. A
+> second polygon is modeled in the scene on the interior side of the window
+> and it is referenced to calculate the view matrix.
+> >
+> > I was wondering if I could generate two identical co-planar polygons
+> where the normal vector of one polygon is looking at the interior side  and
+> the normal vector of the other polygon looks at the exterior side to be
+> referenced, respectively, for the view matrix and daylight matrix
+> calculations? if so, would it still be necessary to model the thickness of
+> the walls hosting fenestration systems in the simulation scene?
+>
+>
+> You could do that, just make sure that your octrees for the view and
+> daylight matrices only contain one the other polygon. If you have a
+> coincident pair of polys in the same octree, it?s up to chance which one is
+> hit by each ray traced. It?s already critical that every ray be counted
+> toward something meaningful (this is the reason for the phases in the first
+> place, with complex fenestration systems).
+>
+>
+> > 2- What is the "proxy geometry" in the five-phase method? is the "proxy
+> geometry" exclusively a reference to the polygon at the interior side of
+> the window system that is assigned a BSDF material?
+> > or is the "proxy geometry" a reference to the 3D geometry of the
+> venetian blinds (or any other type of shading layer of the fenestration
+> system) in the scene?
+>
+>
+> It?s the latter. That geometry serves to block the direct light, in that
+> phase of the workflow.
+>
+> >
+> > 3- what is the "thickness" as the first parameter in the Radiance BSDF
+> material type referring to? is it measured as the distance between the
+> daylight matrix polygon on the exterior side of the window and the view
+> matrix polygon at the interior side?
+>
+> Yes.
+>
+>
+> >
+> > or does "thickness" refer to the depth of the entire fenestration system
+> including the glazing panes and any shading layers?
+> >
+> > 4- If I model the mullions defining the edge condition of any individual
+> glazing pane in 3D scene, what would be the difference between using LBNL's
+> Window to generate a BSDF file and using genBSDF?
+>
+>
+> Hmm, I don?t think there would be a difference in terms of the Radiance
+> BSDF and calculations.
+>
+> >
+> > 5- What would be the difference between using a BSDF file based on
+> Klem's division scheme with higher resolution (where each Klem's patch is
+> subdivided to 4 new patches) and using a tensor tree BSDF?
+>
+>
+> The difference would be higher accuracy in the case of the tensor tree
+> BSDFs, at the expense of longer stimulation times, much larger files (both
+> the input and output), and longer BSDF generation times.
+>
+> - Rob
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20160131/011dd697/attachment.html>
+

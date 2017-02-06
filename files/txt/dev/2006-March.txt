@@ -1,0 +1,449 @@
+From grobe at gmx.net  Sat Mar  4 15:37:27 2006
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Sat Mar  4 20:14:41 2006
+Subject: [Radiance-dev] vectorization data types
+In-Reply-To: <998E2E8A-5CA1-44B4-A234-0283ADADCD0E@gmail.com>
+References: <4EB31910-3B53-4DB1-AD6E-6A5D895B9254@gmail.com>
+	<23441.1141047624@www044.gmx.net>
+	<998E2E8A-5CA1-44B4-A234-0283ADADCD0E@gmail.com>
+Message-ID: <e15e9db4f7bf72c2ace0c0bf57ceef65@gmx.net>
+
+> If you want to test the idea if short vectors can actually speed up 
+> the code, work on the known bottlenecks first, like the ray traversal 
+> code in src/rt/raytrace.c.  In particular, the raymove() routine.  Try 
+> vectorizing:
+>
+> 	pos[0] += r->rdir[0]*t;
+> 	pos[1] += r->rdir[1]*t;
+> 	pos[2] += r->rdir[2]*t;
+>
+> I suspect you will see negligible gains, because (1) the overhead will 
+> kill you and (2) the conditional code above this dominates on modern 
+> pipelined processors.
+
+I think also oconv and the intersection tests (rt/o_*) would benefit, 
+BUT: altivec supports float at most, while vectors (fvect) in radiance 
+usually are doubles as long as I do not define SMLFLT. That means there 
+is really no hope at the moment.
+
+CU Lars.
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: smime.p7s
+Type: application/pkcs7-signature
+Size: 2134 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-dev/attachments/20060304/0609a2f0/smime.bin
+From grobe at gmx.net  Wed Mar  8 20:56:36 2006
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Wed Mar  8 20:56:53 2006
+Subject: [Radiance-dev] Version.c corrupt?
+Message-ID: <440F36F4.2080603@gmx.net>
+
+Hi,
+
+I cannot compile, and it seams that in the Version.c file everything but 
+the variable content is gone...?
+
+Today's head ( March 8th 2006).
+
+CU Lars.
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: smime.p7s
+Type: application/x-pkcs7-signature
+Size: 3485 bytes
+Desc: S/MIME Cryptographic Signature
+Url : http://radiance-online.org/pipermail/radiance-dev/attachments/20060308/e981e42d/smime.bin
+From grobe at gmx.net  Wed Mar  8 21:01:21 2006
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Wed Mar  8 21:01:30 2006
+Subject: [Radiance-dev] nanosleep for holodeck?
+Message-ID: <440F3811.4010204@gmx.net>
+
+Hi,
+
+I get a undefined symbol nanospeed when compiling todays head, on 
+solaris with sun forte c. I do not get the holodeck tools compiled for 
+that reason.
+
+CU Lars.
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: smime.p7s
+Type: application/x-pkcs7-signature
+Size: 3485 bytes
+Desc: S/MIME Cryptographic Signature
+Url : http://radiance-online.org/pipermail/radiance-dev/attachments/20060308/854d1e0d/smime.bin
+From gregoryjward at gmail.com  Wed Mar  8 22:32:48 2006
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed Mar  8 22:32:57 2006
+Subject: [Radiance-dev] nanosleep for holodeck?
+In-Reply-To: <440F3811.4010204@gmx.net>
+References: <440F3811.4010204@gmx.net>
+Message-ID: <42927473-E9CE-442D-B014-962E0805A1FE@gmail.com>
+
+Hi Lars,
+
+I don't know what's going on with Version.c -- try removing it and  
+running "rmake Version.c" in your src/rt directory.  Send me the  
+output if there's an error.
+
+As for nanosleep(), it's probably in some odd library.  Run "man  
+nanosleep" and see what library it says it's in.  If you can't add  
+the appropriate link option to the Rmakefile in src/hd, try removing  
+the calls from rhd_ogl.c and rhd_x11.c.  They aren't essential.
+
+-Greg
+
+> From: "Lars O. Grobe" <grobe@gmx.net>
+> Date: March 8, 2006 12:01:21 PM PST
+>
+> Hi,
+>
+> I get a undefined symbol nanospeed when compiling todays head, on  
+> solaris with sun forte c. I do not get the holodeck tools compiled  
+> for that reason.
+>
+> CU Lars.
+>
+
+From canoe at onetel.com  Thu Mar  9 11:22:38 2006
+From: canoe at onetel.com (James Lee)
+Date: Thu Mar  9 11:25:14 2006
+Subject: [Radiance-dev] nanosleep for holodeck?
+In-Reply-To: <42927473-E9CE-442D-B014-962E0805A1FE@gmail.com>
+References: <440F3811.4010204@gmx.net>
+	<42927473-E9CE-442D-B014-962E0805A1FE@gmail.com>
+Message-ID: <20060309.10223800.1361723884@landeck.jamesipoos.com>
+
+On 08/03/06, 21:32:48, Greg Ward <gregoryjward@gmail.com> wrote regarding
+Re: [Radiance-dev] nanosleep for holodeck?:
+
+> As for nanosleep(), it's probably in some odd library.  Run "man
+> nanosleep" and see what library it says it's in.  If you can't add
+> the appropriate link option to the Rmakefile in src/hd, try removing
+> the calls from rhd_ogl.c and rhd_x11.c.  They aren't essential.
+
+nanosleep for Solaris is in lib rt:
+
+$ nm -D /usr/lib/librt.so | grep nanosleep
+[76]    |         0|       0|FUNC |GLOB |0    |UNDEF  |__nanosleep
+[104]   |     10848|      36|FUNC |GLOB |0    |10     |_nanosleep
+[170]   |     10848|      36|FUNC |WEAK |0    |10     |nanosleep
+
+So I think you can see a problem, the name clash this the radiance
+rt lib.  To compile I patch to change the name of the radiance librt.a
+lib to libradrt.a and -lrt to -lradrt throughout.  As the static lib
+is temporary this affects build only.
+
+Would be great if similar renaming was made to the distribution's
+makefiles.
+
+
+
+
+
+James
+
+From gregoryjward at gmail.com  Thu Mar  9 17:29:18 2006
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu Mar  9 17:29:02 2006
+Subject: [Radiance-dev] nanosleep for holodeck?
+In-Reply-To: <20060309.10223800.1361723884@landeck.jamesipoos.com>
+References: <440F3811.4010204@gmx.net>
+	<42927473-E9CE-442D-B014-962E0805A1FE@gmail.com>
+	<20060309.10223800.1361723884@landeck.jamesipoos.com>
+Message-ID: <C9DE32D1-F3E9-498C-9A99-32BC18BBE599@gmail.com>
+
+I seem to recall running across this problem under Solaris years  
+ago.  I can't believe they haven't renamed their library by now, so  
+it doesn't conflict with mine!
+
+An easy workaround is to put it on the compile line explicitly as "/ 
+usr/lib/librt.so" instead of the shorthand -lrt, which is  already  
+there.  Since no other system uses it and I can't add -lrt  to the  
+Rmakefile anyway, you might as well give the full path for Solaris.
+
+In other words, I could rename my library, but it would only save you  
+and other Solaris users from typing 14 characters, while requiring  
+that I alter every makefile in Radiance.  Even if I make the changes,  
+you still need to go in and edit your src/hd/Rmakefile to add the  
+real-time library link.
+
+-Greg
+
+> From: James Lee <canoe@onetel.com>
+> Date: March 9, 2006 10:22:38 AM PST
+>
+> On 08/03/06, 21:32:48, Greg Ward <gregoryjward@gmail.com> wrote  
+> regarding
+> Re: [Radiance-dev] nanosleep for holodeck?:
+>
+>> As for nanosleep(), it's probably in some odd library.  Run "man
+>> nanosleep" and see what library it says it's in.  If you can't add
+>> the appropriate link option to the Rmakefile in src/hd, try removing
+>> the calls from rhd_ogl.c and rhd_x11.c.  They aren't essential.
+>
+> nanosleep for Solaris is in lib rt:
+>
+> $ nm -D /usr/lib/librt.so | grep nanosleep
+> [76]    |         0|       0|FUNC |GLOB |0    |UNDEF  |__nanosleep
+> [104]   |     10848|      36|FUNC |GLOB |0    |10     |_nanosleep
+> [170]   |     10848|      36|FUNC |WEAK |0    |10     |nanosleep
+>
+> So I think you can see a problem, the name clash this the radiance
+> rt lib.  To compile I patch to change the name of the radiance librt.a
+> lib to libradrt.a and -lrt to -lradrt throughout.  As the static lib
+> is temporary this affects build only.
+>
+> Would be great if similar renaming was made to the distribution's
+> makefiles.
+>
+> James
+
+From canoe at onetel.com  Fri Mar 10 12:45:14 2006
+From: canoe at onetel.com (James Lee)
+Date: Fri Mar 10 13:22:15 2006
+Subject: [Radiance-dev] nanosleep for holodeck?
+In-Reply-To: <C9DE32D1-F3E9-498C-9A99-32BC18BBE599@gmail.com>
+References: <440F3811.4010204@gmx.net>
+	<42927473-E9CE-442D-B014-962E0805A1FE@gmail.com>
+	<20060309.10223800.1361723884@landeck.jamesipoos.com>
+	<C9DE32D1-F3E9-498C-9A99-32BC18BBE599@gmail.com>
+Message-ID: <20060310.11451400.2659050665@landeck.jamesipoos.com>
+
+On 09/03/06, 16:29:18, Gregory "J." Ward <gregoryjward@gmail.com> wrote 
+regarding Re: [Radiance-dev] nanosleep for holodeck?:
+
+> An easy workaround is to put it on the compile line explicitly as "/
+> usr/lib/librt.so" instead of the shorthand -lrt, which is  already
+> there.  Since no other system uses it and I can't add -lrt  to the
+> Rmakefile anyway, you might as well give the full path for Solaris.
+
+> In other words, I could rename my library, but it would only save you
+> and other Solaris users from typing 14 characters, while requiring
+> that I alter every makefile in Radiance.  Even if I make the changes,
+> you still need to go in and edit your src/hd/Rmakefile to add the
+> real-time library link.
+
+Fair point although you do provide a makeall and platform/sunos.cfg
+which could take care of it.
+ 
+These 14 characters are needed in several places, for each new
+release and by each user.  I will cope as I have been, I edit the
+make files for other reasons anyway.
+
+More importantly, I hope anyone else with the problem will read this
+and now know what to do.
+
+
+
+
+James.
+
+
+
+From gregoryjward at gmail.com  Fri Mar 10 16:52:58 2006
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri Mar 10 16:53:23 2006
+Subject: [Radiance-dev] nanosleep for holodeck?
+In-Reply-To: <20060310.11451400.2659050665@landeck.jamesipoos.com>
+References: <440F3811.4010204@gmx.net>
+	<42927473-E9CE-442D-B014-962E0805A1FE@gmail.com>
+	<20060309.10223800.1361723884@landeck.jamesipoos.com>
+	<C9DE32D1-F3E9-498C-9A99-32BC18BBE599@gmail.com>
+	<20060310.11451400.2659050665@landeck.jamesipoos.com>
+Message-ID: <F4EFC54C-8EEF-4154-85B3-20D9CFE396E6@gmail.com>
+
+Hi James,
+
+Schorsch is the one working on the Python build scripts, which as you  
+say can probably take care of this handily.  To get it to work using  
+the Rmakefile's and makeall, I would have to add a libraries option  
+specific to the hd directory, which would be a very ugly solution.
+
+I agree that it should be in there, but I don't have access to a  
+Solaris system so it's a bit difficult for me to even test out a  
+solution.
+
+-Greg
+
+> From: James Lee <canoe@onetel.com>
+> Date: March 10, 2006 11:45:14 AM PST
+>
+> On 09/03/06, 16:29:18, Gregory "J." Ward <gregoryjward@gmail.com>  
+> wrote
+> regarding Re: [Radiance-dev] nanosleep for holodeck?:
+>
+>> An easy workaround is to put it on the compile line explicitly as "/
+>> usr/lib/librt.so" instead of the shorthand -lrt, which is  already
+>> there.  Since no other system uses it and I can't add -lrt  to the
+>> Rmakefile anyway, you might as well give the full path for Solaris.
+>
+>> In other words, I could rename my library, but it would only save you
+>> and other Solaris users from typing 14 characters, while requiring
+>> that I alter every makefile in Radiance.  Even if I make the changes,
+>> you still need to go in and edit your src/hd/Rmakefile to add the
+>> real-time library link.
+>
+> Fair point although you do provide a makeall and platform/sunos.cfg
+> which could take care of it.
+>
+> These 14 characters are needed in several places, for each new
+> release and by each user.  I will cope as I have been, I edit the
+> make files for other reasons anyway.
+>
+> More importantly, I hope anyone else with the problem will read this
+> and now know what to do.
+>
+> James.
+
+From schorsch at schorsch.com  Fri Mar 10 20:44:41 2006
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Fri Mar 10 20:44:47 2006
+Subject: [Radiance-dev] nanosleep for holodeck?
+In-Reply-To: <F4EFC54C-8EEF-4154-85B3-20D9CFE396E6@gmail.com>
+References: <440F3811.4010204@gmx.net>
+	<42927473-E9CE-442D-B014-962E0805A1FE@gmail.com>
+	<20060309.10223800.1361723884@landeck.jamesipoos.com>
+	<C9DE32D1-F3E9-498C-9A99-32BC18BBE599@gmail.com>
+	<20060310.11451400.2659050665@landeck.jamesipoos.com>
+	<F4EFC54C-8EEF-4154-85B3-20D9CFE396E6@gmail.com>
+Message-ID: <Pine.BSF.4.58.0603101440310.6821@zulle.pair.com>
+
+Gregory J. Ward wrote:
+
+> Schorsch is the one working on the Python build scripts, which as you
+> say can probably take care of this handily.  To get it to work using
+> the Rmakefile's and makeall, I would have to add a libraries option
+> specific to the hd directory, which would be a very ugly solution.
+
+
+The Python build system doesn't build one big library but several
+smaller ones, so it didn't have this problem.
+
+On the other side, I have taken the liberty of modifying all the
+Rmakefiles, renaming the library from librt.a to librtrad.a.
+This was mostly a straightforward search and replace operation,
+without any obvious difficulties. I'm sure people will start to
+scream soon, should I have broken anything in the proces...
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From gregoryjward at gmail.com  Fri Mar 10 21:16:03 2006
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri Mar 10 21:15:45 2006
+Subject: [Radiance-dev] nanosleep for holodeck?
+In-Reply-To: <Pine.BSF.4.58.0603101440310.6821@zulle.pair.com>
+References: <440F3811.4010204@gmx.net>
+	<42927473-E9CE-442D-B014-962E0805A1FE@gmail.com>
+	<20060309.10223800.1361723884@landeck.jamesipoos.com>
+	<C9DE32D1-F3E9-498C-9A99-32BC18BBE599@gmail.com>
+	<20060310.11451400.2659050665@landeck.jamesipoos.com>
+	<F4EFC54C-8EEF-4154-85B3-20D9CFE396E6@gmail.com>
+	<Pine.BSF.4.58.0603101440310.6821@zulle.pair.com>
+Message-ID: <BF6CC370-F0C2-4296-802A-E537DFED7997@gmail.com>
+
+Hi Schorsch,
+
+Welcome back -- a lot of folks have been asking after you, wondering  
+where you went.  Madagascar, again?
+
+Thanks for updating the library links.  I tested out your changes,  
+and from what I can tell it all seems to work.  (Of course, I had to  
+go and fix my external projects that link to the Radiance library,  
+but that wasn't such a big deal.)
+
+-Greg
+
+> From: Georg Mischler <schorsch@schorsch.com>
+> Date: March 10, 2006 11:44:41 AM PST
+>
+> Gregory J. Ward wrote:
+>
+>> Schorsch is the one working on the Python build scripts, which as you
+>> say can probably take care of this handily.  To get it to work using
+>> the Rmakefile's and makeall, I would have to add a libraries option
+>> specific to the hd directory, which would be a very ugly solution.
+>
+>
+> The Python build system doesn't build one big library but several
+> smaller ones, so it didn't have this problem.
+>
+> On the other side, I have taken the liberty of modifying all the
+> Rmakefiles, renaming the library from librt.a to librtrad.a.
+> This was mostly a straightforward search and replace operation,
+> without any obvious difficulties. I'm sure people will start to
+> scream soon, should I have broken anything in the proces...
+>
+> -schorsch
+
+From grobe at gmx.net  Sat Mar 11 22:25:24 2006
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Sat Mar 11 22:25:42 2006
+Subject: [Radiance-dev] -DSMLFLT still supported?
+Message-ID: <44134044.7080602@gmx.net>
+
+Hi!
+
+I recently tried to compile with -DSMLFLT. I guess there are not many 
+out there using this any more. Still I wonder if this mode is still 
+"supported". I had expected errors with oconv when assembling large 
+scenes, but I got segfaults, and that seams to indicate that error 
+checking is not clean for DSMLFLT.
+
+The reason for my attempt to use the good old single float was to try 
+the effect when used together with modern processor's float capabilities.
+
+CU Lars.
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: smime.p7s
+Type: application/x-pkcs7-signature
+Size: 3485 bytes
+Desc: S/MIME Cryptographic Signature
+Url : http://radiance-online.org/pipermail/radiance-dev/attachments/20060311/11d574b6/smime.bin
+From gregoryjward at gmail.com  Sun Mar 12 01:14:40 2006
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Sun Mar 12 01:14:26 2006
+Subject: [Radiance-dev] -DSMLFLT still supported?
+In-Reply-To: <44134044.7080602@gmx.net>
+References: <44134044.7080602@gmx.net>
+Message-ID: <FDB867DC-8F40-4C63-A889-9999B0579310@gmail.com>
+
+Hi Lars,
+
+I can give this a try, but debugging is a real pain these days  
+without the help of an IDE.  If you can get a backtrace with symbols  
+showing where the program crashed from your core dump, I might be  
+able to find the error by inspection.  Basically, no one has used the  
+SMLFLT flag for ages, and the code hasn't been tested with it for at  
+least 10 years.  The cracks that appear in geometric objects are  
+enough to scare anyone off this option in practice.
+
+-Greg
+
+> From: "Lars O. Grobe" <grobe@gmx.net>
+> Date: March 11, 2006 1:25:24 PM PST
+>
+> Hi!
+>
+> I recently tried to compile with -DSMLFLT. I guess there are not  
+> many out there using this any more. Still I wonder if this mode is  
+> still "supported". I had expected errors with oconv when assembling  
+> large scenes, but I got segfaults, and that seams to indicate that  
+> error checking is not clean for DSMLFLT.
+>
+> The reason for my attempt to use the good old single float was to  
+> try the effect when used together with modern processor's float  
+> capabilities.
+>
+> CU Lars.
+>
+

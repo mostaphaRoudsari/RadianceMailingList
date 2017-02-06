@@ -1,0 +1,1373 @@
+From apian at pab-opto.de  Thu May  1 00:50:36 2008
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Thu May  1 00:51:22 2008
+Subject: [Radiance-dev] Help compiling 3R9 for Linux   
+Message-ID: <200805010751.m417pHJF029966@mta2.lbl.gov>
+
+Hi Greg,
+
+didn't know you were just about to release a new version with broadly 
+scheduled testing.
+
+so why not take the opportunity and actually check the setvbuf call, 
+'#ifdef linux' if needed ?
+
+Another subtle suggestion:
+It helps to trace problems and add information about other packages, 
+when the testers mention parameters of their Linux distribution:
+
+    the compiler version used (gcc -v)
+
+    the shared lib versions used, e.g.:
+    host $ ldd /usr/local/radiance/bin/rpict
+            linux-gate.so.1 =>  (0xffffe000)
+            libm.so.6 => /lib/tls/libm.so.6 (0xb7ee7000)
+            libc.so.6 => /lib/tls/libc.so.6 (0xb7db4000)
+            /lib/ld-linux.so.2 (0xb7f1e000)
+    host $ ll /lib/tls/libc.so.6
+    lrwxrwxrwx 1 root root 13 Feb 23 15:40 /lib/tls/libc.so.6 ->
+    libc-2.3.6.so
+
+Since Radiance depends so very little on other packages, it seems useful 
+to know what the respective distributions supply for these few libs, in 
+extension to the distribution names.
+
+-Peter
+
+btw1: running 'gcc -Wall' on the rt subdirectory prints warnings of 
+uninitialized variables. (output attached, on gcc 4.1.2) If someone 
+want's to do a touch more, it's worth checking with the latest gcc 
+(4.3.x) and/or Intel/AMD optimizations.
+
+btw2: if anyone feels wants to be a pioneer during the holiday: running 
+a debugger like valgrind on the crucial rpict and rtrace wouldn't hurt, 
+although it does take some time to separate noise from true errors. It's 
+worth it. anyone bothered doing this already ?
+
+btw3: the radiance-online box, nearly celebrating one year of happy life 
+at Berkeley, still runs Debian Linux.
+
+-- 
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+-------------- next part --------------
+rtmain.c: In function 'main':
+rtmain.c:69: warning: 'tralp' may be used uninitialized in this function
+rtmain.c:70: warning: 'duped1' may be used uninitialized in this function
+persist.c: In function 'pfhold':
+persist.c:188: warning: label 'openerr' defined but not used
+ambcomp.c: In function 'doambient':
+ambcomp.c:158: warning: 'd' may be used uninitialized in this function
+srcobstr.c: In function 'initobscache':
+srcobstr.c:66: warning: 'ax' may be used uninitialized in this function
+srcobstr.c:66: warning: 'ax2' may be used uninitialized in this function
+srcobstr.c:66: warning: 'ax1' may be used uninitialized in this function
+srcobstr.c: In function 'srcobstructp':
+srcobstr.c:256: warning: 'ax' may be used uninitialized in this function
+dielectric.c: In function 'm_dielectric':
+dielectric.c:77: warning: 'transdist' may be used uninitialized in this function
+dielectric.c:78: warning: 'mirdist' may be used uninitialized in this function
+glass.c: In function 'm_glass':
+glass.c:53: warning: 'rindex' may be used uninitialized in this function
+m_brdf.c: In function 'm_brdf':
+m_brdf.c:210: warning: 'transdist' may be used uninitialized in this function
+m_brdf.c:210: warning: 'transtest' may be used uninitialized in this function
+fprism.c: In function 'l_get_val':
+fprism.c:778: warning: 'rayt' may be used uninitialized in this function
+data.c: In function 'datavalue':
+data.c:305: warning: 'asize' may be used uninitialized in this function
+duphead.o: In function `openheader':
+duphead.c:(.text+0xac): warning: the use of `mktemp' is dangerous, better use `mkstemp'
+rpmain.c: In function 'main':
+rpmain.c:79: warning: 'duped1' may be used uninitialized in this function
+rpict.o: In function `rpict':
+rpict.c:(.text+0x1bd8): warning: the use of `mktemp' is dangerous, better use `mkstemp'
+devcomm.c: In function 'comm_init':
+devcomm.c:100: warning: missing sentinel in function call
+x11.o: In function `std_comin':
+x11.c:(.text+0xdce): warning: the `gets' function is dangerous and should not be used.
+From pisuke at blueyonder.co.uk  Thu May  1 04:31:05 2008
+From: pisuke at blueyonder.co.uk (Francesco Anselmo)
+Date: Thu May  1 04:31:28 2008
+Subject: [Radiance-dev] Help compiling 3R9 for Linux   
+In-Reply-To: <200805010751.m417pHJF029966@mta2.lbl.gov>
+References: <200805010751.m417pHJF029966@mta2.lbl.gov>
+Message-ID: <A43FD195-C51C-4CD3-BE61-FDA5E03A71C1@blueyonder.co.uk>
+
+Hi all,
+
+I have compiled a static version of 3R9:
+
+http://www.bozzograo.net/radiance/pub/radiance3R9_static_i486-linux-gnu.tar.bz2
+
+and attached a list of shared library dependencies for Ubuntu 7.10
+(haven't upgraded to 8.04 yet ...)
+
+
+-------------- next part --------------
+./bin:
+./bin/genworm:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7fa8000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e5e000)
+	/lib/ld-linux.so.2 (0xb7fde000)
+./bin/pmdblur:
+	non è un eseguibile dinamico
+./bin/ies2rad:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7ece000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7d84000)
+	/lib/ld-linux.so.2 (0xb7f04000)
+./bin/vwright:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7ed1000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7d87000)
+	/lib/ld-linux.so.2 (0xb7f07000)
+./bin/igraph:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f6e000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e24000)
+	/lib/ld-linux.so.2 (0xb7fa4000)
+./bin/rlam:
+	linux-gate.so.1 =>  (0xffffe000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e05000)
+	/lib/ld-linux.so.2 (0xb7f60000)
+./bin/compamb:
+	non è un eseguibile dinamico
+./bin/rholo:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f37000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7ded000)
+	/lib/ld-linux.so.2 (0xb7f6d000)
+./bin/genclock:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f81000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e37000)
+	/lib/ld-linux.so.2 (0xb7fb7000)
+./bin/dev:
+./bin/dev/glx1.hdi:
+	linux-gate.so.1 =>  (0xffffe000)
+	libGLU.so.1 => /usr/lib/libGLU.so.1 (0xb7f00000)
+	libGL.so.1 => /usr/lib/libGL.so.1 (0xb7e9f000)
+	libX11.so.6 => /usr/lib/libX11.so.6 (0xb7dad000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7d88000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7c3e000)
+	libstdc++.so.6 => /usr/lib/libstdc++.so.6 (0xb7b4b000)
+	libgcc_s.so.1 => /lib/libgcc_s.so.1 (0xb7b40000)
+	libXext.so.6 => /usr/lib/libXext.so.6 (0xb7b32000)
+	libXxf86vm.so.1 => /usr/lib/libXxf86vm.so.1 (0xb7b2c000)
+	libXdamage.so.1 => /usr/lib/libXdamage.so.1 (0xb7b29000)
+	libXfixes.so.3 => /usr/lib/libXfixes.so.3 (0xb7b24000)
+	libpthread.so.0 => /lib/tls/i686/cmov/libpthread.so.0 (0xb7b0c000)
+	libdl.so.2 => /lib/tls/i686/cmov/libdl.so.2 (0xb7b08000)
+	libdrm.so.2 => /usr/lib/libdrm.so.2 (0xb7afe000)
+	libXau.so.6 => /usr/lib/libXau.so.6 (0xb7afa000)
+	libXdmcp.so.6 => /usr/lib/libXdmcp.so.6 (0xb7af5000)
+	/lib/ld-linux.so.2 (0xb7f94000)
+./bin/dev/x11.hdi:
+	linux-gate.so.1 =>  (0xffffe000)
+	libX11.so.6 => /usr/lib/libX11.so.6 (0xb7e4a000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7e25000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7cda000)
+	libXau.so.6 => /usr/lib/libXau.so.6 (0xb7cd7000)
+	libXdmcp.so.6 => /usr/lib/libXdmcp.so.6 (0xb7cd2000)
+	libdl.so.2 => /lib/tls/i686/cmov/libdl.so.2 (0xb7cce000)
+	/lib/ld-linux.so.2 (0xb7f4c000)
+./bin/dev/ogl.hdi:
+	linux-gate.so.1 =>  (0xffffe000)
+	libGLU.so.1 => /usr/lib/libGLU.so.1 (0xb7ea6000)
+	libGL.so.1 => /usr/lib/libGL.so.1 (0xb7e45000)
+	libX11.so.6 => /usr/lib/libX11.so.6 (0xb7d53000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7d2e000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7be4000)
+	libstdc++.so.6 => /usr/lib/libstdc++.so.6 (0xb7af1000)
+	libgcc_s.so.1 => /lib/libgcc_s.so.1 (0xb7ae6000)
+	libXext.so.6 => /usr/lib/libXext.so.6 (0xb7ad8000)
+	libXxf86vm.so.1 => /usr/lib/libXxf86vm.so.1 (0xb7ad2000)
+	libXdamage.so.1 => /usr/lib/libXdamage.so.1 (0xb7acf000)
+	libXfixes.so.3 => /usr/lib/libXfixes.so.3 (0xb7aca000)
+	libpthread.so.0 => /lib/tls/i686/cmov/libpthread.so.0 (0xb7ab2000)
+	libdl.so.2 => /lib/tls/i686/cmov/libdl.so.2 (0xb7aae000)
+	libdrm.so.2 => /usr/lib/libdrm.so.2 (0xb7aa4000)
+	libXau.so.6 => /usr/lib/libXau.so.6 (0xb7aa0000)
+	libXdmcp.so.6 => /usr/lib/libXdmcp.so.6 (0xb7a9b000)
+	/lib/ld-linux.so.2 (0xb7f3a000)
+./bin/dev/oglo.hdi:
+	linux-gate.so.1 =>  (0xffffe000)
+	libGLU.so.1 => /usr/lib/libGLU.so.1 (0xb7f20000)
+	libGL.so.1 => /usr/lib/libGL.so.1 (0xb7ebf000)
+	libX11.so.6 => /usr/lib/libX11.so.6 (0xb7dcd000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7da8000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7c5e000)
+	libstdc++.so.6 => /usr/lib/libstdc++.so.6 (0xb7b6b000)
+	libgcc_s.so.1 => /lib/libgcc_s.so.1 (0xb7b60000)
+	libXext.so.6 => /usr/lib/libXext.so.6 (0xb7b52000)
+	libXxf86vm.so.1 => /usr/lib/libXxf86vm.so.1 (0xb7b4c000)
+	libXdamage.so.1 => /usr/lib/libXdamage.so.1 (0xb7b49000)
+	libXfixes.so.3 => /usr/lib/libXfixes.so.3 (0xb7b44000)
+	libpthread.so.0 => /lib/tls/i686/cmov/libpthread.so.0 (0xb7b2c000)
+	libdl.so.2 => /lib/tls/i686/cmov/libdl.so.2 (0xb7b28000)
+	libdrm.so.2 => /usr/lib/libdrm.so.2 (0xb7b1e000)
+	libXau.so.6 => /usr/lib/libXau.so.6 (0xb7b1a000)
+	libXdmcp.so.6 => /usr/lib/libXdmcp.so.6 (0xb7b15000)
+	/lib/ld-linux.so.2 (0xb7fb4000)
+./bin/fieldcomb:
+	non è un eseguibile dinamico
+./bin/obj2rad:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7fad000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e63000)
+	/lib/ld-linux.so.2 (0xb7fe3000)
+./bin/xyzimage:
+	non è un eseguibile dinamico
+./bin/objview:
+	non è un eseguibile dinamico
+./bin/ranimate:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f55000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e0b000)
+	/lib/ld-linux.so.2 (0xb7f8b000)
+./bin/mgf2rad:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f91000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e47000)
+	/lib/ld-linux.so.2 (0xb7fc7000)
+./bin/ra_pfm:
+	non è un eseguibile dinamico
+./bin/ra_tiff:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f60000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e16000)
+	/lib/ld-linux.so.2 (0xb7f96000)
+./bin/gensurf:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7efa000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7db0000)
+	/lib/ld-linux.so.2 (0xb7f30000)
+./bin/rad:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f85000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e3b000)
+	/lib/ld-linux.so.2 (0xb7fbb000)
+./bin/rvu:
+	linux-gate.so.1 =>  (0xffffe000)
+	libX11.so.6 => /usr/lib/libX11.so.6 (0xb7e31000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7e0c000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7cc1000)
+	libXau.so.6 => /usr/lib/libXau.so.6 (0xb7cbe000)
+	libXdmcp.so.6 => /usr/lib/libXdmcp.so.6 (0xb7cb9000)
+	libdl.so.2 => /lib/tls/i686/cmov/libdl.so.2 (0xb7cb5000)
+	/lib/ld-linux.so.2 (0xb7f33000)
+./bin/tmesh2rad:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f24000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7dda000)
+	/lib/ld-linux.so.2 (0xb7f5a000)
+./bin/gencatenary:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f4c000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e02000)
+	/lib/ld-linux.so.2 (0xb7f82000)
+./bin/normpat:
+	non è un eseguibile dinamico
+./bin/ra_pict:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f80000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e36000)
+	/lib/ld-linux.so.2 (0xb7fb6000)
+./bin/getinfo:
+	linux-gate.so.1 =>  (0xffffe000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e09000)
+	/lib/ld-linux.so.2 (0xb7f64000)
+./bin/protate:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f65000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e1b000)
+	/lib/ld-linux.so.2 (0xb7f9b000)
+./bin/glaze:
+	non è un eseguibile dinamico
+./bin/bgraph:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f95000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e4b000)
+	/lib/ld-linux.so.2 (0xb7fcb000)
+./bin/lookamb:
+	linux-gate.so.1 =>  (0xffffe000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7d90000)
+	/lib/ld-linux.so.2 (0xb7eeb000)
+./bin/lampcolor:
+	linux-gate.so.1 =>  (0xffffe000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e4a000)
+	/lib/ld-linux.so.2 (0xb7fa5000)
+./bin/psmeta:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f21000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7dd7000)
+	/lib/ld-linux.so.2 (0xb7f57000)
+./bin/xshowtrace:
+	linux-gate.so.1 =>  (0xffffe000)
+	libX11.so.6 => /usr/lib/libX11.so.6 (0xb7e64000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7e3f000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7cf4000)
+	libXau.so.6 => /usr/lib/libXau.so.6 (0xb7cf1000)
+	libXdmcp.so.6 => /usr/lib/libXdmcp.so.6 (0xb7cec000)
+	libdl.so.2 => /lib/tls/i686/cmov/libdl.so.2 (0xb7ce8000)
+	/lib/ld-linux.so.2 (0xb7f66000)
+./bin/ra_hexbit:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7ee4000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7d9a000)
+	/lib/ld-linux.so.2 (0xb7f1a000)
+./bin/macbethcal:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f97000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e4d000)
+	/lib/ld-linux.so.2 (0xb7fcd000)
+./bin/dgraph:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f94000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e4a000)
+	/lib/ld-linux.so.2 (0xb7fca000)
+./bin/pdfblur:
+	non è un eseguibile dinamico
+./bin/xform:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7ee8000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7d9e000)
+	/lib/ld-linux.so.2 (0xb7f1e000)
+./bin/ximage:
+	linux-gate.so.1 =>  (0xffffe000)
+	libX11.so.6 => /usr/lib/libX11.so.6 (0xb7e86000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7e61000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7d16000)
+	libXau.so.6 => /usr/lib/libXau.so.6 (0xb7d13000)
+	libXdmcp.so.6 => /usr/lib/libXdmcp.so.6 (0xb7d0e000)
+	libdl.so.2 => /lib/tls/i686/cmov/libdl.so.2 (0xb7d0a000)
+	/lib/ld-linux.so.2 (0xb7f88000)
+./bin/genblinds:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f03000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7db9000)
+	/lib/ld-linux.so.2 (0xb7f39000)
+./bin/psort:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f85000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e3b000)
+	/lib/ld-linux.so.2 (0xb7fbb000)
+./bin/ran2tiff:
+	non è un eseguibile dinamico
+./bin/ra_ppm:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f00000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7db6000)
+	/lib/ld-linux.so.2 (0xb7f36000)
+./bin/neaten:
+	linux-gate.so.1 =>  (0xffffe000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7da0000)
+	/lib/ld-linux.so.2 (0xb7efb000)
+./bin/arch2rad:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f7b000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e31000)
+	/lib/ld-linux.so.2 (0xb7fb1000)
+./bin/rsensor:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f93000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e49000)
+	/lib/ld-linux.so.2 (0xb7fc9000)
+./bin/replmarks:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7fa2000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e58000)
+	/lib/ld-linux.so.2 (0xb7fd8000)
+./bin/pdelta:
+	non è un eseguibile dinamico
+./bin/psign:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f87000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e3d000)
+	/lib/ld-linux.so.2 (0xb7fbd000)
+./bin/glrad:
+	linux-gate.so.1 =>  (0xffffe000)
+	libGL.so.1 => /usr/lib/libGL.so.1 (0xb7f02000)
+	libGLU.so.1 => /usr/lib/libGLU.so.1 (0xb7e7f000)
+	libX11.so.6 => /usr/lib/libX11.so.6 (0xb7d8d000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7c43000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7c1e000)
+	libXext.so.6 => /usr/lib/libXext.so.6 (0xb7c10000)
+	libXxf86vm.so.1 => /usr/lib/libXxf86vm.so.1 (0xb7c0b000)
+	libXdamage.so.1 => /usr/lib/libXdamage.so.1 (0xb7c08000)
+	libXfixes.so.3 => /usr/lib/libXfixes.so.3 (0xb7c03000)
+	libpthread.so.0 => /lib/tls/i686/cmov/libpthread.so.0 (0xb7bea000)
+	libdl.so.2 => /lib/tls/i686/cmov/libdl.so.2 (0xb7be6000)
+	libdrm.so.2 => /usr/lib/libdrm.so.2 (0xb7bdc000)
+	libstdc++.so.6 => /usr/lib/libstdc++.so.6 (0xb7ae9000)
+	libgcc_s.so.1 => /lib/libgcc_s.so.1 (0xb7ade000)
+	libXau.so.6 => /usr/lib/libXau.so.6 (0xb7ada000)
+	libXdmcp.so.6 => /usr/lib/libXdmcp.so.6 (0xb7ad5000)
+	/lib/ld-linux.so.2 (0xb7f74000)
+./bin/objline:
+	non è un eseguibile dinamico
+./bin/ev:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f29000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7ddf000)
+	/lib/ld-linux.so.2 (0xb7f5f000)
+./bin/histo:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f86000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e3c000)
+	/lib/ld-linux.so.2 (0xb7fbc000)
+./bin/rtrace:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f43000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7df9000)
+	/lib/ld-linux.so.2 (0xb7f79000)
+./bin/rcalc:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7eed000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7da3000)
+	/lib/ld-linux.so.2 (0xb7f23000)
+./bin/genprism:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f84000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e3a000)
+	/lib/ld-linux.so.2 (0xb7fba000)
+./bin/ra_gif:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f2c000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7de2000)
+	/lib/ld-linux.so.2 (0xb7f62000)
+./bin/plotin:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f7d000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e33000)
+	/lib/ld-linux.so.2 (0xb7fb3000)
+./bin/gcomp:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7ed7000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7d8d000)
+	/lib/ld-linux.so.2 (0xb7f0d000)
+./bin/mgf2meta:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f06000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7dbc000)
+	/lib/ld-linux.so.2 (0xb7f3c000)
+./bin/pvalue:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f70000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e26000)
+	/lib/ld-linux.so.2 (0xb7fa6000)
+./bin/ra_bmp:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f5d000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e13000)
+	/lib/ld-linux.so.2 (0xb7f93000)
+./bin/gensky:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f2a000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7de0000)
+	/lib/ld-linux.so.2 (0xb7f60000)
+./bin/ra_t8:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f66000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e1c000)
+	/lib/ld-linux.so.2 (0xb7f9c000)
+./bin/rpict:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7eb9000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7d6f000)
+	/lib/ld-linux.so.2 (0xb7eef000)
+./bin/pmblur:
+	non è un eseguibile dinamico
+./bin/tabfunc:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7ee5000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7d9b000)
+	/lib/ld-linux.so.2 (0xb7f1b000)
+./bin/oconv:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7ee9000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7d9f000)
+	/lib/ld-linux.so.2 (0xb7f1f000)
+./bin/rhpict:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7ef9000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7daf000)
+	/lib/ld-linux.so.2 (0xb7f2f000)
+./bin/pcond:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7ed2000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7d88000)
+	/lib/ld-linux.so.2 (0xb7f08000)
+./bin/xglaresrc:
+	linux-gate.so.1 =>  (0xffffe000)
+	libX11.so.6 => /usr/lib/libX11.so.6 (0xb7ed7000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7eb2000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7d67000)
+	libXau.so.6 => /usr/lib/libXau.so.6 (0xb7d64000)
+	libXdmcp.so.6 => /usr/lib/libXdmcp.so.6 (0xb7d5f000)
+	libdl.so.2 => /lib/tls/i686/cmov/libdl.so.2 (0xb7d5b000)
+	/lib/ld-linux.so.2 (0xb7fd9000)
+./bin/ttyimage:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f7f000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e35000)
+	/lib/ld-linux.so.2 (0xb7fb5000)
+./bin/rtcontrib:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f80000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e36000)
+	/lib/ld-linux.so.2 (0xb7fb6000)
+./bin/pinterp:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f2d000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7de3000)
+	/lib/ld-linux.so.2 (0xb7f63000)
+./bin/icalc:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7ebc000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7d72000)
+	/lib/ld-linux.so.2 (0xb7ef2000)
+./bin/vwrays:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7ef2000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7da8000)
+	/lib/ld-linux.so.2 (0xb7f28000)
+./bin/mgf2inv:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f1c000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7dd2000)
+	/lib/ld-linux.so.2 (0xb7f52000)
+./bin/normtiff:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f4e000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e04000)
+	/lib/ld-linux.so.2 (0xb7f84000)
+./bin/genmarble:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f2f000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7de5000)
+	/lib/ld-linux.so.2 (0xb7f65000)
+./bin/glare:
+	non è un eseguibile dinamico
+./bin/meta2tga:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f1d000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7dd3000)
+	/lib/ld-linux.so.2 (0xb7f53000)
+./bin/rhcopy:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7ef6000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7dac000)
+	/lib/ld-linux.so.2 (0xb7f2c000)
+./bin/objpict:
+	non è un eseguibile dinamico
+./bin/genbeads:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f77000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e2d000)
+	/lib/ld-linux.so.2 (0xb7fad000)
+./bin/pcwarp:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f83000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e39000)
+	/lib/ld-linux.so.2 (0xb7fb9000)
+./bin/cnt:
+	linux-gate.so.1 =>  (0xffffe000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7de0000)
+	/lib/ld-linux.so.2 (0xb7f3b000)
+./bin/total:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7ec6000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7d7c000)
+	/lib/ld-linux.so.2 (0xb7efc000)
+./bin/genrhgrid:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f9c000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e52000)
+	/lib/ld-linux.so.2 (0xb7fd2000)
+./bin/ra_rgbe:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7eb5000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7d6b000)
+	/lib/ld-linux.so.2 (0xb7eeb000)
+./bin/pexpand:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f36000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7dec000)
+	/lib/ld-linux.so.2 (0xb7f6c000)
+./bin/ra_ps:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f09000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7dbf000)
+	/lib/ld-linux.so.2 (0xb7f3f000)
+./bin/raddepend:
+	non è un eseguibile dinamico
+./bin/rlux:
+	non è un eseguibile dinamico
+./bin/pcompos:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f6c000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e22000)
+	/lib/ld-linux.so.2 (0xb7fa2000)
+./bin/optics2rad:
+	non è un eseguibile dinamico
+./bin/genbox:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f51000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e07000)
+	/lib/ld-linux.so.2 (0xb7f87000)
+./bin/debugcal:
+	non è un eseguibile dinamico
+./bin/falsecolor:
+	non è un eseguibile dinamico
+./bin/x11meta:
+	linux-gate.so.1 =>  (0xffffe000)
+	libX11.so.6 => /usr/lib/libX11.so.6 (0xb7e46000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7e21000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7cd6000)
+	libXau.so.6 => /usr/lib/libXau.so.6 (0xb7cd3000)
+	libXdmcp.so.6 => /usr/lib/libXdmcp.so.6 (0xb7cce000)
+	libdl.so.2 => /lib/tls/i686/cmov/libdl.so.2 (0xb7cca000)
+	/lib/ld-linux.so.2 (0xb7f48000)
+./bin/rhoptimize:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f05000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7dbb000)
+	/lib/ld-linux.so.2 (0xb7f3b000)
+./bin/nff2rad:
+	linux-gate.so.1 =>  (0xffffe000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7dac000)
+	/lib/ld-linux.so.2 (0xb7f07000)
+./bin/dayfact:
+	non è un eseguibile dinamico
+./bin/pbilat:
+	non è un eseguibile dinamico
+./bin/rhinfo:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7eb3000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7d69000)
+	/lib/ld-linux.so.2 (0xb7ee9000)
+./bin/ra_t16:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f9c000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e52000)
+	/lib/ld-linux.so.2 (0xb7fd2000)
+./bin/meta2bmp:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f83000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e39000)
+	/lib/ld-linux.so.2 (0xb7fb9000)
+./bin/pfilt:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f68000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e1e000)
+	/lib/ld-linux.so.2 (0xb7f9e000)
+./bin/pcomb:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f2f000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7de5000)
+	/lib/ld-linux.so.2 (0xb7f65000)
+./bin/genambpos:
+	non è un eseguibile dinamico
+./bin/getbbox:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f49000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7dff000)
+	/lib/ld-linux.so.2 (0xb7f7f000)
+./bin/pgblur:
+	non è un eseguibile dinamico
+./bin/findglare:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7efd000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7db3000)
+	/lib/ld-linux.so.2 (0xb7f33000)
+./bin/cv:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f6c000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e22000)
+	/lib/ld-linux.so.2 (0xb7fa2000)
+./bin/mkillum:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f3c000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7df2000)
+	/lib/ld-linux.so.2 (0xb7f72000)
+./bin/pflip:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f35000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7deb000)
+	/lib/ld-linux.so.2 (0xb7f6b000)
+./bin/genbranch:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f85000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e3b000)
+	/lib/ld-linux.so.2 (0xb7fbb000)
+./bin/phisto:
+	non è un eseguibile dinamico
+./bin/mgfilt:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7eff000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7db5000)
+	/lib/ld-linux.so.2 (0xb7f35000)
+./bin/obj2mesh:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f1c000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7dd2000)
+	/lib/ld-linux.so.2 (0xb7f52000)
+./bin/ranimove:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7ed2000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7d88000)
+	/lib/ld-linux.so.2 (0xb7f08000)
+./bin/rpiece:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7edf000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7d95000)
+	/lib/ld-linux.so.2 (0xb7f15000)
+./bin/3ds2mgf:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f9d000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e53000)
+	/lib/ld-linux.so.2 (0xb7fd3000)
+./bin/genrev:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f39000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7def000)
+	/lib/ld-linux.so.2 (0xb7f6f000)
+./bin/ra_xyze:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f76000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e2c000)
+	/lib/ld-linux.so.2 (0xb7fac000)
+./bin/glarendx:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7ef6000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7dac000)
+	/lib/ld-linux.so.2 (0xb7f2c000)
+./bin/rad2mgf:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f95000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e4b000)
+	/lib/ld-linux.so.2 (0xb7fcb000)
+./bin/plot4:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7ede000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7d94000)
+	/lib/ld-linux.so.2 (0xb7f14000)
+./bin/pextrem:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f4a000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e00000)
+	/lib/ld-linux.so.2 (0xb7f80000)
+./bin/vinfo:
+	non è un eseguibile dinamico
+./bin/mksource:
+	linux-gate.so.1 =>  (0xffffe000)
+	libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7f84000)
+	libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7e3a000)
+	/lib/ld-linux.so.2 (0xb7fba000)
+-------------- next part --------------
+
+
+
+Ciao ciao,
+
+F
+From mstock at umich.edu  Thu May  1 06:10:22 2008
+From: mstock at umich.edu (Mark Stock)
+Date: Thu May  1 06:10:28 2008
+Subject: [Radiance-dev] Help compiling 3R9 for Linux
+In-Reply-To: <D3A61305-14B7-44C3-AFEB-0B27B3F8A80C@gmail.com>
+References: <BC2A68B0-D7FA-4096-A8F7-C4A3DA5A6B2F@lmi.net>
+	<Pine.LNX.4.64.0804302327540.19452@rygar.gpcc.itd.umich.edu>
+	<D3A61305-14B7-44C3-AFEB-0B27B3F8A80C@gmail.com>
+Message-ID: <Pine.LNX.4.64.0805010907570.2939@rygar.gpcc.itd.umich.edu>
+
+Greg,
+
+The binaries are at:
+
+http://mark.technolope.org/transfer/rad3R9_bin.tar.gz
+
+But I didn't specifically make them static. Doh!
+
+And, per PAB's suggestions, here is some more information:
+
+% gcc -v
+Using built-in specs.
+Target: i386-redhat-linux
+Configured with: ../configure --prefix=/usr 
+--mandir=/usr/share/man --infodir=/usr/share/info --enable-shared 
+--enable-threads=posix --enable-checking=release 
+--with-system-zlib --enable-__cxa_atexit 
+--disable-libunwind-exceptions 
+--enable-languages=c,c++,objc,obj-c++,java,fortran,ada 
+--enable-java-awt=gtk --disable-dssi --enable-plugin 
+--with-java-home=/usr/lib/jvm/java-1.5.0-gcj-1.5.0.0/jre 
+--enable-libgcj-multifile --enable-java-maintainer-mode 
+--with-ecj-jar=/usr/share/java/eclipse-ecj.jar --with-cpu=generic 
+--host=i386-redhat-linux
+Thread model: posix
+gcc version 4.1.2 20070925 (Red Hat 4.1.2-33)
+
+% ldd /usr/local/bin/rpict
+ 	linux-gate.so.1 =>  (0x40000000)
+ 	libm.so.6 => /lib/libm.so.6 (0x00922000)
+ 	libc.so.6 => /lib/libc.so.6 (0x007c7000)
+ 	/lib/ld-linux.so.2 (0x007a8000)
+
+% ll /lib/libc.so.6
+lrwxrwxrwx 1 root root 11 2007-11-14 17:21 /lib/libc.so.6 -> 
+libc-2.7.so
+
+Mark
+
+On Wed, 30 Apr 2008, Gregory J. Ward wrote:
+
+> Great, thanks Mark.  That was quick.  Any chance of posting the executables 
+> somewhere so I can grab them?  Any comments from the list on how to ensure 
+> portability between Linux flavors?
+>
+> -Greg
+>
+>> From: Mark Stock <mstock@umich.edu>
+>> Date: April 30, 2008 8:36:58 PM PDT
+>> 
+>> Greg,
+>> 
+>> Reporting for a release (not unstable or testing) version of Fedora 8 i686, 
+>> using gcc 4.1.2, with the default rmake command, I find that 3R9 builds 
+>> completely. The dozen or so warnings are mostly about how mktemp is 
+>> dangerous and that we should use mkstemp. Some other warnings are in 
+>> libtiff, another about how gets is dangerous.
+>> 
+>> Mark
+>> 
+>> On Wed, 30 Apr 2008, Greg Ward wrote:
+>> 
+>>> If anyone out there is willing to lend a hand, I'd like to compile 
+>>> Radiance under Linux for a 3.9 release.  Please use whatever method you 
+>>> think will be most portable.  If that requires static links, fine by me. 
+>>> I don't know Linux well enough to compile things portably, nor to I have 
+>>> convenient access to a machine to do so.  The release source may be 
+>>> downloaded from:
+>>>
+>>> 	http://radsite.lbl.gov/radiance/dist/rad3R9.tar.gz
+>>> 
+>>> Please respond and CC the list before you begin, so we don't duplicate 
+>>> effort.
+>>> 
+>>> Thanks in advance,
+>>> -Greg
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+
+From list at oxdrove.co.uk  Thu May  1 06:47:15 2008
+From: list at oxdrove.co.uk (James Lee)
+Date: Thu May  1 06:47:23 2008
+Subject: [Radiance-dev] Help compiling 3R9 for Linux
+In-Reply-To: <BC2A68B0-D7FA-4096-A8F7-C4A3DA5A6B2F@lmi.net>
+References: <BC2A68B0-D7FA-4096-A8F7-C4A3DA5A6B2F@lmi.net>
+Message-ID: <20080501.13471500.944003700@gyor.oxdrove.co.uk>
+
+On 01/05/08, 00:10:19, Greg Ward <gregoryjward@gmail.com> wrote regarding
+[Radiance-dev] Help compiling 3R9 for Linux:
+
+> If anyone out there is willing to lend a hand, I'd like to compile
+> Radiance under Linux for a 3.9 release.
+
+>       http://radsite.lbl.gov/radiance/dist/rad3R9.tar.gz
+
+I'm using Unix not Linux but here are my results.  I've compiled 3.9
+for Solaris using the Sun Studio compiler.  Provisional packages are
+here:
+    http://www.blastwave.org/testing/
+today's files (rev date may change):
+    radiance-3.9,REV=2008.05.01-SunOS5.8-i386-CSW.pkg.gz
+    radiance-3.9,REV=2008.05.01-SunOS5.8-sparc-CSW.pkg.gz
+
+Since 3.8 the Rmakefiles have lost some -lm.  I had to add these,
+patch attached.
+
+There are some compiler warnings, extracts attached.  Most are
+unimportant but if you like I will attempt to edit the source and
+provide a patch.
+
+
+
+
+James.
+-------------- next part --------------
+--- ./src/cal/Rmakefile.orig	2007-11-24 00:37:26.000000000 +0000
++++ ./src/cal/Rmakefile	2008-05-01 11:16:11.373038000 +0100
+@@ -49,7 +49,7 @@
+ 	$(CC) $(CFLAGS) -o rlam lam.o
+ 
+ tabfunc:	tabfunc.o
+-	$(CC) $(CFLAGS) -o tabfunc tabfunc.o -lrtrad
++	$(CC) $(CFLAGS) -o tabfunc tabfunc.o -lrtrad $(MLIB)
+ 
+ histo:	histo.o
+ 	$(CC) $(CFLAGS) -o histo histo.o $(MLIB)
+--- ./src/hd/Rmakefile.orig	2008-02-07 23:02:14.000000000 +0000
++++ ./src/hd/Rmakefile	2008-05-01 11:14:15.862585000 +0100
+@@ -119,25 +119,25 @@
+ $(DEVDIR)/ogl.hdi:	rhd_ogl0.o rhdisp.o rhdisp2.o viewbeams.o \
+ rhd_odraw.o rhd_geom.o holo.o
+ 	$(CC) $(CFLAGS) -o $(DEVDIR)/ogl.hdi rhd_ogl0.o rhdisp.o rhdisp2.o \
+-viewbeams.o holo.o rhd_odraw.o rhd_geom.o -lrgl -lrtrad -lGLU -lGL -lX11
++viewbeams.o holo.o rhd_odraw.o rhd_geom.o -lrgl -lrtrad -lGLU -lGL -lX11 $(MLIB)
+ 
+ $(DEVDIR)/oglo.hdi:	rhd_oglo.o rhdisp.o rhdisp2.o viewbeams.o \
+ rhd_odraw.o rhd_geom.o holo.o rhdobj.o
+ 	$(CC) $(CFLAGS) -o $(DEVDIR)/oglo.hdi rhd_oglo.o rhdisp.o \
+ rhdisp2.o viewbeams.o holo.o rhd_odraw.o rhd_geom.o rhdobj.o \
+--lrgl -lrtrad -lGLU -lGL -lX11
++-lrgl -lrtrad -lGLU -lGL -lX11 $(MLIB)
+ 
+ $(DEVDIR)/ogls.hdi:	rhd_ogls.o rhdisp.o rhdisp2.o viewbeams.o \
+ rhd_odraw.o rhd_geom.o holo.o
+ 	$(CC) $(CFLAGS) -o $(DEVDIR)/ogls.hdi rhd_ogls.o rhdisp.o rhdisp2.o \
+ viewbeams.o holo.o rhd_odraw.o rhd_geom.o \
+--lrgl -lrtrad -lGLU -lGL -lX11 -lXext
++-lrgl -lrtrad -lGLU -lGL -lX11 -lXext $(MLIB)
+ 
+ $(DEVDIR)/oglso.hdi:	rhd_oglso.o rhdisp.o rhdisp2.o viewbeams.o \
+ rhd_odraw.o rhd_geom.o holo.o rhdobj.o
+ 	$(CC) $(CFLAGS) -o $(DEVDIR)/oglso.hdi rhd_oglso.o rhdisp.o rhdisp2.o \
+ viewbeams.o holo.o rhd_odraw.o rhd_geom.o rhdobj.o \
+--lrgl -lrtrad -lGLU -lGL -lX11 -lXext
++-lrgl -lrtrad -lGLU -lGL -lX11 -lXext $(MLIB)
+ 
+ rhd_ogl0.o:	rhd_ogl.c
+ 	$(CC) $(CFLAGS) -c rhd_ogl.c
+--- ./src/util/Rmakefile.orig	2008-05-01 11:15:05.372784000 +0100
++++ ./src/util/Rmakefile	2008-05-01 11:15:21.222845000 +0100
+@@ -99,7 +99,7 @@
+ 
+ glrad:	glrad.o
+ 	$(CC) $(CFLAGS) -o glrad glrad.o -lrgl -lrtrad -lGLU -lGL \
+--lX11 -lXext
++-lX11 -lXext $(MLIB)
+ 
+ setscan.o:	setscan.h
+ 
+-------------- next part --------------
+"rtcontrib.c", line 1221: warning: function expects to return value: myclose
+
+"glrad.c", line 49: warning: initializer does not fit or is out of range: -1
+
+"caldefn.c", line 709: warning: integer overflow detected: op "<<"
+"caldefn.c", line 712: warning: integer overflow detected: op "<<"
+"caldefn.c", line 713: warning: integer overflow detected: op "<<"
+
+"rglinst.c", line 43: warning: initialization type mismatch
+
+"x11plot.c", line 295: warning: argument #4 is incompatible with prototype:
+	prototype: pointer to const char : "/usr/openwin/include/X11/Xlib.h", line 3164
+	argument : pointer to unsigned char
+
+"../common/calcomp.h", line 20: warning: macro redefined: TICK
+
+"srcobstr.c", line 183: warning: initializer does not fit or is out of range: -1
+
+"x11icon.h", line 5: warning: initializer does not fit or is out of range: 224
+"x11icon.h", line 6: warning: initializer does not fit or is out of range: 224
+"x11icon.h", line 8: warning: initializer does not fit or is out of range: 192
+...
+
+"mkillum4.c", line 236: warning: implicit function declaration: isspace
+
+"neuclrtab.c", line 442: warning: integer overflow detected: op "<<"
+
+"ra_pict.c", line 302: warning: argument #1 is incompatible with prototype:
+	prototype: pointer to unsigned char : "ra_pict.c", line 42
+	argument : pointer to char
+"ra_pict.c", line 302: warning: argument #2 is incompatible with prototype:
+	prototype: pointer to unsigned char : "ra_pict.c", line 42
+	argument : pointer to char
+"ra_pict.c", line 307: warning: argument #1 is incompatible with prototype:
+	prototype: pointer to unsigned char : "ra_pict.c", line 112
+	argument : pointer to char
+
+"warp3d.c", line 124: warning: argument #2 is incompatible with prototype:
+	prototype: pointer to const char : "../common/lookup.h", line 85
+	argument : pointer to unsigned char
+
+"rholo3.c", line 129: warning: argument #4 is incompatible with prototype:
+	prototype: pointer to function(pointer to const void, pointer to const void) returning int : "/usr/include/iso/stdlib_iso.h", line 134
+	argument : pointer to function(pointer to struct  {short hd, int bi, int nr, int nc}, pointer to struct  {short hd, int bi, int nr, int nc}) returning int
+"rholo3.c", line 132: warning: argument #5 is incompatible with prototype:
+	prototype: pointer to function(pointer to const void, pointer to const void) returning int : "/usr/include/iso/stdlib_iso.h", line 113
+	argument : pointer to function(pointer to struct  {short hd, int bi, int nr, int nc}, pointer to struct  {short hd, int bi, int nr, int nc}) returning int
+"rholo3.c", line 185: warning: argument #4 is incompatible with prototype:
+	prototype: pointer to function(pointer to const void, pointer to const void) returning int : "/usr/include/iso/stdlib_iso.h", line 134
+	argument : pointer to function(pointer to struct  {short hd, int bi, int nr, int nc}, pointer to struct  {short hd, int bi, int nr, int nc}) returning int
+"rholo3.c", line 407: warning: argument #4 is incompatible with prototype:
+	prototype: pointer to function(pointer to const void, pointer to const void) returning int : "/usr/include/iso/stdlib_iso.h", line 134
+	argument : pointer to function(pointer to struct  {short hd, int bi, int nr, int nc}, pointer to struct  {short hd, int bi, int nr, int nc}) returning int
+"rholo3.c", line 412: warning: argument #4 is incompatible with prototype:
+	prototype: pointer to function(pointer to const void, pointer to const void) returning int : "/usr/include/iso/stdlib_iso.h", line 134
+	argument : pointer to function(pointer to struct  {short hd, int bi, int nr, int nc}, pointer to struct  {short hd, int bi, int nr, int nc}) returning int
+
+"rhd_ogl.c", line 100: warning: initializer does not fit or is out of range: -1
+
+"rhd_geom.c", line 201: warning: argument #4 is incompatible with prototype:
+
+"rhd_ogl.c", line 100: warning: initializer does not fit or is out of range: -1
+
+"rhdobj.c", line 85: warning: can not declare variably modified type at file scope
+
+"rhdobj.c", line 221: warning: variable length array can not be declared with a static storage class: neighlist
+
+"rhd_glx1.c", line 71: warning: initializer does not fit or is out of range: -1
+
+"rhd_glx1.c", line 169: warning: argument #3 is incompatible with prototype:
+	prototype: pointer to const char : "/usr/openwin/include/X11/Xlib.h", line 1574
+	argument : pointer to unsigned char
+
+"glare.h", line 80: warning: syntax error:  empty declaration
+
+"rad.c", line 1381: warning: implicit function declaration: kill
+
+"ranimate.c", line 1299: warning: argument #1 is incompatible with prototype:
+	prototype: pointer to int : "netproc.h", line 36
+	argument : pointer to long
+From gregoryjward at gmail.com  Thu May  1 08:58:36 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu May  1 08:58:46 2008
+Subject: [Radiance-dev] Help compiling 3R9 for Linux   
+In-Reply-To: <200805010751.m417pHJF029966@mta2.lbl.gov>
+References: <200805010751.m417pHJF029966@mta2.lbl.gov>
+Message-ID: <BC16D636-5D8D-4376-84FF-BD5D628BCAB1@gmail.com>
+
+Hi Peter,
+
+Thanks for your suggestions.  Sorry about not including the setvbuf()  
+call in the release -- I was kind of hoping you'd run the timings for  
+me, since you're the one with the giant octrees.  I am a little wary  
+of this call, since it has given me grief in the past.  From my  
+perspective, it's up to the system to decide how large i/o buffers  
+should be for peak efficiency.  My prediction in this case is the  
+time involved in the other parts of reading octrees and meshes will  
+overshadow the system read times, even on NFS.
+
+I took a look at the warnings, and got about halfway through the  
+"possible unintialized variable" cases without spotting anything  
+wrong, so I gave up.  If you want to go in and initialize these  
+variables to quiet the warnings, be my guest.  The only thing I ask  
+is that you initialize them to an illegal value that will cause a  
+runtime error, because I'd want to know if they really weren't being  
+set properly, and leaving them uninitialized is my usual method  
+(since they just get whatever random data is on the stack in most  
+systems).  For me, fixing the warnings makes debugging more difficult  
+rather than easier.  I did fix a couple of the other warnings,  
+though.  Thanks for sending them.
+
+Regarding your btw3, I did think of compiling on radiance-online, but  
+I wasn't sure how to get a good, portable set of binaries out of it.   
+I don't really know what I'm doing on Linux.
+
+Cheers,
+-Greg
+
+> From: Peter Apian-Bennewitz <apian@pab-opto.de>
+> Date: May 1, 2008 12:50:36 AM PDT
+>
+> Hi Greg,
+>
+> didn't know you were just about to release a new version with  
+> broadly scheduled testing.
+>
+> so why not take the opportunity and actually check the setvbuf  
+> call, '#ifdef linux' if needed ?
+>
+> Another subtle suggestion:
+> It helps to trace problems and add information about other  
+> packages, when the testers mention parameters of their Linux  
+> distribution:
+>
+>    the compiler version used (gcc -v)
+>
+>    the shared lib versions used, e.g.:
+>    host $ ldd /usr/local/radiance/bin/rpict
+>            linux-gate.so.1 =>  (0xffffe000)
+>            libm.so.6 => /lib/tls/libm.so.6 (0xb7ee7000)
+>            libc.so.6 => /lib/tls/libc.so.6 (0xb7db4000)
+>            /lib/ld-linux.so.2 (0xb7f1e000)
+>    host $ ll /lib/tls/libc.so.6
+>    lrwxrwxrwx 1 root root 13 Feb 23 15:40 /lib/tls/libc.so.6 ->
+>    libc-2.3.6.so
+>
+> Since Radiance depends so very little on other packages, it seems  
+> useful to know what the respective distributions supply for these  
+> few libs, in extension to the distribution names.
+>
+> -Peter
+>
+> btw1: running 'gcc -Wall' on the rt subdirectory prints warnings of  
+> uninitialized variables. (output attached, on gcc 4.1.2) If someone  
+> want's to do a touch more, it's worth checking with the latest gcc  
+> (4.3.x) and/or Intel/AMD optimizations.
+>
+> btw2: if anyone feels wants to be a pioneer during the holiday:  
+> running a debugger like valgrind on the crucial rpict and rtrace  
+> wouldn't hurt, although it does take some time to separate noise  
+> from true errors. It's worth it. anyone bothered doing this already ?
+>
+> btw3: the radiance-online box, nearly celebrating one year of happy  
+> life at Berkeley, still runs Debian Linux.
+
+From gregoryjward at gmail.com  Thu May  1 09:39:26 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu May  1 09:39:34 2008
+Subject: [Radiance-dev] Help compiling 3R9 for Linux
+In-Reply-To: <Pine.LNX.4.64.0805010907570.2939@rygar.gpcc.itd.umich.edu>
+References: <BC2A68B0-D7FA-4096-A8F7-C4A3DA5A6B2F@lmi.net>
+	<Pine.LNX.4.64.0804302327540.19452@rygar.gpcc.itd.umich.edu>
+	<D3A61305-14B7-44C3-AFEB-0B27B3F8A80C@gmail.com>
+	<Pine.LNX.4.64.0805010907570.2939@rygar.gpcc.itd.umich.edu>
+Message-ID: <8CB6DCFD-794C-4A3E-9700-41950D9F6505@gmail.com>
+
+Hi Mark,
+
+Thanks for doing this!  Is there any sense in posting the shared- 
+library binaries, or is it better to use the static versions that  
+Francesco compiled?  You guys let me know, because I haven't a clue.
+
+Cheers,
+-Greg
+
+> From: Mark Stock <mstock@umich.edu>
+> Date: May 1, 2008 6:10:22 AM PDT
+>
+> Greg,
+>
+> The binaries are at:
+>
+> http://mark.technolope.org/transfer/rad3R9_bin.tar.gz
+>
+> But I didn't specifically make them static. Doh!
+>
+> And, per PAB's suggestions, here is some more information:
+>
+> % gcc -v
+> Using built-in specs.
+> Target: i386-redhat-linux
+> Configured with: ../configure --prefix=/usr --mandir=/usr/share/man  
+> --infodir=/usr/share/info --enable-shared --enable-threads=posix -- 
+> enable-checking=release --with-system-zlib --enable-__cxa_atexit -- 
+> disable-libunwind-exceptions --enable-languages=c,c++,objc,obj-c+ 
+> +,java,fortran,ada --enable-java-awt=gtk --disable-dssi --enable- 
+> plugin --with-java-home=/usr/lib/jvm/java-1.5.0-gcj-1.5.0.0/jre -- 
+> enable-libgcj-multifile --enable-java-maintainer-mode --with-ecj- 
+> jar=/usr/share/java/eclipse-ecj.jar --with-cpu=generic --host=i386- 
+> redhat-linux
+> Thread model: posix
+> gcc version 4.1.2 20070925 (Red Hat 4.1.2-33)
+>
+> % ldd /usr/local/bin/rpict
+> 	linux-gate.so.1 =>  (0x40000000)
+> 	libm.so.6 => /lib/libm.so.6 (0x00922000)
+> 	libc.so.6 => /lib/libc.so.6 (0x007c7000)
+> 	/lib/ld-linux.so.2 (0x007a8000)
+>
+> % ll /lib/libc.so.6
+> lrwxrwxrwx 1 root root 11 2007-11-14 17:21 /lib/libc.so.6 ->  
+> libc-2.7.so
+>
+> Mark
+
+From gregoryjward at gmail.com  Thu May  1 09:41:17 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu May  1 09:41:24 2008
+Subject: [Radiance-dev] Help compiling 3R9 for Linux
+In-Reply-To: <20080501.13471500.944003700@gyor.oxdrove.co.uk>
+References: <BC2A68B0-D7FA-4096-A8F7-C4A3DA5A6B2F@lmi.net>
+	<20080501.13471500.944003700@gyor.oxdrove.co.uk>
+Message-ID: <35CF688A-DCD9-4D28-A515-1CA810D236EC@gmail.com>
+
+Thanks, James.  This is a big help.  I'm especially grateful for the  
+context diffs on the Rmakefile's, which I've checked in.  Different  
+systems put different things in the math library.  I suspect that  
+Solaris puts atof() there, which is why it's needed most of the time.
+
+I will include your Solaris binaries when I post the 3.9 release.
+
+-Greg
+
+> From: James Lee <list@oxdrove.co.uk>
+> Date: May 1, 2008 1:47:15 PM PDT
+>
+> On 01/05/08, 00:10:19, Greg Ward <gregoryjward@gmail.com> wrote  
+> regarding
+> [Radiance-dev] Help compiling 3R9 for Linux:
+>
+>> If anyone out there is willing to lend a hand, I'd like to compile
+>> Radiance under Linux for a 3.9 release.
+>
+>>       http://radsite.lbl.gov/radiance/dist/rad3R9.tar.gz
+>
+> I'm using Unix not Linux but here are my results.  I've compiled 3.9
+> for Solaris using the Sun Studio compiler.  Provisional packages are
+> here:
+>     http://www.blastwave.org/testing/
+> today's files (rev date may change):
+>     radiance-3.9,REV=2008.05.01-SunOS5.8-i386-CSW.pkg.gz
+>     radiance-3.9,REV=2008.05.01-SunOS5.8-sparc-CSW.pkg.gz
+>
+> Since 3.8 the Rmakefiles have lost some -lm.  I had to add these,
+> patch attached.
+>
+> There are some compiler warnings, extracts attached.  Most are
+> unimportant but if you like I will attempt to edit the source and
+> provide a patch.
+
+From mstock at umich.edu  Thu May  1 09:45:03 2008
+From: mstock at umich.edu (Mark Stock)
+Date: Thu May  1 09:45:11 2008
+Subject: [Radiance-dev] Help compiling 3R9 for Linux
+In-Reply-To: <8CB6DCFD-794C-4A3E-9700-41950D9F6505@gmail.com>
+References: <BC2A68B0-D7FA-4096-A8F7-C4A3DA5A6B2F@lmi.net>
+	<Pine.LNX.4.64.0804302327540.19452@rygar.gpcc.itd.umich.edu>
+	<D3A61305-14B7-44C3-AFEB-0B27B3F8A80C@gmail.com>
+	<Pine.LNX.4.64.0805010907570.2939@rygar.gpcc.itd.umich.edu>
+	<8CB6DCFD-794C-4A3E-9700-41950D9F6505@gmail.com>
+Message-ID: <Pine.LNX.4.64.0805011242520.2939@rygar.gpcc.itd.umich.edu>
+
+Greg and gang,
+
+I'm a little out of my league here. When compiling with -static I 
+saw a lot of errors related to not finding static versions of the 
+X11 libraries. It seems as if you should stick with the experts 
+here (like Francesco).
+
+Mark
+
+On Thu, 1 May 2008, Gregory J. Ward wrote:
+
+> Hi Mark,
+>
+> Thanks for doing this!  Is there any sense in posting the shared-library 
+> binaries, or is it better to use the static versions that Francesco compiled? 
+> You guys let me know, because I haven't a clue.
+>
+> Cheers,
+> -Greg
+>
+>> From: Mark Stock <mstock@umich.edu>
+>> Date: May 1, 2008 6:10:22 AM PDT
+>> 
+>> Greg,
+>> 
+>> The binaries are at:
+>> 
+>> http://mark.technolope.org/transfer/rad3R9_bin.tar.gz
+>> 
+>> But I didn't specifically make them static. Doh!
+>> 
+>> And, per PAB's suggestions, here is some more information:
+>> 
+>> % gcc -v
+>> Using built-in specs.
+>> Target: i386-redhat-linux
+>> Configured with: ../configure --prefix=/usr --mandir=/usr/share/man 
+>> --infodir=/usr/share/info --enable-shared --enable-threads=posix 
+>> --enable-checking=release --with-system-zlib --enable-__cxa_atexit 
+>> --disable-libunwind-exceptions 
+>> --enable-languages=c,c++,objc,obj-c++,java,fortran,ada 
+>> --enable-java-awt=gtk --disable-dssi --enable-plugin 
+>> --with-java-home=/usr/lib/jvm/java-1.5.0-gcj-1.5.0.0/jre 
+>> --enable-libgcj-multifile --enable-java-maintainer-mode 
+>> --with-ecj-jar=/usr/share/java/eclipse-ecj.jar --with-cpu=generic 
+>> --host=i386-redhat-linux
+>> Thread model: posix
+>> gcc version 4.1.2 20070925 (Red Hat 4.1.2-33)
+>> 
+>> % ldd /usr/local/bin/rpict
+>> 	linux-gate.so.1 =>  (0x40000000)
+>> 	libm.so.6 => /lib/libm.so.6 (0x00922000)
+>> 	libc.so.6 => /lib/libc.so.6 (0x007c7000)
+>> 	/lib/ld-linux.so.2 (0x007a8000)
+>> 
+>> % ll /lib/libc.so.6
+>> lrwxrwxrwx 1 root root 11 2007-11-14 17:21 /lib/libc.so.6 -> libc-2.7.so
+>> 
+>> Mark
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+
+From pisuke at blueyonder.co.uk  Fri May  2 15:48:17 2008
+From: pisuke at blueyonder.co.uk (Francesco Anselmo)
+Date: Fri May  2 15:48:24 2008
+Subject: [Radiance-dev] Help compiling 3R9 for Linux
+In-Reply-To: <Pine.LNX.4.64.0805011242520.2939@rygar.gpcc.itd.umich.edu>
+References: <BC2A68B0-D7FA-4096-A8F7-C4A3DA5A6B2F@lmi.net>
+	<Pine.LNX.4.64.0804302327540.19452@rygar.gpcc.itd.umich.edu>
+	<D3A61305-14B7-44C3-AFEB-0B27B3F8A80C@gmail.com>
+	<Pine.LNX.4.64.0805010907570.2939@rygar.gpcc.itd.umich.edu>
+	<8CB6DCFD-794C-4A3E-9700-41950D9F6505@gmail.com>
+	<Pine.LNX.4.64.0805011242520.2939@rygar.gpcc.itd.umich.edu>
+Message-ID: <B84F785E-ECF0-4076-BD40-3232736EC13A@blueyonder.co.uk>
+
+>
+> I'm a little out of my league here. When compiling with -static I  
+> saw a lot of errors related to not finding static versions of the  
+> X11 libraries. It seems as if you should stick with the experts here  
+> (like Francesco).
+>
+
+Hi Mark,
+
+Not really an expert, but I think that Fedora might not include by  
+default static libraries.
+On Debian based distros, static libraries (the ones with extension .a)  
+are in the development
+packages (their names end in -dev).
+
+HTH, and thanks for the great video and artworks!!!
+
+Francesco
+
+
+
+
+From bernd at bzed.de  Fri May  9 08:42:09 2008
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Fri May  9 08:42:20 2008
+Subject: [Radiance-dev] Radiance git repository
+Message-ID: <482470D1.7000105@bzed.de>
+
+Hi,
+
+as I'm using git to work on the Debian package of radiance now, i
+thought about pulling the CVS HEAD into git every night, so I can share
+it (and use it for my packaging work, of course). If anybody else would
+be interested in git access, I'd setup the repository, if not, I'll just
+pull the patch when I need it.
+(As I don't have direct access to the CVS I'd just pull the patch every
+night and apply it, being able to use git-cvs would be better, of course).
+
+Cheers,
+
+Bernd
+
+P.S. Radiance 3R9 will be shipped with Debian Lenny, I'm almost done
+with it and the upload should happen this weekend.
+
+-- 
+ Bernd Zeimetz                           Debian GNU/Linux Developer
+ GPG Fingerprint: 06C8 C9A2 EAAD E37E 5B2C BE93 067A AD04 C93B FF79
+

@@ -1,0 +1,408 @@
+From mcneil.andrew at gmail.com  Thu Sep 17 11:04:22 2015
+From: mcneil.andrew at gmail.com (Andy McNeil)
+Date: Thu, 17 Sep 2015 11:04:22 -0700
+Subject: [Radiance-dev] direct sampling behavior
+Message-ID: <CAEFJVk9hSp46s4wcZ=_5ooLOyEUeHunAjCi5PdVwC=qsjOunYQ@mail.gmail.com>
+
+Hi Radiance Developers (Greg),
+
+I often find myself oversampling an image by as much as 8 times to render
+smooth penumbras. I wonder if it would make sense to add an option to
+Radiance that would allow users to force additional direct samples when
+they want nice penumbras (assuming that -dj is non-zero). Then when I want
+a final image that is 1200x800 I don't need to render it at 9600x6400 and
+filter it down, I could render at 1200x800 and request 64 direct samples
+per light source to get the same smooth penumbras.
+
+Would this actually help me, or is the time difference between rendering
+9600x6400 with 1 direct sample to rendering 1200x800 with 64 direct samples
+negligible?
+
+Andy
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20150917/ef78ec89/attachment.html>
+
+From gregoryjward at gmail.com  Thu Sep 17 12:08:51 2015
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu, 17 Sep 2015 12:08:51 -0700
+Subject: [Radiance-dev] direct sampling behavior
+In-Reply-To: <CAEFJVk9hSp46s4wcZ=_5ooLOyEUeHunAjCi5PdVwC=qsjOunYQ@mail.gmail.com>
+References: <CAEFJVk9hSp46s4wcZ=_5ooLOyEUeHunAjCi5PdVwC=qsjOunYQ@mail.gmail.com>
+Message-ID: <172309CD-4636-4C7D-BAC1-127F35005F34@gmail.com>
+
+Dear Picky Penumbra People (Andy):
+
+It's difficult to say for sure without implementing such an option, but the source sampling often dominates the calculation time to the point where you might not gain much over your current approach.  Increasing image resolution adds some minor costs for the initial ray casting from the view point, and some calculation time looking up and interpolating values from the ambient cache (assuming you are using that), but those are pretty nominal.  Your biggest gains for multiple source sampling would come from scenes with only one or two light sources.
+
+One thing to bear in mind is that lights that are either sphere or source types don't know how to subdivide, so the -ds option doesn't do what it should for those emitters.  Otherwise, you can get better penumbras by reducing your -ds value to some small (non-zero) value in addition to using -dj 1.
+
+Cheers,
+-Greg
+
+> From: Andy McNeil <mcneil.andrew at gmail.com>
+> Subject: [Radiance-dev] direct sampling behavior
+> Date: September 17, 2015 11:04:22 AM PDT
+> 
+> Hi Radiance Developers (Greg),
+> 
+> I often find myself oversampling an image by as much as 8 times to render smooth penumbras. I wonder if it would make sense to add an option to Radiance that would allow users to force additional direct samples when they want nice penumbras (assuming that -dj is non-zero). Then when I want a final image that is 1200x800 I don't need to render it at 9600x6400 and filter it down, I could render at 1200x800 and request 64 direct samples per light source to get the same smooth penumbras.  
+> 
+> Would this actually help me, or is the time difference between rendering 9600x6400 with 1 direct sample to rendering 1200x800 with 64 direct samples negligible?
+> 
+> Andy
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20150917/3b0141f3/attachment.html>
+
+From mcneil.andrew at gmail.com  Thu Sep 17 12:17:09 2015
+From: mcneil.andrew at gmail.com (Andy McNeil)
+Date: Thu, 17 Sep 2015 12:17:09 -0700
+Subject: [Radiance-dev] direct sampling behavior
+In-Reply-To: <172309CD-4636-4C7D-BAC1-127F35005F34@gmail.com>
+References: <CAEFJVk9hSp46s4wcZ=_5ooLOyEUeHunAjCi5PdVwC=qsjOunYQ@mail.gmail.com>
+	<172309CD-4636-4C7D-BAC1-127F35005F34@gmail.com>
+Message-ID: <CAEFJVk-+WR1cbxEAF2XLu17Nq=08F3w_NVEJo++fRJ-UH+MxLg@mail.gmail.com>
+
+Could I test the relative speed by rendering a scene with 64 coincident
+suns of 1/64th the radiance?
+Actually, if this works, it might be a suitable solution for us picky
+penumbra people.
+
+Andy
+
+
+On Thu, Sep 17, 2015 at 12:08 PM, Gregory J. Ward <gregoryjward at gmail.com>
+wrote:
+
+> Dear Picky Penumbra People (Andy):
+>
+> It's difficult to say for sure without implementing such an option, but
+> the source sampling often dominates the calculation time to the point where
+> you might not gain much over your current approach.  Increasing image
+> resolution adds some minor costs for the initial ray casting from the view
+> point, and some calculation time looking up and interpolating values from
+> the ambient cache (assuming you are using that), but those are pretty
+> nominal.  Your biggest gains for multiple source sampling would come from
+> scenes with only one or two light sources.
+>
+> One thing to bear in mind is that lights that are either sphere or source
+> types don't know how to subdivide, so the -ds option doesn't do what it
+> should for those emitters.  Otherwise, you can get better penumbras by
+> reducing your -ds value to some small (non-zero) value in addition to using
+> -dj 1.
+>
+> Cheers,
+> -Greg
+>
+> *From: *Andy McNeil <mcneil.andrew at gmail.com>
+>
+> *Subject: *[Radiance-dev] direct sampling behavior
+>
+> *Date: *September 17, 2015 11:04:22 AM PDT
+>
+>
+> Hi Radiance Developers (Greg),
+>
+> I often find myself oversampling an image by as much as 8 times to render
+> smooth penumbras. I wonder if it would make sense to add an option to
+> Radiance that would allow users to force additional direct samples when
+> they want nice penumbras (assuming that -dj is non-zero). Then when I want
+> a final image that is 1200x800 I don't need to render it at 9600x6400 and
+> filter it down, I could render at 1200x800 and request 64 direct samples
+> per light source to get the same smooth penumbras.
+>
+> Would this actually help me, or is the time difference between rendering
+> 9600x6400 with 1 direct sample to rendering 1200x800 with 64 direct samples
+> negligible?
+>
+> Andy
+>
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20150917/0bd4dc0d/attachment.html>
+
+From mstock at umich.edu  Thu Sep 17 12:22:04 2015
+From: mstock at umich.edu (Mark Stock)
+Date: Thu, 17 Sep 2015 15:22:04 -0400
+Subject: [Radiance-dev] direct sampling behavior
+In-Reply-To: <CAEFJVk-+WR1cbxEAF2XLu17Nq=08F3w_NVEJo++fRJ-UH+MxLg@mail.gmail.com>
+References: <CAEFJVk9hSp46s4wcZ=_5ooLOyEUeHunAjCi5PdVwC=qsjOunYQ@mail.gmail.com>
+	<172309CD-4636-4C7D-BAC1-127F35005F34@gmail.com>
+	<CAEFJVk-+WR1cbxEAF2XLu17Nq=08F3w_NVEJo++fRJ-UH+MxLg@mail.gmail.com>
+Message-ID: <CADoMKs0regk0CFDow_gu2g8b4Cpkim1TEAP2N2Jepa1_ur0Xjg@mail.gmail.com>
+
+Andy,
+
+I think a lot like you. I have a Perl script somewhere around here
+that does just that---can't find it yet.
+
+On a related note, I did some experiments a while back comparing
+ambient sampling with image oversampling, and in the process learned a
+lot about penumbras. I'm posting it here in hopes that you or someone
+finds it useful:
+
+http://markjstock.org/radmisc/aa0_ps1_test/final.html
+
+Mark
+
+On 9/17/15, Andy McNeil <mcneil.andrew at gmail.com> wrote:
+> Could I test the relative speed by rendering a scene with 64 coincident
+> suns of 1/64th the radiance?
+> Actually, if this works, it might be a suitable solution for us picky
+> penumbra people.
+>
+> Andy
+>
+>
+> On Thu, Sep 17, 2015 at 12:08 PM, Gregory J. Ward <gregoryjward at gmail.com>
+> wrote:
+>
+>> Dear Picky Penumbra People (Andy):
+>>
+>> It's difficult to say for sure without implementing such an option, but
+>> the source sampling often dominates the calculation time to the point
+>> where
+>> you might not gain much over your current approach.  Increasing image
+>> resolution adds some minor costs for the initial ray casting from the
+>> view
+>> point, and some calculation time looking up and interpolating values from
+>> the ambient cache (assuming you are using that), but those are pretty
+>> nominal.  Your biggest gains for multiple source sampling would come from
+>> scenes with only one or two light sources.
+>>
+>> One thing to bear in mind is that lights that are either sphere or source
+>> types don't know how to subdivide, so the -ds option doesn't do what it
+>> should for those emitters.  Otherwise, you can get better penumbras by
+>> reducing your -ds value to some small (non-zero) value in addition to
+>> using
+>> -dj 1.
+>>
+>> Cheers,
+>> -Greg
+>>
+>> *From: *Andy McNeil <mcneil.andrew at gmail.com>
+>>
+>> *Subject: *[Radiance-dev] direct sampling behavior
+>>
+>> *Date: *September 17, 2015 11:04:22 AM PDT
+>>
+>>
+>> Hi Radiance Developers (Greg),
+>>
+>> I often find myself oversampling an image by as much as 8 times to render
+>> smooth penumbras. I wonder if it would make sense to add an option to
+>> Radiance that would allow users to force additional direct samples when
+>> they want nice penumbras (assuming that -dj is non-zero). Then when I
+>> want
+>> a final image that is 1200x800 I don't need to render it at 9600x6400 and
+>> filter it down, I could render at 1200x800 and request 64 direct samples
+>> per light source to get the same smooth penumbras.
+>>
+>> Would this actually help me, or is the time difference between rendering
+>> 9600x6400 with 1 direct sample to rendering 1200x800 with 64 direct
+>> samples
+>> negligible?
+>>
+>> Andy
+>>
+>>
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>>
+>>
+>
+
+
+From mcneil.andrew at gmail.com  Thu Sep 17 12:35:44 2015
+From: mcneil.andrew at gmail.com (Andy McNeil)
+Date: Thu, 17 Sep 2015 12:35:44 -0700
+Subject: [Radiance-dev] direct sampling behavior
+In-Reply-To: <CADoMKs0regk0CFDow_gu2g8b4Cpkim1TEAP2N2Jepa1_ur0Xjg@mail.gmail.com>
+References: <CAEFJVk9hSp46s4wcZ=_5ooLOyEUeHunAjCi5PdVwC=qsjOunYQ@mail.gmail.com>
+	<172309CD-4636-4C7D-BAC1-127F35005F34@gmail.com>
+	<CAEFJVk-+WR1cbxEAF2XLu17Nq=08F3w_NVEJo++fRJ-UH+MxLg@mail.gmail.com>
+	<CADoMKs0regk0CFDow_gu2g8b4Cpkim1TEAP2N2Jepa1_ur0Xjg@mail.gmail.com>
+Message-ID: <CAEFJVk_fCUO65b2U6+dQqdXtgaHzBvZ-Opbav=onhkPtMFDtFw@mail.gmail.com>
+
+Mark,
+
+That's great! I didn't expect it, but it's actually quite logical that you
+can reduce the -ad parameter when oversampling and when when the ambient
+cache is disabled. I guess a pixel in the final rendering is the average of
+the oversampled pixels, so 4 ad samples oversampled 4 times is the same as
+16 ad samples without oversampling. That should help considerably when
+oversampling for penumbras.
+
+Thanks!
+Andy
+
+On Thu, Sep 17, 2015 at 12:22 PM, Mark Stock <mstock at umich.edu> wrote:
+
+> Andy,
+>
+> I think a lot like you. I have a Perl script somewhere around here
+> that does just that---can't find it yet.
+>
+> On a related note, I did some experiments a while back comparing
+> ambient sampling with image oversampling, and in the process learned a
+> lot about penumbras. I'm posting it here in hopes that you or someone
+> finds it useful:
+>
+> http://markjstock.org/radmisc/aa0_ps1_test/final.html
+>
+> Mark
+>
+> On 9/17/15, Andy McNeil <mcneil.andrew at gmail.com> wrote:
+> > Could I test the relative speed by rendering a scene with 64 coincident
+> > suns of 1/64th the radiance?
+> > Actually, if this works, it might be a suitable solution for us picky
+> > penumbra people.
+> >
+> > Andy
+> >
+> >
+> > On Thu, Sep 17, 2015 at 12:08 PM, Gregory J. Ward <
+> gregoryjward at gmail.com>
+> > wrote:
+> >
+> >> Dear Picky Penumbra People (Andy):
+> >>
+> >> It's difficult to say for sure without implementing such an option, but
+> >> the source sampling often dominates the calculation time to the point
+> >> where
+> >> you might not gain much over your current approach.  Increasing image
+> >> resolution adds some minor costs for the initial ray casting from the
+> >> view
+> >> point, and some calculation time looking up and interpolating values
+> from
+> >> the ambient cache (assuming you are using that), but those are pretty
+> >> nominal.  Your biggest gains for multiple source sampling would come
+> from
+> >> scenes with only one or two light sources.
+> >>
+> >> One thing to bear in mind is that lights that are either sphere or
+> source
+> >> types don't know how to subdivide, so the -ds option doesn't do what it
+> >> should for those emitters.  Otherwise, you can get better penumbras by
+> >> reducing your -ds value to some small (non-zero) value in addition to
+> >> using
+> >> -dj 1.
+> >>
+> >> Cheers,
+> >> -Greg
+> >>
+> >> *From: *Andy McNeil <mcneil.andrew at gmail.com>
+> >>
+> >> *Subject: *[Radiance-dev] direct sampling behavior
+> >>
+> >> *Date: *September 17, 2015 11:04:22 AM PDT
+> >>
+> >>
+> >> Hi Radiance Developers (Greg),
+> >>
+> >> I often find myself oversampling an image by as much as 8 times to
+> render
+> >> smooth penumbras. I wonder if it would make sense to add an option to
+> >> Radiance that would allow users to force additional direct samples when
+> >> they want nice penumbras (assuming that -dj is non-zero). Then when I
+> >> want
+> >> a final image that is 1200x800 I don't need to render it at 9600x6400
+> and
+> >> filter it down, I could render at 1200x800 and request 64 direct samples
+> >> per light source to get the same smooth penumbras.
+> >>
+> >> Would this actually help me, or is the time difference between rendering
+> >> 9600x6400 with 1 direct sample to rendering 1200x800 with 64 direct
+> >> samples
+> >> negligible?
+> >>
+> >> Andy
+> >>
+> >>
+> >> _______________________________________________
+> >> Radiance-dev mailing list
+> >> Radiance-dev at radiance-online.org
+> >> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+> >>
+> >>
+> >
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20150917/607e203a/attachment-0001.html>
+
+From gregoryjward at gmail.com  Thu Sep 17 14:44:05 2015
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu, 17 Sep 2015 14:44:05 -0700
+Subject: [Radiance-dev] direct sampling behavior
+In-Reply-To: <CAEFJVk-+WR1cbxEAF2XLu17Nq=08F3w_NVEJo++fRJ-UH+MxLg@mail.gmail.com>
+References: <CAEFJVk9hSp46s4wcZ=_5ooLOyEUeHunAjCi5PdVwC=qsjOunYQ@mail.gmail.com>
+	<172309CD-4636-4C7D-BAC1-127F35005F34@gmail.com>
+	<CAEFJVk-+WR1cbxEAF2XLu17Nq=08F3w_NVEJo++fRJ-UH+MxLg@mail.gmail.com>
+Message-ID: <EACB843D-BE4C-4899-B991-8F686E74FE9A@gmail.com>
+
+Yes, I think the coincident suns trick should work.  Did you try it?  It's only valid for distant sources -- anything else would give unreliable results, since local sources cast shadows from one another.
+
+-G
+
+> From: Andy McNeil <mcneil.andrew at gmail.com>
+> Subject: Re: [Radiance-dev] direct sampling behavior
+> Date: September 17, 2015 12:17:09 PM PDT
+> 
+> Could I test the relative speed by rendering a scene with 64 coincident suns of 1/64th the radiance? 
+> Actually, if this works, it might be a suitable solution for us picky penumbra people.
+> 
+> Andy
+> 
+> 
+> On Thu, Sep 17, 2015 at 12:08 PM, Gregory J. Ward <gregoryjward at gmail.com> wrote:
+> Dear Picky Penumbra People (Andy):
+> 
+> It's difficult to say for sure without implementing such an option, but the source sampling often dominates the calculation time to the point where you might not gain much over your current approach.  Increasing image resolution adds some minor costs for the initial ray casting from the view point, and some calculation time looking up and interpolating values from the ambient cache (assuming you are using that), but those are pretty nominal.  Your biggest gains for multiple source sampling would come from scenes with only one or two light sources.
+> 
+> One thing to bear in mind is that lights that are either sphere or source types don't know how to subdivide, so the -ds option doesn't do what it should for those emitters.  Otherwise, you can get better penumbras by reducing your -ds value to some small (non-zero) value in addition to using -dj 1.
+> 
+> Cheers,
+> -Greg
+> 
+>> From: Andy McNeil <mcneil.andrew at gmail.com>
+>> Subject: [Radiance-dev] direct sampling behavior
+>> Date: September 17, 2015 11:04:22 AM PDT
+>> 
+>> Hi Radiance Developers (Greg),
+>> 
+>> I often find myself oversampling an image by as much as 8 times to render smooth penumbras. I wonder if it would make sense to add an option to Radiance that would allow users to force additional direct samples when they want nice penumbras (assuming that -dj is non-zero). Then when I want a final image that is 1200x800 I don't need to render it at 9600x6400 and filter it down, I could render at 1200x800 and request 64 direct samples per light source to get the same smooth penumbras.  
+>> 
+>> Would this actually help me, or is the time difference between rendering 9600x6400 with 1 direct sample to rendering 1200x800 with 64 direct samples negligible?
+>> 
+>> Andy
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+> 
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20150917/84ca933c/attachment.html>
+

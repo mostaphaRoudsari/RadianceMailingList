@@ -1,0 +1,1133 @@
+From rob.guglielmetti at gmail.com  Wed Oct  3 07:49:58 2012
+From: rob.guglielmetti at gmail.com (Rob Guglielmetti)
+Date: Wed, 3 Oct 2012 08:49:58 -0600
+Subject: [Radiance-openstudio] New OpenStudio Version,
+	New Radiance Installers
+Message-ID: <295249CD-8881-4000-906B-21D88D44FFBC@gmail.com>
+
+Hi Folks,
+
+Just a quick note to let you know that we have updated the Radiance installers to coincide with the new 0.9.0 release of OpenStudio. 
+
+Radiance installers here:
+https://openstudio.nrel.gov/getting-started-developer/getting-started-radiance
+
+News on the new OpenStudio release here:
+http://openstudio.nrel.gov/content/openstudio-090-release
+
+I tried statically linking to the tiff libraries so hopefully this version of the Mac installer will work on 10.5, I just don't have a 10.5 system to test it out on. Let us know!
+
+- Rob
+
+From hujia06 at gmail.com  Wed Oct  3 15:44:52 2012
+From: hujia06 at gmail.com (Jia Hu)
+Date: Wed, 3 Oct 2012 18:44:52 -0400
+Subject: [Radiance-openstudio] Problem of DaylightSim.rb in Window 7
+In-Reply-To: <CABzgtwqUGfXLWtepZLe6MJPLj+UKYxzykSxwk+SiWQ=oh2W5AA@mail.gmail.com>
+References: <CABzgtwqUGfXLWtepZLe6MJPLj+UKYxzykSxwk+SiWQ=oh2W5AA@mail.gmail.com>
+Message-ID: <CABzgtwoUO+fWeVFQgpt21EQexEc-h=gnHX9uASxD0BdgEL0A-Q@mail.gmail.com>
+
+Hi all:
+
+I made a preliminary run using OpenStudio V 0.9 DaylightSim.rb in Window 7.
+
+The #{outPath} in DaylightSim.rb uses forward slash which is OK for
+most commands, but I find the following code shows incorrect syntax
+because of using forward slash in outPath and "type" (i.e.,
+catCommand) command..
+
+system("#{catCommand} #{outPath}/materials/materials_vmx.rad
+#{outPath}/scene/glazing/#{space_name}_glaz_#{aziVector}.rad >
+window_temp.rad")
+
+======================
+
+Another question about the DaylightSim.rb.  In Window 7, view matrix for
+the three phase method is not generated using "--dc --z", and I add the
+following code in line #590 for generating the view matrix.
+
+#add following code in line #590:
+exec_statement("type #{outPath}\\numeric\\#{space_name}.map | rcontrib
+#{rtrace_args} -f klems_int.cal -bn Nkbins -I+ -fa  -o
+#{outPath}\\output\\dc\\#{space_name}\\maps\\%s_#{space_name}.vmx
+#{binPairs} #{outPath}\\octrees\\model_dc.oct")
+
+Besides, the following code in Line # 581:
+
+binPairs << " -b
+'kbin(#{viewVectorX.round_to_str(2)},#{viewVectorY.round_to_str(2)},0,0,0,1)'
+-m glaz_#{aziVector}_#{glazingTransmissivity}"
+
+is changed to:
+
+binPairs << " -b
+ kbin(#{viewVectorX.round_to_str(2)},#{viewVectorY.round_to_str(2)},0,0,0,1)
+-m glaz_#{aziVector}_#{glazingTransmissivity}"
+
+Thanks,
+
+Jia
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-openstudio/attachments/20121003/0a69bf7b/attachment.html>
+
+From Robert.Guglielmetti at nrel.gov  Thu Oct  4 07:43:12 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Thu, 4 Oct 2012 08:43:12 -0600
+Subject: [Radiance-openstudio] Problem of DaylightSim.rb in Window 7
+In-Reply-To: <CABzgtwoUO+fWeVFQgpt21EQexEc-h=gnHX9uASxD0BdgEL0A-Q@mail.gmail.com>
+Message-ID: <CC92FB47.153A0%robert.guglielmetti@nrel.gov>
+
+Hi Jia,
+
+Thanks for reposting this to the dedicated OpenStudio-Radiance list. Yep, looks like you found a couple more path/character issues with the three-phase pat of the DaylightSim.rb script. We'll get a cross-platform solution in there for the next iteration release. Thanks for finding these and reporting them!
+
+- Rob
+
+Rob Guglielmetti
+National Renewable Energy Laboratory (NREL)
+Commercial Buildings Research Group
+15013 Denver West Parkway MS:RSF202
+Golden, CO 80401
+303.275.4319
+robert.guglielmetti at nrel.gov
+
+
+
+On 10/3/12 4:44 PM, "Jia Hu" <hujia06 at gmail.com<mailto:hujia06 at gmail.com>> wrote:
+
+Hi all:
+
+I made a preliminary run using OpenStudio V 0.9 DaylightSim.rb in Window 7.
+
+The #{outPath} in DaylightSim.rb uses forward slash which is OK for
+most commands, but I find the following code shows incorrect syntax
+because of using forward slash in outPath and "type" (i.e.,
+catCommand) command..
+
+system("#{catCommand} #{outPath}/materials/materials_vmx.rad
+#{outPath}/scene/glazing/#{space_name}_glaz_#{aziVector}.rad >
+window_temp.rad")
+
+======================
+
+Another question about the DaylightSim.rb.  In Window 7, view matrix for the three phase method is not generated using "--dc --z", and I add the following code in line #590 for generating the view matrix.
+
+#add following code in line #590:
+exec_statement("type #{outPath}\\numeric\\#{space_name}.map | rcontrib #{rtrace_args} -f klems_int.cal -bn Nkbins -I+ -fa  -o #{outPath}\\output\\dc\\#{space_name}\\maps\\%s_#{space_name}.vmx #{binPairs} #{outPath}\\octrees\\model_dc.oct")
+
+Besides, the following code in Line # 581:
+
+binPairs << " -b 'kbin(#{viewVectorX.round_to_str(2)},#{viewVectorY.round_to_str(2)},0,0,0,1)' -m glaz_#{aziVector}_#{glazingTransmissivity}"
+
+is changed to:
+
+binPairs << " -b  kbin(#{viewVectorX.round_to_str(2)},#{viewVectorY.round_to_str(2)},0,0,0,1) -m glaz_#{aziVector}_#{glazingTransmissivity}"
+
+Thanks,
+
+Jia
+
+
+
+From Robert.Guglielmetti at nrel.gov  Thu Oct 11 14:48:12 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Thu, 11 Oct 2012 15:48:12 -0600
+Subject: [Radiance-openstudio] New Tutorial Video Content
+Message-ID: <CC9C9ABC.159A0%robert.guglielmetti@nrel.gov>
+
+Hi folks,
+
+Just a quick note to let you know we have posted a couple of short videos
+showing off the new Radiance "one click" functionality that was recently
+added to OpenStudio (as of v0.9.0). You can access them in line with this
+playlist link:
+
+http://www.youtube.com/watch?v=LAvhO777pPU&list=PLPk2tlcZM0gwMRQ7gvNddCS5HP
+MgzJOU3&index=4&feature=plpp_video
+ 
+
+Some social media things don?t play well with links to a playlist,
+however; here are the direct video links to both videos.
+ 
+1 of 2
+http://www.youtube.com/watch?v=LAvhO777pPU
+ 
+2 of 2
+http://www.youtube.com/watch?v=IXnL6W8kXxQ
+
+
+Thanks!
+
+- Rob
+
+
+Rob Guglielmetti
+National Renewable Energy Laboratory (NREL)
+Commercial Buildings Research Group
+15013 Denver West Parkway MS:RSF202
+Golden, CO 80401
+303.275.4319
+robert.guglielmetti at nrel.gov
+
+
+
+
+
+
+From Robert.Guglielmetti at nrel.gov  Fri Oct 12 08:46:39 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Fri, 12 Oct 2012 09:46:39 -0600
+Subject: [Radiance-openstudio] New Tutorial Video Content
+In-Reply-To: <CC9D956E.159DD%robert.guglielmetti@nrel.gov>
+Message-ID: <CC9D9758.159E6%robert.guglielmetti@nrel.gov>
+
+
+On 10/12/12 8:22 AM, "javed iqbal" <javedvit at gmail.com<mailto:javedvit at gmail.com>> wrote:
+
+Also when i tried to run the simulation it says "Ruby and Radiance are required"..From where i can download these two installation file.
+
+
+Hi Javed,
+
+Here are some links for you:
+
+Radiance:
+https://openstudio.nrel.gov/getting-started-developer/getting-started-radiance
+
+Perl (just in case, assuming you're on Windows. If on Mac or Linux you probably already have Perl installed):
+http://www.activestate.com/activeperl/downloads/thank-you?dl=http://downloads.activestate.com/ActivePerl/releases/5.16.1.1601/ActivePerl-5.16.1.1601-MSWin32-x86-296175.msi
+
+- Rob
+
+
+
+From Robert.Guglielmetti at nrel.gov  Fri Oct 12 08:51:00 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Fri, 12 Oct 2012 09:51:00 -0600
+Subject: [Radiance-openstudio] New Tutorial Video Content
+In-Reply-To: <CAEF2+-k7He9_GtAQyz-UGB+nvqM5ZxZ0d=3iz=5hDnhoPwbprQ@mail.gmail.com>
+Message-ID: <CC9D979B.159E9%robert.guglielmetti@nrel.gov>
+
+Hi Javed,
+
+We do not calculate daylight factors currently. We believe that the DF is an antiquated metric and favor the "dynamic" and climate-based daylight metrics that are out there (and emerging). To add DF to the report would require an additional integration at each timestep for the overcast sky, which is required for the DF evaluation. So for now we elect to not calculate it. Sorry!
+
+
+Rob Guglielmetti
+National Renewable Energy Laboratory (NREL)
+Commercial Buildings Research Group
+15013 Denver West Parkway MS:RSF202
+Golden, CO 80401
+303.275.4319
+robert.guglielmetti at nrel.gov
+
+
+
+On 10/12/12 7:25 AM, "javed iqbal" <javedvit at gmail.com<mailto:javedvit at gmail.com>> wrote:
+
+Hi,
+
+This seems very nice. Is it possible to generate/visualize Daylight Factor in Result viewer?
+
+Great work!
+
+On Fri, Oct 12, 2012 at 3:18 AM, Guglielmetti, Robert <Robert.Guglielmetti at nrel.gov<mailto:Robert.Guglielmetti at nrel.gov>> wrote:
+Hi folks,
+
+Just a quick note to let you know we have posted a couple of short videos
+showing off the new Radiance "one click" functionality that was recently
+added to OpenStudio (as of v0.9.0). You can access them in line with this
+playlist link:
+
+http://www.youtube.com/watch?v=LAvhO777pPU&list=PLPk2tlcZM0gwMRQ7gvNddCS5HP
+MgzJOU3&index=4&feature=plpp_video
+
+
+Some social media things don?t play well with links to a playlist,
+however; here are the direct video links to both videos.
+
+1 of 2
+http://www.youtube.com/watch?v=LAvhO777pPU
+
+2 of 2
+http://www.youtube.com/watch?v=IXnL6W8kXxQ
+
+
+Thanks!
+
+- Rob
+
+
+Rob Guglielmetti
+National Renewable Energy Laboratory (NREL)
+Commercial Buildings Research Group
+15013 Denver West Parkway MS:RSF202
+Golden, CO 80401
+303.275.4319
+robert.guglielmetti at nrel.gov<mailto:robert.guglielmetti at nrel.gov>
+
+
+
+
+
+_______________________________________________
+Radiance-openstudio mailing list
+Radiance-openstudio at radiance-online.org<mailto:Radiance-openstudio at radiance-online.org>
+http://www.radiance-online.org/mailman/listinfo/radiance-openstudio
+
+
+
+--
+
+Javed Iqbal, LEED AP, CEA
+Energy Analyst
+
+
+
+From hujia06 at gmail.com  Sat Oct 13 10:55:50 2012
+From: hujia06 at gmail.com (Jia Hu)
+Date: Sat, 13 Oct 2012 13:55:50 -0400
+Subject: [Radiance-openstudio] genBSDF runtime
+Message-ID: <CABzgtwp6fAEbvjEu6J-YKdhqm7c07-gNK-TPJ6D33m6DF4OY_g@mail.gmail.com>
+
+Hello:
+
+I would like to generate a number of BSDF .xml files dynamically in command
+line or code.  I prefer to use genBSDF because it is more flexible than
+Window 6, which cannot run in command line (right?).  However, the
+computation time of genBSDF seems rather long compared to Window 6.  I
+believe the major reason is the algorithm is different.
+
+The test file is given below.  The default parameter setting "-ab 5" is not
+high.  Besides increasing -n option in genBSDF, is there any way to reduce
+the runtime with an similar accuracy level as Window 6? or is there any
+other tool that can simulate BSDF in command line?
+
+The test file is:
+####### file: glazingBase.rad ######
+glazingRef_0.5 polygon glazing_1
+0
+0
+12
+2  0.0   3
+0.0   0.0   3
+0.0   0.0   0.0
+2  0.0   0.0
+
+########### file: basf.rad ###########
+void glass glazingRef_0.5
+0
+0
+3
+0.545168692741 0.545168692741 0.545168692741
+
+void plastic blindRef_0.2
+0
+0
+5
+0.2 0.2 0.2 0 0
+
+! genblinds blindRef_0.2 blinds_0.2 0.02 2 3 200 0 | xform -rz -90 -rx 90
+-t 0 0 -0.02
+!xform -rx 90 glazingBase.rad
+################ end ########
+
+In Ubuntu, use "genBSDF bsdf.rad  > test.xml"
+
+Thank you!
+
+Jia
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-openstudio/attachments/20121013/f904b7d9/attachment.html>
+
+From grobe at gmx.net  Sat Oct 13 12:50:20 2012
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Sat, 13 Oct 2012 21:50:20 +0200
+Subject: [Radiance-openstudio] genBSDF runtime
+In-Reply-To: <CABzgtwp6fAEbvjEu6J-YKdhqm7c07-gNK-TPJ6D33m6DF4OY_g@mail.gmail.com>
+References: <CABzgtwp6fAEbvjEu6J-YKdhqm7c07-gNK-TPJ6D33m6DF4OY_g@mail.gmail.com>
+Message-ID: <5079C5FC.3030504@gmx.net>
+
+Hi Jia,
+
+as far as I know, Window is using a rather simple radiosity method, 
+which makes the calculation of the BSDF quick. The method is not really 
+suitable to maintain sharp transmissive or reflective peaks, but that is 
+not a concern for most energy simulation. For daylighting however, you 
+usually need the high angular resolution that the path-tracing algorithm 
+of genBSDF provides.
+
+Writing a tool that traces through a model and derives the BSDF from the 
+transmission / reflection at varied incident directions is not that 
+hard, however, that would certainly not be more efficient and useful 
+then what genBSDF does. And - the big advantage of genBSDF is its 
+variable resolution BSDF, which allows you to maintain much more detail 
+in the distribution. If you wanted to write your own "genBSDF", 
+implementing the data reduction would probably be the most difficult step.
+
+By the way, seams not to be much Openstudio-specific but more a Radiance 
+topic.
+
+Cheers, Lars.
+
+> I would like to generate a number of BSDF .xml files dynamically in 
+> command line or code.  I prefer to use genBSDF because it is more 
+> flexible than Window 6, which cannot run in command line (right?).  
+> However, the computation time of genBSDF seems rather long compared to 
+> Window 6.  I believe the major reason is the algorithm is different.
+> The test file is given below.  The default parameter setting "-ab 5" 
+> is not high.  Besides increasing -n option in genBSDF, is there any 
+> way to reduce the runtime with an similar accuracy level as Window 6? 
+> or is there any other tool that can simulate BSDF in command line?
+>
+
+
+From kx7007 at yahoo.com  Sat Oct 13 14:15:47 2012
+From: kx7007 at yahoo.com (KXZ7007 ......)
+Date: Sat, 13 Oct 2012 14:15:47 -0700 (PDT)
+Subject: [Radiance-openstudio] (no subject)
+Message-ID: <1350162947.15973.YahooMailNeo@web125906.mail.ne1.yahoo.com>
+
+Hi all
+I did try to run radiance in openstudio 9.
+However, the simulation did stop. I think this problem is due to how I did the settings
+of RAYBATH and PATH in ?Environment Variables? .....
+I did try to
+follow the instructions in 'Getting started with Radiance https://openstudio.nrel.gov/getting-started-developer/getting-started-radiance,
+put still I did not succeed in running radiance.
+I did attach a
+picture which shows i did the settings and location of radiance folder in my
+PC, and the way i use it to check the
+version of Ruby that you I'm using.
+I appreciate any advice regarding solving this problem
+Thanks
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-openstudio/attachments/20121013/3a953c4f/attachment-0001.html>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: Picture 1.png
+Type: image/png
+Size: 161770 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-openstudio/attachments/20121013/3a953c4f/attachment-0001.png>
+
+From Robert.Guglielmetti at nrel.gov  Wed Oct 17 09:24:22 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Wed, 17 Oct 2012 10:24:22 -0600
+Subject: [Radiance-openstudio] (no subject)
+In-Reply-To: <1350162947.15973.YahooMailNeo@web125906.mail.ne1.yahoo.com>
+Message-ID: <CCA436A9.15C09%robert.guglielmetti@nrel.gov>
+
+A couple of quick things to try:
+
+
+ 1.  Download the latest version of the Radiance installer (I can tell you're using an older version because you don't have the documentation installed)
+ 2.  For your PATH, you should add '$PATH' and '.' to that entry. The former makes sure to add any predefined PATH elements to your additions, the latter includes the current working directory in your path.
+
+Try those, and then let me know if you still have problems. If you do, can you post details about the specific errors you're seeing?
+
+Thanks,
+
+Rob
+
+Rob Guglielmetti
+National Renewable Energy Laboratory (NREL)
+Commercial Buildings Research Group
+15013 Denver West Parkway MS:RSF202
+Golden, CO 80401
+303.275.4319
+robert.guglielmetti at nrel.gov
+
+
+
+On 10/13/12 3:15 PM, "KXZ7007 ......" <kx7007 at yahoo.com<mailto:kx7007 at yahoo.com>> wrote:
+
+Hi all
+I did try to run radiance in openstudio 9. However, the simulation did stop. I think this problem is due to how I did the settings of RAYBATH and PATH in ?Environment Variables? .....
+I did try to follow the instructions in 'Getting started with Radiance https://openstudio.nrel.gov/getting-started-developer/getting-started-radiance, put still I did not succeed in running radiance.
+I did attach a picture which shows i did the settings and location of radiance folder in my PC, and the way i use it to check the version of Ruby that you I'm using.
+I appreciate any advice regarding solving this problem
+Thanks
+
+
+From sotos.enveng at gmail.com  Wed Oct 24 15:20:17 2012
+From: sotos.enveng at gmail.com (=?ISO-8859-7?B?0/n03vHn8iDQ4fDh7fT57d/v9Q==?=)
+Date: Thu, 25 Oct 2012 01:20:17 +0300
+Subject: [Radiance-openstudio] (no subject)
+In-Reply-To: <CCA436A9.15C09%robert.guglielmetti@nrel.gov>
+References: <1350162947.15973.YahooMailNeo@web125906.mail.ne1.yahoo.com>
+	<CCA436A9.15C09%robert.guglielmetti@nrel.gov>
+Message-ID: <CAKmm+9HczmzZkWXzZD5QtvLbpzsGmbpDRnsRcZdgCUyL5jSBMw@mail.gmail.com>
+
+Hello Rob and everyone in this list
+
+I am having the same problem running the ruby file to convert the osm file
+to radiance format, when I type ModeltoRad.rb on the folder where this file
+is located i receive the following message:
+
+C:/Program Files/OpenStudio
+0.9.0/Ruby/openstudio/radiance/ModelToRad.rb:45:in `
+require': no such file to load -- openstudio (LoadError)
+        from C:/Program Files/OpenStudio
+0.9.0/Ruby/openstudio/radiance/ModelToR
+ad.rb:45
+
+Apart from that, the ModeltoRad.rb is not working outside the specific
+folder
+
+Any suggestions?
+
+Thank you in advance
+
+Sotiris
+
+2012/10/17 Guglielmetti, Robert <Robert.Guglielmetti at nrel.gov>
+
+> A couple of quick things to try:
+>
+>
+>  1.  Download the latest version of the Radiance installer (I can tell
+> you're using an older version because you don't have the documentation
+> installed)
+>  2.  For your PATH, you should add '$PATH' and '.' to that entry. The
+> former makes sure to add any predefined PATH elements to your additions,
+> the latter includes the current working directory in your path.
+>
+> Try those, and then let me know if you still have problems. If you do, can
+> you post details about the specific errors you're seeing?
+>
+> Thanks,
+>
+> Rob
+>
+> Rob Guglielmetti
+> National Renewable Energy Laboratory (NREL)
+> Commercial Buildings Research Group
+> 15013 Denver West Parkway MS:RSF202
+> Golden, CO 80401
+> 303.275.4319
+> robert.guglielmetti at nrel.gov
+>
+>
+>
+> On 10/13/12 3:15 PM, "KXZ7007 ......" <kx7007 at yahoo.com<mailto:
+> kx7007 at yahoo.com>> wrote:
+>
+> Hi all
+> I did try to run radiance in openstudio 9. However, the simulation did
+> stop. I think this problem is due to how I did the settings of RAYBATH and
+> PATH in ?Environment Variables? .....
+> I did try to follow the instructions in 'Getting started with Radiance
+> https://openstudio.nrel.gov/getting-started-developer/getting-started-radiance,
+> put still I did not succeed in running radiance.
+> I did attach a picture which shows i did the settings and location of
+> radiance folder in my PC, and the way i use it to check the version of Ruby
+> that you I'm using.
+> I appreciate any advice regarding solving this problem
+> Thanks
+>
+> _______________________________________________
+> Radiance-openstudio mailing list
+> Radiance-openstudio at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-openstudio
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-openstudio/attachments/20121025/b299f742/attachment.html>
+
+From hujia06 at gmail.com  Wed Oct 24 15:44:31 2012
+From: hujia06 at gmail.com (Jia Hu)
+Date: Wed, 24 Oct 2012 18:44:31 -0400
+Subject: [Radiance-openstudio] (no subject)
+In-Reply-To: <CAKmm+9HczmzZkWXzZD5QtvLbpzsGmbpDRnsRcZdgCUyL5jSBMw@mail.gmail.com>
+References: <1350162947.15973.YahooMailNeo@web125906.mail.ne1.yahoo.com>
+	<CCA436A9.15C09%robert.guglielmetti@nrel.gov>
+	<CAKmm+9HczmzZkWXzZD5QtvLbpzsGmbpDRnsRcZdgCUyL5jSBMw@mail.gmail.com>
+Message-ID: <CABzgtwpNzLoENCnVhXXeTa9W1gXMXeHMBh4Tb=3afw=DTGjP=w@mail.gmail.com>
+
+Hi,
+
+You may look at this example format: "Ruby
+"/path/to/ModelToRad/ModelToRad.rb"  "/path/to/your/OSM"
+"/your/path/to/sql"  --month 5  --day 15 --dc --dcts --z
+
+Make sure use quote in Window OS file path if there is blank in between.
+
+Thanks,
+
+Jia
+
+On Wed, Oct 24, 2012 at 6:20 PM, ??????? ??????????? <sotos.enveng at gmail.com
+> wrote:
+
+> Hello Rob and everyone in this list
+>
+> I am having the same problem running the ruby file to convert the osm file
+> to radiance format, when I type ModeltoRad.rb on the folder where this file
+> is located i receive the following message:
+>
+> C:/Program Files/OpenStudio
+> 0.9.0/Ruby/openstudio/radiance/ModelToRad.rb:45:in `
+> require': no such file to load -- openstudio (LoadError)
+>         from C:/Program Files/OpenStudio
+> 0.9.0/Ruby/openstudio/radiance/ModelToR
+> ad.rb:45
+>
+> Apart from that, the ModeltoRad.rb is not working outside the specific
+> folder
+>
+> Any suggestions?
+>
+> Thank you in advance
+>
+> Sotiris
+>
+> 2012/10/17 Guglielmetti, Robert <Robert.Guglielmetti at nrel.gov>
+>
+> A couple of quick things to try:
+>>
+>>
+>>  1.  Download the latest version of the Radiance installer (I can tell
+>> you're using an older version because you don't have the documentation
+>> installed)
+>>  2.  For your PATH, you should add '$PATH' and '.' to that entry. The
+>> former makes sure to add any predefined PATH elements to your additions,
+>> the latter includes the current working directory in your path.
+>>
+>> Try those, and then let me know if you still have problems. If you do,
+>> can you post details about the specific errors you're seeing?
+>>
+>> Thanks,
+>>
+>> Rob
+>>
+>> Rob Guglielmetti
+>> National Renewable Energy Laboratory (NREL)
+>> Commercial Buildings Research Group
+>> 15013 Denver West Parkway MS:RSF202
+>> Golden, CO 80401
+>> 303.275.4319
+>> robert.guglielmetti at nrel.gov
+>>
+>>
+>>
+>> On 10/13/12 3:15 PM, "KXZ7007 ......" <kx7007 at yahoo.com<mailto:
+>> kx7007 at yahoo.com>> wrote:
+>>
+>> Hi all
+>> I did try to run radiance in openstudio 9. However, the simulation did
+>> stop. I think this problem is due to how I did the settings of RAYBATH and
+>> PATH in "Environment Variables" .....
+>> I did try to follow the instructions in 'Getting started with Radiance
+>> https://openstudio.nrel.gov/getting-started-developer/getting-started-radiance,
+>> put still I did not succeed in running radiance.
+>> I did attach a picture which shows i did the settings and location of
+>> radiance folder in my PC, and the way i use it to check the version of Ruby
+>> that you I'm using.
+>> I appreciate any advice regarding solving this problem
+>> Thanks
+>>
+>> _______________________________________________
+>> Radiance-openstudio mailing list
+>> Radiance-openstudio at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-openstudio
+>>
+>
+>
+> _______________________________________________
+> Radiance-openstudio mailing list
+> Radiance-openstudio at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-openstudio
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-openstudio/attachments/20121024/62bb4f2f/attachment.html>
+
+From kx7007 at yahoo.com  Thu Oct 25 10:01:13 2012
+From: kx7007 at yahoo.com (KXZ7007 ......)
+Date: Thu, 25 Oct 2012 10:01:13 -0700 (PDT)
+Subject: [Radiance-openstudio] (no subject)
+In-Reply-To: <CCA436A9.15C09%robert.guglielmetti@nrel.gov>
+References: <1350162947.15973.YahooMailNeo@web125906.mail.ne1.yahoo.com>
+	<CCA436A9.15C09%robert.guglielmetti@nrel.gov>
+Message-ID: <1351184473.48853.YahooMailNeo@web125901.mail.ne1.yahoo.com>
+
+
+
+Thanks Rob.
+I did install the latest version of Radiance from:https://openstudio.nrel.gov/getting-started-developer/getting-started-radiance
+however, I did not see any installed documentation.
+Also I did what you mentioned in step no.2;
+PATH:???????????????????? .;$PATH;c:\radiance\bin
+RAYPTH:?????????????? .;c:\Radiance\lib
+?and still, I have the same problem. 
+Regarding the error, i got 1 error which I?could not find any detailes for such error, just i will get in the openstudio window,
+that the Run has Failed, and Warning: 0 and Errors:1. 
+Thanks
+ 
+
+________________________________
+ From: "Guglielmetti, Robert" <Robert.Guglielmetti at nrel.gov>
+To: KXZ7007 ...... <kx7007 at yahoo.com>; Discussion of Radiance with OpenStudio <radiance-openstudio at radiance-online.org> 
+Sent: Wednesday, October 17, 2012 7:24 PM
+Subject: Re: [Radiance-openstudio] (no subject)
+  
+A couple of quick things to try:
+
+
+1.? Download the latest version of the Radiance installer (I can tell you're using an older version because you don't have the documentation installed)
+2.? For your PATH, you should add '$PATH' and '.' to that entry. The former makes sure to add any predefined PATH elements to your additions, the latter includes the current working directory in your path.
+
+Try those, and then let me know if you still have problems. If you do, can you post details about the specific errors you're seeing?
+
+Thanks,
+
+Rob
+
+Rob Guglielmetti
+National Renewable Energy Laboratory (NREL)
+Commercial Buildings Research Group
+15013 Denver West Parkway MS:RSF202
+Golden, CO 80401
+303.275.4319
+robert.guglielmetti at nrel.gov
+
+
+
+On 10/13/12 3:15 PM, "KXZ7007 ......" <kx7007 at yahoo.com<mailto:kx7007 at yahoo.com>> wrote:
+
+Hi all
+I did try to run radiance in openstudio 9. However, the simulation did stop. I think this problem is due to how I did the settings of RAYBATH and PATH in ?Environment Variables? .....
+I did try to follow the instructions in 'Getting started with Radiance https://openstudio.nrel.gov/getting-started-developer/getting-started-radiance, put still I did not succeed in running radiance.
+I did attach a picture which shows i did the settings and location of radiance folder in my PC, and the way i use it to check the version of Ruby that you I'm using.
+I appreciate any advice regarding solving this problem
+Thanks
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-openstudio/attachments/20121025/f1742df3/attachment-0001.html>
+
+From martin.klingler at gmx.at  Tue Oct 30 02:56:49 2012
+From: martin.klingler at gmx.at (Martin Klingler)
+Date: Tue, 30 Oct 2012 10:56:49 +0100
+Subject: [Radiance-openstudio] =?iso-8859-1?q?OpenStudio_on_OSX_10=2E8?=
+Message-ID: <1520785148561558013395@conserver>
+
+Hello,
+
+?
+
+this is my first mailing to this list. Sorry for my bad English, I am located in Austria.
+
+I try to setup Open Studio with the radiance functionality on my Macbook. After a series of trials with no success I start a new attempt and try to follow the available instructions as close as possible.
+
+?
+
+I just did a fresh installation of OSX 10.8 on a separate partition.
+
+?
+
+1. question: This is a German OSX version, could that lead to any problems?
+
+?
+
+2. question: OSX 10.8 comes with Ruby 1.8.7. The "Radiance_Installation_Instructions_0_9_0.pdf" says "Install RUBY 1.8.6" so ist 1.8.6 required?
+
+If yes, are there any hints how to downgrade to Ruby 1.8.6?
+
+?
+
+3. question: The installation sequence according to "Radiance_Installation_Instructions_0_9_0.pdf" seems to be reverse to the sequence described in the "Installation Instructions" on the Open Studio Webpage. The notes for OS X on that webpage also tell that Ruby 1.8.6 or 1.8.7 is supported, which comes back to question number 2.
+
+?
+
+4. question: "Radiance_Installation_Instructions_0_9_0.pdf" tells to do a separate Perl installation (ActivePerl is recommended). Is this true also for OSX?
+
+?
+
+?
+
+Many thanks for any help on my way.
+
+?
+
+Best regards
+
+Martin Klingler
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-openstudio/attachments/20121030/43765092/attachment.html>
+
+From Robert.Guglielmetti at nrel.gov  Tue Oct 30 08:07:53 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Tue, 30 Oct 2012 09:07:53 -0600
+Subject: [Radiance-openstudio] OpenStudio on OSX 10.8
+In-Reply-To: <1520785148561558013395@conserver>
+References: <1520785148561558013395@conserver>
+Message-ID: <FFF56A6D37A3A54F91A03601AC22DA3225FDC07D60@MAILBOX2.nrel.gov>
+
+Hi Martin (your English is just fine),
+
+1. I'm fairly certain we have some German/Austrian OpenStudio users...
+2. Ruby 1.8.7 works just fine with OpenStudio -- in fact, yours is the same setup as I have (OSX10.8 + Ruby 1.8.7) 
+3. The install doc you are working off of is outdated (see #4).
+4. The Perl install directive is only for people running OpenStudio on Windows; OSX and Linux users most likely already have Perl installed (as well as Ruby). 
+
+What version of OpenStudio are you trying to install? I highly recommend installing the latest iteration version, which is 0.9.3. That installer can be downloaded from the Developers tab on the OpenStudio website:
+
+http://openstudio.nrel.gov/developers
+
+Direct link to Mac installer:
+http://openstudio.nrel.gov/accept/file/1162
+
+Once you have that version installed, let us know how you make out. If you still have problems, please post some specifics about the nature of the problem. 
+
+Cheers,
+
+- Rob
+
+________________________________________
+From: Martin Klingler [martin.klingler at gmx.at]
+Sent: Tuesday, October 30, 2012 3:56 AM
+To: radiance-openstudio at radiance-online.org
+Subject: [Radiance-openstudio] OpenStudio on OSX 10.8
+
+Hello,
+
+
+
+this is my first mailing to this list. Sorry for my bad English, I am located in Austria.
+
+I try to setup Open Studio with the radiance functionality on my Macbook. After a series of trials with no success I start a new attempt and try to follow the available instructions as close as possible.
+
+
+
+I just did a fresh installation of OSX 10.8 on a separate partition.
+
+
+
+1. question: This is a German OSX version, could that lead to any problems?
+
+
+
+2. question: OSX 10.8 comes with Ruby 1.8.7. The "Radiance_Installation_Instructions_0_9_0.pdf" says "Install RUBY 1.8.6" so ist 1.8.6 required?
+
+If yes, are there any hints how to downgrade to Ruby 1.8.6?
+
+
+
+3. question: The installation sequence according to "Radiance_Installation_Instructions_0_9_0.pdf" seems to be reverse to the sequence described in the "Installation Instructions" on the Open Studio Webpage. The notes for OS X on that webpage also tell that Ruby 1.8.6 or 1.8.7 is supported, which comes back to question number 2.
+
+
+
+4. question: "Radiance_Installation_Instructions_0_9_0.pdf" tells to do a separate Perl installation (ActivePerl is recommended). Is this true also for OSX?
+
+
+
+
+
+Many thanks for any help on my way.
+
+
+
+Best regards
+
+Martin Klingler
+
+
+From kx7007 at yahoo.com  Tue Oct 30 12:43:53 2012
+From: kx7007 at yahoo.com (KXZ7007 ......)
+Date: Tue, 30 Oct 2012 12:43:53 -0700 (PDT)
+Subject: [Radiance-openstudio] EnergyPlus version and radiance
+In-Reply-To: <FFF56A6D37A3A54F91A03601AC22DA3225FDC07D60@MAILBOX2.nrel.gov>
+References: <1520785148561558013395@conserver>
+	<FFF56A6D37A3A54F91A03601AC22DA3225FDC07D60@MAILBOX2.nrel.gov>
+Message-ID: <1351626233.94713.YahooMailNeo@web125902.mail.ne1.yahoo.com>
+
+?hi all,
+?
+Dose OpenStudio 0.9.3 support EnergyPlus 7.2 ?? 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-openstudio/attachments/20121030/c724362d/attachment.html>
+
+From Robert.Guglielmetti at nrel.gov  Wed Oct 31 09:20:07 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Wed, 31 Oct 2012 10:20:07 -0600
+Subject: [Radiance-openstudio] EnergyPlus version and radiance
+In-Reply-To: <1351626233.94713.YahooMailNeo@web125902.mail.ne1.yahoo.com>
+Message-ID: <CCB6AB81.16713%robert.guglielmetti@nrel.gov>
+
+Currently, OpenStudio (0.9.3) supports EnergyPlus 7.1. Our releases are a bit "off" from one another and so there's always a period where the latest OpenStudio version supports the previous version of EnergyPlus. Sorry about that!
+
+Rob Guglielmetti
+National Renewable Energy Laboratory (NREL)
+Commercial Buildings Research Group
+15013 Denver West Parkway MS:RSF202
+Golden, CO 80401
+303.275.4319
+robert.guglielmetti at nrel.gov
+
+
+
+On 10/30/12 1:43 PM, "KXZ7007 ......" <kx7007 at yahoo.com<mailto:kx7007 at yahoo.com>> wrote:
+
+ hi all,
+
+Dose OpenStudio 0.9.3 support EnergyPlus 7.2
+
+
+
+From martin.klingler at gmx.at  Wed Oct 31 10:29:29 2012
+From: martin.klingler at gmx.at (Martin Klingler)
+Date: Wed, 31 Oct 2012 18:29:29 +0100
+Subject: [Radiance-openstudio] =?iso-8859-1?q?OpenStudio_on_OSX_10=2E8?=
+References: <FFF56A6D37A3A54F91A03601AC22DA3225FDC07D60@MAILBOX2.nrel.gov>
+Message-ID: <1520308046482808027683@conserver>
+
+Hi Rob,
+
+thank you very much for your instructions. I just did the complete installation (EnergyPlus 7.1, Sketchup 8, Radiance 4.2.a and Openstudio 0.9.3).
+
+I then followed very closely your tutorial about OpenStudio New Features - Radiance Integration. But the run failed (see https://dl.dropbox.com/u/27495200/Pic2.png).
+
+Just in case, I have uploaded also my example file (https://dl.dropbox.com/u/27495200/office2.zip).
+
+In Sketchup, when closing the preference window there is a warning about the path to EnergyPlus(https://dl.dropbox.com/u/27495200/Pic1.png). But the tools seem to be recognized (https://dl.dropbox.com/u/27495200/Pic3.png).
+
+Any idea what is going wrong?
+
+Thanks and best regards
+
+Martin Klingler
+
+?
+
+Original Message
+
+processed by CONSOLIDATE
+
+Subject:
+
+RE: [Radiance-openstudio] OpenStudio on OSX 10.8
+
+Sent:
+
+Dienstag, 30. Oktober 2012 16:07
+
+From:
+
+Guglielmetti, Robert (Robert.Guglielmetti at nrel.gov)
+
+
+Hi Martin (your English is just fine),
+
+1. I m fairly certain we have some German/Austrian OpenStudio users...
+2. Ruby 1.8.7 works just fine with OpenStudio -- in fact, yours is the same setup as I have (OSX10.8 + Ruby 1.8.7)
+3. The install doc you are working off of is outdated (see #4).
+4. The Perl install directive is only for people running OpenStudio on Windows; OSX and Linux users most likely already have Perl installed (as well as Ruby).
+
+What version of OpenStudio are you trying to install? I highly recommend installing the latest iteration version, which is 0.9.3. That installer can be downloaded from the Developers tab on the OpenStudio website:
+
+http://openstudio.nrel.gov/developers
+
+Direct link to Mac installer:
+http://openstudio.nrel.gov/accept/file/1162
+
+Once you have that version installed, let us know how you make out. If you still have problems, please post some specifics about the nature of the problem.
+
+Cheers,
+
+- Rob
+
+________________________________________
+From: Martin Klingler [martin.klingler at gmx.at]
+Sent: Tuesday, October 30, 2012 3:56 AM
+To: radiance-openstudio at radiance-online.org
+Subject: [Radiance-openstudio] OpenStudio on OSX 10.8
+
+Hello,
+
+
+
+this is my first mailing to this list. Sorry for my bad English, I am located in Austria.
+
+I try to setup Open Studio with the radiance functionality on my Macbook. After a series of trials with no success I start a new attempt and try to follow the available instructions as close as possible.
+
+
+
+I just did a fresh installation of OSX 10.8 on a separate partition.
+
+
+
+1. question: This is a German OSX version, could that lead to any problems?
+
+
+
+2. question: OSX 10.8 comes with Ruby 1.8.7. The "Radiance_Installation_Instructions_0_9_0.pdf" says "Install RUBY 1.8.6" so ist 1.8.6 required?
+
+If yes, are there any hints how to downgrade to Ruby 1.8.6?
+
+
+
+3. question: The installation sequence according to "Radiance_Installation_Instructions_0_9_0.pdf" seems to be reverse to the sequence described in the "Installation Instructions" on the Open Studio Webpage. The notes for OS X on that webpage also tell that Ruby 1.8.6 or 1.8.7 is supported, which comes back to question number 2.
+
+
+
+4. question: "Radiance_Installation_Instructions_0_9_0.pdf" tells to do a separate Perl installation (ActivePerl is recommended). Is this true also for OSX?
+
+
+
+
+
+Many thanks for any help on my way.
+
+
+
+Best regards
+
+Martin Klingler
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-openstudio/attachments/20121031/19e951d7/attachment.html>
+
+From Robert.Guglielmetti at nrel.gov  Wed Oct 31 12:36:12 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Wed, 31 Oct 2012 13:36:12 -0600
+Subject: [Radiance-openstudio] OpenStudio on OSX 10.8
+In-Reply-To: <1520308046482808027683@conserver>
+Message-ID: <CCB6D987.16785%robert.guglielmetti@nrel.gov>
+
+Hi Martin,
+
+The first thing I would do is to re-run "scan for tools" in the OS app (under the File? menu). Make sure EnergyPlus 7.1 is there, and then remove as a tool any other versions of EnergyPlus that may show up. Generally those shouldn?t matter, but we have seen cases where having an old version prevented the simulation from running.
+
+Rob Guglielmetti
+National Renewable Energy Laboratory (NREL)
+Commercial Buildings Research Group
+15013 Denver West Parkway MS:RSF202
+Golden, CO 80401
+303.275.4319
+robert.guglielmetti at nrel.gov
+
+
+
+On 10/31/12 11:29 AM, "Martin Klingler" <martin.klingler at gmx.at<mailto:martin.klingler at gmx.at>> wrote:
+
+
+Hi Rob,
+
+thank you very much for your instructions. I just did the complete installation (EnergyPlus 7.1, Sketchup 8, Radiance 4.2.a and Openstudio 0.9.3).
+
+I then followed very closely your tutorial about OpenStudio New Features - Radiance Integration. But the run failed (see https://dl.dropbox.com/u/27495200/Pic2.png).
+
+Just in case, I have uploaded also my example file (https://dl.dropbox.com/u/27495200/office2.zip).
+
+In Sketchup, when closing the preference window there is a warning about the path to EnergyPlus(https://dl.dropbox.com/u/27495200/Pic1.png). But the tools seem to be recognized (https://dl.dropbox.com/u/27495200/Pic3.png).
+
+Any idea what is going wrong?
+
+Thanks and best regards
+
+Martin Klingler
+
+
+
+Original Message
+
+
+processed by CONSOLIDATE <http://www.consolidate.at>
+
+
+Subject:
+
+
+RE: [Radiance-openstudio] OpenStudio on OSX 10.8
+
+
+Sent:
+
+
+Dienstag, 30. Oktober 2012 16:07
+
+
+From:
+
+
+Guglielmetti, Robert (Robert.Guglielmetti at nrel.gov<mailto:Robert.Guglielmetti at nrel.gov>)
+
+
+Hi Martin (your English is just fine),
+
+1. I?m fairly certain we have some German/Austrian OpenStudio users...
+2. Ruby 1.8.7 works just fine with OpenStudio -- in fact, yours is the same setup as I have (OSX10.8 + Ruby 1.8.7)
+3. The install doc you are working off of is outdated (see #4).
+4. The Perl install directive is only for people running OpenStudio on Windows; OSX and Linux users most likely already have Perl installed (as well as Ruby).
+
+What version of OpenStudio are you trying to install? I highly recommend installing the latest iteration version, which is 0.9.3. That installer can be downloaded from the Developers tab on the OpenStudio website:
+
+http://openstudio.nrel.gov/developers
+
+Direct link to Mac installer:
+http://openstudio.nrel.gov/accept/file/1162
+
+Once you have that version installed, let us know how you make out. If you still have problems, please post some specifics about the nature of the problem.
+
+Cheers,
+
+- Rob
+
+________________________________________
+From: Martin Klingler [martin.klingler at gmx.at<mailto:martin.klingler at gmx.at>]
+Sent: Tuesday, October 30, 2012 3:56 AM
+To: radiance-openstudio at radiance-online.org<mailto:radiance-openstudio at radiance-online.org>
+Subject: [Radiance-openstudio] OpenStudio on OSX 10.8
+
+Hello,
+
+
+
+this is my first mailing to this list. Sorry for my bad English, I am located in Austria.
+
+I try to setup Open Studio with the radiance functionality on my Macbook. After a series of trials with no success I start a new attempt and try to follow the available instructions as close as possible.
+
+
+
+I just did a fresh installation of OSX 10.8 on a separate partition.
+
+
+
+1. question: This is a German OSX version, could that lead to any problems?
+
+
+
+2. question: OSX 10.8 comes with Ruby 1.8.7. The "Radiance_Installation_Instructions_0_9_0.pdf" says "Install RUBY 1.8.6" so ist 1.8.6 required?
+
+If yes, are there any hints how to downgrade to Ruby 1.8.6?
+
+
+
+3. question: The installation sequence according to "Radiance_Installation_Instructions_0_9_0.pdf" seems to be reverse to the sequence described in the "Installation Instructions" on the Open Studio Webpage. The notes for OS X on that webpage also tell that Ruby 1.8.6 or 1.8.7 is supported, which comes back to question number 2.
+
+
+
+4. question: "Radiance_Installation_Instructions_0_9_0.pdf" tells to do a separate Perl installation (ActivePerl is recommended). Is this true also for OSX?
+
+
+
+
+
+Many thanks for any help on my way.
+
+
+
+Best regards
+
+Martin Klingler
+
+

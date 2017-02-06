@@ -1,0 +1,398 @@
+From chris at christianhumann.com  Fri Oct  4 12:11:36 2013
+From: chris at christianhumann.com (Christian Humann)
+Date: Fri, 4 Oct 2013 12:11:36 -0700
+Subject: [HDRI] Masking perimeter corners of fisheye image with black
+Message-ID: <A45B442E-0EF7-44F1-8F8F-1C6572E0413D@christianhumann.com>
+
+Dear list,
+
+I've been using the following pcomb routine to fill in the perimeter corners of a square, 1200x1200 fisheye image with black to cover up the light spill inside the lens body and around the perimeter of the lens element:
+
+pcomb -e 's(x):x*x;m=if(xmax*ymax/4-s(x-xmax/2)-s(y-ymax/2),1,0);ro=m*ri(1);go=m*gi(1);bo=m*bi(1)' input.hdr > output.hdr
+
+In order to maintain the absolute pixel values, which are much lower in the resultant 'output.hdr', would I need to use 'ra_xyze' piped into pcomb?  I've tried various iterations but keep getting "illegal output resolution."  
+
+As always thanks!
+
+Chris
+
+From gregoryjward at gmail.com  Fri Oct  4 12:27:43 2013
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri, 4 Oct 2013 12:27:43 -0700
+Subject: [HDRI] Masking perimeter corners of fisheye image with black
+In-Reply-To: <A45B442E-0EF7-44F1-8F8F-1C6572E0413D@christianhumann.com>
+References: <A45B442E-0EF7-44F1-8F8F-1C6572E0413D@christianhumann.com>
+Message-ID: <4DD96CA4-3DCC-4807-9581-FCB2F2812387@gmail.com>
+
+Hi Chris,
+
+Would adding a "-o" option to your pcomb command (original values) solve your problem?
+
+-Greg
+
+> From: Christian Humann <chris at christianhumann.com>
+> Date: October 4, 2013 12:11:36 PM PDT
+> 
+> Dear list,
+> 
+> I've been using the following pcomb routine to fill in the perimeter corners of a square, 1200x1200 fisheye image with black to cover up the light spill inside the lens body and around the perimeter of the lens element:
+> 
+> pcomb -e 's(x):x*x;m=if(xmax*ymax/4-s(x-xmax/2)-s(y-ymax/2),1,0);ro=m*ri(1);go=m*gi(1);bo=m*bi(1)' input.hdr > output.hdr
+> 
+> In order to maintain the absolute pixel values, which are much lower in the resultant 'output.hdr', would I need to use 'ra_xyze' piped into pcomb?  I've tried various iterations but keep getting "illegal output resolution."  
+> 
+> As always thanks!
+> 
+> Chris
+
+
+From grobe at gmx.net  Sat Oct  5 09:06:56 2013
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Sat, 05 Oct 2013 18:06:56 +0200
+Subject: [HDRI] hdr imaging doubts - evalglare
+In-Reply-To: <CACH8DKdGu3ifrNmKZQ4i8AXEt=HrEC8dbibM+8pnKR=OgLrcRg@mail.gmail.com>
+References: <CACH8DKdGu3ifrNmKZQ4i8AXEt=HrEC8dbibM+8pnKR=OgLrcRg@mail.gmail.com>
+Message-ID: <52503920.5090000@gmx.net>
+
+Hi Nithya,
+
+I think noone answered this so far.
+> 1.As evalglare software requires hdr images of 800x800 pixels, i tried 
+> to get the pixel information using getinfo in DOS window from the 
+> START button-> run->cmd. And while using pfilt command to divide x and 
+> y by a number, it says pfilt is not recoznised as an internal or 
+> external command. Is there another command to resize the image that 
+> can be used with DOS window?
+Pfilt is a program coming with Radiance (www.radiance-online.org). It 
+allows you to filter images in Radiance RGBE format, an HDR image format 
+storing a wide range of radiance (or, sometimes, irradiance) values 
+maintaining acceptable file sizes. However, it applies algorithms to the 
+file that go beyond scaling the image size. I would thus propose to use 
+pcomb instead, again, part of Radiance.
+
+Both tools provide a command-line interface, no graphical user 
+interface. The syntax for pcomb to generate a 800 by 800 pixel version 
+of big.hdr would be
+pcomb -x 800 -y 800 -o big.hdr > small.hdr
+
+The -o will revert any exposure-adjustments that may have been applied 
+to your image before. small.hdr would be the image to be processed by 
+evalglare.
+> 2. How shall i install the evalglare application? When i run evalglare 
+> application by right clicking the setup file,a plain dos screen 
+> appears.How shall i start with it?
+Evalglare is just one program that should be located in a directory 
+included in your operating system's search path. No need for any kind of 
+"installer".
+> 3. Will evalglare work well with hdr images other than fish-eye?
+Yes. However, you need to know the vertical illuminance than, which can 
+be calculated from the pixel values in case that you have a 180 degrees 
+fisheye.
+
+I guess you are working in some Windows environment. I have no 
+experience with this, so my answers are pretty generic. You will need to 
+know how to work on the command-line if you want to start using 
+evalglare and Radiance HDR tools. This is not specific to HDRI, but to 
+knowing your operating system. Many do not find Windows to be a very 
+comfortable environment for such applications, I would rather go with a 
+Linux or Mac OS installation, however it is not impossible.
+
+Good luck, cheers, Lars.
+
+
+From Christopher.Rush at arup.com  Mon Oct  7 06:15:10 2013
+From: Christopher.Rush at arup.com (Christopher Rush)
+Date: Mon, 7 Oct 2013 13:15:10 +0000
+Subject: [HDRI] hdr imaging doubts - evalglare
+In-Reply-To: <52503920.5090000@gmx.net>
+References: <CACH8DKdGu3ifrNmKZQ4i8AXEt=HrEC8dbibM+8pnKR=OgLrcRg@mail.gmail.com>
+	<52503920.5090000@gmx.net>
+Message-ID: <88079A360FAC7441AE93ECBF619982360CD29A@AMXExMb01.global.arup.com>
+
+I hadn't noticed before that this question is posted to the HDRI list, which may have a limited number of readers who are also using evalglare on Windows. It might be worthwhile to post your questions #1 and #2 to the radiance-general mailing list in this case. Those questions have more to do with successful use of evalglare and Radiance in Windows than they are specific to HDRI. To add to Lars' answer for question #3, please check this link:
+http://radiance-online.org/pipermail/radiance-general/2012-February/008353.html
+
+Regards,
+Chris
+
+-----Original Message-----
+From: Lars O. Grobe [mailto:grobe at gmx.net] 
+Sent: Saturday, October 05, 2013 12:07 PM
+To: High Dynamic Range Imaging
+Subject: Re: [HDRI] hdr imaging doubts - evalglare
+
+Hi Nithya,
+
+I think noone answered this so far.
+> 1.As evalglare software requires hdr images of 800x800 pixels, i tried 
+> to get the pixel information using getinfo in DOS window from the 
+> START button-> run->cmd. And while using pfilt command to divide x and 
+> y by a number, it says pfilt is not recoznised as an internal or 
+> external command. Is there another command to resize the image that 
+> can be used with DOS window?
+Pfilt is a program coming with Radiance (www.radiance-online.org). It 
+allows you to filter images in Radiance RGBE format, an HDR image format 
+storing a wide range of radiance (or, sometimes, irradiance) values 
+maintaining acceptable file sizes. However, it applies algorithms to the 
+file that go beyond scaling the image size. I would thus propose to use 
+pcomb instead, again, part of Radiance.
+
+Both tools provide a command-line interface, no graphical user 
+interface. The syntax for pcomb to generate a 800 by 800 pixel version 
+of big.hdr would be
+pcomb -x 800 -y 800 -o big.hdr > small.hdr
+
+The -o will revert any exposure-adjustments that may have been applied 
+to your image before. small.hdr would be the image to be processed by 
+evalglare.
+> 2. How shall i install the evalglare application? When i run evalglare 
+> application by right clicking the setup file,a plain dos screen 
+> appears.How shall i start with it?
+Evalglare is just one program that should be located in a directory 
+included in your operating system's search path. No need for any kind of 
+"installer".
+> 3. Will evalglare work well with hdr images other than fish-eye?
+Yes. However, you need to know the vertical illuminance than, which can 
+be calculated from the pixel values in case that you have a 180 degrees 
+fisheye.
+
+I guess you are working in some Windows environment. I have no 
+experience with this, so my answers are pretty generic. You will need to 
+know how to work on the command-line if you want to start using 
+evalglare and Radiance HDR tools. This is not specific to HDRI, but to 
+knowing your operating system. Many do not find Windows to be a very 
+comfortable environment for such applications, I would rather go with a 
+Linux or Mac OS installation, however it is not impossible.
+
+Good luck, cheers, Lars.
+
+_______________________________________________
+HDRI mailing list
+HDRI at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/hdri
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+
+
+
+From david.moroder at gmail.com  Tue Oct 22 06:45:47 2013
+From: david.moroder at gmail.com (David Geisler-Moroder)
+Date: Tue, 22 Oct 2013 15:45:47 +0200
+Subject: [HDRI] Tone mapping for animation
+Message-ID: <CAL-bo5EWL=NjbOrBTQcxpF-Q=FSqU=C_fjSL+Cx-gYWtfAqjOQ@mail.gmail.com>
+
+Hi all,
+
+I have a question concerning the tone mapping procedures implemented in the
+Radiance tools.
+For an animation of a full day I would like to get something similar that a
+camera would do that just takes a picture every 5 minutes with the same
+settings (exposure time and aperture). Rendering the images for every 5
+minutes is not a problem, however, I stuck when trying to convert the HDRs
+to some tonemapped images. As far as I got it, In ra_jpeg/hdr2jpeg no
+exposure can be given at all, in ra_tiff/ra_bmp only relative exposures can
+be applied.
+
+Thus my question: is it possible to explicitly set the exposure used in the
+tonemapping process with any tool in Radiance?
+
+Thanks in advance!
+David
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20131022/4d184717/attachment.html>
+
+From grobe at gmx.net  Tue Oct 22 07:02:11 2013
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Tue, 22 Oct 2013 16:02:11 +0200
+Subject: [HDRI] Tone mapping for animation
+In-Reply-To: <CAL-bo5EWL=NjbOrBTQcxpF-Q=FSqU=C_fjSL+Cx-gYWtfAqjOQ@mail.gmail.com>
+References: <CAL-bo5EWL=NjbOrBTQcxpF-Q=FSqU=C_fjSL+Cx-gYWtfAqjOQ@mail.gmail.com>
+Message-ID: <52668563.3020109@gmx.net>
+
+Hi David,
+> Thus my question: is it possible to explicitly set the exposure used 
+> in the tonemapping process with any tool in Radiance?
+I'd say combine pfilt with ra_tiff, so that you set a fixed exposure 
+with pfilt -e X and keep that untouched in the later conversion using 
+ra_tiff -e 0. Would that work as expected?
+
+Cheers, Lars.
+
+
+From david.moroder at gmail.com  Tue Oct 22 08:14:04 2013
+From: david.moroder at gmail.com (David Geisler-Moroder)
+Date: Tue, 22 Oct 2013 17:14:04 +0200
+Subject: [HDRI] [Radiance-general] Tone mapping for animation
+In-Reply-To: <5266861B.5090302@visarc.com>
+References: <CAL-bo5EWL=NjbOrBTQcxpF-Q=FSqU=C_fjSL+Cx-gYWtfAqjOQ@mail.gmail.com>
+	<5266861B.5090302@visarc.com>
+Message-ID: <CAL-bo5FiX2kZwzHXKcK8CLrr5eqydD6ffNELXW-pBKUPdnJDaQ@mail.gmail.com>
+
+Hi Jack, hi Lars,
+
+thanks a lot for the quick response!
+Jack, your second hint exactly did what I was looking for. I tried to use
+pcond first, but didn't think of the possibility to use a histogram...
+
+Sorry, if my description was somehow cryptic, but you exactly found what I
+wanted...
+
+Just for information: the pfilt exposure corrections do not help in my case
+because the tone-mapping that is done in the HDR2LDR conversion (with
+hdr2jpeg / ra_tiff or similar) does the tone mapping for each single frame
+independent from the other images. (But maybe I just got something terribly
+wrong here...!?)
+
+Thanks!
+David
+
+
+
+2013/10/22 Jack de Valpine <jedev at visarc.com>
+
+>  Hi David,
+>
+> I am a little unclear on what you want to accomplish but here are a few
+> thoughts.
+>
+>    1. time series animation with constant exposure on successive frames -
+>    use pfilt -1 -e [constant exposure setting] for each frame
+>     2. time series animation with tone mapping function on successive
+>    frames - use pcond and phisto, phisto will compute a histogram across a
+>    series of frames pcond can then use the results from phisto to tone map the
+>    frames according to selected tone mapping operator, there is a an example
+>    in the man page for pcond
+>
+> I think that maybe where I am confused by your description is that since
+> Radiance output is already HDR, setting exposure is really a post process.
+> I think that what you are looking for is the second option that I describe
+> above.
+>  Not sure if this answers your questions, but perhaps gives you some
+> things to look into.
+>
+> Best,
+>
+> -Jack
+>
+> --
+> Jack de Valpine
+> President
+>
+> Visarc Incorporatedwww.visarc.com
+>
+> channeling technology for superior design and construction
+>
+> On 10/22/2013 9:45 AM, David Geisler-Moroder wrote:
+>
+>  Hi all,
+>
+>  I have a question concerning the tone mapping procedures implemented in
+> the Radiance tools.
+> For an animation of a full day I would like to get something similar that
+> a camera would do that just takes a picture every 5 minutes with the same
+> settings (exposure time and aperture). Rendering the images for every 5
+> minutes is not a problem, however, I stuck when trying to convert the HDRs
+> to some tonemapped images. As far as I got it, In ra_jpeg/hdr2jpeg no
+> exposure can be given at all, in ra_tiff/ra_bmp only relative exposures can
+> be applied.
+>
+>  Thus my question: is it possible to explicitly set the exposure used in
+> the tonemapping process with any tool in Radiance?
+>
+>  Thanks in advance!
+>  David
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing listRadiance-general at radiance-online.orghttp://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20131022/d1dbdf10/attachment.html>
+
+From gbetti at fosterandpartners.com  Thu Oct 31 05:13:48 2013
+From: gbetti at fosterandpartners.com (Giovanni Betti)
+Date: Thu, 31 Oct 2013 12:13:48 +0000
+Subject: [HDRI] Recover HDR from RAW images
+Message-ID: <9AE3DAF33501B04BA74EFAE96296631836259B13@CORP3011.CORPORATE.FOSTER.NETWORK>
+
+Dear List,
+
+I was wondering if anybody has some experience in recovering luminance information (an HDR image) from a single RAW file.
+
+I understand RAW files as some sort of MDR (Medium Dynamic Range) images... not as wide as a true HDR but higher than jpgs and the like...
+This range could be enough to get some meaningful results in certain lighting conditions (i.e. an artificially lit interior) where contrast is limited.
+
+I have tried a few ways to accomplish this using Photoshop or Picturenaut or LuminaceHDR but I get very different results and a million different options that end up being quite confusing.
+
+Anyone any thoughts?
+
+Thanks in advance,
+
+Giovanni
+
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20131031/faa49f7b/attachment.html>
+
+From gregoryjward at gmail.com  Thu Oct 31 08:23:03 2013
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu, 31 Oct 2013 08:23:03 -0700
+Subject: [HDRI] Recover HDR from RAW images
+In-Reply-To: <9AE3DAF33501B04BA74EFAE96296631836259B13@CORP3011.CORPORATE.FOSTER.NETWORK>
+References: <9AE3DAF33501B04BA74EFAE96296631836259B13@CORP3011.CORPORATE.FOSTER.NETWORK>
+Message-ID: <43FDB8AB-BADE-4A9A-A2D5-424FB6434F59@gmail.com>
+
+Hi Giovanni,
+
+Preserving all of the data from a camera RAW file is a tricky business.  The Adobe RAW converter has a lot of options to play with and allows you to go straight into a 16-bit/channel file, which has the potential to keep everything.  You still have to make choices as to how to clamp the highlights as the three channels will clip at different levels and this depends on the camera sensor, environment and white balance settings.
+
+The ultimate control comes from the program dcraw by Dave Coffin:
+
+	http://www.cybercom.net/~dcoffin/dcraw/
+
+I have written the attached C-shell script that uses dcraw and another excellent freeware package called exiftool to preserve 16-bit data and camera information while converting to a linear 16-bit/channel output.  This will be recognized by Photosphere but may display incorrectly in other programs due to an assumed gamma.
+
+Cheers,
+-Greg
+
+
+> From: Giovanni Betti <gbetti at fosterandpartners.com>
+> Date: October 31, 2013 5:13:48 AM PDT
+> 
+> Dear List,
+>  
+> I was wondering if anybody has some experience in recovering luminance information (an HDR image) from a single RAW file.
+>  
+> I understand RAW files as some sort of MDR (Medium Dynamic Range) images? not as wide as a true HDR but higher than jpgs and the like?
+> This range could be enough to get some meaningful results in certain lighting conditions (i.e. an artificially lit interior) where contrast is limited.
+>  
+> I have tried a few ways to accomplish this using Photoshop or Picturenaut or LuminaceHDR but I get very different results and a million different options that end up being quite confusing.
+>  
+> Anyone any thoughts?
+>  
+> Thanks in advance,
+>  
+> Giovanni
+>  
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20131031/8188a68e/attachment.html>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: dctiff
+Type: application/octet-stream
+Size: 639 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20131031/8188a68e/attachment.obj>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20131031/8188a68e/attachment-0001.html>
+

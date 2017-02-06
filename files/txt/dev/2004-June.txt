@@ -1,0 +1,859 @@
+From marcdevon at hotmail.com  Fri Jun 11 20:34:44 2004
+From: marcdevon at hotmail.com (Marcus Jacobs)
+Date: Fri Jun 11 20:34:58 2004
+Subject: [Radiance-dev] Help with face.h 
+Message-ID: <BAY2-F109PBzvMQxlJN00005c1e@hotmail.com>
+
+Dear Group
+
+I have finally found enough time to try to implement the Moller-Trumbore 
+algorithm for ray-triangle intersection test into Radiance. I have a 
+question though as to how to ascertain the real arguments for the position 
+for each vertex for a triangle. I have gone through the function readfargs 
+in readfargs.c and it appears to me that the arguments for type FUNARGS is 
+stored in its member farg as an array. I have tried reading through some of 
+the source code and it appears to me that the arguments can somehow be 
+ascertained via a macro in face.h, which states:
+
+#define  VERTEX(f,n)	((f)->va + 3*(n))
+
+I am unsure how this macro works. At first it seems that the values of each 
+real argument is added to the quantity 3 multiplied times the number of 
+vertices but that I do not think is what is happening. If so, then the 
+arguments are being transformed into another coordinate (maybe local) 
+system. I have not the slightest clue as to what is going on. I am wondering 
+if anyone in this group can provide some guidance in order for me to get the 
+vertices for a triangle.
+
+
+Regards,
+
+
+Marcus D. Jacobs
+
+_________________________________________________________________
+Watch the online reality show Mixed Messages with a friend and enter to win 
+a trip to NY 
+http://www.msnmessenger-download.click-url.com/go/onm00200497ave/direct/01/
+
+
+From gward at lmi.net  Sat Jun 12 07:09:15 2004
+From: gward at lmi.net (Greg Ward)
+Date: Sat Jun 12 07:09:22 2004
+Subject: [Radiance-dev] Help with face.h 
+In-Reply-To: <BAY2-F109PBzvMQxlJN00005c1e@hotmail.com>
+References: <BAY2-F109PBzvMQxlJN00005c1e@hotmail.com>
+Message-ID: <A6C66194-BC2E-11D8-9C1F-000A95BB392A@lmi.net>
+
+Hi Marcus,
+
+It's pretty simple, really.  The macro:
+
+#define  VERTEX(f,n)	((f)->va + 3*(n))
+
+Is designed to be used where you might otherwise use an FVECT.  To get 
+the y-coordinate of the first vertex, you would use:
+
+	VERTEX(myface_pointer,0)[1]
+
+The z-coordinate of the second vertex would be:
+
+	VERTEX(myface_pointer,1)[2]
+
+Likewise, you can pass it to a function that takes an FVECT argument, 
+as in:
+
+	fcross(vres, v1, VERTEX(myface_pointer,1));
+
+Hopefully, you get the idea.
+
+-Greg
+
+> From: "Marcus Jacobs" <marcdevon@hotmail.com>
+> Date: June 11, 2004 11:34:44 AM PDT
+>
+> Dear Group
+>
+> I have finally found enough time to try to implement the 
+> Moller-Trumbore algorithm for ray-triangle intersection test into 
+> Radiance. I have a question though as to how to ascertain the real 
+> arguments for the position for each vertex for a triangle. I have gone 
+> through the function readfargs in readfargs.c and it appears to me 
+> that the arguments for type FUNARGS is stored in its member farg as an 
+> array. I have tried reading through some of the source code and it 
+> appears to me that the arguments can somehow be ascertained via a 
+> macro in face.h, which states:
+>
+> #define  VERTEX(f,n)	((f)->va + 3*(n))
+>
+> I am unsure how this macro works. At first it seems that the values of 
+> each real argument is added to the quantity 3 multiplied times the 
+> number of vertices but that I do not think is what is happening. If 
+> so, then the arguments are being transformed into another coordinate 
+> (maybe local) system. I have not the slightest clue as to what is 
+> going on. I am wondering if anyone in this group can provide some 
+> guidance in order for me to get the vertices for a triangle.
+>
+> Regards,
+>
+> Marcus D. Jacobs
+
+
+From marcdevon at hotmail.com  Mon Jun 21 21:26:39 2004
+From: marcdevon at hotmail.com (Marcus Jacobs)
+Date: Mon Jun 21 21:26:55 2004
+Subject: [Radiance-dev] Trouble with ray-triangle intersection optimization
+Message-ID: <BAY2-F127JB1ndcx3Vp00079973@hotmail.com>
+
+Dear Group
+
+As a personal project of mine, I wanted to integrate the Möller-Trumbore 
+(see white paper at http://www.graphics.cornell.edu/pubs/1997/MT97.html) 
+algorithm for ray-triangle intersection into Radiance. The reason why I 
+chose this algorithm is because it was simple to implement and for front 
+facing, early division can be avoided. I have read the white paper and the 
+math all checks out. The algorithm has been out for some time and has been 
+implemented in numerous other raytracers. I have not heard any problems with 
+the algorithm but in my own implementation neither the algorithm for front 
+or back facing seem to work properly. I have check the code, which was 
+adapted from the source code given in the paper, but it still doesn’t work 
+like it should. I have thrown my hands up because I do not know what I have 
+done wrong. I have considered the Segura-Feito method (implemented in 
+o_mesh.c) but the problem here is that this method isn’t ray-triangle 
+intersection but segment-triangle intersection. The only way that I know of 
+how to calculate the ray segment length is find the ray length via ray-plane 
+intersection. Unfortunately, this requires division which negates the 
+primary advantage of the Segura-Feito method. Here is the modified version 
+of o_face.c that I have been working on for Möller-Trumbore. Any help…. 
+Please?
+
+Regards,
+
+Marcus
+
+
+#ifndef lint
+static const char RCSid[] = "$Id: o_face.c,v 2.4 2003/03/11 17:08:55 greg 
+Exp $";
+#endif
+/*
+*  o_face.c - compute ray intersection with faces.
+*/
+#include "copyright.h"
+#include  "ray.h"
+#include  "face.h"
+#include  "standard.h"
+#include  "object.h"
+#include  "fvect.h"
+o_face(o, r)		/* compute intersection with polygonal face */
+OBJREC  *o;
+register RAY  *r;
+{
+	double  rdot;		/* direction . normal */
+	double  t;		/* distance to intersection */
+	FVECT  pisect;		/* intersection point */
+	register FACE  *f;	/* face record */
+	register int  i;
+
+
+	f = getface(o);
+	/*
+	 *  First, we find the distance to the plane containing the
+	 *  face.  If this distance is less than zero or greater
+	 *  than a previous intersection, we return.  Otherwise,
+	 *  we determine whether in fact the ray intersects the
+	 *  face.  The ray intersects the face if the
+	 *  point of intersection with the plane of the face
+	 *  is inside the face.
+	 */
+	/* compute dist. to plane */
+	if(f->nv == 3)
+		{
+			if (intersect_triangle(r,f) == 0)
+			  	return(0);
+
+		}
+	else
+		{
+			rdot = -DOT(r->rdir, f->norm);
+			if (rdot <= FTINY && rdot >= -FTINY)	/* ray parallels plane */
+				t = FHUGE;
+			else
+				t = (DOT(r->rorg, f->norm) - f->offset) / rdot;
+			if (t <= FTINY || t >= r->rot)		/* not good enough */
+				return(0);
+			/* compute intersection */
+			for (i = 0; i < 3; i++)
+				pisect[i] = r->rorg[i] + r->rdir[i]*t;
+			if (!inface(pisect, f))			/* ray intersects face? */
+				return(0);
+			r->rot = t;
+			VCOPY(r->rop, pisect);
+			r->rod = rdot;
+		}
+	r->ro = o;
+	VCOPY(r->ron, f->norm);
+	r->pert[0] = r->pert[1] = r->pert[2] = 0.0;
+	r->uv[0] = r->uv[1] = 0.0;
+	r->rox = NULL;
+	return(1);				/* hit */
+}
+/****************************************************************************/
+/* The following function is adapted from the Möller-Trumbore  algorithm 
+***/
+/****************************************************************************/
+int
+intersect_triangle(r, f)
+FACE  *f;
+register RAY  *r;
+{
+	double *u, *v, *t;
+	double det,inv_det, d;
+	int i;
+	double  rdot;
+	FVECT tvec, pvec, qvec, edge1, edge2;
+
+	VSUB(edge1, VERTEX(f,1), VERTEX(f,0));
+	VSUB(edge2, VERTEX(f,2), VERTEX(f,0));
+
+	/* begin calculating determinant - also used to calculate U parameter */
+	VCROSS(pvec, r->rdir, edge2);
+	/* if determinant is near zero, ray lies in plane of triangle */
+	det = DOT(edge1, pvec);
+	if (det > -FTINY && det < FTINY)
+		return 0;
+	inv_det = 1.0 / det;
+	/* calculate distance from vert0 to ray origin */
+	VSUB(tvec, r->rorg, VERTEX(f,0));
+	/* calculate U parameter and test bounds */
+	*u = DOT(tvec, pvec)* inv_det;
+	if (*u < 0.0 || *u > 1.0)
+		return 0;
+	/* prepare to test V parameter */
+	VCROSS(qvec, tvec, edge1);
+	/* calculate V parameter and test bounds */
+	*v = DOT(r->rdir, qvec) * inv_det;
+	if (*v < 0.0 || *u + *v > 1.0)
+		return 0;
+	/* calculate t, scale parameters, ray intersects triangle */
+
+	*t = DOT(edge2, qvec) * inv_det;
+
+	if (*t <= FTINY || *t >= r->rot)	  /* not good enough */
+		return(0);
+	r->rot = *t;
+	rdot = -DOT(r->rdir, f->norm);
+	r->rod = rdot;
+	for (i = 0; i < 3; i++)
+		r->rop[i] = r->rorg[i] + r->rdir[i]* r->rot;
+	return 1;
+}
+
+_________________________________________________________________
+MSN Movies - Trailers, showtimes, DVD's, and the latest news from Hollywood! 
+http://movies.msn.click-url.com/go/onm00200509ave/direct/01/
+
+
+From mstock at umich.edu  Fri Jun 25 04:50:35 2004
+From: mstock at umich.edu (Mark Stock)
+Date: Fri Jun 25 04:50:40 2004
+Subject: [Radiance-dev] Re: rpict/rpiece dies in inithemi
+In-Reply-To: <B373C257-B01D-11D8-B82E-000A95BB392A@lmi.net>
+References: <Pine.SOL.4.58.0405271113370.23627@rygar.gpcc.itd.umich.edu>
+	<6680ACDF-AFFB-11D8-84CC-000A95BB392A@lmi.net>
+	<Pine.SOL.4.58.0405271241530.23627@rygar.gpcc.itd.umich.edu>
+	<B373C257-B01D-11D8-B82E-000A95BB392A@lmi.net>
+Message-ID: <Pine.SOL.4.58.0406242242500.26274@mspacman.gpcc.itd.umich.edu>
+
+[discussion moved over from Radiance-general
+
+Summary:
+rpict and rpiece bomb with the "bad ray direction in inithemi"
+error, optimization not (?) to blame
+
+Longer story:
+I keep encountering trouble rendering my scene with rpiece.
+I will start 6 rpiece jobs and after a few hours each one
+will have stopped because it encountered the "bad ray direction
+in inithemi" error (rt/ambcomp.c). I am running 3.6a on Linux
+on a cluster of Opterons, and compiling with gcc. I have tried
+versions compiled with -O3, -O2, -O, and no optimization.
+
+An image of the scene can be viewed here:
+http://mark.technolope.org/image/p42_temp/img15e1.png
+(from 8x8 rpiece, larger image in works is 24x24 pieces)
+
+The scene contains many cones with zero radius at one end,
+2000 of them, to be precise. I looked at the code in
+rt/o_cone.c, but couldn't quite figure out how the RAY->ron
+value is set (intersection surface normal).
+
+The error stems from a test in rt/ambcomp.c that checks the
+3 components of the ray's intersection surface normal for any
+components outside of the bounds [-0.6:0.6]. I'd like, if I
+may, to ask what this check accomplishes. I removed the
+check and re-ran it, but I get other errors.
+
+Is there something inherently bad with cones with zero-radius
+ends? Or is the 64-bit gcc simply unreliable (and I have
+to render this piece on the slower 2-proc Athlon)?
+
+Mark
+
+On Thu, 27 May 2004, Greg Ward wrote:
+
+> Hi Mark,
+>
+> Yeah, I had similar problems with the gcc optimizer when I tried it.
+> If you used makeall to set the options rather than doing it by hand on
+> the command line, you should be able to find your settings in the
+> "rmake" script that gets put in your Radiance executables directory.
+>  From my experiments under OS X at least, I couldn't approach your
+> benchmark speeds without simultaneously introducing some nefarious bug
+> in the renderer.  I spent some time on it, but gave up trying to figure
+> out where the calculations had gone south.  From what I've seen with
+> gcc problems in the past, they can be incredibly subtle.  (At one
+> point, the optimizer was giving incorrect arithmetic results inside a
+> simple loop -- 2+2 = 5 and that sort of nonsense.)
+>
+> I can't explain why rpict would be able to recover using the -ro option
+> where rpiece cannot.  When code doesn't compile right, it's anybody's
+> guess as to what's going on.
+>
+> I also don't know how to search the archives for phrases -- maybe Peter
+> A-B or someone familiar with our system could help with that one?
+>
+> -Greg
+>
+> > From: Mark Stock <mstock@umich.edu>
+> > Date: May 27, 2004 9:57:16 AM PDT
+> >
+> > Thanks for your quick reply, Greg. I have more information
+> > that may help our understanding.
+> >
+> > The other options that the rendering used are
+> >
+> > -ps 1 -ab 2 -aa 0 -ad 8 -as 0 -dj 0.7 -st 0.05
+> >
+> > so I'm guessing it's not the ambient file. It is possible that
+> > with all of the compiler optimizations that I used, I cut one
+> > too many corners.
+> >
+> > But how does this explain the fact that I could always
+> > "rpict -ro" and it would continue where it left off, creating
+> > a fine image in the end?
+> >
+> > Is there some way to find out what compile-time options
+> > I used? Is there a file in ray/src that contains that
+> > information?
+> >
+> > Also, I seem to be unable to search the radiance-online
+> > archives for a whole phrase. How is this done?
+> >
+> > Mark
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+From gward at lmi.net  Fri Jun 25 11:38:22 2004
+From: gward at lmi.net (gward@lmi.net)
+Date: Fri Jun 25 11:38:38 2004
+Subject: [Radiance-dev] Re: rpict/rpiece dies in inithemi
+In-Reply-To: <Pine.SOL.4.58.0406242242500.26274@mspacman.gpcc.itd.umich.edu>
+References: <Pine.SOL.4.58.0405271113370.23627@rygar.gpcc.itd.umich.edu>
+	<6680ACDF-AFFB-11D8-84CC-000A95BB392A@lmi.net>
+	<Pine.SOL.4.58.0405271241530.23627@rygar.gpcc.itd.umich.edu>
+	<B373C257-B01D-11D8-B82E-000A95BB392A@lmi.net>
+	<Pine.SOL.4.58.0406242242500.26274@mspacman.gpcc.itd.umich.edu>
+Message-ID: <1088156302.40dbf28ee4fbe@webmail.lmi.net>
+
+Hi Mark,
+
+Are you using a shared ambient file?  If so,
+I suspect a bad NFS lock manager is the culprit.
+I can't think what else might be causing this error.
+
+-Greg
+
+Quoting Mark Stock <mstock@umich.edu>:
+
+> [discussion moved over from Radiance-general
+> 
+> Summary:
+> rpict and rpiece bomb with the "bad ray direction in inithemi"
+> error, optimization not (?) to blame
+> 
+> Longer story:
+> I keep encountering trouble rendering my scene with rpiece.
+> I will start 6 rpiece jobs and after a few hours each one
+> will have stopped because it encountered the "bad ray direction
+> in inithemi" error (rt/ambcomp.c). I am running 3.6a on Linux
+> on a cluster of Opterons, and compiling with gcc. I have tried
+> versions compiled with -O3, -O2, -O, and no optimization.
+> 
+> An image of the scene can be viewed here:
+> http://mark.technolope.org/image/p42_temp/img15e1.png
+> (from 8x8 rpiece, larger image in works is 24x24 pieces)
+> 
+> The scene contains many cones with zero radius at one end,
+> 2000 of them, to be precise. I looked at the code in
+> rt/o_cone.c, but couldn't quite figure out how the RAY->ron
+> value is set (intersection surface normal).
+> 
+> The error stems from a test in rt/ambcomp.c that checks the
+> 3 components of the ray's intersection surface normal for any
+> components outside of the bounds [-0.6:0.6]. I'd like, if I
+> may, to ask what this check accomplishes. I removed the
+> check and re-ran it, but I get other errors.
+> 
+> Is there something inherently bad with cones with zero-radius
+> ends? Or is the 64-bit gcc simply unreliable (and I have
+> to render this piece on the slower 2-proc Athlon)?
+> 
+> Mark
+> 
+
+From jedev at visarc.com  Fri Jun 25 15:57:20 2004
+From: jedev at visarc.com (Jack de Valpine)
+Date: Fri Jun 25 15:57:33 2004
+Subject: [Radiance-dev] Re: rpict/rpiece dies in inithemi
+In-Reply-To: <Pine.SOL.4.58.0406242242500.26274@mspacman.gpcc.itd.umich.edu>
+References: <Pine.SOL.4.58.0405271113370.23627@rygar.gpcc.itd.umich.edu>	<6680ACDF-AFFB-11D8-84CC-000A95BB392A@lmi.net>	<Pine.SOL.4.58.0405271241530.23627@rygar.gpcc.itd.umich.edu>	<B373C257-B01D-11D8-B82E-000A95BB392A@lmi.net>
+	<Pine.SOL.4.58.0406242242500.26274@mspacman.gpcc.itd.umich.edu>
+Message-ID: <40DC2F40.2000604@visarc.com>
+
+Hi Mark,
+
+Just out of curiosity, for diagnostic purposes have you tried to run 
+just two rpiece jobs on one opteron host (assuming these are dual cpu 
+hosts)? This might be one way to diagnose if there are compile problems 
+versus NFS problems. I know that setting up NFS locking on Linux 
+requires some pretty careful tailoring of the server and client 
+configuration and mount options. I have never really been sure that I 
+have been able to set it up properly myself.
+
+Also what are you using to tie your "cluster" together if anything? 
+Obviously the most basic solution is NFS with file locking and rpiece. 
+There are other solutions such as beowolf with bproc and some kind of 
+shared filesystem space such as GFS or others such as openMosix with 
+MFS/DFS (I tried this at one point and encountered some problems).
+
+Regards,
+
+-Jack de Valpine
+
+Mark Stock wrote:
+
+>[discussion moved over from Radiance-general
+>
+>Summary:
+>rpict and rpiece bomb with the "bad ray direction in inithemi"
+>error, optimization not (?) to blame
+>
+>Longer story:
+>I keep encountering trouble rendering my scene with rpiece.
+>I will start 6 rpiece jobs and after a few hours each one
+>will have stopped because it encountered the "bad ray direction
+>in inithemi" error (rt/ambcomp.c). I am running 3.6a on Linux
+>on a cluster of Opterons, and compiling with gcc. I have tried
+>versions compiled with -O3, -O2, -O, and no optimization.
+>
+>An image of the scene can be viewed here:
+>http://mark.technolope.org/image/p42_temp/img15e1.png
+>(from 8x8 rpiece, larger image in works is 24x24 pieces)
+>
+>The scene contains many cones with zero radius at one end,
+>2000 of them, to be precise. I looked at the code in
+>rt/o_cone.c, but couldn't quite figure out how the RAY->ron
+>value is set (intersection surface normal).
+>
+>The error stems from a test in rt/ambcomp.c that checks the
+>3 components of the ray's intersection surface normal for any
+>components outside of the bounds [-0.6:0.6]. I'd like, if I
+>may, to ask what this check accomplishes. I removed the
+>check and re-ran it, but I get other errors.
+>
+>Is there something inherently bad with cones with zero-radius
+>ends? Or is the 64-bit gcc simply unreliable (and I have
+>to render this piece on the slower 2-proc Athlon)?
+>
+>Mark
+>
+>On Thu, 27 May 2004, Greg Ward wrote:
+>
+>  
+>
+>>Hi Mark,
+>>
+>>Yeah, I had similar problems with the gcc optimizer when I tried it.
+>>If you used makeall to set the options rather than doing it by hand on
+>>the command line, you should be able to find your settings in the
+>>"rmake" script that gets put in your Radiance executables directory.
+>> From my experiments under OS X at least, I couldn't approach your
+>>benchmark speeds without simultaneously introducing some nefarious bug
+>>in the renderer.  I spent some time on it, but gave up trying to figure
+>>out where the calculations had gone south.  From what I've seen with
+>>gcc problems in the past, they can be incredibly subtle.  (At one
+>>point, the optimizer was giving incorrect arithmetic results inside a
+>>simple loop -- 2+2 = 5 and that sort of nonsense.)
+>>
+>>I can't explain why rpict would be able to recover using the -ro option
+>>where rpiece cannot.  When code doesn't compile right, it's anybody's
+>>guess as to what's going on.
+>>
+>>I also don't know how to search the archives for phrases -- maybe Peter
+>>A-B or someone familiar with our system could help with that one?
+>>
+>>-Greg
+>>
+>>    
+>>
+>>>From: Mark Stock <mstock@umich.edu>
+>>>Date: May 27, 2004 9:57:16 AM PDT
+>>>
+>>>Thanks for your quick reply, Greg. I have more information
+>>>that may help our understanding.
+>>>
+>>>The other options that the rendering used are
+>>>
+>>>-ps 1 -ab 2 -aa 0 -ad 8 -as 0 -dj 0.7 -st 0.05
+>>>
+>>>so I'm guessing it's not the ambient file. It is possible that
+>>>with all of the compiler optimizations that I used, I cut one
+>>>too many corners.
+>>>
+>>>But how does this explain the fact that I could always
+>>>"rpict -ro" and it would continue where it left off, creating
+>>>a fine image in the end?
+>>>
+>>>Is there some way to find out what compile-time options
+>>>I used? Is there a file in ray/src that contains that
+>>>information?
+>>>
+>>>Also, I seem to be unable to search the radiance-online
+>>>archives for a whole phrase. How is this done?
+>>>
+>>>Mark
+>>>      
+>>>
+>>_______________________________________________
+>>Radiance-general mailing list
+>>Radiance-general@radiance-online.org
+>>http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>
+>>    
+>>
+>
+>_______________________________________________
+>Radiance-dev mailing list
+>Radiance-dev@radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>  
+>
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20040625/bc97520e/attachment.htm
+From mstock at umich.edu  Sat Jun 26 19:34:54 2004
+From: mstock at umich.edu (Mark Stock)
+Date: Sat Jun 26 19:35:00 2004
+Subject: [Radiance-dev] Re: rpict/rpiece dies in inithemi
+In-Reply-To: <1088156302.40dbf28ee4fbe@webmail.lmi.net>
+References: <Pine.SOL.4.58.0405271113370.23627@rygar.gpcc.itd.umich.edu>
+	<6680ACDF-AFFB-11D8-84CC-000A95BB392A@lmi.net>
+	<Pine.SOL.4.58.0405271241530.23627@rygar.gpcc.itd.umich.edu>
+	<B373C257-B01D-11D8-B82E-000A95BB392A@lmi.net>
+	<Pine.SOL.4.58.0406242242500.26274@mspacman.gpcc.itd.umich.edu>
+	<1088156302.40dbf28ee4fbe@webmail.lmi.net>
+Message-ID: <Pine.SOL.4.58.0406261329070.8526@asteroids.gpcc.itd.umich.edu>
+
+I'm using the "-aa 0" option, so I don't store an ambient file.
+
+Carsten gave me the idea of looking in the cone intersection
+code, as the error stems from the normal, somehow. I realized
+that the cones in my scene are very narrow (0.01 long, but
+radii are 0.0001 and 0.0). I know very little about raytracing
+calculations, but I'd guess that a ray-cone intersection test
+possibly involves a division of a radius (or radius difference)
+and a length. This may puch the calculation towards machine
+precision...enough so that a normal may not be calculated
+accurately.
+
+Here are two cones (one at a tip, and one just before
+transitioning to cylinders):
+
+def cone 0c 0 0 8
+-0.525577 -0.177557 -0.381599  -0.526188 -0.185438 -0.38283  0
+0.0001391
+
+def cone 18c 0 0 8
+-0.505553 -0.317633 -0.401908  -0.502736 -0.324996 -0.403267
+0.0039803 0.004
+
+Mark
+
+On Fri, 25 Jun 2004 gward@lmi.net wrote:
+
+> Hi Mark,
+>
+> Are you using a shared ambient file?  If so,
+> I suspect a bad NFS lock manager is the culprit.
+> I can't think what else might be causing this error.
+>
+> -Greg
+>
+> Quoting Mark Stock <mstock@umich.edu>:
+>
+> > [discussion moved over from Radiance-general
+> >
+> > Summary:
+> > rpict and rpiece bomb with the "bad ray direction in inithemi"
+> > error, optimization not (?) to blame
+> >
+> > Longer story:
+> > I keep encountering trouble rendering my scene with rpiece.
+> > I will start 6 rpiece jobs and after a few hours each one
+> > will have stopped because it encountered the "bad ray direction
+> > in inithemi" error (rt/ambcomp.c). I am running 3.6a on Linux
+> > on a cluster of Opterons, and compiling with gcc. I have tried
+> > versions compiled with -O3, -O2, -O, and no optimization.
+> >
+> > An image of the scene can be viewed here:
+> > http://mark.technolope.org/image/p42_temp/img15e1.png
+> > (from 8x8 rpiece, larger image in works is 24x24 pieces)
+> >
+> > The scene contains many cones with zero radius at one end,
+> > 2000 of them, to be precise. I looked at the code in
+> > rt/o_cone.c, but couldn't quite figure out how the RAY->ron
+> > value is set (intersection surface normal).
+> >
+> > The error stems from a test in rt/ambcomp.c that checks the
+> > 3 components of the ray's intersection surface normal for any
+> > components outside of the bounds [-0.6:0.6]. I'd like, if I
+> > may, to ask what this check accomplishes. I removed the
+> > check and re-ran it, but I get other errors.
+> >
+> > Is there something inherently bad with cones with zero-radius
+> > ends? Or is the 64-bit gcc simply unreliable (and I have
+> > to render this piece on the slower 2-proc Athlon)?
+> >
+> > Mark
+> >
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+
+From mstock at umich.edu  Sat Jun 26 19:49:45 2004
+From: mstock at umich.edu (Mark Stock)
+Date: Sat Jun 26 19:49:48 2004
+Subject: [Radiance-dev] Re: rpict/rpiece dies in inithemi
+In-Reply-To: <1088156302.40dbf28ee4fbe@webmail.lmi.net>
+References: <Pine.SOL.4.58.0405271113370.23627@rygar.gpcc.itd.umich.edu>
+	<6680ACDF-AFFB-11D8-84CC-000A95BB392A@lmi.net>
+	<Pine.SOL.4.58.0405271241530.23627@rygar.gpcc.itd.umich.edu>
+	<B373C257-B01D-11D8-B82E-000A95BB392A@lmi.net>
+	<Pine.SOL.4.58.0406242242500.26274@mspacman.gpcc.itd.umich.edu>
+	<1088156302.40dbf28ee4fbe@webmail.lmi.net>
+Message-ID: <Pine.SOL.4.58.0406261335050.8526@asteroids.gpcc.itd.umich.edu>
+
+Oh, and what I forgot to say is that I replaced the "error"
+line with a "normalize(hp->uz);" line and the code compiles
+(gcc -O) and runs (rpiece) on the 64-bit Opterons. There
+seem to be no image errors.
+
+pfilt'd result (in the middle of rpiece -R) is as follows:
+http://mark.technolope.org/image/p42_temp/img17t3.png
+
+Mark
+
+On Fri, 25 Jun 2004 gward@lmi.net wrote:
+
+> Hi Mark,
+>
+> Are you using a shared ambient file?  If so,
+> I suspect a bad NFS lock manager is the culprit.
+> I can't think what else might be causing this error.
+>
+> -Greg
+>
+> Quoting Mark Stock <mstock@umich.edu>:
+>
+> > [discussion moved over from Radiance-general
+> >
+> > Summary:
+> > rpict and rpiece bomb with the "bad ray direction in inithemi"
+> > error, optimization not (?) to blame
+> >
+> > Longer story:
+> > I keep encountering trouble rendering my scene with rpiece.
+> > I will start 6 rpiece jobs and after a few hours each one
+> > will have stopped because it encountered the "bad ray direction
+> > in inithemi" error (rt/ambcomp.c). I am running 3.6a on Linux
+> > on a cluster of Opterons, and compiling with gcc. I have tried
+> > versions compiled with -O3, -O2, -O, and no optimization.
+> >
+> > An image of the scene can be viewed here:
+> > http://mark.technolope.org/image/p42_temp/img15e1.png
+> > (from 8x8 rpiece, larger image in works is 24x24 pieces)
+> >
+> > The scene contains many cones with zero radius at one end,
+> > 2000 of them, to be precise. I looked at the code in
+> > rt/o_cone.c, but couldn't quite figure out how the RAY->ron
+> > value is set (intersection surface normal).
+> >
+> > The error stems from a test in rt/ambcomp.c that checks the
+> > 3 components of the ray's intersection surface normal for any
+> > components outside of the bounds [-0.6:0.6]. I'd like, if I
+> > may, to ask what this check accomplishes. I removed the
+> > check and re-ran it, but I get other errors.
+> >
+> > Is there something inherently bad with cones with zero-radius
+> > ends? Or is the 64-bit gcc simply unreliable (and I have
+> > to render this piece on the slower 2-proc Athlon)?
+> >
+> > Mark
+> >
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+
+From gward at lmi.net  Sun Jun 27 11:57:24 2004
+From: gward at lmi.net (gward@lmi.net)
+Date: Sun Jun 27 11:57:28 2004
+Subject: [Radiance-dev] Re: rpict/rpiece dies in inithemi
+In-Reply-To: <Pine.SOL.4.58.0406261335050.8526@asteroids.gpcc.itd.umich.edu>
+References: <Pine.SOL.4.58.0405271113370.23627@rygar.gpcc.itd.umich.edu>
+	<6680ACDF-AFFB-11D8-84CC-000A95BB392A@lmi.net>
+	<Pine.SOL.4.58.0405271241530.23627@rygar.gpcc.itd.umich.edu>
+	<B373C257-B01D-11D8-B82E-000A95BB392A@lmi.net>
+	<Pine.SOL.4.58.0406242242500.26274@mspacman.gpcc.itd.umich.edu>
+	<1088156302.40dbf28ee4fbe@webmail.lmi.net>
+	<Pine.SOL.4.58.0406261335050.8526@asteroids.gpcc.itd.umich.edu>
+Message-ID: <1088330244.40de9a043814a@webmail.lmi.net>
+
+Thanks for the additional information -- I'll check into this when I get back to
+the States on Thursday.
+
+-Greg
+
+Quoting Mark Stock <mstock@umich.edu>:
+
+> Oh, and what I forgot to say is that I replaced the "error"
+> line with a "normalize(hp->uz);" line and the code compiles
+> (gcc -O) and runs (rpiece) on the 64-bit Opterons. There
+> seem to be no image errors.
+> 
+> pfilt'd result (in the middle of rpiece -R) is as follows:
+> http://mark.technolope.org/image/p42_temp/img17t3.png
+> 
+> Mark
+>
+
+From gward at lmi.net  Mon Jun 28 12:11:57 2004
+From: gward at lmi.net (Greg Ward)
+Date: Mon Jun 28 12:12:34 2004
+Subject: [Radiance-dev] Re: rpict/rpiece dies in inithemi
+In-Reply-To: <Pine.SOL.4.58.0406261335050.8526@asteroids.gpcc.itd.umich.edu>
+References: <Pine.SOL.4.58.0405271113370.23627@rygar.gpcc.itd.umich.edu>
+	<6680ACDF-AFFB-11D8-84CC-000A95BB392A@lmi.net>
+	<Pine.SOL.4.58.0405271241530.23627@rygar.gpcc.itd.umich.edu>
+	<B373C257-B01D-11D8-B82E-000A95BB392A@lmi.net>
+	<Pine.SOL.4.58.0406242242500.26274@mspacman.gpcc.itd.umich.edu>
+	<1088156302.40dbf28ee4fbe@webmail.lmi.net>
+	<Pine.SOL.4.58.0406261335050.8526@asteroids.gpcc.itd.umich.edu>
+Message-ID: <968513A4-C8EB-11D8-97A4-00306540F848@lmi.net>
+
+Hi Mark,
+
+Carsten was right.  There was an accumulation of numerical error in the 
+cone normal computation for needle-like cones like yours.  The errors I 
+saw were as high as 10^-3, which is significant and can accumulate 
+especially on multiple ray intersections.  I have added a correction 
+that should take care of this, which I have attached as a context diff, 
+below.
+
+-Greg
+
+Index: o_cone.c
+===================================================================
+RCS file: /cvs/radiance//ray/src/rt/o_cone.c,v
+retrieving revision 2.5
+retrieving revision 2.6
+diff -r2.5 -r2.6
+2c2
+< static const char RCSid[] = "$Id: o_cone.c,v 2.5 2004/03/30 16:13:01 
+schorsch Exp $";
+---
+ > static const char RCSid[] = "$Id: o_cone.c,v 2.6 2004/06/28 10:07:17 
+greg Exp $";
+129a130,134
+ >               a = DOT(r->ron, r->ron);
+ >               if (a > 1.+FTINY || a < 1.-FTINY) {
+ >                       c = 1./(.5 + .5*a);     /* avoid numerical 
+error */
+ >                       r->ron[0] *= c; r->ron[1] *= c; r->ron[2] *= c;
+ >               }
+[photon:ray/src/rt] gward% ^diff^diff -c
+cvs diff -c -r 2.5 o_cone.c
+Enter passphrase for key '/Users/gward/.ssh/id_rsa':
+Index: o_cone.c
+===================================================================
+RCS file: /cvs/radiance//ray/src/rt/o_cone.c,v
+retrieving revision 2.5
+retrieving revision 2.6
+diff -c -r2.5 -r2.6
+*** a/o_cone.c  30 Mar 2004 16:13:01 -0000      2.5
+--- b/o_cone.c  28 Jun 2004 10:07:17 -0000      2.6
+***************
+*** 1,5 ****
+   #ifndef lint
+! static const char RCSid[] = "$Id: o_cone.c,v 2.5 2004/03/30 16:13:01 
+schorsch Exp $";
+   #endif
+   /*
+    *  o_cone.c - routine to determine ray intersection with cones.
+--- 1,5 ----
+   #ifndef lint
+! static const char RCSid[] = "$Id: o_cone.c,v 2.6 2004/06/28 10:07:17 
+greg Exp $";
+   #endif
+   /*
+    *  o_cone.c - routine to determine ray intersection with cones.
+***************
+*** 127,132 ****
+--- 127,137 ----
+                         for (i = 0; i < 3; i++)
+                                 r->ron[i] = (co->al*r->ron[i] - 
+c*co->ad[i])
+                                                 /co->sl;
++               a = DOT(r->ron, r->ron);
++               if (a > 1.+FTINY || a < 1.-FTINY) {
++                       c = 1./(.5 + .5*a);     /* avoid numerical 
+error */
++                       r->ron[0] *= c; r->ron[1] *= c; r->ron[2] *= c;
++               }
+                 r->rod = -DOT(r->rdir, r->ron);
+                 r->pert[0] = r->pert[1] = r->pert[2] = 0.0;
+                 r->uv[0] = r->uv[1] = 0.0;
+
+

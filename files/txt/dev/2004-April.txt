@@ -1,0 +1,303 @@
+From marcdevon at hotmail.com  Tue Apr 13 21:24:26 2004
+From: marcdevon at hotmail.com (Marcus Jacobs)
+Date: Tue Apr 13 21:24:33 2004
+Subject: [Radiance-dev] Question About RAY type member
+Message-ID: <BAY2-F17aDGTqMHPuuG0000a4b6@hotmail.com>
+
+Dear Group
+
+I am wondering if anyone could shed some light on the RAY type member 'rod'. 
+I am curious as to how and why this is used. I am assuming that it has 
+something to do with the fact that all object in Radiance are two sided and 
+this relates the surface normal orientation wrt the ray being traced. Then 
+again, I am probably wrong. Out of curiosity, if it is already known that 
+all surface normal for faces are properly oriented (i.e. facing the viewer), 
+is it necessary to calculate this value?
+
+
+Thanks
+
+Marcus
+
+_________________________________________________________________
+Watch LIVE baseball games on your computer with MLB.TV, included with MSN 
+Premium! 
+http://join.msn.com/?page=features/mlb&pgmarket=en-us/go/onm00200439ave/direct/01/
+
+
+From gward at lmi.net  Tue Apr 13 21:51:50 2004
+From: gward at lmi.net (Greg Ward)
+Date: Tue Apr 13 21:52:01 2004
+Subject: [Radiance-dev] Question About RAY type member
+In-Reply-To: <BAY2-F17aDGTqMHPuuG0000a4b6@hotmail.com>
+References: <BAY2-F17aDGTqMHPuuG0000a4b6@hotmail.com>
+Message-ID: <014886D8-8D84-11D8-B1AE-000A95BB392A@lmi.net>
+
+Hi Marcus,
+
+The rod member is a minor optimization to avoid the need to repeatedly 
+compute -DOT(rdir,ron).  It does not flip the surface the right way 
+around -- some material routines do this by calling the flipsurface() 
+function.  Why do you want to know?
+
+-Greg
+
+> From: "Marcus Jacobs" <marcdevon@hotmail.com>
+> Date: April 13, 2004 12:24:26 PM PDT
+>
+> Dear Group
+>
+> I am wondering if anyone could shed some light on the RAY type member 
+> 'rod'. I am curious as to how and why this is used. I am assuming that 
+> it has something to do with the fact that all object in Radiance are 
+> two sided and this relates the surface normal orientation wrt the ray 
+> being traced. Then again, I am probably wrong. Out of curiosity, if it 
+> is already known that all surface normal for faces are properly 
+> oriented (i.e. facing the viewer), is it necessary to calculate this 
+> value?
+>
+>
+> Thanks
+>
+> Marcus
+
+
+From marcdevon at hotmail.com  Wed Apr 14 17:19:27 2004
+From: marcdevon at hotmail.com (Marcus Jacobs)
+Date: Wed Apr 14 17:19:36 2004
+Subject: [Radiance-dev] Question About RAY type member 
+Message-ID: <BAY2-F22P2GDlSYTg8g0000cf24@hotmail.com>
+
+Thanks Greg for the info.
+
+I did take a look through the source code. When I first looked, this value 
+appeared to only be used in logical statements. After looking further, I can 
+see that this value is used to calculate other values.
+
+The reason I have interest in this is because I am looking to implement an 
+optimization to Radiance for ray-triangle intersection. From what I can 
+tell, Radiance uses generic routines for calculating ray/n-sided polygon 
+intersection and nothing specific for triangles. Since the geometry for my 
+scenes, with the exception of light sources, consist entirely of triangles, 
+I want to optimize the code a bit. The ray-triangle intersection algorithm 
+that I am going to use is the Möller-Trumbore method listed here:
+
+http://www.acm.org/jgt/papers/MollerTrumbore97/
+
+
+It seems pretty straight forward to implement. There are two branches to the 
+code, culling and non-culling. I am going to implement both and do a 
+performance comparision. The reason I asked whether about the member 'rod' 
+is because I only want to calculate only what is necessary. Since I am 
+implementing the culling branch of the Möller-Trumbore algorithm  first, I 
+was curious as to whether or not the value would be needed if I am doing 
+backface culling. I see now that I will need it. If this is sucessful and I 
+can achieve a modest performance increase, I may look to implement the 
+algorithm into o_mesh.c
+
+BTW, the dicussion that we had last month about tmesh.cal worked great for 
+me. With the revision to the source code to my conversion program, I 
+achieved a 10.5% - 12.5% gain in performance.
+
+
+
+Thanks
+
+Marcus
+
+
+
+>Date: Tue, 13 Apr 2004 12:51:50 -0700
+>From: Greg Ward <gward@lmi.net>
+>Subject: Re: [Radiance-dev] Question About RAY type member
+>To: code development <radiance-dev@radiance-online.org>
+>Message-ID: <014886D8-8D84-11D8-B1AE-000A95BB392A@lmi.net>
+>Content-Type: text/plain; charset=US-ASCII; format=flowed
+>
+>Hi Marcus,
+>
+>The rod member is a minor optimization to avoid the need to repeatedly
+>compute -DOT(rdir,ron).  It does not flip the surface the right way
+>around -- some material routines do this by calling the flipsurface()
+>function.  Why do you want to know?
+>
+>-Greg
+>
+> > From: "Marcus Jacobs" <marcdevon@hotmail.com>
+> > Date: April 13, 2004 12:24:26 PM PDT
+> >
+> > Dear Group
+> >
+> > I am wondering if anyone could shed some light on the RAY type member
+> > 'rod'. I am curious as to how and why this is used. I am assuming that
+> > it has something to do with the fact that all object in Radiance are
+> > two sided and this relates the surface normal orientation wrt the ray
+> > being traced. Then again, I am probably wrong. Out of curiosity, if it
+> > is already known that all surface normal for faces are properly
+> > oriented (i.e. facing the viewer), is it necessary to calculate this
+> > value?
+> >
+> >
+> > Thanks
+> >
+> > Marcus
+>
+>
+
+_________________________________________________________________
+Persistent heartburn? Check out Digestive Health & Wellness for information 
+and advice. http://gerd.msn.com/default.asp
+
+
+From gward at lmi.net  Wed Apr 14 17:54:20 2004
+From: gward at lmi.net (Greg Ward)
+Date: Wed Apr 14 17:54:33 2004
+Subject: [Radiance-dev] Re: Question About RAY type member 
+In-Reply-To: <BAY2-F22P2GDlSYTg8g0000cf24@hotmail.com>
+References: <BAY2-F22P2GDlSYTg8g0000cf24@hotmail.com>
+Message-ID: <FDE6DAC4-8E2B-11D8-AFEC-000A95BB392A@lmi.net>
+
+Hi Marcus,
+
+I'm already using a supposedly fast triangle intersection test in 
+rt/o_mesh.c -- didn't you look?  It uses the following algorithm by 
+Segura & Feito, which the they compare favorably to Moller's technique:
+
+	http://wscg.zcu.cz/wscg2001/Papers_2001/R75.pdf
+
+If you feel like implementing Moller's method and comparing it to 
+Segura & Feito, be my guest, but I bet they're pretty similar.  The 
+legacy Radiance code for general polys is probably faster in fact, 
+since it stores and reuses surface normal information.  I don't do this 
+in meshes due to the storage overhead.
+
+I also implemented my own optimization in o_mesh.c that cuts the number 
+of cross products approximately in half, since neighboring faces are 
+usually tested together.
+
+-Greg
+
+> From: "Marcus Jacobs" <marcdevon@hotmail.com>
+> Date: April 14, 2004 8:19:27 AM PDT
+>
+> Thanks Greg for the info.
+>
+> I did take a look through the source code. When I first looked, this 
+> value appeared to only be used in logical statements. After looking 
+> further, I can see that this value is used to calculate other values.
+>
+> The reason I have interest in this is because I am looking to 
+> implement an optimization to Radiance for ray-triangle intersection. 
+> From what I can tell, Radiance uses generic routines for calculating 
+> ray/n-sided polygon intersection and nothing specific for triangles. 
+> Since the geometry for my scenes, with the exception of light sources, 
+> consist entirely of triangles, I want to optimize the code a bit. The 
+> ray-triangle intersection algorithm that I am going to use is the 
+> M?ller-Trumbore method listed here:
+>
+> http://www.acm.org/jgt/papers/MollerTrumbore97/
+>
+> It seems pretty straight forward to implement. There are two branches 
+> to the code, culling and non-culling. I am going to implement both and 
+> do a performance comparision. The reason I asked whether about the 
+> member 'rod' is because I only want to calculate only what is 
+> necessary. Since I am implementing the culling branch of the 
+> M?ller-Trumbore algorithm  first, I was curious as to whether or not 
+> the value would be needed if I am doing backface culling. I see now 
+> that I will need it. If this is sucessful and I can achieve a modest 
+> performance increase, I may look to implement the algorithm into 
+> o_mesh.c
+>
+> BTW, the dicussion that we had last month about tmesh.cal worked great 
+> for me. With the revision to the source code to my conversion program, 
+> I achieved a 10.5% - 12.5% gain in performance.
+
+
+From marcdevon at hotmail.com  Wed Apr 14 18:57:23 2004
+From: marcdevon at hotmail.com (Marcus Jacobs)
+Date: Wed Apr 14 18:57:30 2004
+Subject: [Radiance-dev] Re: Question About RAY type member
+Message-ID: <BAY2-F15pmy20h08xWI0000d3b8@hotmail.com>
+
+Hi Greg
+
+To be honest with you, I have only glanced through o_mesh.c. I thought I 
+would mention that I would use Möller-Trumbore for optimization just as an 
+off hand thought as I was sending a reply and to get your comments on it. 
+Since o_mesh uses the Segura & Feito method, I see no reason to try to 
+implement Möller-Trumbore. Though, I may look to store and reuse the surface 
+normal values since I have a couple of gigs of memory to play with on my 
+machine. I'll have to evaluate it later. If I am correct though, 
+Möller-Trumbore doesn't use the surface normal values in order to test for 
+intersection (though the values will be stored). Thank you for all of your 
+insight.
+
+Marcus
+
+
+>From: Greg Ward <gward@lmi.net>
+>To: "Marcus Jacobs" <marcdevon@hotmail.com>
+>CC: code development <radiance-dev@radiance-online.org>
+>Subject: Re: Question About RAY type member Date: Wed, 14 Apr 2004 08:54:20 
+>-0700
+>
+>Hi Marcus,
+>
+>I'm already using a supposedly fast triangle intersection test in 
+>rt/o_mesh.c -- didn't you look?  It uses the following algorithm by Segura 
+>& Feito, which the they compare favorably to Moller's technique:
+>
+>	http://wscg.zcu.cz/wscg2001/Papers_2001/R75.pdf
+>
+>If you feel like implementing Moller's method and comparing it to Segura & 
+>Feito, be my guest, but I bet they're pretty similar.  The legacy Radiance 
+>code for general polys is probably faster in fact, since it stores and 
+>reuses surface normal information.  I don't do this in meshes due to the 
+>storage overhead.
+>
+>I also implemented my own optimization in o_mesh.c that cuts the number of 
+>cross products approximately in half, since neighboring faces are usually 
+>tested together.
+>
+>-Greg
+>
+>>From: "Marcus Jacobs" <marcdevon@hotmail.com>
+>>Date: April 14, 2004 8:19:27 AM PDT
+>>
+>>Thanks Greg for the info.
+>>
+>>I did take a look through the source code. When I first looked, this value 
+>>appeared to only be used in logical statements. After looking further, I 
+>>can see that this value is used to calculate other values.
+>>
+>>The reason I have interest in this is because I am looking to implement an 
+>>optimization to Radiance for ray-triangle intersection. From what I can 
+>>tell, Radiance uses generic routines for calculating ray/n-sided polygon 
+>>intersection and nothing specific for triangles. Since the geometry for my 
+>>scenes, with the exception of light sources, consist entirely of 
+>>triangles, I want to optimize the code a bit. The ray-triangle 
+>>intersection algorithm that I am going to use is the Möller-Trumbore 
+>>method listed here:
+>>
+>>http://www.acm.org/jgt/papers/MollerTrumbore97/
+>>
+>>It seems pretty straight forward to implement. There are two branches to 
+>>the code, culling and non-culling. I am going to implement both and do a 
+>>performance comparision. The reason I asked whether about the member 'rod' 
+>>is because I only want to calculate only what is necessary. Since I am 
+>>implementing the culling branch of the Möller-Trumbore algorithm  first, I 
+>>was curious as to whether or not the value would be needed if I am doing 
+>>backface culling. I see now that I will need it. If this is sucessful and 
+>>I can achieve a modest performance increase, I may look to implement the 
+>>algorithm into o_mesh.c
+>>
+>>BTW, the dicussion that we had last month about tmesh.cal worked great for 
+>>me. With the revision to the source code to my conversion program, I 
+>>achieved a 10.5% - 12.5% gain in performance.
+>
+
+_________________________________________________________________
+Free up your inbox with MSN Hotmail Extra Storage! Multiple plans available. 
+http://join.msn.com/?pgmarket=en-us&page=hotmail/es2&ST=1/go/onm00200362ave/direct/01/
+
+

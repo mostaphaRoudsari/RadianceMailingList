@@ -1,0 +1,516 @@
+From tbleicher at arcor.de  Mon Mar 10 02:04:32 2008
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Mon Mar 10 02:06:42 2008
+Subject: [Radiance-dev] Re: [Radiance-general] Problem installing radiance
+	onto Mac OSX-Leopard: running trad
+In-Reply-To: <000601c88274$e308a170$0d01a8c0@nest1>
+References: <000601c88274$e308a170$0d01a8c0@nest1>
+Message-ID: <B1D8FEC3-81DF-4DA8-BD35-CD3CFD1D07AD@arcor.de>
+
+
+On 10 Mar 2008, at 06:06, Terrance Mc Minn wrote:
+
+> Hello All,
+>
+> Problem installing radiance onto Mac OSX-Leopard: running trad (I  
+> am a Linux
+> user)
+
+[...]
+
+> However, this year, a number of students have asked to install  
+> radiance on
+> their MAC notebooks - easy says I ...
+
+it generally is
+
+> So far no trouble in the 10 minutes between classes however I came  
+> unstuck
+> with the TRAD program - appears to run but bombs out with glob  
+> errors -
+> sorry don't have the student's machine here to give more  
+> information. What I
+> do know, is that unknown to the student, X11 was pre-installed as  
+> was some
+> version of wish. The OS version was Mac OSX Leopard.
+
+I have Tiger here but I see the same problem.
+
+I just googled and man-paged a bit and it seems that wish is not started
+correctly. If you can call wish directly with trad as argument and it  
+works
+that might be your problem, too. Try
+
+	wish /usr/local/bin/trad    # or wherever trad is installed
+
+This might be enough on it's own for you. If you want to allow students
+to type simply 'trad' at the command prompt replace the #!/usr/bin/wish
+line in trad with
+
+	#!/bin/sh
+         # the next line restarts using wish \
+         exec wish "$0" "$@"
+
+This is straight out of the man page. It starts the GUI but I haven't
+used trad in a long time and I haven't tested if it crashes further down
+the line.
+
+Let your students test it. That's what they're there for.
+
+Thomas
+
+
+From James.Nell at Sun.COM  Mon Mar 24 14:02:21 2008
+From: James.Nell at Sun.COM (Jim Nell)
+Date: Mon Mar 24 14:02:31 2008
+Subject: [Radiance-dev] Solaris x86 Porting
+Message-ID: <47E816DD.4030709@sun.com>
+
+Hi,
+
+I am trying to compile on Solaris 10 using the Sun Studio compiler but 
+am having issues. In particular, rpict does not get made (amongst other 
+things). How can I go about getting some help debugging the problems? I 
+can include the ./makeall install output, but it is rather lengthy.
+
+Thanks!
+
+Jim
+
+-- 
+-------------------------------------------
+
+ Jim Nell
+ Performance Engineer
+ Strategic Applications Engineering (SAE)
+ Sun Microsystems, Inc.
+
+-------------------------------------------
+
+
+From jedev at visarc.com  Mon Mar 24 15:18:33 2008
+From: jedev at visarc.com (Jack de Valpine)
+Date: Mon Mar 24 15:18:54 2008
+Subject: [Radiance-dev] Solaris x86 Porting
+In-Reply-To: <47E816DD.4030709@sun.com>
+References: <47E816DD.4030709@sun.com>
+Message-ID: <47E828B9.3050405@visarc.com>
+
+Hi Jim,
+
+Although lengthy, a good place to start would be to include output from 
+the makeall script.
+
+-Jack
+
+Jim Nell wrote:
+> Hi,
+>
+> I am trying to compile on Solaris 10 using the Sun Studio compiler but 
+> am having issues. In particular, rpict does not get made (amongst 
+> other things). How can I go about getting some help debugging the 
+> problems? I can include the ./makeall install output, but it is rather 
+> lengthy.
+>
+> Thanks!
+>
+> Jim
+>
+
+-- 
+# Jack de Valpine
+# president
+#
+# visarc incorporated
+# http://www.visarc.com
+#
+# channeling technology for superior design and construction
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: jedev.vcf
+Type: text/x-vcard
+Size: 251 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-dev/attachments/20080324/de8e93de/jedev.vcf
+From bernd at bzed.de  Mon Mar 24 15:27:20 2008
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Mon Mar 24 15:27:27 2008
+Subject: [Radiance-dev] Solaris x86 Porting
+In-Reply-To: <47E816DD.4030709@sun.com>
+References: <47E816DD.4030709@sun.com>
+Message-ID: <47E82AC8.6090101@bzed.de>
+
+Hi,
+
+> I am trying to compile on Solaris 10 using the Sun Studio compiler but
+> am having issues. In particular, rpict does not get made (amongst other
+> things). How can I go about getting some help debugging the problems? I
+> can include the ./makeall install output, but it is rather lengthy.
+
+If I remember right, makeall does not stop if there's something going
+wrong, so I'd edit it and add an 'echo' in front of the call to make,
+and then take the output and run every line manually. For the Debian
+package I re-qrote makeall, but that's not platform independent.
+Although I could come up with a proper Makefile replacement for makeall,
+if there's interest.
+Also make sure to use the latest HEAD from cvs, probably it just works
+then. Unfortunately I don't have access to a Solaris box anymore - my
+last machines from SUN are working for the Debian project now ;)
+
+
+Hope that helps,
+
+Bernd
+
+-- 
+Bernd Zeimetz
+<bernd@bzed.de>                         <http://bzed.de/>
+
+From gregoryjward at gmail.com  Mon Mar 24 15:35:46 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Mon Mar 24 15:36:03 2008
+Subject: [Radiance-dev] Solaris x86 Porting
+In-Reply-To: <47E82AC8.6090101@bzed.de>
+References: <47E816DD.4030709@sun.com> <47E82AC8.6090101@bzed.de>
+Message-ID: <24F07E5D-0F30-490C-B56E-7E5E5E0577E4@gmail.com>
+
+Alternatively, you can take the '-k' option out of the rmake script.
+
+-Greg
+
+> From: Bernd Zeimetz <bernd@bzed.de>
+> Date: March 24, 2008 3:27:20 PM PDT
+>
+> Hi,
+>
+>> I am trying to compile on Solaris 10 using the Sun Studio compiler  
+>> but
+>> am having issues. In particular, rpict does not get made (amongst  
+>> other
+>> things). How can I go about getting some help debugging the  
+>> problems? I
+>> can include the ./makeall install output, but it is rather lengthy.
+>
+> If I remember right, makeall does not stop if there's something going
+> wrong, so I'd edit it and add an 'echo' in front of the call to make,
+> and then take the output and run every line manually. For the Debian
+> package I re-qrote makeall, but that's not platform independent.
+> Although I could come up with a proper Makefile replacement for  
+> makeall,
+> if there's interest.
+> Also make sure to use the latest HEAD from cvs, probably it just works
+> then. Unfortunately I don't have access to a Solaris box anymore - my
+> last machines from SUN are working for the Debian project now ;)
+>
+>
+> Hope that helps,
+>
+> Bernd
+
+From James.Nell at Sun.COM  Tue Mar 25 15:08:45 2008
+From: James.Nell at Sun.COM (Jim Nell)
+Date: Tue Mar 25 15:08:55 2008
+Subject: [Radiance-dev] Solaris x86 Porting
+Message-ID: <47E977ED.60108@sun.com>
+
+Hi all,
+
+Thanks for all the tips. I'll give them a try later today and let you 
+know how it goes.
+
+Jim
+
+-- 
+-------------------------------------------
+
+ Jim Nell
+ Performance Engineer
+ Strategic Applications Engineering (SAE)
+ Sun Microsystems, Inc.
+
+-------------------------------------------
+
+
+From James.Nell at Sun.COM  Wed Mar 26 11:03:10 2008
+From: James.Nell at Sun.COM (Jim Nell)
+Date: Wed Mar 26 11:03:41 2008
+Subject: [Radiance-dev] Solaris Failings
+Message-ID: <47EA8FDE.2050105@sun.com>
+
+Hi again,
+
+Attached is the errors from th ./makeall install. I can't easily capture 
+all the output in one file as it doesn't allow me to see the prompts. I 
+guess I can write down my responses and try flying blind.
+
+Anyway, any help is much appreciated.
+
+I am using the latest CVS version plus the supplemental tarball, FYI.
+
+Jim
+
+-- 
+-------------------------------------------
+
+ Jim Nell
+ Performance Engineer
+ Strategic Applications Engineering (SAE)
+ Sun Microsystems, Inc.
+
+-------------------------------------------
+
+-------------- next part --------------
+Assembler: tmapcolrs.c
+	"/tmp/ube_sGAA.29662.WCaW75", line 98 : Warning: Symbol "pow" already has a type
+"srcobstr.c", line 183: warning: initializer does not fit or is out of range: -1
+"../common/calcomp.h", line 20: warning: macro redefined: TICK
+"func.c", line 176: warning: initializer does not fit or is out of range: -1
+sh: whoami: not found
+sh: whoami: not found
+make: Warning: Don't know how to make target `Version.o'
+"x11icon.h", line 5: warning: initializer does not fit or is out of range: 224
+"x11icon.h", line 6: warning: initializer does not fit or is out of range: 224
+"x11icon.h", line 8: warning: initializer does not fit or is out of range: 192
+"x11icon.h", line 9: warning: initializer does not fit or is out of range: 128
+"x11icon.h", line 9: warning: initializer does not fit or is out of range: 224
+"x11icon.h", line 9: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 10: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 10: warning: initializer does not fit or is out of range: 132
+"x11icon.h", line 11: warning: initializer does not fit or is out of range: 192
+"x11icon.h", line 11: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 11: warning: initializer does not fit or is out of range: 191
+"x11icon.h", line 11: warning: initializer does not fit or is out of range: 169
+"x11icon.h", line 11: warning: initializer does not fit or is out of range: 253
+"x11icon.h", line 11: warning: initializer does not fit or is out of range: 160
+"x11icon.h", line 11: warning: initializer does not fit or is out of range: 170
+"x11icon.h", line 12: warning: initializer does not fit or is out of range: 160
+"x11icon.h", line 12: warning: initializer does not fit or is out of range: 169
+"x11icon.h", line 12: warning: initializer does not fit or is out of range: 128
+"x11icon.h", line 13: warning: initializer does not fit or is out of range: 160
+"x11icon.h", line 13: warning: initializer does not fit or is out of range: 146
+"x11icon.h", line 13: warning: initializer does not fit or is out of range: 162
+"x11icon.h", line 13: warning: initializer does not fit or is out of range: 248
+"x11icon.h", line 13: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 13: warning: initializer does not fit or is out of range: 191
+"x11icon.h", line 13: warning: initializer does not fit or is out of range: 146
+"x11icon.h", line 14: warning: initializer does not fit or is out of range: 174
+"x11icon.h", line 14: warning: initializer does not fit or is out of range: 252
+"x11icon.h", line 14: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 14: warning: initializer does not fit or is out of range: 248
+"x11icon.h", line 14: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 14: warning: initializer does not fit or is out of range: 252
+"x11icon.h", line 14: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 15: warning: initializer does not fit or is out of range: 248
+"x11icon.h", line 15: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 15: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 15: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 15: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 15: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 15: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 15: warning: initializer does not fit or is out of range: 248
+"x11icon.h", line 15: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 15: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 16: warning: initializer does not fit or is out of range: 248
+"x11icon.h", line 16: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 16: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 16: warning: initializer does not fit or is out of range: 248
+"x11icon.h", line 16: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 16: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 16: warning: initializer does not fit or is out of range: 199
+"x11icon.h", line 16: warning: initializer does not fit or is out of range: 227
+"x11icon.h", line 16: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 16: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 17: warning: initializer does not fit or is out of range: 248
+"x11icon.h", line 17: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 17: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 17: warning: initializer does not fit or is out of range: 204
+"x11icon.h", line 17: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 17: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 17: warning: initializer does not fit or is out of range: 248
+"x11icon.h", line 17: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 17: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 18: warning: initializer does not fit or is out of range: 144
+"x11icon.h", line 18: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 18: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 18: warning: initializer does not fit or is out of range: 248
+"x11icon.h", line 18: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 18: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 18: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 19: warning: initializer does not fit or is out of range: 248
+"x11icon.h", line 19: warning: initializer does not fit or is out of range: 254
+"x11icon.h", line 19: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 19: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 19: warning: initializer does not fit or is out of range: 248
+"x11icon.h", line 20: warning: initializer does not fit or is out of range: 254
+"x11icon.h", line 20: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 20: warning: initializer does not fit or is out of range: 248
+"x11icon.h", line 20: warning: initializer does not fit or is out of range: 130
+"x11icon.h", line 20: warning: initializer does not fit or is out of range: 254
+"x11icon.h", line 20: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 21: warning: initializer does not fit or is out of range: 248
+"x11icon.h", line 21: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 21: warning: initializer does not fit or is out of range: 128
+"x11icon.h", line 21: warning: initializer does not fit or is out of range: 254
+"x11icon.h", line 21: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 21: warning: initializer does not fit or is out of range: 248
+"x11icon.h", line 22: warning: initializer does not fit or is out of range: 128
+"x11icon.h", line 22: warning: initializer does not fit or is out of range: 254
+"x11icon.h", line 22: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 22: warning: initializer does not fit or is out of range: 248
+"x11icon.h", line 22: warning: initializer does not fit or is out of range: 128
+"x11icon.h", line 22: warning: initializer does not fit or is out of range: 254
+"x11icon.h", line 22: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 23: warning: initializer does not fit or is out of range: 248
+"x11icon.h", line 23: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 23: warning: initializer does not fit or is out of range: 254
+"x11icon.h", line 23: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 23: warning: initializer does not fit or is out of range: 248
+"x11icon.h", line 23: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 23: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 24: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 24: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 24: warning: initializer does not fit or is out of range: 248
+"x11icon.h", line 24: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 24: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 24: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 24: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 25: warning: initializer does not fit or is out of range: 248
+"x11icon.h", line 25: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 25: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 25: warning: initializer does not fit or is out of range: 144
+"x11icon.h", line 25: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 25: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 25: warning: initializer does not fit or is out of range: 248
+"x11icon.h", line 25: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 25: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 26: warning: initializer does not fit or is out of range: 204
+"x11icon.h", line 26: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 26: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 26: warning: initializer does not fit or is out of range: 248
+"x11icon.h", line 26: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 26: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 26: warning: initializer does not fit or is out of range: 199
+"x11icon.h", line 26: warning: initializer does not fit or is out of range: 227
+"x11icon.h", line 26: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 26: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 27: warning: initializer does not fit or is out of range: 240
+"x11icon.h", line 27: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 27: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 27: warning: initializer does not fit or is out of range: 248
+"x11icon.h", line 27: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 27: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 27: warning: initializer does not fit or is out of range: 224
+"x11icon.h", line 27: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 27: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 27: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 28: warning: initializer does not fit or is out of range: 255
+"x11icon.h", line 28: warning: initializer does not fit or is out of range: 255
+cp: cannot access ./rtrace
+cp: cannot access ./rpict
+cp: cannot access ./rvu
+make: Warning: Target `install' not remade because of errors
+"x11plot.c", line 295: warning: argument #4 is incompatible with prototype:
+	prototype: pointer to const char : "/usr/openwin/include/X11/Xlib.h", line 3164
+	argument : pointer to unsigned char
+"../common/calcomp.h", line 20: warning: macro redefined: TICK
+"../common/calcomp.h", line 20: warning: macro redefined: TICK
+Assembler: mgf2inv.c
+	"/tmp/ube_sGAA.928.SWaa0b", line 179 : Warning: Symbol "strcmp" already has a type
+"../common/calcomp.h", line 20: warning: macro redefined: TICK
+"mkillum4.c", line 235: warning: implicit function declaration: isspace
+ld: fatal: library -lradiance: not found
+ld: fatal: File processing errors. No output written to mkillum
+ld: fatal: library -lradiance: not found
+ld: fatal: File processing errors. No output written to mksource
+make: Warning: Target `install' not remade because of errors
+ld: warning: file ../lib/libtiff.a(tif_aux.o): wrong ELF class: ELFCLASS32
+Undefined			first referenced
+ symbol  			    in file
+TIFFReadScanline                    ra_tiff.o
+TIFFScanlineSize                    ra_tiff.o
+TIFFWriteScanline                   ra_tiff.o
+TIFFSetField                        ra_tiff.o
+TIFFGetField                        ra_tiff.o
+TIFFGetFieldDefaulted               ra_tiff.o
+TIFFClose                           ra_tiff.o
+TIFFOpen                            ra_tiff.o
+ld: fatal: Symbol referencing errors. No output written to ra_tiff
+ld: warning: file ../lib/libtiff.a(tif_aux.o): wrong ELF class: ELFCLASS32
+Undefined			first referenced
+ symbol  			    in file
+TIFFReadScanline                    ../lib/librtrad.a(tmaptiff.o)
+uv_decode                           ../lib/librtrad.a(tmapluv.o)
+uv_encode                           ../lib/librtrad.a(tmapluv.o)
+TIFFScanlineSize                    normtiff.o
+TIFFWriteScanline                   normtiff.o
+TIFFSetField                        normtiff.o
+TIFFGetField                        ../lib/librtrad.a(tmaptiff.o)
+TIFFGetFieldDefaulted               normtiff.o
+TIFFClose                           normtiff.o
+TIFFOpen                            normtiff.o
+ld: fatal: Symbol referencing errors. No output written to normtiff
+"neuclrtab.c", line 442: warning: integer overflow detected: op "<<"
+"../common/calcomp.h", line 20: warning: macro redefined: TICK
+Assembler: x11image.c
+	"/tmp/ube_sGAA.12146.OpaqUx", line 305 : Warning: Symbol "pow" already has a type
+"ra_pict.c", line 302: warning: argument #1 is incompatible with prototype:
+	prototype: pointer to unsigned char : "ra_pict.c", line 42
+	argument : pointer to char
+"ra_pict.c", line 302: warning: argument #2 is incompatible with prototype:
+	prototype: pointer to unsigned char : "ra_pict.c", line 42
+	argument : pointer to char
+"ra_pict.c", line 307: warning: argument #1 is incompatible with prototype:
+	prototype: pointer to unsigned char : "ra_pict.c", line 112
+	argument : pointer to char
+"warp3d.c", line 124: warning: argument #2 is incompatible with prototype:
+	prototype: pointer to const char : "../common/lookup.h", line 85
+	argument : pointer to unsigned char
+make: Warning: Target `install' not remade because of errors
+"rholo3.c", line 129: warning: argument #4 is incompatible with prototype:
+	prototype: pointer to function(pointer to const void, pointer to const void) returning int : "/usr/include/iso/stdlib_iso.h", line 134
+	argument : pointer to function(pointer to struct  {short hd, int bi, int nr, int nc}, pointer to struct  {short hd, int bi, int nr, int nc}) returning int
+"rholo3.c", line 132: warning: argument #5 is incompatible with prototype:
+	prototype: pointer to function(pointer to const void, pointer to const void) returning int : "/usr/include/iso/stdlib_iso.h", line 113
+	argument : pointer to function(pointer to struct  {short hd, int bi, int nr, int nc}, pointer to struct  {short hd, int bi, int nr, int nc}) returning int
+"rholo3.c", line 185: warning: argument #4 is incompatible with prototype:
+	prototype: pointer to function(pointer to const void, pointer to const void) returning int : "/usr/include/iso/stdlib_iso.h", line 134
+	argument : pointer to function(pointer to struct  {short hd, int bi, int nr, int nc}, pointer to struct  {short hd, int bi, int nr, int nc}) returning int
+"rholo3.c", line 407: warning: argument #4 is incompatible with prototype:
+	prototype: pointer to function(pointer to const void, pointer to const void) returning int : "/usr/include/iso/stdlib_iso.h", line 134
+	argument : pointer to function(pointer to struct  {short hd, int bi, int nr, int nc}, pointer to struct  {short hd, int bi, int nr, int nc}) returning int
+"rholo3.c", line 412: warning: argument #4 is incompatible with prototype:
+	prototype: pointer to function(pointer to const void, pointer to const void) returning int : "/usr/include/iso/stdlib_iso.h", line 134
+	argument : pointer to function(pointer to struct  {short hd, int bi, int nr, int nc}, pointer to struct  {short hd, int bi, int nr, int nc}) returning int
+"Version.c", line 1: warning: old-style declaration or incorrect type for: RADIANCE
+"Version.c", line 1: syntax error before or at: 3.8
+"Version.c", line 2: warning: old-style declaration or incorrect type for: Wed
+"Version.c", line 2: warning: old-style declaration or incorrect type for: Mar
+"Version.c", line 2: warning: old-style declaration or incorrect type for: PDT
+cc: acomp failed for Version.c
+"rhdisp.c", line 177: undefined struct/union member: _cnt
+"rhdisp.c", line 179: undefined struct/union member: _cnt
+cc: acomp failed for rhdisp.c
+make: Warning: Target `install' not remade because of errors
+"glare.h", line 80: warning: syntax error:  empty declaration
+"glare.h", line 80: warning: syntax error:  empty declaration
+"glare.h", line 80: warning: syntax error:  empty declaration
+"Version.c", line 1: warning: old-style declaration or incorrect type for: RADIANCE
+"Version.c", line 1: syntax error before or at: 3.8
+"Version.c", line 2: warning: old-style declaration or incorrect type for: Wed
+"Version.c", line 2: warning: old-style declaration or incorrect type for: Mar
+"Version.c", line 2: warning: old-style declaration or incorrect type for: PDT
+cc: acomp failed for Version.c
+"rad.c", line 1381: warning: implicit function declaration: kill
+"ranimove1.c", line 707: warning: statement not reached
+ld: fatal: library -lradiance: not found
+ld: fatal: File processing errors. No output written to ranimove
+"../common/calcomp.h", line 20: warning: macro redefined: TICK
+"rtcontrib.c", line 1213: warning: function expects to return value: myclose
+ld: fatal: library -lradiance: not found
+ld: fatal: File processing errors. No output written to rsensor
+cp: cannot access rpiece
+cp: cannot access ranimove
+cp: cannot access rtcontrib
+cp: cannot access rsensor
+make: Warning: Target `install' not remade because of errors

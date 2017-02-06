@@ -1,0 +1,358 @@
+From devon.sparks at arup.com  Mon Apr  7 17:20:15 2014
+From: devon.sparks at arup.com (Devon Sparks)
+Date: Tue, 8 Apr 2014 00:20:15 +0000
+Subject: [Radiance-dev] Radiance ASCII format specification
+Message-ID: <CF68902C.A452%devon.sparks@arup.com>
+
+Does Radiance specify[1] a standard ASCII format for RGB output? I've observed two "defaults":
+
+* rtrace, rcalc - RGB fields separated by tabs. Sensor records separated by newlines.
+$ vwrays -vf myview.vf | head -n 1 |  rtrace -ab 0 -h model.oct
+$    0.000000e+00<TAB>0.000000e+00<TAB>0.000000e+00<TAB><CR>
+
+* dctimestep - RGB fields separated by spaces. Time-series records separated by tabs. Sensor records separated by newlines.
+$ gendaymtx -m 4 city.wea | dctimestep -n 8760 model.dc | head -n 1
+$    0.000000e+00<SP>0.000000e+00<SP>0.000000e+00<TAB>0.000000e+00<SP>0.000000e+00<SP>0.000000e+00<TAB>...
+
+Is there any reason to think that these two format specifications should be unified in the standard distribution (e.g. fields separated by spaces, time-based records separated by tabs, spatial records separated by newlines)? How many tools would be broken in the process?
+
+Thanks in advance ? Devon
+
+[1] http://radsite.lbl.gov/radiance/refer/filefmts.pdf
+
+Devon Sparks
+Consultant  |  Lighting Group
+
+Arup
+560 Mission Street  Seventh Floor   San Francisco CA 94105   United States
+t +1 415 957 9445  d +1 415 946 0240
+f +1 415 957 9096
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20140408/a5d6c88a/attachment.html>
+
+From gregoryjward at gmail.com  Mon Apr  7 20:04:44 2014
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Mon, 7 Apr 2014 20:04:44 -0700
+Subject: [Radiance-dev] Radiance ASCII format specification
+In-Reply-To: <CF68902C.A452%devon.sparks@arup.com>
+References: <CF68902C.A452%devon.sparks@arup.com>
+Message-ID: <11347584-4359-4A07-AACB-2680860B44C9@gmail.com>
+
+Hi Devon,
+
+Most Unix programs (Radiance tools included) treat tabs and spaces the same on input.
+
+There is a new program called rcollate that allows you to change the record length for any input, i.e. change where newlines are placed.
+
+What is the problem you are trying to resolve, exactly?
+
+-Greg
+
+> From: Devon Sparks <devon.sparks at arup.com>
+> Subject: [Radiance-dev] Radiance ASCII format specification
+> Date: April 7, 2014 5:20:15 PM PDT
+> 
+> Does Radiance specify[1] a standard ASCII format for RGB output? I've observed two "defaults":
+> 
+> * rtrace, rcalc - RGB fields separated by tabs. Sensor records separated by newlines.
+> $ vwrays -vf myview.vf | head -n 1 |  rtrace -ab 0 -h model.oct
+> $    0.000000e+00<TAB>0.000000e+00<TAB>0.000000e+00<TAB><CR>
+> 
+> * dctimestep - RGB fields separated by spaces. Time-series records separated by tabs. Sensor records separated by newlines.
+> $ gendaymtx -m 4 city.wea | dctimestep -n 8760 model.dc | head -n 1
+> $    0.000000e+00<SP>0.000000e+00<SP>0.000000e+00<TAB>0.000000e+00<SP>0.000000e+00<SP>0.000000e+00<TAB>...
+> 
+> Is there any reason to think that these two format specifications should be unified in the standard distribution (e.g. fields separated by spaces, time-based records separated by tabs, spatial records separated by newlines)? How many tools would be broken in the process? 
+> 
+> Thanks in advance ? Devon
+> 
+> [1] http://radsite.lbl.gov/radiance/refer/filefmts.pdf
+> 
+> Devon Sparks
+> Consultant  |  Lighting Group
+>  
+> Arup
+> 560 Mission Street  Seventh Floor   San Francisco CA 94105   United States
+> t +1 415 957 9445  d +1 415 946 0240
+> f +1 415 957 9096
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20140407/58193743/attachment.html>
+
+From devon.sparks at arup.com  Tue Apr  8 10:56:10 2014
+From: devon.sparks at arup.com (Devon Sparks)
+Date: Tue, 8 Apr 2014 17:56:10 +0000
+Subject: [Radiance-dev] Radiance ASCII format specification
+In-Reply-To: <CF68902C.A452%devon.sparks@arup.com>
+Message-ID: <CF698452.A473%devon.sparks@arup.com>
+
+Hi Greg,
+
+I've sketched a collection of analysis tools that operate on Radiance output. Some of these tools should operate on Radiance output data whatever, regardless of source (e.g. rtrace, dctimestep) and provide sanity checks where possible. For argument's sake, assume I'm writing a C-based tool for calculating dot products with RGB triplets in a file with a variable number of records. A few approaches:
+
+1.) Accept input data as-is. Collect/emit values with strtok_r, exiting on malformed/misaligned input. Because there's no way (?) to consistently distinguish records from fields without parsing the header (which may be missing), there's no safety net in the event the user accidentally provides wrongly typed data (say, an illuminance dat file vs irradiance values).
+
+2.) Provide an "rcheck" command/function to perform record/field standardization up front. I currently approximate this by wrapping rcollate. This works well, as it isolates record parsing from the analysis logic. Data processing on RGB triplets (one per record) now can be treated consistently:
+
+while not EOF:
+   rec = next_records(1)
+   assert length(rec)==3
+   process_rec(rec)
+
+Unfortunately, this adds an additional scan of the input stream.
+
+3.) Unify the field/record specification within Radiance itself in order to simplify the logic of analysis tools.
+
+Some of these sketched programs operate on a single record, while others collect n (12,24,60) records before processing. By munching tabs and spaces without discretion, it seems difficult to validate input format/record types during processing. For now I've opted for option (2), but figured I'd ask about alternative approaches.
+
+Many thanks ? Devon
+
+Devon Sparks
+Consultant  |  Lighting Group
+
+Arup
+560 Mission Street  Seventh Floor   San Francisco CA 94105   United States
+t +1 415 957 9445  d +1 415 946 0240
+f +1 415 957 9096
+
+From: Devon Sparks <devon.sparks at arup.com<mailto:devon.sparks at arup.com>>
+Date: Monday, April 7, 2014 5:26 PM
+To: "radiance-dev at radiance-online.org<mailto:radiance-dev at radiance-online.org>" <radiance-dev at radiance-online.org<mailto:radiance-dev at radiance-online.org>>
+Subject: Radiance ASCII format specification
+
+Does Radiance specify[1] a standard ASCII format for RGB output? I've observed two "defaults":
+
+* rtrace, rcalc - RGB fields separated by tabs. Sensor records separated by newlines.
+$ vwrays -vf myview.vf | head -n 1 |  rtrace -ab 0 -h model.oct
+$    0.000000e+00<TAB>0.000000e+00<TAB>0.000000e+00<TAB><CR>
+
+* dctimestep - RGB fields separated by spaces. Time-series records separated by tabs. Sensor records separated by newlines.
+$ gendaymtx -m 4 city.wea | dctimestep -n 8760 model.dc | head -n 1
+$    0.000000e+00<SP>0.000000e+00<SP>0.000000e+00<TAB>0.000000e+00<SP>0.000000e+00<SP>0.000000e+00<TAB>...
+
+Is there any reason to think that these two format specifications should be unified in the standard distribution (e.g. fields separated by spaces, time-based records separated by tabs, spatial records separated by newlines)? How many tools would be broken in the process?
+
+Thanks in advance ? Devon
+
+[1] http://radsite.lbl.gov/radiance/refer/filefmts.pdf
+
+Devon Sparks
+Consultant  |  Lighting Group
+
+Arup
+560 Mission Street  Seventh Floor   San Francisco CA 94105   United States
+t +1 415 957 9445  d +1 415 946 0240
+f +1 415 957 9096
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20140408/5c168a40/attachment-0001.html>
+
+From gregoryjward at gmail.com  Tue Apr  8 11:47:17 2014
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue, 8 Apr 2014 11:47:17 -0700
+Subject: [Radiance-dev] Radiance ASCII format specification
+In-Reply-To: <CF698452.A473%devon.sparks@arup.com>
+References: <CF698452.A473%devon.sparks@arup.com>
+Message-ID: <5CBC8901-5B27-4A64-A613-7D01DC80EC13@gmail.com>
+
+Thanks, Devon.  Definitely helps me to know some context....
+
+Wrapping rcollate isn't a bad approach, since I wrote this program to be very efficient.  It doesn't attempt to decode floating-point numbers (atof() is a very expensive call) and file i/o is streamlined as much as possible.
+
+However, if there are specific changes you can suggest to specific Radiance tools that would make your life easier, I will look into it.  I know some of the tools differ with regards to tabs and spaces between the final record and the newline, for example.  This has caused me trouble when tried to use rcalc input formats, so I wouldn't working on that issue.
+
+As far as spaces versus tabs between RGB values, I can probably fix this as well for some tools, but generic programs like rcalc are not going to differentiate between fields in a record.
+
+Cheers,
+-Greg
+
+> From: Devon Sparks <devon.sparks at arup.com>
+> Subject: Re: [Radiance-dev] Radiance ASCII format specification
+> Date: April 8, 2014 10:56:10 AM PDT
+> 
+> Hi Greg,
+> 
+> I've sketched a collection of analysis tools that operate on Radiance output. Some of these tools should operate on Radiance output data whatever, regardless of source (e.g. rtrace, dctimestep) and provide sanity checks where possible. For argument's sake, assume I'm writing a C-based tool for calculating dot products with RGB triplets in a file with a variable number of records. A few approaches:
+> 
+> 1.) Accept input data as-is. Collect/emit values with strtok_r, exiting on malformed/misaligned input. Because there's no way (?) to consistently distinguish records from fields without parsing the header (which may be missing), there's no safety net in the event the user accidentally provides wrongly typed data (say, an illuminance dat file vs irradiance values). 
+> 
+> 2.) Provide an "rcheck" command/function to perform record/field standardization up front. I currently approximate this by wrapping rcollate. This works well, as it isolates record parsing from the analysis logic. Data processing on RGB triplets (one per record) now can be treated consistently:
+> 
+> while not EOF:
+>    rec = next_records(1)
+>    assert length(rec)==3
+>    process_rec(rec)
+> 
+> Unfortunately, this adds an additional scan of the input stream.
+> 
+> 3.) Unify the field/record specification within Radiance itself in order to simplify the logic of analysis tools. 
+> 
+> Some of these sketched programs operate on a single record, while others collect n (12,24,60) records before processing. By munching tabs and spaces without discretion, it seems difficult to validate input format/record types during processing. For now I've opted for option (2), but figured I'd ask about alternative approaches.
+> 
+> Many thanks ? Devon
+> 
+> Devon Sparks
+> Consultant  |  Lighting Group
+>  
+> From: Devon Sparks <devon.sparks at arup.com>
+> Date: Monday, April 7, 2014 5:26 PM
+> To: "radiance-dev at radiance-online.org" <radiance-dev at radiance-online.org>
+> Does Radiance specify[1] a standard ASCII format for RGB output? I've observed two "defaults":
+> 
+> * rtrace, rcalc - RGB fields separated by tabs. Sensor records separated by newlines.
+> $ vwrays -vf myview.vf | head -n 1 |  rtrace -ab 0 -h model.oct
+> $    0.000000e+00<TAB>0.000000e+00<TAB>0.000000e+00<TAB><CR>
+> 
+> * dctimestep - RGB fields separated by spaces. Time-series records separated by tabs. Sensor records separated by newlines.
+> $ gendaymtx -m 4 city.wea | dctimestep -n 8760 model.dc | head -n 1
+> $    0.000000e+00<SP>0.000000e+00<SP>0.000000e+00<TAB>0.000000e+00<SP>0.000000e+00<SP>0.000000e+00<TAB>...
+> 
+> Is there any reason to think that these two format specifications should be unified in the standard distribution (e.g. fields separated by spaces, time-based records separated by tabs, spatial records separated by newlines)? How many tools would be broken in the process? 
+> 
+> Thanks in advance ? Devon
+> 
+> [1] http://radsite.lbl.gov/radiance/refer/filefmts.pdf
+> 
+> Devon Sparks
+> Consultant  |  Lighting Group
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20140408/a4aedb53/attachment.html>
+
+From gregoryjward at gmail.com  Tue Apr  8 16:58:07 2014
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue, 8 Apr 2014 16:58:07 -0700
+Subject: [Radiance-dev] Radiance ASCII format specification
+In-Reply-To: <CF68902C.A452%devon.sparks@arup.com>
+References: <CF68902C.A452%devon.sparks@arup.com>
+Message-ID: <06F48EE3-5689-4D1C-B536-1F336E5A7416@gmail.com>
+
+Hi Devon,
+
+I looked into this some more, and there's not much I can do to change rtrace without breaking other tools, unfortunately.
+
+I just tweaked dctimestep so that it doesn't insert a leading tab on the first record, bringing its output in line with that of rcollate.  Not sure if this is any help.
+
+The reason I don't actually output columns on a single line with gendaymtx is that most text editors will choke on a 130 KByte line, although you can get that easily with something like "rcollate -oc 8760" if you want it.  Passing to dctimestep (if that's your plan) is faster with the gendaymtx "-of" option, anyway, since you avoid the back-and-forth between ASCII and float representations that takes so much time.
+
+Cheers,
+-Greg
+
+> From: Devon Sparks <devon.sparks at arup.com>
+> Subject: [Radiance-dev] Radiance ASCII format specification
+> Date: April 7, 2014 5:20:15 PM PDT
+> 
+> Does Radiance specify[1] a standard ASCII format for RGB output? I've observed two "defaults":
+> 
+> * rtrace, rcalc - RGB fields separated by tabs. Sensor records separated by newlines.
+> $ vwrays -vf myview.vf | head -n 1 |  rtrace -ab 0 -h model.oct
+> $    0.000000e+00<TAB>0.000000e+00<TAB>0.000000e+00<TAB><CR>
+> 
+> * dctimestep - RGB fields separated by spaces. Time-series records separated by tabs. Sensor records separated by newlines.
+> $ gendaymtx -m 4 city.wea | dctimestep -n 8760 model.dc | head -n 1
+> $    0.000000e+00<SP>0.000000e+00<SP>0.000000e+00<TAB>0.000000e+00<SP>0.000000e+00<SP>0.000000e+00<TAB>...
+> 
+> Is there any reason to think that these two format specifications should be unified in the standard distribution (e.g. fields separated by spaces, time-based records separated by tabs, spatial records separated by newlines)? How many tools would be broken in the process? 
+> 
+> Thanks in advance ? Devon
+> 
+> [1] http://radsite.lbl.gov/radiance/refer/filefmts.pdf
+> 
+> Devon Sparks
+> Consultant  |  Lighting Group
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20140408/bdd1302a/attachment.html>
+
+From devon.sparks at arup.com  Wed Apr  9 14:23:43 2014
+From: devon.sparks at arup.com (Devon Sparks)
+Date: Wed, 9 Apr 2014 21:23:43 +0000
+Subject: [Radiance-dev] Radiance ASCII format specification
+In-Reply-To: <mailman.1.1397070001.23132.radiance-dev@radiance-online.org>
+Message-ID: <CF6AFD33.A6E7%devon.sparks@arup.com>
+
+Hi Greg,
+
+Thanks very much for your help here. It seems like the best way forward is
+to use an rcollate-based "rcheck" program to unify data as needed, and
+then to build analysis tools around this output format. If the new format
+proves particularly helpful, I may have a go at patching my local Radiance
+install and see how far I get. Happy to share my findings.
+
+All very helpful. Thanks again! -- Devon
+
+>----------------------------------------------------------------------
+>
+>Message: 1
+>Date: Tue, 8 Apr 2014 16:58:07 -0700
+>From: "Gregory J. Ward" <gregoryjward at gmail.com>
+>To: code development <radiance-dev at radiance-online.org>
+>Subject: Re: [Radiance-dev] Radiance ASCII format specification
+>Message-ID: <06F48EE3-5689-4D1C-B536-1F336E5A7416 at gmail.com>
+>Content-Type: text/plain; charset="windows-1252"
+>
+>Hi Devon,
+>
+>I looked into this some more, and there's not much I can do to change
+>rtrace without breaking other tools, unfortunately.
+>
+>I just tweaked dctimestep so that it doesn't insert a leading tab on the
+>first record, bringing its output in line with that of rcollate.  Not
+>sure if this is any help.
+>
+>The reason I don't actually output columns on a single line with
+>gendaymtx is that most text editors will choke on a 130 KByte line,
+>although you can get that easily with something like "rcollate -oc 8760"
+>if you want it.  Passing to dctimestep (if that's your plan) is faster
+>with the gendaymtx "-of" option, anyway, since you avoid the
+>back-and-forth between ASCII and float representations that takes so much
+>time.
+>
+>Cheers,
+>-Greg
+>
+>> From: Devon Sparks <devon.sparks at arup.com>
+>> Subject: [Radiance-dev] Radiance ASCII format specification
+>> Date: April 7, 2014 5:20:15 PM PDT
+>> 
+>> Does Radiance specify[1] a standard ASCII format for RGB output? I've
+>>observed two "defaults":
+>> 
+>> * rtrace, rcalc - RGB fields separated by tabs. Sensor records
+>>separated by newlines.
+>> $ vwrays -vf myview.vf | head -n 1 |  rtrace -ab 0 -h model.oct
+>> $    0.000000e+00<TAB>0.000000e+00<TAB>0.000000e+00<TAB><CR>
+>> 
+>> * dctimestep - RGB fields separated by spaces. Time-series records
+>>separated by tabs. Sensor records separated by newlines.
+>> $ gendaymtx -m 4 city.wea | dctimestep -n 8760 model.dc | head -n 1
+>> $    
+>>0.000000e+00<SP>0.000000e+00<SP>0.000000e+00<TAB>0.000000e+00<SP>0.000000
+>>e+00<SP>0.000000e+00<TAB>...
+>> 
+>> Is there any reason to think that these two format specifications
+>>should be unified in the standard distribution (e.g. fields separated by
+>>spaces, time-based records separated by tabs, spatial records separated
+>>by newlines)? How many tools would be broken in the process?
+>> 
+>> Thanks in advance ? Devon
+>> 
+>> [1] http://radsite.lbl.gov/radiance/refer/filefmts.pdf
+>> 
+>> Devon Sparks
+>> Consultant  |  Lighting Group
+>
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+
+
+

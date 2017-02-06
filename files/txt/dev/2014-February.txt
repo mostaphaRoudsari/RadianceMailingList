@@ -1,0 +1,677 @@
+From vaibhavjain.co at gmail.com  Fri Feb  7 09:12:13 2014
+From: vaibhavjain.co at gmail.com (Vaib)
+Date: Fri, 7 Feb 2014 18:12:13 +0100
+Subject: [Radiance-dev] How to parse room dimensions from .rad model ?
+Message-ID: <CAD7gt0WiOtUqvox9Aj291yno0XqsD3v5QPEiU2bBNvdBvShBtg@mail.gmail.com>
+
+Hello everyone,
+
+It is a kind of weird question but thought to hear your views.
+
+Let's say, someone gave me a .rad file which is a model of a rectangle
+room. This model has many polygons for surfaces such as walls, windows,
+luminaire, furniture etc.
+
+How shall I develop a method/function that can parse this .rad file and
+return me back the room dimensions. I have no additional information, like
+walls' name variable etc.
+
+I want to make a simple java method for that. I am not using any CAD API.
+
+Is it possible? Please don't bash me for my stupid question.. :P
+
+Best regards,
+Vaib
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20140207/4cae6888/attachment.html>
+
+From Christopher.Rush at arup.com  Fri Feb  7 09:41:21 2014
+From: Christopher.Rush at arup.com (Christopher Rush)
+Date: Fri, 7 Feb 2014 17:41:21 +0000
+Subject: [Radiance-dev] How to parse room dimensions from .rad model ?
+Message-ID: <88079A360FAC7441AE93ECBF619982360D839D44@AMXExMb02.global.arup.com>
+
+Crossing over to the general list...
+
+If you can create an octree from your model, try the command and option getinfo -d
+
+That will return the dimensional information for your full scene though, so if there are objects included outside of your area of interest, it becomes more tricky.
+
+
+From: Vaib [mailto:vaibhavjain.co at gmail.com]
+Sent: Friday, February 07, 2014 12:12 PM
+To: radiance-dev
+Subject: [Radiance-dev] How to parse room dimensions from .rad model ?
+
+Hello everyone,
+
+It is a kind of weird question but thought to hear your views.
+
+Let's say, someone gave me a .rad file which is a model of a rectangle room. This model has many polygons for surfaces such as walls, windows, luminaire, furniture etc.
+
+How shall I develop a method/function that can parse this .rad file and return me back the room dimensions. I have no additional information, like walls' name variable etc.
+
+I want to make a simple java method for that. I am not using any CAD API.
+
+Is it possible? Please don't bash me for my stupid question.. :P
+
+Best regards,
+Vaib
+
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20140207/3482b5da/attachment.html>
+
+From jacobs.axel at gmail.com  Tue Feb 11 04:38:22 2014
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Tue, 11 Feb 2014 12:38:22 +0000
+Subject: [Radiance-dev] rlam limitations
+Message-ID: <CA+dqh61JcLzY9rGV2sKHVwqsJJgWprzD3+YJhw7xD9s_f8AuCA@mail.gmail.com>
+
+Hi devs,
+
+I am trying to get rlam to merge an occupancy file (single '0' or '1',
+one per line) with a large matrix. Both files are 8760 lines long. The
+matrix contains grey illuminance readings and has as many columns as
+there are sensors in the room.
+
+The following doesn't actually do anything useful.  I'm simply running
+the annual illuminance matrix through rlam:
+
+rlam $lmx | awk '{print NF}' |sort |uniq
+40
+
+as expected, this gives me a single number: the sensor count.  BUT
+this only works with a small grid.  With a larger one (650 grid
+points), I get
+
+rlam $lmx | awk '{print NF}' |sort |uniq -c
+      1 271
+      9 272
+    402 273
+   2400 274
+   1598 275
+     97 276
+      2 283
+     10 284
+     22 285
+     24 286
+     19 287
+      2 288
+      5 363
+     22 364
+     23 365
+     23 366
+      6 367
+    257 375
+   2237 376
+   1811 377
+    199 378
+      3 379
+   4174 650
+
+It looks as if all the rows with only zeros (night time) are all
+right.  Daytime rows (longer lines) are truncated.
+
+Is there some rlam limitation wrt line length or column count that
+might be causing this?
+
+Lovely day to you all
+
+Best
+
+Axel
+
+
+From gregoryjward at gmail.com  Tue Feb 11 09:06:16 2014
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue, 11 Feb 2014 09:06:16 -0800
+Subject: [Radiance-dev] rlam limitations
+In-Reply-To: <CA+dqh61JcLzY9rGV2sKHVwqsJJgWprzD3+YJhw7xD9s_f8AuCA@mail.gmail.com>
+References: <CA+dqh61JcLzY9rGV2sKHVwqsJJgWprzD3+YJhw7xD9s_f8AuCA@mail.gmail.com>
+Message-ID: <F83C4A25-E4F5-4A18-B9DE-B65CA1246D51@gmail.com>
+
+Hi Axel,
+
+Yes, there is a MAXLINE #define of 8192 in the version of rlam you are using.  I just increased it to 64KB, which should handle just about anything.  You can download the new HEAD version or change MAXLINE in src/cal/lam.c and recompile.
+
+Cheers,
+-Greg
+
+> From: Axel Jacobs <jacobs.axel at gmail.com>
+> Date: February 11, 2014 4:38:22 AM PST
+> 
+> Hi devs,
+> 
+> I am trying to get rlam to merge an occupancy file (single '0' or '1',
+> one per line) with a large matrix. Both files are 8760 lines long. The
+> matrix contains grey illuminance readings and has as many columns as
+> there are sensors in the room.
+> 
+> The following doesn't actually do anything useful.  I'm simply running
+> the annual illuminance matrix through rlam:
+> 
+> rlam $lmx | awk '{print NF}' |sort |uniq
+> 40
+> 
+> as expected, this gives me a single number: the sensor count.  BUT
+> this only works with a small grid.  With a larger one (650 grid
+> points), I get
+> 
+> rlam $lmx | awk '{print NF}' |sort |uniq -c
+>      1 271
+>      9 272
+>    402 273
+>   2400 274
+>   1598 275
+>     97 276
+>      2 283
+>     10 284
+>     22 285
+>     24 286
+>     19 287
+>      2 288
+>      5 363
+>     22 364
+>     23 365
+>     23 366
+>      6 367
+>    257 375
+>   2237 376
+>   1811 377
+>    199 378
+>      3 379
+>   4174 650
+> 
+> It looks as if all the rows with only zeros (night time) are all
+> right.  Daytime rows (longer lines) are truncated.
+> 
+> Is there some rlam limitation wrt line length or column count that
+> might be causing this?
+> 
+> Lovely day to you all
+> 
+> Best
+> 
+> Axel
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+From jacobs.axel at gmail.com  Tue Feb 11 09:23:04 2014
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Tue, 11 Feb 2014 17:23:04 +0000
+Subject: [Radiance-dev] rlam limitations
+In-Reply-To: <F83C4A25-E4F5-4A18-B9DE-B65CA1246D51@gmail.com>
+References: <CA+dqh61JcLzY9rGV2sKHVwqsJJgWprzD3+YJhw7xD9s_f8AuCA@mail.gmail.com>
+	<F83C4A25-E4F5-4A18-B9DE-B65CA1246D51@gmail.com>
+Message-ID: <CA+dqh63QhB7KBQOTbYbJg=hr+Rj1M8qNLwuMMDopJstiL+UH2A@mail.gmail.com>
+
+You're star, Greg!  Thank you so much.
+
+Regards
+
+Axel
+
+
+On 11 February 2014 17:06, Gregory J. Ward <gregoryjward at gmail.com> wrote:
+> Hi Axel,
+>
+> Yes, there is a MAXLINE #define of 8192 in the version of rlam you are using.  I just increased it to 64KB, which should handle just about anything.  You can download the new HEAD version or change MAXLINE in src/cal/lam.c and recompile.
+>
+> Cheers,
+> -Greg
+>
+>> From: Axel Jacobs <jacobs.axel at gmail.com>
+>> Date: February 11, 2014 4:38:22 AM PST
+>>
+>> Hi devs,
+>>
+>> I am trying to get rlam to merge an occupancy file (single '0' or '1',
+>> one per line) with a large matrix. Both files are 8760 lines long. The
+>> matrix contains grey illuminance readings and has as many columns as
+>> there are sensors in the room.
+>>
+>> The following doesn't actually do anything useful.  I'm simply running
+>> the annual illuminance matrix through rlam:
+>>
+>> rlam $lmx | awk '{print NF}' |sort |uniq
+>> 40
+>>
+>> as expected, this gives me a single number: the sensor count.  BUT
+>> this only works with a small grid.  With a larger one (650 grid
+>> points), I get
+>>
+>> rlam $lmx | awk '{print NF}' |sort |uniq -c
+>>      1 271
+>>      9 272
+>>    402 273
+>>   2400 274
+>>   1598 275
+>>     97 276
+>>      2 283
+>>     10 284
+>>     22 285
+>>     24 286
+>>     19 287
+>>      2 288
+>>      5 363
+>>     22 364
+>>     23 365
+>>     23 366
+>>      6 367
+>>    257 375
+>>   2237 376
+>>   1811 377
+>>    199 378
+>>      3 379
+>>   4174 650
+>>
+>> It looks as if all the rows with only zeros (night time) are all
+>> right.  Daytime rows (longer lines) are truncated.
+>>
+>> Is there some rlam limitation wrt line length or column count that
+>> might be causing this?
+>>
+>> Lovely day to you all
+>>
+>> Best
+>>
+>> Axel
+>>
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+From jan.wienold at ise.fraunhofer.de  Fri Feb 14 03:02:31 2014
+From: jan.wienold at ise.fraunhofer.de (Jan Wienold)
+Date: Fri, 14 Feb 2014 12:02:31 +0100
+Subject: [Radiance-dev] your last changes on eplus_adduvf.c eplus_idf.c do
+	not compile...
+Message-ID: <52FDF7C7.3040803@ise.fraunhofer.de>
+
+Hi Greg,
+
+just a short note:
+
+Your last changes from yesterday on
+
+eplus_adduvf.c eplus_idf.c
+
+seem not to compile - I downloaded the headlease today and got the 
+error-messages below...
+
+But not serious for my installation, since this was the only error...
+
+Cheers,
+
+Jan
+
+
+
+
+
+In directory util...
+gcc -I../common -I../rt -L../lib -O2 -Dlinux -D_FILE_OFFSET_BITS=64 
+-L/usr/X11R6/lib -I/usr/include/X11 -DNOSTEREO -o eplus_adduvf 
+eplus_adduvf.o eplus_idf.o -lrtrad
+eplus_adduvf.o: In function `main':
+eplus_adduvf.c:(.text+0xc27): warning: the use of `mktemp' is dangerous, 
+better use `mkstemp' or `mkdtemp'
+eplus_adduvf.o: In function `sample_triangle':
+eplus_adduvf.c:(.text+0x26b): undefined reference to `sqrt'
+eplus_adduvf.c:(.text+0x2ee): undefined reference to `sqrt'
+eplus_adduvf.c:(.text+0x36d): undefined reference to `sqrt'
+../lib/librtrad.a(fvect.o): In function `normalize':
+fvect.c:(.text+0x4ae): undefined reference to `sqrt'
+../lib/librtrad.a(fvect.o): In function `geodesic':
+fvect.c:(.text+0x6f5): undefined reference to `sincos'
+fvect.c:(.text+0x741): undefined reference to `sqrt'
+fvect.c:(.text+0x7db): undefined reference to `acos'
+../lib/librtrad.a(fvect.o): In function `spinvector':
+fvect.c:(.text+0x851): undefined reference to `sincos'
+../lib/librtrad.a(fvect.o): In function `Acos':
+fvect.c:(.text+0x501): undefined reference to `acos'
+../lib/librtrad.a(fvect.o): In function `Asin':
+fvect.c:(.text+0x961): undefined reference to `asin'
+../lib/librtrad.a(tcos.o): In function `tcos':
+tcos.c:(.text+0x13d): undefined reference to `cos'
+collect2: ld returned 1 exit status
+make: *** [eplus_adduvf] Error 1
+make: Target `install' not remade because of errors.
+
+
+-- 
+Dr.-Ing. Jan Wienold
+Head of Team Passive Systems and Daylighting
+Fraunhofer-Institut f?r Solare Energiesysteme
+Thermal Systems and Buildings
+Heidenhofstr. 2, 79110 Freiburg, Germany
+Phone: +49(0)761 4588 5133 Fax:+49(0)761 4588 9133
+jan.wienold at ise.fraunhofer.de
+http://www.ise.fraunhofer.de
+
+In office:
+Mo,Tue: 8:30-18:00
+We,Thu: 8:30-16:00
+Fr:  8:30-15:30
+
+
+
+From gregoryjward at gmail.com  Fri Feb 14 09:36:48 2014
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri, 14 Feb 2014 09:36:48 -0800
+Subject: [Radiance-dev] your last changes on eplus_adduvf.c eplus_idf.c
+	do not compile...
+In-Reply-To: <52FDF7C7.3040803@ise.fraunhofer.de>
+References: <52FDF7C7.3040803@ise.fraunhofer.de>
+Message-ID: <B9A021F7-B6AA-412D-8DA9-23DBB91F9C86@gmail.com>
+
+Many thanks, Jan.  This is a new module that computes view factors for EnergyPlus.  It is still undergoing testing...  Looks like I forgot to link to the standard math library, which is automatic on my system.  Just checked in a fix to the Rmakefile.  Not sure if CMakeLists.txt needs to change -- I think it's savvy about such things.
+
+Cheers,
+-Greg
+
+> From: Jan Wienold <jan.wienold at ise.fraunhofer.de>
+> Date: February 14, 2014 3:02:31 AM PST
+> 
+> Hi Greg,
+> 
+> just a short note:
+> 
+> Your last changes from yesterday on
+> 
+> eplus_adduvf.c eplus_idf.c
+> 
+> seem not to compile - I downloaded the headlease today and got the error-messages below...
+> 
+> But not serious for my installation, since this was the only error...
+> 
+> Cheers,
+> 
+> Jan
+> 
+
+
+From Robert.Guglielmetti at nrel.gov  Tue Feb 18 13:40:36 2014
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Tue, 18 Feb 2014 14:40:36 -0700
+Subject: [Radiance-dev] your last changes on eplus_adduvf.c eplus_idf.c
+ do not compile...
+In-Reply-To: <B9A021F7-B6AA-412D-8DA9-23DBB91F9C86@gmail.com>
+References: <52FDF7C7.3040803@ise.fraunhofer.de>
+	<B9A021F7-B6AA-412D-8DA9-23DBB91F9C86@gmail.com>
+Message-ID: <CF2920D6.3534%robert.guglielmetti@nrel.gov>
+
+
+
+On 2/14/14, 10:36 AM, "Gregory J. Ward" <gregoryjward at gmail.com> wrote:
+
+>Many thanks, Jan.  This is a new module that computes view factors for
+>EnergyPlus.  It is still undergoing testing...  Looks like I forgot to
+>link to the standard math library, which is automatic on my system.  Just
+>checked in a fix to the Rmakefile.  Not sure if CMakeLists.txt needs to
+>change -- I think it's savvy about such things.
+
+
+Yes, this is declared elsewhere and is picked up automatically when using
+CMake. I haven?t tried building this particular executable on Windows yet,
+but it *should* work fine?
+
+- Rob
+
+
+
+From ian_ashdown at helios32.com  Tue Feb 18 14:54:35 2014
+From: ian_ashdown at helios32.com (Ian Ashdown)
+Date: Tue, 18 Feb 2014 14:54:35 -0800
+Subject: [Radiance-dev] CIE Unified Glare Rating calculation - error in
+	findglare
+Message-ID: <00fd01cf2cfc$65e486d0$31ad9470$@helios32.com>
+
+The documentation for RADIANCE Visual Comfort Calculation
+(http://radsite.lbl.gov/radiance/refer/Notes/glare.html) states:
+
+ 
+
+The Guth position index is used by this formula as well, and its calculation
+is described in [Levin75].
+
+ 
+
+This is true for  IESNA Visual Comfort Probability (VCP) calculations, but
+it is *not* true for CIE UGR calculations. Quoting from CIE 117-1995,
+"Discomfort Glare in Interior Lighting," Section 4.5:  "The position index
+is found by interpolating the data of Table 4.1 [Table of position
+indices]."
+
+ 
+
+The equation of Levin, R. E. 1975, "Position Index in VCP Calculations,"
+Journal of the IES, pp. 99-105, is based on:
+
+ 
+
+Committee on Recommendations of Quality and Quantity of Illumination of the
+IES, "Outline of a Standard Procedure for Computing Visual Comfort Ratings
+for Interior Lighting, Report No. 2 (1966), Illuminating Engineering, Vol.
+61, No. 10, October 1966, p. 643.
+
+ 
+
+which shows a plot of the Guth position index.
+
+ 
+
+As noted by Levin, "The maximum difference between the basic Guth plot and
+Equation (6) is about 12 percent." An error plot shows that errors in excess
+of 5 percent occur over most of the range of the Guth position plot.
+
+ 
+
+This issue aside, the RADIANCE documentation states:
+ 
+If a single view direction is selected, findglare samples uniformly on the
+projected hemisphere.
+
+ 
+
+Unfortunately, CIE 117-1995, Section 4.5, states: "It is recommended that
+luminaires with T/R values outside the range of the table (0 to 3) be
+ignored. It is further noted that some positions in the table at large H/R
+values are void. These correspond to positions hidden from observers by
+eyebrows and foreheads, and accordingly to luminaires which do not add to
+the UGR."
+
+ 
+
+The entries of Table 4.1 define an elliptical field of view measuring
+approximately 62 degrees vertical by 73 degrees horizontal.
+
+ 
+
+The problem is that by ignoring the shielding effect of eyebrows and
+forehead in the Guth position index (which regrettably assumes a Caucasian
+physiognomy), the UGR values for narrow-beam luminaires with small luminous
+areas seen at high viewing angles can be grossly overestimated. In one
+study, the difference was 23 versus 14.
+
+ 
+
+Such errors typically occur within a range of less than 30 cm [12 inches]
+for the observer position, but it remains that findglare does not appear to
+be in full compliance with the requirements and recommendations of CIE
+117-1995. To do so would require replacing the Levin analytic equation with
+an interpolation of the Guth position indices table published therein.
+
+ 
+
+(This analysis is based on the above-referenced Visual Comfort Calculation
+document, dated 1992. I have not examined the current source code for
+findglare to see whether it still applies.)
+
+ 
+
+Ian Ashdown, P. Eng., FIES
+
+President
+
+byHeart Consultants Limited
+
+http://www.helios32.com <http://www.helios32.com/> 
+
+ 
+
+CONFIDENTIALITY NOTICE: This entire communication, including without
+limitation any attachments, is intended for the use of the recipient to
+which or whom it is addressed, and may contain confidential, personal,
+and/or privileged information. Please contact us immediately if you are not
+the intended recipient of this communication, and do not copy, distribute,
+or take action relying on it. Any communication received in error, or
+subsequent reply, should be deleted or destroyed.
+
+ 
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20140218/fc5f8c61/attachment.html>
+
+From gregoryjward at gmail.com  Wed Feb 19 02:31:20 2014
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed, 19 Feb 2014 11:31:20 +0100
+Subject: [Radiance-dev] CIE Unified Glare Rating calculation - error in
+	findglare
+In-Reply-To: <00fd01cf2cfc$65e486d0$31ad9470$@helios32.com>
+References: <00fd01cf2cfc$65e486d0$31ad9470$@helios32.com>
+Message-ID: <A9FA69BD-9E56-48EF-8376-A21E00680505@gmail.com>
+
+Hi Ian,
+
+Thanks very much for your detailed analysis of the algorithm used in findglare and glareval.  You are of course correct that the Guth position index is applied broadly even where a particular glare metric calls for a different treatment.  This was done as an effort-saving measure in what turned out to be a rarely visited cul-de-sac in the Radiance roadmap.  I am not sure at this point if anyone relies on these calculations in their regular practice.
+
+Personally, I never held much faith in the various glare metrics.  As important as this topic is, there seems to be a lot of disagreement as to what constitutes a good glare metric or what it is even supposed to measure.  The notion of human comfort is very ill-defined and has a wide range of variance from one individual to the next and even one moment to the next for the same individual.
+
+This is an aside from the central topic you raise, which is whether or not findglare and glareval adhere to the specified calculations they claim to support.  I must concur with your assessment that they do not, at least in the case of UGR.  I remember when I wrote these tools about 23 years ago that I was more focused on VCP than any of the others, which were added mostly for comparison purposes and not as definitive implementations.  In making a general interface for scene analysis (findglare), I was forced to compromise some of the more peculiar specifications in UGR and the other glare metrics.  At the time, this was still an active area of research, and our particular interest at the EPFL was in the application of glare analysis to daylighting situations, which were problematically different from typical electric lighting scenarios the index creators had in mind.
+
+If there is strong interest in developing an accurate UGR calculation in Radiance, I am happy to help whoever wants to work on it.
+
+Cheers,
+-Greg
+
+> From: "Ian Ashdown" <ian_ashdown at helios32.com>
+> Date: February 18, 2014 11:54:35 PM GMT+01:00
+> 
+> The documentation for RADIANCE Visual Comfort Calculation (http://radsite.lbl.gov/radiance/refer/Notes/glare.html) states:
+>  
+> The Guth position index is used by this formula as well, and its calculation is described in [Levin75].
+>  
+> This is true for  IESNA Visual Comfort Probability (VCP) calculations, but it is *not* true for CIE UGR calculations. Quoting from CIE 117-1995, ?Discomfort Glare in Interior Lighting,? Section 4.5:  ?The position index is found by interpolating the data of Table 4.1 [Table of position indices].?
+>  
+> The equation of Levin, R. E. 1975, ?Position Index in VCP Calculations,? Journal of the IES, pp. 99-105, is based on:
+>  
+> Committee on Recommendations of Quality and Quantity of Illumination of the IES, ?Outline of a Standard Procedure for Computing Visual Comfort Ratings for Interior Lighting, Report No. 2 (1966), Illuminating Engineering, Vol. 61, No. 10, October 1966, p. 643.
+>  
+> which shows a plot of the Guth position index.
+>  
+> As noted by Levin, ?The maximum difference between the basic Guth plot and Equation (6) is about 12 percent.? An error plot shows that errors in excess of 5 percent occur over most of the range of the Guth position plot.
+>  
+> This issue aside, the RADIANCE documentation states:
+>  
+> If a single view direction is selected, findglare samples uniformly on the projected hemisphere.
+>  
+> Unfortunately, CIE 117-1995, Section 4.5, states: "It is recommended that luminaires with T/R values outside the range of the table (0 to 3) be ignored. It is further noted that some positions in the table at large H/R values are void. These correspond to positions hidden from observers by eyebrows and foreheads, and accordingly to luminaires which do not add to the UGR."
+>  
+> The entries of Table 4.1 define an elliptical field of view measuring approximately 62 degrees vertical by 73 degrees horizontal.
+>  
+> The problem is that by ignoring the shielding effect of eyebrows and forehead in the Guth position index (which regrettably assumes a Caucasian physiognomy), the UGR values for narrow-beam luminaires with small luminous areas seen at high viewing angles can be grossly overestimated. In one study, the difference was 23 versus 14.
+>  
+> Such errors typically occur within a range of less than 30 cm [12 inches] for the observer position, but it remains that findglare does not appear to be in full compliance with the requirements and recommendations of CIE 117-1995. To do so would require replacing the Levin analytic equation with an interpolation of the Guth position indices table published therein.
+>  
+> (This analysis is based on the above-referenced Visual Comfort Calculation document, dated 1992. I have not examined the current source code for findglare to see whether it still applies.)
+>  
+> Ian Ashdown, P. Eng., FIES
+> President
+> byHeart Consultants Limited
+> http://www.helios32.com
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20140219/b34c51e6/attachment.html>
+
+From gregoryjward at gmail.com  Thu Feb 20 01:02:59 2014
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu, 20 Feb 2014 10:02:59 +0100
+Subject: [Radiance-dev] CIE Unified Glare Rating calculation - error in
+	findglare
+In-Reply-To: <00fd01cf2cfc$65e486d0$31ad9470$@helios32.com>
+References: <00fd01cf2cfc$65e486d0$31ad9470$@helios32.com>
+Message-ID: <C5B97786-C453-4855-88D4-041615B14615@gmail.com>
+
+(I'm reposting this as it seems to have gotten stuck in the mail queue since yesterday).
+
+Hi Ian,
+
+Thanks very much for your detailed analysis of the algorithm used in findglare and glareval.  You are of course correct that the Guth position index is applied broadly even where a particular glare metric calls for a different treatment.  This was done as an effort-saving measure in what turned out to be a rarely visited cul-de-sac in the Radiance roadmap.  I am not sure at this point if anyone relies on these calculations in their regular practice.
+
+Personally, I never held much faith in the various glare metrics.  As important as this topic is, there seems to be a lot of disagreement as to what constitutes a good glare metric or what it is even supposed to measure.  The notion of human comfort is very ill-defined and has a wide range of variance from one individual to the next and even one moment to the next for the same individual.
+
+This is an aside from the central topic you raise, which is whether or not findglare and glareval adhere to the specified calculations they claim to support.  I must concur with your assessment that they do not, at least in the case of UGR.  I remember when I wrote these tools about 23 years ago that I was more focused on VCP than any of the others, which were added mostly for comparison purposes and not as definitive implementations.  In making a general interface for scene analysis (findglare), I was forced to compromise some of the more peculiar specifications in UGR and the other glare metrics.  At the time, this was still an active area of research, and our particular interest at the EPFL was in the application of glare analysis to daylighting situations, which were problematically different from typical electric lighting scenarios the index creators had in mind.
+
+If there is strong interest in developing an accurate UGR calculation in Radiance, I am happy to help whoever wants to work on it.
+
+Cheers,
+-Greg
+
+> From: "Ian Ashdown" <ian_ashdown at helios32.com>
+> Date: February 18, 2014 11:54:35 PM GMT+01:00
+> 
+> The documentation for RADIANCE Visual Comfort Calculation (http://radsite.lbl.gov/radiance/refer/Notes/glare.html) states:
+>  
+> The Guth position index is used by this formula as well, and its calculation is described in [Levin75].
+>  
+> This is true for  IESNA Visual Comfort Probability (VCP) calculations, but it is *not* true for CIE UGR calculations. Quoting from CIE 117-1995, ?Discomfort Glare in Interior Lighting,? Section 4.5:  ?The position index is found by interpolating the data of Table 4.1 [Table of position indices].?
+>  
+> The equation of Levin, R. E. 1975, ?Position Index in VCP Calculations,? Journal of the IES, pp. 99-105, is based on:
+>  
+> Committee on Recommendations of Quality and Quantity of Illumination of the IES, ?Outline of a Standard Procedure for Computing Visual Comfort Ratings for Interior Lighting, Report No. 2 (1966), Illuminating Engineering, Vol. 61, No. 10, October 1966, p. 643.
+>  
+> which shows a plot of the Guth position index.
+>  
+> As noted by Levin, ?The maximum difference between the basic Guth plot and Equation (6) is about 12 percent.? An error plot shows that errors in excess of 5 percent occur over most of the range of the Guth position plot.
+>  
+> This issue aside, the RADIANCE documentation states:
+>  
+> If a single view direction is selected, findglare samples uniformly on the projected hemisphere.
+>  
+> Unfortunately, CIE 117-1995, Section 4.5, states: "It is recommended that luminaires with T/R values outside the range of the table (0 to 3) be ignored. It is further noted that some positions in the table at large H/R values are void. These correspond to positions hidden from observers by eyebrows and foreheads, and accordingly to luminaires which do not add to the UGR."
+>  
+> The entries of Table 4.1 define an elliptical field of view measuring approximately 62 degrees vertical by 73 degrees horizontal.
+>  
+> The problem is that by ignoring the shielding effect of eyebrows and forehead in the Guth position index (which regrettably assumes a Caucasian physiognomy), the UGR values for narrow-beam luminaires with small luminous areas seen at high viewing angles can be grossly overestimated. In one study, the difference was 23 versus 14.
+>  
+> Such errors typically occur within a range of less than 30 cm [12 inches] for the observer position, but it remains that findglare does not appear to be in full compliance with the requirements and recommendations of CIE 117-1995. To do so would require replacing the Levin analytic equation with an interpolation of the Guth position indices table published therein.
+>  
+> (This analysis is based on the above-referenced Visual Comfort Calculation document, dated 1992. I have not examined the current source code for findglare to see whether it still applies.)
+>  
+> Ian Ashdown, P. Eng., FIES
+> President
+> byHeart Consultants Limited
+> http://www.helios32.com
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20140220/c90e1291/attachment-0001.html>
+

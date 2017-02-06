@@ -1,0 +1,500 @@
+From leylasanati at gmail.com  Tue Feb 19 09:51:12 2013
+From: leylasanati at gmail.com (Leyla Sanati)
+Date: Tue, 19 Feb 2013 11:51:12 -0600
+Subject: [HDRI] Cleaning the HDR image with pcomb
+Message-ID: <CAN1QwsPKNTxDp6_Bushj-j+kj8TXmbrYKuifhP3tuxmGNQdHhA@mail.gmail.com>
+
+Hi,
+
+I have some HDR images captured by a fisheye lens, and I want to clean it
+up to only show the circular image in a black background.
+Can anyone help me with the pcomb command to mask off the circular image.
+
+Thanks,
+Leyla
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20130219/a2b4b3df/attachment.html>
+
+From gregoryjward at gmail.com  Tue Feb 19 11:45:45 2013
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue, 19 Feb 2013 11:45:45 -0800
+Subject: [HDRI] Cleaning the HDR image with pcomb
+In-Reply-To: <CAN1QwsPKNTxDp6_Bushj-j+kj8TXmbrYKuifhP3tuxmGNQdHhA@mail.gmail.com>
+References: <CAN1QwsPKNTxDp6_Bushj-j+kj8TXmbrYKuifhP3tuxmGNQdHhA@mail.gmail.com>
+Message-ID: <E6E56C2D-69A4-49D9-8B36-2F861EC313E5@gmail.com>
+
+Something like:
+
+	pcomb -e 'Cx:xmax/2;Cy:ymax/2;R:if(Cx-Cy,Cy,Cx);sq(x):x*x' -e 'inC=sq(R)-sq(x-Cx)-sq(y-Cy)' \
+			-e 'ro=if(inC,ri(1),0);go=if(inC,gi(1),0);bo=if(inC,bi(1),0)' -o input.hdr > cropped.hdr
+
+You may have to adjust the definitions of R and/or Cx and Cy if your circle doesn't completely fill one dimension of the image.
+
+Best,
+-Greg
+
+> From: Leyla Sanati <leylasanati at gmail.com>
+> Date: February 19, 2013 9:51:12 AM PST
+> 
+> Hi,
+>  
+> I have some HDR images captured by a fisheye lens, and I want to clean it up to only show the circular image in a black background.  
+> Can anyone help me with the pcomb command to mask off the circular image.
+>  
+> Thanks,
+> Leyla
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20130219/bedb5473/attachment.html>
+
+From Chris.Coulter at burohappold.com  Tue Feb 19 11:39:22 2013
+From: Chris.Coulter at burohappold.com (Chris Coulter)
+Date: Tue, 19 Feb 2013 19:39:22 +0000
+Subject: [HDRI] Cleaning the HDR image with pcomb
+In-Reply-To: <CAN1QwsPKNTxDp6_Bushj-j+kj8TXmbrYKuifhP3tuxmGNQdHhA@mail.gmail.com>
+References: <CAN1QwsPKNTxDp6_Bushj-j+kj8TXmbrYKuifhP3tuxmGNQdHhA@mail.gmail.com>
+Message-ID: <8E6BAE1BECA2854BB78706B1506FC7AC04496971@ex-be01.burohappold.com>
+
+Leyla,
+
+ 
+
+There may be a better way, but I generally will open a single image into
+my Photoshop to create my mask. Create an image with the fisheye portion
+you want to keep black and the part you want masked out white. Save this
+as a .tiff file in your working directory.
+
+ 
+
+In Radiance, you will first need to convert the tiff into an hdr. This
+is done by the following command: ra_tiff -r filename.tiff mask.hdr
+
+ 
+
+To mask out your captured hdr using pcomb, this should work: pcomb
+captured.hdr -s -1000 mask.hdr > output.hdr (or pipe to another
+process).
+
+ 
+
+The "-s -1000" portion of the pcomb command should be sufficient, but if
+you have some remaining pixels in the masked area, try a different
+scaling factor (-10000, etc).
+
+ 
+
+Good luck.
+
+ 
+
+Chris
+
+ 
+
+Chris Coulter
+
+Senior Lighting Designer
+Buro Happold Consulting Engineers
+
+100 Broadway, 23rd Floor
+
+New York, NY 10005
+
+Tel: 212.334.2025
+
+Direct: 212.616.0254
+
+Email: chris.coulter at burohappold.com 
+
+Website: www.burohappold.com
+
+ 
+
+From: Leyla Sanati [mailto:leylasanati at gmail.com] 
+Sent: Tuesday, February 19, 2013 12:51 PM
+To: hdri at radiance-online.org
+Subject: [HDRI] Cleaning the HDR image with pcomb
+
+ 
+
+Hi,
+
+ 
+
+I have some HDR images captured by a fisheye lens, and I want to clean
+it up to only show the circular image in a black background.  
+
+Can anyone help me with the pcomb command to mask off the circular
+image. 
+
+ 
+
+Thanks,
+
+Leyla
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20130219/a4eb9543/attachment.html>
+
+From Michael.Donn at vuw.ac.nz  Wed Feb 20 15:28:16 2013
+From: Michael.Donn at vuw.ac.nz (Michael Donn)
+Date: Wed, 20 Feb 2013 23:28:16 +0000
+Subject: [HDRI] Photosphere "Cannot solve for response function"
+Message-ID: <2DBE56A76E46FB4EB2AEEC29FCBD07784A144C73@STAWINCOX10MBX1.staff.vuw.ac.nz>
+
+Hi
+
+I am (finally) back from summer holidays and cannot help but add my twopence worth - as the supervisor Peony refers to.
+
+Peony seems to have narrowed down the problem to a jpeg format issue that makes the image unreadable, nothing to do with the phone itself.
+
+For example, she is able - using the same HDR software on her tablet to generate a camera response curve.
+
+The software for the phone that she is using to generate the HDR images allows the turning of off auto white balance and allows the setting up of 3, 5 or 7 images at separate exposure values.
+
+She can clearly create the camera response curve for the $2000 Nikon camera with its $2000 fish eye lens
+
+With her $300 phone and $50 fish eye lens, and the same software as the tablet she cannot create a curve. 
+
+The software saves the original jpg images as well as the combined HDR image on each machine.
+
+At first we thought it was inadequate EXIF data in the original jpeg images. However, it is not the EXIF data because the Nikon camera images with the phone image EXIF data replacing the Nikon's EXIF data still produce a camera response curve.
+
+She has eliminated the jpg image compression from the question because she has opened each jpg original in photoshop and re-saved it in a standard jpg format - the Nikon images still work, the phone not.
+
+Personally, I'd like this to work because first year and second year building science student measurement exercises could be so much more interesting if we were measuring a whole space, not a simple grid... Also: We can calibrate the sound level meters on the phones. They can use a simple app on the phones to photograph the horizon line with overlaid sun path diagrams in Augmented Reality mode. The phone as general survey instrument, not just site camera is becoming a reality.  Calibration / trust of each phone, and how to test it  is the issue
+
+At another level, I feel responsible for understanding what the issue might be to try to explain what might be going wrong so a) Peony can understand, and document this process properly in her thesis Appendix and b) some recommendations can be formulated as to what camera-phone characteristics to look for.
+
+Thus I return to the question: what might we be unable to control with the phone, but is controlled on the tablet, that would cause this kind of Photosphere error message? And how might we further  test what we are doing?
+
+Thanks in anticipation of any help.
+
+M
+
+------------------------------------
+Victoria University of Wellington School of Architecture
+Michael Donn
+michael.donn at vuw.ac.nz
+PO Box 600
+139 Vivian St
+Wellington
+New Zealand
+tel: +64 4 463 6221
+fax: +64 4 463 6204
+mobile: +64 21 611 280
+Skype ID:the_donn
+------------------------------------
+
+Today's Topics:
+
+   1. Re: Photosphere "Cannot solve for response function"
+      (Gregory J. Ward)
+
+
+----------------------------------------------------------------------
+
+Message: 1
+Date: Mon, 24 Dec 2012 08:56:34 -0800
+From: "Gregory J. Ward" <gregoryjward at gmail.com>
+To: High Dynamic Range Imaging <hdri at radiance-online.org>
+Subject: Re: [HDRI] Photosphere "Cannot solve for response function"
+Message-ID: <2B93AA80-729C-406E-88FD-91ADEF27401B at gmail.com>
+Content-Type: text/plain; charset=us-ascii
+
+Hi Peony,
+
+I guess no one ever responded to this...  I can really only repeat my response from August, which is that getting calibrated output from phone cameras is not possible at this stage, and may never be.  Their application is too different, and repeatability is not one of the design requirements for these modules.  They alter sensitivity, color response, and probably tone response without making any record of the original data.  I really think it is a waste of your time.
+
+Best,
+-Greg
+
+> From: "Peony Au" <peony_au at hotmail.com>
+> Date: November 27, 2012 11:13:11 PM PST
+> 
+> Hi everyone,
+> 
+> After much development on my thesis, I have a few queries I am hoping some of you will be able to help me out on.
+> 
+> First of, my supervisor pointed out an application on the iPhone called iPhotoLux which maps the luminance measurement of an HDR image taken by the iPhone camera. So I am hoping what I am trying to produce in my thesis does work.
+> 
+> Secondly, I have been using a Nikon DSLR camera to create HDR images in the lighting laboratory using a scale model, so that my skills in creating a accurate HDR image. I have also used both luminance and illuminance meters to ensure the photos are accurate.
+> 
+> Therefore, after experimenting in the lighting laboratory, I got my Smartphone camera back out and using a HDR Camera application available in the Android market. I put both cameras side by side and took images of the same scene on a tripod. However, I am still receiving the same error message as before, then I found out that the HDR Camera application does not write the EXIF data required to create a camera response curve. Therefore, just to try the images produced by the Smartphone out, I coped the EXIF data from the DSLR camera and inserted into the images produced by the Smartphone camera ensuring that all the exposure value information are the same. I then try and fuse these Smartphone camera produced images together, but the same error message reappears.
+> 
+> Therefore, I was just wondering if anyone knows why the camera response curve cannot be created even with the comparison done between the DSLR camera and the Smartphone camera.
+> 
+> Thank you for all your help.
+> 
+> Kind regards,
+> Peony
+
+
+
+------------------------------
+
+_______________________________________________
+HDRI mailing list
+HDRI at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/hdri
+
+
+End of HDRI Digest, Vol 54, Issue 2
+***********************************
+
+
+
+
+From inanici at u.washington.edu  Sat Feb 23 13:57:48 2013
+From: inanici at u.washington.edu (Mehlika Inanici)
+Date: Sat, 23 Feb 2013 13:57:48 -0800 (PST)
+Subject: [HDRI] genskyvec and hdr
+Message-ID: <alpine.LRH.2.01.1302231357480.19909@hymn04.u.washington.edu>
+
+
+
+Hi everyone,
+
+Is there a way to run genskyvec with an HDR sky image? If yes, how? I could not come up with the right solution. 
+
+Thanks,
+Mehlika
+ 
+
+
+
+From gregoryjward at gmail.com  Sun Feb 24 09:50:19 2013
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Sun, 24 Feb 2013 09:50:19 -0800
+Subject: [HDRI] genskyvec and hdr
+In-Reply-To: <alpine.LRH.2.01.1302231357480.19909@hymn04.u.washington.edu>
+References: <alpine.LRH.2.01.1302231357480.19909@hymn04.u.washington.edu>
+Message-ID: <1C484C03-97B9-4368-8047-90879BBB86C0@gmail.com>
+
+Hi Mehlika,
+
+The genskyvec program is designed to work with gendaylit and gensky input, only.  That isn't to say you shouldn't be able to generate an equivalent output from an HDR capture of the sky dome, but genskyvec isn't going to be much help with that.  You are looking at a manual process until and unless someone gets around to automating it.
+
+Here are some of the necessary steps:
+
+1) Create a Radiance description of a scene using your captured sky as a colorpict input with the appropriate fisheye mapping.
+2) Extract the $rhcal variable from genskyvec.pl, which defines the Reinhart sky sampling needed.
+3) Assign the MF constant to the desired Reinhart subdivision resolution (default 4 in genskyvec).
+4) Call cnt with the number of sky patches as given by the Rmax constant defined in $rhcal and the number of samples per patch (16 in genskyvec but you may need more if you're trying to resolve the sun).
+5) Pipe the output of cnt into rcalc and rtrace as done in the $tregcommand variable in genskyvec.pl.
+6) The output of rtrace goes into total to sum patch values together, and this basically produces your desired vector, minus the ground plane.
+7) Insert a ground plane triple at the beginning based on the expected ground brightness (irradiance times reflectance over pi) and you're done.
+
+-Greg
+
+> From: Mehlika Inanici <inanici at u.washington.edu>
+> Date: February 23, 2013 1:57:48 PM PST
+> 
+> Hi everyone,
+> 
+> Is there a way to run genskyvec with an HDR sky image? If yes, how? I could not come up with the right solution. 
+> 
+> Thanks,
+> Mehlika
+> 
+
+
+From inanici at u.washington.edu  Sun Feb 24 21:19:39 2013
+From: inanici at u.washington.edu (Mehlika Inanici)
+Date: Sun, 24 Feb 2013 21:19:39 -0800 (PST)
+Subject: [HDRI] genskyvec and hdr
+In-Reply-To: <1C484C03-97B9-4368-8047-90879BBB86C0@gmail.com>
+Message-ID: <alpine.LRH.2.01.1302242119390.5785@hymn02.u.washington.edu>
+
+
+
+Thanks Greg. I was thinking of a quick and definitely dirty way of transforming fisheye into panorama, which will make the parsing much easier. I will try both ways. Obviously, your process will be more precise. As always, your help is greatly appreciated.
+
+Mehlika
+
+On Sun, 24 Feb 2013, Gregory J. Ward wrote:
+
+> Hi Mehlika,
+>
+> The genskyvec program is designed to work with gendaylit and gensky input, only.  That isn't to say you shouldn't be able to generate an equivalent output from an HDR capture of the sky dome, but genskyvec isn't going to be much help with that.  You are looking at a manual process until and unless someone gets around to automating it.
+>
+> Here are some of the necessary steps:
+>
+> 1) Create a Radiance description of a scene using your captured sky as a colorpict input with the appropriate fisheye mapping.
+> 2) Extract the $rhcal variable from genskyvec.pl, which defines the Reinhart sky sampling needed.
+> 3) Assign the MF constant to the desired Reinhart subdivision resolution (default 4 in genskyvec).
+> 4) Call cnt with the number of sky patches as given by the Rmax constant defined in $rhcal and the number of samples per patch (16 in genskyvec but you may need more if you're trying to resolve the sun).
+> 5) Pipe the output of cnt into rcalc and rtrace as done in the $tregcommand variable in genskyvec.pl.
+> 6) The output of rtrace goes into total to sum patch values together, and this basically produces your desired vector, minus the ground plane.
+> 7) Insert a ground plane triple at the beginning based on the expected ground brightness (irradiance times reflectance over pi) and you're done.
+>
+> -Greg
+>
+>> From: Mehlika Inanici <inanici at u.washington.edu>
+>> Date: February 23, 2013 1:57:48 PM PST
+>>
+>> Hi everyone,
+>>
+>> Is there a way to run genskyvec with an HDR sky image? If yes, how? I could not come up with the right solution.
+>>
+>> Thanks,
+>> Mehlika
+>>
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+>
+
+
+
+
+From grobe at gmx.net  Mon Feb 25 08:03:16 2013
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Mon, 25 Feb 2013 17:03:16 +0100
+Subject: [HDRI] Fwd: CfP: HDRI Conference 2013 - Oporto, Portugal,
+	9-10 April 2013
+In-Reply-To: <e202dedd-b8ef-4f10-8dad-46b8bc5366c4@googlegroups.com>
+References: <e202dedd-b8ef-4f10-8dad-46b8bc5366c4@googlegroups.com>
+Message-ID: <512B8B44.40107@gmx.net>
+
+Hi all, I think this may not have reached everyone here and may be of 
+general interest for the list subscribers. I received the announcement 
+by Rafal Mantiuk on the pfstools mailing list:
+
+*First International Conference and SME Workshop on HDR imaging* - 
+Oporto, 9-10 April 2013
+
+High Dynamic Range imaging can capture and display the full range of 
+real-world lighting. This Conference and SME Workshop brings together 
+leading academic and industrial researchers and practitioners to review 
+the latest developments and consider the future potential of this 
+revolutionary technology.
+
+Up to 4 page Extended Abstracts are sought for presentation at the 
+event. Topics of interest include, but are not limited to:
+
+  * HDR content - capture and creation
+  * Cameras, post production, displays
+  * HDR on mobile devices
+  * Image based lighting
+  * Quality metrics
+  * Tone mapping
+  * HDR video compression
+  * Perception of HDR scenes
+
+The proceedings will be published on the COST Action's website.
+
+*The best papers will be invited to submit to a special issue of 
+Computers & Graphics.*
+
+*Key dates*
+27 February: Extended abstract deadline
+15 March: Authors notified
+9-10 April: Conference and SME Workshop
+
+More details: http://t.co/L1nWqF6a
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20130225/ea3e6513/attachment.html>
+
+From ytyukhova at unomaha.edu  Wed Feb 27 11:46:08 2013
+From: ytyukhova at unomaha.edu (Yulia Tyukhova)
+Date: Wed, 27 Feb 2013 13:46:08 -0600
+Subject: [HDRI] Image analysis of HDRI in matlab
+Message-ID: <CAJYAbgq2JiwXDqnY19=XYRttDkM3NanmprCdY8KXxe1By8Qs4Q@mail.gmail.com>
+
+Good afternoon everyone!
+
+Is there a way to do a Fourier Transform of 2D HDRI in Matlab?
+
+Thank you,
+Yulia Tyukhova
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20130227/e2d50c51/attachment.html>
+
+From kallie at umn.edu  Thu Feb 28 17:20:36 2013
+From: kallie at umn.edu (Chris Kallie)
+Date: Thu, 28 Feb 2013 19:20:36 -0600
+Subject: [HDRI] Image analysis of HDRI in matlab
+In-Reply-To: <CAJYAbgq2JiwXDqnY19=XYRttDkM3NanmprCdY8KXxe1By8Qs4Q@mail.gmail.com>
+References: <CAJYAbgq2JiwXDqnY19=XYRttDkM3NanmprCdY8KXxe1By8Qs4Q@mail.gmail.com>
+Message-ID: <51300264.6040106@umn.edu>
+
+Hello Yulia,
+
+This command reads a Radiance-formatted HDR image into Matlab:
+
+Img = hdrread('Image.hdr');
+
+The following 3 commands perform 2D fast Fourier filtering on the Red, 
+Green, and Blue image planes, respectively.
+
+FRed = fft2(Img(:,:,1));
+FGreen = fft2(Img(:,:,2));
+FBlue = fft2(Img(:,:,3));
+
+I'm not sure what you are planing to do, but you can also do the work 
+with luminance values by first preparing the image using Radiance 
+commands. For example, from the command line:
+
+ >> pvalue -o -b RGBImage.hdr > Luminance.dat
+ >> pvalue -o -b -r Luminance.dat > RedundantGrayscaleImage.hdr
+
+Then in Matlab, strip off two redundant image planes, and you are left 
+with luminance.
+
+A second, perhaps easier way to get luminance values is to rewrite this 
+famous equation in Matlab:
+
+luminance = 179 * (0.265*R + 0.670*G + 0.065*B)
+
+Modified for Matlab, this should do the trick:
+
+Luminance = 179 .* (0.265.*Img(:,:,1) + 0.670.*Img(:,:,2) + 
+0.065.*Img(:,:,3));
+
+No matter what you are doing, be sure all matrices remain high 
+resolution (i.e., 'double precision' and not 'uint8'), or you will get 
+8-bit aliasing, clipping, Matlab errors, and all kinds of problems.
+
+In Chapter 4 of my dissertation, there are some image processing 
+techniques using Matlab and Photoshop, including Fourier filtering with 
+Matlab. It might be worth a look:
+
+Evaluating Object Visibility with Simulated Visual Impairment Using Real 
+and Rendered Scenes. URL: http://purl.umn.edu/144216
+
+One more thought: there are also ways to read the header information 
+into Matlab, if necessary. A bit of that is covered in my code snippets 
+of Chapter 4.
+
+Have fun!
+-Chris
+
+
+On 2/27/13 1:46 PM, Yulia Tyukhova wrote:
+> Good afternoon everyone!
+>
+> Is there a way to do a Fourier Transform of 2D HDRI in Matlab?
+>
+> Thank you,
+> Yulia Tyukhova
+>
+>
+>
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20130228/20fba868/attachment.html>
+

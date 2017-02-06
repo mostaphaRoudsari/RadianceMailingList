@@ -1,0 +1,2613 @@
+From radiance-dev@radiance-online.org  Fri Aug  1 12:27:27 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Fri, 1 Aug 2003 07:27:27 -0400 (EDT)
+Subject: [Radiance-dev] Radiance quality assurance suggestions
+In-Reply-To: <BDA29A95-C326-11D7-972A-0030658EA95E@panix.com>
+Message-ID: <Pine.BSF.4.44.0308010719350.55334-100000@emancholl.pair.com>
+
+Randolph Fritz wrote:
+
+>> 64 bit systems are a can of worms that I'd like to open as late
+>> as possible, ...
+>
+> Too late, I think; it was open the minute the G5 shipped.  If we're
+> lucky, we won't have someone pop up on this list with "I compiled
+> Radiance on my shiny new G5 with -mpowerpc64 and ...".
+
+That's why we provide default compile settings in makeall.
+As far as I'm concerned (until Greg convinces me otherwise),
+Radiance is not 64 bit safe. Of course, that doesn't mean it
+won't work on 64 bit system when compiled in 32 bit mode. People
+have been successfully using it that way for quite some time
+already.
+
+
+>> Radiance still carries code (and conditionals) from a time when
+>> the differences between unixes were much bigger than they are
+>> today, and we're continuously reducing that historical ballast.
+>
+> I'm all for that.  But let's not make the next leg of the journey in
+> ballast, hunh?  Want to carry pay cargo, I do.
+
+My goal for this leg of the journey is to make the code (minus
+the GUI stuff for the moment) first compile and then run
+correctly on Windows. I think that's cargo enough. All other
+changes I make are just serving that one goal, even if some of
+the details may be determined by other long-term considerations.
+
+
+>> Let's keep things simple. OS X supports posix and X11, so we
+>> don't need to provide any proprietary interfaces for it.
+>
+> And Cygwin (or Red Hat GNUpro, if that's what it's called now) runs on
+> Microsoft Windows, no need to provide any proprietary interfaces for
+> that system.
+>
+> If only!
+
+I prefer a less polemic and more practical approach. Fact is,
+that all systems we're currently try to *directly* support have
+those functions from posix that we need, and that can be mapped
+directly to the semantics of the underlying system. And the few
+exceptions (eg. process control on Windows) are already being
+addressed.
+
+
+> Apple's comments on this:
+>> ...
+>
+> And this also applies to MS-Windows, of course.
+
+Now you're switching from discussing the fundamental OS APIs (as
+used by roughly 100 executables in Radiance) to discussing the
+look-and-feel options of the GUI (as used by 3 executables in
+Radiance).
+
+No sane person will refuse to use Radiance on OS X just because
+rview doesn't have shiny transparent buttons there. But of
+course, if you want to write portable replacements that use the
+native widget set on each platform, you're very welcome! ;)
+
+If I had the time (or money, sponsoring gladly accepted) for
+stuff like that, then I'd turn the rendering engine into a
+library, wrap that library as a Python extension, and write the
+GUI stuff in Python/WxPython. WxPython (resp. the underlying
+WxWindows) will use gtk on unix, MFC on Windows, and one of the
+available native widget sets on OS X. A much less powerful (but
+considerably more mature) alternative to WxPython would be Tk.
+
+
+> In fact, Mac OS X does not support POSIX (I looked it up two days
+> ago--I was hoping it did.)  It *provides* some POSIX system calls and
+> programs.
+
+And that's exactly everything we ask for. We don't need certified
+support on paper. We need working functionality in practise.
+
+
+> I see the following likely platforms:
+>
+>    POSIX (Sun, IBM, DEC Alpha/Compaq), Mac OS X, various Linux, various
+> BSD, SGI
+
+People are already working with Radiance on all those systems,
+and then some.
+
+>    Plan 9 ANSI/POSIX Emulation
+
+Doubtful, and I currently see no reason to care about that one
+(though I won't complain if it happens to work anyway).
+
+>    various MS-Windows versions
+
+See above (my second point). I'll restrict explicit support to NT
+based systems though, because Win95/98/ME are technically
+inadequate for our purposes anyway.
+
+>    Special-purpose servers (a holodeck server is a likely possibility)
+
+Have fun... ;)
+
+
+> Which to test?  Wihtout a user survey, I'd guess the most-used
+> platforms will be...
+
+The daily HEAD dump is available for everyone who wants to do
+beta testing on the platform of their choice. As long as they can
+provide meaningful test results and bug reports, there's no need
+for Greg or me to personally run the full test suite on every
+platform imagineable.
+
+
+>   POSIX, you will notice, isn't even the list
+
+Of course not. Posix is not targeted at end users. It's simply a
+useful abstraction for developers, which tells them that certain
+functions can be expected to be present on many systems.
+
+
+>>  We'll
+>> have to run all the tests on all the seperate platforms anyway.
+>
+> The more of the code is platform-independent, however, the more tests
+> will apply across platforms, providing additional testing for free.
+
+What happened to your usual paranoia here? ;)
+No test applies across platforms. Necessarily, our tests will
+also have to verify that the underlying OS functionality is
+working as expected. Unfortunately, even certified posix (or
+whatever) implementations have bugs.
+
+
+>> "Make build" will have to move all the binaries into a local
+>> ray/bin directory, for "make install" to pick them up there.
+>> There are two possibilities how to organize the library files.
+>> Either we collect them into a local ray/share directory right
+>> away (they're scattered all around the source tree right now),
+>> or "make build" will have to do that as well.
+>
+> Mmmm...common practice is to simply build in the source directory, then
+> find and move the files for install.  But practice varies.
+
+This is indeed common practise in those cases where all the
+resulting executables are built in one directory anyway. In cases
+like Radiance, where executables are built in many different
+subdirectories, it is common practise for the build process to
+collect them in one place for local testing. In excessive cases,
+the object files and executables may even be placed in a seperate
+subdirectory for each supported platform, which makes it possible
+to build and test several versions from the same tree over NFS
+(even concurrently) without having to "make clean" in between.
+
+
+> A much more serious problem to my mind is the problem of conditional
+> build--as with the OpenGL support, which I have been wrestling with.
+
+You're trying to do things with make that it wasn't designed to
+do. Just leave the "make ogl" in place as it currently is and
+delegate the decisions to the makeall script. That's the main
+reason we even have this script, after all.
+
+
+> I have a friend who thinks well of SCONS
+> <http://www.scons.org/>, but that's a big shift.
+
+I have it installed here, but haven't found the time to play
+around with it yet. It looks like the most brilliant approach to
+the software build process I have seen so far. Unfortunately, it
+has one big disadvantage, at least while we haven't convinced
+Greg otherwise: It requires that a working and relatively recent
+copy of Python is already installed on the build system.
+
+I actually thought of establishing SCons as a secondary build
+method in parallel to make, for those who have Python or want to
+compile on exotic platforms that aren't included in makeall yet.
+
+
+>> - For binaries, first look in the directory where the current
+>>   executable was loaded from, then look in the $PATH.
+>> - For library files, first look in ../share/ (again based on
+>>   the location of the current executable), then in
+>>   ../share/radiance-<ver>/, and then on $RAYPATH.
+>
+> How does this work on Mac OS X and MS-Windows?
+
+As a strategy, this will obviously work on any OS that uses
+hierarchical file system semantics.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Fri Aug  1 16:52:51 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Fri, 01 Aug 2003 17:52:51 +0200
+Subject: [Radiance-dev] Radiance quality assurance suggestions
+In-Reply-To: <Pine.BSF.4.44.0308010719350.55334-100000@emancholl.pair.com>
+References: <Pine.BSF.4.44.0308010719350.55334-100000@emancholl.pair.com>
+Message-ID: <3F2A8CD3.5070900@pab-opto.de>
+
+Georg Mischler wrote:
+
+>Randolph Fritz wrote:
+>
+>...
+>
+>>
+>>   POSIX (Sun, IBM, DEC Alpha/Compaq), Mac OS X, various Linux, various
+>>BSD, SGI
+>>    
+>>
+>
+>People are already working with Radiance on all those systems,
+>and then some.
+>
+...
+
+Randolph, I don't want to discourage your thrust and enthusiasm to much, 
+- however I agree with most of Schorsch's points.
+A pragmatic approach wants to see Radiance compiling and running on MS 
+Windows XP/2000  and UNIXes (MacOS and Linux being top, with the rest of 
+SUNOS,IRIX,HPUX,AIX a minority). MS is being cared for by Schorsch. 
+People have packaged Debian et al distributions for Linux end-users, 
+MacOS is being cared for by Greg himself. Someone with a SUN has either 
+compile experience him/herself or an admin closeby. dito IRIX/HPUX/AIX.  
+The makeall script is not the premium solution, but it works.
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+From radiance-dev@radiance-online.org  Sat Aug  2 07:20:50 2003
+From: radiance-dev@radiance-online.org (Randolph Fritz)
+Date: Fri, 1 Aug 2003 23:20:50 -0700
+Subject: [Radiance-dev] Radiance quality assurance suggestions
+In-Reply-To: <3F2A8CD3.5070900@pab-opto.de>
+Message-ID: <76A18604-C4B1-11D7-947D-0030658EA95E@panix.com>
+
+On Friday, August 1, 2003, at 08:52  AM, Peter Apian-Bennewitz wrote:
+
+> MS is being cared for by Schorsch. People have packaged Debian et al 
+> distributions for Linux end-users, MacOS is being cared for by Greg 
+> himself. Someone with a SUN has either compile experience him/herself 
+> or an admin closeby. dito IRIX/HPUX/AIX.
+
+I agree with you on these.  In fact, I agreed with you in the original 
+message.  Hunh?
+
+> The makeall script is not the premium solution, but it works.
+
+The problems I see are:
+
+1. There is no way to write portable Rmakefiles which separate build 
+and install and work with the current makeall script.
+
+2. There is no platform-independent way to automatically include 
+header-file dependencies in  Rmakefile's.
+
+Do you see any way around these?  Or regard them as minor?
+
+Randolph
+
+
+From radiance-dev@radiance-online.org  Sat Aug  2 12:48:17 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Sat, 2 Aug 2003 07:48:17 -0400 (EDT)
+Subject: [Radiance-dev] Radiance quality assurance suggestions
+In-Reply-To: <76A18604-C4B1-11D7-947D-0030658EA95E@panix.com>
+Message-ID: <Pine.BSF.4.44.0308020723590.2531-100000@emancholl.pair.com>
+
+Randolph Fritz wrote:
+
+> Peter Apian-Bennewitz wrote:
+>
+> > The makeall script is not the premium solution, but it works.
+>
+> The problems I see are:
+>
+> 1. There is no way to write portable Rmakefiles which separate build
+> and install and work with the current makeall script.
+
+Since the makeall script has to trigger the two seperate
+procedures individually, it obviously needs to be adapted to know
+about them. Incidently, Greg has already created a seperate
+"installib" module some time ago. It probably wouldn't hurt to
+continue into that direction and modularize makeall even further.
+Creating seperate files with the default settings for each known
+platform might be a good start, as it would make it much easier
+to add new platforms in the future.
+
+
+> 2. There is no platform-independent way to automatically include
+> header-file dependencies in  Rmakefile's.
+
+Since we include the same set of headers on all platforms
+that use the makeall/Rmakefile combination, this shouldn't be a
+problem. The dependencies only need to be generated when they
+actually change, which means on Gregs system or mine. There
+should be no need for anyone else to bother with that.
+
+That implies that we'll only include dependencies to our own
+headers. A platform independent procedure would only be necessary
+if we were to generate dependencies for system headers as well,
+which I consider bad practise. The development environment should
+take care of those without any intervention from our side.
+
+Actually, I'm not sure if the dependency generation really needs
+to be automatic, although it would certainly be nice.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+From radiance-dev@radiance-online.org  Sat Aug  2 20:11:37 2003
+From: radiance-dev@radiance-online.org (Randolph Fritz)
+Date: Sat, 2 Aug 2003 12:11:37 -0700
+Subject: [Radiance-dev] Radiance quality assurance suggestions
+In-Reply-To: <Pine.BSF.4.44.0308020723590.2531-100000@emancholl.pair.com>
+Message-ID: <23A30C1C-C51D-11D7-8CEB-0030658EA95E@panix.com>
+
+On Saturday, August 2, 2003, at 04:48  AM, Georg Mischler wrote:
+
+> Randolph Fritz wrote:
+>
+>> Peter Apian-Bennewitz wrote:
+>>
+>>> The makeall script is not the premium solution, but it works.
+>>
+>> The problems I see are:
+>>
+>> 1. There is no way to write portable Rmakefiles which separate build
+>> and install and work with the current makeall script.
+>
+> Since the makeall script has to trigger the two seperate
+> procedures individually, it obviously needs to be adapted to know
+> about them. [...]
+
+That strikes me as an awkward way to reimplement something that's 
+already been done.  And of course as the scripts get more and more 
+complex, they will require more and more maintenance.
+
+>> 2. There is no platform-independent way to automatically include
+>> header-file dependencies in  Rmakefile's.
+>
+> Since we include the same set of headers on all platforms
+> that use the makeall/Rmakefile combination, this shouldn't be a
+> problem. The dependencies only need to be generated when they
+> actually change, which means on Gregs system or mine. There
+> should be no need for anyone else to bother with that.
+
+Wouldn't all developers potentially need them?  And we don't currently 
+have all of those dependencies explicit at all, except where we've 
+kludged them in.  (By the way, there is no support for dynamic 
+inclusion of files in basic make.)
+
+> That implies that we'll only include dependencies to our own
+> headers.  A platform independent procedure would only be necessary
+> if we were to generate dependencies for system headers as well,
+> which I consider bad practise.
+
+I agree.
+
+> Actually, I'm not sure if the dependency generation really needs
+> to be automatic, although it would certainly be nice.
+
+"make" itself is not strictly necessary, but I am long enough in 
+computing to remember what builds were like without it.  If they aren't 
+too much trouble, I'd rather use the best simple automatic tools I can 
+find.  The build scripts are going to get more and more complicated and 
+grow to include dependency-generation scripts.  They will take 
+maintenance time themselves.
+
+In terms of Scons (which I haven't actually tried yet), well, is 
+requiring Python 1.5.2 for build (not execution) such a terrible thing? 
+  1.5.2 is pretty old now, and it runs on every platform Radiance runs 
+on, as far as I know.  It is even preinstalled on Mac OS X and most 
+Linuxen.  Greg?
+
+Randolph
+
+
+From radiance-dev@radiance-online.org  Sun Aug  3 07:17:07 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Sun, 03 Aug 2003 08:17:07 +0200
+Subject: [Radiance-dev] Radiance quality assurance suggestions
+In-Reply-To: <23A30C1C-C51D-11D7-8CEB-0030658EA95E@panix.com>
+References: <23A30C1C-C51D-11D7-8CEB-0030658EA95E@panix.com>
+Message-ID: <3F2CA8E3.2010904@pab-opto.de>
+
+Randolph Fritz wrote:
+....
+
+>> Actually, I'm not sure if the dependency generation really needs
+>> to be automatic, although it would certainly be nice.
+>
+>
+> "make" itself is not strictly necessary, but I am long enough in 
+> computing to remember what builds were like without it.  If they 
+> aren't too much trouble, I'd rather use the best simple automatic 
+> tools I can find.  The build scripts are going to get more and more 
+> complicated and grow to include dependency-generation scripts.  They 
+> will take maintenance time themselves.
+>
+> In terms of Scons* (which I haven't actually tried yet),* well, is 
+> requiring Python 1.5.2 for build (not execution) such a terrible 
+> thing?  1.5.2 is pretty old now, and it runs on every platform 
+> Radiance runs on, as far as I know.  It is even preinstalled on Mac OS 
+> X and most Linuxen.  Greg? 
+
+Wouldn't it be good if you gain some solid experience with something new 
+first, /before/ going to lengthly theoretical arguments ?
+P.
+
+
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+From radiance-dev@radiance-online.org  Sun Aug  3 09:46:42 2003
+From: radiance-dev@radiance-online.org (Erwin Rol)
+Date: Sun, 03 Aug 2003 10:46:42 +0200
+Subject: [Radiance-dev] Radiance quality assurance suggestions
+In-Reply-To: <23A30C1C-C51D-11D7-8CEB-0030658EA95E@panix.com>
+References: <23A30C1C-C51D-11D7-8CEB-0030658EA95E@panix.com>
+Message-ID: <1059900401.3141.8.camel@erwin.fe.think>
+
+We could write some own scripts that automatically generate the
+makefiles, we could call it automake or autoconf or so ;-)
+
+OK just kidding, but i think ppl should do what they are best in , the
+radiance ppl are best in writing code that does
+rendering/raytracing/etc. Let other ppl make the gui toolkits like
+Gtk/Qt/Motif and yet others configuration tools like autoconf etc. 
+
+It always seems that writing yer own keeps things simpler in the
+beginning until you project grows and than you hit the same problems
+other ppl already had and solved. 
+
+Another advantage of using wel known tools is that ppl have written
+books about them , there are loads ppl that know those tools, and they
+are kept up to date. 
+
+Just my 2 cents, which i know are going to be ignored cause making own
+things is cool.
+
+- Erwin 
+
+
+On Sat, 2003-08-02 at 21:11, Randolph Fritz wrote:
+> On Saturday, August 2, 2003, at 04:48  AM, Georg Mischler wrote:
+> 
+> > Randolph Fritz wrote:
+> >
+> >> Peter Apian-Bennewitz wrote:
+> >>
+> >>> The makeall script is not the premium solution, but it works.
+> >>
+> >> The problems I see are:
+> >>
+> >> 1. There is no way to write portable Rmakefiles which separate build
+> >> and install and work with the current makeall script.
+> >
+> > Since the makeall script has to trigger the two seperate
+> > procedures individually, it obviously needs to be adapted to know
+> > about them. [...]
+> 
+> That strikes me as an awkward way to reimplement something that's 
+> already been done.  And of course as the scripts get more and more 
+> complex, they will require more and more maintenance.
+> 
+> >> 2. There is no platform-independent way to automatically include
+> >> header-file dependencies in  Rmakefile's.
+> >
+> > Since we include the same set of headers on all platforms
+> > that use the makeall/Rmakefile combination, this shouldn't be a
+> > problem. The dependencies only need to be generated when they
+> > actually change, which means on Gregs system or mine. There
+> > should be no need for anyone else to bother with that.
+> 
+> Wouldn't all developers potentially need them?  And we don't currently 
+> have all of those dependencies explicit at all, except where we've 
+> kludged them in.  (By the way, there is no support for dynamic 
+> inclusion of files in basic make.)
+> 
+> > That implies that we'll only include dependencies to our own
+> > headers.  A platform independent procedure would only be necessary
+> > if we were to generate dependencies for system headers as well,
+> > which I consider bad practise.
+> 
+> I agree.
+> 
+> > Actually, I'm not sure if the dependency generation really needs
+> > to be automatic, although it would certainly be nice.
+> 
+> "make" itself is not strictly necessary, but I am long enough in 
+> computing to remember what builds were like without it.  If they aren't 
+> too much trouble, I'd rather use the best simple automatic tools I can 
+> find.  The build scripts are going to get more and more complicated and 
+> grow to include dependency-generation scripts.  They will take 
+> maintenance time themselves.
+> 
+> In terms of Scons (which I haven't actually tried yet), well, is 
+> requiring Python 1.5.2 for build (not execution) such a terrible thing? 
+>   1.5.2 is pretty old now, and it runs on every platform Radiance runs 
+> on, as far as I know.  It is even preinstalled on Mac OS X and most 
+> Linuxen.  Greg?
+> 
+> Randolph
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+From radiance-dev@radiance-online.org  Sun Aug  3 13:08:00 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Sun, 3 Aug 2003 08:08:00 -0400 (EDT)
+Subject: [Radiance-dev] SCons [was: Radiance quality assurance...]
+In-Reply-To: <3F2CA8E3.2010904@pab-opto.de>
+Message-ID: <Pine.BSF.4.44.0308030755040.60766-100000@emancholl.pair.com>
+
+Peter Apian-Bennewitz wrote:
+>
+> Randolph Fritz wrote:
+>>
+>> In terms of Scons* (which I haven't actually tried yet),* well, is
+>> requiring Python 1.5.2 for build (not execution) such a terrible
+>> thing?  1.5.2 is pretty old now, and it runs on every platform
+>> Radiance runs on, as far as I know.  It is even preinstalled on Mac OS
+>> X and most Linuxen.  Greg?
+>
+> Wouldn't it be good if you gain some solid experience with something new
+> first, /before/ going to lengthly theoretical arguments ?
+> P.
+
+
+If that was a good counter-argument, then nobody would ever try
+anything new, or even think about it... This list is for thinking
+collectively about the Radiance development process, I'm not
+quite sure why you dislike this particular thought so much.
+
+SCons has a proven track report, and it is being used in other
+projects with great success. And nobody suggested to throw out
+the makefiles now, and to think about a way to replace them
+afterwards. If someone finds the time to setup the necessary
+SCons environment, both methods can coexist without the slightest
+problems until we have established which is favourized by the
+people out there trying to compile Radiance.
+
+
+Erwin Rol wrote:
+>
+> It always seems that writing yer own keeps things simpler in the
+> beginning until you project grows and than you hit the same problems
+> other ppl already had and solved.
+
+You make a few good points there (even though you don't seem to
+be fully aware of the specific experience and skill sets of the
+developers involved). Although you didn't say so explicitly, you
+seem to want us to use autoconf and friends. But in line with
+your own arguments: Making things simpler is one of the most
+interesting goals here.
+
+While autoconf is very powerful and solves lots of problems, it
+isn't exactly simple, and brings quite a few problems of its own.
+Most noteably, it is itself based on inadequate and platform
+(unix) dependent tools, a limitation it shares with the current
+makeall script in Radiance (and parts of the Radiance codebase).
+
+Autoconf is generally used for several distinct tasks:
+
+a) establish the toolchain
+     (figure out which compiler and other tools to use)
+b) analyze the system environment
+     (find the necessary system headers, and check whether they
+     contain specific declarations)
+c) build the software
+d) install the software
+
+The biggest and most convoluted part of that is b). Radiance has
+very few platform dependencies, the idea actually is to reduce
+them to none between unix systems. So in effect, we don't need b).
+
+The simplest part is d), so we don't need any premade tools for
+that one either.
+
+Which leaves us with a) and c). SCons offers a much simpler and
+yet more powerful solution for both, and it does so on platforms
+that autoconf will never know about.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Sun Aug  3 13:39:17 2003
+From: radiance-dev@radiance-online.org (Erwin Rol)
+Date: Sun, 03 Aug 2003 14:39:17 +0200
+Subject: [Radiance-dev] SCons [was: Radiance quality assurance...]
+In-Reply-To: <Pine.BSF.4.44.0308030755040.60766-100000@emancholl.pair.com>
+References: <Pine.BSF.4.44.0308030755040.60766-100000@emancholl.pair.com>
+Message-ID: <1059914356.3118.21.camel@erwin.fe.think>
+
+On Sun, 2003-08-03 at 14:08, Georg Mischler wrote:
+
+> 
+> Erwin Rol wrote:
+> >
+> > It always seems that writing yer own keeps things simpler in the
+> > beginning until you project grows and than you hit the same problems
+> > other ppl already had and solved.
+> 
+> You make a few good points there (even though you don't seem to
+> be fully aware of the specific experience and skill sets of the
+> developers involved). 
+
+I wanted in no way suggest that radiance developers only can write
+renderer/math software. 
+
+> Although you didn't say so explicitly, you
+> seem to want us to use autoconf and friends. 
+
+I used automake/autoconf for other things, and i don't know SCons, so
+thats why i mentioned autoconf.
+
+
+> But in line with
+> your own arguments: Making things simpler is one of the most
+> interesting goals here.
+> 
+> While autoconf is very powerful and solves lots of problems, it
+> isn't exactly simple, and brings quite a few problems of its own.
+
+Simple depends on yer point of view, for simple programs autoconf
+scripts can be very simple, for complex programs ( complex as in complex
+dependencies on the system , not complex as in complex math in the code)
+the scripts get more complex. 
+
+> Most noteably, it is itself based on inadequate and platform
+> (unix) dependent tools, a limitation it shares with the current
+> makeall script in Radiance (and parts of the Radiance codebase).
+> 
+
+True. Al tough the radiance scripts limitations are worse, since it
+can't find out the type of Unix on its own.
+
+
+> Autoconf is generally used for several distinct tasks:
+> 
+> a) establish the toolchain
+>      (figure out which compiler and other tools to use)
+> b) analyze the system environment
+>      (find the necessary system headers, and check whether they
+>      contain specific declarations)
+> c) build the software
+> d) install the software
+> 
+> The biggest and most convoluted part of that is b). Radiance has
+> very few platform dependencies, the idea actually is to reduce
+> them to none between unix systems. So in effect, we don't need b).
+> 
+> The simplest part is d), so we don't need any premade tools for
+> that one either.
+> 
+> Which leaves us with a) and c). SCons offers a much simpler and
+> yet more powerful solution for both, and it does so on platforms
+> that autoconf will never know about.
+
+How well does SCons for example deal with building shared libraries ?
+(whcih is part of point c ).
+
+> 
+> 
+> -schorsch
+
+But anyway, i would vote for any more sophisticate build system than
+hand written scripts, not just autoconf.
+
+- Erwin
+
+
+
+From radiance-dev@radiance-online.org  Sun Aug  3 15:48:22 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Sun, 3 Aug 2003 10:48:22 -0400 (EDT)
+Subject: [Radiance-dev] SCons (and other build tools)
+In-Reply-To: <1059914356.3118.21.camel@erwin.fe.think>
+Message-ID: <Pine.BSF.4.44.0308030939290.60766-100000@emancholl.pair.com>
+
+Erwin Rol wrote:
+
+> Simple depends on yer point of view, for simple programs autoconf
+> scripts can be very simple, for complex programs ( complex as in complex
+> dependencies on the system , not complex as in complex math in the code)
+> the scripts get more complex.
+
+As long as configure is only used to determine the right compiler
+options, I'll agree with you without hesitation (at least on
+unix). As soon as feature selection comes into the picture,
+autoconf mandates that certain cpp macros be used in the code,
+which causes my complexity meter to jump by several notches.
+
+I'd still like to eventually get away from shell script based
+solutions completely. In my view, shell scripts are an obsolete
+heritage from the time when all "real" programming languages
+required complicated procedures to build programs.  Nowadays we
+have Python (Perl, Tcl, Ruby, etc.), which bridge the gap between
+language functionality and ease of use in a much more effective
+and platform independent way.
+
+There's no rational justification for writing any *new* shell
+scripts larger than 5 lines in 2003. Unfortunately, maintaining
+existing scripts is a different story.
+
+
+>> Most noteably, it is itself based on inadequate and platform
+>> (unix) dependent tools, a limitation it shares with the current
+>> makeall script in Radiance (and parts of the Radiance codebase).
+>
+> True. Altough the radiance scripts limitations are worse, since it
+> can't find out the type of Unix on its own.
+
+I don't consider this a big problem (the person doing the compile
+should know, right?), even if an automatic detection would be
+more elegant.
+
+The serious problems are with scripts like falsecolor etc.
+There are C replacements available from Radiance 3.3 (as in
+DesktopRadiance and Rayfront) for some of them, but those will
+have to be fixed to work reliably (eg. to accept file names with
+spaces, etc.). Maybe I should just check them into CVS, so that
+anyone feeling adventurous enough can start playing around with
+them.
+
+
+> How well does SCons for example deal with building shared libraries ?
+> (whcih is part of point c ).
+
+That's an integral part of the basic functionality. SCons isn't a
+generic tool like make, it contains a lot of builtin intelligence
+about standard build procedures. Check the manpage for a very
+cursory overview of the target types and tools directly supported:
+
+  http://www.scons.org/doc/HTML/scons-man.html
+
+Other target types and tools can be easily added (at least by a
+somewhat experienced Python programmer).
+
+
+> But anyway, i would vote for any more sophisticate build system than
+> hand written scripts, not just autoconf.
+
+Ultimately, we'll have to convince Greg about any alternatives.
+In the mean time, I'd have no problem with people experimenting
+with whatever tools they know and like. I assume we have several
+people with autoconf experience reading here, and we already have
+two who expressed interest in SCons. Competition furthers
+innovation, doesn't it? The best way to decide about the right
+tool is to compare contributed solutions side by side.
+Gentlemen, start your engines!
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+
+From radiance-dev@radiance-online.org  Sun Aug  3 20:52:34 2003
+From: radiance-dev@radiance-online.org (Randolph Fritz)
+Date: Sun, 3 Aug 2003 12:52:34 -0700
+Subject: [Radiance-dev] SCons [was: Radiance quality assurance...]
+In-Reply-To: <Pine.BSF.4.44.0308030755040.60766-100000@emancholl.pair.com>
+References: <3F2CA8E3.2010904@pab-opto.de> <Pine.BSF.4.44.0308030755040.60766-100000@emancholl.pair.com>
+Message-ID: <20030803195233.GA19384@panix.com>
+
+On Sun, Aug 03, 2003 at 08:08:00AM -0400, Georg Mischler wrote:
+> 
+> SCons has a proven track report, and it is being used in other
+> projects with great success. And nobody suggested to throw out
+> the makefiles now, and to think about a way to replace them
+> afterwards. If someone finds the time to setup the necessary
+> SCons environment, both methods can coexist without the slightest
+> problems until we have established which is favourized by the
+> people out there trying to compile Radiance.
+> 
+
+If no-one is dead-set against it (and no-one has written to say they
+are), I'm going to give it a try, then.
+
+Randolph
+
+From radiance-dev@radiance-online.org  Mon Aug  4 19:23:32 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Mon, 4 Aug 2003 11:23:32 -0700
+Subject: [Radiance-dev] Re: SCons [was: Radiance quality assurance...]
+In-Reply-To: <20030803195233.GA19384@panix.com>
+Message-ID: <C0B00A40-C6A8-11D7-BBF7-000A956D40C8@lmi.net>
+
+I have been silent during this discussion not from lack of interest or 
+relevant comments, but because I was off at SIGGRAPH in San Diego last 
+week and unable to respond to (or comfortably read) e-mail.
+
+In general, I am opposed to "enhancements" to the distribution that 
+require people to compile other packages, unless they are freely 
+available and supported on all platforms and provide a substantial 
+benefit to a majority of people (or developers for the build system).  
+In the case of SCons, which I know nothing about, it sounds like it is 
+free and depends on Python, which is preinstalled on many systems and 
+probably easy to install on most others.  This leaves only the second 
+requirement -- that SCons provide such an improvement to the system 
+that it is worth the added effort....
+
+Schorsch has suggested (more than once) that the current C-shell 
+scripts that are part of Radiance should be rewritten, either as C 
+programs or Python/Perl scripts.  I tend to agree, if only because 
+these languages are better supported on non-Unix systems than C-shell.  
+If they are rewritten as Python scripts, then SCons would be no added 
+effort over the default system.  If it would also provide some benefit 
+in maintenance or ease of compilation, then I would favor it.
+
+These are the questions I have about it:
+
+1) Is Python available precompiled or easily built on all systems we 
+support?
+
+2) Is SCons sufficiently stable that we don't have to be updating our 
+build input to keep compatibility with different SCons releases?  This 
+can be a nightmare for deployment.
+
+3) What benefit does SCons offer over our current script-builds-rmake 
+system, which is quite simple when compared with almost any other build 
+system I've seen?  The rmake command is intelligible, the Rmakefile's 
+are intelligible, and even the makeall command is pretty easy to 
+follow.  Take a quick peek at any of the files in a typical autoconf 
+build system for comparison.  I'd like to see what SCons expects as 
+input.
+
+In the following e-mail, I will address some of the more specific 
+compile issues brought up last week.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Mon Aug  4 20:19:58 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Mon, 4 Aug 2003 12:19:58 -0700
+Subject: [Radiance-dev] Radiance quality assurance suggestions
+In-Reply-To: <Pine.BSF.4.44.0307280851170.16960-100000@emancholl.pair.com>
+Message-ID: <A36933C0-C6B0-11D7-BBF7-000A956D40C8@lmi.net>
+
+> From: Georg Mischler <schorsch@schorsch.com>
+> Date: Mon Jul 28, 2003  6:18:22  AM US/Pacific
+>
+> The basis to this should be a new strategy on where Radiance
+> searches it's binaries and library files. We had a first stab at
+> this discussion already a few weeks back. I think a reasonable
+> strategy would go like this:
+>
+> - For binaries, first look in the directory where the current
+>   executable was loaded from, then look in the $PATH.
+> - For library files, first look in ../share/ (again based on
+>   the location of the current executable), then in
+>   ../share/radiance-<ver>/, and then on $RAYPATH.
+
+Is there some way within a Unix program to determine where the 
+executable was found, other than researching the $PATH environment 
+variable to find where argv[0] lives?
+
+>
+>> 1. Calcomp.h and otypes.h have a pointer to an unprototype-able
+>> function in their definitions. I haven't studied these enough to have
+>> formed ideas on how to approach the problem, though I've discarded
+>> several early approaches.  Would it be all right to bring this up on
+>> the radiance-dev list?
+>
+> I brought those two up last time, since I assumed they are
+> somehow related. I see that the functions involved actually all
+> are X(void), but I'd like more input about what actually happens
+> there before changing the prototypes. Greg?
+
+The function pointer declared in otypes.h cannot be easily prototyped, 
+as I'm using this pointer with different parameters depending on 
+whether it's being called by oconv or the renderers.  I'd rather leave 
+it this way.
+
+The progotype for the eoper[] dispatch array in calcomp.h was easy to 
+prototype on the other hand, and I have done so.  I could do the same 
+for the library function pointer in the LIBR struct, except that it is 
+assigned in so many places that it would be a bit of a hassle to track 
+them all down.  This pointer takes a single char * argument, which is 
+usually neither defined nor examined by callers.  This makes it a big 
+hassle to include as a prototype, with little potential benefit to us 
+as developers.  I'd leave this as is, also.
+
+> From: Randolph Fritz <randolph@panix.com>
+> Date: Fri Aug 1, 2003  11:20:50  PM US/Pacific
+> Subject: Re: [Radiance-dev] Radiance quality assurance suggestions
+>
+>
+> On Friday, August 1, 2003, at 08:52  AM, Peter Apian-Bennewitz wrote:
+>
+>> MS is being cared for by Schorsch. People have packaged Debian et al 
+>> distributions for Linux end-users, MacOS is being cared for by Greg 
+>> himself. Someone with a SUN has either compile experience him/herself 
+>> or an admin closeby. dito IRIX/HPUX/AIX.
+>
+> I agree with you on these.  In fact, I agreed with you in the original 
+> message.  Hunh?
+>
+>> The makeall script is not the premium solution, but it works.
+>
+> The problems I see are:
+>
+> 1. There is no way to write portable Rmakefiles which separate build 
+> and install and work with the current makeall script.
+>
+> 2. There is no platform-independent way to automatically include 
+> header-file dependencies in  Rmakefile's.
+>
+> Do you see any way around these?  Or regard them as minor?
+>
+> Randolph
+
+I really consider these to be minor problems, though it would be nice 
+to build without installing.  The current rmake sans arguments builds 
+in the working directory without copying the executables anywhere.  We 
+could do as Schorsch suggested and copy these to one location for a 
+"build" option and from there to the standard location(s) for the 
+"install" option.  What I usually do is hand-tweak a version of rmake 
+(which I rename "dmake") that sets LIBDIR and INSTDIR to some other 
+location, as well as replacing the -O option with -g for debugging.  
+This works, also.
+
+As for header files, it's not difficult to keep the Rmakefile's up to 
+date so long as you pay attention to what you're doing as you're doing 
+it.  It would be nice to have an automatic way to create the 
+dependencies, but mkdep is not fool-proof either, as it's easy to 
+forget to include all the relevant files that are in other directories 
+(mostly ../common) when you run it.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Mon Aug  4 21:26:57 2003
+From: radiance-dev@radiance-online.org (Randolph Fritz)
+Date: Mon, 4 Aug 2003 13:26:57 -0700
+Subject: [Radiance-dev] Radiance quality assurance suggestions
+In-Reply-To: <A36933C0-C6B0-11D7-BBF7-000A956D40C8@lmi.net>
+References: <Pine.BSF.4.44.0307280851170.16960-100000@emancholl.pair.com> <A36933C0-C6B0-11D7-BBF7-000A956D40C8@lmi.net>
+Message-ID: <20030804202657.GA4070@panix.com>
+
+On Mon, Aug 04, 2003 at 12:19:58PM -0700, Greg Ward wrote:
+> Is there some way within a Unix program to determine where the 
+> executable was found, other than researching the $PATH environment 
+> variable to find where argv[0] lives?
+> 
+
+I do not believe so, except in the Mac OS X Cocoa environment.  Even
+argv[0] is not certain, since it is only convention that it contain
+the program name that was actually used.  System utilities usually
+resolve this with a file in /etc, but I don't like that solution for
+Radiance.
+
+> >
+> >>1. Calcomp.h and otypes.h have a pointer to an unprototype-able
+> >>function in their definitions. I haven't studied these enough to have
+> >>formed ideas on how to approach the problem, though I've discarded
+> >>several early approaches.  Would it be all right to bring this up on
+> >>the radiance-dev list?
+> >
+> >I brought those two up last time, since I assumed they are
+> >somehow related. I see that the functions involved actually all
+> >are X(void), but I'd like more input about what actually happens
+> >there before changing the prototypes. Greg?
+> 
+> The function pointer declared in otypes.h cannot be easily prototyped, 
+> as I'm using this pointer with different parameters depending on 
+> whether it's being called by oconv or the renderers.  I'd rather leave 
+> it this way.
+> 
+
+I would, too.  But it's not mainstream C any more, and it won't work
+at all in C++, where that construct is equivalent to (*f)(void).  I do
+wish ISO C allowed (*f)(...), but it does not.  As I said, I have some
+thoughts on this that I want to explore futher.
+
+> The progotype for the eoper[] dispatch array in calcomp.h was easy to 
+> prototype on the other hand, and I have done so.
+
+Great!
+
+> I could do the same for the library function pointer in the LIBR
+> struct, except that it is assigned in so many places that it would
+> be a bit of a hassle to track them all down.  This pointer takes a
+> single char * argument, which is usually neither defined nor
+> examined by callers.  This makes it a big hassle to include as a
+> prototype, with little potential benefit to us as developers.  I'd
+> leave this as is, also.
+
+Perhaps just change it to void *, eventually?  That seems to me in
+line with your intentions.  The compiler can locate the references.
+
+> 
+> I really consider these to be minor problems, though it would be nice 
+> to build without installing.  The current rmake sans arguments builds 
+> in the working directory without copying the executables anywhere.
+>
+
+I've seen that some things don't get built without "install"--the
+OpenGL files in common are one example, but I think I remember othes.
+Trying to make it so that all things got built without install led to
+my deciding that the problem is non-trivial--I can do it with csh and
+make, but I can't do it simply and portably.
+
+> 
+> As for header files, it's not difficult to keep the Rmakefile's up to 
+> date so long as you pay attention to what you're doing as you're doing 
+> it.  It would be nice to have an automatic way to create the 
+> dependencies, but mkdep is not fool-proof either, as it's easy to 
+> forget to include all the relevant files that are in other directories 
+> (mostly ../common) when you run it.
+> 
+
+scons, which I've been playing with a bit, does all this.  And it
+seems to be clear.  But I'm still learning how to use it.  More on
+this when I know more.
+
+Randolph
+
+From radiance-dev@radiance-online.org  Mon Aug  4 23:18:19 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Mon, 4 Aug 2003 15:18:19 -0700
+Subject: [Radiance-dev] Re: Radiance quality assurance suggestions
+In-Reply-To: <20030804202657.GA4070@panix.com>
+Message-ID: <8D80465A-C6C9-11D7-A551-000A956D40C8@lmi.net>
+
+> From: Randolph Fritz <randolph@panix.com>
+> Date: Mon Aug 4, 2003  1:26:57  PM US/Pacific
+>> The function pointer declared in otypes.h cannot be easily prototyped,
+>> as I'm using this pointer with different parameters depending on
+>> whether it's being called by oconv or the renderers.  I'd rather leave
+>> it this way.
+>>
+>
+> I would, too.  But it's not mainstream C any more, and it won't work
+> at all in C++, where that construct is equivalent to (*f)(void).  I do
+> wish ISO C allowed (*f)(...), but it does not.  As I said, I have some
+> thoughts on this that I want to explore futher.
+
+This pointer carries out different functions depending on the 
+application and primitive type.  In the case of oconv and surfaces, it 
+determines voxel intersection.  In the case of rendering and surfaces, 
+it computes ray intersection.  In the case of rendering and materials, 
+it computes shading.  In the case of rendering and patterns or 
+textures, it modifies the pattern/texture for a ray.  The way it was 
+designed, one signature works for oconv and another for the renderers.  
+We could simply have two function pointers where there is now one, like 
+so:
+
+typedef struct {
+         char  *funame;                  /* function name */
+         int  flags;                     /* type flags */
+         int  (*funv)(OBJREC *o, CUBE *c);           /* voxel 
+intersection */
+         int  (*funr)(OBJREC *o, RAY *r);    /* ray evaluation */
+}  FUN;
+
+In oconv, the funr pointers will all be assigned NULL, and likewise for 
+the funv pointers in rpict/rview/rtrace.  It wastes a pointer, but 
+that's hardly a concern these days.  The other option is to stick with 
+a single signature and use a cast.  This is less objectionable than 
+usual because it is like "client data" in most respects:
+
+typedef struct {
+         char  *funame;                  /* function name */
+         int  flags;                     /* type flags */
+         int  (*funp)(OBJREC *o, void *p);                 /* pointer to 
+function */
+}  FUN;
+
+>
+>> The progotype for the eoper[] dispatch array in calcomp.h was easy to
+>> prototype on the other hand, and I have done so.
+>
+> Great!
+>
+>> I could do the same for the library function pointer in the LIBR
+>> struct, except that it is assigned in so many places that it would
+>> be a bit of a hassle to track them all down.  This pointer takes a
+>> single char * argument, which is usually neither defined nor
+>> examined by callers.  This makes it a big hassle to include as a
+>> prototype, with little potential benefit to us as developers.  I'd
+>> leave this as is, also.
+>
+> Perhaps just change it to void *, eventually?  That seems to me in
+> line with your intentions.  The compiler can locate the references.
+
+Actually, it really is a char * in this case, as I'm passing the name 
+of the called function so that it may discovers the user's intent in 
+the case of a single function with variants.  As I said, it's not 
+really a problem so much as a pain, but probably on the order of 5 
+minutes of pain, which is less than it took me to write this e-mail.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Mon Aug  4 23:24:58 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Mon, 4 Aug 2003 18:24:58 -0400 (EDT)
+Subject: [Radiance-dev] Radiance quality assurance suggestions
+In-Reply-To: <A36933C0-C6B0-11D7-BBF7-000A956D40C8@lmi.net>
+Message-ID: <Pine.BSF.4.44.0308041807120.89098-100000@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> > - For binaries, first look in the directory where the current
+> >   executable was loaded from, then look in the $PATH.
+> > - For library files, first look in ../share/ (again based on
+> >   the location of the current executable), then in
+> >   ../share/radiance-<ver>/, and then on $RAYPATH.
+>
+> Is there some way within a Unix program to determine where the
+> executable was found, other than researching the $PATH environment
+> variable to find where argv[0] lives?
+
+Scanning the PATH is the only truly portable solution I am aware
+of. Doing this appears to be quite common practise.
+On some systems though, you may find that information somewhere
+under /proc. On Linux, /proc/<pid>/exe always is a symlink to the
+program file.
+Newer Windows versions have a system call to the same effect.
+
+
+
+>   The current rmake sans arguments builds
+> in the working directory without copying the executables anywhere.
+
+Right now, I think it doesn't actually build everything, because
+at least some of the libaries don't get copied to ../lib, which
+causes other stuff to fail later.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Mon Aug  4 23:45:19 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Mon, 4 Aug 2003 18:45:19 -0400 (EDT)
+Subject: [Radiance-dev] Re: Radiance quality assurance suggestions
+In-Reply-To: <8D80465A-C6C9-11D7-A551-000A956D40C8@lmi.net>
+Message-ID: <Pine.BSF.4.44.0308041829121.89098-100000@emancholl.pair.com>
+
+Greg Ward wrote:
+
+>   The way it was
+> designed, one signature works for oconv and another for the renderers.
+> ...
+>
+>   The other option is to stick with
+> a single signature and use a cast.  This is less objectionable than
+> usual because it is like "client data" in most respects:
+>
+> typedef struct {
+>     char  *funame;                    /* function name */
+>     int  flags;                       /* type flags */
+>     int  (*funp)(OBJREC *o, void *p); /* pointer to function */
+> }  FUN;
+
+If each program is garanteed to always use the same signature,
+then that looks acceptable to me as an "opaque" data structure.
+I'm not even sure if it will require any casts.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+From radiance-dev@radiance-online.org  Mon Aug  4 23:52:29 2003
+From: radiance-dev@radiance-online.org (Chris Jessee)
+Date: Mon, 4 Aug 2003 18:52:29 -0400
+Subject: [Radiance-dev] the whole beast
+Message-ID: <53A89C4E-C6CE-11D7-9EE4-00039386208A@virginia.edu>
+
+Two renderings of the complete Crystal Palace model.
+
+http://jefferson.village.virginia.edu/~cj8n/london/int.jpg
+http://jefferson.village.virginia.edu/~cj8n/london/viewtop.jpg
+
+On a Dual G4 1.4ghz, 1.5gb ram
+
+486mb oct file, 1hr to generate
+
+int.jpg:
+30 hrs to render at 2880x2880
+QUALITY, DETAIL, VARIABILITY = medium, 2 indirect bounces
+
+viewtop.jpg:
+.6 hrs to render at 2880x2880
+QUALITY, VARIABILITY = medium, DETAIL = high, 0 indirect bounces
+
+Thanks again for all the helpful suggestions  in getting radiance going 
+on my mac.
+
+I welcome suggestions on how I might decrease render time and visible 
+artifacts.
+
+Take care,
+
+Chris Jessee
+cj8n@virginia.edu
+
+
+From radiance-dev@radiance-online.org  Tue Aug  5 04:26:39 2003
+From: radiance-dev@radiance-online.org (Randolph Fritz)
+Date: Mon, 4 Aug 2003 20:26:39 -0700
+Subject: [Radiance-dev] Radiance quality assurance suggestions
+In-Reply-To: <A36933C0-C6B0-11D7-BBF7-000A956D40C8@lmi.net>
+Message-ID: <A0A1C2FA-C6F4-11D7-B1FD-0030658EA95E@panix.com>
+
+On Monday, August 4, 2003, at 12:19  PM, Greg Ward wrote:
+>>> - For binaries, first look in the directory where the current
+>>>   executable was loaded from, then look in the $PATH.
+>>> - For library files, first look in ../share/ (again based on
+>>>   the location of the current executable), then in
+>>>   ../share/radiance-<ver>/, and then on $RAYPATH.
+>>
+>> Is there some way within a Unix program to determine where the 
+>> executable was found, other than researching the $PATH environment 
+>> variable to find where argv[0] lives?
+
+> Scanning the PATH is the only truly portable solution I am aware
+> of. Doing this appears to be quite common practise.
+> On some systems though, you may find that information somewhere
+> under /proc. On Linux, /proc/<pid>/exe always is a symlink to the
+> program file.
+
+On Mac OS X, however, it's probably best to eventually (not 
+immediately) adopt the practice of packaging Radiance as a Mac OS X 
+application, and use ~/Library/Radiance and /Library/Radiance for 
+add-on libraries.  Mac OS X isn't--quite--Unix.
+
+Randolph
+
+
+From radiance-dev@radiance-online.org  Fri Aug  8 06:04:53 2003
+From: radiance-dev@radiance-online.org (Randolph Fritz)
+Date: Thu, 7 Aug 2003 22:04:53 -0700
+Subject: [Radiance-dev] A first look at scons
+Message-ID: <D864F242-C95D-11D7-B350-0030658EA95E@panix.com>
+
+--Apple-Mail-4-407514449
+Content-Transfer-Encoding: 7bit
+Content-Type: text/plain;
+	charset=US-ASCII;
+	format=flowed
+
+I decided to put my money where my mouth was, and try to make scons 
+build the Radiance libraries in "src/common".
+
+In general, "scons" works fairly well.  Starting from a general 
+knowlege of Python, it took me perhaps eight hours of work to learn 
+scons well enough to assemble an overall configuration script, and one 
+which builds the common libraries.
+
+Scons uses a directory hierarchy model.  At the top of the hierarchy, a 
+file named, by default, "SConstruct" is used, which sets up the build, 
+determining system configuration, and including the various build files 
+(by convention named "SConscript") from subdirectories.  To build the 
+whole thing, one then uses the command "scons" in the top-level 
+directory.  To build parts, one uses "scons <subdirectory>" to build a 
+subdirectory's files from the top or "scons -u" from within a 
+subdirectory.
+
+Scons uses a two-phase build model, where a description of the build is 
+constructed first, and then targets are built.  The build description 
+is constructed by the Python script, SConstruct, which includes the 
+subsidiary SConscript scripts.  The scripts are themselves run in a 
+special environment provided by scons which includes three special 
+classes: one of describing build environments, one for describing 
+command-line options, and one for testing the build system 
+configuration.  The build portion is impressively well-worked out, and 
+automatically includes dependencies for many languages--there is never 
+a need to specify dependencies on .h files, as far as I can tell.
+
+What I have is a global configuration script, and a script that 
+describes the build of the common library.  They are attached, and you 
+can read them and try them.  I think they're pretty straightforward.
+
+So far, I think this is a winner.  There are some rough 
+spots--forgetting to use Python lists in certain places can produce 
+amazingly Python-esque messages, but, those being identified, it works 
+fairly well.  Keep in mind I've yet to build and install any actual 
+executables--I may change my mind once I have.
+
+Files are attached--unless someone screams "NO! NO!" my next step will 
+be to write a build and install script for the programs in src/meta.
+
+Randolph
+
+
+--Apple-Mail-4-407514449
+Content-Disposition: attachment;
+	filename=SConstruct
+Content-Transfer-Encoding: 7bit
+Content-Type: application/octet-stream;
+	x-unix-mode=0644;
+	name="SConstruct"
+
+# XXX still needs install code
+
+# Notes to people who come after:
+#
+# In general, only use '/' as a path separator in *nix-specific code, use
+# join() for everythign else
+
+from os.path import isdir, join
+from sys import platform
+
+def set_opts(env):
+    # XXX add some caching
+    opts = Options(None, ARGUMENTS)
+    opts.Add ('RAYLIB', 'Radiance library directory', '/usr/local/ray')
+    opts.Add ('EXECDIR', 'Executables placed here', '/usr/local/bin')
+    opts.Update(env) 
+    Help(opts.GenerateHelpText(env, sort=cmp))
+
+def gen_setup(env):
+    # Radiance headers
+    # This must be a Python list (hence the square brackets).  If it is
+    # not, Bad Things happen.
+    env.Append (CPPPATH = [join ("#", "src", "common")])
+
+def nix_setup(env):
+    # XXX X11 and OGL probably would be better as options.  In fact, all this
+    # stuff would probably be better as options
+    # Look for X-Windows directory
+    d = None
+    for t in ("/usr/X11R6", "/usr/X11", "/usr/openwin"):
+        if isdir (t):
+            d = t
+            break
+    # Check for the presence of -lX11 and OpenGL, set flags,  and add the
+    # X11 library and include directories to the appropriate paths
+    if d:
+        # These must be Python lists (hence the square brackets).  If they are
+        # not, Bad Things happen.
+        env.Append (LIBPATH = [join (d, "lib")]) 
+        env.Append (CPPPATH = [join (d, "include")])
+        conf = Configure (env)
+        conf.env['X11'] = conf.CheckLibWithHeader ("X11", "X11/X.h", "C")
+        conf.env['OGL'] = conf.CheckCHeader ("GL/gl.h")
+        env = conf.Finish ()
+
+    # Set up the C preprocessor flags, the C flags, and special local
+    # versions of library files.
+    if platform == 'darwin':
+        env.Append (CPPFLAGS = Split ("-DBSD -DNOSTEREO -Dfreebsd -DSPEED=200"))
+        env.Append (CFLAGS = Split ("-O2"))
+        env['COMPAT'] = ("bmalloc.c")
+    else:
+        # generic *nix
+        env.Append (CPPFLAGS = "-DNOSTEREO")
+        env.Append (CFLAGS = "-O")
+        env['COMPAT'] = Split ("bmalloc.c erf.c strcmp.c")
+
+env = Environment()
+set_opts(env)
+
+# Set up platform-independent build environment
+gen_setup(env)
+
+# Set up platform-specific build environment
+if env['PLATFORM'] == "posix":
+    nix_setup(env)
+else:
+    print "Sorry--*nix only, so far"
+    Exit(2)
+
+# Bring in all the actual things to build
+Export ("env")
+for d in Split ("common meta cv gen ot rt px hd util cal"):
+    SConscript (join ("src", d, "SConscript"))
+
+--Apple-Mail-4-407514449
+Content-Disposition: attachment;
+	filename=SConscript
+Content-Transfer-Encoding: 7bit
+Content-Type: application/octet-stream;
+	x-unix-mode=0644;
+	name="SConscript"
+
+Import ("env")
+
+RT = Split ("cone.c face.c free_os.c instance.c readobj.c readoct.c otypes.c \
+	objset.c octree.c readfargs.c modobject.c \
+	addobjnotify.c zeroes.c mesh.c readmesh.c tmesh.c sceneio.c")
+
+RT.append (env.StaticObject ("getlibpath.c", CPPFLAGS = '-DDEFPATH=\\":' + 
+                            env['RAYLIB'] + '\\"'))
+
+PIC = Split ("color.c header.c image.c lamps.c resolu.c rexpr.c spec_rgb.c \
+	colrops.c font.c tonemap.c tmapluv.c tmaptiff.c \
+	tmap16bit.c")
+
+PIC.append (env.StaticObject ("tmapcolrs.c", CPPFLAGS = '-DPCOND=\\"pcond\\"'))
+
+STD = Split ("fgetline.c fropen.c linregr.c xf.c mat4.c invmat4.c fvect.c urand.c \
+	urind.c calexpr.c caldefn.c calfunc.c calprnt.c biggerlib.c multisamp.c \
+	unix_process.c process.c getpath.c error.c savestr.c savqstr.c \
+	badarg.c fgetword.c words.c expandarg.c wordfile.c fgetval.c \
+	clip.c plocate.c eputs.c wputs.c quit.c lookup.c \
+	loadvars.c tcos.c fputword.c chanvalue.c dircode.c paths.c")
+
+SYS = Split ("ealloc.c fdate.c portio.c myhostname.c")
+SYS.append (env['COMPAT'])
+
+RGL = Split ("rglfile.c rglmat.c rgldomat.c rglsurf.c rglinst.c rglsrc.c")
+
+env.Append (LIBS = env.StaticLibrary ("rt", RT + PIC + STD + SYS))
+if env['OGL']:
+    env.Append (LIBS = env.StaticLibrary ("rgl", RGL))
+
+--Apple-Mail-4-407514449--
+
+
+From radiance-dev@radiance-online.org  Sat Aug  9 14:26:21 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Sat, 9 Aug 2003 09:26:21 -0400 (EDT)
+Subject: [Radiance-dev] SCons
+In-Reply-To: <C0B00A40-C6A8-11D7-BBF7-000A956D40C8@lmi.net>
+Message-ID: <Pine.BSF.4.44.0308090923040.60093-100000@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> 1) Is Python available precompiled or easily built on all systems we
+> support?
+
+Python is easy and very reliable to compile on all platforms.
+In fact, many of my ideas about portability are "borrowed" from
+the Python sources and/or installation procedures.
+
+For Windows, VisualC workspace and project files are included
+with the sources, enabling a full build in one click. Of course,
+there's also a binary installer available (actually several).
+
+Building on unix systems is setup with autoconf (since Python
+wraps a large number of OS APIs, that's really helpful in this
+case). It will just automatically build all the modules that it
+can, based on the installed libraries it finds. A very basic set
+of modules is sufficient for SCons, though.
+
+Binary packages are included with or available for all relevant
+Linux distributions, normally installed by default (the Redhat
+installer is even based on Python).
+
+OS X comes with a working Python, although some usually expected
+modules aren't included (SCons works fine with that version).
+
+Besides those already mentioned, installers for one or several
+precompiled Python versions are available for Sparc Solaris,
+OS/2, Amiga, AROS, RISC OS, BeOS, AS/400, OS/390, z/OS, VMS, QNX,
+VxWorks, DOS, Windows 3.1, WindowsNT Alpha, WindowsCE, PalmOS,
+Psion, PlayStation, Sharp Zaurus, etc...
+
+
+> 2) Is SCons sufficiently stable that we don't have to be updating our
+> build input to keep compatibility with different SCons releases?  This
+> can be a nightmare for deployment.
+
+>From http://www.scons.org/ :
+
+ "We ensure that today's functionality isn't broken by tomorrow's
+ release through rigorous use of a development methodology that
+ adds incrementally to an extensive set of regression tests:
+ non-comment lines of test code outnumber lines of production
+ code by more than 2.5 to 1."
+
+You might consider that excessive, but hey, if it works... ;)
+
+
+> 3) What benefit does SCons offer over our current script-builds-rmake
+> system,
+
+Again, from http://www.scons.org/ (just the most relevant points):
+
+- Reliable, automatic dependency analysis
+
+- Built-in support for fetching source files from SCCS, RCS, CVS,
+  BitKeeper and Perforce. [not sure if we need this]
+
+- Built-in support for Microsoft Visual Studio .NET and past
+  Visual Studio versions, including generation of .dsp, .dsw,
+  .sln and .vcproj files. [makes some of my own work obsolete...]
+
+- Reliable detection of build changes using MD5 signatures;
+  optional, configurable support for traditional timestamps.
+
+- Improved support for parallel builds -- like make -j but keeps
+  N jobs running simultaneously regardless of directory
+  hierarchy.
+
+- Integrated Autoconf-like support for finding #include files,
+  libraries, functions and typedefs.
+
+- Global view of all dependencies -- no more multiple build
+  passes or reordering targets to build everything.
+
+- Designed from the ground up for cross-platform builds, and
+  known to work on Linux, POSIX systems (including AIX, *BSD
+  systems, HP/UX and IRIX), Windows NT, Mac OS X, and OS/2.
+
+
+So far, the configuration files we have played with were between
+20% and 50% the size and complexity of makeall and the respective
+Rmakefiles, but added automatic X11 and GL configuration and
+automatic dependency management to their functionality. The still
+missing installation part should take less than two dozen lines.
+
+
+> I'd like to see what SCons expects as input.
+
+You've seen some of that by now. More about this part seperately.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Sat Aug  9 15:01:45 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Sat, 9 Aug 2003 10:01:45 -0400 (EDT)
+Subject: [Radiance-dev] A first look at scons
+In-Reply-To: <D864F242-C95D-11D7-B350-0030658EA95E@panix.com>
+Message-ID: <Pine.BSF.4.44.0308090947540.60093-101000@emancholl.pair.com>
+
+  This message is in MIME format.  The first part should be readable text,
+  while the remaining parts are likely unreadable without MIME-aware tools.
+  Send mail to mime@docserver.cac.washington.edu for more info.
+
+--0-536982328-1060437705=:60093
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+
+Randolph Fritz wrote:
+
+> I decided to put my money where my mouth was, and try to make scons
+> build the Radiance libraries in "src/common".
+>
+> [...]
+>
+> What I have is a global configuration script, and a script that
+> describes the build of the common library.  They are attached, and you
+> can read them and try them.  I think they're pretty straightforward.
+
+
+Nice start. I played around with this a bit, added a SConscript
+file for src/rt, and after some more fiddling, I ended up with
+the following:
+
+- If you use triple quotes (''' or """), then you don't need to
+  escape line wraps in literal Python strings.
+
+- I changed the imports of the standard modules to just import
+  the module. It is usually less confusing to explicitly refer
+  eg. to the fully qualified sys.platform in the code, especially
+  for such generic names.
+
+- ("this") is just "this" in Python. But I think you already
+  figured this out on your own...
+
+- You created one environment named "env". I changed that name to
+  "build", so that we can later establish a seperate "install"
+  target (those names are used when you do eg. an "scons install").
+  There should also be a way to have "install" depend on "build".
+
+- Check what the man page says about opts.Update(). I don't think
+  it really makes a functional difference, but what they
+  recommend is probably better style and may have other
+  advantages down the road (not changed yet).
+
+- The compile options flag is named CCFLAGS, not CFLAGS.
+
+- I changed the configure routines to look for the GL library
+  like you already did with X11, and not just for the headers.
+  Then I moved those routines to a seperate module
+  build_utils/find_libs.py. Maybe the option related routines can
+  go into build_utils as well.
+
+- When checking for X11, I don't include the resulting paths in
+  the global CPPPATH and LIBPATH. It seems better to store them
+  in seperate variables, and add them as overrides to only those
+  files that actually need them. You can then also skip building
+  eg. rview if the respective variables aren't set.
+
+- Similarly, I pass [NO]STEREO and SPEED as seperate variables,
+  which may be used to override the defaults further down.
+
+- I have named all Radiance specific variables "RAD_XXX", so that
+  there will never be any confusion.
+
+- In src/common/SConscript, you can use "#src/lib/rt" as a target
+  for the library, so it will be built in the correct place.
+
+- Adding a library to env['LIBS'] means that every single
+  executable will be linked with it after that. I'm sure that a
+  majority currently does use librt.a, but maybe we can be more
+  specific here to improve the performance of the linking.
+  In src/rt, I'm making a copy of the "build" environment with
+  the changes required for all the targets there.
+
+- The env['PLATFORM'] value is tuned for internal use by SCons.
+  I have decided to use the more standard sys.platform (and
+  os.name, where that isn't enough) for our own purposes.
+  SConstruct now supposts (almost) the full range of settings
+  from makeall.
+
+  If that still isn't enough, we also have os.uname(), at least
+  when os.name == 'posix'. This may be necessary eg. in case we
+  need to distinguish between Solaris or Linux on different
+  hardware.
+
+- I moved unix_process.c resp. win_process.c to a variable named
+  "RAD_PROCESS", which then gets added to the right file list in
+  src/common. Other files like "win_popen.c" may follow.
+
+- I'll have to experiment a bit more with automatically
+  generating C files from a Python function, so that we can
+  replace the current "ed" script in a platform independent way.
+
+- Interestingly, SCons uses c++ to link the executables on my
+  system. I think they do so to improve flexibility, in case
+  there might be any C++ object files involved. At first, I was a
+  bit confused by that, but I couldn't find any disadvantages of
+  this approach.
+
+
+The results of my fiddling are attached as a tgz, which expands
+directly into the build tree from ray/.
+
+Some of my experiments uncovered general build issues in Radiance
+(eg. duplicate function names), which I'll address seperately.
+I did build the binaries in src/rt (and everything they depend
+on), and it worked very nicely.
+
+I'm inclined to check this into CVS, so that we can use the
+revision management there. For the moment, I don't think it will
+interfere in any way with the old build system, so that a
+coexistence of the two shouldn't be a problem.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+--0-536982328-1060437705=:60093
+Content-Type: APPLICATION/octet-stream; name="raysc02.tgz"
+Content-Transfer-Encoding: BASE64
+Content-ID: <Pine.BSF.4.44.0308091001450.60093@emancholl.pair.com>
+Content-Description: 
+Content-Disposition: attachment; filename="raysc02.tgz"
+
+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
+--0-536982328-1060437705=:60093--
+
+From radiance-dev@radiance-online.org  Sat Aug  9 17:02:58 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Sat, 9 Aug 2003 09:02:58 -0700
+Subject: [Radiance-dev] Re: A first look at scons
+In-Reply-To: <Pine.BSF.4.44.0308090947540.60093-101000@emancholl.pair.com>
+Message-ID: <F2361E7B-CA82-11D7-B7D3-00306540F848@lmi.net>
+
+Hi Schorsch,
+
+This looks pretty cool.  I have the following comments:
+
+1) The overall SConstruct file doesn't look that much smaller than 
+makeall, though it is better organized.  It's missing some things, like 
+the license agreement, which must be added, and the ability to edit the 
+build options.  Once you add these, assuming you can, it will probably 
+be about the same size as makeall, which is OK.
+
+2) However, I'm wondering if it's even possible with this system to 
+allow the people doing the compiles to mess with the options without 
+editing the SConstruct script, and therefore understanding it.  I 
+wouldn't feel comfortable editing this myself, as Python is a whole 
+new, foreign environment to me.
+
+3) If you added a way to change the build options, would SCons then 
+rebuild all the *.o files automatically?  What's the "clean" process?  
+Makeall has a little test to see if the rmake script has been updated 
+and does a clean if it has.  Can we include such functionality with 
+SCons?
+
+4) Since SCons is figuring out all the dependencies for us, which by 
+the way is unnecessary for end users, who build the whole system from 
+scratch and that's about all they do, I'm wondering how these 
+dependencies are worked out?  Does it look in all the source files 
+every time to find the headers?  Seems a bit time consuming if all 
+you're doing is rebuilding after a single change, but I haven't seen it 
+work so I don't actually know if it slows down the process or not.
+
+5) Personally, I like the process we currently have of building the 
+rmake script, which is just a call to make with a bunch of options, and 
+building separately.  Does combining the two with a whole environment 
+of passed variables means you can only recompile at the top level, or 
+is there some way to build in a subdirectory only?  If it was wasteful 
+to refigure the dependencies in just one directory, refiguring them 
+over the entire system each time you compile a small change has GOT to 
+be a factor, doesn't it?
+
+Well, those are my concerns for now.  I really appreciate you and Fritz 
+looking into this.
+-Greg
+
+
+From radiance-dev@radiance-online.org  Mon Aug 11 22:14:28 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Mon, 11 Aug 2003 17:14:28 -0400 (EDT)
+Subject: [Radiance-dev] Re: A first look at scons
+In-Reply-To: <F2361E7B-CA82-11D7-B7D3-00306540F848@lmi.net>
+Message-ID: <Pine.BSF.4.44.0308111710030.84389-100000@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> 1) The overall SConstruct file doesn't look that much smaller than
+> makeall, though it is better organized.  It's missing some things, like
+> the license agreement, which must be added, and the ability to edit the
+> build options.  Once you add these, assuming you can, it will probably
+> be about the same size as makeall, which is OK.
+
+The platform configs and the license statement are the biggest
+chunks in there, so that's no surprise...
+
+
+> 2) However, I'm wondering if it's even possible with this system to
+> allow the people doing the compiles to mess with the options without
+> editing the SConstruct script, and therefore understanding it.
+
+It's fairly simple as it is now, but we can make it as nice as we
+want. Remeber, we now have a "real" programming language at our
+disposal at that point. For example, Python brings a module for
+parsing the traditional configuration file format:
+
+  [build]
+  CC = cc
+  CPPFLAGS = -DBSD -Dfreebsd
+  CCFLAGS = -O2
+  [install]
+  bindir = /opt/radiance3.6a/bin
+  sharedir = /opt/radiance3.6a/share
+  mandir = /opt/radiance3.6a/man
+
+This could be used for both the shipped platform specific
+configuration files, as well as for storing whatever the user has
+chosen to modify. There may be other ways to shortcut a few tests
+on a box where we have run before.
+
+
+> 3) If you added a way to change the build options, would SCons then
+> rebuild all the *.o files automatically?
+
+Scons will automatically rebuild everything where either the
+build options or the dependencies have changed.
+
+
+> What's the "clean" process?
+
+scons -c
+
+
+> Makeall has a little test to see if the rmake script has been updated
+> and does a clean if it has.  Can we include such functionality with
+> SCons?
+
+Not needed here.
+
+
+> 4) Since SCons is figuring out all the dependencies for us, which by
+> the way is unnecessary for end users, who build the whole system from
+> scratch and that's about all they do, I'm wondering how these
+> dependencies are worked out?  Does it look in all the source files
+> every time to find the headers?  Seems a bit time consuming if all
+> you're doing is rebuilding after a single change, but I haven't seen it
+> work so I don't actually know if it slows down the process or not.
+
+Good questions... I find it surprisingly fast considering all the
+information it has to look at. I think there's a fairly smart
+combination of timestamps, cryptographic hashes, and dependency
+caching at work. All the bells and whistles may not matter for
+someone who just compiles everything once, but the automatic
+dependencies can save a lot of time for developers making small
+changes here and there. Those benefits will probably increase
+when we split librt.a into several smaller units, because changes
+under common will have less widespread consequences then.
+
+
+> 5) Personally, I like the process we currently have of building the
+> rmake script, which is just a call to make with a bunch of options, and
+> building separately.  Does combining the two with a whole environment
+> of passed variables means you can only recompile at the top level, or
+> is there some way to build in a subdirectory only?
+
+To compile just the stuff in one directory:
+ in ray:        "sconf src/common"
+ in src/common: "sconf -u"
+
+To compile just one file:
+ in ray:        "sconf src/common/cone.o"
+ in src/common: "sconf -u cone.o"
+
+Other than make, it will also update any dependencies outside of
+the current directory when necessary.
+
+
+> If it was wasteful
+> to refigure the dependencies in just one directory, refiguring them
+> over the entire system each time you compile a small change has GOT to
+> be a factor, doesn't it?
+
+Obviously, all that power requires some overhead. Reading all the
+files and analyzing the dependencies takes a few seconds on my
+old 300 Mhz box. But since modern hardware is almost ten times as
+fast, I don't expect that to be a problem. I'm also not sure if we
+already have an optimal setup. We'll only find out by trying...
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Tue Aug 12 02:00:36 2003
+From: radiance-dev@radiance-online.org (Randolph Fritz)
+Date: Mon, 11 Aug 2003 18:00:36 -0700
+Subject: [Radiance-dev] Re: A first look at scons
+In-Reply-To: <F2361E7B-CA82-11D7-B7D3-00306540F848@lmi.net>
+References: <Pine.BSF.4.44.0308090947540.60093-101000@emancholl.pair.com> <F2361E7B-CA82-11D7-B7D3-00306540F848@lmi.net>
+Message-ID: <20030812010035.GA11526@panix.com>
+
+On Sat, Aug 09, 2003 at 09:02:58AM -0700, Greg Ward wrote:
+> 
+> 1) The overall SConstruct file doesn't look that much smaller than 
+> makeall, though it is better organized.  It's missing some things, like 
+> the license agreement, which must be added, and the ability to edit the 
+> build options.  Once you add these, assuming you can, it will probably 
+> be about the same size as makeall, which is OK.
+>
+
+Good.  I'm working on some of the build option stuff.
+
+> 
+> 2) However, I'm wondering if it's even possible with this system to 
+> allow the people doing the compiles to mess with the options without 
+> editing the SConstruct script, and therefore understanding it.  I 
+> wouldn't feel comfortable editing this myself, as Python is a whole 
+> new, foreign environment to me.
+> 
+
+Options can be given on the command line; I think the first version I
+sent out even had some help in it; try "scons -h".  All the options
+aren't in yet, however.  On the other hand, it searches out the X and
+OpenGL libraries, which simplifies the script.  I think it's possible
+to check for a native libtiff as well.
+
+> 3) If you added a way to change the build options, would SCons then 
+> rebuild all the *.o files automatically?  What's the "clean" process?  
+> Makeall has a little test to see if the rmake script has been updated 
+> and does a clean if it has.  Can we include such functionality with 
+> SCons?
+
+"scons -c" is the clean command.  "Rebuild all" on changed options is
+possible; I didn't do it in the first version.
+
+> 
+> 4) Since SCons is figuring out all the dependencies for us, which by 
+> the way is unnecessary for end users, who build the whole system from 
+> scratch and that's about all they do, I'm wondering how these 
+> dependencies are worked out?  Does it look in all the source files 
+> every time to find the headers?  Seems a bit time consuming if all 
+> you're doing is rebuilding after a single change, but I haven't seen it 
+> work so I don't actually know if it slows down the process or not.
+> 
+
+A bit of both; it caches (by default) MD5 checksums to check if files
+are changed, I think it only scans files that have been changed for
+headers.
+
+
+> 5) Personally, I like the process we currently have of building the 
+> rmake script, which is just a call to make with a bunch of options, and 
+> building separately.  Does combining the two with a whole environment 
+> of passed variables means you can only recompile at the top level, or 
+> is there some way to build in a subdirectory only?  If it was wasteful 
+> to refigure the dependencies in just one directory, refiguring them 
+> over the entire system each time you compile a small change has GOT to 
+> be a factor, doesn't it?
+
+"scons src/common" or (cd src/common; scons -u).  I don't know what
+rules it uses for rescanning in that case, but it doesn't do that much
+rescanning most of the time.
+
+I've got some more stuff in, unfortunately I went in a somewhat
+different direction than Schorsch.  I'll send the new versions out &
+people can have a look.
+
+Randolph
+
+From radiance-dev@radiance-online.org  Tue Aug 12 02:31:06 2003
+From: radiance-dev@radiance-online.org (Randolph Fritz)
+Date: Mon, 11 Aug 2003 18:31:06 -0700
+Subject: [Radiance-dev] Re: SCons [was: Radiance quality assurance...]
+In-Reply-To: <C0B00A40-C6A8-11D7-BBF7-000A956D40C8@lmi.net>
+References: <20030803195233.GA19384@panix.com> <C0B00A40-C6A8-11D7-BBF7-000A956D40C8@lmi.net>
+Message-ID: <20030812013106.GB11526@panix.com>
+
+A few more notes on this.
+
+On Mon, Aug 04, 2003 at 11:23:32AM -0700, Greg Ward wrote:
+> 
+> These are the questions I have about it:
+> 
+> 1) Is Python available precompiled or easily built on all systems we 
+> support?
+> 
+
+Yes--installed in Mac OS X since 10.2 at least, usually automatically
+installed on Linux and available in all the standard distributions;
+precompiled on Windows, but you do have to download it.  The Python
+builder is autoconf, which will try to build on any *nix version.  I
+can find reports of Python on IRIX, POSIX, and BSD and support seems
+to be good.
+
+Python is at version 2.3; scons only requires Python 1.5.2, which is
+relatively old and common.
+
+> 2) Is SCons sufficiently stable that we don't have to be updating our 
+> build input to keep compatibility with different SCons releases?  This 
+> can be a nightmare for deployment.
+
+To judge by their web site the scons developers are aware of these
+issues and addressing them.  They write, "We ensure that today's
+functionality isn't broken by tomorrow's release through rigorous use
+of a development methodology that adds incrementally to an extensive
+set of regression tests: non-comment lines of test code outnumber
+lines of production code by more than 2.5 to 1."  Serious QA
+commitment there.
+
+Randolph
+
+Web sites:
+  http://scons.sourceforge.net/
+  http://www.python.org
+
+From radiance-dev@radiance-online.org  Thu Aug 14 22:40:14 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Thu, 14 Aug 2003 17:40:14 -0400 (EDT)
+Subject: [Radiance-dev] Re: [DesktopRadiance] RADIANCE on CYGWIN
+In-Reply-To: <bhgt2n+8mad@eGroups.com>
+Message-ID: <Pine.BSF.4.44.0308141736130.4815-100000@emancholl.pair.com>
+
+marcdevon wrote:
+
+> Dear Group
+>
+> Since the ANSI-fication of the latest version of the Radiance source
+> code by Greg Ward (latest version is 3.5), it is now possible to port
+> the latest Radiance binaries to the Windows platform using CYGWIN.
+> Here is a link for the binaries and also instructions as to how to
+> compile the binaries. Also, you can download precompiled binaries
+> from this site.
+
+
+Hi Marcus,
+
+I'm involved in creating a native Windows port based on current
+CVS HEAD, but this sounds interesting as well. I followed your
+link to see what you had done, and fetched the patch file you
+offer for download there.
+
+In you patch, most changed files are included in full twice,
+because you saved them with line endings in Windows format (\r\n)
+instead of unix format (\n). This makes it almost impossible to
+see what you actually did. The patch also includes a few files
+that don't really belong there (backup files ending with ~, and
+the automatically generated Version.c).
+
+I wouldn't want to apply any patches with the "wrong" line
+endings (let alone check them into CVS), and I suspect neither
+would Greg. Apart from that, we're highly interested in any fixes
+that make the code easier to compile on any system, so your
+contribution is certainly appreciated. Just that it isn't really
+useable for us in its current state. A correctly created diff
+will at best be a few hunderd lines long, not more than 5500.
+
+Since this is a development issue, I'm cross-posting this message
+here to the Radiance development list. I suggest you post any
+technically oriented replies there as well (ideally only there).
+If you're not subscribed there yet, you can do that here:
+
+  http://www.radiance-online.org/
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Sat Aug 16 16:16:29 2003
+From: radiance-dev@radiance-online.org (radiance-dev@radiance-online.org)
+Date: Sat, 16 Aug 2003 17:16:29 +0200
+Subject: [Radiance-dev] Re: [DesktopRadiance] RADIANCE on CYGWIN
+In-Reply-To: <Pine.BSF.4.44.0308141736130.4815-100000@emancholl.pair.com>
+References: <Pine.BSF.4.44.0308141736130.4815-100000@emancholl.pair.com>
+Message-ID: <1061046989.3f3e4acd5f421@www.dream.unipa.it>
+
+Hi!
+
+> marcdevon wrote:
+> > Dear Group
+> >
+> > Since the ANSI-fication of the latest version of the Radiance source
+> > code by Greg Ward (latest version is 3.5), it is now possible to port
+> > the latest Radiance binaries to the Windows platform using CYGWIN.
+> > Here is a link for the binaries and also instructions as to how to
+> > compile the binaries. Also, you can download precompiled binaries
+> > from this site.
+
+I've already successfully compiled Radiance-HEAD using CYGWIN, too.
+
+Here is a link to the binaries:
+http://www.dream.unipa.it/dream/pub/dot/anselmo/radiance/03.php#binaries
+
+In the same page there is also a short description of the changes 
+I did to have everything compiled.
+
+-- 
+Francesco Anselmo
+anselmo@dream.unipa.it
+
+-------------------------------------------------
+This mail sent through IMP: http://horde.org/imp/
+
+From radiance-dev@radiance-online.org  Sat Aug 16 20:24:07 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Sat, 16 Aug 2003 15:24:07 -0400 (EDT)
+Subject: [Radiance-dev] RADIANCE on CYGWIN
+In-Reply-To: <1061046989.3f3e4acd5f421@www.dream.unipa.it>
+Message-ID: <Pine.BSF.4.44.0308161504500.91362-100000@emancholl.pair.com>
+
+anselmo@dream.unipa.it wrote:
+
+> Hi!
+>
+> > marcdevon wrote:
+> > > Dear Group
+> > >
+> > > Since the ANSI-fication of the latest version of the Radiance source
+> > > code by Greg Ward (latest version is 3.5), it is now possible to port
+> > > the latest Radiance binaries to the Windows platform using CYGWIN.
+> > > Here is a link for the binaries and also instructions as to how to
+> > > compile the binaries. Also, you can download precompiled binaries
+> > > from this site.
+>
+> I've already successfully compiled Radiance-HEAD using CYGWIN, too.
+>
+> Here is a link to the binaries:
+> http://www.dream.unipa.it/dream/pub/dot/anselmo/radiance/03.php#binaries
+>
+> In the same page there is also a short description of the changes
+> I did to have everything compiled.
+
+
+Hi Anselmo,
+
+In that case, my request for a more meaningful patch file would
+go to you, since Marcus just pointed to your page as well.
+Reading his post again, he didn't really say he created the port
+himself as I had originally assumed. Sorry for the confusion.
+
+I think you announced your port already some time ago, but I
+didn't look at it in detail back then. Would it be possible
+for you to create a patch file with just the relevant changes?
+This would enable us to adapt those into the original sources
+so that they will then compile on cygwin out of the box.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Sun Aug 17 09:39:15 2003
+From: radiance-dev@radiance-online.org (radiance-dev@radiance-online.org)
+Date: Sun, 17 Aug 2003 10:39:15 +0200
+Subject: [Radiance-dev] RADIANCE on CYGWIN
+In-Reply-To: <Pine.BSF.4.44.0308161504500.91362-100000@emancholl.pair.com>
+References: <Pine.BSF.4.44.0308161504500.91362-100000@emancholl.pair.com>
+Message-ID: <1061109555.3f3f3f33640c4@www.dream.unipa.it>
+
+Hi!
+
+> In that case, my request for a more meaningful patch file would
+> go to you, since Marcus just pointed to your page as well.
+> Reading his post again, he didn't really say he created the port
+> himself as I had originally assumed. Sorry for the confusion.
+
+No problem. You should have understood that I'm quite 
+inexperienced with the diff command ...
+
+> I think you announced your port already some time ago, but I
+> didn't look at it in detail back then. Would it be possible
+> for you to create a patch file with just the relevant changes?
+> This would enable us to adapt those into the original sources
+> so that they will then compile on cygwin out of the box.
+
+Sorry for the patch file: I used diff for the first time 
+and didn't remember that I also opened and saved files 
+that were not relevant before building the patch.
+
+Of course I can make it ... 
+I will include it in the next message ...
+
+--
+Francesco Anselmo
+pisuke@libero.it
+anselmo@dream.unipa.it
+
+
+-------------------------------------------------
+This mail sent through IMP: http://horde.org/imp/
+
+From radiance-dev@radiance-online.org  Mon Aug 18 10:17:39 2003
+From: radiance-dev@radiance-online.org (Francesco Anselmo)
+Date: Mon, 18 Aug 2003 11:17:39 +0200
+Subject: [Radiance-dev] RADIANCE pmap 3.13 on CYGWIN
+In-Reply-To: <1061109555.3f3f3f33640c4@www.dream.unipa.it>
+References: <Pine.BSF.4.44.0308161504500.91362-100000@emancholl.pair.com> <1061109555.3f3f3f33640c4@www.dream.unipa.it>
+Message-ID: <200308181117.39902.anselmo@dream.unipa.it>
+
+Hi!
+
+I managed in compiling Roland Schregle's pmap 3.13
+extension under cygwin.
+
+http://www.dream.unipa.it/dream/pub/dot/anselmo/radiance/03.php#binaries
+
+Today I noticed there already is a pmap version
+for radiance 3R5, so I'll have to rebuild it
+again :(  ;-D
+
+Ciao!
+
+-- 
+ing. Francesco Anselmo
+anselmo@dream.unipa.it
+--
+[ DREAm ] 
+Dipartimento di Ricerche 
+Energetiche e Ambientali
+--
+Università di Palermo
+--
+Viale delle Scienze
+90128 Palermo - Italy
+--
+Tel + 39 091 236 302
+Fax + 39 091 484 425
+--
+
+
+
+From radiance-dev@radiance-online.org  Mon Aug 18 18:42:57 2003
+From: radiance-dev@radiance-online.org (Roland Schregle)
+Date: Mon, 18 Aug 2003 19:42:57 +0200
+Subject: [Radiance-dev] RADIANCE pmap 3.13 on CYGWIN
+References: <Pine.BSF.4.44.0308161504500.91362-100000@emancholl.pair.com> <1061109555.3f3f3f33640c4@www.dream.unipa.it> <200308181117.39902.anselmo@dream.unipa.it>
+Message-ID: <3F411021.87BCCF17@gmx.net>
+
+Francesco Anselmo wrote:
+> 
+> Hi!
+> 
+> I managed in compiling Roland Schregle's pmap 3.13
+> extension under cygwin.
+
+YEEEEHA! :^)
+ 
+> http://www.dream.unipa.it/dream/pub/dot/anselmo/radiance/03.php#binaries
+> 
+> Today I noticed there already is a pmap version
+> for radiance 3R5, so I'll have to rebuild it
+
+You might wanna wait a bit with that; there's a few bugs which still
+need cleaning up, plus Bernhard Spanlang may have discovered some
+weirdness in conjunction with the GLOW primitive. I expect the next
+release will be ready by early september. (Or not. Probably not. :^)
+
+See ya!
+
+--Roland
+
+
+-- 
+END OF LINE. (MCP)
+
+From radiance-dev@radiance-online.org  Thu Aug 21 16:35:41 2003
+From: radiance-dev@radiance-online.org (Francesco Anselmo)
+Date: Thu, 21 Aug 2003 17:35:41 +0200
+Subject: [Radiance-dev] cygwin binaries update!
+In-Reply-To: <D6957072-D36F-11D7-8672-00306540F848@lmi.net>
+References: <D6957072-D36F-11D7-8672-00306540F848@lmi.net>
+Message-ID: <200308211735.41758.anselmo@dream.unipa.it>
+
+Hi all!
+
+Thanks to Schorsch, I fixed some problems related to
+the Cygwin Radiance binaries that I compiled some
+days ago.
+
+Now they also work and output stdout and stderr in the
+normal Cygwin console.
+
+Here's the link once again:
+
+http://www.dream.unipa.it/dream/pub/dot/anselmo/radiance/03.php#binaries
+
+And many thanks to Schorsch!
+
+--
+francesco
+
+From radiance-dev@radiance-online.org  Sun Aug 24 23:30:12 2003
+From: radiance-dev@radiance-online.org (Randolph Fritz)
+Date: Sun, 24 Aug 2003 15:30:12 -0700
+Subject: [Radiance-dev] scons status?
+Message-ID: <86B2918F-D682-11D7-B36A-0030658EA95E@panix.com>
+
+--Apple-Mail-2--294849766
+Content-Transfer-Encoding: 7bit
+Content-Type: text/plain;
+	charset=US-ASCII;
+	format=flowed
+
+I got very busy with other things & didn't have time to work on this.  
+So here's my last notes--I added an install (note that it doesn't 
+require a separate environment) and build for meta.  What's the status 
+of the scons scripts for Radiance--has anyone else done work on them?  
+(I would like to do a cvs diff so that I don't have to bother anyone 
+with that question.  I plead yet again for read-only access to the CVS 
+database.  Surely there is some simple, secure way?)
+
+Randolph
+
+
+--Apple-Mail-2--294849766
+Content-Disposition: attachment;
+	filename=SConstruct
+Content-Transfer-Encoding: 7bit
+Content-Type: application/octet-stream;
+	x-unix-mode=0644;
+	name="SConstruct"
+
+# XXX still needs install code
+
+# Notes to people who come after:
+#
+# In general, only use '/' as a path separator in *nix-specific code, use
+# join() for everythign else
+
+from os.path import isdir, join
+import sys
+
+OPTFILE = 'rayopts.py'
+
+def set_opts(env):
+    # XXX X11, OGL, and control for the optional build files need to go here
+    # XXX X11 = 0 -- don't build X11 stuff
+    #         = <string> -- use string as X base
+    # XXX OGL = 0 don't build OGL stuff
+    opts = Options(OPTFILE, ARGUMENTS)
+    opts.Add ('RAYLIB', 'Radiance library directory', '/usr/local/ray')
+    opts.Add ('EXECDIR', 'Executables placed here', '/usr/local/bin')
+    opts.Update(env) 
+    opts.Save(OPTFILE, env)
+    Help(opts.GenerateHelpText(env, sort=cmp))
+
+def gen_setup(env):
+    # Radiance headers
+    # This must be a Python list (hence the square brackets).  If it is
+    # not, Bad Things happen.
+    env.Append (CPPPATH = [join ("#", "src", "common")])
+    env.Append (LIBPATH = [join ("#", "src", "common")])
+    env.Alias ("install", [env['RAYLIB'], env['EXECDIR']])
+
+def nix_setup(env):
+    # XXX X11 and OGL probably would be better as options.  In fact, all this
+    # stuff would probably be better as options
+    # Look for X-Windows directory
+    for d in ("/usr/X11R6", "/usr/X11", "/usr/openwin"):
+        if isdir (d):
+            libdir = join (d, "lib")
+            incdir = join (d, "include")
+            # These must be Python lists (hence the square brackets).
+            # If they are not, Bad Things happen.
+            env.Append (LIBPATH = [libdir]) 
+            env.Append (CPPPATH = [incdir])
+            conf = Configure (env)
+            conf.env['X11'] = conf.CheckLibWithHeader ("X11", "X11/X.h", "C")
+            conf.env['OGL'] = conf.CheckCHeader ("GL/gl.h")
+            env = conf.Finish ()
+            if env['X11']:
+                break
+            env['LIBPATH'].remove(libdir)
+            env['CPPPATH'].remove(incdir)
+
+    # Set up the C preprocessor flags, the C flags, and special local
+    # versions of library files.
+    if sys.platform == 'darwin':
+        env.Append (CPPFLAGS = "-DBSD -DNOSTEREO -Dfreebsd -DSPEED=200")
+        env.Append (CFLAGS = "-O2")
+        env['COMPAT'] = Split("bmalloc.c")
+    else:
+        # generic *nix
+        env.Append (CPPFLAGS = "-DNOSTEREO")
+        env.Append (CFLAGS = "-O")
+        env['COMPAT'] = Split ("bmalloc.c erf.c strcmp.c")
+
+env = Environment()
+set_opts(env)
+
+# Set up platform-independent build environment
+gen_setup(env)
+
+# Set up platform-specific build environment
+if env['PLATFORM'] == "posix":
+    nix_setup(env)
+else:
+    print "Sorry--*nix only, so far"
+    Exit(2)
+
+# Bring in all the actual things to build
+Export ("env")
+
+for d in Split ("common meta cv gen ot rt px hd util cal"):
+    SConscript (join ("src", d, "SConscript"))
+
+
+--Apple-Mail-2--294849766
+Content-Disposition: attachment;
+	filename=SConscript
+Content-Transfer-Encoding: 7bit
+Content-Type: application/octet-stream;
+	x-unix-mode=0644;
+	name="SConscript"
+
+Import ("env")
+
+menv = env.Copy()
+menv.Append (CPPFLAGS = ' -DMDIR=\\"' + menv['RAYLIB'] + '\\"')
+
+common = Split("mfio.c syscalls.c misc.c")
+
+# XXX is libmeta to be made available to other Radiance modules? 
+libmeta = [menv.StaticLibrary (
+    "meta",
+    Split ("metacalls.c primout.c progname.c") + common)]
+
+execs = []
+execs.append(menv.Program (
+    "meta2tga",
+    Split("meta2tga.c rplot.c plot.c palloc.c") + common))
+execs.append(menv.Program (
+    "pexpand",
+    Split("pexpand.c expand.c segment.c palloc.c") + common))
+execs.append(menv.Program (
+    "psort",
+    Split("psort.c sort.c palloc.c") + common))
+execs.append(menv.Program (
+    "cv",
+    Split("cv.c mfio.c cvhfio.c syscalls.c misc.c")))
+execs.append(menv.Program (
+    "psmeta",
+    Split("psmeta.c psplot.c") + common))
+execs.append(menv.Program (
+    "plotin",
+    Split("plotin.c primout.c") + common))
+execs.append(menv.Program (
+    "x11meta",
+    Split("plotin.c primout.c") + common))
+execs.append(menv.Program (
+    "bgraph",
+    Split("bgraph.c mgvars.c mgraph.c") + libmeta))
+execs.append(menv.Program (
+    "igraph",
+    Split("igraph.c mgvars.c mgraph.c gcalc.c cgraph.c") + libmeta))
+execs.append(menv.Program (
+    "dgraph",
+    Split("dgraph.c cgraph.c mgvars.c")))
+execs.append(menv.Program (
+    "gcomp",
+    Split("gcomp.c gcalc.c mgvars.c")))
+execs.append(menv.Program (
+    "plot4",
+    Split("plot4.c primout.c") + common))
+
+# XXX add the optional "meta" files
+
+env.Install (env['EXECDIR'], execs)
+
+--Apple-Mail-2--294849766
+Content-Disposition: attachment;
+	filename=SConscript
+Content-Transfer-Encoding: 7bit
+Content-Type: application/octet-stream;
+	x-unix-mode=0644;
+	name="SConscript"
+
+Import ("env")
+
+RT = Split ("cone.c face.c free_os.c instance.c readobj.c readoct.c otypes.c \
+	objset.c octree.c readfargs.c modobject.c \
+	addobjnotify.c zeroes.c mesh.c readmesh.c tmesh.c sceneio.c")
+
+RT.append (env.StaticObject ("getlibpath.c", CPPFLAGS = '-DDEFPATH=\\":' + 
+                            env['RAYLIB'] + '\\"'))
+
+PIC = Split ("color.c header.c image.c lamps.c resolu.c rexpr.c spec_rgb.c \
+	colrops.c font.c tonemap.c tmapluv.c tmaptiff.c \
+	tmap16bit.c")
+
+PIC.append (env.StaticObject ("tmapcolrs.c", CPPFLAGS = '-DPCOND=\\"pcond\\"'))
+
+STD = Split ("fgetline.c fropen.c linregr.c xf.c mat4.c invmat4.c fvect.c urand.c \
+	urind.c calexpr.c caldefn.c calfunc.c calprnt.c biggerlib.c multisamp.c \
+	unix_process.c process.c getpath.c error.c savestr.c savqstr.c \
+	badarg.c fgetword.c words.c expandarg.c wordfile.c fgetval.c \
+	clip.c plocate.c eputs.c wputs.c quit.c lookup.c \
+	loadvars.c tcos.c fputword.c chanvalue.c dircode.c paths.c")
+
+SYS = Split ("ealloc.c fdate.c portio.c myhostname.c")
+SYS = SYS + (env['COMPAT'])
+
+RGL = Split ("rglfile.c rglmat.c rgldomat.c rglsurf.c rglinst.c rglsrc.c")
+
+env.StaticLibrary ("rt", RT + PIC + STD + SYS)
+env.Append (LIBS = "rt")
+
+if env['OGL']:
+    env.StaticLibrary ("rgl", RGL)
+    env.Append (LIBS = "rgl")
+
+
+--Apple-Mail-2--294849766--
+
+
+From radiance-dev@radiance-online.org  Sun Aug 31 16:51:44 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Sun, 31 Aug 2003 17:51:44 +0200
+Subject: [Radiance-dev] irradiance and antimatter
+Message-ID: <3F521990.9040209@pab-opto.de>
+
+Hi folks,
+
+rpict -i calculates irradiance on antimatter surfaces, which are 
+otherwise (no -i) not visible.
+Any comments to my thinking it should continue tracing to the first 
+non-antimattered surface and do the irradiance there ?
+
+That'll be in version 2.42 of rt/raytrace.c in line 177:
+changing
+                if (do_irrad && !(r->crtype & ~(PRIMARY|TRANS)) &&
+                                (ofun[m->otype].flags & (T_M|T_X)) ) {
+to
+                if (do_irrad && !(r->crtype & ~(PRIMARY|TRANS)) &&
+                                (ofun[m->otype].flags & (T_M|T_X)) && 
+(m->otype!=MAT_CLIP) ) {
+
+
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+

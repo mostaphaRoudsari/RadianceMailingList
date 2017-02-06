@@ -1,0 +1,354 @@
+From gregoryjward at gmail.com  Tue Mar  1 08:14:47 2011
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue, 1 Mar 2011 08:14:47 -0800
+Subject: [HDRI] [Radiance-general] image formatting for input to
+	evalglare
+In-Reply-To: <f9fe629e83666d76139edc0398c8513d.squirrel@calmail.berkeley.edu>
+References: <f9fe629e83666d76139edc0398c8513d.squirrel@calmail.berkeley.edu>
+Message-ID: <6E2162A8-32C3-4FCC-945B-442F98726FD2@lmi.net>
+
+Hi Kyle,
+
+This discussion probably belongs on the HDRI list, so I'm cross-posting there.
+
+The thing about pcompos is that it doesn't transfer exposure information, which you need for most images to get the absolute numbers back.  Here are the commands you want:
+
+echo "VIEW= -vta -vh 180 -vv 180 -vp 0 0 0 -vd 1 0 0 -vu 0 0 1" > corrected.hdr
+ra_xyze -r -o -u orig.hdr | pcompos -x 1200 - -200 0 >> corrected.hdr
+
+The first one puts the view information you want in the header.  The ra_xyze command undoes the exposure on the image before passing it to pcompos, which does the cropping and appends it to the view header.
+
+Hope this works.
+-Greg
+
+> From: kkonis at berkeley.edu
+> Date: March 1, 2011 6:48:48 AM PST
+> 
+> Dear list,
+> 
+> I am trying to format HDR images produced from a Canon A570 digital camera
+> with a 180 deg fisheye converter attached.
+> 
+> The images are 1600,1200 pixels (x,y) and have the circular "fisheye" view
+> centered in the image.
+> 
+> I need to do three operations:
+> 
+> 1) crop image down to a square shape, so that it bounds the hemispherical
+> view of the lens and
+> 
+> 2) filter the cropped image down to less than 800 x 800 pixels to input to
+> evalglare (i can do this with pfilt -1, and this works fine so long as
+> pcompos is not involved)
+> 
+> 3) then i need to edit the image file's header info and trick it into
+> thinking it has a 180 view (since the camera does not know it has a
+> converter attached!) e.g.
+> 
+> 
+> VIEW= -vta -vh 180 -vv 180 -vp 0 0 0 -vd 1 0 0 -vu 0 0 1
+> 
+> 
+> Right now i am perplexed when i use pcompos to crop the image via:
+> 
+> pcompos -x 1200 input/$image -200 0 > output/{$image}
+> 
+> The result is a new "cropped" hdr image that looks great from a cropping
+> standpoint, but the luminance values are much lower when viewed in
+> photosphere (compared to the orig image)
+> 
+> My guess is there is something happening to the header:
+> 
+> here is the original header:
+> 
+> 
+> #?RADIANCE
+> CAMERA= Canon Canon PowerShot A570 IS version v.0
+> EXPOSURE=8.278360e-02
+> VIEW= -vtv -vh 52.456387 -vv 40.558973
+> CAPDATE= 2010:10:07 10:41:59
+> hdrgen created HDR image from 'IMG_0450.JPG' 'IMG_0449.JPG' 'IMG_0448.JPG'
+> 'IMG_0447.JPG' 'IMG_0446.JPG' 'IMG_0445.JPG' 'IMG_0444.JPG' 'IMG_0443.JPG'
+> 'IMG_0442.JPG' 'IMG_0441.JPG'
+> PRIMARIES= 0.6400 0.3300 0.3000 0.6000 0.1500 0.0600 0.3127 0.3290
+> FORMAT=32-bit_rle_rgbe
+> 
+> -Y 1200 +X 1600
+> 
+> ................ and the result after the pcompos ...................
+> 
+> #?RADIANCE
+> CAPDATE= 2011:03:01 06:30:57
+> GMT= 2011:03:01 14:30:57
+> input/201010071045.hdr:
+> 	CAMERA= Canon Canon PowerShot A570 IS version v.0
+> 	EXPOSURE=8.778544e-02
+> 	VIEW= -vtv -vh 52.456387 -vv 40.558973
+> 	CAPDATE= 2010:10:07 10:46:59
+> 	hdrgen created HDR image from 'IMG_0460.JPG' 'IMG_0459.JPG'
+> 'IMG_0458.JPG' 'IMG_0457.JPG' 'IMG_0456.JPG' 'IMG_0455.JPG'
+> 'IMG_0454.JPG' 'IMG_0453.JPG' 'IMG_0452.JPG' 'IMG_0451.JPG'
+> 	PRIMARIES= 0.6400 0.3300 0.3000 0.6000 0.1500 0.0600 0.3127 0.3290
+> pcompos -x 1200 input/201010071045.hdr -200 0
+> FORMAT=32-bit_rle_rgbe
+> 
+> -Y 1200 +X 1200
+> 
+> ..................................................................
+> 
+> While on the subject of header manipulation, I am eager for suggestions
+> for how to edit lines of the header. In my case i want to replace the
+> original view line
+> 
+> VIEW= -vtv -vh 52.456387 -vv 40.558973
+> 
+> 
+> with
+> 
+> 
+> VIEW= -vta -vh 180 -vv 180 -vp 0 0 0 -vd 1 0 0 -vu 0 0 1
+> 
+> 
+> 
+> I have tried doing this "manually" in BBedit and Xcode, but get an
+> "unexpected end of file" error
+> 
+> 
+> 
+> Any suggestions are appreciated!
+> 
+> -Kyle
+> 
+> Kyle Konis
+> Ph.D. Candidate
+> Dept. of Architecture (Building Science)
+> University of California, Berkeley
+> Research Assistant, Lawrence Berkeley National Lab
+> Tel. (206) 303 9786
+> Email: kkonis at berkeley.edu
+> 
+
+
+From kkonis at berkeley.edu  Tue Mar  1 15:50:47 2011
+From: kkonis at berkeley.edu (kkonis at berkeley.edu)
+Date: Tue, 1 Mar 2011 15:50:47 -0800
+Subject: [HDRI] HDRI Digest, Vol 39, Issue 1
+In-Reply-To: <mailman.1.1299009600.98277.hdri@radiance-online.org>
+References: <mailman.1.1299009600.98277.hdri@radiance-online.org>
+Message-ID: <61e9e8185fa50ecab836410c54a2bb4e.squirrel@calmail.berkeley.edu>
+
+Thanks Greg,
+
+I have successfully cropped and pfilt'ed my hdr images down into 600 x
+600 pixel images with the appropriate VIEW description
+
+The modified header is below:
+
+...................................................................................................
+
+VIEW= -vta -vh 180 -vv 180 -vp 0 0 0 -vd 1 0 0 -vu 0 0 1
+#?RADIANCE
+CAPDATE= 2011:03:01 15:29:53
+GMT= 2011:03:01 23:29:53
+<stdin>:
+       CAMERA= Canon Canon PowerShot A570 IS version v.0
+       VIEW= -vtv -vh 52.456387 -vv 40.558973
+       CAPDATE= 2010:10:11 16:06:59
+       hdrgen created HDR image from 'IMG_1100.JPG' 'IMG_1099.JPG'
+'IMG_1098.JPG' 'IMG_1097.JPG' 'IMG_1096.JPG' 'IMG_1095.JPG'
+'IMG_1094.JPG' 'IMG_1093.JPG' 'IMG_1092.JPG' 'IMG_1091.JPG'
+       pfilt -1 -x /2 -y /2
+       ra_xyze -r -o -u
+       PRIMARIES= 0.6400 0.3300 0.2900 0.6000 0.1500 0.0600 0.3333 0.3333
+pcompos -x 600 - -75 0
+FORMAT=32-bit_rle_rgbe
+
+-Y 600 +X 600
+
+...................................................................................................
+
+The images can be analyzed using the Radiance program 'findglare' with
+what look like reasonable results
+...................................................................................................
+
+findglare -p output/corrected_201010111605.hdr
+VIEW= -vth -vp 0 0 0 -vd 1 0 0 -vu 0 0 1 -vh 180 -vv 180 -vo 0 -va 0 -vs 0
+-vl 0
+FORMAT=ascii
+
+BEGIN glare source
+       0.983158 0.158794 0.090470      0.039193        5077.962407
+       0.786589 0.612193 0.080600      0.014087        5621.114152
+       0.321372 -0.943305 0.083034     0.009191        3504.607733
+       0.390327 0.906667 0.160000      0.028193        7046.145541
+       0.755319 -0.622916 0.203640     0.015073        3462.277860
+       0.753612 0.589769 0.290244      0.032770        5008.000344
+       0.905625 -0.347670 0.242835     0.026667        3517.498954
+       0.951442 -0.142012 0.273112     0.024567        3538.742064
+       0.950063 0.162100 0.266651      0.040324        4302.979581
+       0.910482 0.146667 0.386667      0.019310        3550.061832
+END glare source
+BEGIN indirect illuminance
+       0       633.402385
+END indirect illuminance
+
+...........................................................................................................
+
+
+However, evalglare is still giving me an error message related to the
+view not being "-vta"
+
+...........................................................................................................
+
+% evalglare output/corrected_201010111605.hdr
+wrong view type! must be vta!!! type = 118 0
+
+...........................................................................................................
+
+One initial guess for why evalglare was not accepting the image was
+that "#?RADIANCE" was not at the top of the header, but i've tried
+echo'ing a few complete headers from HDR images that evalglare does
+work on and get the same view error.
+
+For anyone interested, i've placed the "before" and "after" images
+created from the below script online at the following location:
+
+
+https://gaia.lbl.gov/people/kskonis/share/TEMP/evalglare/
+
+
+...........................................................................................................
+
+#!/bin/csh -f
+
+# this works on all .hdr images you place in a folder called "input"
+
+foreach image (`ls input | grep .hdr`)
+
+  echo $image
+       echo "VIEW= -vta -vh 180 -vv 180 -vp 0 0 0 -vd 1 0 0 -vu 0 0 1" >
+output/corrected_{$image}
+       pfilt -1 -x /2 -y /2 input/$image | ra_xyze -r -o -u  | pcompos -x
+600 - -85 0 >> output/corrected_{$image}
+
+       end
+...........................................................................................................
+
+
+best,
+
+Kyle
+
+
+
+From kskonis at gmail.com  Tue Mar  1 15:41:52 2011
+From: kskonis at gmail.com (kyle konis)
+Date: Tue, 1 Mar 2011 15:41:52 -0800
+Subject: [HDRI] HDRI Digest, Vol 39, Issue 1
+In-Reply-To: <mailman.1.1299009600.98277.hdri@radiance-online.org>
+References: <mailman.1.1299009600.98277.hdri@radiance-online.org>
+Message-ID: <AANLkTi=HmG_CRLudnP-87b25ZkmJAk_SK+b1w41tseTW@mail.gmail.com>
+
+Thanks Greg,
+
+I have successfully cropped and pfilt'ed my hdr images down into 600 x
+600 pixel images with the appropriate VIEW description
+
+The modified header is below:
+
+...................................................................................................
+
+VIEW= -vta -vh 180 -vv 180 -vp 0 0 0 -vd 1 0 0 -vu 0 0 1
+#?RADIANCE
+CAPDATE= 2011:03:01 15:29:53
+GMT= 2011:03:01 23:29:53
+<stdin>:
+	CAMERA= Canon Canon PowerShot A570 IS version v.0
+	VIEW= -vtv -vh 52.456387 -vv 40.558973
+	CAPDATE= 2010:10:11 16:06:59
+	hdrgen created HDR image from 'IMG_1100.JPG' 'IMG_1099.JPG'
+'IMG_1098.JPG' 'IMG_1097.JPG' 'IMG_1096.JPG' 'IMG_1095.JPG'
+'IMG_1094.JPG' 'IMG_1093.JPG' 'IMG_1092.JPG' 'IMG_1091.JPG'
+	pfilt -1 -x /2 -y /2
+	ra_xyze -r -o -u
+	PRIMARIES= 0.6400 0.3300 0.2900 0.6000 0.1500 0.0600 0.3333 0.3333
+pcompos -x 600 - -75 0
+FORMAT=32-bit_rle_rgbe
+
+-Y 600 +X 600
+
+...................................................................................................
+
+The images can be analyzed using the Radiance program 'findglare' with
+what look like reasonable results
+...................................................................................................
+
+findglare -p output/corrected_201010111605.hdr
+VIEW= -vth -vp 0 0 0 -vd 1 0 0 -vu 0 0 1 -vh 180 -vv 180 -vo 0 -va 0 -vs 0 -vl 0
+FORMAT=ascii
+
+BEGIN glare source
+	0.983158 0.158794 0.090470	0.039193	5077.962407
+	0.786589 0.612193 0.080600	0.014087	5621.114152
+	0.321372 -0.943305 0.083034	0.009191	3504.607733
+	0.390327 0.906667 0.160000	0.028193	7046.145541
+	0.755319 -0.622916 0.203640	0.015073	3462.277860
+	0.753612 0.589769 0.290244	0.032770	5008.000344
+	0.905625 -0.347670 0.242835	0.026667	3517.498954
+	0.951442 -0.142012 0.273112	0.024567	3538.742064
+	0.950063 0.162100 0.266651	0.040324	4302.979581
+	0.910482 0.146667 0.386667	0.019310	3550.061832
+END glare source
+BEGIN indirect illuminance
+	0	633.402385
+END indirect illuminance
+
+...........................................................................................................
+
+
+However, evalglare is still giving me an error message related to the
+view not being "-vta"
+
+...........................................................................................................
+
+% evalglare output/corrected_201010111605.hdr
+wrong view type! must be vta!!! type = 118 0
+
+...........................................................................................................
+
+One initial guess for why evalglare was not accepting the image was
+that "#?RADIANCE" was not at the top of the header, but i've tried
+echo'ing a few complete headers from HDR images that evalglare does
+work on and get the same view error.
+
+For anyone interested, i've placed the "before" and "after" images
+created from the below script online at the following location:
+
+
+https://gaia.lbl.gov/people/kskonis/share/TEMP/evalglare/
+
+
+...........................................................................................................
+
+#!/bin/csh -f
+
+# this works on all .hdr images you place in a folder called "input"
+
+foreach image (`ls input | grep .hdr`)
+
+	echo $image
+		
+		echo "VIEW= -vta -vh 180 -vv 180 -vp 0 0 0 -vd 1 0 0 -vu 0 0 1" >
+output/corrected_{$image}
+		pfilt -1 -x /2 -y /2 input/$image | ra_xyze -r -o -u  | pcompos -x
+600 - -85 0 >> output/corrected_{$image}
+		
+	end
+...........................................................................................................
+
+
+best,
+
+Kyle
+
+

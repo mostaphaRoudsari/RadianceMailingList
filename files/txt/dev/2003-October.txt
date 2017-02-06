@@ -1,0 +1,1798 @@
+From radiance-dev@radiance-online.org  Sun Oct 19 07:41:53 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Sun, 19 Oct 2003 08:41:53 +0200
+Subject: [Radiance-dev] rholo restart stalls with "bad magic number"
+In-Reply-To: <68ED4A3A-01F4-11D8-948A-000A956D40C8@lmi.net>
+References: <68ED4A3A-01F4-11D8-948A-000A956D40C8@lmi.net>
+Message-ID: <3F923231.4050305@pab-opto.de>
+
+This is a multi-part message in MIME format.
+--------------020606090706070300020809
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Transfer-Encoding: 7bit
+
+Dear folks,
+
+FYI: rholo (HEAD version as of today, 19.10.03) on Linux (tested on slackware and Debian 'sarge') screws writing holodeck files.
+It works if holofile.c and rholo.c include
+
+        #include <sys/types.h>
+        #include <unistd.h>
+
+as suggested by the lseek man page
+
+note 2 (mostly for developpers): POSIX lseeks seem to favor macros for the lseek 'whence' parameter: lseek man page says:
+
+       When converting old code, substitute values for whence with the following macros:
+         old       new
+        0        SEEK_SET
+        1        SEEK_CUR
+        2        SEEK_END
+        L_SET    SEEK_SET
+        L_INCR   SEEK_CUR
+        L_XTND   SEEK_END
+
+at least that keeps me going for now
+
+I'm posting this to the general list to keep potential users updated, the cross-post to the dev list is indended for follow ups.
+
+-Peter
+
+PS: yet another good reason for a test suite
+
+-- 
+  pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+--------------020606090706070300020809
+Content-Type: text/plain;
+ name="rholo.c"
+Content-Transfer-Encoding: base64
+Content-Disposition: inline;
+ filename="rholo.c"
+
+I2lmbmRlZiBsaW50CnN0YXRpYyBjb25zdCBjaGFyCVJDU2lkW10gPSAiJElkOiByaG9sby5j
+LHYgMy42MCAyMDAzLzA3LzI3IDIyOjEyOjAyIHNjaG9yc2NoIEV4cCAkIjsKI2VuZGlmCi8q
+CiAqIFJhZGlhbmNlIGhvbG9kZWNrIGdlbmVyYXRpb24gY29udHJvbGxlcgogKi8KCiNpbmNs
+dWRlIDxzaWduYWwuaD4KI2luY2x1ZGUgPHN5cy9zdGF0Lmg+CiNpbmNsdWRlIDxzdHJpbmcu
+aD4KCiNpbmNsdWRlICJyaG9sby5oIgojaW5jbHVkZSAicmFuZG9tLmgiCgojaWZuZGVmIEZS
+QUdXQVJOCiNkZWZpbmUgRlJBR1dBUk4JMjAJCS8qIGZyYWdtZW50YXRpb24gZm9yIHdhcm5p
+bmcgKCUpICovCiNlbmRpZgojaWZuZGVmIE1BWFFUSU1FCiNkZWZpbmUgTUFYUVRJTUUJNQkJ
+LyogdGFyZ2V0IG1heGltdW0gc2Vjb25kcyBpbiBxdWV1ZSAqLwojZW5kaWYKCQkJCQkvKiBt
+YW51YWwgY2FjaGUgZmx1c2hpbmcgZnJlcXVlbmN5ICovCiNpZm5kZWYgUlRGTFVTSAojaWYg
+TUFYUVRJTUUKI2RlZmluZSBSVEZMVVNICQkoMzAwL01BWFFUSU1FKnRvdHFsZW4pCS8qIDw9
+IDUgbWludXRlcyAqLwojZWxzZQojZGVmaW5lIFJURkxVU0gJCSg1MCp0b3RxbGVuKQkJLyog
+anVzdCBndWVzcyAqLwojZW5kaWYKI2VuZGlmCgkJCS8qIHRoZSBmb2xsb3dpbmcgbXVzdCBi
+ZSBjb25zaXN0ZW50IHdpdGggcmhvbG8uaCAqLwppbnQJTlZBUlMgPSBOUkhWQVJTOwkJLyog
+dG90YWwgbnVtYmVyIG9mIHZhcmlhYmxlcyAqLwoKVkFSSUFCTEUJdnZbXSA9IFJIVklOSVQ7
+CQkvKiB2YXJpYWJsZS12YWx1ZSBwYWlycyAqLwoKY2hhcgkqcHJvZ25hbWU7CQkvKiBvdXIg
+cHJvZ3JhbSBuYW1lICovCmNoYXIJKmhka2ZpbGU7CQkvKiBob2xvZGVjayBmaWxlIG5hbWUg
+Ki8KY2hhcglmcm9vdFsyNTZdOwkJLyogcm9vdCBmaWxlIG5hbWUgKi8KCmludAluY3Byb2Nz
+ID0gMDsJCS8qIGRlc2lyZWQgbnVtYmVyIG9mIGNvbXB1dGUgcHJvY2Vzc2VzICovCgpjaGFy
+CSpvdXRkZXYgPSBOVUxMOwkJLyogb3V0cHV0IGRldmljZSBuYW1lICovCgppbnQJcmVhZGlu
+cCA9IDA7CQkvKiByZWFkIGNvbW1hbmRzIGZyb20gc3RkaW4gKi8KCmludAlmb3JjZSA9IDA7
+CQkvKiBhbGxvdyBvdmVyd3JpdGUgb2YgaG9sb2RlY2sgKC0xID09IHJlYWQtb25seSkgKi8K
+CnRpbWVfdAlzdGFydHRpbWU7CQkvKiB0aW1lIHdlIGdvdCBzdGFydGVkICovCnRpbWVfdAll
+bmR0aW1lOwkJLyogdGltZSB3ZSBzaG91bGQgZW5kIGJ5ICovCnRpbWVfdAlyZXBvcnR0aW1l
+OwkJLyogdGltZSBmb3IgbmV4dCByZXBvcnQgKi8KCm9mZl90CW1heGRpc2s7CQkvKiBtYXhp
+bXVtIGZpbGUgc3BhY2UgKGJ5dGVzKSAqLwoKaW50CXJ0YXJnYyA9IDE7CQkvKiBydHJhY2Ug
+Y29tbWFuZCAqLwpjaGFyCSpydGFyZ3ZbMTI4XSA9IHsicnRyYWNlIiwgTlVMTH07CgppbnQJ
+b3JpZ19tb2RlID0gLTE7CQkvKiBvcmlnaW5hbCBmaWxlIG1vZGUgKC0xIGlmIHVuY2hhbmdl
+ZCkgKi8KCmxvbmcJbnJheXNkb25lID0gMEw7CQkvKiBudW1iZXIgb2YgcmF5cyBkb25lICov
+CmxvbmcJbnBhY2tzZG9uZSA9IDBMOwkvKiBudW1iZXIgb2YgcGFja2V0cyBkb25lICovCgpQ
+QUNLRVQJKmZyZWVwYWNrczsJCS8qIGF2YWlsYWJsZSBwYWNrZXRzICovCmludAl0b3RxbGVu
+OwkJLyogbWF4aW11bSBxdWV1ZSBsZW5ndGggKG51bWJlciBvZiBwYWNrZXRzKSAqLwoKY2hh
+ciAgKnNpZ2VycltOU0lHXTsJCS8qIHNpZ25hbCBlcnJvciBtZXNzYWdlcyAqLwoKZXh0ZXJu
+IGludAlub3dhcm47CQkvKiB0dXJuIHdhcm5pbmdzIG9mZj8gKi8KCmV4dGVybiB0aW1lX3QJ
+dGltZSgpOwoKCm1haW4oYXJnYywgYXJndikKaW50CWFyZ2M7CmNoYXIJKmFyZ3ZbXTsKewoJ
+aW50CWk7CgoJaW5pdHVyYW5kKDE2Mzg0KTsJCQkvKiBpbml0aWFsaXplIHVyYW5kICovCglw
+cm9nbmFtZSA9IGFyZ3ZbMF07CQkJLyogZ2V0IGFyZ3VtZW50cyAqLwoJZm9yIChpID0gMTsg
+aSA8IGFyZ2MgJiYgYXJndltpXVswXSA9PSAnLSc7IGkrKykKCQlzd2l0Y2ggKGFyZ3ZbaV1b
+MV0pIHsKCQljYXNlICd3JzoJCQkvKiB0dXJuIG9mZiB3YXJuaW5ncyAqLwoJCQlub3dhcm4r
+KzsKCQkJYnJlYWs7CgkJY2FzZSAnZic6CQkJLyogZm9yY2Ugb3ZlcndyaXRlICovCgkJCWZv
+cmNlID0gMTsKCQkJYnJlYWs7CgkJY2FzZSAncic6CQkJLyogcmVhZC1vbmx5IG1vZGUgKi8K
+CQkJZm9yY2UgPSAtMTsKCQkJYnJlYWs7CgkJY2FzZSAnaSc6CQkJLyogcmVhZCBpbnB1dCBm
+cm9tIHN0ZGluICovCgkJCXJlYWRpbnArKzsKCQkJYnJlYWs7CgkJY2FzZSAnbic6CQkJLyog
+Y29tcHV0ZSBwcm9jZXNzZXMgKi8KCQkJaWYgKGkgPj0gYXJnYy0yKQoJCQkJZ290byB1c2Vy
+cjsKCQkJbmNwcm9jcyA9IGF0b2koYXJndlsrK2ldKTsKCQkJYnJlYWs7CgkJY2FzZSAnbyc6
+CQkJLyogb3V0cHV0IGRpc3BsYXkgKi8KCQkJaWYgKGkgPj0gYXJnYy0yKQoJCQkJZ290byB1
+c2VycjsKCQkJb3V0ZGV2ID0gYXJndlsrK2ldOwoJCQlicmVhazsKCQlkZWZhdWx0OgoJCQln
+b3RvIHVzZXJyOwoJCX0KCQkJCQkJLyogZ2V0IHJvb3QgZmlsZSBuYW1lICovCglpZiAoaSA+
+PSBhcmdjKQoJCWdvdG8gdXNlcnI7Cglyb290bmFtZShmcm9vdCwgaGRrZmlsZT1hcmd2W2kr
+K10pOwoJCQkJCQkvKiBsb2FkIHZhcmlhYmxlcz8gKi8KCWlmIChpIDwgYXJnYykKCQlpZiAo
+YXJndltpXVswXSAhPSAnLScgJiYgYXJndltpXVswXSAhPSAnKycpCgkJCWxvYWR2YXJzKGFy
+Z3ZbaV0pOwkvKiBsb2FkIHZhcmlhYmxlcyBmcm9tIGZpbGUgKi8KCglpZiAoaSA+PSBhcmdj
+IHx8IGFyZ3ZbaV1bMF0gPT0gJysnKQoJCWxvYWRob2xvKCk7CQkJLyogbG9hZCBleGlzdGlu
+ZyBob2xvZGVjayAqLwoKCXdoaWxlICgrK2kgPCBhcmdjKQkJCS8qIGdldCBjb21tYW5kIGxp
+bmUgc2V0dGluZ3MgKi8KCQlpZiAoc2V0dmFyaWFibGUoYXJndltpXSwgbWF0Y2h2YXIpIDwg
+MCkgewoJCQlzcHJpbnRmKGVycm1zZywgInVua25vd24gdmFyaWFibGU6ICVzIiwgYXJndltp
+XSk7CgkJCWVycm9yKFVTRVIsIGVycm1zZyk7CgkJfQoJCQkJCQkvKiBjaGVjayBzZXR0aW5n
+cyAqLwoJY2hlY2t2YWx1ZXMoKTsKCQkJCQkJLyogbG9hZCByYWQgaW5wdXQgZmlsZSAqLwoJ
+Z2V0cmFkZmlsZSgpOwoKCWlmIChoZGxpc3RbMF0gPT0gTlVMTCkgewkJLyogY3JlYXRlIG5l
+dyBob2xvZGVjayAqLwoJCUhER1JJRAloZGdbSERNQVhdOwoJCQkJCQkJLyogc2V0IGRlZmF1
+bHRzICovCgkJc2V0ZGVmYXVsdHMoaGRnKTsKCQkJCQkJCS8qIGNoZWNrIHJlYWQtb25seSAq
+LwoJCWlmIChmb3JjZSA8IDApCgkJCWVycm9yKFVTRVIsICJjYW5ub3QgY3JlYXRlIHJlYWQt
+b25seSBob2xvZGVjayIpOwoJCQkJCQkJLyogaG9sb2RlY2sgZXhpc3RzPyAqLwoJCWlmICgh
+Zm9yY2UgJiYgYWNjZXNzKGhka2ZpbGUsIFJfT0t8V19PSykgPT0gMCkKCQkJZXJyb3IoVVNF
+UiwKCQkJCSJob2xvZGVjayBmaWxlIGV4aXN0cyAtLSB1c2UgLWYgdG8gb3ZlcndyaXRlIik7
+CgkJCQkJCQkvKiBjcmVhdGUgaG9sb2RlY2sgKi8KCQljcmVhdGhvbG8oaGRnKTsKCX0gZWxz
+ZQkJCQkJLyogZWxzZSBqdXN0IHNldCBkZWZhdWx0cyAqLwoJCXNldGRlZmF1bHRzKE5VTEwp
+OwoJCQkJCQkvKiBpbml0aWFsaXplICovCglpbml0cmhvbG8oKTsKCQkJCQkJLyogbWFpbiBs
+b29wICovCgl3aGlsZSAocmhvbG8oKSkKCQk7CgkJCQkJCS8qIGRvbmUgKi8KCXF1aXQoMCk7
+CnVzZXJyOgoJZnByaW50ZihzdGRlcnIsCiJVc2FnZTogJXMgWy1uIG5wcm9jc11bLW8gZGlz
+cF1bLXddWy1yfC1mXSBvdXRwdXQuaGRrIFtjb250cm9sLmhpZnwrfC0gW1ZBUj12YWwgLi5d
+XVxuIiwKCQkJcHJvZ25hbWUpOwoJcXVpdCgxKTsKfQoKCnZvaWQKb25zaWcoc2lnbm8pCQkJ
+CS8qIGZhdGFsIHNpZ25hbCAqLwppbnQgIHNpZ25vOwp7CglzdGF0aWMgaW50ICBnb3RzaWcg
+PSAwOwoKCWlmIChnb3RzaWcgPiAxKQkJCS8qIHdlJ3JlIGdvaW5nIGFzIGZhc3QgYXMgd2Ug
+Y2FuISAqLwoJCXJldHVybjsKCWlmIChnb3RzaWcrKykgewkJCS8qIHR3byBzaWduYWxzIGFu
+ZCB3ZSBzcGxpdCAqLwoJCWhkc3luYyhOVUxMLCAwKTsJLyogZG9uJ3QgbGVhdmUgdy9vIHNh
+eWluZyBnb29kYnllICovCgkJX2V4aXQoc2lnbm8pOwoJfQoJYWxhcm0oMzAwKTsJCQkvKiBh
+bGxvdyA1IG1pbnV0ZXMgdG8gY2xlYW4gdXAgKi8KCWVwdXRzKCJzaWduYWwgLSAiKTsKCWVw
+dXRzKHNpZ2VycltzaWdub10pOwoJZXB1dHMoIlxuIik7CglxdWl0KDMpOwp9CgoKc2lnZGll
+KHNpZ25vLCBtc2cpCQkJLyogc2V0IGZhdGFsIHNpZ25hbCAqLwppbnQgIHNpZ25vOwpjaGFy
+ICAqbXNnOwp7CglpZiAoc2lnbmFsKHNpZ25vLCBvbnNpZykgPT0gU0lHX0lHTikKCQlzaWdu
+YWwoc2lnbm8sIFNJR19JR04pOwoJc2lnZXJyW3NpZ25vXSA9IG1zZzsKfQoKCmludApyZXNm
+bW9kZShmZCwgbW9kKQkJLyogcmVzdHJpY3Qgb3BlbiBmaWxlIGFjY2VzcyBtb2RlICovCmlu
+dAlmZCwgbW9kOwp7CglzdHJ1Y3Qgc3RhdAlzdGJ1ZjsKCQkJCQkvKiBnZXQgb3JpZ2luYWwg
+bW9kZSAqLwoJaWYgKGZzdGF0KGZkLCAmc3RidWYpIDwgMCkKCQllcnJvcihTWVNURU0sICJj
+YW5ub3Qgc3RhdCBvcGVuIGhvbG9kZWNrIGZpbGUiKTsKCW1vZCAmPSBzdGJ1Zi5zdF9tb2Rl
+OwkJLyogYWx3YXlzIG1vcmUgcmVzdHJpY3RpdmUgKi8KCWlmIChtb2QgPT0gKHN0YnVmLnN0
+X21vZGUgJiAwNzc3KSkKCQlyZXR1cm4oLTEpOwkJLyogYWxyZWFkeSBzZXQgKi8KCQkJCQkv
+KiBlbHNlIGNoYW5nZSBpdCAqLwoJaWYgKGZjaG1vZChmZCwgbW9kKSA8IDApIHsKCQllcnJv
+cihXQVJOSU5HLCAiY2Fubm90IGNoYW5nZSBob2xvZGVjayBmaWxlIGFjY2VzcyBtb2RlIik7
+CgkJcmV0dXJuKC0xKTsKCX0KCXJldHVybihzdGJ1Zi5zdF9tb2RlKTsJCS8qIHJldHVybiBv
+cmlnaW5hbCBtb2RlICovCn0KCgppbml0cmhvbG8oKQkJCS8qIGdldCBvdXIgaG9sb2RlY2sg
+cnVubmluZyAqLwp7CglleHRlcm4gaW50CWdsb2JhbF9wYWNrZXQoKTsKCXJlZ2lzdGVyIGlu
+dAlpOwoJCQkJCQkvKiBjbG9zZSBob2xvZGVjayBvbiBleGVjKCkgKi8KCWZjbnRsKGhkbGlz
+dFswXS0+ZmQsIEZfU0VURkQsIEZEX0NMT0VYRUMpOwoKCWlmIChvdXRkZXYgIT0gTlVMTCkJ
+CQkvKiBvcGVuIG91dHB1dCBkZXZpY2UgKi8KCQlkaXNwX29wZW4ob3V0ZGV2KTsKCWVsc2Ug
+aWYgKG5jcHJvY3MgPiAwKQkJCS8qIGVsc2UgdXNlIGdsb2JhbCByYXkgZmVlZCAqLwoJCWlu
+aXRfZ2xvYmFsKCk7CgkJCQkJCS8qIHJlY29yZCBkaXNrIHNwYWNlIGxpbWl0ICovCglpZiAo
+IXZkZWYoRElTS1NQQUNFKSkKCQltYXhkaXNrID0gKChvZmZfdCkxPDwoc2l6ZW9mKG9mZl90
+KSo4LTIpKSAtIDEwMjQ7CgllbHNlCgkJbWF4ZGlzayA9IDEwMjQuKjEwMjQuKnZmbHQoRElT
+S1NQQUNFKTsKCQkJCQkJLyogc2V0IHVwIG1lbW9yeSBjYWNoZSAqLwoJaWYgKG91dGRldiA9
+PSBOVUxMKQoJCWhkY2FjaGVzaXplID0gMDsJCS8qIG1hbnVhbCBmbHVzaGluZyAqLwoJZWxz
+ZSBpZiAodmRlZihDQUNIRSkpCgkJaGRjYWNoZXNpemUgPSAxMDI0LioxMDI0Lip2Zmx0KENB
+Q0hFKTsKCQkJCQkJLyogb3BlbiByZXBvcnQgZmlsZSAqLwoJaWYgKHZkZWYoUkVQT1JUKSkg
+ewoJCXJlZ2lzdGVyIGNoYXIJKnMgPSBzc2tpcDIodnZhbChSRVBPUlQpLCAxKTsKCQlpZiAo
+KnMgJiYgZnJlb3BlbihzLCAiYSIsIHN0ZGVycikgPT0gTlVMTCkKCQkJcXVpdCgyKTsKCX0K
+CQkJCQkJLyogbWFyayB0aGUgc3RhcnRpbmcgdGltZSAqLwoJc3RhcnR0aW1lID0gdGltZShO
+VUxMKTsKCQkJCQkJLyogY29tcHV0ZSBlbmQgdGltZSAqLwoJaWYgKCF2ZGVmKFRJTUUpIHx8
+IHZmbHQoVElNRSkgPD0gRlRJTlkpCgkJZW5kdGltZSA9IDA7CgllbHNlCgkJZW5kdGltZSA9
+IHN0YXJ0dGltZSArIHZmbHQoVElNRSkqMzYwMC4gKyAuNTsKCQkJCQkJLyogc3RhcnQgcnRy
+YWNlICovCglpZiAobmNwcm9jcyA+IDApIHsKCQl0b3RxbGVuID0gaSA9IHN0YXJ0X3J0cmFj
+ZSgpOwoJCWlmIChpIDwgMSkKCQkJZXJyb3IoVVNFUiwgImNhbm5vdCBzdGFydCBydHJhY2Ug
+cHJvY2VzcyhlcykiKTsKCQlpZiAodmRlZihSRVBPUlQpKSB7CQkvKiBtYWtlIGZpcnN0IHJl
+cG9ydCAqLwoJCQlwcmludGFyZ3MocnRhcmdjLCBydGFyZ3YsIHN0ZGVycik7CgkJCXJlcG9y
+dCgwKTsKCQl9CgkJCQkJCS8qIGFsbG9jYXRlIHBhY2tldHMgKi8KCQlmcmVlcGFja3MgPSAo
+UEFDS0VUICopYm1hbGxvYyhpKnNpemVvZihQQUNLRVQpKTsKCQlpZiAoZnJlZXBhY2tzID09
+IE5VTEwpCgkJCWdvdG8gbWVtZXJyOwoJCWZyZWVwYWNrc1stLWldLm5yID0gMDsKCQlmcmVl
+cGFja3NbaV0ubmV4dCA9IE5VTEw7CgkJaWYgKCF2ZGVmKE9CU1RSVUNUSU9OUykgfHwgIXZi
+b29sKE9CU1RSVUNUSU9OUykpIHsKCQkJZnJlZXBhY2tzW2ldLm9mZnNldCA9IChmbG9hdCAq
+KWJtYWxsb2MoCgkJCQkJUlBBQ0tTSVoqc2l6ZW9mKGZsb2F0KSooaSsxKSApOwoJCQlpZiAo
+ZnJlZXBhY2tzW2ldLm9mZnNldCA9PSBOVUxMKQoJCQkJZ290byBtZW1lcnI7CgkJfSBlbHNl
+CgkJCWZyZWVwYWNrc1tpXS5vZmZzZXQgPSBOVUxMOwoJCXdoaWxlIChpLS0pIHsKCQkJZnJl
+ZXBhY2tzW2ldLm5yID0gMDsKCQkJZnJlZXBhY2tzW2ldLm9mZnNldCA9IGZyZWVwYWNrc1tp
+KzFdLm9mZnNldCA9PSBOVUxMID8KCQkJCQlOVUxMIDogZnJlZXBhY2tzW2krMV0ub2Zmc2V0
+K1JQQUNLU0laIDsKCQkJZnJlZXBhY2tzW2ldLm5leHQgPSAmZnJlZXBhY2tzW2krMV07CgkJ
+fQoJfQoJCQkJCS8qIHNldCB1cCBzaWduYWwgaGFuZGxpbmcgKi8KCXNpZ2RpZShTSUdJTlQs
+ICJJbnRlcnJ1cHQiKTsKCXNpZ2RpZShTSUdIVVAsICJIYW5ndXAiKTsKCXNpZ2RpZShTSUdU
+RVJNLCAiVGVybWluYXRlIik7CglzaWdkaWUoU0lHUElQRSwgIkJyb2tlbiBwaXBlIik7Cglz
+aWdkaWUoU0lHQUxSTSwgIkFsYXJtIGNsb2NrIik7CiNpZmRlZglTSUdYQ1BVCglzaWdkaWUo
+U0lHWENQVSwgIkNQVSBsaW1pdCBleGNlZWRlZCIpOwoJc2lnZGllKFNJR1hGU1osICJGaWxl
+IHNpemUgZXhjZWVkZWQiKTsKI2VuZGlmCgkJCQkJLyogcHJvdGVjdCBob2xvZGVjayBmaWxl
+ICovCglvcmlnX21vZGUgPSByZXNmbW9kZShoZGxpc3RbMF0tPmZkLCAobmNwcm9jcz4wKSAm
+IChmb3JjZT49MCkgPyAwIDogMDQ0NCk7CglyZXR1cm47Cm1lbWVycjoKCWVycm9yKFNZU1RF
+TSwgIm91dCBvZiBtZW1vcnkgaW4gaW5pdHJob2xvIik7Cn0KCgpyaG9sbygpCQkJCS8qIGhv
+bG9kZWNrIG1haW4gbG9vcCAqLwp7CglzdGF0aWMgbG9uZwluZXh0ZnJhZ3dhcm4gPSAxMDAq
+KDFMPDwyMCk7CglzdGF0aWMgaW50CWlkbGUgPSAwOwoJUEFDS0VUCSpwbCA9IE5VTEwsICpw
+bGVuZDsKCW9mZl90CWZzaXo7CglpbnQJcGtzaXo7CglyZWdpc3RlciBQQUNLRVQJKnA7Cgl0
+aW1lX3QJdDsKCQkJCQkvKiBjaGVjayBkaXNwbGF5ICovCglpZiAobnByb2NzIDw9IDApCgkJ
+aWRsZSA9IDE7CglpZiAob3V0ZGV2ICE9IE5VTEwpIHsKCQlpZiAoIWRpc3BfY2hlY2soaWRs
+ZSkpCgkJCXJldHVybigwKTsJLyogcXVpdCByZXF1ZXN0ICovCgkJaWYgKG5wcm9jcyA8PSAw
+KQoJCQlyZXR1cm4oMSk7Cgl9IGVsc2UgaWYgKGlkbGUpCgkJcmV0dXJuKDApOwkJLyogYWxs
+IGRvbmUgKi8KCWZzaXogPSBoZGZpbGVuKGhkbGlzdFswXS0+ZmQpOwkvKiBjaGVjayBmaWxl
+IHNpemUgKi8KCWlmIChtYXhkaXNrID4gMCAmJiBmc2l6ID49IG1heGRpc2spIHsKCQllcnJv
+cihXQVJOSU5HLCAiZmlsZSBsaW1pdCBleGNlZWRlZCIpOwoJCWRvbmVfcnRyYWNlKCk7CgkJ
+cmV0dXJuKDEpOwkvKiBjb21lcyBiYWNrICovCgl9CiNpZiBGUkFHV0FSTgoJaWYgKGZzaXog
+Pj0gbmV4dGZyYWd3YXJuICYmCgkJKGZzaXotaGRmaWx1c2UoaGRsaXN0WzBdLT5mZCwwKSkv
+KGZzaXovMTAwKSA+IEZSQUdXQVJOKSB7CgkJc3ByaW50ZihlcnJtc2csICJob2xvZGVjayBm
+aWxlIGZyYWdtZW50YXRpb24gaXMgJS4wZiUlIiwKCQkJCTEwMC4qKGZzaXotaGRmaWx1c2Uo
+aGRsaXN0WzBdLT5mZCwxKSkvZnNpeik7CgkJZXJyb3IoV0FSTklORywgZXJybXNnKTsKCQlu
+ZXh0ZnJhZ3dhcm4gPSBmc2l6ICsgKGZzaXo+PjIpOwkvKiBkZWNlbnQgaW50ZXJ2YWwgKi8K
+CX0KI2VuZGlmCgl0ID0gdGltZShOVUxMKTsJCQkvKiBjaGVjayB0aW1lICovCglpZiAoZW5k
+dGltZSA+IDAgJiYgdCA+PSBlbmR0aW1lKSB7CgkJZXJyb3IoV0FSTklORywgInRpbWUgbGlt
+aXQgZXhjZWVkZWQiKTsKCQlkb25lX3J0cmFjZSgpOwoJCXJldHVybigxKTsJLyogY29tZXMg
+YmFjayAqLwoJfQoJaWYgKHJlcG9ydHRpbWUgPiAwICYmIHQgPj0gcmVwb3J0dGltZSkKCQly
+ZXBvcnQodCk7CgkJCQkJLyogZmlndXJlIG91dCBnb29kIHBhY2tldCBzaXplICovCglwa3Np
+eiA9IFJQQUNLU0laOwojaWYgTUFYUVRJTUUKCWlmICghY2h1bmt5Y21wKSB7CgkJcGtzaXog
+PSBucmF5c2RvbmUqTUFYUVRJTUUvKHRvdHFsZW4qKHQgLSBzdGFydHRpbWUgKyAxTCkpOwoJ
+CWlmIChwa3NpeiA8IDEpIHBrc2l6ID0gMTsKCQllbHNlIGlmIChwa3NpeiA+IFJQQUNLU0la
+KSBwa3NpeiA9IFJQQUNLU0laOwoJfQojZW5kaWYKCWlkbGUgPSAwOwkJCS8qIGdldCBwYWNr
+ZXRzIHRvIHByb2Nlc3MgKi8KCXdoaWxlIChmcmVlcGFja3MgIT0gTlVMTCkgewoJCXAgPSBm
+cmVlcGFja3M7IGZyZWVwYWNrcyA9IHAtPm5leHQ7IHAtPm5leHQgPSBOVUxMOwoJCWlmICgh
+bmV4dF9wYWNrZXQocCwgcGtzaXopKSB7CgkJCXAtPm5leHQgPSBmcmVlcGFja3M7IGZyZWVw
+YWNrcyA9IHA7CgkJCWlkbGUgPSAxOwoJCQlicmVhazsKCQl9CgkJaWYgKHBsID09IE5VTEwp
+IHBsID0gcDsKCQllbHNlIHBsZW5kLT5uZXh0ID0gcDsKCQlwbGVuZCA9IHA7Cgl9CgkJCQkJ
+LyogcHJvY2VzcyBwYWNrZXRzICovCglkb25lX3BhY2tldHMoZG9fcGFja2V0cyhwbCkpOwoJ
+cmV0dXJuKDEpOwkJCS8qIGFuZCBjb250aW51ZSAqLwp9CgoKc2V0ZGVmYXVsdHMoZ3ApCQkJ
+Lyogc2V0IGRlZmF1bHQgdmFsdWVzICovCnJlZ2lzdGVyIEhER1JJRAkqZ3A7CnsKCWV4dGVy
+biBjaGFyCSphdG9zKCk7CglyZWdpc3RlciBpbnQJaTsKCWludAluOwoJZG91YmxlCWxlblsz
+XSwgZDsKCWNoYXIJYnVmWzY0XTsKCglpZiAoIXZkZWYoU0VDVElPTikpIHsKCQlzcHJpbnRm
+KGVycm1zZywgIiVzIG11c3QgYmUgZGVmaW5lZCIsIHZuYW0oU0VDVElPTikpOwoJCWVycm9y
+KFVTRVIsIGVycm1zZyk7Cgl9CglpZiAoIXZkZWYoT0NUUkVFKSkgewoJCWlmICgodnZhbChP
+Q1RSRUUpID0gYm1hbGxvYyhzdHJsZW4oZnJvb3QpKzUpKSA9PSBOVUxMKQoJCQllcnJvcihT
+WVNURU0sICJvdXQgb2YgbWVtb3J5Iik7CgkJc3ByaW50Zih2dmFsKE9DVFJFRSksICIlcy5v
+Y3QiLCBmcm9vdCk7CgkJdmRlZihPQ1RSRUUpKys7Cgl9CglpZiAoIXZkZWYoVkRJU1QpKSB7
+CgkJdnZhbChWRElTVCkgPSAiRiI7CgkJdmRlZihWRElTVCkrKzsKCX0KCQkJCS8qIGFwcGVu
+ZCByZW5kZXJpbmcgb3B0aW9ucyAqLwoJaWYgKHZkZWYoUkVOREVSKSkKCQlydGFyZ2MgKz0g
+d29yZHN0cmluZyhydGFyZ3YrcnRhcmdjLCB2dmFsKFJFTkRFUikpOwoJCglpZiAoZ3AgPT0g
+TlVMTCkJCS8qIGFscmVhZHkgaW5pdGlhbGl6ZWQ/ICovCgkJcmV0dXJuOwoJCQkJLyogc2V0
+IGdyaWQgcGFyYW1ldGVycyAqLwoJZm9yIChuID0gMDsgbiA8IHZkZWYoU0VDVElPTik7IG4r
+KywgZ3ArKykgewoJCWdwLT5ncmlkWzBdID0gZ3AtPmdyaWRbMV0gPSBncC0+Z3JpZFsyXSA9
+IDA7CgkJaWYgKHNzY2FuZihudmFsdWUoU0VDVElPTiwgbiksCgkJIiVsZiAlbGYgJWxmICVs
+ZiAlbGYgJWxmICVsZiAlbGYgJWxmICVsZiAlbGYgJWxmICVoZCAlaGQgJWhkIiwKCQkJCSZn
+cC0+b3JpZ1swXSwgJmdwLT5vcmlnWzFdLCAmZ3AtPm9yaWdbMl0sCgkJCQkmZ3AtPnh2WzBd
+WzBdLCAmZ3AtPnh2WzBdWzFdLCAmZ3AtPnh2WzBdWzJdLAoJCQkJJmdwLT54dlsxXVswXSwg
+JmdwLT54dlsxXVsxXSwgJmdwLT54dlsxXVsyXSwKCQkJCSZncC0+eHZbMl1bMF0sICZncC0+
+eHZbMl1bMV0sICZncC0+eHZbMl1bMl0sCgkJCQkmZ3AtPmdyaWRbMF0sICZncC0+Z3JpZFsx
+XSwgJmdwLT5ncmlkWzJdKSA8IDEyKQoJCQliYWR2YWx1ZShTRUNUSU9OKTsKCQlmb3IgKGkg
+PSAwOyBpIDwgMzsgaSsrKQoJCQlsZW5baV0gPSBWTEVOKGdwLT54dltpXSk7CgkJaWYgKCF2
+ZGVmKEdSSUQpKSB7CgkJCWQgPSAyLzJlNSooIGxlblswXSpsZW5bMF0qKGxlblsxXSpsZW5b
+MV0gKwoJCQkJCWxlblsyXSpsZW5bMl0gKyA0KmxlblsxXSpsZW5bMl0pCgkJCQkrIGxlblsx
+XSpsZW5bMV0qbGVuWzJdKihsZW5bMl0gKyA0KmxlblswXSkKCQkJCSsgNCpsZW5bMF0qbGVu
+WzFdKmxlblsyXSpsZW5bMl0gKTsKCQkJZCA9IHNxcnQoc3FydChkKSk7CgkJfSBlbHNlIGlm
+ICgoZCA9IHZmbHQoR1JJRCkpIDw9IEZUSU5ZKQoJCQliYWR2YWx1ZShHUklEKTsKCQlmb3Ig
+KGkgPSAwOyBpIDwgMzsgaSsrKQoJCQlpZiAoZ3AtPmdyaWRbaV0gPD0gMCkKCQkJCWdwLT5n
+cmlkW2ldID0gbGVuW2ldL2QgKyAoMS4tRlRJTlkpOwoJfQp9CgoKY3JlYXRob2xvKGdwKQkJ
+CS8qIGNyZWF0ZSBhIGhvbG9kZWNrIG91dHB1dCBmaWxlICovCkhER1JJRAkqZ3A7CnsKCWV4
+dGVybiBjaGFyCVZlcnNpb25JRFtdOwoJaW50MzIJbGFzdGxvYywgbmV4dGxvYzsKCWludAlu
+OwoJaW50CWZkOwoJRklMRQkqZnA7CgkJCQkJLyogb3BlbiAmIHRydW5jYXRlIGZpbGUgKi8K
+CWlmICgoZnAgPSBmb3BlbihoZGtmaWxlLCAidysiKSkgPT0gTlVMTCkgewoJCXNwcmludGYo
+ZXJybXNnLCAiY2Fubm90IG9wZW4gXCIlc1wiIGZvciB3cml0aW5nIiwgaGRrZmlsZSk7CgkJ
+ZXJyb3IoU1lTVEVNLCBlcnJtc2cpOwoJfQoJCQkJCS8qIHdyaXRlIGluZm9ybWF0aW9uIGhl
+YWRlciAqLwoJbmV3aGVhZGVyKCJSQURJQU5DRSIsIGZwKTsKCWZwcmludGYoZnAsICJTT0ZU
+V0FSRT0gJXNcbiIsIFZlcnNpb25JRCk7CglwcmludHZhcnMoZnApOwoJZnB1dGZvcm1hdChI
+T0xPRk1ULCBmcCk7CglmcHV0YygnXG4nLCBmcCk7CglwdXR3KEhPTE9NQUdJQywgZnApOwkJ
+LyogcHV0IG1hZ2ljIG51bWJlciAqLwoJaWYoIChmZCA9IGR1cChmaWxlbm8oZnApKSkgPCAw
+ICkgewoJCXNwcmludGYoZXJybXNnLCAiY2Fubm90IGR1cCBcIiVzXCIgZm9yIHdyaXRpbmci
+LCBoZGtmaWxlKTsKCQllcnJvcihTWVNURU0sIGVycm1zZyk7Cgl9CglpZiggRU9GPT1mY2xv
+c2UoZnApICkgewkJLyogZmx1c2ggYW5kIGNsb3NlIHN0ZGlvIHN0cmVhbSAqLwoJCXNwcmlu
+dGYoZXJybXNnLCAiY2Fubm90IGZjbG9zZSBcIiVzXCIgZm9yIHdyaXRpbmciLCBoZGtmaWxl
+KTsKCQllcnJvcihTWVNURU0sIGVycm1zZyk7Cgl9CglpZiggKGxhc3Rsb2MgPSBsc2Vlayhm
+ZCwgKG9mZl90KTAsIDIpKSA9PSAob2ZmX3QpLTEgKSB7CgkJc3ByaW50ZihlcnJtc2csICJj
+YW5ub3QgbHNlZWsgXCIlc1wiIiwgaGRrZmlsZSk7CgkJZXJyb3IoU1lTVEVNLCBlcnJtc2cp
+OwoJfQoJZm9yIChuID0gdmRlZihTRUNUSU9OKTsgbi0tOyBncCsrKSB7CS8qIGluaXRpYWxp
+emUgZWFjaCBzZWN0aW9uICovCgkJbmV4dGxvYyA9IDBMOwoJCXdyaXRlKGZkLCAoY2hhciAq
+KSZuZXh0bG9jLCBzaXplb2YobmV4dGxvYykpOwoJCWhkaW5pdChmZCwgZ3ApOwkJCS8qIHdy
+aXRlcyBiZWFtIGluZGV4ICovCgkJaWYgKCFuKQoJCQlicmVhazsKCQluZXh0bG9jID0gaGRm
+aWxlbihmZCk7CQkvKiB3cml0ZSBzZWN0aW9uIHBvaW50ZXIgKi8KCQlpZiAobHNlZWsoZmQs
+IChvZmZfdClsYXN0bG9jLCAwKSA9PSAob2ZmX3QpLTEgKQoJCQllcnJvcihTWVNURU0sCgkJ
+CQkiY2Fubm90IHNlZWsgb24gaG9sb2RlY2sgZmlsZSBpbiBjcmVhdGhvbG8iKTsKCQl3cml0
+ZShmZCwgKGNoYXIgKikmbmV4dGxvYywgc2l6ZW9mKG5leHRsb2MpKTsKCQlsc2VlayhmZCwg
+KG9mZl90KShsYXN0bG9jPW5leHRsb2MpLCAwKTsKCX0KfQoKCmludApoZWFkbGluZShzKQkJ
+CS8qIHByb2Nlc3MgaW5mb3JtYXRpb24gaGVhZGVyIGxpbmUgKi8KY2hhcgkqczsKewoJZXh0
+ZXJuIGNoYXIJRk1UU1RSW107CglyZWdpc3RlciBjaGFyCSpjcDsKCWNoYXIJZm10WzMyXTsK
+CglpZiAoZm9ybWF0dmFsKGZtdCwgcykpIHsKCQlpZiAoc3RyY21wKGZtdCwgSE9MT0ZNVCkp
+IHsKCQkJc3ByaW50ZihlcnJtc2csICIlcyBmaWxlIFwiJXNcIiBoYXMgJXMlcyIsCgkJCQkJ
+SE9MT0ZNVCwgaGRrZmlsZSwgRk1UU1RSLCBmbXQpOwoJCQllcnJvcihVU0VSLCBlcnJtc2cp
+OwoJCX0KCQlyZXR1cm4oMCk7Cgl9Cglmb3IgKGNwID0gczsgKmNwOyBjcCsrKQkJLyogdGFr
+ZSBvZmYgYW55IGNvbW1lbnRzICovCgkJaWYgKCpjcCA9PSAnIycpIHsKCQkJKmNwID0gJ1ww
+JzsKCQkJYnJlYWs7CgkJfQoJc2V0dmFyaWFibGUocywgbWF0Y2h2YXIpOwkvKiBkb24ndCBm
+bGFnIGVycm9ycyAqLwoJcmV0dXJuKDApOwp9CgoKbG9hZGhvbG8oKQkJCS8qIHN0YXJ0IGxv
+YWRpbmcgYSBob2xvZGVjayBmcm9tIGZuYW1lICovCnsKCUZJTEUJKmZwOwoJaW50CWZkOwoJ
+aW50CW47CglpbnQzMgluZXh0bG9jOwoJCglpZiAoKG5jcHJvY3MgPiAwKSAmIChmb3JjZSA+
+PSAwKSkKCQlmcCA9IGZvcGVuKGhka2ZpbGUsICJyKyIpOwoJZWxzZQoJCWZwID0gTlVMTDsK
+CWlmIChmcCA9PSBOVUxMKSB7CgkJaWYgKChmcCA9IGZvcGVuKGhka2ZpbGUsICJyIikpID09
+IE5VTEwpIHsKCQkJc3ByaW50ZihlcnJtc2csICJjYW5ub3Qgb3BlbiBcIiVzXCIiLCBoZGtm
+aWxlKTsKCQkJZXJyb3IoU1lTVEVNLCBlcnJtc2cpOwoJCX0KCQlpZiAobmNwcm9jcyA+IDAp
+IHsKCQkJc3ByaW50ZihlcnJtc2csCgkJCSJcIiVzXCIgb3BlbmVkIHJlYWQtb25seTsgbmV3
+IHJheXMgd2lsbCBiZSBkaXNjYXJkZWQiLAoJCQkJCWhka2ZpbGUpOwoJCQllcnJvcihXQVJO
+SU5HLCBlcnJtc2cpOwoJCQlmb3JjZSA9IC0xOwoJCX0KCX0KCQkJCQkvKiBsb2FkIHZhcmlh
+YmxlcyBmcm9tIGhlYWRlciAqLwoJZ2V0aGVhZGVyKGZwLCBoZWFkbGluZSwgTlVMTCk7CgkJ
+CQkJLyogY2hlY2sgbWFnaWMgbnVtYmVyICovCglpZiAoZ2V0dyhmcCkgIT0gSE9MT01BR0lD
+KSB7CgkJc3ByaW50ZihlcnJtc2csICJiYWQgbWFnaWMgbnVtYmVyIGluIGhvbG9kZWNrIGZp
+bGUgXCIlc1wiIiwKCQkJCWhka2ZpbGUpOwoJCWVycm9yKFVTRVIsIGVycm1zZyk7Cgl9Cglu
+ZXh0bG9jID0gZnRlbGwoZnApOwkJCS8qIGdldCBzdGRpbyBwb3NpdGlvbiAqLwoJZmQgPSBk
+dXAoZmlsZW5vKGZwKSk7CglmY2xvc2UoZnApOwkJCQkvKiBkb25lIHdpdGggc3RkaW8gKi8K
+CWZvciAobiA9IDA7IG5leHRsb2MgPiAwTDsgbisrKSB7CS8qIGluaXRpYWxpemUgZWFjaCBz
+ZWN0aW9uICovCgkJbHNlZWsoZmQsIChvZmZfdCluZXh0bG9jLCAwKTsKCQlyZWFkKGZkLCAo
+Y2hhciAqKSZuZXh0bG9jLCBzaXplb2YobmV4dGxvYykpOwoJCWhkaW5pdChmZCwgTlVMTCk7
+Cgl9CglpZiAobiAhPSB2ZGVmKFNFQ1RJT04pKSB7CgkJc3ByaW50ZihlcnJtc2csICJudW1i
+ZXIgb2Ygc2VjdGlvbnMgZG9lcyBub3QgbWF0Y2ggJXMgc2V0dGluZyIsCgkJCQl2bmFtKFNF
+Q1RJT04pKTsKCQllcnJvcihXQVJOSU5HLCBlcnJtc2cpOwoJfQp9CgoKZG9uZV9wYWNrZXRz
+KHBsKQkJLyogaGFuZGxlIGZpbmlzaGVkIHBhY2tldHMgKi8KUEFDS0VUCSpwbDsKewoJc3Rh
+dGljIGludAluMmZsdXNoID0gMDsKCXJlZ2lzdGVyIFBBQ0tFVAkqcDsKCgl3aGlsZSAocGwg
+IT0gTlVMTCkgewoJCXAgPSBwbDsgcGwgPSBwLT5uZXh0OyBwLT5uZXh0ID0gTlVMTDsKCQlp
+ZiAocC0+bnIgPiAwKSB7CQkvKiBhZGQgdG8gaG9sb2RlY2sgKi8KCQkJbWVtY3B5KCAodm9p
+ZCAqKWhkbmV3cmF5cyhoZGxpc3RbcC0+aGRdLHAtPmJpLHAtPm5yKSwKCQkJCSh2b2lkICop
+cC0+cmEsCgkJCQlwLT5ucipzaXplb2YoUkFZVkFMKSk7CgkJCWlmIChvdXRkZXYgIT0gTlVM
+TCkJLyogZGlzcGxheSBpdCAqLwoJCQkJZGlzcF9wYWNrZXQoKFBBQ0tIRUFEICopcCk7CgkJ
+CWlmIChoZGNhY2hlc2l6ZSA8PSAwKQoJCQkJbjJmbHVzaCsrOwoJCQlucmF5c2RvbmUgKz0g
+cC0+bnI7CgkJCW5wYWNrc2RvbmUrKzsKCQkJcC0+bnIgPSAwOwoJCX0KCQlwLT5uZXh0ID0g
+ZnJlZXBhY2tzOwkJLyogcHVzaCBvbnRvIGZyZWUgbGlzdCAqLwoJCWZyZWVwYWNrcyA9IHA7
+Cgl9CglpZiAobjJmbHVzaCA+PSBSVEZMVVNIKSB7CgkJaWYgKG91dGRldiAhPSBOVUxMKQoJ
+CQloZHN5bmMoTlVMTCwgMSk7CgkJZWxzZQoJCQloZGZsdXNoKE5VTEwpOwoJCW4yZmx1c2gg
+PSAwOwoJfQp9CgoKcm9vdG5hbWUocm4sIGZuKQkJLyogcmVtb3ZlIHRhaWwgZnJvbSBlbmQg
+b2YgZm4gKi8KcmVnaXN0ZXIgY2hhcgkqcm4sICpmbjsKewoJY2hhcgkqdHAsICpkcDsKCglm
+b3IgKHRwID0gTlVMTCwgZHAgPSBybjsgKCpybiA9ICpmbisrKTsgcm4rKykgewoJCWlmICgq
+cm4gPT0gJy8nKQoJCQlkcCA9IHJuOwoJCWVsc2UgaWYgKCpybiA9PSAnLicpCgkJCXRwID0g
+cm47Cgl9CglpZiAodHAgIT0gTlVMTCAmJiB0cCA+IGRwKQoJCSp0cCA9ICdcMCc7Cn0KCgpi
+YWR2YWx1ZSh2YykJCQkvKiByZXBvcnQgYmFkIHZhcmlhYmxlIHZhbHVlIGFuZCBleGl0ICov
+CmludAl2YzsKewoJc3ByaW50ZihlcnJtc2csICJiYWQgdmFsdWUgZm9yIHZhcmlhYmxlICcl
+cyciLCB2bmFtKHZjKSk7CgllcnJvcihVU0VSLCBlcnJtc2cpOwp9CgoKdm9pZAplcHV0cyhz
+KQkJCS8qIHB1dCBlcnJvciBtZXNzYWdlIHRvIHN0ZGVyciAqLwpyZWdpc3RlciBjaGFyICAq
+czsKewoJc3RhdGljIGludCAgbWlkbGluZSA9IDA7CgoJaWYgKCEqcykKCQlyZXR1cm47Cglp
+ZiAoIW1pZGxpbmUrKykgewkvKiBwcmVwZW5kIGxpbmUgd2l0aCBwcm9ncmFtIG5hbWUgKi8K
+CQlmcHV0cyhwcm9nbmFtZSwgc3RkZXJyKTsKCQlmcHV0cygiOiAiLCBzdGRlcnIpOwoJfQoJ
+ZnB1dHMocywgc3RkZXJyKTsKCWlmIChzW3N0cmxlbihzKS0xXSA9PSAnXG4nKSB7CgkJZmZs
+dXNoKHN0ZGVycik7CgkJbWlkbGluZSA9IDA7Cgl9Cn0KCgp2b2lkCnF1aXQoZWMpCQkJLyog
+ZXhpdCBwcm9ncmFtIGdyYWNlZnVsbHkgKi8KaW50CWVjOwp7CglpbnQJc3RhdHVzID0gMDsK
+CglpZiAoaGRsaXN0WzBdICE9IE5VTEwpIHsJLyogY2xvc2UgaG9sb2RlY2sgKi8KCQlpZiAo
+bnByb2NzID4gMCkKCQkJc3RhdHVzID0gZG9uZV9ydHJhY2UoKTsJCS8qIGNhbGxzIGhkc3lu
+YygpICovCgkJaWYgKChuY3Byb2NzID4gMCkgJiAoZm9yY2UgPj0gMCkgJiYgdmRlZihSRVBP
+UlQpKSB7CgkJCW9mZl90CWZzaXosIGZ1c2U7CgkJCWZzaXogPSBoZGZpbGVuKGhkbGlzdFsw
+XS0+ZmQpOwoJCQlmdXNlID0gaGRmaWx1c2UoaGRsaXN0WzBdLT5mZCwgMSk7CgkJCWZwcmlu
+dGYoc3RkZXJyLAoJCQkiJXM6ICUuMWYgTWJ5dGUgaG9sb2RlY2sgZmlsZSwgJS4xZiUlIGZy
+YWdtZW50YXRpb25cbiIsCgkJCQkJaGRrZmlsZSwgZnNpei8oMTAyNC4qMTAyNC4pLAoJCQkJ
+CTEwMC4qKGZzaXotZnVzZSkvZnNpeik7CgkJfQoJfQoJaWYgKG9yaWdfbW9kZSA+PSAwKQkJ
+LyogcmVzZXQgaG9sb2RlY2sgYWNjZXNzIG1vZGUgKi8KCQlmY2htb2QoaGRsaXN0WzBdLT5m
+ZCwgb3JpZ19tb2RlKTsKCWlmIChvdXRkZXYgIT0gTlVMTCkJCS8qIGNsb3NlIGRpc3BsYXkg
+Ki8KCQlkaXNwX2Nsb3NlKCk7CglleGl0KGVjID8gZWMgOiBzdGF0dXMpOwkJLyogZXhpdCAq
+Lwp9Cg==
+--------------020606090706070300020809--
+
+
+From radiance-dev@radiance-online.org  Sun Oct 19 08:25:03 2003
+From: radiance-dev@radiance-online.org (Randolph Fritz)
+Date: Sun, 19 Oct 2003 00:25:03 -0700 (PDT)
+Subject: [Radiance-dev] rholo restart stalls with 'bad magic number'
+Message-ID: <61913.65.100.0.172.1066548303.squirrel@mail.panix.com>
+
+This again.  I think it's a regression--it looks like a problem we fixed
+last spring.  If it's the same one, it's a byte order problem that occurs
+on little-endian platforms like the x86.  For best results on that
+platform, also make sure to set _FILE_OFFSET_BITS to 64 (gcc option
+"-D_FILE_OFFSET_BITS=64") or the file size will be limited (!) to 2 GB.
+
+Randolph
+
+
+
+
+
+From radiance-dev@radiance-online.org  Sun Oct 19 18:27:29 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Sun, 19 Oct 2003 10:27:29 -0700
+Subject: [Radiance-dev] Re: [Radiance-general] rholo restart stalls with "bad magic number"
+In-Reply-To: <3F923231.4050305@pab-opto.de>
+Message-ID: <83CA08C2-0259-11D8-A63B-000A956D40C8@lmi.net>
+
+Hi Peter,
+
+The declaration for lseek() is done manually in rtio.h following an 
+inclusion of <sys/types.h>, which is included by standard.h, which is 
+included by holo.h (and thence by rholo.h).  So, it should be declared 
+properly.  I logged onto radiance-online and checked it with cc -E, and 
+lseek() is declared in rholo.c and holofile.c without the <unistd.h> 
+inclusion.
+
+The reason we did this rather than including <unistd.h> is because this 
+header is not found on all systems, most notably Windows.  The 
+declaration in rtio.h appears to match the Linux declaration, unless 
+-D_FILE_OFFSET_BITS=64 is assigned.  I noticed that this macro was 
+recently added to the default makeall by schorsch (version 1.7, 
+2003/07/12), and this seems to be the trouble.
+
+I guess the solution is to include the new "platform.h" for all files 
+that use lseek(), which are the following by my search:
+
+common/preadwrite.c
+hd/genrhenv.c
+hd/genrhgrid.c
+hd/holofile.c
+hd/rhcopy.c
+hd/rhinfo.c
+hd/rholo.c
+hd/rhoptimize.c
+hd/rhpict.c
+px/pinterp.c
+rt/ambient.c
+rt/persist.c
+rt/rpict.c
+util/rpiece.c
+util/vwrays.c
+
+Since "platform.h" includes <unistd.h> on all UNIX systems, this should 
+solve the problem, I would think.  (Schorsch, do you agree?)
+
+-Greg
+
+P.S.  For some reason, the source auxiliary files are not included in 
+the HEAD distribution.  The following files are missing:
+
+ray/src/common/tmesh.cal
+ray/src/cv/lamp.tab
+ray/src/cv/source.cal
+ray/src/cv/tilt.cal
+ray/src/gen/clockface.hex
+ray/src/gen/glaze1.cal
+ray/src/gen/glaze2.cal
+ray/src/gen/illum.cal
+ray/src/gen/rev.cal
+ray/src/gen/skybright.cal
+ray/src/gen/surf.cal
+ray/src/rt/rayinit.cal
+
+Please add them, as makeall depends on them for proper operation.
+
+
+From radiance-dev@radiance-online.org  Sun Oct 19 19:03:30 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Sun, 19 Oct 2003 11:03:30 -0700
+Subject: [Radiance-dev] rholo restart stalls with 'bad magic number'
+In-Reply-To: <61913.65.100.0.172.1066548303.squirrel@mail.panix.com>
+Message-ID: <8BB88D80-025E-11D8-A63B-000A956D40C8@lmi.net>
+
+A postscript to my last message...
+
+It's not actually my declaration of lseek() "rtio.h" that's wrong; it's 
+the fact that lseek() gets "redirected" to lseek64() in the new version 
+of the GNU C libraries.  (I swear, those guys just make my life 
+miserable.)  Here is the ever so clever declaration with 
+-D__USE_FILE_OFFSET64 set in <unistd.h>:
+
+extern __off64_t lseek (int __fd, __off64_t __offset, int __whence) 
+__asm__ ("" "lseek64");
+
+The funny __asm__ business at the end apparently causes any call to 
+lseek() to be redirected to the function lseek64(), which is not 
+officially part of the UNIX/C library interface.
+
+The solution is still, as I stated, to include "platform.h" wherever 
+lseek() is required, because I'm not about to include this sort of 
+declaration nonsense in a Radiance header.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Sun Oct 19 23:18:42 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Sun, 19 Oct 2003 18:18:42 -0400 (EDT)
+Subject: [Radiance-dev] Re: [Radiance-general] rholo restart stalls with
+ "bad magic number"
+In-Reply-To: <83CA08C2-0259-11D8-A63B-000A956D40C8@lmi.net>
+Message-ID: <Pine.BSF.4.44.0310191812320.78253-100000@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> I guess the solution is to include the new "platform.h" for all files
+> that use lseek(), which are the following by my search:
+>
+> [...]
+>
+> Since "platform.h" includes <unistd.h> on all UNIX systems, this should
+> solve the problem, I would think.  (Schorsch, do you agree?)
+
+Yes, that looks like the correct thing to do (and we really
+shouldn't try to second guess the declarations in any of the
+system header files).  I think lseek() is declared in <io.h> on
+Windows, which already gets included by plaform.h, but I'll
+consult the documentation to make sure.
+
+
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Mon Oct 20 03:22:49 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Mon, 20 Oct 2003 04:22:49 +0200
+Subject: [Radiance-dev] HEAD files missing / was: Re: [Radiance-general] rholo restart stalls
+ with "bad magic number"
+In-Reply-To: <83CA08C2-0259-11D8-A63B-000A956D40C8@lmi.net>
+References: <83CA08C2-0259-11D8-A63B-000A956D40C8@lmi.net>
+Message-ID: <3F9346F9.3000404@pab-opto.de>
+
+Greg Ward wrote:
+
+> P.S.  For some reason, the source auxiliary files are not included in 
+> the HEAD distribution.  The following files are missing:
+>
+> ray/src/common/tmesh.cal
+> ray/src/cv/lamp.tab
+> ray/src/cv/source.cal
+> ray/src/cv/tilt.cal
+> ray/src/gen/clockface.hex
+> ray/src/gen/glaze1.cal
+> ray/src/gen/glaze2.cal
+> ray/src/gen/illum.cal
+> ray/src/gen/rev.cal
+> ray/src/gen/skybright.cal
+> ray/src/gen/surf.cal
+> ray/src/rt/rayinit.cal
+>
+> Please add them, as makeall depends on them for proper operation.
+
+apian@www $ tar vtfz 
+/www/www.radiance-online.org/htdocs/software/snapshots/radiance-HEAD.tgz 
+ray/src/gen/clockface.hex
+-r--r--r-- apian/cvs     47088 1995-05-25 18:32:35 ray/src/gen/clockface.hex
+
+apian@www $ tar vtfz 
+/www/www.radiance-online.org/htdocs/software/snapshots/radiance-HEAD.tgz 
+ray/src/gen/skybright.cal
+-r--r--r-- apian/cvs      1100 2003-02-22 03:07:24 ray/src/gen/skybright.cal
+
+These are the files generated nightly since January 2003 and distributed 
+by the webserver.
+So what's the problem ? Am I missing some vital point here ?
+
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+From radiance-dev@radiance-online.org  Mon Oct 20 16:07:25 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Mon, 20 Oct 2003 08:07:25 -0700
+Subject: [Radiance-dev] Re: HEAD files missing / was: Re: [Radiance-general] rholo restart stalls with "bad magic number"
+In-Reply-To: <3F9346F9.3000404@pab-opto.de>
+Message-ID: <1D15D258-030F-11D8-8C03-000A956D40C8@lmi.net>
+
+Hi Peter,
+
+I'm sorry.  I misinterpreted events.  When I uploaded and unpacked the  
+distribution on radiance-online.org, these files were somehow missing,  
+or so I thought.  I just went through what I did again, and discovered  
+what went wrong.  You see, I neglected to add the supplementary files  
+on top of the distribution after unpacking it and before running  
+makeall, which attempted to install files in ray/lib without first  
+creating the directory.  (It was always there before.)  When it hit the  
+following point in the build:
+
+cd /home/greg/ray/lib ; rm -f tmesh.cal
+/bin/sh: line 1: cd: /home/greg/ray/lib: No such file or directory
+cp tmesh.cal /home/greg/ray/lib
+cp: cannot stat `tmesh.cal': No such file or directory
+make: *** [install] Error 1
+
+It wasn't able to change to the library directory, then inappropriately  
+removed tmesh.cal.  So, when I went to look at it later, I was too  
+hasty in deciding that it was never there to begin with.
+
+I will modify the installib script to create the ray/lib directory if  
+it doesn't already exist, and this will fix the problem for others who  
+make the same mistake.
+
+Sorry for the false alarm.
+-Greg
+
+> From: Peter Apian-Bennewitz <apian@pab-opto.de>
+> Date: Sun Oct 19, 2003  7:22:49  PM US/Pacific
+>
+> Greg Ward wrote:
+>
+>> P.S.  For some reason, the source auxiliary files are not included in  
+>> the HEAD distribution.  The following files are missing:
+>>
+>> ray/src/common/tmesh.cal
+>> ray/src/cv/lamp.tab
+>> ray/src/cv/source.cal
+>> ray/src/cv/tilt.cal
+>> ray/src/gen/clockface.hex
+>> ray/src/gen/glaze1.cal
+>> ray/src/gen/glaze2.cal
+>> ray/src/gen/illum.cal
+>> ray/src/gen/rev.cal
+>> ray/src/gen/skybright.cal
+>> ray/src/gen/surf.cal
+>> ray/src/rt/rayinit.cal
+>>
+>> Please add them, as makeall depends on them for proper operation.
+>
+> apian@www $ tar vtfz  
+> /www/www.radiance-online.org/htdocs/software/snapshots/radiance- 
+> HEAD.tgz ray/src/gen/clockface.hex
+> -r--r--r-- apian/cvs     47088 1995-05-25 18:32:35  
+> ray/src/gen/clockface.hex
+>
+> apian@www $ tar vtfz  
+> /www/www.radiance-online.org/htdocs/software/snapshots/radiance- 
+> HEAD.tgz ray/src/gen/skybright.cal
+> -r--r--r-- apian/cvs      1100 2003-02-22 03:07:24  
+> ray/src/gen/skybright.cal
+>
+> These are the files generated nightly since January 2003 and  
+> distributed by the webserver.
+> So what's the problem ? Am I missing some vital point here ?
+>
+> -Peter
+
+
+From radiance-dev@radiance-online.org  Mon Oct 20 17:03:59 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Mon, 20 Oct 2003 09:03:59 -0700
+Subject: [Radiance-dev] Re: [Radiance-general] rholo restart stalls with "bad magic number"
+In-Reply-To: <Pine.BSF.4.44.0310191812320.78253-100000@emancholl.pair.com>
+Message-ID: <046093B2-0317-11D8-8C03-000A956D40C8@lmi.net>
+
+Done.  I also updated the calls to lseek() to use the officially 
+blessed macros.  If these aren't defined for some reason under Windows, 
+we should add the following lines to platform.h:
+
+#ifndef SEEK_SET
+#define SEEK_SET	0
+#define SEEK_CUR	1
+#define SEEK_END	2
+#endif
+
+-Greg
+
+> From: Georg Mischler <schorsch@schorsch.com>
+> Date: Sun Oct 19, 2003  3:18:42  PM US/Pacific
+>
+> Greg Ward wrote:
+>> I guess the solution is to include the new "platform.h" for all files
+>> that use lseek(), which are the following by my search:
+>>
+>> [...]
+>>
+>> Since "platform.h" includes <unistd.h> on all UNIX systems, this 
+>> should
+>> solve the problem, I would think.  (Schorsch, do you agree?)
+>
+> Yes, that looks like the correct thing to do (and we really
+> shouldn't try to second guess the declarations in any of the
+> system header files).  I think lseek() is declared in <io.h> on
+> Windows, which already gets included by plaform.h, but I'll
+> consult the documentation to make sure.
+
+
+From radiance-dev@radiance-online.org  Tue Oct 21 01:48:11 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Mon, 20 Oct 2003 20:48:11 -0400 (EDT)
+Subject: [Radiance-dev] rholo restart stalls with "bad magic number"
+In-Reply-To: <046093B2-0317-11D8-8C03-000A956D40C8@lmi.net>
+Message-ID: <Pine.BSF.4.44.0310202037320.76999-100000@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> Done.  I also updated the calls to lseek() to use the officially
+> blessed macros.  If these aren't defined for some reason under Windows,
+> we should add the following lines to platform.h:
+>
+> #ifndef SEEK_SET
+> #define SEEK_SET	0
+> #define SEEK_CUR	1
+> #define SEEK_END	2
+> #endif
+
+
+Looks good.
+I found that lseek() is indeed defined in <io.h> as I suspected.
+Although I couldn't find the above macros in the same file, they
+must be defined somewhere close by, because the code compiled on
+Windows right away.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Tue Oct 21 21:07:44 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Tue, 21 Oct 2003 16:07:44 -0400 (EDT)
+Subject: [Radiance-dev] SCons checkin
+Message-ID: <Pine.BSF.4.44.0310211603080.9799-100000@emancholl.pair.com>
+
+Hi all,
+
+I just checked the experimental SCons build environment into CVS,
+so it will probably be included in the daily HEAD dump tomorrow
+for those who like to experiment with it. I decided to do so
+after I succeded compiling large parts of Radiance on Windows
+with the help of SCons. Francesco reported a problem when trying
+the same thing with Cygwin, but I think that's fixed now.
+
+Currently, 86 executables get built without errors on Windows
+(although in some areas still with lots of warnings).
+The missing parts are as follows:
+
+* mgf2rad trips over duplicate file/function names between
+  librt and libmgf.
+* The holodeck will require some substantial porting work.
+* rtrace and rpict trip over multiple definitions of functions
+  named free_os(), as well as over unix specific code in
+  raypcalls.c
+* Ranimate requires a Windows version of netproc.c.
+* Ranimove also has troubles with free_os().
+* The X11 dependent stuff is obvious.
+* I ignored the tifflib for the moment. Since we seem to be
+  migrating to a more current version anyway, are there any
+  chances that the rad3R5supp.tar.gz will get updated?
+  Or do we need a seperate rad3R6supp.tar.gz?
+
+As one of the next things I'll start resolving name conflicts
+throughout the code base, which probably requires some discussion
+about what goes where.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Wed Oct 22 03:00:37 2003
+From: radiance-dev@radiance-online.org (Kipp C Cannon)
+Date: Tue, 21 Oct 2003 20:00:37 -0600 (MDT)
+Subject: [Radiance-dev] [PATCH] add missing errno.h to lots of files
+Message-ID: <Pine.LNX.4.44.0310211947580.18971-100000@gauss.phys.ualberta.ca>
+
+Hi,
+
+radiance 3.5.0 will not build out of the box on my system (linux system
+with glibc version 2.3.1 and gcc version 3.2.2).  The problem is that
+errno.h is not always #include'ed in every file that uses the global errno
+variable.  I'm surprised one can get away with this on any system but I
+guess some C compilers assume extern int for all unresolved references?  
+Who knows.  Anyway... the following patch adds errno.h where it seems to
+be needed and gets radiance building fairly cleanly on my system.
+
+This touches LOTS of files and probably doesn't add the #include's in ways
+that make the maintainer(s) of those files happy (blank lines, etc.).  
+Also, radiance has a bit of a header-file spaghetti thing going on so it's
+hard to tell what is actually including what.  In the end I got sick of
+adding one "#incude <errno.h>" at a time and testing with a rebuild so I
+just grepped for files that reference errno but don't have errno.h.  I did
+try to decide if they might get errno.h through some other header file but
+only checked this as far as my own patience could tolerate.  SOOO.... this
+patch might add a few that aren't really needed.
+
+Good luck, and thanks all for a very fun piece of software!
+
+							-Kipp
+
+
+diff -uNr ray-orig/src/cal/ev.c ray/src/cal/ev.c
+--- ray-orig/src/cal/ev.c	2003-02-21 19:07:20.000000000 -0700
++++ ray/src/cal/ev.c	2003-10-05 00:04:09.000000000 -0600
+@@ -8,6 +8,7 @@
+  */
+ 
+ #include  <stdio.h>
++#include  <errno.h>
+ 
+ #include  "calcomp.h"
+ 
+diff -uNr ray-orig/src/gen/mkillum2.c ray/src/gen/mkillum2.c
+--- ray-orig/src/gen/mkillum2.c	2003-02-21 19:07:24.000000000 -0700
++++ ray/src/gen/mkillum2.c	2003-10-05 00:07:34.000000000 -0600
+@@ -5,6 +5,7 @@
+  * Routines to do the actual calculation for mkillum
+  */
+ 
++#include  <errno.h>
+ #include  "mkillum.h"
+ 
+ #include  "face.h"
+diff -uNr ray-orig/src/gen/mkillum.c ray/src/gen/mkillum.c
+--- ray-orig/src/gen/mkillum.c	2003-03-11 12:29:05.000000000 -0700
++++ ray/src/gen/mkillum.c	2003-10-05 00:06:23.000000000 -0600
+@@ -8,7 +8,7 @@
+ #include  "mkillum.h"
+ 
+ #include  <signal.h>
+-
++#include  <errno.h>
+ #include  <ctype.h>
+ 
+ 				/* default parameters */
+diff -uNr ray-orig/src/hd/holofile.c ray/src/hd/holofile.c
+--- ray-orig/src/hd/holofile.c	2003-02-21 19:07:24.000000000 -0700
++++ ray/src/hd/holofile.c	2003-10-05 00:08:22.000000000 -0600
+@@ -7,6 +7,7 @@
+  *	9/30/97	GWLarson
+  */
+ 
++#include <errno.h>
+ #include "holo.h"
+ 
+ #ifndef CACHESIZE
+diff -uNr ray-orig/src/hd/rhdisp.c ray/src/hd/rhdisp.c
+--- ray-orig/src/hd/rhdisp.c	2003-02-21 19:07:24.000000000 -0700
++++ ray/src/hd/rhdisp.c	2003-10-05 00:08:37.000000000 -0600
+@@ -10,6 +10,7 @@
+ #include "rhdriver.h"
+ #include "selcall.h"
+ #include <ctype.h>
++#include <errno.h>
+ 
+ #ifndef VIEWHISTLEN
+ #define VIEWHISTLEN	4	/* number of remembered views */
+diff -uNr ray-orig/src/hd/rholo2l.c ray/src/hd/rholo2l.c
+--- ray-orig/src/hd/rholo2l.c	2003-02-21 19:07:25.000000000 -0700
++++ ray/src/hd/rholo2l.c	2003-10-05 00:08:49.000000000 -0600
+@@ -9,6 +9,7 @@
+ #include "random.h"
+ #include "paths.h"
+ #include "selcall.h"
++#include <errno.h>
+ #include <signal.h>
+ #include <sys/time.h>
+ 
+diff -uNr ray-orig/src/hd/rholo4.c ray/src/hd/rholo4.c
+--- ray-orig/src/hd/rholo4.c	2003-02-21 19:07:25.000000000 -0700
++++ ray/src/hd/rholo4.c	2003-10-05 00:09:02.000000000 -0600
+@@ -7,6 +7,7 @@
+ 
+ #include "rholo.h"
+ #include "rhdisp.h"
++#include <errno.h>
+ #include <sys/uio.h>
+ 
+ #ifndef HDSUF
+diff -uNr ray-orig/src/px/tiff/contrib/mfs/mfs_file.c ray/src/px/tiff/contrib/mfs/mfs_file.c
+--- ray-orig/src/px/tiff/contrib/mfs/mfs_file.c	1997-08-29 16:56:40.000000000 -0600
++++ ray/src/px/tiff/contrib/mfs/mfs_file.c	2003-10-05 00:09:37.000000000 -0600
+@@ -44,6 +44,7 @@
+ #include	<stdio.h>
+ #include	<stdlib.h>
+ #include	<string.h>
++#include	<errno.h>
+ 
+ /*
+ --------------------------------------------------------------------------------
+diff -uNr ray-orig/src/rt/aniso.c ray/src/rt/aniso.c
+--- ray-orig/src/rt/aniso.c	2003-03-12 10:26:58.000000000 -0700
++++ ray/src/rt/aniso.c	2003-10-05 00:10:13.000000000 -0600
+@@ -5,6 +5,7 @@
+  *  Shading functions for anisotropic materials.
+  */
+ 
++#include <errno.h>
+ #include "copyright.h"
+ 
+ #include  "ray.h"
+diff -uNr ray-orig/src/rt/m_brdf.c ray/src/rt/m_brdf.c
+--- ray-orig/src/rt/m_brdf.c	2003-03-05 09:16:53.000000000 -0700
++++ ray/src/rt/m_brdf.c	2003-10-05 00:10:37.000000000 -0600
+@@ -5,6 +5,7 @@
+  *  Shading for materials with arbitrary BRDF's
+  */
+ 
++#include <errno.h>
+ #include "copyright.h"
+ 
+ #include  "ray.h"
+diff -uNr ray-orig/src/rt/m_direct.c ray/src/rt/m_direct.c
+--- ray-orig/src/rt/m_direct.c	2003-03-05 09:16:53.000000000 -0700
++++ ray/src/rt/m_direct.c	2003-10-05 00:10:47.000000000 -0600
+@@ -6,6 +6,7 @@
+  *   their associated virtual light sources
+  */
+ 
++#include <errno.h>
+ #include "copyright.h"
+ 
+ #include  "ray.h"
+diff -uNr ray-orig/src/rt/mx_data.c ray/src/rt/mx_data.c
+--- ray-orig/src/rt/mx_data.c	2003-03-05 09:16:53.000000000 -0700
++++ ray/src/rt/mx_data.c	2003-10-05 00:11:01.000000000 -0600
+@@ -5,6 +5,7 @@
+  *  mx_data.c - routine for stored mixtures.
+  */
+ 
++#include <errno.h>
+ #include "copyright.h"
+ 
+ #include  "ray.h"
+diff -uNr ray-orig/src/rt/mx_func.c ray/src/rt/mx_func.c
+--- ray-orig/src/rt/mx_func.c	2003-03-05 09:16:53.000000000 -0700
++++ ray/src/rt/mx_func.c	2003-10-05 00:11:10.000000000 -0600
+@@ -5,6 +5,7 @@
+  *  mx_func.c - routine for mixture functions.
+  */
+ 
++#include <errno.h>
+ #include "copyright.h"
+ 
+ #include  "ray.h"
+diff -uNr ray-orig/src/rt/p_data.c ray/src/rt/p_data.c
+--- ray-orig/src/rt/p_data.c	2003-03-05 09:16:53.000000000 -0700
++++ ray/src/rt/p_data.c	2003-10-05 00:11:24.000000000 -0600
+@@ -5,6 +5,7 @@
+  *  p_data.c - routine for stored patterns.
+  */
+ 
++#include <errno.h>
+ #include "copyright.h"
+ 
+ #include  "ray.h"
+diff -uNr ray-orig/src/rt/p_func.c ray/src/rt/p_func.c
+--- ray-orig/src/rt/p_func.c	2003-03-05 09:16:53.000000000 -0700
++++ ray/src/rt/p_func.c	2003-10-05 00:11:32.000000000 -0600
+@@ -5,6 +5,7 @@
+  *  p_func.c - routine for procedural patterns.
+  */
+ 
++#include <errno.h>
+ #include "copyright.h"
+ 
+ #include  "ray.h"
+diff -uNr ray-orig/src/rt/raypcalls.c ray/src/rt/raypcalls.c
+--- ray-orig/src/rt/raypcalls.c	2003-02-24 19:47:23.000000000 -0700
++++ ray/src/rt/raypcalls.c	2003-10-05 00:11:48.000000000 -0600
+@@ -7,6 +7,7 @@
+  *  External symbols declared in ray.h
+  */
+ 
++#include <errno.h>
+ #include "copyright.h"
+ 
+ /*
+diff -uNr ray-orig/src/rt/rpict.c ray/src/rt/rpict.c
+--- ray-orig/src/rt/rpict.c	2003-03-10 10:26:26.000000000 -0700
++++ ray/src/rt/rpict.c	2003-10-05 00:12:08.000000000 -0600
+@@ -9,6 +9,7 @@
+ 
+ #include  "ray.h"
+ 
++#include  <errno.h>
+ #include  <sys/types.h>
+ 
+ #ifndef NIX
+diff -uNr ray-orig/src/rt/rpmain.c ray/src/rt/rpmain.c
+--- ray-orig/src/rt/rpmain.c	2003-02-24 19:47:23.000000000 -0700
++++ ray/src/rt/rpmain.c	2003-10-05 00:12:29.000000000 -0600
+@@ -17,6 +17,7 @@
+ 
+ #include  "paths.h"
+ 
++#include  <errno.h>
+ #include  <sys/types.h>
+ 
+ #include  <signal.h>
+diff -uNr ray-orig/src/rt/rtmain.c ray/src/rt/rtmain.c
+--- ray-orig/src/rt/rtmain.c	2003-02-24 19:47:23.000000000 -0700
++++ ray/src/rt/rtmain.c	2003-10-05 00:12:42.000000000 -0600
+@@ -17,6 +17,7 @@
+ 
+ #include  "paths.h"
+ 
++#include  <errno.h>
+ #include  <sys/types.h>
+ 
+ #include  <signal.h>
+diff -uNr ray-orig/src/rt/rview.c ray/src/rt/rview.c
+--- ray-orig/src/rt/rview.c	2003-02-24 19:47:23.000000000 -0700
++++ ray/src/rt/rview.c	2003-10-05 00:12:53.000000000 -0600
+@@ -13,6 +13,7 @@
+ 
+ #include  "rpaint.h"
+ 
++#include  <errno.h>
+ #include  <signal.h>
+ 
+ #include  <ctype.h>
+diff -uNr ray-orig/src/rt/rvmain.c ray/src/rt/rvmain.c
+--- ray-orig/src/rt/rvmain.c	2003-02-24 19:47:23.000000000 -0700
++++ ray/src/rt/rvmain.c	2003-10-05 00:13:08.000000000 -0600
+@@ -17,6 +17,7 @@
+ 
+ #include  "paths.h"
+ 
++#include  <errno.h>
+ #include  <signal.h>
+ 
+ #include  "view.h"
+diff -uNr ray-orig/src/rt/t_data.c ray/src/rt/t_data.c
+--- ray-orig/src/rt/t_data.c	2003-03-05 09:16:53.000000000 -0700
++++ ray/src/rt/t_data.c	2003-10-05 00:13:26.000000000 -0600
+@@ -5,6 +5,7 @@
+  *  t_data.c - routine for stored textures
+  */
+ 
++#include <errno.h>
+ #include "copyright.h"
+ 
+ #include  "ray.h"
+diff -uNr ray-orig/src/rt/t_func.c ray/src/rt/t_func.c
+--- ray-orig/src/rt/t_func.c	2003-03-05 09:16:53.000000000 -0700
++++ ray/src/rt/t_func.c	2003-10-05 00:13:35.000000000 -0600
+@@ -5,6 +5,7 @@
+  *  t_func.c - routine for procedural textures.
+  */
+ 
++#include <errno.h>
+ #include "copyright.h"
+ 
+ #include  "ray.h"
+diff -uNr ray-orig/src/util/ranimate.c ray/src/util/ranimate.c
+--- ray-orig/src/util/ranimate.c	2003-02-24 19:47:24.000000000 -0700
++++ ray/src/util/ranimate.c	2003-10-05 00:13:46.000000000 -0600
+@@ -16,6 +16,7 @@
+ #include "copyright.h"
+ 
+ #include "standard.h"
++#include <errno.h>
+ #include <ctype.h>
+ #include <sys/stat.h>
+ #include "view.h"
+diff -uNr ray-orig/src/util/rpiece.c ray/src/util/rpiece.c
+--- ray-orig/src/util/rpiece.c	2003-02-21 19:07:30.000000000 -0700
++++ ray/src/util/rpiece.c	2003-10-05 00:13:59.000000000 -0600
+@@ -5,6 +5,7 @@
+  * Generate sections of a picture.
+  */
+  
++#include <errno.h>
+ #include "standard.h"
+ 
+ #ifndef F_SETLKW
+
+
+From radiance-dev@radiance-online.org  Wed Oct 22 03:24:23 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Tue, 21 Oct 2003 19:24:23 -0700
+Subject: [Radiance-dev] [PATCH] add missing errno.h to lots of files
+In-Reply-To: <Pine.LNX.4.44.0310211947580.18971-100000@gauss.phys.ualberta.ca>
+Message-ID: <D9AF6AB7-0436-11D8-9AF6-000A956D40C8@lmi.net>
+
+Hi Kipp,
+
+Can you tell us which compiles were giving you complaints, exactly?  I 
+just did a run-through of the HEAD distribution and couldn't find 
+anyplace where errno is referenced that doesn't include <errno.h> 
+either directly, or indirectly via "standard.h", "rtio.h" or 
+"rtprocess.h".
+
+I bet that some of these corrections were made subsequent to the 
+official 3.5 release.  We have posted this message before, but it bears 
+repeating.  If you wish to offer a patch, please offer a patch to the 
+current HEAD release rather than to an earlier release.  Last night's 
+HEAD release may always be found at the download link on 
+www.radiance-online.org.
+
+Thanks!
+-Greg
+
+> From: Kipp C Cannon <kcannon@phys.ualberta.ca>
+> Date: Tue Oct 21, 2003  7:00:37  PM US/Pacific
+>
+> Hi,
+>
+> radiance 3.5.0 will not build out of the box on my system (linux system
+> with glibc version 2.3.1 and gcc version 3.2.2).  The problem is that
+> errno.h is not always #include'ed in every file that uses the global 
+> errno
+> variable.  I'm surprised one can get away with this on any system but I
+> guess some C compilers assume extern int for all unresolved references?
+> Who knows.  Anyway... the following patch adds errno.h where it seems 
+> to
+> be needed and gets radiance building fairly cleanly on my system.
+>
+> This touches LOTS of files and probably doesn't add the #include's in 
+> ways
+> that make the maintainer(s) of those files happy (blank lines, etc.).
+> Also, radiance has a bit of a header-file spaghetti thing going on so 
+> it's
+> hard to tell what is actually including what.  In the end I got sick of
+> adding one "#incude <errno.h>" at a time and testing with a rebuild so 
+> I
+> just grepped for files that reference errno but don't have errno.h.  I 
+> did
+> try to decide if they might get errno.h through some other header file 
+> but
+> only checked this as far as my own patience could tolerate.  SOOO.... 
+> this
+> patch might add a few that aren't really needed.
+>
+> Good luck, and thanks all for a very fun piece of software!
+>
+> 							-Kipp
+
+
+From radiance-dev@radiance-online.org  Wed Oct 22 04:33:05 2003
+From: radiance-dev@radiance-online.org (Kipp C Cannon)
+Date: Tue, 21 Oct 2003 21:33:05 -0600 (MDT)
+Subject: [Radiance-dev] [PATCH] add missing errno.h to lots of files
+In-Reply-To: <D9AF6AB7-0436-11D8-9AF6-000A956D40C8@lmi.net>
+Message-ID: <Pine.LNX.4.44.0310212106050.18971-100000@gauss.phys.ualberta.ca>
+
+On Tue, 21 Oct 2003, Greg Ward wrote:
+
+> Hi Kipp,
+
+Hi.
+
+> Can you tell us which compiles were giving you complaints, exactly?  I 
+> just did a run-through of the HEAD distribution and couldn't find 
+> anyplace where errno is referenced that doesn't include <errno.h> 
+> either directly, or indirectly via "standard.h", "rtio.h" or 
+> "rtprocess.h".
+
+Sure.  It's the "last official release":  rad3R5.  And, no, you're right I
+haven't tried compiling the HEAD release.
+
+> I bet that some of these corrections were made subsequent to the 
+> official 3.5 release.  We have posted this message before, but it bears 
+> repeating.  If you wish to offer a patch, please offer a patch to the 
+> current HEAD release rather than to an earlier release.  Last night's 
+> HEAD release may always be found at the download link on 
+> www.radiance-online.org.
+
+Yeah, OK.  I'll download it and give today's HEAD a try.
+
+How far away is a new official release?  Even if the problem is fixed, I
+think most users, like me, are somewhat uncomfortable running something
+labeled "experimental" and really uncomfortable running a random nightly
+build.
+
+							-Kipp
+
+
+From radiance-dev@radiance-online.org  Wed Oct 22 06:00:32 2003
+From: radiance-dev@radiance-online.org (Randolph Fritz)
+Date: Tue, 21 Oct 2003 22:00:32 -0700 (PDT)
+Subject: [Radiance-dev] SCons checkin
+In-Reply-To: <Pine.BSF.4.44.0310211603080.9799-100000@emancholl.pair.com>
+References: <Pine.BSF.4.44.0310211603080.9799-100000@emancholl.pair.com>
+Message-ID: <61873.65.100.0.172.1066798832.squirrel@mail.panix.com>
+
+>
+> I just checked the experimental SCons build environment into CVS,
+> [...]
+>
+
+Great!  Glad to see that you picked this up.
+
+Randolph, still dealing with the gators
+
+
+
+
+From radiance-dev@radiance-online.org  Wed Oct 22 06:13:54 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Tue, 21 Oct 2003 22:13:54 -0700
+Subject: [Radiance-dev] [PATCH] add missing errno.h to lots of files
+In-Reply-To: <Pine.LNX.4.44.0310212106050.18971-100000@gauss.phys.ualberta.ca>
+Message-ID: <884F40EF-044E-11D8-A35A-000A956D40C8@lmi.net>
+
+> From: Kipp C Cannon <kcannon@phys.ualberta.ca>
+> Date: Tue Oct 21, 2003  8:33:05  PM US/Pacific
+>
+> How far away is a new official release?  Even if the problem is fixed, 
+> I
+> think most users, like me, are somewhat uncomfortable running something
+> labeled "experimental" and really uncomfortable running a random 
+> nightly
+> build.
+
+Well, if all you want is the official release, then why don't you 
+download the binaries as opposed to rebuilding it yourself?  The 
+"experimental" version is a lot more reliable than the official 
+release, because immediately after the official release we found a 
+whole bunch of build problems and other bugs that showed up when people 
+started compiling it on various systems.  Unfortunately, this is often 
+the case with "public works" software like Radiance -- we simply don't 
+have the resources to test it out on all sorts of machines prior to 
+making a release.
+
+At one time, we would offer a "patched official release" that fixed the 
+major bugs we would find immediately following a new release, but with 
+the current setup offering continuous updates, we thought this would be 
+superfluous.  We probably should think about having a more traditional 
+"patch" branch and "development" branch, but the extra administrative 
+effort required seemed unnecessary as most of the changes we make are 
+either limited to one or two programs or are bug fixes that should go 
+into a patch release, anyway.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Wed Oct 22 06:37:04 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Tue, 21 Oct 2003 22:37:04 -0700
+Subject: [Radiance-dev] SCons checkin
+In-Reply-To: <Pine.BSF.4.44.0310211603080.9799-100000@emancholl.pair.com>
+Message-ID: <C4C98A7C-0451-11D8-A35A-000A956D40C8@lmi.net>
+
+> From: Georg Mischler <schorsch@schorsch.com>
+> Date: Tue Oct 21, 2003  1:07:44  PM US/Pacific
+>
+> [...]
+>
+> Currently, 86 executables get built without errors on Windows
+> (although in some areas still with lots of warnings).
+> The missing parts are as follows:
+>
+> * mgf2rad trips over duplicate file/function names between
+>   librt and libmgf.
+> * The holodeck will require some substantial porting work.
+> * rtrace and rpict trip over multiple definitions of functions
+>   named free_os(), as well as over unix specific code in
+>   raypcalls.c
+> * Ranimate requires a Windows version of netproc.c.
+> * Ranimove also has troubles with free_os().
+
+I rely on being able to override my own library functions in places -- 
+does SCons not support this strategy?  If not, then we'll just have to 
+come up with unique functions that perform the same job differently, I 
+suppose.  Not a big deal, and better for clarity, anyway.
+
+> * The X11 dependent stuff is obvious.
+> * I ignored the tifflib for the moment. Since we seem to be
+>   migrating to a more current version anyway, are there any
+>   chances that the rad3R5supp.tar.gz will get updated?
+>   Or do we need a seperate rad3R6supp.tar.gz?
+
+I believe the current release of the TIFF library is fully compatible 
+with the 3.5 release.  I have uploaded this onto my account on 
+radiance-online.org as ~greg/tiff.tgz if Peter wants to put it in the 
+supplemental materials in place of what's there.  I think it would be 
+fine.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Wed Oct 22 21:06:21 2003
+From: radiance-dev@radiance-online.org (Randolph Fritz)
+Date: Wed, 22 Oct 2003 13:06:21 -0700
+Subject: [Radiance-dev] Re: SCons checkin
+Message-ID: <20031022200621.GA24100@panix.com>
+
+> I rely on being able to override my own library functions in places -- 
+> does SCons not support this strategy?
+
+I think it can be made to--were more confused than anything else.
+
+Over the years, you have moved Radiance towards a semi-object-oriented
+organization (this is very similar to subclassing) and since you've
+been the main person working on the code, never needed to document
+this.  As people like Georg Mischler and me work on the code, we
+stumble into it and get all confused.  If I ever have time again
+(sigh), I'll try writing some comments that explain these areas.
+
+Once the Grand ANSI Unification project is complete, it might be
+interesting to develop an experimental version in some mix of Python
+and C++; things like this make me hope it might actually be a
+relatively simple project.
+
+Randolph
+
+
+From radiance-dev@radiance-online.org  Wed Oct 22 21:23:36 2003
+From: radiance-dev@radiance-online.org (Kipp C Cannon)
+Date: Wed, 22 Oct 2003 14:23:36 -0600 (MDT)
+Subject: [Radiance-dev] [PATCH] add missing errno.h to lots of files
+In-Reply-To: <884F40EF-044E-11D8-A35A-000A956D40C8@lmi.net>
+Message-ID: <Pine.LNX.4.44.0310221405510.13294-100000@blossom.phys.ualberta.ca>
+
+On Tue, 21 Oct 2003, Greg Ward wrote:
+
+> > From: Kipp C Cannon <kcannon@phys.ualberta.ca>
+> > Date: Tue Oct 21, 2003  8:33:05  PM US/Pacific
+> >
+> > How far away is a new official release?  Even if the problem is fixed, 
+> > I
+> > think most users, like me, are somewhat uncomfortable running something
+> > labeled "experimental" and really uncomfortable running a random 
+> > nightly
+> > build.
+> 
+> Well, if all you want is the official release, then why don't you 
+> download the binaries as opposed to rebuilding it yourself?
+
+Pride, suspicion, superstition, who knows.  :-).  No, seriously though, I
+package it up into an RPM to make upgrades easier and it's convenient to
+do that from the source.  Besides, in the past its always been a really
+nice clean build.  In any case, there's no reason the source shouldn't be
+buildable.  Particularly not for this reason.
+
+> The 
+> "experimental" version is a lot more reliable than the official 
+> release, because immediately after the official release we found a 
+> whole bunch of build problems and other bugs that showed up when people 
+> started compiling it on various systems.
+[snip]
+> At one time, we would offer a "patched official release" that fixed the 
+> major bugs we would find immediately following a new release, but with 
+> the current setup offering continuous updates, we thought this would be 
+> superfluous.
+
+Ahhh... I see.  Yes, building used to involve downloading the source and
+the most recent patch.  I had assumed this had not changed and, since
+there are no patches yet, that 3R5 is the most recent version.
+
+> We probably should think about having a more traditional 
+> "patch" branch and "development" branch, but the extra administrative 
+> effort required seemed unnecessary as most of the changes we make are 
+> either limited to one or two programs or are bug fixes that should go 
+> into a patch release, anyway.
+
+Well that makes it sound like all that needs to be done is change the
+wording on the web site from "experimental" to, I don't know, maybe
+something like "pre-release".  Something that still sounds like this is a
+thing in flux but also suggests to people that they should give it a try
+if they are hitting a bug.  Less bleeding-edge.  I think most open
+development projects are pretty fast and loose with their "daily
+snapshots" but if the radiance team keeps a tight lid on the condition of
+theirs then it would be good to somehow make this more clear to users so 
+they feel more comfortable giving it a go.
+
+							-Kipp
+
+
+From radiance-dev@radiance-online.org  Wed Oct 22 23:38:31 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Wed, 22 Oct 2003 15:38:31 -0700
+Subject: [Radiance-dev] Re: SCons checkin
+In-Reply-To: <20031022200621.GA24100@panix.com>
+Message-ID: <76B3EC58-04E0-11D8-B44B-000A956D40C8@lmi.net>
+
+> From: Randolph Fritz <randolph@panix.com>
+> Date: Wed Oct 22, 2003  1:06:21  PM US/Pacific
+>
+>> I rely on being able to override my own library functions in places --
+>> does SCons not support this strategy?
+>
+> I think it can be made to--were more confused than anything else.
+>
+> Over the years, you have moved Radiance towards a semi-object-oriented
+> organization (this is very similar to subclassing) and since you've
+> been the main person working on the code, never needed to document
+> this.  As people like Georg Mischler and me work on the code, we
+> stumble into it and get all confused.  If I ever have time again
+> (sigh), I'll try writing some comments that explain these areas.
+
+I'm really loathe to admit such things, but the free_os() routine has 
+bitten me as well.  I wouldn't miss it if we object-deorient it.
+
+-G
+
+
+From radiance-dev@radiance-online.org  Thu Oct 23 05:13:15 2003
+From: radiance-dev@radiance-online.org (Kipp C Cannon)
+Date: Wed, 22 Oct 2003 22:13:15 -0600 (MDT)
+Subject: [Radiance-dev] [PATCH] add missing errno.h to lots of files
+In-Reply-To: <Pine.LNX.4.44.0310212106050.18971-100000@gauss.phys.ualberta.ca>
+Message-ID: <Pine.LNX.4.44.0310212150070.18971-100000@gauss.phys.ualberta.ca>
+
+Hi,
+
+OK.  I gave today's HEAD (2003-10-20) a try and the errno problem has
+disappeared.  Great!
+
+							-Kipp
+
+On Tue, 21 Oct 2003, Kipp C Cannon wrote:
+
+> On Tue, 21 Oct 2003, Greg Ward wrote:
+> 
+> > Hi Kipp,
+> 
+> Hi.
+> 
+> > Can you tell us which compiles were giving you complaints, exactly?  I 
+> > just did a run-through of the HEAD distribution and couldn't find 
+> > anyplace where errno is referenced that doesn't include <errno.h> 
+> > either directly, or indirectly via "standard.h", "rtio.h" or 
+> > "rtprocess.h".
+> 
+> Sure.  It's the "last official release":  rad3R5.  And, no, you're right I
+> haven't tried compiling the HEAD release.
+> 
+> > I bet that some of these corrections were made subsequent to the 
+> > official 3.5 release.  We have posted this message before, but it bears 
+> > repeating.  If you wish to offer a patch, please offer a patch to the 
+> > current HEAD release rather than to an earlier release.  Last night's 
+> > HEAD release may always be found at the download link on 
+> > www.radiance-online.org.
+> 
+> Yeah, OK.  I'll download it and give today's HEAD a try.
+> 
+> How far away is a new official release?  Even if the problem is fixed, I
+> think most users, like me, are somewhat uncomfortable running something
+> labeled "experimental" and really uncomfortable running a random nightly
+> build.
+> 
+> 							-Kipp
+
+
+From radiance-dev@radiance-online.org  Thu Oct 23 06:02:52 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Thu, 23 Oct 2003 07:02:52 +0200
+Subject: HEAD name / was Re: [Radiance-dev] [PATCH] add missing errno.h to
+ lots of files
+In-Reply-To: <Pine.LNX.4.44.0310221405510.13294-100000@blossom.phys.ualberta.ca>
+References: <Pine.LNX.4.44.0310221405510.13294-100000@blossom.phys.ualberta.ca>
+Message-ID: <3F9760FC.7010006@pab-opto.de>
+
+Kipp C Cannon wrote:
+
+> ....
+>
+>
+>Well that makes it sound like all that needs to be done is change the
+>wording on the web site from "experimental" to, I don't know, maybe
+>something like "pre-release".  Something that still sounds like this is a
+>thing in flux but also suggests to people that they should give it a try
+>if they are hitting a bug.  Less bleeding-edge.  I think most open
+>development projects are pretty fast and loose with their "daily
+>snapshots" but if the radiance team keeps a tight lid on the condition of
+>theirs then it would be good to somehow make this more clear to users so 
+>they feel more comfortable giving it a go
+>
+"experimental" got changed to "pre-release" on the web page, as the HEAD 
+version has turned out to be much more a bugfix than exotic experiment.
+thanks for hinting at that
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+From radiance-dev@radiance-online.org  Thu Oct 23 08:26:58 2003
+From: radiance-dev@radiance-online.org (Randolph Fritz)
+Date: Thu, 23 Oct 2003 00:26:58 -0700 (PDT)
+Subject: HEAD name / was Re: [Radiance-dev] [PATCH] add missing errno.h to lots of files
+In-Reply-To: <3F9760FC.7010006@pab-opto.de>
+References: <Pine.LNX.4.44.0310221405510.13294-100000@blossom.phys.ualberta.ca>
+ <3F9760FC.7010006@pab-opto.de>
+Message-ID: <62749.65.100.0.172.1066894018.squirrel@mail.panix.com>
+
+>>
+> "experimental" got changed to "pre-release" on the web page, as the HEAD
+>  version has turned out to be much more a bugfix than exotic experiment.
+> thanks for hinting at that
+> -Peter
+>
+
+3.6 beta?  (Evil grin)
+
+I suppose when it's enough done it can be 3.6rc1.
+
+Randolph
+
+
+
+
+
+From radiance-dev@radiance-online.org  Mon Oct 27 14:43:46 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Mon, 27 Oct 2003 09:43:46 -0500 (EST)
+Subject: [Radiance-dev] SCons/Windows status
+Message-ID: <Pine.BSF.4.44.0310270909310.13158-100000@emancholl.pair.com>
+
+Hi all,
+
+
+I think I figured out why xform (and others) had troubles with
+multiline !commands on Windows in my earlier attempts. The thing
+is, that cmd.com doesn't handle "\\\n" escapes. I now redirected
+all calls to popen() to my own win_peopen(). This one correctly
+emulates the "|" handling of unix shells, and removes any
+disturbing character sequences before invoking the external
+programs through Windows native tools. At the moment, it only
+supports mode "r", though, which means that igraph, plot4,
+ra_rgbe, rad, and rlux will fail during runtime, even if they
+successfully compile.
+
+I added a gethomedir.c for posix and Windows, which simplifies
+the internals of getpath.c.
+
+I added a util/win_netproc.c, which I found in the Radiance 3.2
+sources. It actually only defines stubs to most of the required
+functions, so that ranimate will compile but may not do anything
+useful (haven't tried). All in all we now can compile 111
+executables on Windows, including the "special" targets.
+
+
+I updated the SCons files, so that it is now possible to create a
+debug build with the commandline argument DEBUG=1. This will be
+remembered, so you need to use DEBUG=0 for your next release
+build after that. I'm more and more leaning towards the idea of
+building into seperate trees for release/debug builds and
+differnt platforms. As long the build paths remain constant, a
+switch between release and debug mode will automatically rebuild
+all affected dependencies.
+
+
+As an experiment, I reconfigured SCons to create several smaller
+libraries instead of one big librt.a from the common directory.
+The currently resulting number of libraries may be excessive, but
+I wanted to see how far we can go. It's likely that the final
+splitting will look different. Turns out that having two build
+systems next to each other really helps for this kind of testing.
+
+As another positive consequence, it seems that the duplicate file
+and function names throughout Radiance don't prevent us from
+building stuff on Windows anymore. We should probably still
+eliminate most of those redundancies, but that's not quite as
+urgent anymore as it first looked like.
+
+
+Here's the current setup, with files and dependencies for
+each library:
+
+librterror.a
+	eputs.c
+	error.c
+	quit.c
+	wputs.c
+	->
+
+librtmem.a  # allocate and free memory
+	bmalloc.c
+	ealloc.c
+	-> error
+
+librtcont.a   # containers: generic in-memory storage and retreival
+	savestr.c
+	savqstr.c
+	lookup.c
+	-> error
+
+librtmath.a
+	fvect.c
+	invmat4.c
+	linregr.c
+	mat4.c
+	tcos.c
+	urand.c
+	urind.c
+	zeroes.c
+	dircode.c
+	erf.c
+	clip.c
+	multisamp.c
+	plocate.c
+	-> error
+
+librtfunc.a
+	biggerlib.c
+	caldefn.c
+	calexpr.c
+	calfunc.c
+	calprnt.c
+	chanvalue.c
+	-> error
+	-> math (error)
+	-> mem (error)
+	-> cont (error)
+
+librtio.a  # reading from and writing to files
+	fdate.c
+	fgetline.c
+	fgetval.c
+	fgetword.c
+	fputword.c
+	loadvars.c
+	portio.c
+	wordfile.c
+	words.c
+	header.c
+	-> (frexp.c)
+	-> mem (error)
+	-> error
+
+librtargs.a   # process arguments within processes
+	badarg.c
+	expandarg.c
+	fixargv0.c
+	-> mem (error)
+	-> io (mem error)
+
+librtpic.a  # picture file handling
+	color.c
+	colrops.c
+	resolu.c
+	image.c
+	-> math (error)
+	-> mem (error)
+	-> io (mem error)
+	-> args (io mem error)
+
+librtcolor.a  # color math
+	spec_rgb.c
+	->
+
+tonemap  # picture tone mapping
+(this is actually included in librtpic.a at the moment)
+	tmapcolrs.c
+	tmapluv.c
+	tmaptiff.c
+	tmap16bit.c
+	tonemap.c
+	-> color
+	-> pic (math mem io error)
+	-> tiff
+	-> io (mem error)
+
+librtpath.a  # manipulating file names and files (but not the contents)
+	getpath.c
+	gethomedir.c
+	paths.c
+	getlibpath.c
+	-> io (string manipulation)
+
+librtproc.a  # processes: call them, feed them, kill them
+	process.c
+	unix_process.c
+	win_process.c
+	win_popen.c
+	-> paths
+	-> io (error)
+
+librtnet.a
+	myhostname.c
+	->
+
+librtscene.a  # scene and octree files
+	cone.c
+	face.c
+	font.c
+	mesh.c
+	instance.c
+	tmesh.c
+	sceneio.c
+	readobj.c
+	modobject.c
+	objset.c
+	readfargs.c
+	otypes.c
+	free_os.c
+	addobjnotify.c
+	octree.c
+	readmesh.c
+	readoct.c
+	xf.c (args/math.h)
+
+librgl.a  # OpenGL
+	rgldomat.c
+	rglfile.c
+	rglinst.c
+	rglmat.c
+	rglsrc.c
+	rglsurf.c
+	-> error
+	-> mem (error)
+	-> io (mem error)
+	-> math (error)
+	-> sys
+	-> scene/octree
+	-> xf.c
+
+librtlamps.a
+	lamps.c
+	rexpr.c
+	fropen.c [use getpath.c instead?]
+	-> color
+
+stuff that gets used to replace system functions on some
+platforms:
+	popen.c
+	mktemp.c
+	strcmp.c
+	preadwrite.c
+	frexp.c
+	fwrite.c
+	random.c
+	malloc.c -> getpagesize.c
+	  [getpagesize.c]
+
+unused
+	bcopy.c
+	peano.c
+
+
+Comments:
+
+The most obvous candidate for merging are librtcont.a and
+librtmem.a. Although there are several programs that only use one
+of them, they are related and small enough to be packed together.
+
+I'm not sure how tricky it would be to split up librtio.a
+further, to seperate plain string manipulation from those
+functions that are actually used to access files. I don't know
+yet whether that would make sense either.
+
+Yes, librtcolor.a is very small. It's used seperately of
+librtpic.a several times, as a dependency of librtlamps.a.
+
+The tonemapping could justifiably be seperated from librtpic.a,
+there are only dependencies in one direction.
+
+Librtargs.a and librtpath.a both provide rather specialized
+functionality, which depends on the string functions (and only
+those) from librtio.a.
+
+Librtnet.a may eventually grow, when (and if) we add remote
+ambient file access in some way or another. It might be worth
+considering to merge librtpath.a, librtproc.a, and librtnet.a
+into a librtsys.a. Those three libraries all have a lot of OS
+dependencies to deal with, and they are likely to be used in
+combination.
+
+I didn't find the time and energy yet to analyze all the
+dependencies within librtscene.a yet, but it probably depends on
+almost anything else.
+
+There are two identical copies of x11findwind.c around. Maybe
+we can find a few more files that could be combined into a
+librtx11.a?
+
+When did anyone check which of the OS replacement functions are
+really necessary anymore? Some of them seem to be written to
+replace really old and buggy implementations that may have gone
+out of use by now anyway.
+
+Can we remove those files that aren't used at all?
+
+
+The parts that currently still don't compile on Windows are
+everything to do with the tifflib, the holodeck, and the GUI
+programs, as well as makedist and ranimove (the latter two
+because they use fork()/exec() and friends).
+
+
+Oh, you're still reading that far down? Congrats! ;)
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+From radiance-dev@radiance-online.org  Thu Oct 30 01:54:44 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Wed, 29 Oct 2003 17:54:44 -0800
+Subject: [Radiance-dev] SCons/Windows status
+In-Reply-To: <Pine.BSF.4.44.0310270909310.13158-100000@emancholl.pair.com>
+Message-ID: <08E3DA88-0A7C-11D8-B064-00306540F848@lmi.net>
+
+Hi Georg,
+
+Thanks for doing all this work on the Windows port -- great progress!  
+I'm a little confused as to the benefit(s) of separating the objects 
+into so many libraries.  Is this just to help reduce memory 
+requirements for dynamic linking?  On Unix at least, it complicates the 
+builds considerably, as you need to know the correct link order for the 
+libraries or you get undefined symbol errors at load time.
+
+> From: Georg Mischler <schorsch@schorsch.com>
+> Date: Mon Oct 27, 2003  6:43:46  AM US/Pacific
+> [...]
+> When did anyone check which of the OS replacement functions are
+> really necessary anymore? Some of them seem to be written to
+> replace really old and buggy implementations that may have gone
+> out of use by now anyway.
+
+In some cases, they may never be needed again, but how can we know?
+
+> Can we remove those files that aren't used at all?
+
+Yes, I suppose so.  Since they'll live on in the CVS "attic," removing 
+a source file is not irrevocable.
+
+-Greg
+
+

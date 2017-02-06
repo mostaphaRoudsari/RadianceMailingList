@@ -1,0 +1,1553 @@
+From radiance-dev@radiance-online.org  Thu Jan  1 03:50:24 2004
+From: radiance-dev@radiance-online.org (John de Valpine)
+Date: Wed, 31 Dec 2003 22:50:24 -0500 (EST)
+Subject: [Radiance-dev] source.c typo in current HEAD
+Message-ID: <200401010350.WAA16331@swiftsure.cnchost.com>
+
+Hey Greg,
+
+I grabbed the latest HEAD to check out your new optimization. It looks like there is a typo in source.c that results in a compile error.  Here is a diff.
+
+[root@fs rt]# diff source.c source.c.orig 
+386c386
+< 			return &noobs;   /* could happen if ray is outside */
+---
+> 			return &nobs;   /* could happen if ray is outside */
+
+-Jack
+
+From radiance-dev@radiance-online.org  Thu Jan  1 11:08:01 2004
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Thu, 1 Jan 2004 06:08:01 -0500 (EST)
+Subject: [Radiance-dev] source.c typo in current HEAD
+In-Reply-To: <200401010350.WAA16331@swiftsure.cnchost.com>
+References: <200401010350.WAA16331@swiftsure.cnchost.com>
+Message-ID: <Pine.BSF.4.58.0401010556410.35820@emancholl.pair.com>
+
+John de Valpine wrote:
+
+> Hey Greg,
+>
+> I grabbed the latest HEAD to check out your new optimization. It looks like there is a typo in source.c that results in a compile error.  Here is a diff.
+>
+> [root@fs rt]# diff source.c source.c.orig
+> 386c386
+> < 			return &noobs;   /* could happen if ray is outside */
+> ---
+> > 			return &nobs;   /* could happen if ray is outside */
+
+
+The HEAD dump is built a bit after midnight european time. It
+looks like Greg happened to check in his latest changes just
+after this happened, so you don't have the most current version
+(the code containing the above line is now in a seperate file).
+
+I just integrated the new stuff with the SCons build system, and
+everything compiles fine here. It will all be in the HEAD dump
+tomorrow (really now! ;).
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From radiance-dev@radiance-online.org  Thu Jan  1 16:51:22 2004
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Thu, 1 Jan 2004 08:51:22 -0800
+Subject: [Radiance-dev] source.c typo in current HEAD
+In-Reply-To: <Pine.BSF.4.58.0401010556410.35820@emancholl.pair.com>
+References: <200401010350.WAA16331@swiftsure.cnchost.com> <Pine.BSF.4.58.0401010556410.35820@emancholl.pair.com>
+Message-ID: <BAF506C2-3C7A-11D8-9997-000A95BB392A@lmi.net>
+
+Thanks, Schorsch for pointing that out.  I try not to check in anything 
+after midnight, but that's California time!
+
+If you want to see the latest, you can always go directly to the source 
+pages Peter has so lovingly arranged for us:
+
+	http://www.radiance-online.org/cgi-bin/viewcvs.cgi/ray/src/
+
+There you can always see the changes and download the latest, without 
+relying on the nightly dump.
+
+-Greg
+
+P.S.  A "rule of thumb" on check-ins is that they should always 
+compile.  I obviously messed up on that check-in, then messed up again 
+by telling everyone to go grab it!!  (Sorry about that.)
+
+> From: Georg Mischler <schorsch@schorsch.com>
+> Date: January 1, 2004 3:08:01 AM PST
+>
+> John de Valpine wrote:
+>
+>> Hey Greg,
+>>
+>> I grabbed the latest HEAD to check out your new optimization. It 
+>> looks like there is a typo in source.c that results in a compile 
+>> error.  Here is a diff.
+>>
+>> [root@fs rt]# diff source.c source.c.orig
+>> 386c386
+>> < 			return &noobs;   /* could happen if ray is outside */
+>> ---
+>>> 			return &nobs;   /* could happen if ray is outside */
+>
+>
+> The HEAD dump is built a bit after midnight european time. It
+> looks like Greg happened to check in his latest changes just
+> after this happened, so you don't have the most current version
+> (the code containing the above line is now in a seperate file).
+>
+> I just integrated the new stuff with the SCons build system, and
+> everything compiles fine here. It will all be in the HEAD dump
+> tomorrow (really now! ;).
+>
+>
+> -schorsch
+
+
+From radiance-dev@radiance-online.org  Thu Jan  1 17:14:49 2004
+From: radiance-dev@radiance-online.org (Roland Schregle)
+Date: Thu, 01 Jan 2004 18:14:49 +0100
+Subject: [Radiance-dev] Re: [Radiance-general] New occlusion testing optimization
+In-Reply-To: <E7CF4D64-3BD2-11D8-A23B-000A95BB392A@lmi.net>
+References: <E7CF4D64-3BD2-11D8-A23B-000A95BB392A@lmi.net>
+Message-ID: <3FF45589.9000506@gmx.net>
+
+Greg Ward wrote:
+> I just checked in a new optimization for light source testing that seems 
+> to speed renderings up by about a factor of 2, depending on the number 
+> and arrangement of light sources in the scene.  
+> 
+> The way it works is simple:  with each light source, we associate an 
+> array of SHADCACHExSHADCACHE OBJECT indices listing occluders in each 
+> direction as seen from the source.
+
+(Techy stuff, so moved to radiance-dev)
+
+Howdy Greg, and a happy new one to you too!
+
+Just wondering: how do you resolve the spatial dependency of the shadow 
+blocker w.r.t. direction and position on the source? This cache would 
+have to be at least 4 dimensional to account for that.
+
+--Roland
+
+
+-- 
+Roland Schregle
+PhD candidate, Fraunhofer Institute for Solar Energy Systems
+RADIANCE Photon Map page: www.ise.fhg.de/radiance/photon-map
+
+END OF LINE. (MCP)
+
+
+From radiance-dev@radiance-online.org  Thu Jan  1 17:32:57 2004
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Thu, 1 Jan 2004 09:32:57 -0800
+Subject: [Radiance-dev] Re: [Radiance-general] New occlusion testing optimization
+In-Reply-To: <3FF45589.9000506@gmx.net>
+References: <E7CF4D64-3BD2-11D8-A23B-000A95BB392A@lmi.net> <3FF45589.9000506@gmx.net>
+Message-ID: <89DE8746-3C80-11D8-9997-000A95BB392A@lmi.net>
+
+Hi Roland,
+
+Happy New Year to you, too!
+
+> From: Roland Schregle <ganjatron@gmx.net>
+> Date: January 1, 2004 9:14:49 AM PST
+>
+> Just wondering: how do you resolve the spatial dependency of the 
+> shadow blocker w.r.t. direction and position on the source? This cache 
+> would have to be at least 4 dimensional to account for that.
+
+Simple.  I don't.  The cache is only two dimensional.  The algorithm 
+switches off when a test point is close enough to the source to trigger 
+subdivision (controlled by -ds parameter), so we hopefully avoid the 
+cases where the cache is made useless by the relative size of the 
+source.
+
+The cache is only used as a hint for one blocker to check before the 
+rest, and it's by no means guaranteed to give you the right one.  For 
+sources that are small with respect to their distance (i.e., they cover 
+a small solid angle seen from the test point), the hint is likely to be 
+pretty good.  In my test scene that had many large light sources, which 
+may be tested from a great distance as well as close up, I got about a 
+75% success rate.  Since testing a ray against a single surface (I also 
+exclude instances and meshes from the cache), the cost of the 
+intersection test is so cheap that adding in an extra one prior to 
+full-blown ray tracing is really negligible.
+
+If you want to have a look at how I do all this, the routines aren't 
+very long, and are collected together in the new module 
+src/rt/srcobstr.c.  (I should have mentioned in my last e-mail to Jack 
+that if he doesn't want to wait for tomorrow's dump, then he'll have to 
+pick up this new module as well since it's not in last night's dump.)  
+Comments are always welcome.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Fri Jan  2 07:01:52 2004
+From: radiance-dev@radiance-online.org (=?iso-8859-1?Q?Patrik_M=FCller?=)
+Date: Fri, 2 Jan 2004 08:01:52 +0100
+Subject: [Radiance-dev] RE: RE: Problems with using VC6
+In-Reply-To: <20040101110003.7683.37216.Mailman@radiance-on-linux.org>
+Message-ID: <CGEKIDKIKLBNCLGHCDOHCEFPCDAA.muellerptr@kimweb.de>
+
+
+>This has nothing to do with C++ vs. C or your compiler version.
+
+>We have modified all header files earlier this year so that the
+>code should compile correctly with any conforming C/C++ compiler.
+>This also means that you should use the HEAD dump instead of the
+>outdated 3.5 release if you don't do this already.
+
+>What you need is the following definition somewhere:
+
+>FUN  ofun[NUMOTYPE] = INIT_OTYPE;
+
+>This statement is present in the sources for several Radiance
+>executables, as well as in src/rt/initotypes.c (linked into
+>src/lib/libradiance.a if you use the makeall script, and into
+>src/lib/librttrace.a if you use SCons) for use by the renderers.
+>The relevant declarations are in src/common/otypes.h.
+
+>Since SCons is platform-independent (most of Radiance compiles
+>fine with VC6 that way), I'd recommend to build Radiance with
+>this, and just use the resulting libraries for your project.
+>SCons automatically selects alternative code for some of the
+>platform specific functionality, so that you don't need to worry
+>about most unix APIs. Note that SCons also creates a different
+>and more granular set of libraries than the Rmakefiles, which
+>gives you more flexibility to link to just what you need.
+
+>The SCons build instructions and requirements can be found
+>somewhere in the archives here, but you can just ask if you need
+>any further explanations.
+
+
+>-schorsch
+
+>--
+>Georg Mischler  --  simulations developer  --  schorsch at schorsch com
+>+schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+Hi schorsch,
+
+I've searched a little bit a the mailing list but found no hint how to use
+SCons. I have now installed Python and SCons. Whats the next step?
+
+Happy new year,
+
+Patrik
+
+
+From radiance-dev@radiance-online.org  Fri Jan  2 08:34:07 2004
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Fri, 2 Jan 2004 03:34:07 -0500 (EST)
+Subject: [Radiance-dev] Problems with using VC6
+In-Reply-To: <CGEKIDKIKLBNCLGHCDOHCEFPCDAA.muellerptr@kimweb.de>
+References: <CGEKIDKIKLBNCLGHCDOHCEFPCDAA.muellerptr@kimweb.de>
+Message-ID: <Pine.BSF.4.58.0401020317590.47359@emancholl.pair.com>
+
+Patrik Müller wrote:
+
+>
+> >The SCons build instructions and requirements can be found
+> >somewhere in the archives here, but you can just ask if you need
+> >any further explanations.
+>
+>
+> I've searched a little bit a the mailing list but found no hint how to use
+> SCons. I have now installed Python and SCons. Whats the next step?
+
+
+The best information can be found in the SCons documentation.
+ http://scons.sourceforge.net/doc/HTML/scons-man.html
+
+Here's a brief summary:
+In all cases, you need a console window and to change to
+the "ray" directory of the Radiance sources.
+Then the simplest invocation (assuming Scons is installed so
+that it gets found on the %PATH%) is just typing:
+
+  scons
+
+which will build everything. If the "scons.bat" file wasn't installed
+on your %PATH%, then you can feed its *.py sibling to Python:
+
+  python "x:\where\ever\is\scons.py"
+
+You can give arguments to specify individual targets or directories
+to get built:
+
+  scons src\rt\rtrace.lib
+  scons src\lib
+
+To remove all previously generated files involved in building a target
+use the -c option:
+
+  scons -c
+
+There are several configuration options in our build, which will be
+remembered for future invocations. The general form is:
+
+  scons opt=val
+
+The -h option will give you a list of what's available.
+
+The os specific configuration files are located in ray/platform/.
+In your case the file "win32.cfg" will be used. Don't modify those,
+because they'll be replaced when you update your sources. If you
+want to make any changes (you shouldn't need to), then you can
+create a copy named "win32_custom.cfg" and modify that. SCons will
+prefer the xxx_custom name for a platform if it exists.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Fri Jan  2 08:52:49 2004
+From: radiance-dev@radiance-online.org (=?iso-8859-1?Q?Patrik_M=FCller?=)
+Date: Fri, 2 Jan 2004 09:52:49 +0100
+Subject: [Radiance-dev] Problems with using VC6
+In-Reply-To: <Pine.BSF.4.58.0401020317590.47359@emancholl.pair.com>
+Message-ID: <CGEKIDKIKLBNCLGHCDOHMEFPCDAA.muellerptr@kimweb.de>
+
+Yes,
+
+now I've got the libs!!! :-))
+
+Now lets continue with the original project...
+
+Thanks for the fast help,
+
+Patrik
+
+-----Original Message-----
+From: radiance-dev-admin@radiance-online.org
+[mailto:radiance-dev-admin@radiance-online.org]On Behalf Of Georg
+Mischler
+Sent: Friday, January 02, 2004 9:34 AM
+To: radiance-dev@radiance-online.org
+Subject: Re: [Radiance-dev] Problems with using VC6
+
+
+Patrik Müller wrote:
+
+>
+> >The SCons build instructions and requirements can be found
+> >somewhere in the archives here, but you can just ask if you need
+> >any further explanations.
+>
+>
+> I've searched a little bit a the mailing list but found no hint how to use
+> SCons. I have now installed Python and SCons. Whats the next step?
+
+
+The best information can be found in the SCons documentation.
+ http://scons.sourceforge.net/doc/HTML/scons-man.html
+
+Here's a brief summary:
+In all cases, you need a console window and to change to
+the "ray" directory of the Radiance sources.
+Then the simplest invocation (assuming Scons is installed so
+that it gets found on the %PATH%) is just typing:
+
+  scons
+
+which will build everything. If the "scons.bat" file wasn't installed
+on your %PATH%, then you can feed its *.py sibling to Python:
+
+  python "x:\where\ever\is\scons.py"
+
+You can give arguments to specify individual targets or directories
+to get built:
+
+  scons src\rt\rtrace.lib
+  scons src\lib
+
+To remove all previously generated files involved in building a target
+use the -c option:
+
+  scons -c
+
+There are several configuration options in our build, which will be
+remembered for future invocations. The general form is:
+
+  scons opt=val
+
+The -h option will give you a list of what's available.
+
+The os specific configuration files are located in ray/platform/.
+In your case the file "win32.cfg" will be used. Don't modify those,
+because they'll be replaced when you update your sources. If you
+want to make any changes (you shouldn't need to), then you can
+create a copy named "win32_custom.cfg" and modify that. SCons will
+prefer the xxx_custom name for a platform if it exists.
+
+
+-schorsch
+
+--
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+From radiance-dev@radiance-online.org  Fri Jan  2 18:54:10 2004
+From: radiance-dev@radiance-online.org (Jack de Valpine)
+Date: Fri, 02 Jan 2004 13:54:10 -0500
+Subject: [Radiance-dev] rpict: out of memory in ecalloc
+Message-ID: <3FF5BE52.8000806@visarc.com>
+
+Hi all,
+
+I grabbed and recompiled with the latest HEAD as per the previous 
+thread. I started a scene and came back to find that it had died with 
+the following error reported:
+
+rpict: out of memory in ecalloc
+
+I am using rpiece to run the scene on a machine equipped with 2GB of 
+memory. I do not know if this is related to the latest changes or some 
+other problem.
+
+-Jack
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+
+
+From radiance-dev@radiance-online.org  Fri Jan  2 19:32:03 2004
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Fri, 2 Jan 2004 11:32:03 -0800
+Subject: [Radiance-dev] rpict: out of memory in ecalloc
+In-Reply-To: <3FF5BE52.8000806@visarc.com>
+References: <3FF5BE52.8000806@visarc.com>
+Message-ID: <57BEA2FA-3D5A-11D8-9FBE-000A95BB392A@lmi.net>
+
+That's really strange.  It seems that ecalloc() is only called for one 
+purpose, which is to allocate nodes in the .cal expression parse tree.  
+This is a very small amount of memory, so either you just happened to 
+run out of memory when reading in a new .cal file or else it was caught 
+in a loop reading the .cal file in over and over again.
+
+I don't see how the changes I made to the source routines could be 
+affecting this, unless you have so many light sources that it gobbled 
+up all your VM before loading in the.cal file.  That seems incredibly 
+unlikely, since it would have failed on a larger memory request, and 
+you would need over 250,000 light sources to use up a GByte of RAM.
+
+Maybe Schorch has some ideas -- he also checked in a bunch of changes, 
+though they were all ANSIfication fixes that shouldn't have caused 
+problems.
+
+Can you rerun the process, just to see if it dies at the same point?
+
+-Greg
+
+> From: Jack de Valpine <jedev@visarc.com>
+> Date: January 2, 2004 10:54:10 AM PST
+>
+> Hi all,
+>
+> I grabbed and recompiled with the latest HEAD as per the previous 
+> thread. I started a scene and came back to find that it had died with 
+> the following error reported:
+>
+> rpict: out of memory in ecalloc
+>
+> I am using rpiece to run the scene on a machine equipped with 2GB of 
+> memory. I do not know if this is related to the latest changes or some 
+> other problem.
+>
+> -Jack
+
+
+From radiance-dev@radiance-online.org  Fri Jan  2 19:42:38 2004
+From: radiance-dev@radiance-online.org (Jack de Valpine)
+Date: Fri, 02 Jan 2004 14:42:38 -0500
+Subject: [Radiance-dev] rpict: out of memory in ecalloc
+References: <3FF5BE52.8000806@visarc.com> <57BEA2FA-3D5A-11D8-9FBE-000A95BB392A@lmi.net>
+Message-ID: <3FF5C9AE.7010705@visarc.com>
+
+Hi Greg,
+
+Thanks, I am rerunning the process to see what happens. I will note 
+that, although I have successfully rendered this scene before, it is 
+with an older version of Radiance (probably somewhere between 3.4 and 
+3.5 in vintage), so it sound's like this could likely be something 
+completely unrelated to the source routines. There are a limited number 
+of lights in the scene, so I do not believe that this would be a problem.
+
+As a side note. Would it be possible to have the routine(s) ecalloc and 
+others report the name of the .cal that a process dies on, if indeed 
+this is the problem?
+
+-Jack
+
+Greg Ward wrote:
+
+> That's really strange.  It seems that ecalloc() is only called for one 
+> purpose, which is to allocate nodes in the .cal expression parse 
+> tree.  This is a very small amount of memory, so either you just 
+> happened to run out of memory when reading in a new .cal file or else 
+> it was caught in a loop reading the .cal file in over and over again.
+>
+> I don't see how the changes I made to the source routines could be 
+> affecting this, unless you have so many light sources that it gobbled 
+> up all your VM before loading in the.cal file.  That seems incredibly 
+> unlikely, since it would have failed on a larger memory request, and 
+> you would need over 250,000 light sources to use up a GByte of RAM.
+>
+> Maybe Schorch has some ideas -- he also checked in a bunch of changes, 
+> though they were all ANSIfication fixes that shouldn't have caused 
+> problems.
+>
+> Can you rerun the process, just to see if it dies at the same point?
+>
+> -Greg
+>
+>> From: Jack de Valpine <jedev@visarc.com>
+>> Date: January 2, 2004 10:54:10 AM PST
+>>
+>> Hi all,
+>>
+>> I grabbed and recompiled with the latest HEAD as per the previous 
+>> thread. I started a scene and came back to find that it had died with 
+>> the following error reported:
+>>
+>> rpict: out of memory in ecalloc
+>>
+>> I am using rpiece to run the scene on a machine equipped with 2GB of 
+>> memory. I do not know if this is related to the latest changes or 
+>> some other problem.
+>>
+>> -Jack
+>
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+
+
+
+From radiance-dev@radiance-online.org  Fri Jan  2 21:35:20 2004
+From: radiance-dev@radiance-online.org (Jack de Valpine)
+Date: Fri, 02 Jan 2004 16:35:20 -0500
+Subject: [Radiance-dev] rpict: out of memory in ecalloc
+References: <3FF5BE52.8000806@visarc.com> <57BEA2FA-3D5A-11D8-9FBE-000A95BB392A@lmi.net> <3FF5C9AE.7010705@visarc.com>
+Message-ID: <3FF5E418.7080702@visarc.com>
+
+Ok, new error now at same point in process (same percentage complete):
+
+rpict: system - out of memory in getfunc: Cannot allocate memory
+
+-Jack
+
+Jack de Valpine wrote:
+
+> Hi Greg,
+>
+> Thanks, I am rerunning the process to see what happens. I will note 
+> that, although I have successfully rendered this scene before, it is 
+> with an older version of Radiance (probably somewhere between 3.4 and 
+> 3.5 in vintage), so it sound's like this could likely be something 
+> completely unrelated to the source routines. There are a limited 
+> number of lights in the scene, so I do not believe that this would be 
+> a problem.
+>
+> As a side note. Would it be possible to have the routine(s) ecalloc 
+> and others report the name of the .cal that a process dies on, if 
+> indeed this is the problem?
+>
+> -Jack
+>
+> Greg Ward wrote:
+>
+>> That's really strange.  It seems that ecalloc() is only called for 
+>> one purpose, which is to allocate nodes in the .cal expression parse 
+>> tree.  This is a very small amount of memory, so either you just 
+>> happened to run out of memory when reading in a new .cal file or else 
+>> it was caught in a loop reading the .cal file in over and over again.
+>>
+>> I don't see how the changes I made to the source routines could be 
+>> affecting this, unless you have so many light sources that it gobbled 
+>> up all your VM before loading in the.cal file.  That seems incredibly 
+>> unlikely, since it would have failed on a larger memory request, and 
+>> you would need over 250,000 light sources to use up a GByte of RAM.
+>>
+>> Maybe Schorch has some ideas -- he also checked in a bunch of 
+>> changes, though they were all ANSIfication fixes that shouldn't have 
+>> caused problems.
+>>
+>> Can you rerun the process, just to see if it dies at the same point?
+>>
+>> -Greg
+>>
+>>> From: Jack de Valpine <jedev@visarc.com>
+>>> Date: January 2, 2004 10:54:10 AM PST
+>>>
+>>> Hi all,
+>>>
+>>> I grabbed and recompiled with the latest HEAD as per the previous 
+>>> thread. I started a scene and came back to find that it had died 
+>>> with the following error reported:
+>>>
+>>> rpict: out of memory in ecalloc
+>>>
+>>> I am using rpiece to run the scene on a machine equipped with 2GB of 
+>>> memory. I do not know if this is related to the latest changes or 
+>>> some other problem.
+>>>
+>>> -Jack
+>>
+>>
+>>
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev@radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>>
+>>
+>
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+
+
+
+From radiance-dev@radiance-online.org  Thu Jan  8 18:29:18 2004
+From: radiance-dev@radiance-online.org (Zack Rogers)
+Date: Thu, 08 Jan 2004 11:29:18 -0700
+Subject: [Radiance-dev] Problems installing on Suse 8.2
+Message-ID: <3FFDA17E.4030909@archenergy.com>
+
+Hello,
+
+We have not been able to install the latest HEAD release on our Suse 8.2 
+machine.  The installation worked fine on several Suse 7.2 machines. 
+ The problem on the 8.2 machines was related to libtiff, specifically 
+when using rmake to compile makefile from makefile.in in the directory 
+raysource/px/tiff/ .  It seems line 31 and several other lines get 
+garbled and essentially are not commented out anymore.  Line 31 just 
+contains a bunch of version information.  
+
+The relevant differences noted between Suse 8.2 and Suse 7.2 was with 
+the libtiff version and the gcc version.
+
+Suse 7.2 has
+libtiff 3.5.5-136
+gcc 2.95.3-52
+
+Suse 8.2 has
+libtiff 3.5.7-204
+gcc3.3-23
+
+I read somewhere on this site that people were successful with libtiff 
+3.5.7 and so that leads me to think the problem was with the version of gcc.
+
+Just wanted to report this problem to you all as Suse 7.2 is now several 
+years old and Suse 8.2 is also slightly outdated.  Is there any work 
+arounds we can take to get Radiance working on Suse8.2?  Most of the 
+binaries seemed to compile before this error, could we just execute the 
+last portion of the install script to move the binaries into the correct 
+locations, and what programs would we be missing if we did that? (ie. 
+what programs are dependant on libtiff?)
+
+Thanks in advance!
+Zack
+
+PS Thanks Greg for the help in narrowing down this error!
+
+-- 
+Zack Rogers
+Staff Engineer
+Architectural Energy Corporation
+2540 Frontier Avenue, Suite 201
+Boulder, CO 80301 USA
+
+tel (303)444-4149 ext.235
+fax (303)444-4304
+http://www.archenergy.com
+
+
+
+From radiance-dev@radiance-online.org  Thu Jan  8 18:47:12 2004
+From: radiance-dev@radiance-online.org (Roland Schregle)
+Date: Thu, 08 Jan 2004 19:47:12 +0100
+Subject: [Radiance-dev] Problems installing on Suse 8.2
+In-Reply-To: <3FFDA17E.4030909@archenergy.com>
+References: <3FFDA17E.4030909@archenergy.com>
+Message-ID: <3FFDA5B0.4040209@gmx.net>
+
+Zack Rogers wrote:
+> Hello,
+> 
+> We have not been able to install the latest HEAD release on our Suse 8.2 
+> machine.  The installation worked fine on several Suse 7.2 machines. The 
+> problem on the 8.2 machines was related to libtiff, specifically when 
+> using rmake to compile makefile from makefile.in in the directory 
+> raysource/px/tiff/ .  It seems line 31 and several other lines get 
+> garbled and essentially are not commented out anymore.  Line 31 just 
+> contains a bunch of version information. 
+
+ From the sound of it, I ran into this too under Mandrake 9.1. The 
+entire Makefile is garbled with stuff repeated all over the place. I 
+think it was a problem with sed, but I never figured out why. I vaguely 
+remember sed generated the makefile fine from the commandline, but not 
+from the configure script -- VERY weird. I ended up doing it the hard 
+way, i.e. manually. You might wanna try a newer libtiff and pray it's 
+still compatible with RADIANCE. In any case, future RADIANCE releases 
+should definitely upgrade to a current(ish) libtiff.
+
+--Roland
+
+-- 
+Roland Schregle
+PhD candidate, Fraunhofer Institute for Solar Energy Systems
+RADIANCE Photon Map page: www.ise.fhg.de/radiance/photon-map
+
+END OF LINE. (MCP)
+
+
+From radiance-dev@radiance-online.org  Thu Jan  8 18:33:48 2004
+From: radiance-dev@radiance-online.org (Zack Rogers)
+Date: Thu, 08 Jan 2004 11:33:48 -0700
+Subject: [Radiance-dev] Radiance on 64-bit
+Message-ID: <3FFDA28C.5040501@archenergy.com>
+
+Hello again,
+
+We are considering getting a new G5!  I am wondering if there is any 
+work happening on creating a 64-bit version of Radiance?  If not, what 
+are people's thoughts on how extensive this conversion would be?
+
+Thanks!
+Zack
+
+-- 
+Zack Rogers
+Staff Engineer
+Architectural Energy Corporation
+2540 Frontier Avenue, Suite 201
+Boulder, CO 80301 USA
+
+tel (303)444-4149 ext.235
+fax (303)444-4304
+http://www.archenergy.com
+
+
+
+From radiance-dev@radiance-online.org  Thu Jan  8 19:48:38 2004
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Thu, 8 Jan 2004 14:48:38 -0500 (EST)
+Subject: [Radiance-dev] Radiance on 64-bit
+In-Reply-To: <3FFDA28C.5040501@archenergy.com>
+References: <3FFDA28C.5040501@archenergy.com>
+Message-ID: <Pine.BSF.4.58.0401081430110.65768@emancholl.pair.com>
+
+Zack Rogers wrote:
+
+> Hello again,
+>
+> We are considering getting a new G5!  I am wondering if there is any
+> work happening on creating a 64-bit version of Radiance?  If not, what
+> are people's thoughts on how extensive this conversion would be?
+
+
+Doesn't the G5 run 32 bit binaries as well?
+I'm not sure what the benefit would be, btw. Are you thinking of
+some aspect in particular?
+
+There are many elements in a program that can be either 32 or
+64 bits wide (or any other size). Among others those are the
+sizes of ints (increasing their range), floats (increasing their
+precision), and pointers (increasing the address space).
+But very often, those have no direct influence on performance.
+The most noticeable thing to change might be the required amount
+of memory. In the worst case, you'd have to install twice as much
+RAM to get the same result.
+
+What *would* help for the recent G# Macs is the use of the
+altivec unit in the CPU. If someone finds a way to eg. unroll the
+64 multiplications in multmat4 in src/common/mat4.c, so that they
+get executed in parallel, then that might make a real difference.
+Anyone wants to dig into PowerPC assembler?
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From radiance-dev@radiance-online.org  Thu Jan  8 21:09:49 2004
+From: radiance-dev@radiance-online.org (Ferdinand Schmid)
+Date: Thu, 08 Jan 2004 14:09:49 -0700
+Subject: [Radiance-dev] Radiance on 64-bit
+In-Reply-To: <Pine.BSF.4.58.0401081430110.65768@emancholl.pair.com>
+References: <3FFDA28C.5040501@archenergy.com>
+ <Pine.BSF.4.58.0401081430110.65768@emancholl.pair.com>
+Message-ID: <17220000.1073596189@[192.168.5.33]>
+
+--On Thursday, January 08, 2004 02:48:38 PM -0500 Georg Mischler
+<schorsch@schorsch.com> wrote:
+<snip>
+> Doesn't the G5 run 32 bit binaries as well?
+> I'm not sure what the benefit would be, btw. Are you thinking of
+> some aspect in particular?
+
+Yes, the G5 is binary compatible with 32bit apps.  What Zack was hoping
+for is
+increased math performance for long ints and floats.  Not knowing the
+source
+code I can't tell what type of variables/math Radiance uses.  But if
+you can
+combine a two step 32bit operation into a single 64bit operation then
+you can
+gain significant performance improvements.
+
+> There are many elements in a program that can be either 32 or
+> 64 bits wide (or any other size). Among others those are the
+> sizes of ints (increasing their range), floats (increasing their
+> precision), and pointers (increasing the address space).
+> But very often, those have no direct influence on performance.
+> The most noticeable thing to change might be the required amount
+> of memory. In the worst case, you'd have to install twice as much
+> RAM to get the same result.
+> 
+> What *would* help for the recent G# Macs is the use of the
+> altivec unit in the CPU. If someone finds a way to eg. unroll the
+> 64 multiplications in multmat4 in src/common/mat4.c, so that they
+> get executed in parallel, then that might make a real difference.
+> Anyone wants to dig into PowerPC assembler?
+
+I think this answers Zack's and my question.  Radiance isn't using
+64bit words
+and won't benefit from 64bit math.
+
+Thanks,
+Ferdinand
+
+--
+Ferdinand Schmid
+Architectural Energy Corporation
+Celebrating over 20 Years of Improving Building Energy Performance
+http://www.archenergy.com
+
+
+From radiance-dev@radiance-online.org  Fri Jan  9 14:13:23 2004
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Fri, 9 Jan 2004 09:13:23 -0500 (EST)
+Subject: [Radiance-dev] Radiance on 64-bit
+In-Reply-To: <17220000.1073596189@[192.168.5.33]>
+References: <3FFDA28C.5040501@archenergy.com> <Pine.BSF.4.58.0401081430110.65768@emancholl.pair.com>
+ <17220000.1073596189@[192.168.5.33]>
+Message-ID: <Pine.BSF.4.58.0401090855530.99877@emancholl.pair.com>
+
+Ferdinand Schmid wrote:
+
+> I think this answers Zack's and my question.  Radiance isn't using
+> 64bit words and won't benefit from 64bit math.
+
+
+Well, it's entirely possible that making explicit use of wider
+data paths *somewhere* in the G5 system architecture might result
+in a performance advantage. But obviously, such an optimisation
+would be highly platform specific. If you feel like researching
+compiler switches and their potential benefits and dangers, be my
+guest!
+
+In the mean time I found that Apple provides an altivec optimized
+BLAS implementation, which includes all common matrix and vector
+operations. It looks like we could just replace the contents of
+mat4.c and invmat4.c with macros invoking the equivalent functions
+in that library to make optimal use of the special CPU capabilities.
+I don't have a Mac myself (although I'm open to donations... ;),
+but the conversion looks quite straightforward if anyone wants to
+give it a try:
+
+  http://developer.apple.com/hardware/ve/vector_libraries.html
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From radiance-dev@radiance-online.org  Fri Jan  9 17:06:20 2004
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Fri, 9 Jan 2004 09:06:20 -0800
+Subject: [Radiance-dev] Radiance on 64-bit
+In-Reply-To: <Pine.BSF.4.58.0401090855530.99877@emancholl.pair.com>
+References: <3FFDA28C.5040501@archenergy.com> <Pine.BSF.4.58.0401081430110.65768@emancholl.pair.com> <17220000.1073596189@[192.168.5.33]> <Pine.BSF.4.58.0401090855530.99877@emancholl.pair.com>
+Message-ID: <2550CBE8-42C6-11D8-B5CE-000A95BB392A@lmi.net>
+
+> From: Georg Mischler <schorsch@schorsch.com>
+> Date: January 9, 2004 6:13:23 AM PST
+>
+> Ferdinand Schmid wrote:
+>
+>> I think this answers Zack's and my question.  Radiance isn't using
+>> 64bit words and won't benefit from 64bit math.
+>
+> Well, it's entirely possible that making explicit use of wider
+> data paths *somewhere* in the G5 system architecture might result
+> in a performance advantage. But obviously, such an optimisation
+> would be highly platform specific. If you feel like researching
+> compiler switches and their potential benefits and dangers, be my
+> guest!
+
+I spent a little time on compiler options myself, since I have a 
+dual-processor G5, and found that the best I could get was about a 10% 
+improvement over the -O2 default setting without causing some failure 
+in the system.  The -fast option that does all the most aggressive 
+optimizations for the G5 works on Mark Stock's benchmark with good 
+effect (30% speed improvement or so), but causes an infinite loop 
+somewhere in the code for other scenes.  Regrettably, I don't have a 
+good recommendation for a set of options to use with the G5 in lieu of 
+-fast -- I tried a bunch of them and never got anything close to the 
+performance improvement of this one option, and it isn't reliable.
+
+> In the mean time I found that Apple provides an altivec optimized
+> BLAS implementation, which includes all common matrix and vector
+> operations. It looks like we could just replace the contents of
+> mat4.c and invmat4.c with macros invoking the equivalent functions
+> in that library to make optimal use of the special CPU capabilities.
+> I don't have a Mac myself (although I'm open to donations... ;),
+> but the conversion looks quite straightforward if anyone wants to
+> give it a try:
+>
+>   http://developer.apple.com/hardware/ve/vector_libraries.html
+
+Even easier, Apple offers a library of their own routines to get the 
+job done.  Just run "man Accelerate" to learn all about it.  However, 
+I'm not sure how much speedup you'll get by reimplementing the matrix 
+routines -- they're pretty short vectors, and they're not called all 
+that often in the code.  I'd recommend looking in the ray tracing 
+routines in "rt/raytrace.c" for places to optimize first, then perhaps 
+"source.c" at the direct calculations.  Radiance doesn't deal with a 
+lot of long vectors, though, and the set up costs for vectors of length 
+4 or less usually cancels the savings from what I've heard.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Fri Jan  9 18:01:26 2004
+From: radiance-dev@radiance-online.org (Ferdinand Schmid)
+Date: Fri, 09 Jan 2004 11:01:26 -0700
+Subject: [Radiance-dev] Radiance on 64-bit
+In-Reply-To: <2550CBE8-42C6-11D8-B5CE-000A95BB392A@lmi.net>
+References: <3FFDA28C.5040501@archenergy.com>
+ <Pine.BSF.4.58.0401081430110.65768@emancholl.pair.com>
+ <17220000.1073596189@[192.168.5.33]>
+ <Pine.BSF.4.58.0401090855530.99877@emancholl.pair.com>
+ <2550CBE8-42C6-11D8-B5CE-000A95BB392A@lmi.net>
+Message-ID: <10320000.1073671286@[192.168.5.33]>
+
+Thanks Greg and Georg,
+
+This is the type of information I was hoping to receive.  Many of Zack's
+simulations take several days to complete (on our current dual AthlonMP
+1.8 GHz
+systems).  I wanted to identify options to improve performance.  For
+some type
+of analyses (e.g. some of our CFD work) it makes sense to use 64bit
+code to
+more efficiently fit the problems into memory and to improve the math.
+
+Apparently Radiance problems are not the best fit for a 64bit platform
+at this
+time.  We may be better off with a small cluster of high clock speed
+32bit
+systems. 
+
+Thanks again for taking the time to guide us with your expert insight,
+Ferdinand
+
+--On Friday, January 09, 2004 09:06:20 AM -0800 Greg Ward
+<gward@lmi.net> wrote:
+
+>> From: Georg Mischler <schorsch@schorsch.com>
+>> Date: January 9, 2004 6:13:23 AM PST
+>> 
+>> Ferdinand Schmid wrote:
+>> 
+>>> I think this answers Zack's and my question.  Radiance isn't using
+>>> 64bit words and won't benefit from 64bit math.
+>> 
+>> Well, it's entirely possible that making explicit use of wider
+>> data paths *somewhere* in the G5 system architecture might result
+>> in a performance advantage. But obviously, such an optimisation
+>> would be highly platform specific. If you feel like researching
+>> compiler switches and their potential benefits and dangers, be my
+>> guest!
+> 
+> I spent a little time on compiler options myself, since I have a
+> dual-processor G5, and found that the best I could get was about a
+> 10% improvement over the -O2 default setting without causing some
+> failure in the system.  The -fast option that does all the most
+> aggressive optimizations for the G5 works on Mark Stock's benchmark
+> with good effect (30% speed improvement or so), but causes an
+> infinite loop somewhere in the code for other scenes.  Regrettably, I
+> don't have a good recommendation for a set of options to use with the
+> G5 in lieu of -fast -- I tried a bunch of them and never got anything
+> close to the performance improvement of this one option, and it isn't
+> reliable.
+> 
+>> In the mean time I found that Apple provides an altivec optimized
+>> BLAS implementation, which includes all common matrix and vector
+>> operations. It looks like we could just replace the contents of
+>> mat4.c and invmat4.c with macros invoking the equivalent functions
+>> in that library to make optimal use of the special CPU capabilities.
+>> I don't have a Mac myself (although I'm open to donations... ;),
+>> but the conversion looks quite straightforward if anyone wants to
+>> give it a try:
+>> 
+>>   http://developer.apple.com/hardware/ve/vector_libraries.html
+> 
+> Even easier, Apple offers a library of their own routines to get the
+> job done.  Just run "man Accelerate" to learn all about it.  However,
+> I'm not sure how much speedup you'll get by reimplementing the matrix
+> routines -- they're pretty short vectors, and they're not called all
+> that often in the code.  I'd recommend looking in the ray tracing
+> routines in "rt/raytrace.c" for places to optimize first, then
+> perhaps "source.c" at the direct calculations.  Radiance doesn't deal
+> with a lot of long vectors, though, and the set up costs for vectors
+> of length 4 or less usually cancels the savings from what I've heard.
+> 
+> -Greg
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+--
+Ferdinand Schmid
+Architectural Energy Corporation
+Celebrating over 20 Years of Improving Building Energy Performance
+http://www.archenergy.com
+
+
+From radiance-dev@radiance-online.org  Fri Jan  9 18:21:06 2004
+From: radiance-dev@radiance-online.org (Rob Guglielmetti)
+Date: Fri, 09 Jan 2004 13:21:06 -0500
+Subject: [Radiance-dev] Radiance on 64-bit
+In-Reply-To: <10320000.1073671286@[192.168.5.33]>
+References: <3FFDA28C.5040501@archenergy.com> <Pine.BSF.4.58.0401081430110.65768@emancholl.pair.com> <17220000.1073596189@[192.168.5.33]> <Pine.BSF.4.58.0401090855530.99877@emancholl.pair.com> <2550CBE8-42C6-11D8-B5CE-000A95BB392A@lmi.net> <10320000.1073671286@[192.168.5.33]>
+Message-ID: <3FFEF112.2010100@rumblestrip.org>
+
+Ferdinand Schmid wrote:
+
+> Apparently Radiance problems are not the best fit for a 64bit platform
+> at this
+> time.  We may be better off with a small cluster of high clock speed
+> 32bit
+> systems. 
+
+The only problem with that is that the NFS locking is problematic.  I 
+believe Visarc Jack uses dual CPU machines and keeps all his rpiece 
+simulations limited to the two CPUs in any one box, after trying many 
+times do get good results across a cluster.  John An recently reported 
+some difficulty as well with this.
+
+I'm not saying it cannot be done, simply that a lot of very experienced 
+people on this list have seemingly given up on making big clusters run 
+rpiece without error.  But if you're bringing your dual CPU machine to 
+its knees already, perhaps it's worth a look.
+
+Your mileage may vary on this advice, since I only have a rudimentary 
+understanding of rpiece and the NFS problems.  I just thought I'd bring 
+it up.  I'd love to hear success stories with this issue...
+
+----
+
+      Rob Guglielmetti
+
+e. rpg@rumblestrip.org
+w. www.rumblestrip.org
+
+
+From radiance-dev@radiance-online.org  Fri Jan  9 18:54:31 2004
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Fri, 9 Jan 2004 13:54:31 -0500 (EST)
+Subject: [Radiance-dev] Radiance on 64-bit
+In-Reply-To: <2550CBE8-42C6-11D8-B5CE-000A95BB392A@lmi.net>
+References: <3FFDA28C.5040501@archenergy.com> <Pine.BSF.4.58.0401081430110.65768@emancholl.pair.com>
+ <17220000.1073596189@[192.168.5.33]> <Pine.BSF.4.58.0401090855530.99877@emancholl.pair.com>
+ <2550CBE8-42C6-11D8-B5CE-000A95BB392A@lmi.net>
+Message-ID: <Pine.BSF.4.58.0401091345390.99877@emancholl.pair.com>
+
+Greg Ward wrote:
+
+>   The -fast option that does all the most aggressive
+> optimizations for the G5 works on Mark Stock's benchmark with good
+> effect (30% speed improvement or so), but causes an infinite loop
+> somewhere in the code for other scenes.
+
+Yes, certain types of optimization tend to have that effect
+some times. Do you have any idea where exactly it was hanging?
+On one hand, I hate to suggest platform specific optimizations,
+but on the other hand this problem might point us to places
+where we'd want to simplify our code anyway...
+
+
+> > In the mean time I found that Apple provides an altivec optimized
+> > BLAS implementation, which includes all common matrix and vector
+> > operations.
+> > ...
+> >
+> >   http://developer.apple.com/hardware/ve/vector_libraries.html
+>
+> Even easier, Apple offers a library of their own routines to get the
+> job done.  Just run "man Accelerate" to learn all about it.
+
+I suspect we're talking about the same thing.
+
+
+> However,
+> I'm not sure how much speedup you'll get by reimplementing the matrix
+> routines -- they're pretty short vectors, and they're not called all
+> that often in the code.  I'd recommend looking in the ray tracing
+> routines in "rt/raytrace.c" for places to optimize first, then perhaps
+> "source.c" at the direct calculations.
+
+Taking this a bit further, has anyone ever profiled Radiance?
+I think this might give us interesting information that could be
+useful for all platforms.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From radiance-dev@radiance-online.org  Fri Jan  9 19:22:03 2004
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Fri, 9 Jan 2004 11:22:03 -0800
+Subject: [Radiance-dev] Radiance on 64-bit
+In-Reply-To: <Pine.BSF.4.58.0401091345390.99877@emancholl.pair.com>
+References: <3FFDA28C.5040501@archenergy.com> <Pine.BSF.4.58.0401081430110.65768@emancholl.pair.com> <17220000.1073596189@[192.168.5.33]> <Pine.BSF.4.58.0401090855530.99877@emancholl.pair.com> <2550CBE8-42C6-11D8-B5CE-000A95BB392A@lmi.net> <Pine.BSF.4.58.0401091345390.99877@emancholl.pair.com>
+Message-ID: <1AD7ED20-42D9-11D8-97B3-000A95BB392A@lmi.net>
+
+> From: Georg Mischler <schorsch@schorsch.com>
+> Date: January 9, 2004 10:54:31 AM PST
+>
+> Greg Ward wrote:
+>
+>>   The -fast option that does all the most aggressive
+>> optimizations for the G5 works on Mark Stock's benchmark with good
+>> effect (30% speed improvement or so), but causes an infinite loop
+>> somewhere in the code for other scenes.
+>
+> Yes, certain types of optimization tend to have that effect
+> some times. Do you have any idea where exactly it was hanging?
+> On one hand, I hate to suggest platform specific optimizations,
+> but on the other hand this problem might point us to places
+> where we'd want to simplify our code anyway...
+
+Unfortunately, I have no idea where it's hanging.  I didn't try forcing 
+a quit, but I could do that and take a look at the traceback.  I'm not 
+sure it would provide the needed information with such a level of 
+optimization, but it might.
+
+>>> In the mean time I found that Apple provides an altivec optimized
+>>> BLAS implementation, which includes all common matrix and vector
+>>> operations.
+>>> ...
+>>>
+>>>   http://developer.apple.com/hardware/ve/vector_libraries.html
+>>
+>> Even easier, Apple offers a library of their own routines to get the
+>> job done.  Just run "man Accelerate" to learn all about it.
+>
+> I suspect we're talking about the same thing.
+
+"Doh!" as Homer would say.  That's what I get for not looking at your 
+link.
+
+>> However,
+>> I'm not sure how much speedup you'll get by reimplementing the matrix
+>> routines -- they're pretty short vectors, and they're not called all
+>> that often in the code.  I'd recommend looking in the ray tracing
+>> routines in "rt/raytrace.c" for places to optimize first, then perhaps
+>> "source.c" at the direct calculations.
+>
+> Taking this a bit further, has anyone ever profiled Radiance?
+> I think this might give us interesting information that could be
+> useful for all platforms.
+
+I haven't profiled Radiance for years and years.  I did a lot of 
+profiling during early development, but sort of fell out of the habit.  
+The time spent by the code varies tremendously with the scene input -- 
+number of light sources, data lookup, .cal files, etc.  I've noticed 
+that it can bottleneck in about a dozen places, depending on what's 
+cooking.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Sat Jan 10 21:42:13 2004
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Sat, 10 Jan 2004 16:42:13 -0500 (EST)
+Subject: [Radiance-dev] Radiance on 64-bit
+In-Reply-To: <1AD7ED20-42D9-11D8-97B3-000A95BB392A@lmi.net>
+References: <3FFDA28C.5040501@archenergy.com> <Pine.BSF.4.58.0401081430110.65768@emancholl.pair.com>
+ <17220000.1073596189@[192.168.5.33]> <Pine.BSF.4.58.0401090855530.99877@emancholl.pair.com>
+ <2550CBE8-42C6-11D8-B5CE-000A95BB392A@lmi.net> <Pine.BSF.4.58.0401091345390.99877@emancholl.pair.com>
+ <1AD7ED20-42D9-11D8-97B3-000A95BB392A@lmi.net>
+Message-ID: <Pine.BSF.4.58.0401101641460.87014@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> I haven't profiled Radiance for years and years.  I did a lot of
+> profiling during early development, but sort of fell out of the habit.
+> The time spent by the code varies tremendously with the scene input --
+> number of light sources, data lookup, .cal files, etc.  I've noticed
+> that it can bottleneck in about a dozen places, depending on what's
+> cooking.
+
+"grep '^{' src/*/*.c" suggests that there are more than 4000
+function definitions in Radiance. If we can pick out only a dozen
+of those to know where to look for bottlenecks, then that sounds
+very promising!
+
+Of course, we need to find a collection of scenes where each one
+triggers one of those bottlenecks. That might actually be
+something to put into the standard test suite...
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From radiance-dev@radiance-online.org  Wed Jan 28 05:14:49 2004
+From: radiance-dev@radiance-online.org (Sabine Wolf)
+Date: Wed, 28 Jan 2004 06:14:49 +0100
+Subject: [Radiance-dev] Compiling Radiance with Scons under windows
+Message-ID: <003601c3e55d$a7369fc0$ad22993e@cosmaa>
+
+This is a multi-part message in MIME format.
+
+------=_NextPart_000_0031_01C3E566.089DCC90
+Content-Type: text/plain;
+	charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+Hi,
+
+after a long time of absence I'm very happy to see Radiance is still =
+alive with a lot of people pushing Radiance forward together with Greg =
+himself, implementing things like photons maps, meshes etc. :-) =20
+Today I tried to compile Radiance under windows. I installed mingw and =
+msys to have the basic unix-like tools, a shell, gcc and such things (a =
+similar thing as cygwin). But I d=F6n't know, what kind of shell msys =
+uses, the makeall-script failed with things like "foreach". So I tried =
+the Python-way and installed Scons. Scons detected a win32-system, so I =
+put my settings for gcc into the win32.cfg-file. The first  call of gcc =
+gives me the following error:
+
+gcc -O2 -Dfreebsd -DHDSUF=3D.exe -Isrc\common -c -o src\meta\meta2tga.o =
+src\meta\meta2tga.c
+In file included from f:/MinGW/include/process.h:36,
+                 from src/common/rtprocess.h:16,
+                 from src/meta/meta2tga.c:10:
+f:/MinGW/include/sys/types.h:90: conflicting types for `pid_t'
+src/common/rtprocess.h:15: previous declaration of `pid_t'
+
+Scons sets the _WIN32 flag, in rtprocess.h pid_t is declared as DWORD:
+
+#ifdef _WIN32
+  #include <windows.h> /* DWORD etc. */
+  #include <stdio.h>
+  typedef DWORD pid_t;
+
+In types.h pid_t is declared as int:
+
+ifndef _PID_T_
+#define _PID_T_
+typedef int _pid_t;
+
+#ifndef _NO_OLDNAMES
+typedef _pid_t pid_t;
+#endif
+#endif /* Not _PID_T_ */
+
+How can I tell Scons my system is not really win32, rather a *nix-like =
+thing to prevent such conflicts?=20
+Or is there a free one true win32-compiler I can use together with =
+Scons?=20
+
+Tschau,
+  Sabine
+
+
+
+
+------=_NextPart_000_0031_01C3E566.089DCC90
+Content-Type: text/html;
+	charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv=3DContent-Type content=3D"text/html; =
+charset=3Diso-8859-1">
+<META content=3D"MSHTML 6.00.2600.0" name=3DGENERATOR>
+<STYLE></STYLE>
+</HEAD>
+<BODY bgColor=3D#ffffff>
+<DIV><FONT face=3DArial size=3D2>Hi,</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2></FONT>&nbsp;</DIV>
+<DIV><FONT face=3DArial size=3D2>after a long time of absence I'm very =
+happy to see=20
+Radiance is still alive&nbsp;with a lot of people&nbsp;pushing Radiance=20
+forward&nbsp;together with Greg himself, implementing&nbsp;things like =
+photons=20
+maps, meshes etc.&nbsp;:-) &nbsp;</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>Today I tried to compile =
+Radiance&nbsp;under=20
+windows. I installed mingw and msys to have the basic unix-like tools, a =
+shell,=20
+gcc and such things (a similar thing&nbsp;as cygwin). But I d=F6n't =
+know, what=20
+kind of shell msys uses, the makeall-script failed with things like =
+"foreach".=20
+So I tried the Python-way and installed Scons. Scons detected a =
+win32-system, so=20
+I put my settings for gcc into the win32.cfg-file. The first &nbsp;call =
+of gcc=20
+gives me the following error:</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2></FONT>&nbsp;</DIV>
+<DIV><FONT face=3DArial size=3D2>gcc -O2 -Dfreebsd -DHDSUF=3D.exe =
+-Isrc\common -c -o=20
+src\meta\meta2tga.o src\meta\meta2tga.c<BR>In file included from=20
+f:/MinGW/include/process.h:36,<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nb=
+sp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=20
+from=20
+src/common/rtprocess.h:16,<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&=
+nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=20
+from src/meta/meta2tga.c:10:<BR>f:/MinGW/include/sys/types.h:90: =
+conflicting=20
+types for `pid_t'<BR>src/common/rtprocess.h:15: previous declaration of=20
+`pid_t'</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2></FONT>&nbsp;</DIV>
+<DIV><FONT face=3DArial size=3D2>Scons sets the _WIN32 flag, in =
+rtprocess.h pid_t is=20
+declared as DWORD:</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2></FONT>&nbsp;</DIV>
+<DIV><FONT face=3DArial size=3D2>#</FONT><FONT face=3DArial =
+size=3D2>ifdef=20
+_WIN32<BR>&nbsp; #include &lt;windows.h&gt; /* DWORD etc. */<BR>&nbsp; =
+#include=20
+&lt;stdio.h&gt;<BR>&nbsp; typedef DWORD pid_t;</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2></FONT>&nbsp;</DIV>
+<DIV><FONT face=3DArial size=3D2>In types.h pid_t is declared as =
+int:</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2></FONT>&nbsp;</DIV>
+<DIV><FONT face=3DArial size=3D2>ifndef =
+_PID_T_<BR>#define&nbsp;_PID_T_<BR>typedef=20
+int&nbsp;_pid_t;</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2></FONT>&nbsp;</DIV>
+<DIV><FONT face=3DArial size=3D2>#ifndef&nbsp;_NO_OLDNAMES<BR>typedef=20
+_pid_t&nbsp;pid_t;<BR>#endif<BR>#endif&nbsp;/* Not _PID_T_ =
+*/<BR></FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>How can I&nbsp;tell&nbsp;Scons my =
+system is not=20
+really win32, rather a *nix-like thing to prevent such conflicts? =
+</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>Or is there a free one&nbsp;true =
+win32-compiler I=20
+can use together with Scons? </FONT></DIV>
+<DIV><FONT face=3DArial size=3D2></FONT>&nbsp;</DIV>
+<DIV><FONT face=3DArial size=3D2>Tschau,</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>&nbsp; Sabine</FONT></DIV>
+<DIV>&nbsp;</DIV>
+<DIV><FONT face=3DArial size=3D2>&nbsp;</DIV></FONT>
+<DIV><FONT face=3DArial size=3D2></FONT>&nbsp;</DIV></BODY></HTML>
+
+------=_NextPart_000_0031_01C3E566.089DCC90--
+
+
+From radiance-dev@radiance-online.org  Wed Jan 28 13:08:35 2004
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Wed, 28 Jan 2004 08:08:35 -0500 (EST)
+Subject: [Radiance-dev] Compiling Radiance with Scons under windows
+In-Reply-To: <003601c3e55d$a7369fc0$ad22993e@cosmaa>
+References: <003601c3e55d$a7369fc0$ad22993e@cosmaa>
+Message-ID: <Pine.BSF.4.58.0401280804530.43813@emancholl.pair.com>
+
+Sabine Wolf wrote:
+
+> Hi,
+>
+> after a long time of absence
+
+Welcome back!
+
+
+> Scons detected
+> a win32-system, so I put my settings for gcc into the win32.cfg-file.
+
+If you change the default settings in a platform config
+file, it's better to make a copy as platform/win32_custom.cfg.
+If such a *.custom.cfg file exists, then our SCons script will
+use that instead of the original.
+
+I'm assuming that you want to create real Win32 binaries, which
+will use the native OS APIs. If this happens to work equally well
+as with the VC that I'm using, then we should probably try to
+detect when SCons is about to run with mingw, and provide an
+extra config file for that. If you're trying to build against
+the posix APIs that may come with mingw's, then you probably
+better copy the cygwin.cfg file for your custom settings.
+
+
+> The first call of gcc gives me the following error:
+>
+> f:/MinGW/include/sys/types.h:90: conflicting types for `pid_t'
+> src/common/rtprocess.h:15: previous declaration of `pid_t'
+
+The code involved here made an assumption that doesn't happen to
+be correct when you compile with mingw. It assumed that a build
+system would *either* know about the posix pid_t type, *or* about
+Windows native process IDs. On Windows, I simply hijacked the
+type name pid_t to mean the other one. Since mingw apparently
+exposes both APIs next to each other, this creates a conflict
+there.
+
+I now changed src/common/rtprocess.h to define its own platform
+independent type name, which is cleaner and avoids any confusion.
+The fix is in CVS, so you can fech the file through the web, and
+it will also be in the HEAD dump tomorrow. If you want to fiddle
+with it yourself, below's the context diff. There are only a few
+lines that have changed.
+
+
+-schorsch
+
+
+RCS file: /cvs/radiance/ray/src/common/rtprocess.h,v
+retrieving revision 3.9
+diff -c -r3.9 rtprocess.h
+*** rtprocess.h 14 Nov 2003 17:22:06 -0000      3.9
+--- rtprocess.h 28 Jan 2004 12:40:21 -0000
+***************
+*** 12,18 ****
+  #ifdef _WIN32
+    #include <windows.h> /* DWORD etc. */
+    #include <stdio.h>
+!   typedef DWORD pid_t;
+    #include <process.h> /* getpid() and others */
+    #define nice(inc) win_nice(inc)
+
+--- 12,18 ----
+  #ifdef _WIN32
+    #include <windows.h> /* DWORD etc. */
+    #include <stdio.h>
+!   typedef DWORD RT_PID;
+    #include <process.h> /* getpid() and others */
+    #define nice(inc) win_nice(inc)
+
+***************
+*** 30,35 ****
+--- 30,37 ----
+  #else
+    #include <stdio.h>
+    #include <sys/param.h>
++   #include <sys/types.h>
++   typedef pid_t RT_PID;
+  #endif
+
+  #include "paths.h"
+***************
+*** 43,50 ****
+
+     This means that we shouldn't rely on PIDs and file descriptors
+     being the same type, so we have to describe processes with a struct,
+!    instead of the original int[3]. To keep things simple, we typedef
+!    the posix pid_t on those systems that don't have it already.
+  */
+
+
+--- 45,52 ----
+
+     This means that we shouldn't rely on PIDs and file descriptors
+     being the same type, so we have to describe processes with a struct,
+!    instead of the original int[3]. For that purpose, we typedef a
+!    platform independent RT_PID.
+  */
+
+
+***************
+*** 64,70 ****
+        int r; /* read handle */
+        int w; /* write handle */
+        int running; /* doing something */
+!       pid_t pid; /* process ID */
+  } SUBPROC;
+
+  #define SP_INACTIVE {-1,-1,0,0} /* for static initializations */
+--- 66,72 ----
+        int r; /* read handle */
+        int w; /* write handle */
+        int running; /* doing something */
+!       RT_PID pid; /* process ID */
+  } SUBPROC;
+
+  #define SP_INACTIVE {-1,-1,0,0} /* for static initializations */
+
+
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+

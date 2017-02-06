@@ -1,0 +1,477 @@
+From nathanieljon at gmail.com  Mon Apr 27 13:01:35 2015
+From: nathanieljon at gmail.com (Nathaniel Jones)
+Date: Mon, 27 Apr 2015 16:01:35 -0400
+Subject: [Radiance-dev]
+	=?utf-8?q?=5BRadiance-general=5D_OConv_=26_Rpict_R?=
+	=?utf-8?q?untime_Error_=C2=AD_Out_of_Memory?=
+In-Reply-To: <AE55A995167B224DBBFA16500E3AB9B3047C5B84@NDJSMBX202.ndc.nasa.gov>
+References: <D15C23CC.182F4%Robert.Guglielmetti@nrel.gov>
+	<AE55A995167B224DBBFA16500E3AB9B3047C19EA@NDJSMBX202.ndc.nasa.gov>
+	<D15D0F00.18324%Robert.Guglielmetti@nrel.gov>
+	<AE55A995167B224DBBFA16500E3AB9B3047C5B84@NDJSMBX202.ndc.nasa.gov>
+Message-ID: <CAJR73tvq34u2UsDQT_rWNPfOJK6-QtvEBsNN_bP91xF4cWug3w@mail.gmail.com>
+
+Hi Andrei,
+
+I don't know of any hard and fast limits to the size of a Radiance model,
+but it looks like you've found one.
+
+Since you're compiling the source code yourself, here's a suggestion to try
+in objset.c. This should keep you from trying to access a negative entry in
+ostable. Change lines 182-183:
+
+int  osentry, ntries;
+long  hval;
+
+to:
+
+unsigned int  osentry, ntries;
+unsigned long  hval;
+
+For good measure, you might also change line 197:
+
+osentry = (hval + (long)ntries*ntries) % OSTSIZ;
+
+to:
+
+osentry = (hval + (unsigned long)ntries*ntries) % OSTSIZ;
+
+I'd suggest moving this thread over to the radiance-dev list. I'm
+interested to hear how your large models go.
+
+Nathaniel
+
+
+On Mon, Apr 27, 2015 at 2:36 PM, Kolomenski, Andrei (JSC-SF311)[WYLE INTEG.
+SCI. & ENG.] <andrei.kolomenski at nasa.gov> wrote:
+
+> Dear Radiance Users,
+>
+> I successfully built and tested the 64 bit executables of Radiance 4.3.a.2
+> (https://github.com/NREL/Radiance/tree/4.3.a.2), using Visual Studio 2013
+> 64 bit and CMake 3.2.2. However, I'm running into a similar run-time crash
+> when using rpict and oconv for very large geometries (2.4 GB geometry .rad
+> file).
+>
+> I ran 64 bit rpict in Debug mode inside Visual Studio 2013 to determine
+> the cause of the ?Unhandled Memory Exception? error. The error was traced
+> to line 198 in objset.c of Radiance 4.3.a.2 source code.
+>
+>         Line 198: os = ostable[osentry];
+>
+>  Variable, osentry (int), is used as an index to access an entry in the
+> ostable[], object table array; osentry crashes with the value -26,513. I?m
+> not sure what is causing osentry variable to attain a negative value.. I?ve
+> printed the osentry to screen and noticed that it is evaluated to a
+> positive integer many times before it attains the negative value. I printed
+> the last few osentry values during run-time.
+>
+> Osentry: 230041
+> Osentry: 145409
+> Osentry: 196801
+> Osentry: -243553
+>
+> Oconv, breaks in the same line of code as rpict (line 198 in objset.c).
+>
+> What can be causing a break at this point in the code?
+>
+> Is there a limit to the maximum number of polygons/vertices that can be
+> present in a scene depending on 32 or 64 bit Radiance executables?
+>
+> Windows has limits to a function's recursion depth that is determined by
+> the maximum stack size, which by default is set to 1 MB. Can the limit on
+> the stack size be causing the unexpected run-time error?
+>
+>
+> Thank you,
+> Andrei Kolomenski
+>
+> -----Original Message-----
+> From: Guglielmetti, Robert [mailto:Robert.Guglielmetti at nrel.gov]
+> Sent: Wednesday, April 22, 2015 9:47 AM
+> To: radiance-general at radiance-online.org
+> Subject: Re: [Radiance-general] OConv & Rpict Runtime Error  Out of Memory
+>
+> Oh it's definitely possible, and FYI we are doing it for Mac and Linux
+> already. These are publicly available:
+>
+> Linux64
+> https://github.com/NREL/Radiance/releases/download/5.0.a.1/radiance-5.0.a-L
+> inux64.tar.gz
+> https://github.com/NREL/Radiance/releases/download/4.3.a.2/radiance-4.3.a-L
+> inux64.tar.gz
+>
+> Mac Universal
+> https://github.com/NREL/Radiance/releases/download/5.0.a.1/radiance-5.0.a-D
+> arwin.dmg
+> https://github.com/NREL/Radiance/releases/download/4.3.a.2/radiance-4.3.a-D
+> arwin.dmg
+>
+> I also know folks are successfully building older vintages of Radiance
+> (4.3a) for 64-bit Windows. We just haven't had the time to get a Windows
+> build system together to do it here; once we do, they will be posted to
+> NREL's GitHub site alongside the others.
+>
+> - Rob
+>
+> P.S.
+> Radiance 5.0a for Windows (32bit) is also a work in progress, which we
+> hope to have available soon.
+>
+>
+>
+> On 4/22/15, 7:11 AM, "Kolomenski, Andrei (JSC-SF311)[WYLE INTEG. SCI. &
+> ENG.]" <andrei.kolomenski at nasa.gov> wrote:
+>
+> >Hi Robert,
+> >
+> >Thank you for the response. I was hoping that someone would say that it
+> >is possible to build 64 bit Radiance. I will give it a try and report
+> >back on the outcome.
+> >
+> >Regards,
+> >Andrei
+> >
+> >-----Original Message-----
+> >From: Guglielmetti, Robert [mailto:Robert.Guglielmetti at nrel.gov]
+> >Sent: Tuesday, April 21, 2015 5:01 PM
+> >To: Radiance-general at radiance-online.org
+> >Subject: Re: [Radiance-general] OConv & Rpict Runtime Error  Out of
+> >Memory
+> >
+> >Hi Andrei,
+> >
+> >In theory you should be able to use CMake now with a pre-5.0a vintage
+> >(say, https://github.com/NREL/Radiance/tree/4.3.a.2) of the source to
+> >try building for 64-bit Windows. I don't know of any publicly-available
+> >Win64 Radiance installers. We (NREL) would like to offer them, and
+> >that's on the to-do list, but it's a long list.
+> >
+> >- Rob
+> >
+> >On 4/21/15, 3:21 PM, "Kolomenski, Andrei (JSC-SF311)[WYLE INTEG. SCI. &
+> >ENG.]" <andrei.kolomenski at nasa.gov<mailto:andrei.kolomenski at nasa.gov>>
+> >wrote:
+> >
+> >Hello All,
+> >I'm experiencing a runtime error with oconv when generating an octree
+> >file for a model that has about 5 million triangle polygons. This is
+> >the error I see:
+> >               oconv: system - out of octree space: Not enough space
+> >I'm using Radiance 4.3a 32 bit on Windows 7 64 bit OS running on a
+> >desktop with an i7 and 16 GB of RAM. I tried this on another desktop
+> >with a Xeon
+> >X5647 with 48 GB of RAM and same error. So hardware resources shouldn't
+> >be the issue. I tried generating the same octree on Linux, and
+> >everything worked properly.
+> >I have a similar problem with rpict when rendering an image of a large
+> >geometry scene. My octree is 843 MB and I'm testing the model with no
+> >lights and only ambient lighting (using -av 1 1 1). When I run rpict
+> >from the command line it either finishes but generates a completely
+> >empty image or rpict crashes and I see a "rpict not responding" Windows
+> message.
+> >Is there a 64 bit Windows installer version of Radiance, or can I build
+> >it from source code using CMAKE? What is the maximum number of vertices
+> >that 32 bit Radiance can handle? Has anybody else experienced problems
+> >with oconv or rpict in Windows when working with large models?
+> >
+> >Kind Regards,
+> >Andrei Kolomenski
+> >
+> >
+> >_______________________________________________
+> >Radiance-general mailing list
+> >Radiance-general at radiance-online.org
+> >http://www.radiance-online.org/mailman/listinfo/radiance-general
+> >
+> >_______________________________________________
+> >Radiance-general mailing list
+> >Radiance-general at radiance-online.org
+> >http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20150427/8edd9c1d/attachment.html>
+
+From gward at lmi.net  Mon Apr 27 15:05:32 2015
+From: gward at lmi.net (Greg Ward)
+Date: Mon, 27 Apr 2015 15:05:32 -0700
+Subject: [Radiance-dev]
+ =?iso-8859-1?q?=5BRadiance-general=5D_OConv_=26_Rp?=
+ =?iso-8859-1?q?ict_Runtime_Error_=AD_Out_of_Memory?=
+In-Reply-To: <CAJR73tvq34u2UsDQT_rWNPfOJK6-QtvEBsNN_bP91xF4cWug3w@mail.gmail.com>
+References: <D15C23CC.182F4%Robert.Guglielmetti@nrel.gov>
+	<AE55A995167B224DBBFA16500E3AB9B3047C19EA@NDJSMBX202.ndc.nasa.gov>
+	<D15D0F00.18324%Robert.Guglielmetti@nrel.gov>
+	<AE55A995167B224DBBFA16500E3AB9B3047C5B84@NDJSMBX202.ndc.nasa.gov>
+	<CAJR73tvq34u2UsDQT_rWNPfOJK6-QtvEBsNN_bP91xF4cWug3w@mail.gmail.com>
+Message-ID: <20A8923B-1571-4643-8D4F-8C8AAD0905D9@lmi.net>
+
+Agreed -- thread now moved to radiance-dev list.  (Andrei, you can sign up for this list if you aren't already at <www.radiance-online.org>.)
+
+That's a good idea to use unsigned integersh, Nathaniel.  I've also suggested (in a private message to Andrei) that he try it with "long long" in place of "long," as I think the latter only uses 32 bits in VS on 64-bit Windows.
+
+Let's see what happens with "long long" and in either case, I'll probably change to unsigned types where I can.
+
+Cheers,
+-Greg
+
+> From: Nathaniel Jones <nathanieljon at gmail.com>
+> Subject: Re: [Radiance-general] OConv & Rpict Runtime Error ? Out of Memory
+> Date: April 27, 2015 1:01:35 PM PDT
+> 
+> Hi Andrei,
+> 
+> I don't know of any hard and fast limits to the size of a Radiance model, but it looks like you've found one.
+> 
+> Since you're compiling the source code yourself, here's a suggestion to try in objset.c. This should keep you from trying to access a negative entry in ostable. Change lines 182-183:
+> 
+> int  osentry, ntries;
+> long  hval;
+> 
+> to:
+> 
+> unsigned int  osentry, ntries;
+> unsigned long  hval;
+> 
+> For good measure, you might also change line 197:
+> 
+> osentry = (hval + (long)ntries*ntries) % OSTSIZ;
+> 
+> to:
+> 
+> osentry = (hval + (unsigned long)ntries*ntries) % OSTSIZ;
+> 
+> I'd suggest moving this thread over to the radiance-dev list. I'm interested to hear how your large models go.
+> 
+> Nathaniel
+> 
+> 
+> On Mon, Apr 27, 2015 at 2:36 PM, Kolomenski, Andrei (JSC-SF311)[WYLE INTEG. SCI. & ENG.] <andrei.kolomenski at nasa.gov> wrote:
+> Dear Radiance Users,
+> 
+> I successfully built and tested the 64 bit executables of Radiance 4.3.a.2 (https://github.com/NREL/Radiance/tree/4.3.a.2), using Visual Studio 2013 64 bit and CMake 3.2.2. However, I'm running into a similar run-time crash when using rpict and oconv for very large geometries (2.4 GB geometry .rad file).
+> 
+> I ran 64 bit rpict in Debug mode inside Visual Studio 2013 to determine the cause of the ?Unhandled Memory Exception? error. The error was traced to line 198 in objset.c of Radiance 4.3.a.2 source code.
+> 
+>         Line 198: os = ostable[osentry];
+> 
+>  Variable, osentry (int), is used as an index to access an entry in the ostable[], object table array; osentry crashes with the value -26,513. I?m not sure what is causing osentry variable to attain a negative value.. I?ve printed the osentry to screen and noticed that it is evaluated to a positive integer many times before it attains the negative value. I printed the last few osentry values during run-time.
+> 
+> Osentry: 230041
+> Osentry: 145409
+> Osentry: 196801
+> Osentry: -243553
+> 
+> Oconv, breaks in the same line of code as rpict (line 198 in objset.c).
+> 
+> What can be causing a break at this point in the code?
+> 
+> Is there a limit to the maximum number of polygons/vertices that can be present in a scene depending on 32 or 64 bit Radiance executables?
+> 
+> Windows has limits to a function's recursion depth that is determined by the maximum stack size, which by default is set to 1 MB. Can the limit on the stack size be causing the unexpected run-time error?
+> 
+> 
+> Thank you,
+> Andrei Kolomenski
+> 
+> -----Original Message-----
+> From: Guglielmetti, Robert [mailto:Robert.Guglielmetti at nrel.gov]
+> Sent: Wednesday, April 22, 2015 9:47 AM
+> To: radiance-general at radiance-online.org
+> Subject: Re: [Radiance-general] OConv & Rpict Runtime Error  Out of Memory
+> 
+> Oh it's definitely possible, and FYI we are doing it for Mac and Linux already. These are publicly available:
+> 
+> Linux64
+> https://github.com/NREL/Radiance/releases/download/5.0.a.1/radiance-5.0.a-L
+> inux64.tar.gz
+> https://github.com/NREL/Radiance/releases/download/4.3.a.2/radiance-4.3.a-L
+> inux64.tar.gz
+> 
+> Mac Universal
+> https://github.com/NREL/Radiance/releases/download/5.0.a.1/radiance-5.0.a-D
+> arwin.dmg
+> https://github.com/NREL/Radiance/releases/download/4.3.a.2/radiance-4.3.a-D
+> arwin.dmg
+> 
+> I also know folks are successfully building older vintages of Radiance
+> (4.3a) for 64-bit Windows. We just haven't had the time to get a Windows build system together to do it here; once we do, they will be posted to NREL's GitHub site alongside the others.
+> 
+> - Rob
+> 
+> P.S.
+> Radiance 5.0a for Windows (32bit) is also a work in progress, which we hope to have available soon.
+> 
+> 
+> 
+> On 4/22/15, 7:11 AM, "Kolomenski, Andrei (JSC-SF311)[WYLE INTEG. SCI. & ENG.]" <andrei.kolomenski at nasa.gov> wrote:
+> 
+> >Hi Robert,
+> >
+> >Thank you for the response. I was hoping that someone would say that it
+> >is possible to build 64 bit Radiance. I will give it a try and report
+> >back on the outcome.
+> >
+> >Regards,
+> >Andrei
+> >
+> >-----Original Message-----
+> >From: Guglielmetti, Robert [mailto:Robert.Guglielmetti at nrel.gov]
+> >Sent: Tuesday, April 21, 2015 5:01 PM
+> >To: Radiance-general at radiance-online.org
+> >Subject: Re: [Radiance-general] OConv & Rpict Runtime Error  Out of
+> >Memory
+> >
+> >Hi Andrei,
+> >
+> >In theory you should be able to use CMake now with a pre-5.0a vintage
+> >(say, https://github.com/NREL/Radiance/tree/4.3.a.2) of the source to
+> >try building for 64-bit Windows. I don't know of any publicly-available
+> >Win64 Radiance installers. We (NREL) would like to offer them, and
+> >that's on the to-do list, but it's a long list.
+> >
+> >- Rob
+> >
+> >On 4/21/15, 3:21 PM, "Kolomenski, Andrei (JSC-SF311)[WYLE INTEG. SCI. &
+> >ENG.]" <andrei.kolomenski at nasa.gov<mailto:andrei.kolomenski at nasa.gov>>
+> >wrote:
+> >
+> >Hello All,
+> >I'm experiencing a runtime error with oconv when generating an octree
+> >file for a model that has about 5 million triangle polygons. This is
+> >the error I see:
+> >               oconv: system - out of octree space: Not enough space
+> >I'm using Radiance 4.3a 32 bit on Windows 7 64 bit OS running on a
+> >desktop with an i7 and 16 GB of RAM. I tried this on another desktop
+> >with a Xeon
+> >X5647 with 48 GB of RAM and same error. So hardware resources shouldn't
+> >be the issue. I tried generating the same octree on Linux, and
+> >everything worked properly.
+> >I have a similar problem with rpict when rendering an image of a large
+> >geometry scene. My octree is 843 MB and I'm testing the model with no
+> >lights and only ambient lighting (using -av 1 1 1). When I run rpict
+> >from the command line it either finishes but generates a completely
+> >empty image or rpict crashes and I see a "rpict not responding" Windows message.
+> >Is there a 64 bit Windows installer version of Radiance, or can I build
+> >it from source code using CMAKE? What is the maximum number of vertices
+> >that 32 bit Radiance can handle? Has anybody else experienced problems
+> >with oconv or rpict in Windows when working with large models?
+> >
+> >Kind Regards,
+> >Andrei Kolomenski
+> >
+> >
+> >_______________________________________________
+> >Radiance-general mailing list
+> >Radiance-general at radiance-online.org
+> >http://www.radiance-online.org/mailman/listinfo/radiance-general
+> >
+> >_______________________________________________
+> >Radiance-general mailing list
+> >Radiance-general at radiance-online.org
+> >http://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20150427/23a0d19d/attachment-0001.html>
+
+From andrei.kolomenski at nasa.gov  Tue Apr 28 07:12:47 2015
+From: andrei.kolomenski at nasa.gov (Kolomenski, Andrei (JSC-SF311)[WYLE INTEG. SCI. & ENG.])
+Date: Tue, 28 Apr 2015 14:12:47 +0000
+Subject: [Radiance-dev]
+ =?utf-8?q?=5BRadiance-general=5D_OConv_=26_Rpict_R?=
+ =?utf-8?q?untime_Error_=C2=AD_Out_of_Memory?=
+Message-ID: <AE55A995167B224DBBFA16500E3AB9B3047C7C5E@NDJSMBX202.ndc.nasa.gov>
+
+Hi Greg & Nathaniel,
+
+Thank you for the input and help. Both of you spotted the error amazingly quick!
+
+I changed hval declaration from ?long hval? to ?long long hval? in objset.c, rebuilt oconv & rpict and both are working correctly for a large geometry (2.4 GB .rad file) ?
+
+I think the problem is that hval goes beyond the long limit and becomes a huge negative number, causing osentry to become negative, which is an index to ostable array.. osentry should never be negative. So I agree that some of these variables should be changed to unsigned.
+
+               osentry = (hval + (xtra_long)ntries*ntries) % OSTSIZ;
+               os = ostable[osentry];
+
+The reason oconv & rpict worked on Linux is that ?long? data type is assigned 8 bytes just like the ?long long? data type.. so no issues. However, on Windows a ?long? takes up 4 bytes and a ?long long? takes up 8 bytes, so there is the inconsistency.
+
+Nathaniel, can you please recompile Accelerad rpict and oconv with updated objset.c, to account for this for this issue? I would like to test Accelerad with a large geometry scene.
+
+Thank you so much,
+Andrei Kolomenski
+
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20150428/0c408e50/attachment.html>
+
+From gregoryjward at gmail.com  Tue Apr 28 09:58:31 2015
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue, 28 Apr 2015 09:58:31 -0700
+Subject: [Radiance-dev]
+ =?iso-8859-1?q?=5BRadiance-general=5D_OConv_=26_Rp?=
+ =?iso-8859-1?q?ict_Runtime_Error_=AD_Out_of_Memory?=
+In-Reply-To: <AE55A995167B224DBBFA16500E3AB9B3047C7C5E@NDJSMBX202.ndc.nasa.gov>
+References: <AE55A995167B224DBBFA16500E3AB9B3047C7C5E@NDJSMBX202.ndc.nasa.gov>
+Message-ID: <223F2CA4-645D-4F5E-890E-8A13519DE0F9@gmail.com>
+
+Great -- I've checked in the appropriate changes to objset.c in the HEAD distribution.
+
+Cheers,
+-Greg
+
+> From: "Kolomenski, Andrei (JSC-SF311)[WYLE INTEG. SCI. & ENG.]" <andrei.kolomenski at nasa.gov>
+> Subject: Re: [Radiance-dev] [Radiance-general] OConv & Rpict Runtime Error ? Out of Memory
+> Date: April 28, 2015 7:12:47 AM PDT
+> 
+> Hi Greg & Nathaniel,
+>  
+> Thank you for the input and help. Both of you spotted the error amazingly quick!
+>  
+> I changed hval declaration from ?long hval? to ?long long hval? in objset.c, rebuilt oconv & rpict and both are working correctly for a large geometry (2.4 GB .rad file) J
+>  
+> I think the problem is that hval goes beyond the long limit and becomes a huge negative number, causing osentry to become negative, which is an index to ostable array.. osentry should never be negative. So I agree that some of these variables should be changed to unsigned.
+>  
+>                osentry = (hval + (xtra_long)ntries*ntries) % OSTSIZ;
+>                os = ostable[osentry];
+>  
+> The reason oconv & rpict worked on Linux is that ?long? data type is assigned 8 bytes just like the ?long long? data type.. so no issues. However, on Windows a ?long? takes up 4 bytes and a ?long long? takes up 8 bytes, so there is the inconsistency.
+>  
+> Nathaniel, can you please recompile Accelerad rpict and oconv with updated objset.c, to account for this for this issue? I would like to test Accelerad with a large geometry scene.
+>  
+> Thank you so much,
+> Andrei Kolomenski
+> 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20150428/585e0b77/attachment.html>
+

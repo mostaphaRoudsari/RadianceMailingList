@@ -1,0 +1,333 @@
+From kevinv at uidaho.edu  Wed Jan 18 22:05:35 2012
+From: kevinv at uidaho.edu (Van Den Wymelenberg, Kevin)
+Date: Wed, 18 Jan 2012 22:05:35 -0800
+Subject: [HDRI] RGB in Photosphere & sequence of exposures
+Message-ID: <CB3D00BF.13EA3%kevinv@uidaho.edu>
+
+HDRI mailing list,
+
+1) I am using Photosphere to examine ?RGB? values of single exposures using
+the Histogram function (RGB) to determine which exposures to include or
+exclude in ?Make HDR?.  Is this histogram RGB applying the weighting factor
+( R*0.2651 + G* 0.6701 + B*0.0648) to determine the Minimum and Maximum
+values reported?
+
+2) Does Photosphere expect the multiple exposures to be loaded sequentially
+from the brightest (longest shutter speed) to the darkest (shortest shutter
+speed) or vice versa?  Will the accuracy be compromised in any manner
+depending on the order in which the exposures are loaded?
+
+Thank you, 
+
+
+Kevin Van Den Wymelenberg
+Integrated Design Lab ? Boise, Director
+College of Art & Architecture, Assistant Professor
+University of Idaho ? Boise Center
+www.uidaho.edu/idl 
+
+ph. 208.724.9456                    fx. 208.343.0001                    306
+S. 6th Street                    Boise, ID  83702
+
+
+
+
+
+
+
+
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20120118/79fbd7fd/attachment.html>
+
+From gregoryjward at gmail.com  Thu Jan 19 07:50:08 2012
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu, 19 Jan 2012 07:50:08 -0800
+Subject: [HDRI] RGB in Photosphere & sequence of exposures
+In-Reply-To: <CB3D00BF.13EA3%kevinv@uidaho.edu>
+References: <CB3D00BF.13EA3%kevinv@uidaho.edu>
+Message-ID: <51E49962-0973-46B4-87DC-A5C7998BA9BA@gmail.com>
+
+Hi Kevin,
+
+1) The weighting factors are not applied to the individual channels.  What you see is a raw histogram of the data values.
+
+2) Photosphere re-orders the images according to their exposure.  It makes no difference the order in which they are given to the software.
+
+There is a check box you can use to automatically exclude unneeded exposures, but it sometimes throws out a few of the brightest pixel values.  If you want to be sure you lose nothing, just give Photosphere all of your exposures and it will use what it can.
+
+Cheers,
+-Greg
+
+> From: "Van Den Wymelenberg, Kevin" <kevinv at uidaho.edu>
+> Date: January 18, 2012 10:05:35 PM PST
+> 
+> HDRI mailing list,
+> 
+> 1) I am using Photosphere to examine ?RGB? values of single exposures using the Histogram function (RGB) to determine which exposures to include or exclude in ?Make HDR?.  Is this histogram RGB applying the weighting factor ( R*0.2651 + G* 0.6701 + B*0.0648) to determine the Minimum and Maximum values reported?
+> 
+> 2) Does Photosphere expect the multiple exposures to be loaded sequentially from the brightest (longest shutter speed) to the darkest (shortest shutter speed) or vice versa?  Will the accuracy be compromised in any manner depending on the order in which the exposures are loaded?
+> 
+> Thank you,
+> 
+> Kevin Van Den Wymelenberg
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20120119/14deb902/attachment.html>
+
+From kevinv at uidaho.edu  Tue Jan 31 00:08:43 2012
+From: kevinv at uidaho.edu (Van Den Wymelenberg, Kevin)
+Date: Tue, 31 Jan 2012 00:08:43 -0800
+Subject: [HDRI] pvalue -o
+Message-ID: <CB4CEF9B.14464%kevinv@uidaho.edu>
+
+HDRI list - 
+
+Can someone help me better understand the pvalue ?o option?
+
+http://radsite.lbl.gov/radiance/man_html/pvalue.1.html
+
+I have completed HDRgen for a large data set, and will apply exposure
+correction, vignetting correction, then use pvalue (with or without ?o) to
+apply the spot calibration using a grey card mask (according to below), and
+finally pvalue again (with or without ?o) to get useful results.
+
+This is in the context of the previous post for automating the spot
+calibration for a large number of HDRs using luminance meter and grey card
+in a scene. 
+
+Do I let it at the default (+o)?
+
+Thank you,
+
+---
+
+On Apr 14, 2011, at 12:52 PM, "Greg Ward" <gregoryjward at gmail.com> wrote:
+>    
+>   
+>> Hi Kevin,
+>>  
+>>  What you ask is a very tricky scripting operation.  If you know exactly
+>> where the point you want to calibrate is in every image, you can script it
+>> with some combination of the Radiance ra_xyze, pcompos, pvalue, and total
+>> programs.  Let's say you know that you have a value of 322 cd/m^2 in the
+>> square from (x,y)=(300,450) to (380,530) -- y pixels measured from the bottom
+>> of the image and x from the left, you could compute the average using:
+>>  
+>>   set img_val=`ra_rxyze -o capture.hdr | pcompos -x 80 -y 80 - -300 -450 |
+>> pvalue -h -H -d -pG | total -m`
+>>   
+>>  You could then use this to compute a correction (calibration) factor to the
+>> image exposure:
+>>   
+>>   set meas=322
+>>   
+>>   set ecorr=`ev "179*$img_val/$meas"`
+>>   
+>>  The 179 value is the standard lumens/watt conversion used in Radiance, and
+>> the 322 value is your measured luminance value.  You then need to add the
+>> above to your image header, which can be accomplished with getinfo like so:
+>>   
+>>   (getinfo < capture.hdr ; echo EXPOSURE=$ecorr ; getinfo - < capture.hdr) >
+>> calibrated.hdr
+>>   
+>>  I hope this helps.
+>>   
+>>  
+ -Greg 
+
+
+
+Kevin Van Den Wymelenberg
+Integrated Design Lab ? Boise, Director
+College of Art & Architecture, Assistant Professor
+University of Idaho ? Boise Center
+www.uidaho.edu/idl 
+
+ph. 208.724.9456                    fx. 208.343.0001                    306
+S. 6th Street                    Boise, ID  83702
+
+
+
+
+
+
+
+
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20120131/d92b3e9f/attachment.html>
+
+From grobe at gmx.net  Tue Jan 31 00:26:02 2012
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Tue, 31 Jan 2012 09:26:02 +0100
+Subject: [HDRI] pvalue -o
+In-Reply-To: <CB4CEF9B.14464%kevinv@uidaho.edu>
+References: <CB4CEF9B.14464%kevinv@uidaho.edu>
+Message-ID: <4F27A59A.1040109@gmx.net>
+
+Hi Kevin,
+
+from my understanding, the exposure correction here is done by modifying
+the exposure, not the image data itself. pvalue -o would give you the
+raw pixel data, ignoring the exposure (and thus the correction you did).
+So I would not use the -o switch here, because you want the exposure
+correction (which you caluclated from your known luminance values) to be
+applied.
+
+Three ways to handle uncertainty in my mail (in ascending order of wisdom):
+
+1) Believe in my mail.[1]
+
+2) Hope that Greg confirms (or rejects) these assumptions.[2]
+
+3) Try out by e.g. using a 10 times higher value for the exposure
+correction then you get from your calibration. That should lead to 10
+times higher values in the results, if the correction got applied,
+right? So if you get these 10 times higher values even with pvalue -o,
+my assumption was wrong.
+
+;)
+
+Cheers, Lars.
+
+[1] strongly discouraged approach
+[2] promising to be on the safe side
+
+
+> HDRI list -
+> 
+> Can someone help me better understand the pvalue ?o option?
+> 
+> http://radsite.lbl.gov/radiance/man_html/pvalue.1.html
+> 
+> I have completed HDRgen for a large data set, and will apply exposure
+> correction, vignetting correction, then use pvalue (with or without ?o)
+> to apply the spot calibration using a grey card mask (according to
+> below), and finally pvalue again (with or without ?o) to get useful
+> results.  
+> 
+> This is in the context of the previous post for automating the spot
+> calibration for a large number of HDRs using luminance meter and grey
+> card in a scene.
+> 
+> Do I let it at the default (+o)?
+> 
+> Thank you,
+> 
+> ---
+> 
+> On Apr 14, 2011, at 12:52 PM, "Greg Ward" < gregoryjward at gmail.com > wrote:
+> 
+>       
+>      
+> 
+>         Hi Kevin,
+>          
+>          What you ask is a very tricky scripting operation.  If you know
+>         exactly where the point you want to calibrate is in every image,
+>         you can script it with some combination of the Radiance ra_xyze,
+>         pcompos, pvalue, and total programs.  Let's say you know that
+>         you have a value of 322 cd/m^2 in the square from
+>         (x,y)=(300,450) to (380,530) -- y pixels measured from the
+>         bottom of the image and x from the left, you could compute the
+>         average using:
+>          
+>           set img_val=`ra_rxyze -o capture.hdr | pcompos -x 80 -y 80 -
+>         -300 -450 | pvalue -h -H -d -pG | total -m`
+>           
+>          You could then use this to compute a correction (calibration)
+>         factor to the image exposure:
+>           
+>           set meas=322
+>           
+>           set ecorr=`ev "179*$img_val/$meas"`
+>           
+>          The 179 value is the standard lumens/watt conversion used in
+>         Radiance, and the 322 value is your measured luminance value.
+>          You then need to add the above to your image header, which can
+>         be accomplished with getinfo like so:
+>           
+>           (getinfo < capture.hdr ; echo EXPOSURE=$ecorr ; getinfo - <
+>         capture.hdr) > calibrated.hdr
+>           
+>          I hope this helps.
+>           
+>          
+> 
+> -Greg
+> 
+> *
+> 
+> Kevin Van Den Wymelenberg
+> Integrated Design Lab ? Boise, Director
+> *College of Art & Architecture, Assistant Professor
+> University of Idaho ? Boise Center
+> /www.uidaho.edu/idl  
+> /
+> ph. 208.724.9456                    fx. 208.343.0001
+>                    306 S. 6th Street                    Boise, ID  83702
+> /
+> /
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: smime.p7s
+Type: application/pkcs7-signature
+Size: 4438 bytes
+Desc: S/MIME Kryptografische Unterschrift
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20120131/56b97e57/attachment.bin>
+
+From jacobs.axel at gmail.com  Tue Jan 31 13:30:28 2012
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Tue, 31 Jan 2012 21:30:28 +0000
+Subject: [HDRI] pvalue -o
+Message-ID: <4F285D74.3050806@gmail.com>
+
+Kevin,
+
+you need to set pvalue -o to get the pixel values from the calibrated 
+HDR image. The pixel luminance is then the weighted average of the RGB 
+channels.
+
+You may use hdrexpo.pl to do the calibration:
+http://www.jaloxa.eu/resources/hdr/hdrexpo/index.shtml
+-- simply supply the calibration factor (spot meter reading/HDR value)
+
+Cheers
+
+Axel
+
+
+From jacobs.axel at gmail.com  Tue Jan 31 13:40:48 2012
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Tue, 31 Jan 2012 21:40:48 +0000
+Subject: [HDRI] pvalue -o
+Message-ID: <4F285FE0.8020006@gmail.com>
+
+CORRECTION:
+
+the -o switch was correct, but to get the luminance, you need to 
+multiply the weighted RGB by 179. Better use -b to get the 'brightness' 
+or luminance, which is weighted RGB * 179.
+
+Axel
+
+

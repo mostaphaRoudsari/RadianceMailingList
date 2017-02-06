@@ -1,0 +1,591 @@
+From jonghoon7kim at gmail.com  Wed Feb 26 07:33:10 2014
+From: jonghoon7kim at gmail.com (Jonghoon Kim)
+Date: Wed, 26 Feb 2014 09:33:10 -0600
+Subject: [HDRI] Crop HDRIs in radiance and evalglare
+Message-ID: <A0E6E05A-7825-41EB-AB33-B5A85BBD5625@gmail.com>
+
+Dear list,
+
+I am trying to glare analysis via HDR images captured by a canon DSLR Camera and sigma fish eye lens.
+
+The procedure that I use was
+
+1. Taking 13 images via gphoto2 +Crontab
+
+2. Creating HDR images in HDRgen
+
+3. Resize
+pfilt -x 1433  -y 955 Big.hdr > resize.hdr
+
+4.Crop & cleaning mask
+ra_xyze -r -o -u resize.hdr | pcompos -x 800 -y 800 - -315 -78 > crop.hdr | pcomb -s -1000 output_masked2.hdr
+
+5. Evalglare analysis
+echo "VIEW= -vta -vh 180 -vv 180 -vp 0 0 0 -vd 1 0 0 -vu 0 0 1" > output_masked2.hdr
+evalglare output_masked2.hdr
+
+The problem is that Evalglare reports errors after the crop process.
+
+error: no valid view specified
+
+(There was no evalglare errors when I test it with the resized image.)
+
+I has checked the luminance values of the HDR in photosphere and it looks OK!
+
+Do I need to use another crop command for evalglare processing?
+
+Please, let me know if you have any ideas.
+
+Best regards,
+Jonghoon Kim
+Ph.D. student
+Texas A&M University
+
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20140226/c839693a/attachment.html>
+
+From jacobs.axel at gmail.com  Wed Feb 26 08:25:28 2014
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Wed, 26 Feb 2014 16:25:28 +0000
+Subject: [HDRI] Crop HDRIs in radiance and evalglare
+In-Reply-To: <A0E6E05A-7825-41EB-AB33-B5A85BBD5625@gmail.com>
+References: <A0E6E05A-7825-41EB-AB33-B5A85BBD5625@gmail.com>
+Message-ID: <CA+dqh61Y+UOkSAzp1mE9frpGydXKLK8zJh6vPmsCaBA-9FHJzQ@mail.gmail.com>
+
+Both pcompos and pcomb mess with the HDR header. Also, what you are doing here:
+
+echo "VIEW= -vta -vh 180 -vv 180 -vp 0 0 0 -vd 1 0 0 -vu 0 0 1" >
+output_masked2.hdr
+
+is overwrite HDR image output_masked2.hdr with just the view string.
+You need to edit this image in a text editor and put a full VIEW= line
+back in.  If you're happy using vim, then you could try Radiance's
+vinfo.
+
+Regards
+
+Axel
+
+
+On 26 February 2014 15:33, Jonghoon Kim <jonghoon7kim at gmail.com> wrote:
+> Dear list,
+>
+> I am trying to glare analysis via HDR images captured by a canon DSLR Camera
+> and sigma fish eye lens.
+>
+> The procedure that I use was
+>
+> 1. Taking 13 images via gphoto2 +Crontab
+>
+> 2. Creating HDR images in HDRgen
+>
+> 3. Resize
+> pfilt -x 1433  -y 955 Big.hdr > resize.hdr
+>
+> 4.Crop & cleaning mask
+> ra_xyze -r -o -u resize.hdr | pcompos -x 800 -y 800 - -315 -78 > crop.hdr |
+> pcomb -s -1000 output_masked2.hdr
+>
+> 5. Evalglare analysis
+> echo "VIEW= -vta -vh 180 -vv 180 -vp 0 0 0 -vd 1 0 0 -vu 0 0 1" >
+> output_masked2.hdr
+> evalglare output_masked2.hdr
+>
+> The problem is that Evalglare reports errors after the crop process.
+>
+> error: no valid view specified
+>
+> (There was no evalglare errors when I test it with the resized image.)
+>
+> I has checked the luminance values of the HDR in photosphere and it looks
+> OK!
+>
+> Do I need to use another crop command for evalglare processing?
+>
+> Please, let me know if you have any ideas.
+>
+> Best regards,
+> Jonghoon Kim
+> Ph.D. student
+> Texas A&M University
+>
+>
+>
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+>
+
+
+From jonghoon7kim at gmail.com  Thu Feb 27 07:55:17 2014
+From: jonghoon7kim at gmail.com (Jonghoon Kim)
+Date: Thu, 27 Feb 2014 09:55:17 -0600
+Subject: [HDRI] HDRI Digest, Vol 68, Issue 1
+In-Reply-To: <mailman.1.1393444800.347.hdri@radiance-online.org>
+References: <mailman.1.1393444800.347.hdri@radiance-online.org>
+Message-ID: <0461533E-AF01-4B4E-912A-EA4A90DB1EA6@gmail.com>
+
+I appreciate your comment Axel!!
+
+I slightly modified my code and it is working now.
+
+However, I have one more question!
+
+My HDR process is like below.
+
+(Please, let me know if there is something wrong in my script.)
+=====================================================
+
+Cropping the original HDR image to match the size with the vignetting filter file
+ra_xyze -r -o -u Original.hdr | pcompos -x 4368 -y 2912 - -408 -272 > Resized_for_Vignetting.hdr
+
+Applying the vignetting filter to the cropped HDRI
+pcomb  -e  'ro=ri(1) / ri(2);go=gi(1) / gi(2);bo=bi(1) / bi(2)' Resized_for_Vignetting.hdr Vignetting_Filter.hdr > Vignetting_Corrected.hdr
+
+Resizing the HDRI for glare analysis 
+pfilt -x 1200  -y 800 Vignetting_Corrected.hdr > Vignetting_Corrected_resized.hdr
+
+Cropping the HDRI for glare analysis 
+ra_xyze -r -o -u Vignetting_Corrected_resized.hdr | pcompos -x 800 -y 800 - -200 0 > Cropped.hdr
+
+Creating the cleaning filter 
+ra_tiff -r Cleaning_filter.tif Cleaning_filter.hdr
+
+Applying the cleaning filter on the resized HDRI
+pcomb Cropped.hdr -s -1000 Cleaning_filter.hdr > Final.hdr
+
+Running the Evalglare analysis
+evalglare -vta -vh 180 -vv 180 Final.hdr
+
+=====================================================
+
+After the process above, The header file  is like below.
+
+	#?RADIANCE
+	CAPDATE= 2014:02:26 22:58:34
+	GMT= 2014:02:27 04:58:34
+	/Users/jonghoonkim/Desktop/Sample HDRI/Crop800_800.hdr:
+		CAPDATE= 2014:02:26 22:51:52
+		GMT= 2014:02:27 04:51:52
+		<stdin>:
+			CAPDATE= 2014:02:26 22:16:03
+			GMT= 2014:02:27 04:16:03
+			/Users/jonghoonkim/Desktop/Sample HDRI/Big_for_Vignetting.hdr:
+				CAPDATE= 2014:02:26 22:09:29
+				GMT= 2014:02:27 04:09:29
+				<stdin>:
+					CAMERA= Canon Canon EOS 60D version v.0
+					Photosphere created HDR image from 'Jong_-2014-0111-1104-14.jpg' 'Jong_-2014-0111-1104-17.jpg' 'Jong_-2014-0111-1104-20.jpg' 'Jong_-2014-0111-1104-22.jpg' 'Jong_-2014-0111-1104-25.jpg' 'Jong_-2014-0111-1104-28.jpg' 'Jong_-2014-0111-1104-31.jpg' 'Jong_-2014-0111-1104-34.jpg' 'Jong_-2014-0111-1104-37.jpg' 'Jong_-2014-0111-1104-40.jpg' 'Jong_-2014-0111-1104-44.jpg' 'Jong_-2014-0111-1104-48.jpg' 'Jong_-2014-0111-1104-53.jpg'
+					VIEW= -vtv -vh 132.979172 -vv 113.747666
+					CAPDATE= 2014:01:11 12:05:53
+					ra_xyze -r -o -u "/Users/jonghoonkim/Desktop/Sample HDRI/Big.hdr"
+					PRIMARIES= 0.6400 0.3300 0.2900 0.6000 0.1500 0.0600 0.3333 0.3333
+				pcompos -x 4368 -y 2912 - -408 -272
+			/Users/jonghoonkim/Desktop/Sample HDRI/Sigma_f56FishVigL.hdr:
+				# Output from HDRShop
+				EXPOSURE=          1.0000000000000
+			pcomb -e "ro=ri(1) / ri(2);go=gi(1) / gi(2);bo=bi(1) / bi(2)" "/Users/jonghoonkim/Desktop/Sample HDRI/Big_for_Vignetting.hdr" "/Users/jonghoonkim/Desktop/Sample HDRI/Sigma_f56FishVigL.hdr"
+			pfilt -x 1200 -y 800
+			ra_xyze -r -o -u "/Users/jonghoonkim/Desktop/Sample HDRI/Resize.hdr"
+			PRIMARIES= 0.6400 0.3300 0.2900 0.6000 0.1500 0.0600 0.3333 0.3333
+		pcompos -x 800 -y 800 - -200 0
+	/Users/jonghoonkim/Desktop/Sample HDRI/Cleaning_filter.hdr:
+		ra_tiff -r
+		CAPDATE= 2014:02:25 16:15:37
+	pcomb "/Users/jonghoonkim/Desktop/Sample HDRI/Crop800_800.hdr" -s -1000 "/Users/jonghoonkim/Desktop/Sample HDRI/Cleaning_filter.hdr"
+	FORMAT=32-bit_rle_rgbe
+
+
+=====================================================
+
+The header file is very long like above after the whole process.
+
+I could run evalglare with the final.hdr. ( It looks OK until now.) 
+
+Is the header file is OK for futhur HDRI analysis?
+
+Are there any potential error source in the head?
+
+If I need to modify the head, can you explain a little bit more on vim and Radiance?s info?
+
+
+Have a good day!
+
+Best regards,
+Jonghoon Kim
+
+
+
+
+On Feb 26, 2014, at 2:00 PM, hdri-request at radiance-online.org wrote:
+
+> Send HDRI mailing list submissions to
+> 	hdri at radiance-online.org
+> 
+> To subscribe or unsubscribe via the World Wide Web, visit
+> 	http://www.radiance-online.org/mailman/listinfo/hdri
+> or, via email, send a message with subject or body 'help' to
+> 	hdri-request at radiance-online.org
+> 
+> You can reach the person managing the list at
+> 	hdri-owner at radiance-online.org
+> 
+> When replying, please edit your Subject line so it is more specific
+> than "Re: Contents of HDRI digest..."
+> 
+> 
+> Today's Topics:
+> 
+>   1. Crop HDRIs in radiance and evalglare (Jonghoon Kim)
+>   2. Re: Crop HDRIs in radiance and evalglare (Axel Jacobs)
+> 
+> 
+> ----------------------------------------------------------------------
+> 
+> Message: 1
+> Date: Wed, 26 Feb 2014 09:33:10 -0600
+> From: Jonghoon Kim <jonghoon7kim at gmail.com>
+> To: hdri at radiance-online.org
+> Subject: [HDRI] Crop HDRIs in radiance and evalglare
+> Message-ID: <A0E6E05A-7825-41EB-AB33-B5A85BBD5625 at gmail.com>
+> Content-Type: text/plain; charset="us-ascii"
+> 
+> Dear list,
+> 
+> I am trying to glare analysis via HDR images captured by a canon DSLR Camera and sigma fish eye lens.
+> 
+> The procedure that I use was
+> 
+> 1. Taking 13 images via gphoto2 +Crontab
+> 
+> 2. Creating HDR images in HDRgen
+> 
+> 3. Resize
+> pfilt -x 1433  -y 955 Big.hdr > resize.hdr
+> 
+> 4.Crop & cleaning mask
+> ra_xyze -r -o -u resize.hdr | pcompos -x 800 -y 800 - -315 -78 > crop.hdr | pcomb -s -1000 output_masked2.hdr
+> 
+> 5. Evalglare analysis
+> echo "VIEW= -vta -vh 180 -vv 180 -vp 0 0 0 -vd 1 0 0 -vu 0 0 1" > output_masked2.hdr
+> evalglare output_masked2.hdr
+> 
+> The problem is that Evalglare reports errors after the crop process.
+> 
+> error: no valid view specified
+> 
+> (There was no evalglare errors when I test it with the resized image.)
+> 
+> I has checked the luminance values of the HDR in photosphere and it looks OK!
+> 
+> Do I need to use another crop command for evalglare processing?
+> 
+> Please, let me know if you have any ideas.
+> 
+> Best regards,
+> Jonghoon Kim
+> Ph.D. student
+> Texas A&M University
+> 
+> 
+> 
+> -------------- next part --------------
+> An HTML attachment was scrubbed...
+> URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20140226/c839693a/attachment-0001.html>
+> 
+> ------------------------------
+> 
+> Message: 2
+> Date: Wed, 26 Feb 2014 16:25:28 +0000
+> From: Axel Jacobs <jacobs.axel at gmail.com>
+> To: High Dynamic Range Imaging <hdri at radiance-online.org>
+> Subject: Re: [HDRI] Crop HDRIs in radiance and evalglare
+> Message-ID:
+> 	<CA+dqh61Y+UOkSAzp1mE9frpGydXKLK8zJh6vPmsCaBA-9FHJzQ at mail.gmail.com>
+> Content-Type: text/plain; charset=ISO-8859-1
+> 
+> Both pcompos and pcomb mess with the HDR header. Also, what you are doing here:
+> 
+> echo "VIEW= -vta -vh 180 -vv 180 -vp 0 0 0 -vd 1 0 0 -vu 0 0 1" >
+> output_masked2.hdr
+> 
+> is overwrite HDR image output_masked2.hdr with just the view string.
+> You need to edit this image in a text editor and put a full VIEW= line
+> back in.  If you're happy using vim, then you could try Radiance's
+> vinfo.
+> 
+> Regards
+> 
+> Axel
+> 
+> 
+> On 26 February 2014 15:33, Jonghoon Kim <jonghoon7kim at gmail.com> wrote:
+>> Dear list,
+>> 
+>> I am trying to glare analysis via HDR images captured by a canon DSLR Camera
+>> and sigma fish eye lens.
+>> 
+>> The procedure that I use was
+>> 
+>> 1. Taking 13 images via gphoto2 +Crontab
+>> 
+>> 2. Creating HDR images in HDRgen
+>> 
+>> 3. Resize
+>> pfilt -x 1433  -y 955 Big.hdr > resize.hdr
+>> 
+>> 4.Crop & cleaning mask
+>> ra_xyze -r -o -u resize.hdr | pcompos -x 800 -y 800 - -315 -78 > crop.hdr |
+>> pcomb -s -1000 output_masked2.hdr
+>> 
+>> 5. Evalglare analysis
+>> echo "VIEW= -vta -vh 180 -vv 180 -vp 0 0 0 -vd 1 0 0 -vu 0 0 1" >
+>> output_masked2.hdr
+>> evalglare output_masked2.hdr
+>> 
+>> The problem is that Evalglare reports errors after the crop process.
+>> 
+>> error: no valid view specified
+>> 
+>> (There was no evalglare errors when I test it with the resized image.)
+>> 
+>> I has checked the luminance values of the HDR in photosphere and it looks
+>> OK!
+>> 
+>> Do I need to use another crop command for evalglare processing?
+>> 
+>> Please, let me know if you have any ideas.
+>> 
+>> Best regards,
+>> Jonghoon Kim
+>> Ph.D. student
+>> Texas A&M University
+>> 
+>> 
+>> 
+>> 
+>> _______________________________________________
+>> HDRI mailing list
+>> HDRI at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/hdri
+>> 
+> 
+> 
+> 
+> ------------------------------
+> 
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+> 
+> 
+> End of HDRI Digest, Vol 68, Issue 1
+> ***********************************
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20140227/4a326f93/attachment-0001.html>
+
+From jacobs.axel at gmail.com  Thu Feb 27 14:07:33 2014
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Thu, 27 Feb 2014 22:07:33 +0000
+Subject: [HDRI] Crop HDRIs in radiance and evalglare
+In-Reply-To: <0461533E-AF01-4B4E-912A-EA4A90DB1EA6@gmail.com>
+References: <mailman.1.1393444800.347.hdri@radiance-online.org>
+	<0461533E-AF01-4B4E-912A-EA4A90DB1EA6@gmail.com>
+Message-ID: <530FB725.3090900@gmail.com>
+
+Hi Kim,
+
+Comments in-line below...
+
+On 27/02/14 15:55, Jonghoon Kim wrote:
+> I appreciate your comment Axel!!
+>
+> I slightly modified my code and it is working now.
+>
+> However, I have one more question!
+>
+> My HDR process is like below.
+>
+> (Please, let me know if there is something wrong in my script.)
+>
+> =====================================================
+>
+> Cropping the original HDR image to match the size with the vignetting
+> filter file
+> ra_xyze -r -o -u Original.hdr | pcompos -x 4368 -y 2912 - -408 -272 >
+> Resized_for_Vignetting.hdr
+
+You don't need the ra_xyze -r here.
+
+If you're using a fisheye lens, then I'm not sure why the -x and -y of 
+pcompose are not the same.  Does this have to do with your vignetting 
+filter?
+
+> Applying the vignetting filter to the cropped HDRI
+> pcomb  -e  'ro=ri(1) / ri(2);go=gi(1) / gi(2);bo=bi(1) / bi(2)'
+> Resized_for_Vignetting.hdr Vignetting_Filter.hdr > Vignetting_Corrected.hdr
+>
+> Resizing the HDRI for glare analysis
+> pfilt -x 1200  -y 800 Vignetting_Corrected.hdr >
+> Vignetting_Corrected_resized.hdr
+
+Deriving glare metrics from a resized HDR images gives you somewhat 
+different values compared to getting them off the original, larger-res 
+image.  You might want to test this, and see how large the differences 
+in UGR, DGP etc are.
+
+> Cropping the HDRI for glare analysis
+> ra_xyze -r -o -u Vignetting_Corrected_resized.hdr | pcompos -x 800 -y
+> 800 - -200 0 > Cropped.hdr
+
+Oh, so now you're cropping it into a square.
+
+> Creating the cleaning filter
+> ra_tiff -r Cleaning_filter.tif Cleaning_filter.hdr
+
+Is this cleaning filter for removing hot or dead pixels?
+
+> Applying the cleaning filter on the resized HDRI
+> pcomb Cropped.hdr -s -1000 Cleaning_filter.hdr > Final.hdr
+>
+> Running the Evalglare analysis
+> evalglare -vta -vh 180 -vv 180 Final.hdr
+
+You can streamline this a little:
+
+a) crop and square and make the border black:
+
+dim=1234   # or whatever the diameter (in pixels) of the actual fisheye 
+on your large-size HDR
+pcompos -x $dim -y $dim hdrgen.hdr -$xoffset -$yoffset \
+|pcomb -e 
+'s(x):x*x;m=if(xmax*ymax/4-s(x-xmax/2)-s(y-ymax/2),1,0);ro=m*ri(1);go=m*gi(1);bo=m*bi(1)' 
+\
+- |pfilt > tidy.hdr
+
+b) do some QA
+
+By the sounds of it, you're working under LINUX.  I suggest you check 
+out webhdrtools.  This is some of the magic behind the WebHDR site, 
+packaged as individual Perl scripts.
+http://www.jaloxa.eu/resources/hdr/webhdrtools
+
+Before you move on to deriving the actual glare metrics, I suggest you
+
+b1) verify that the dynamic range that you've captured within your 
+sequence is sufficient.  Use webhdr_jpgheatmap.pl for this.  If there 
+are any red pixels on the heatmap, the sequence is not usable for glare 
+stuff.
+
+b2) verify that the recovered RSP is good.  webhdr_rspplot.pl helps you 
+plot it (relies on gnuplot).  The red, grn, and blu curve should be 
+almost identical, and there should be no weird wobbles.  It might be 
+best to take a number of calibration HDRs, and to derive an averaged RSP 
+from them.  webhdr_rspavrg.pl is your friend here.
+
+c) fix the view
+
+I have a tool that does this, but since it hasn't been tested properly, 
+I have not included it in the webhdrtools yet.  You might want to give 
+it a try, and see if it works for you:
+http://www.jaloxa.eu/pickup/webhdr_hdrcalib.pl
+
+Run it like so:
+
+STDVIEW="-vta -vp 0 0 0 -vd 0 1 0 -vu 0 0 1 -vv 180 -vh 180"
+CF=1.0   # Your calibration factor.
+# See http://www.jaloxa.eu/webhdr/calibrate.shtml
+webhdr_hdrcalib.pl $STDVIEW -m $CF tidy.hdr > tidy_fixed.hdr
+
+webhdr_hdrcalib.pl also has a -f option that will attempt to recover a 
+view that exists in the HDR header, but got corrupted by pcomb or 
+pcompos.  However, for images generated by hdrgen, it's best to not do 
+this, since hdrgen relies on the EXIF info from the photographs that 
+don't always give you accurate view angles.
+
+d) do your glare stuff...
+
+Done.  Now have a cup of tea and flick through my "Glare measurement 
+using HDR photography" presentation from the 2012 Radiance workshop:
+http://radiance-online.org/community/workshops/2012-copenhagen
+
+I hope you're not trying to measure glare from LED light sources...
+
+Regards
+
+Axel
+
+
+
+> =====================================================
+>
+> After the process above, The header file  is like below.
+>
+> #?RADIANCE
+> CAPDATE= 2014:02:26 22:58:34
+> GMT= 2014:02:27 04:58:34
+> /Users/jonghoonkim/Desktop/Sample HDRI/Crop800_800.hdr:
+> CAPDATE= 2014:02:26 22:51:52
+> GMT= 2014:02:27 04:51:52
+> <stdin>:
+> CAPDATE= 2014:02:26 22:16:03
+> GMT= 2014:02:27 04:16:03
+> /Users/jonghoonkim/Desktop/Sample HDRI/Big_for_Vignetting.hdr:
+> CAPDATE= 2014:02:26 22:09:29
+> GMT= 2014:02:27 04:09:29
+> <stdin>:
+> CAMERA= Canon Canon EOS 60D version v.0
+> Photosphere created HDR image from 'Jong_-2014-0111-1104-14.jpg'
+> 'Jong_-2014-0111-1104-17.jpg' 'Jong_-2014-0111-1104-20.jpg'
+> 'Jong_-2014-0111-1104-22.jpg' 'Jong_-2014-0111-1104-25.jpg'
+> 'Jong_-2014-0111-1104-28.jpg' 'Jong_-2014-0111-1104-31.jpg'
+> 'Jong_-2014-0111-1104-34.jpg' 'Jong_-2014-0111-1104-37.jpg'
+> 'Jong_-2014-0111-1104-40.jpg' 'Jong_-2014-0111-1104-44.jpg'
+> 'Jong_-2014-0111-1104-48.jpg' 'Jong_-2014-0111-1104-53.jpg'
+> VIEW= -vtv -vh 132.979172 -vv 113.747666
+> CAPDATE= 2014:01:11 12:05:53
+> ra_xyze -r -o -u "/Users/jonghoonkim/Desktop/Sample HDRI/Big.hdr"
+> PRIMARIES= 0.6400 0.3300 0.2900 0.6000 0.1500 0.0600 0.3333 0.3333
+> pcompos -x 4368 -y 2912 - -408 -272
+> /Users/jonghoonkim/Desktop/Sample HDRI/Sigma_f56FishVigL.hdr:
+> # Output from HDRShop
+> EXPOSURE=          1.0000000000000
+> pcomb -e "ro=ri(1) / ri(2);go=gi(1) / gi(2);bo=bi(1) / bi(2)"
+> "/Users/jonghoonkim/Desktop/Sample HDRI/Big_for_Vignetting.hdr"
+> "/Users/jonghoonkim/Desktop/Sample HDRI/Sigma_f56FishVigL.hdr"
+> pfilt -x 1200 -y 800
+> ra_xyze -r -o -u "/Users/jonghoonkim/Desktop/Sample HDRI/Resize.hdr"
+> PRIMARIES= 0.6400 0.3300 0.2900 0.6000 0.1500 0.0600 0.3333 0.3333
+> pcompos -x 800 -y 800 - -200 0
+> /Users/jonghoonkim/Desktop/Sample HDRI/Cleaning_filter.hdr:
+> ra_tiff -r
+> CAPDATE= 2014:02:25 16:15:37
+> pcomb "/Users/jonghoonkim/Desktop/Sample HDRI/Crop800_800.hdr" -s -1000
+> "/Users/jonghoonkim/Desktop/Sample HDRI/Cleaning_filter.hdr"
+> FORMAT=32-bit_rle_rgbe
+>
+>
+> =====================================================
+>
+> The header file is very long like above after the whole process.
+>
+> I could run evalglare with the final.hdr. ( It looks OK until now.)
+>
+> Is the header file is OK for futhur HDRI analysis?
+>
+> Are there any potential error source in the head?
+>
+> If I need to modify the head, can you explain a little bit more on vim
+> and Radiance?s info?
+>
+
+
+

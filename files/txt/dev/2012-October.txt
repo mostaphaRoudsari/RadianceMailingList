@@ -1,0 +1,3470 @@
+From pally.sandher at iesve.com  Wed Oct 10 02:18:59 2012
+From: pally.sandher at iesve.com (Pally Sandher)
+Date: Wed, 10 Oct 2012 09:18:59 +0000
+Subject: [Radiance-dev] Possible bug in findglare/rtrace
+Message-ID: <A7E25FADF831E94DBBD5904D7E584865195E96@GL-EXC-01.iesve.com>
+
+Hi,
+I'm running into a strange issue when attempting to use findglare on Windows (built from source using MSVC 10 to compile).
+
+findglare -v -ga 10-60:10 -t 0.000000 -r 250 -p image1.pic image1.oct  >image1.glr
+findglare: initializing data structures...
+findglare: opening picture file "image1.pic"...
+
+findglare: starting luminance calculation...        rtrace -h- -ov -fff -ld- -i- -I- image1.oct
+findglare: computing glare threshold...
+rtrace: warning - no light sources found
+findglare: threshold set to 1161.998064 cd/m2 from 1000 samples
+findglare: analyzing... -3299313%
+
+It starts at -3.8 million% & runs for quite a while.
+
+If you want to test it out with my test image and octree you can download them from http://upload.iesve.com/downloads/radiance_issues/findglare_bug.zip
+
+Any help would be most appreciated.
+
+Palbinder Sandher 
+Software Platform Engineer 
+T: +44 (0) 141 945 8500
+F: +44 (0) 141 945 8501
+http://www.iesve.com 
+
+**Design, Simulate + Innovate with the <Virtual Environment>** 
+Integrated Environmental Solutions Limited. Registered in Scotland No. SC151456
+Registered Office - Helix Building, West Of Scotland Science Park, Glasgow G20 0SP
+Email Disclaimer 
+
+
+
+
+From gregoryjward at gmail.com  Wed Oct 10 14:41:23 2012
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed, 10 Oct 2012 23:41:23 +0200
+Subject: [Radiance-dev] Possible bug in findglare/rtrace
+In-Reply-To: <A7E25FADF831E94DBBD5904D7E584865195E96@GL-EXC-01.iesve.com>
+References: <A7E25FADF831E94DBBD5904D7E584865195E96@GL-EXC-01.iesve.com>
+Message-ID: <2FCB4EF1-1A12-4040-8CD4-083B7198F9E6@gmail.com>
+
+Hi Pally,
+
+It seems tat you found an original bug in findglare.  Frankly, I don't know why this hasn't caused problems before, because it is clearly an error that has been there from the beginning.  Maybe compilers and systems have gotten better at array bounds checking?  Anyway, I am attaching the corrected source file from ray/src/util/, which I'm hoping will fix the problem under Windows as well.
+
+Cheers,
+-Greg
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: glareval.c
+Type: application/octet-stream
+Size: 10304 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20121010/3da88ab1/attachment.obj>
+-------------- next part --------------
+
+
+> From: Pally Sandher <pally.sandher at iesve.com>
+> Date: October 10, 2012 11:18:59 AM GMT+02:00
+> 
+> Hi,
+> I'm running into a strange issue when attempting to use findglare on Windows (built from source using MSVC 10 to compile).
+> 
+> findglare -v -ga 10-60:10 -t 0.000000 -r 250 -p image1.pic image1.oct  >image1.glr
+> findglare: initializing data structures...
+> findglare: opening picture file "image1.pic"...
+> 
+> findglare: starting luminance calculation...        rtrace -h- -ov -fff -ld- -i- -I- image1.oct
+> findglare: computing glare threshold...
+> rtrace: warning - no light sources found
+> findglare: threshold set to 1161.998064 cd/m2 from 1000 samples
+> findglare: analyzing... -3299313%
+> 
+> It starts at -3.8 million% & runs for quite a while.
+> 
+> If you want to test it out with my test image and octree you can download them from http://upload.iesve.com/downloads/radiance_issues/findglare_bug.zip
+> 
+> Any help would be most appreciated.
+> 
+> Palbinder Sandher 
+> Software Platform Engineer 
+> T: +44 (0) 141 945 8500
+> F: +44 (0) 141 945 8501
+> http://www.iesve.com 
+> 
+
+From pally.sandher at iesve.com  Thu Oct 11 02:35:28 2012
+From: pally.sandher at iesve.com (Pally Sandher)
+Date: Thu, 11 Oct 2012 09:35:28 +0000
+Subject: [Radiance-dev] Possible bug in findglare/rtrace
+In-Reply-To: <2FCB4EF1-1A12-4040-8CD4-083B7198F9E6@gmail.com>
+References: <A7E25FADF831E94DBBD5904D7E584865195E96@GL-EXC-01.iesve.com>
+	<2FCB4EF1-1A12-4040-8CD4-083B7198F9E6@gmail.com>
+Message-ID: <A7E25FADF831E94DBBD5904D7E58486519715B@GL-EXC-01.iesve.com>
+
+Rebuilt findglare.exe with the supplied code change and I can confirm it now works perfectly.
+
+Thanks for the extremely quick response Greg =)
+
+[IES]<http://www.iesve.com/>
+
+Palbinder Sandher
+Software Platform Engineer
+
+T:
+
++44 (0) 141 945 8500
+
+F:
+
++44 (0) 141 945 8501
+
+http://www.iesve.com<http://www.iesve.com/>
+
+
+**Design, Simulate + Innovate with the <Virtual Environment>**
+
+Integrated Environmental Solutions Limited. Registered in Scotland No. SC151456
+Registered Office - Helix Building, West Of Scotland Science Park, Glasgow G20 0SP
+
+Email Disclaimer<http://www.iesve.com/disclaimer.html>
+
+
+
+From: Gregory J. Ward [mailto:gregoryjward at gmail.com]
+Sent: 10 October 2012 22:42
+To: code development
+Subject: Re: [Radiance-dev] Possible bug in findglare/rtrace
+
+Hi Pally,
+
+It seems tat you found an original bug in findglare.  Frankly, I don't know why this hasn't caused problems before, because it is clearly an error that has been there from the beginning.  Maybe compilers and systems have gotten better at array bounds checking?  Anyway, I am attaching the corrected source file from ray/src/util/, which I'm hoping will fix the problem under Windows as well.
+
+Cheers,
+-Greg
+
+
+
+
+> From: Pally Sandher <pally.sandher at iesve.com>
+> Date: October 10, 2012 11:18:59 AM GMT+02:00
+>
+> Hi,
+> I'm running into a strange issue when attempting to use findglare on Windows (built from source using MSVC 10 to compile).
+>
+> findglare -v -ga 10-60:10 -t 0.000000 -r 250 -p image1.pic image1.oct  >image1.glr
+> findglare: initializing data structures...
+> findglare: opening picture file "image1.pic"...
+>
+> findglare: starting luminance calculation...        rtrace -h- -ov -fff -ld- -i- -I- image1.oct
+> findglare: computing glare threshold...
+> rtrace: warning - no light sources found
+> findglare: threshold set to 1161.998064 cd/m2 from 1000 samples
+> findglare: analyzing... -3299313%
+>
+> It starts at -3.8 million% & runs for quite a while.
+>
+> If you want to test it out with my test image and octree you can download them from http://upload.iesve.com/downloads/radiance_issues/findglare_bug.zip
+>
+> Any help would be most appreciated.
+>
+> Palbinder Sandher
+> Software Platform Engineer
+> T: +44 (0) 141 945 8500
+> F: +44 (0) 141 945 8501
+> http://www.iesve.com
+>
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20121011/59e9dada/attachment-0001.html>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: image001.jpg
+Type: image/jpeg
+Size: 2684 bytes
+Desc: image001.jpg
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20121011/59e9dada/attachment-0001.jpg>
+
+From tim.v2.0 at gmail.com  Tue Oct 16 16:30:45 2012
+From: tim.v2.0 at gmail.com (Tim Perry)
+Date: Tue, 16 Oct 2012 16:30:45 -0700
+Subject: [Radiance-dev] Segmentation fault in gendaylit
+In-Reply-To: <CAFVgASWsJLssn-6A2UvgD7agfynPSmWDB5eQiEhTXZ2_f_xWng@mail.gmail.com>
+References: <CAFVgASWsJLssn-6A2UvgD7agfynPSmWDB5eQiEhTXZ2_f_xWng@mail.gmail.com>
+Message-ID: <CAFVgASWaYNBc_1XQs4U5OQ5=KXTo14XUSNqb_mp_Apyy0CFpag@mail.gmail.com>
+
+I've reproduced this on two machines: one with the latest release and
+one compiled from head on September 19, 2012.
+
+$ gendaylit 7 19 14.500 -W 924 65 -a 34.3 -o 116.17 -m 120
+# gendaylit 7 19 14.500 -W 924 65 -a 34.3 -o 116.17 -m 120
+Segmentation fault (core dumped)
+
+
+The values I've fed into gendaylit come from the TMY3 file from
+apps2.eere.energy.gov. Every other hour of the data from this weather
+file runs correctly. This hour always crashes.
+
+wget http://apps1.eere.energy.gov/buildings/energyplus/weatherdata/4_north_and_central_america_wmo_region_4/1_usa/USA_CA_Twentynine.Palms.690150_TMY3.zip
+
+
+Any help would be greatly appreciated.
+
+Sincerely,
+Tim
+
+
+From jedev at visarc.com  Tue Oct 16 18:56:24 2012
+From: jedev at visarc.com (Jack de Valpine)
+Date: Tue, 16 Oct 2012 21:56:24 -0400
+Subject: [Radiance-dev] Segmentation fault in gendaylit
+In-Reply-To: <CAFVgASWaYNBc_1XQs4U5OQ5=KXTo14XUSNqb_mp_Apyy0CFpag@mail.gmail.com>
+References: <CAFVgASWsJLssn-6A2UvgD7agfynPSmWDB5eQiEhTXZ2_f_xWng@mail.gmail.com>
+	<CAFVgASWaYNBc_1XQs4U5OQ5=KXTo14XUSNqb_mp_Apyy0CFpag@mail.gmail.com>
+Message-ID: <507E1048.8050103@visarc.com>
+
+Hi Tim,
+
+I cannot test this right now, however I do know that it is possible for 
+gendaylit to fail in select conditions. If I recall correctly, one is if 
+the direct normal radiance is zero (not the case here). There are other 
+cases where it fails more dramatically, which is what you are facing I 
+believe. In this case I think that the thing to do is re-use a previous 
+value from the data set (eg the previous hour).
+
+Unfortunately, what you really need to do is actually "test" if 
+gendaylit is going to produce valid output prior to actually getting the 
+output. This can be done by evaluating the result of:
+
+    gendaylit $myArgs > /dev/null  2>&1
+
+    which in your case would be
+
+    gendaylit 7 19 14.500 -W 924 65 -a 34.3 -o 116.17 -m 120 > /dev/null
+    2>&1
+
+Assuming your are processing a complete weather file then you need to 
+test every time step that is not definitively at night, so that you can 
+catch any time steps that case an error for gendaylit and then do 
+something in those places.
+
+Axel Jacobs goes into this in some more detail in his most excellent 
+tutorial on rtcontrib:
+
+    http://www.jaloxa.eu/resources/radiance/documentation/docs/rtcontrib_lesson.pdf
+
+Hope this helps.
+
+Regards,
+
+-Jack de Valpine
+
+On 10/16/2012 7:30 PM, Tim Perry wrote:
+> I've reproduced this on two machines: one with the latest release and
+> one compiled from head on September 19, 2012.
+>
+> $ gendaylit 7 19 14.500 -W 924 65 -a 34.3 -o 116.17 -m 120
+> # gendaylit 7 19 14.500 -W 924 65 -a 34.3 -o 116.17 -m 120
+> Segmentation fault (core dumped)
+>
+>
+> The values I've fed into gendaylit come from the TMY3 file from
+> apps2.eere.energy.gov. Every other hour of the data from this weather
+> file runs correctly. This hour always crashes.
+>
+> wget http://apps1.eere.energy.gov/buildings/energyplus/weatherdata/4_north_and_central_america_wmo_region_4/1_usa/USA_CA_Twentynine.Palms.690150_TMY3.zip
+>
+>
+> Any help would be greatly appreciated.
+>
+> Sincerely,
+> Tim
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20121016/79ef9810/attachment.html>
+
+From jan.wienold at ise.fraunhofer.de  Tue Oct 16 23:04:29 2012
+From: jan.wienold at ise.fraunhofer.de (Jan Wienold)
+Date: Wed, 17 Oct 2012 08:04:29 +0200
+Subject: [Radiance-dev] Segmentation fault in gendaylit
+In-Reply-To: <CAFVgASWaYNBc_1XQs4U5OQ5=KXTo14XUSNqb_mp_Apyy0CFpag@mail.gmail.com>
+References: <CAFVgASWsJLssn-6A2UvgD7agfynPSmWDB5eQiEhTXZ2_f_xWng@mail.gmail.com>
+	<CAFVgASWaYNBc_1XQs4U5OQ5=KXTo14XUSNqb_mp_Apyy0CFpag@mail.gmail.com>
+Message-ID: <6f5a928f12f90ffa11a76b585e4b5978@ise.fhg.de>
+
+Hi Tim,
+
+I've got a slightly modified version of gendaylit here and this is 
+saying:
+
+ERROR: Model parameters out of range
+
+So I guess the Perez sky is not defined with that parameters.
+
+It must be very close to the "border" b/c when you reduce the direct 
+irrad to 923 W/m?, then a valid output is produced.
+
+Maybe this is an easy solution for your problem.
+
+Jan
+
+
+
+
+Am 17.10.2012 01:30, schrieb Tim Perry:
+> I've reproduced this on two machines: one with the latest release and
+> one compiled from head on September 19, 2012.
+>
+> $ gendaylit 7 19 14.500 -W 924 65 -a 34.3 -o 116.17 -m 120
+> # gendaylit 7 19 14.500 -W 924 65 -a 34.3 -o 116.17 -m 120
+> Segmentation fault (core dumped)
+>
+>
+> The values I've fed into gendaylit come from the TMY3 file from
+> apps2.eere.energy.gov. Every other hour of the data from this weather
+> file runs correctly. This hour always crashes.
+>
+> wget
+> 
+> http://apps1.eere.energy.gov/buildings/energyplus/weatherdata/4_north_and_central_america_wmo_region_4/1_usa/USA_CA_Twentynine.Palms.690150_TMY3.zip
+>
+>
+> Any help would be greatly appreciated.
+>
+> Sincerely,
+> Tim
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+From Robert.Guglielmetti at nrel.gov  Wed Oct 17 07:41:28 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Wed, 17 Oct 2012 08:41:28 -0600
+Subject: [Radiance-dev] Segmentation fault in gendaylit
+In-Reply-To: <507E1048.8050103@visarc.com>
+Message-ID: <CCA41CFB.15B4B%robert.guglielmetti@nrel.gov>
+
+On 10/16/12 7:56 PM, "Jack de Valpine" <jedev at visarc.com<mailto:jedev at visarc.com>> wrote:
+
+Hi Tim,
+
+I cannot test this right now, however I do know that it is possible for gendaylit to fail in select conditions. If I recall correctly, one is if the direct normal radiance is zero (not the case here). There are other cases where it fails more dramatically, which is what you are facing I believe. In this case I think that the thing to do is re-use a previous value from the data set (eg the previous hour).
+
+Unfortunately, what you really need to do is actually "test" if gendaylit is going to produce valid output prior to actually getting the output. This can be done by evaluating the result of:
+gendaylit $myArgs > /dev/null  2>&1
+
+which in your case would be
+
+gendaylit 7 19 14.500 -W 924 65 -a 34.3 -o 116.17 -m 120 > /dev/null 2>&1
+
+Assuming your are processing a complete weather file then you need to test every time step that is not definitively at night, so that you can catch any time steps that case an error for gendaylit and then do something in those places.
+
+This has been a constant headache for us as well, as we are trying to use gendaylit in the OpenStudio annual simulation stuff. We do a test like Jack has illustrated above, again cribbing from Axel's excellent tutorials. We have found that bad sky descriptions can still be written (or nothing), and our test can miss some. The error reporting in gendaylit seems inconsistent. We try to scan for all the warnings/errors we have seen coming from gendaylit like so:
+
+gendaylit_command = "gendaylit -ang #{tsSolarAlt} #{tsSolarAzi} -L #{tsDirectNormIllum} #{tsDiffuseHorIllum} 2>&1"
+            tempIO = IO.popen(gendaylit_command)
+            gendaylit_output = tempIO.readlines.to_s
+            tempIO.close
+
+            tempSky = true
+            if /[wW]arning/.match(gendaylit_output) or /[eE]rror/.match(gendaylit_output) or /valid/.match(gendaylit_output) or /[cC]heck/.match(gendaylit_output) or /skyclearness/.match(gendaylit_output)
+              tempSky = false
+            End
+
+?we fall back on gensky if found. Andy McNeil proposes scanning for a really tiny file (one of the failure modes for gendaylit is it writes a blank file with no errors generated). I implemented that in Ruby with the tempfile class, but obviously I did a poor job because the tempfiles were not being properly killed, so I took that out for now. But I do need to beef up this error checking as we'd prefer to use gendaylit.
+
+- Rob
+
+
+From tim.v2.0 at gmail.com  Wed Oct 17 11:18:23 2012
+From: tim.v2.0 at gmail.com (Tim Perry)
+Date: Wed, 17 Oct 2012 11:18:23 -0700
+Subject: [Radiance-dev] Segmentation fault in gendaylit
+In-Reply-To: <CCA41CFB.15B4B%robert.guglielmetti@nrel.gov>
+References: <507E1048.8050103@visarc.com>
+	<CCA41CFB.15B4B%robert.guglielmetti@nrel.gov>
+Message-ID: <CAFVgASXKofBD62rcBMV5sv9neTWpLnEDr6kjFTvvtT39vcvDRA@mail.gmail.com>
+
+Thank you, everyone, for the information. It sounds like gendaylit
+just can't handle some of the sky params and I need to enhance my
+scripts a bit. I imagine I'll be following Rob's lead. Or perhaps I'll
+just use his scripts.
+
+In that short run, what if I just adjust the diffuse value up from 65
+to 65.07. Then I get a valid sky. The change is only 0.1%. Should I
+reduce the direct to compensate? Or just not worry about it?
+
+Thanks,
+Tim
+
+On Wed, Oct 17, 2012 at 7:41 AM, Guglielmetti, Robert
+<Robert.Guglielmetti at nrel.gov> wrote:
+> On 10/16/12 7:56 PM, "Jack de Valpine" <jedev at visarc.com<mailto:jedev at visarc.com>> wrote:
+>
+> Hi Tim,
+>
+> I cannot test this right now, however I do know that it is possible for gendaylit to fail in select conditions. If I recall correctly, one is if the direct normal radiance is zero (not the case here). There are other cases where it fails more dramatically, which is what you are facing I believe. In this case I think that the thing to do is re-use a previous value from the data set (eg the previous hour).
+>
+> Unfortunately, what you really need to do is actually "test" if gendaylit is going to produce valid output prior to actually getting the output. This can be done by evaluating the result of:
+> gendaylit $myArgs > /dev/null  2>&1
+>
+> which in your case would be
+>
+> gendaylit 7 19 14.500 -W 924 65 -a 34.3 -o 116.17 -m 120 > /dev/null 2>&1
+>
+> Assuming your are processing a complete weather file then you need to test every time step that is not definitively at night, so that you can catch any time steps that case an error for gendaylit and then do something in those places.
+>
+> This has been a constant headache for us as well, as we are trying to use gendaylit in the OpenStudio annual simulation stuff. We do a test like Jack has illustrated above, again cribbing from Axel's excellent tutorials. We have found that bad sky descriptions can still be written (or nothing), and our test can miss some. The error reporting in gendaylit seems inconsistent. We try to scan for all the warnings/errors we have seen coming from gendaylit like so:
+>
+> gendaylit_command = "gendaylit -ang #{tsSolarAlt} #{tsSolarAzi} -L #{tsDirectNormIllum} #{tsDiffuseHorIllum} 2>&1"
+>             tempIO = IO.popen(gendaylit_command)
+>             gendaylit_output = tempIO.readlines.to_s
+>             tempIO.close
+>
+>             tempSky = true
+>             if /[wW]arning/.match(gendaylit_output) or /[eE]rror/.match(gendaylit_output) or /valid/.match(gendaylit_output) or /[cC]heck/.match(gendaylit_output) or /skyclearness/.match(gendaylit_output)
+>               tempSky = false
+>             End
+>
+> ?we fall back on gensky if found. Andy McNeil proposes scanning for a really tiny file (one of the failure modes for gendaylit is it writes a blank file with no errors generated). I implemented that in Ruby with the tempfile class, but obviously I did a poor job because the tempfiles were not being properly killed, so I took that out for now. But I do need to beef up this error checking as we'd prefer to use gendaylit.
+>
+> - Rob
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+From jedev at visarc.com  Wed Oct 17 11:29:17 2012
+From: jedev at visarc.com (Jack de Valpine)
+Date: Wed, 17 Oct 2012 14:29:17 -0400
+Subject: [Radiance-dev] Segmentation fault in gendaylit
+In-Reply-To: <CAFVgASXKofBD62rcBMV5sv9neTWpLnEDr6kjFTvvtT39vcvDRA@mail.gmail.com>
+References: <507E1048.8050103@visarc.com>
+	<CCA41CFB.15B4B%robert.guglielmetti@nrel.gov>
+	<CAFVgASXKofBD62rcBMV5sv9neTWpLnEDr6kjFTvvtT39vcvDRA@mail.gmail.com>
+Message-ID: <507EF8FD.2090907@visarc.com>
+
+Hi Tim,
+
+I sent this out earlier and I do not know why it did not get through 
+(perhaps the mail server is choking on my sig). Here is my earlier 
+response to Rob's follow-up. In short you might look at adjusting the 
+time value by +/- 15 minutes.
+
+-Jack de Valpine
+
+> Hey Rob,
+>
+> Just to fill in the details a bit more now. I am largely working from 
+> Axel's observations on under what circumstances gendaylit fails. From 
+> what I have seen the error conditions are:
+>
+>  1. if the Diffuse Normal Radiation is 0, in which case assume a night
+>     time step
+>  2. if the time used results in a solar zenith angle > 90 - this seems
+>     to occur at the boundary conditions around sunrise/sunset - this
+>     will report an error
+>  3. if the -W parameters are out of bounds for what gendaylit expects
+>     at a given time step - this looks like it seg faults
+>
+> To process the weather data, I have been setting the time at 30 
+> minutes less than the hour reported in the weather file. It occurs to 
+> me that in the case of (2) it might make sense to continue testing 
+> with altered times until a value is reported (just thinking off the 
+> cuff here). So for example (in condensed form):
+>
+> The weather file for Boston reports the following for January 1 at 17:00
+>
+>     direct normal irradiance: 7
+>     diffuse horizontal irradiance: 5
+>
+> if we do:
+>
+>     gendaylit 1 1 16.5 -a 42.37 -o 71.02 -m 75 -W 7 5
+>
+>     we will get an error relating to zenith angle > 90
+>
+> however if we then move back 15 minutes:
+>
+>     gendaylit 1 1 16.25 -a 42.37 -o 71.02 -m 75 -W 7 5
+>
+> we actually get a valid description...
+>
+> Curiously adding 15 minutes to the time step in Tim's case actually 
+> results in a sky description:
+>
+>     gendaylit 7 19 14.500 -W 924 65 -a 34.3 -o 116.17 -m 120
+>     results in seg fault
+>
+>     gendaylit 7 19 14.2500 -W 924 65 -a 34.3 -o 116.17 -m 120
+>     results in error message:
+>     sky clearness or sky brightness out of range 12.605739  0.059480
+>
+>     gendaylit 7 19 14.7500 -W 924 65 -a 34.3 -o 116.17 -m 120
+>     results in sky description
+>
+> Note I am picking 15 minutes as the next increment as halving of the 
+> 30 minute value.
+>
+> Not really sure what this tells us or how it helps.... It is also not 
+> clear to me any issues that might result, eg pros/cons of:
+>
+>  1. gendaylit initially fails so we fall back on gensky
+>  2. gendaylit initially fails so we use a different time value (within
+>     the hour of record) to get "good" output
+>  3. gendaylit initially fails so we fall back on the previous hour's
+>     value output
+>
+> -Jack
+
+
+On 10/17/2012 2:18 PM, Tim Perry wrote:
+> Thank you, everyone, for the information. It sounds like gendaylit
+> just can't handle some of the sky params and I need to enhance my
+> scripts a bit. I imagine I'll be following Rob's lead. Or perhaps I'll
+> just use his scripts.
+>
+> In that short run, what if I just adjust the diffuse value up from 65
+> to 65.07. Then I get a valid sky. The change is only 0.1%. Should I
+> reduce the direct to compensate? Or just not worry about it?
+>
+> Thanks,
+> Tim
+>
+> On Wed, Oct 17, 2012 at 7:41 AM, Guglielmetti, Robert
+> <Robert.Guglielmetti at nrel.gov> wrote:
+>> On 10/16/12 7:56 PM, "Jack de Valpine" <jedev at visarc.com<mailto:jedev at visarc.com>> wrote:
+>>
+>> Hi Tim,
+>>
+>> I cannot test this right now, however I do know that it is possible for gendaylit to fail in select conditions. If I recall correctly, one is if the direct normal radiance is zero (not the case here). There are other cases where it fails more dramatically, which is what you are facing I believe. In this case I think that the thing to do is re-use a previous value from the data set (eg the previous hour).
+>>
+>> Unfortunately, what you really need to do is actually "test" if gendaylit is going to produce valid output prior to actually getting the output. This can be done by evaluating the result of:
+>> gendaylit $myArgs > /dev/null  2>&1
+>>
+>> which in your case would be
+>>
+>> gendaylit 7 19 14.500 -W 924 65 -a 34.3 -o 116.17 -m 120 > /dev/null 2>&1
+>>
+>> Assuming your are processing a complete weather file then you need to test every time step that is not definitively at night, so that you can catch any time steps that case an error for gendaylit and then do something in those places.
+>>
+>> This has been a constant headache for us as well, as we are trying to use gendaylit in the OpenStudio annual simulation stuff. We do a test like Jack has illustrated above, again cribbing from Axel's excellent tutorials. We have found that bad sky descriptions can still be written (or nothing), and our test can miss some. The error reporting in gendaylit seems inconsistent. We try to scan for all the warnings/errors we have seen coming from gendaylit like so:
+>>
+>> gendaylit_command = "gendaylit -ang #{tsSolarAlt} #{tsSolarAzi} -L #{tsDirectNormIllum} #{tsDiffuseHorIllum} 2>&1"
+>>              tempIO = IO.popen(gendaylit_command)
+>>              gendaylit_output = tempIO.readlines.to_s
+>>              tempIO.close
+>>
+>>              tempSky = true
+>>              if /[wW]arning/.match(gendaylit_output) or /[eE]rror/.match(gendaylit_output) or /valid/.match(gendaylit_output) or /[cC]heck/.match(gendaylit_output) or /skyclearness/.match(gendaylit_output)
+>>                tempSky = false
+>>              End
+>>
+>> ?we fall back on gensky if found. Andy McNeil proposes scanning for a really tiny file (one of the failure modes for gendaylit is it writes a blank file with no errors generated). I implemented that in Ruby with the tempfile class, but obviously I did a poor job because the tempfiles were not being properly killed, so I took that out for now. But I do need to beef up this error checking as we'd prefer to use gendaylit.
+>>
+>> - Rob
+>>
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20121017/45ccc1f3/attachment-0001.html>
+
+From jedev at visarc.com  Wed Oct 17 09:23:54 2012
+From: jedev at visarc.com (Jack de Valpine)
+Date: Wed, 17 Oct 2012 12:23:54 -0400
+Subject: [Radiance-dev] Segmentation fault in gendaylit
+In-Reply-To: <CCA41CFB.15B4B%robert.guglielmetti@nrel.gov>
+References: <CCA41CFB.15B4B%robert.guglielmetti@nrel.gov>
+Message-ID: <507EDB9A.50001@visarc.com>
+
+Hey Rob,
+
+Just to fill in the details a bit more now. I am largely working from 
+Axel's observations on under what circumstances gendaylit fails. From 
+what I have seen the error conditions are:
+
+ 1. if the Diffuse Normal Radiation is 0, in which case assume a night
+    time step
+ 2. if the time used results in a solar zenith angle > 90 - this seems
+    to occur at the boundary conditions around sunrise/sunset - this
+    will report an error
+ 3. if the -W parameters are out of bounds for what gendaylit expects at
+    a given time step - this looks like it seg faults
+
+To process the weather data, I have been setting the time at 30 minutes 
+less than the hour reported in the weather file. It occurs to me that in 
+the case of (2) it might make sense to continue testing with altered 
+times until a value is reported (just thinking off the cuff here). So 
+for example (in condensed form):
+
+The weather file for Boston reports the following for January 1 at 17:00
+
+    direct normal irradiance: 7
+    diffuse horizontal irradiance: 5
+
+if we do:
+
+    gendaylit 1 1 16.5 -a 42.37 -o 71.02 -m 75 -W 7 5
+
+    we will get an error relating to zenith angle > 90
+
+however if we then move back 15 minutes:
+
+    gendaylit 1 1 16.25 -a 42.37 -o 71.02 -m 75 -W 7 5
+
+we actually get a valid description...
+
+Curiously adding 15 minutes to the time step in Tim's case actually 
+results in a sky description:
+
+    gendaylit 7 19 14.500 -W 924 65 -a 34.3 -o 116.17 -m 120
+    results in seg fault
+
+    gendaylit 7 19 14.2500 -W 924 65 -a 34.3 -o 116.17 -m 120
+    results in error message:
+    sky clearness or sky brightness out of range 12.605739  0.059480
+
+    gendaylit 7 19 14.7500 -W 924 65 -a 34.3 -o 116.17 -m 120
+    results in sky description
+
+Note I am picking 15 minutes as the next increment as halving of the 30 
+minute value.
+
+Not really sure what this tells us or how it helps.... It is also not 
+clear to me any issues that might result, eg pros/cons of:
+
+ 1. gendaylit initially fails so we fall back on gensky
+ 2. gendaylit initially fails so we use a different time value (within
+    the hour of record) to get "good" output
+ 3. gendaylit initially fails so we fall back on the previous hour's
+    value output
+
+-Jack
+
+-- 
+# Jack de Valpine
+# president
+#
+# visarc incorporated
+# http://www.visarc.com
+#
+# channeling technology for superior design and construction
+
+On 10/17/2012 10:41 AM, Guglielmetti, Robert wrote:
+> On 10/16/12 7:56 PM, "Jack de Valpine" <jedev at visarc.com<mailto:jedev at visarc.com>> wrote:
+>
+> Hi Tim,
+>
+> I cannot test this right now, however I do know that it is possible for gendaylit to fail in select conditions. If I recall correctly, one is if the direct normal radiance is zero (not the case here). There are other cases where it fails more dramatically, which is what you are facing I believe. In this case I think that the thing to do is re-use a previous value from the data set (eg the previous hour).
+>
+> Unfortunately, what you really need to do is actually "test" if gendaylit is going to produce valid output prior to actually getting the output. This can be done by evaluating the result of:
+> gendaylit $myArgs > /dev/null  2>&1
+>
+> which in your case would be
+>
+> gendaylit 7 19 14.500 -W 924 65 -a 34.3 -o 116.17 -m 120 > /dev/null 2>&1
+>
+> Assuming your are processing a complete weather file then you need to test every time step that is not definitively at night, so that you can catch any time steps that case an error for gendaylit and then do something in those places.
+>
+> This has been a constant headache for us as well, as we are trying to use gendaylit in the OpenStudio annual simulation stuff. We do a test like Jack has illustrated above, again cribbing from Axel's excellent tutorials. We have found that bad sky descriptions can still be written (or nothing), and our test can miss some. The error reporting in gendaylit seems inconsistent. We try to scan for all the warnings/errors we have seen coming from gendaylit like so:
+>
+> gendaylit_command = "gendaylit -ang #{tsSolarAlt} #{tsSolarAzi} -L #{tsDirectNormIllum} #{tsDiffuseHorIllum} 2>&1"
+>              tempIO = IO.popen(gendaylit_command)
+>              gendaylit_output = tempIO.readlines.to_s
+>              tempIO.close
+>
+>              tempSky = true
+>              if /[wW]arning/.match(gendaylit_output) or /[eE]rror/.match(gendaylit_output) or /valid/.match(gendaylit_output) or /[cC]heck/.match(gendaylit_output) or /skyclearness/.match(gendaylit_output)
+>                tempSky = false
+>              End
+>
+> ?we fall back on gensky if found. Andy McNeil proposes scanning for a really tiny file (one of the failure modes for gendaylit is it writes a blank file with no errors generated). I implemented that in Ruby with the tempfile class, but obviously I did a poor job because the tempfiles were not being properly killed, so I took that out for now. But I do need to beef up this error checking as we'd prefer to use gendaylit.
+>
+> - Rob
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20121017/d2b3bef2/attachment.html>
+
+From Robert.Guglielmetti at nrel.gov  Wed Oct 17 11:52:32 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Wed, 17 Oct 2012 12:52:32 -0600
+Subject: [Radiance-dev] Segmentation fault in gendaylit
+In-Reply-To: <507EF8FD.2090907@visarc.com>
+Message-ID: <CCA459F1.15D89%robert.guglielmetti@nrel.gov>
+
+Hey Jack, thanks for this. Good stuff. I am hoping to refactor the mess that is DaylightSim.rb this quarter, to make it more easily maintainable, and one of the things I plan to do at that time is also improve on this gendaylit error handling business!
+
+Rob Guglielmetti
+National Renewable Energy Laboratory (NREL)
+Commercial Buildings Research Group
+15013 Denver West Parkway MS:RSF202
+Golden, CO 80401
+303.275.4319
+robert.guglielmetti at nrel.gov
+
+
+
+On 10/17/12 12:29 PM, "Jack de Valpine" <jedev at visarc.com<mailto:jedev at visarc.com>> wrote:
+
+Hi Tim,
+
+I sent this out earlier and I do not know why it did not get through (perhaps the mail server is choking on my sig). Here is my earlier response to Rob's follow-up. In short you might look at adjusting the time value by +/- 15 minutes.
+
+-Jack de Valpine
+
+Hey Rob,
+
+Just to fill in the details a bit more now. I am largely working from Axel's observations on under what circumstances gendaylit fails. From what I have seen the error conditions are:
+
+ 1.  if the Diffuse Normal Radiation is 0, in which case assume a night time step
+ 2.  if the time used results in a solar zenith angle > 90 - this seems to occur at the boundary conditions around sunrise/sunset - this will report an error
+ 3.  if the -W parameters are out of bounds for what gendaylit expects at a given time step - this looks like it seg faults
+
+To process the weather data, I have been setting the time at 30 minutes less than the hour reported in the weather file. It occurs to me that in the case of (2) it might make sense to continue testing with altered times until a value is reported (just thinking off the cuff here). So for example (in condensed form):
+
+The weather file for Boston reports the following for January 1 at 17:00
+
+direct normal irradiance: 7
+diffuse horizontal irradiance: 5
+if we do:
+gendaylit 1 1 16.5 -a 42.37 -o 71.02 -m 75 -W 7 5
+
+we will get an error relating to zenith angle > 90
+however if we then move back 15 minutes:
+gendaylit 1 1 16.25 -a 42.37 -o 71.02 -m 75 -W 7 5
+we actually get a valid description...
+
+Curiously adding 15 minutes to the time step in Tim's case actually results in a sky description:
+gendaylit 7 19 14.500 -W 924 65 -a 34.3 -o 116.17 -m 120
+results in seg fault
+
+gendaylit 7 19 14.2500 -W 924 65 -a 34.3 -o 116.17 -m 120
+results in error message:
+sky clearness or sky brightness out of range 12.605739     0.059480
+
+gendaylit 7 19 14.7500 -W 924 65 -a 34.3 -o 116.17 -m 120
+results in sky description
+Note I am picking 15 minutes as the next increment as halving of the 30 minute value.
+
+Not really sure what this tells us or how it helps.... It is also not clear to me any issues that might result, eg pros/cons of:
+
+ 1.  gendaylit initially fails so we fall back on gensky
+ 2.  gendaylit initially fails so we use a different time value (within the hour of record) to get "good" output
+ 3.  gendaylit initially fails so we fall back on the previous hour's value output
+
+-Jack
+
+
+On 10/17/2012 2:18 PM, Tim Perry wrote:
+
+Thank you, everyone, for the information. It sounds like gendaylit
+just can't handle some of the sky params and I need to enhance my
+scripts a bit. I imagine I'll be following Rob's lead. Or perhaps I'll
+just use his scripts.
+
+In that short run, what if I just adjust the diffuse value up from 65
+to 65.07. Then I get a valid sky. The change is only 0.1%. Should I
+reduce the direct to compensate? Or just not worry about it?
+
+Thanks,
+Tim
+
+On Wed, Oct 17, 2012 at 7:41 AM, Guglielmetti, Robert
+<Robert.Guglielmetti at nrel.gov><mailto:Robert.Guglielmetti at nrel.gov> wrote:
+
+
+On 10/16/12 7:56 PM, "Jack de Valpine" <jedev at visarc.com<mailto:jedev at visarc.com><mailto:jedev at visarc.com><mailto:jedev at visarc.com>> wrote:
+
+Hi Tim,
+
+I cannot test this right now, however I do know that it is possible for gendaylit to fail in select conditions. If I recall correctly, one is if the direct normal radiance is zero (not the case here). There are other cases where it fails more dramatically, which is what you are facing I believe. In this case I think that the thing to do is re-use a previous value from the data set (eg the previous hour).
+
+Unfortunately, what you really need to do is actually "test" if gendaylit is going to produce valid output prior to actually getting the output. This can be done by evaluating the result of:
+gendaylit $myArgs > /dev/null  2>&1
+
+which in your case would be
+
+gendaylit 7 19 14.500 -W 924 65 -a 34.3 -o 116.17 -m 120 > /dev/null 2>&1
+
+Assuming your are processing a complete weather file then you need to test every time step that is not definitively at night, so that you can catch any time steps that case an error for gendaylit and then do something in those places.
+
+This has been a constant headache for us as well, as we are trying to use gendaylit in the OpenStudio annual simulation stuff. We do a test like Jack has illustrated above, again cribbing from Axel's excellent tutorials. We have found that bad sky descriptions can still be written (or nothing), and our test can miss some. The error reporting in gendaylit seems inconsistent. We try to scan for all the warnings/errors we have seen coming from gendaylit like so:
+
+gendaylit_command = "gendaylit -ang #{tsSolarAlt} #{tsSolarAzi} -L #{tsDirectNormIllum} #{tsDiffuseHorIllum} 2>&1"
+            tempIO = IO.popen(gendaylit_command)
+            gendaylit_output = tempIO.readlines.to_s
+            tempIO.close
+
+            tempSky = true
+            if /[wW]arning/.match(gendaylit_output) or /[eE]rror/.match(gendaylit_output) or /valid/.match(gendaylit_output) or /[cC]heck/.match(gendaylit_output) or /skyclearness/.match(gendaylit_output)
+              tempSky = false
+            End
+
+?we fall back on gensky if found. Andy McNeil proposes scanning for a really tiny file (one of the failure modes for gendaylit is it writes a blank file with no errors generated). I implemented that in Ruby with the tempfile class, but obviously I did a poor job because the tempfiles were not being properly killed, so I took that out for now. But I do need to beef up this error checking as we'd prefer to use gendaylit.
+
+- Rob
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev at radiance-online.org<mailto:Radiance-dev at radiance-online.org>http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev at radiance-online.org<mailto:Radiance-dev at radiance-online.org>http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+From lumnis at googlemail.com  Tue Oct 23 08:10:55 2012
+From: lumnis at googlemail.com (Denny)
+Date: Tue, 23 Oct 2012 17:10:55 +0200
+Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on command
+	line / linux
+Message-ID: <3346900.IeqWLPaXdv@dbhome>
+
+
+Dear all,
+ 
+I tried to compile radiance HEAD 3332 from source (snapshot) on an openSUSE 
+12.2 64bit box with cmake 2.8.9; gcc 4.7.1, but don't get a working version of 
+radiance.
+ 
+As I couldn't find much documentation on the cmake build for radiance and I 
+haven't used cmake much, It would be good to get some guidance.
+ 
+Here is what I did:
+ 
+1. Untar src
+/> tar xvf radiance-HEAD-ecd3332.tar.gz
+ 
+2. change into directory and call cmake
+/>cd radiance-HEAD-ecd3332
+/>cmake src/
+ 
+Everything looks good, except for the following warning:
+CMake Warning (dev) in CMakeLists.txt:
+  No cmake_minimum_required command is present.  A line of code such as
+ 
+    cmake_minimum_required(VERSION 2.8)
+ 
+  should be added at the top of the file.  The version specified may be lower
+  if you wish to support older CMake versions for this project.  For more
+  information run "cmake --help-policy CMP0000".
+This warning is for project developers.  Use -Wno-dev to suppress it.
+ 
+3. Build binaries from source
+/>make -i
+ 
+4. Install
+/>make install -i
+ 
+ 
+Following things I noticed:
+1. Build fails when not using -i with make, as there are many issues regarding 
+a missing Version.c file, like:
+:
+[ 37%] Built target genworm
+[ 37%] Generating /src/rt/Version.c
+CMake Error: Error processing file:/src/rt/create_version.cmake
+make[2]: *** [/src/rt/Version.c] Error 1
+make[1]: *** [rt/CMakeFiles/radiance.dir/all] Error 2
+make: *** [all] Error 2
+ 
+2. There is no build/ directory created when building that holds the resulting 
+binaries etc.
+ 
+ 
+Questions:
+1. Is there anything obvious, I should do differently?
+2. How do I install executables etc. to /usr/ rather than /usr/local/ e.g 
+/usr/bin or /usr/share/radiance/ etc. without patching the sources/cmake files?
+ 
+ 
+Thanks for your help.
+ 
+Denny
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20121023/8851399e/attachment.html>
+
+From Robert.Guglielmetti at nrel.gov  Tue Oct 23 09:36:47 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Tue, 23 Oct 2012 10:36:47 -0600
+Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on
+	command	line / linux
+In-Reply-To: <3346900.IeqWLPaXdv@dbhome>
+References: <3346900.IeqWLPaXdv@dbhome>
+Message-ID: <FFF56A6D37A3A54F91A03601AC22DA3225FDC07D24@MAILBOX2.nrel.gov>
+
+Hi Denny,
+
+Yeah there really isn't any documentation on the NREL site on how to actually use the CMake build system in the Radiance source tree, yet. Pally at IESve wrote up a great summary of her experience using CMake and posted it here a couple/few months ago. 
+
+Sounds like you have CMake on your system. The quick bullet list of steps I do is as follows:
+
+1. create build directory in ray/
+2. cd ray/build
+3. cmake ..
+4. ccmake .
+4a. In the ccmake "gui", type 'c' to configure, fix any errors found
+4b. Type 'g' to generate themakefiles; ccmake will then exit
+5. make
+if all goes well, then:
+6. sudo make install
+
+Lemme know if that helps. 
+
+- Rob
+
+________________________________________
+From: Denny [lumnis at googlemail.com]
+Sent: Tuesday, October 23, 2012 9:10 AM
+To: radiance-dev at radiance-online.org
+Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on command        line / linux
+
+Dear all,
+
+I tried to compile radiance HEAD 3332 from source (snapshot) on an openSUSE 12.2 64bit box with cmake 2.8.9; gcc 4.7.1, but don't get a working version of radiance.
+
+As I couldn't find much documentation on the cmake build for radiance and I haven't used cmake much, It would be good to get some guidance.
+
+Here is what I did:
+
+1. Untar src
+
+/> tar xvf radiance-HEAD-ecd3332.tar.gz
+
+2. change into directory and call cmake
+
+/>cd radiance-HEAD-ecd3332
+
+/>cmake src/
+
+Everything looks good, except for the following warning:
+
+CMake Warning (dev) in CMakeLists.txt:
+
+No cmake_minimum_required command is present. A line of code such as
+
+cmake_minimum_required(VERSION 2.8)
+
+should be added at the top of the file. The version specified may be lower
+
+if you wish to support older CMake versions for this project. For more
+
+information run "cmake --help-policy CMP0000".
+
+This warning is for project developers. Use -Wno-dev to suppress it.
+
+3. Build binaries from source
+
+/>make -i
+
+4. Install
+
+/>make install -i
+
+Following things I noticed:
+
+1. Build fails when not using -i with make, as there are many issues regarding a missing Version.c file, like:
+
+:
+
+[ 37%] Built target genworm
+
+[ 37%] Generating /src/rt/Version.c
+
+CMake Error: Error processing file:/src/rt/create_version.cmake
+
+make[2]: *** [/src/rt/Version.c] Error 1
+
+make[1]: *** [rt/CMakeFiles/radiance.dir/all] Error 2
+
+make: *** [all] Error 2
+
+2. There is no build/ directory created when building that holds the resulting binaries etc.
+
+Questions:
+
+1. Is there anything obvious, I should do differently?
+
+2. How do I install executables etc. to /usr/ rather than /usr/local/ e.g /usr/bin or /usr/share/radiance/ etc. without patching the sources/cmake files?
+
+Thanks for your help.
+
+Denny
+
+
+From lumnis at googlemail.com  Wed Oct 24 11:09:58 2012
+From: lumnis at googlemail.com (Denny)
+Date: Wed, 24 Oct 2012 20:09:58 +0200
+Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on
+	command	line / linux
+In-Reply-To: <FFF56A6D37A3A54F91A03601AC22DA3225FDC07D24@MAILBOX2.nrel.gov>
+References: <3346900.IeqWLPaXdv@dbhome>
+	<FFF56A6D37A3A54F91A03601AC22DA3225FDC07D24@MAILBOX2.nrel.gov>
+Message-ID: <1437444.q1r6KdOLV7@dbhome>
+
+
+Hey Robert,
+thank you for your reply. It actually did help a bit.
+
+I still found several issues when compiling/installing, I couldn't get solved 
+yet.
+
+1. Install Paths
+I can't use an interactive build process, so the ccmake option does not work 
+in this case.
+Instead, I tried to pass parameters to the cmake call to adjust install 
+directories etc.
+e.g.
+cmake -DCMAKE_INSTALL_PREFIX="/usr/"
+
+The result is: with make install, everything ends up under "/usr/" (instead of 
+/usr/local/), even man, lib etc. and not where it should be. I tried passing 
+those with parameters as well, but they've got ignored by cmake.
+
+2. radiance_support
+when running make, it tries to download the rad4R1supp package. I'd prefer to 
+just provide the already downloaded archive, which does not seemed to be well 
+supported by the cmake/make system.
+However, I placed the archive under the manually created directory 
+build/Downloads/Download/radiance_support/ .
+
+The problem here seems to be, that the make script seems to accept it (no 
+download), but nothing from that gets actually build/installed.
+
+If all goes well, I should get some rpm's with the open-build-service in the 
+end. You can follow the progress on
+
+https://build.opensuse.org/package/show?package=radiance&project=home%3Alumnis
+
+However, there are quite a few things left to get there.
+
+The cmake setup needs some improvements, at the moment a number of "hacks" are 
+needed to get the current state, which could be fixed in the cmake setup, 
+mainly the path/install issues.
+
+Any comments/help would be appreciated.
+
+Denny
+
+
+
+
+
+Am Dienstag, 23. Oktober 2012, 10:36:47 schrieb Guglielmetti, Robert:
+> Hi Denny,
+> 
+> Yeah there really isn't any documentation on the NREL site on how to
+> actually use the CMake build system in the Radiance source tree, yet. Pally
+> at IESve wrote up a great summary of her experience using CMake and posted
+> it here a couple/few months ago.
+> 
+> Sounds like you have CMake on your system. The quick bullet list of steps I
+> do is as follows:
+> 
+> 1. create build directory in ray/
+> 2. cd ray/build
+> 3. cmake ..
+> 4. ccmake .
+> 4a. In the ccmake "gui", type 'c' to configure, fix any errors found
+> 4b. Type 'g' to generate themakefiles; ccmake will then exit
+> 5. make
+> if all goes well, then:
+> 6. sudo make install
+> 
+> Lemme know if that helps.
+> 
+> - Rob
+> 
+> ________________________________________
+> From: Denny [lumnis at googlemail.com]
+> Sent: Tuesday, October 23, 2012 9:10 AM
+> To: radiance-dev at radiance-online.org
+> Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on command    
+>    line / linux
+> 
+> Dear all,
+> 
+> I tried to compile radiance HEAD 3332 from source (snapshot) on an openSUSE
+> 12.2 64bit box with cmake 2.8.9; gcc 4.7.1, but don't get a working version
+> of radiance.
+> 
+> As I couldn't find much documentation on the cmake build for radiance and I
+> haven't used cmake much, It would be good to get some guidance.
+> 
+> Here is what I did:
+> 
+> 1. Untar src
+> 
+> /> tar xvf radiance-HEAD-ecd3332.tar.gz
+> 
+> 2. change into directory and call cmake
+> 
+> />cd radiance-HEAD-ecd3332
+> 
+> />cmake src/
+> 
+> Everything looks good, except for the following warning:
+> 
+> CMake Warning (dev) in CMakeLists.txt:
+> 
+> No cmake_minimum_required command is present. A line of code such as
+> 
+> cmake_minimum_required(VERSION 2.8)
+> 
+> should be added at the top of the file. The version specified may be lower
+> 
+> if you wish to support older CMake versions for this project. For more
+> 
+> information run "cmake --help-policy CMP0000".
+> 
+> This warning is for project developers. Use -Wno-dev to suppress it.
+> 
+> 3. Build binaries from source
+> 
+> />make -i
+> 
+> 4. Install
+> 
+> />make install -i
+> 
+> Following things I noticed:
+> 
+> 1. Build fails when not using -i with make, as there are many issues
+> regarding a missing Version.c file, like:
+> 
+> 
+> 
+> [ 37%] Built target genworm
+> 
+> [ 37%] Generating /src/rt/Version.c
+> 
+> CMake Error: Error processing file:/src/rt/create_version.cmake
+> 
+> make[2]: *** [/src/rt/Version.c] Error 1
+> 
+> make[1]: *** [rt/CMakeFiles/radiance.dir/all] Error 2
+> 
+> make: *** [all] Error 2
+> 
+> 2. There is no build/ directory created when building that holds the
+> resulting binaries etc.
+> 
+> Questions:
+> 
+> 1. Is there anything obvious, I should do differently?
+> 
+> 2. How do I install executables etc. to /usr/ rather than /usr/local/ e.g
+> /usr/bin or /usr/share/radiance/ etc. without patching the sources/cmake
+> files?
+> 
+> Thanks for your help.
+> 
+> Denny
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20121024/03fa3bc6/attachment-0001.html>
+
+From lumnis at googlemail.com  Thu Oct 25 08:14:35 2012
+From: lumnis at googlemail.com (Denny)
+Date: Thu, 25 Oct 2012 17:14:35 +0200
+Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on
+	command	line / linux
+In-Reply-To: <FFF56A6D37A3A54F91A03601AC22DA3225FDC07D24@MAILBOX2.nrel.gov>
+References: <3346900.IeqWLPaXdv@dbhome>
+	<FFF56A6D37A3A54F91A03601AC22DA3225FDC07D24@MAILBOX2.nrel.gov>
+Message-ID: <1404471.3QE97kDn7S@dbhome>
+
+
+Dear all,
+I'm still not sure, whether the build process does what it supposed to do.
+
+What exactly is the difference in when enabling "BUILD_SHARED_LIBS" for the 
+build process. I tried the two options with different (problematic) results:
+
+[1] When using the normal call
+/>cmake ..
+It seems, that all binaries/programs got build and installed to 
+/usr/local/bin/
+Following issues:
+[1-i1] Some librarie-files also end up under bin/, where they shouldn't be, eg. 
+- plugins/imageformats/libqgif.so", libqico.so, etc.
+- libradiance.a and other *.a files
+- objview.rb
+- qt.conf
+etc. 
+[1-i2] there is an error about the "/usr/local/bin/wish4.0" . I know wish is 
+used for tk, but why is in radiance. Shouldn't be tk rather be installed on 
+the system, that shipping tk with radiance?
+
+[2] When I used
+/>cmake -DBUILD_SHARED_LIBS="ON" ..
+
+following issues are generated:
+[2-i1] almost no progams are build due to linking errors as follows:
+Linking C executable ../../bin/rcalc
+../common/librtrad.so: undefined reference to `progrname`
+../common/librtrad.so: undefined reference to `vv`
+:
+collect2: error: ld returned 1 exit status
+
+This output you find for almost all modules/pograms, the only one that got 
+build seems cnt.
+
+
+Please advise.
+
+Denny
+
+
+
+Am Dienstag, 23. Oktober 2012, 10:36:47 schrieb Guglielmetti, Robert:
+> Hi Denny,
+> 
+> Yeah there really isn't any documentation on the NREL site on how to
+> actually use the CMake build system in the Radiance source tree, yet. Pally
+> at IESve wrote up a great summary of her experience using CMake and posted
+> it here a couple/few months ago.
+> 
+> Sounds like you have CMake on your system. The quick bullet list of steps I
+> do is as follows:
+> 
+> 1. create build directory in ray/
+> 2. cd ray/build
+> 3. cmake ..
+> 4. ccmake .
+> 4a. In the ccmake "gui", type 'c' to configure, fix any errors found
+> 4b. Type 'g' to generate themakefiles; ccmake will then exit
+> 5. make
+> if all goes well, then:
+> 6. sudo make install
+> 
+> Lemme know if that helps.
+> 
+> - Rob
+> 
+> ________________________________________
+> From: Denny [lumnis at googlemail.com]
+> Sent: Tuesday, October 23, 2012 9:10 AM
+> To: radiance-dev at radiance-online.org
+> Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on command    
+>    line / linux
+> 
+> Dear all,
+> 
+> I tried to compile radiance HEAD 3332 from source (snapshot) on an openSUSE
+> 12.2 64bit box with cmake 2.8.9; gcc 4.7.1, but don't get a working version
+> of radiance.
+> 
+> As I couldn't find much documentation on the cmake build for radiance and I
+> haven't used cmake much, It would be good to get some guidance.
+> 
+> Here is what I did:
+> 
+> 1. Untar src
+> 
+> /> tar xvf radiance-HEAD-ecd3332.tar.gz
+> 
+> 2. change into directory and call cmake
+> 
+> />cd radiance-HEAD-ecd3332
+> 
+> />cmake src/
+> 
+> Everything looks good, except for the following warning:
+> 
+> CMake Warning (dev) in CMakeLists.txt:
+> 
+> No cmake_minimum_required command is present. A line of code such as
+> 
+> cmake_minimum_required(VERSION 2.8)
+> 
+> should be added at the top of the file. The version specified may be lower
+> 
+> if you wish to support older CMake versions for this project. For more
+> 
+> information run "cmake --help-policy CMP0000".
+> 
+> This warning is for project developers. Use -Wno-dev to suppress it.
+> 
+> 3. Build binaries from source
+> 
+> />make -i
+> 
+> 4. Install
+> 
+> />make install -i
+> 
+> Following things I noticed:
+> 
+> 1. Build fails when not using -i with make, as there are many issues
+> regarding a missing Version.c file, like:
+> 
+> 
+> 
+> [ 37%] Built target genworm
+> 
+> [ 37%] Generating /src/rt/Version.c
+> 
+> CMake Error: Error processing file:/src/rt/create_version.cmake
+> 
+> make[2]: *** [/src/rt/Version.c] Error 1
+> 
+> make[1]: *** [rt/CMakeFiles/radiance.dir/all] Error 2
+> 
+> make: *** [all] Error 2
+> 
+> 2. There is no build/ directory created when building that holds the
+> resulting binaries etc.
+> 
+> Questions:
+> 
+> 1. Is there anything obvious, I should do differently?
+> 
+> 2. How do I install executables etc. to /usr/ rather than /usr/local/ e.g
+> /usr/bin or /usr/share/radiance/ etc. without patching the sources/cmake
+> files?
+> 
+> Thanks for your help.
+> 
+> Denny
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+From lumnis at googlemail.com  Thu Oct 25 08:44:26 2012
+From: lumnis at googlemail.com (Denny)
+Date: Thu, 25 Oct 2012 17:44:26 +0200
+Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on
+	command	line / linux
+In-Reply-To: <FFF56A6D37A3A54F91A03601AC22DA3225FDC07D24@MAILBOX2.nrel.gov>
+References: <3346900.IeqWLPaXdv@dbhome>
+	<FFF56A6D37A3A54F91A03601AC22DA3225FDC07D24@MAILBOX2.nrel.gov>
+Message-ID: <45042162.aRDyT3dqSX@dbhome>
+
+
+Dear all,
+when compiling with static libraries, I get a dependency error when the 
+program gets packaged for rpm:
+
+file:
+	src/util/trad.wsh:
+contains
+	#!/usr/local/bin/wish4.0
+
+and therefor a dependency is automatically generated for it, which is not 
+allowed/possible.
+
+Solution (if wish is still needed):
+Replace the line with
+	#!/usr/bin/wish
+
+which will create a dependency a tk package meets.
+
+Regards,
+
+Denny
+
+
+
+Am Dienstag, 23. Oktober 2012, 10:36:47 schrieb Guglielmetti, Robert:
+> Hi Denny,
+> 
+> Yeah there really isn't any documentation on the NREL site on how to
+> actually use the CMake build system in the Radiance source tree, yet. Pally
+> at IESve wrote up a great summary of her experience using CMake and posted
+> it here a couple/few months ago.
+> 
+> Sounds like you have CMake on your system. The quick bullet list of steps I
+> do is as follows:
+> 
+> 1. create build directory in ray/
+> 2. cd ray/build
+> 3. cmake ..
+> 4. ccmake .
+> 4a. In the ccmake "gui", type 'c' to configure, fix any errors found
+> 4b. Type 'g' to generate themakefiles; ccmake will then exit
+> 5. make
+> if all goes well, then:
+> 6. sudo make install
+> 
+> Lemme know if that helps.
+> 
+> - Rob
+> 
+> ________________________________________
+> From: Denny [lumnis at googlemail.com]
+> Sent: Tuesday, October 23, 2012 9:10 AM
+> To: radiance-dev at radiance-online.org
+> Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on command    
+>    line / linux
+> 
+> Dear all,
+> 
+> I tried to compile radiance HEAD 3332 from source (snapshot) on an openSUSE
+> 12.2 64bit box with cmake 2.8.9; gcc 4.7.1, but don't get a working version
+> of radiance.
+> 
+> As I couldn't find much documentation on the cmake build for radiance and I
+> haven't used cmake much, It would be good to get some guidance.
+> 
+> Here is what I did:
+> 
+> 1. Untar src
+> 
+> /> tar xvf radiance-HEAD-ecd3332.tar.gz
+> 
+> 2. change into directory and call cmake
+> 
+> />cd radiance-HEAD-ecd3332
+> 
+> />cmake src/
+> 
+> Everything looks good, except for the following warning:
+> 
+> CMake Warning (dev) in CMakeLists.txt:
+> 
+> No cmake_minimum_required command is present. A line of code such as
+> 
+> cmake_minimum_required(VERSION 2.8)
+> 
+> should be added at the top of the file. The version specified may be lower
+> 
+> if you wish to support older CMake versions for this project. For more
+> 
+> information run "cmake --help-policy CMP0000".
+> 
+> This warning is for project developers. Use -Wno-dev to suppress it.
+> 
+> 3. Build binaries from source
+> 
+> />make -i
+> 
+> 4. Install
+> 
+> />make install -i
+> 
+> Following things I noticed:
+> 
+> 1. Build fails when not using -i with make, as there are many issues
+> regarding a missing Version.c file, like:
+> 
+> 
+> 
+> [ 37%] Built target genworm
+> 
+> [ 37%] Generating /src/rt/Version.c
+> 
+> CMake Error: Error processing file:/src/rt/create_version.cmake
+> 
+> make[2]: *** [/src/rt/Version.c] Error 1
+> 
+> make[1]: *** [rt/CMakeFiles/radiance.dir/all] Error 2
+> 
+> make: *** [all] Error 2
+> 
+> 2. There is no build/ directory created when building that holds the
+> resulting binaries etc.
+> 
+> Questions:
+> 
+> 1. Is there anything obvious, I should do differently?
+> 
+> 2. How do I install executables etc. to /usr/ rather than /usr/local/ e.g
+> /usr/bin or /usr/share/radiance/ etc. without patching the sources/cmake
+> files?
+> 
+> Thanks for your help.
+> 
+> Denny
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20121025/2396b4a0/attachment-0001.html>
+
+From amcneil at lbl.gov  Thu Oct 25 10:12:07 2012
+From: amcneil at lbl.gov (Andrew McNeil)
+Date: Thu, 25 Oct 2012 10:12:07 -0700
+Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on command
+ line / linux
+In-Reply-To: <45042162.aRDyT3dqSX@dbhome>
+References: <3346900.IeqWLPaXdv@dbhome>
+	<FFF56A6D37A3A54F91A03601AC22DA3225FDC07D24@MAILBOX2.nrel.gov>
+	<45042162.aRDyT3dqSX@dbhome>
+Message-ID: <CAOG+Niwo08j5LvgxYP_Xg+6qFrdLsNGvh-escbM29rX24PdfKA@mail.gmail.com>
+
+Hi Denny,
+
+I want to know more about why you're using cmake.  The cmake build system
+was added by NREL as part of their quest to provide windows installers.  If
+you're using cmake because you want to try it out and work out all the
+kinks, then carry on.
+
+If your goal is to install a working HEAD version of Radiance on a linux
+os, then you are probably better served using the makeall script. The
+makeall script is the most reliable build option for unix type operating
+systems (since that is what the Greg uses).  Also, makeall.sh is updated by
+Greg when he adds new programs - cmake updates take longer because NREL
+needs to do them, and pass them back to Greg.  Someday cmake might be the
+preferred build platform for Radiance, but for now if you're using Linux,
+you're better off with makeall.sh.  You can follow these instructions
+(written for compiling on mac). Ignore the first step - installing xcode.
+http://www.radiance-online.org/download-install/installation-information/mac-osx-1#Compiling
+
+Andy
+
+
+
+On Thu, Oct 25, 2012 at 8:44 AM, Denny <lumnis at googlemail.com> wrote:
+
+> **
+>
+>
+>
+> Dear all,
+>
+> when compiling with static libraries, I get a dependency error when the
+> program gets packaged for rpm:
+>
+>
+>
+> file:
+>
+> src/util/trad.wsh:
+>
+> contains
+>
+> #!/usr/local/bin/wish4.0
+>
+>
+>
+> and therefor a dependency is automatically generated for it, which is not
+> allowed/possible.
+>
+>
+>
+> Solution (if wish is still needed):
+>
+> Replace the line with
+>
+> #!/usr/bin/wish
+>
+>
+>
+> which will create a dependency a tk package meets.
+>
+>
+>
+> Regards,
+>
+>
+>
+> Denny
+>
+>
+>
+>
+>
+>
+>
+> Am Dienstag, 23. Oktober 2012, 10:36:47 schrieb Guglielmetti, Robert:
+>
+> > Hi Denny,
+>
+> >
+>
+> > Yeah there really isn't any documentation on the NREL site on how to
+>
+> > actually use the CMake build system in the Radiance source tree, yet.
+> Pally
+>
+> > at IESve wrote up a great summary of her experience using CMake and
+> posted
+>
+> > it here a couple/few months ago.
+>
+> >
+>
+> > Sounds like you have CMake on your system. The quick bullet list of
+> steps I
+>
+> > do is as follows:
+>
+> >
+>
+> > 1. create build directory in ray/
+>
+> > 2. cd ray/build
+>
+> > 3. cmake ..
+>
+> > 4. ccmake .
+>
+> > 4a. In the ccmake "gui", type 'c' to configure, fix any errors found
+>
+> > 4b. Type 'g' to generate themakefiles; ccmake will then exit
+>
+> > 5. make
+>
+> > if all goes well, then:
+>
+> > 6. sudo make install
+>
+> >
+>
+> > Lemme know if that helps.
+>
+> >
+>
+> > - Rob
+>
+> >
+>
+> > ________________________________________
+>
+> > From: Denny [lumnis at googlemail.com]
+>
+> > Sent: Tuesday, October 23, 2012 9:10 AM
+>
+> > To: radiance-dev at radiance-online.org
+>
+> > Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on command
+>
+> > line / linux
+>
+> >
+>
+> > Dear all,
+>
+> >
+>
+> > I tried to compile radiance HEAD 3332 from source (snapshot) on an
+> openSUSE
+>
+> > 12.2 64bit box with cmake 2.8.9; gcc 4.7.1, but don't get a working
+> version
+>
+> > of radiance.
+>
+> >
+>
+> > As I couldn't find much documentation on the cmake build for radiance
+> and I
+>
+> > haven't used cmake much, It would be good to get some guidance.
+>
+> >
+>
+> > Here is what I did:
+>
+> >
+>
+> > 1. Untar src
+>
+> >
+>
+> > /> tar xvf radiance-HEAD-ecd3332.tar.gz
+>
+> >
+>
+> > 2. change into directory and call cmake
+>
+> >
+>
+> > />cd radiance-HEAD-ecd3332
+>
+> >
+>
+> > />cmake src/
+>
+> >
+>
+> > Everything looks good, except for the following warning:
+>
+> >
+>
+> > CMake Warning (dev) in CMakeLists.txt:
+>
+> >
+>
+> > No cmake_minimum_required command is present. A line of code such as
+>
+> >
+>
+> > cmake_minimum_required(VERSION 2.8)
+>
+> >
+>
+> > should be added at the top of the file. The version specified may be
+> lower
+>
+> >
+>
+> > if you wish to support older CMake versions for this project. For more
+>
+> >
+>
+> > information run "cmake --help-policy CMP0000".
+>
+> >
+>
+> > This warning is for project developers. Use -Wno-dev to suppress it.
+>
+> >
+>
+> > 3. Build binaries from source
+>
+> >
+>
+> > />make -i
+>
+> >
+>
+> > 4. Install
+>
+> >
+>
+> > />make install -i
+>
+> >
+>
+> > Following things I noticed:
+>
+> >
+>
+> > 1. Build fails when not using -i with make, as there are many issues
+>
+> > regarding a missing Version.c file, like:
+>
+> >
+>
+> >
+>
+> >
+>
+> > [ 37%] Built target genworm
+>
+> >
+>
+> > [ 37%] Generating /src/rt/Version.c
+>
+> >
+>
+> > CMake Error: Error processing file:/src/rt/create_version.cmake
+>
+> >
+>
+> > make[2]: *** [/src/rt/Version.c] Error 1
+>
+> >
+>
+> > make[1]: *** [rt/CMakeFiles/radiance.dir/all] Error 2
+>
+> >
+>
+> > make: *** [all] Error 2
+>
+> >
+>
+> > 2. There is no build/ directory created when building that holds the
+>
+> > resulting binaries etc.
+>
+> >
+>
+> > Questions:
+>
+> >
+>
+> > 1. Is there anything obvious, I should do differently?
+>
+> >
+>
+> > 2. How do I install executables etc. to /usr/ rather than /usr/local/ e.g
+>
+> > /usr/bin or /usr/share/radiance/ etc. without patching the sources/cmake
+>
+> > files?
+>
+> >
+>
+> > Thanks for your help.
+>
+> >
+>
+> > Denny
+>
+> >
+>
+> > _______________________________________________
+>
+> > Radiance-dev mailing list
+>
+> > Radiance-dev at radiance-online.org
+>
+> > http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20121025/8b702839/attachment.html>
+
+From Robert.Guglielmetti at nrel.gov  Thu Oct 25 10:46:13 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Thu, 25 Oct 2012 11:46:13 -0600
+Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on command
+ line / linux
+In-Reply-To: <CAOG+Niwo08j5LvgxYP_Xg+6qFrdLsNGvh-escbM29rX24PdfKA@mail.gmail.com>
+Message-ID: <CCAED5B8.164C5%robert.guglielmetti@nrel.gov>
+
+I totally agree with Andy, the makeall script is still drop-dead simple for Mac and Linux users. That said, the CMake system adds functionality, mainly the Windows bit, but I see others (Denny included) are trying to use it to generate RPMs and other things. I think this is FANTASTIC, and I want to encourage this use of the system. Thanks for trying it out, and thank for reporting your issues and fixes. I will try my best to get these implemented in a widely compatible way, but it may have to wait until I get my support contract with Kitware renewed. =8-)
+
+Rob Guglielmetti
+National Renewable Energy Laboratory (NREL)
+Commercial Buildings Research Group
+15013 Denver West Parkway MS:RSF202
+Golden, CO 80401
+303.275.4319
+robert.guglielmetti at nrel.gov
+
+
+
+On 10/25/12 11:12 AM, "Andrew McNeil" <amcneil at lbl.gov<mailto:amcneil at lbl.gov>> wrote:
+
+Hi Denny,
+
+I want to know more about why you're using cmake.  The cmake build system was added by NREL as part of their quest to provide windows installers.  If you're using cmake because you want to try it out and work out all the kinks, then carry on.
+
+If your goal is to install a working HEAD version of Radiance on a linux os, then you are probably better served using the makeall script. The makeall script is the most reliable build option for unix type operating systems (since that is what the Greg uses).  Also, makeall.sh is updated by Greg when he adds new programs - cmake updates take longer because NREL needs to do them, and pass them back to Greg.  Someday cmake might be the preferred build platform for Radiance, but for now if you're using Linux, you're better off with makeall.sh.  You can follow these instructions (written for compiling on mac). Ignore the first step - installing xcode.
+http://www.radiance-online.org/download-install/installation-information/mac-osx-1#Compiling
+
+Andy
+
+
+
+On Thu, Oct 25, 2012 at 8:44 AM, Denny <lumnis at googlemail.com<mailto:lumnis at googlemail.com>> wrote:
+
+
+
+Dear all,
+
+when compiling with static libraries, I get a dependency error when the program gets packaged for rpm:
+
+
+
+file:
+
+src/util/trad.wsh:
+
+contains
+
+#!/usr/local/bin/wish4.0
+
+
+
+and therefor a dependency is automatically generated for it, which is not allowed/possible.
+
+
+
+Solution (if wish is still needed):
+
+Replace the line with
+
+#!/usr/bin/wish
+
+
+
+which will create a dependency a tk package meets.
+
+
+
+Regards,
+
+
+
+Denny
+
+
+
+
+
+
+
+Am Dienstag, 23. Oktober 2012, 10:36:47 schrieb Guglielmetti, Robert:
+
+> Hi Denny,
+
+>
+
+> Yeah there really isn't any documentation on the NREL site on how to
+
+> actually use the CMake build system in the Radiance source tree, yet. Pally
+
+> at IESve wrote up a great summary of her experience using CMake and posted
+
+> it here a couple/few months ago.
+
+>
+
+> Sounds like you have CMake on your system. The quick bullet list of steps I
+
+> do is as follows:
+
+>
+
+> 1. create build directory in ray/
+
+> 2. cd ray/build
+
+> 3. cmake ..
+
+> 4. ccmake .
+
+> 4a. In the ccmake "gui", type 'c' to configure, fix any errors found
+
+> 4b. Type 'g' to generate themakefiles; ccmake will then exit
+
+> 5. make
+
+> if all goes well, then:
+
+> 6. sudo make install
+
+>
+
+> Lemme know if that helps.
+
+>
+
+> - Rob
+
+>
+
+> ________________________________________
+
+> From: Denny [lumnis at googlemail.com<mailto:lumnis at googlemail.com>]
+
+> Sent: Tuesday, October 23, 2012 9:10 AM
+
+> To: radiance-dev at radiance-online.org<mailto:radiance-dev at radiance-online.org>
+
+> Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on command
+
+> line / linux
+
+>
+
+> Dear all,
+
+>
+
+> I tried to compile radiance HEAD 3332 from source (snapshot) on an openSUSE
+
+> 12.2 64bit box with cmake 2.8.9; gcc 4.7.1, but don't get a working version
+
+> of radiance.
+
+>
+
+> As I couldn't find much documentation on the cmake build for radiance and I
+
+> haven't used cmake much, It would be good to get some guidance.
+
+>
+
+> Here is what I did:
+
+>
+
+> 1. Untar src
+
+>
+
+> /> tar xvf radiance-HEAD-ecd3332.tar.gz
+
+>
+
+> 2. change into directory and call cmake
+
+>
+
+> />cd radiance-HEAD-ecd3332
+
+>
+
+> />cmake src/
+
+>
+
+> Everything looks good, except for the following warning:
+
+>
+
+> CMake Warning (dev) in CMakeLists.txt:
+
+>
+
+> No cmake_minimum_required command is present. A line of code such as
+
+>
+
+> cmake_minimum_required(VERSION 2.8)
+
+>
+
+> should be added at the top of the file. The version specified may be lower
+
+>
+
+> if you wish to support older CMake versions for this project. For more
+
+>
+
+> information run "cmake --help-policy CMP0000".
+
+>
+
+> This warning is for project developers. Use -Wno-dev to suppress it.
+
+>
+
+> 3. Build binaries from source
+
+>
+
+> />make -i
+
+>
+
+> 4. Install
+
+>
+
+> />make install -i
+
+>
+
+> Following things I noticed:
+
+>
+
+> 1. Build fails when not using -i with make, as there are many issues
+
+> regarding a missing Version.c file, like:
+
+>
+
+>
+
+>
+
+> [ 37%] Built target genworm
+
+>
+
+> [ 37%] Generating /src/rt/Version.c
+
+>
+
+> CMake Error: Error processing file:/src/rt/create_version.cmake
+
+>
+
+> make[2]: *** [/src/rt/Version.c] Error 1
+
+>
+
+> make[1]: *** [rt/CMakeFiles/radiance.dir/all] Error 2
+
+>
+
+> make: *** [all] Error 2
+
+>
+
+> 2. There is no build/ directory created when building that holds the
+
+> resulting binaries etc.
+
+>
+
+> Questions:
+
+>
+
+> 1. Is there anything obvious, I should do differently?
+
+>
+
+> 2. How do I install executables etc. to /usr/ rather than /usr/local/ e.g
+
+> /usr/bin or /usr/share/radiance/ etc. without patching the sources/cmake
+
+> files?
+
+>
+
+> Thanks for your help.
+
+>
+
+> Denny
+
+>
+
+> _______________________________________________
+
+> Radiance-dev mailing list
+
+> Radiance-dev at radiance-online.org<mailto:Radiance-dev at radiance-online.org>
+
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev at radiance-online.org<mailto:Radiance-dev at radiance-online.org>
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+
+From lumnis at googlemail.com  Thu Oct 25 13:03:21 2012
+From: lumnis at googlemail.com (Denny)
+Date: Thu, 25 Oct 2012 22:03:21 +0200
+Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on command
+	line / linux
+In-Reply-To: <CAOG+Niwo08j5LvgxYP_Xg+6qFrdLsNGvh-escbM29rX24PdfKA@mail.gmail.com>
+References: <3346900.IeqWLPaXdv@dbhome> <45042162.aRDyT3dqSX@dbhome>
+	<CAOG+Niwo08j5LvgxYP_Xg+6qFrdLsNGvh-escbM29rX24PdfKA@mail.gmail.com>
+Message-ID: <2203477.VFZuAJg70L@dbhome>
+
+
+Hi Andy,
+I seen the video before. That is a great demo. However, it's also confusing to 
+have several options to build available not knowing it which state they are.
+
+Why I gave cmake a go is quite simple:
+In order to create rpm's automatically on a build system, you need to have an 
+non-interactive build process.
+The interactive makeall script doesn't help here as it requires user 
+interaction. It would require patching to disable it, what you need to rework 
+everytime things changed in the script.
+
+Would there be a config file or similar together with a non-interactive mode, I 
+could use that. As it is now, it's quite hard to work around it. I was hoping 
+cmake/scons would help here - as it wasn't my first attempt to package 
+radiance.
+
+Denny
+
+
+Am Donnerstag, 25. Oktober 2012, 10:12:07 schrieb Andrew McNeil:
+
+Hi Denny,
+
+
+I want to know more about why you're using cmake.  The cmake build system was 
+added by NREL as part of their quest to provide windows installers.  If you're 
+using cmake because you want to try it out and work out all the kinks, then 
+carry on.   
+
+
+If your goal is to install a working HEAD version of Radiance on a linux os, 
+then you are probably better served using the makeall script. The makeall 
+script is the most reliable build option for unix type operating systems 
+(since that is what the Greg uses).  Also, makeall.sh is updated by Greg when 
+he adds new programs - cmake updates take longer because NREL needs to do 
+them, and pass them back to Greg.  Someday cmake might be the preferred build 
+platform for Radiance, but for now if you're using Linux, you're better off 
+with makeall.sh.  You can follow these instructions (written for compiling on 
+mac). Ignore the first step - installing xcode. 
+http://www.radiance-online.org/download-install/installation-information/mac-
+osx-1#Compiling
+
+
+Andy
+
+
+
+
+
+On Thu, Oct 25, 2012 at 8:44 AM, Denny <lumnis at googlemail.com> wrote:
+
+ 
+Dear all,
+when compiling with static libraries, I get a dependency error when the 
+program gets packaged for rpm:
+ 
+file:
+src/util/trad.wsh:
+contains
+#!/usr/local/bin/wish4.0
+ 
+and therefor a dependency is automatically generated for it, which is not 
+allowed/possible.
+ 
+Solution (if wish is still needed):
+Replace the line with
+#!/usr/bin/wish
+ 
+which will create a dependency a tk package meets.
+ 
+Regards,
+ 
+Denny
+ 
+ 
+ 
+Am Dienstag, 23. Oktober 2012, 10:36:47 schrieb Guglielmetti, Robert:
+> Hi Denny,
+> 
+> Yeah there really isn't any documentation on the NREL site on how to
+> actually use the CMake build system in the Radiance source tree, yet. Pally
+> at IESve wrote up a great summary of her experience using CMake and posted
+> it here a couple/few months ago.
+> 
+> Sounds like you have CMake on your system. The quick bullet list of steps I
+> do is as follows:
+> 
+> 1. create build directory in ray/
+> 2. cd ray/build
+> 3. cmake ..
+> 4. ccmake .
+> 4a. In the ccmake "gui", type 'c' to configure, fix any errors found
+> 4b. Type 'g' to generate themakefiles; ccmake will then exit
+> 5. make
+> if all goes well, then:
+> 6. sudo make install
+> 
+> Lemme know if that helps.
+> 
+> - Rob
+> 
+> ________________________________________
+> From: Denny [lumnis at googlemail.com]
+> Sent: Tuesday, October 23, 2012 9:10 AM
+> To: radiance-dev at radiance-online.org
+> Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on command 
+> line / linux
+> 
+> Dear all,
+> 
+> I tried to compile radiance HEAD 3332 from source (snapshot) on an openSUSE
+> 12.2 64bit box with cmake 2.8.9; gcc 4.7.1, but don't get a working version
+> of radiance.
+> 
+> As I couldn't find much documentation on the cmake build for radiance and I
+> haven't used cmake much, It would be good to get some guidance.
+> 
+> Here is what I did:
+> 
+> 1. Untar src
+> 
+> /> tar xvf radiance-HEAD-ecd3332.tar.gz
+> 
+> 2. change into directory and call cmake
+> 
+> />cd radiance-HEAD-ecd3332
+> 
+> />cmake src/
+> 
+> Everything looks good, except for the following warning:
+> 
+> CMake Warning (dev) in CMakeLists.txt:
+> 
+> No cmake_minimum_required command is present. A line of code such as
+> 
+> cmake_minimum_required(VERSION 2.8)
+> 
+> should be added at the top of the file. The version specified may be lower
+> 
+> if you wish to support older CMake versions for this project. For more
+> 
+> information run "cmake --help-policy CMP0000".
+> 
+> This warning is for project developers. Use -Wno-dev to suppress it.
+> 
+> 3. Build binaries from source
+> 
+> />make -i
+> 
+> 4. Install
+> 
+> />make install -i
+> 
+> Following things I noticed:
+> 
+> 1. Build fails when not using -i with make, as there are many issues
+> regarding a missing Version.c file, like:
+> 
+> 
+> 
+> [ 37%] Built target genworm
+> 
+> [ 37%] Generating /src/rt/Version.c
+> 
+> CMake Error: Error processing file:/src/rt/create_version.cmake
+> 
+> make[2]: *** [/src/rt/Version.c] Error 1
+> 
+> make[1]: *** [rt/CMakeFiles/radiance.dir/all] Error 2
+> 
+> make: *** [all] Error 2
+> 
+> 2. There is no build/ directory created when building that holds the
+> resulting binaries etc.
+> 
+> Questions:
+> 
+> 1. Is there anything obvious, I should do differently?
+> 
+> 2. How do I install executables etc. to /usr/ rather than /usr/local/ e.g
+> /usr/bin or /usr/share/radiance/ etc. without patching the sources/cmake
+> files?
+> 
+> Thanks for your help.
+> 
+> Denny
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev 
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20121025/c184a9cb/attachment-0001.html>
+
+From gregoryjward at gmail.com  Thu Oct 25 13:16:47 2012
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu, 25 Oct 2012 13:16:47 -0700
+Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on command
+	line / linux
+In-Reply-To: <2203477.VFZuAJg70L@dbhome>
+References: <3346900.IeqWLPaXdv@dbhome> <45042162.aRDyT3dqSX@dbhome>
+	<CAOG+Niwo08j5LvgxYP_Xg+6qFrdLsNGvh-escbM29rX24PdfKA@mail.gmail.com>
+	<2203477.VFZuAJg70L@dbhome>
+Message-ID: <5C7823F8-F09B-4ECF-A252-D8E9B88774DF@gmail.com>
+
+You could just copy the last part of the makeall script and use that to update the binaries once it's been successfully built the first time:
+
+The below assumes a C-Shell.  If you use Bourne or some other shell, you'll need to modify it:
+
+set srcdirs=( common rt meta cv gen ot px hd util cal )
+cd src
+echo "Making programs..."
+set errs=0
+foreach i ( $srcdirs )
+	pushd $i
+	echo "In directory $i..."
+	$rmake -k
+	@ errs += $status
+	popd
+end
+if ( $errs ) then
+	echo "There were some errors."
+else
+	echo "Done."
+endif
+
+I could probably add a "-b" option for non-interactive mode if it's really that important.
+
+Cheers,
+-Greg
+
+> From: Denny <lumnis at googlemail.com>
+> Date: October 25, 2012 1:03:21 PM PDT
+>  
+> Hi Andy,
+> I seen the video before. That is a great demo. However, it's also confusing to have several options to build available not knowing it which state they are.
+>  
+> Why I gave cmake a go is quite simple:
+> In order to create rpm's automatically on a build system, you need to have an non-interactive build process.
+> The interactive makeall script doesn't help here as it requires user interaction. It would require patching to disable it, what you need to rework everytime things changed in the script.
+>  
+> Would there be a config file or similar together with a non-interactive mode, I could use that. As it is now, it's quite hard to work around it. I was hoping cmake/scons would help here - as it wasn't my first attempt to package radiance.
+>  
+> Denny
+> 
+
+
+From Robert.Guglielmetti at nrel.gov  Thu Oct 25 13:18:17 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Thu, 25 Oct 2012 14:18:17 -0600
+Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on command
+ line / linux
+In-Reply-To: <2203477.VFZuAJg70L@dbhome>
+Message-ID: <CCAEF8C5.1651C%robert.guglielmetti@nrel.gov>
+
+Hey Denny,
+
+Bravo for taking on the job of offering RPMs!
+
+Maybe we can take this offline as I have some Ruby scripts you might be able to start with. For example I have a ruby script that does an automated build and test run, and submits test results to the dashboard nightly. I think I have a bash example around here someplace too, that the Kitware guys set me up with. Cmake just needs a little "help" in order to do what you want.
+
+Rob Guglielmetti
+National Renewable Energy Laboratory (NREL)
+Commercial Buildings Research Group
+15013 Denver West Parkway MS:RSF202
+Golden, CO 80401
+303.275.4319
+robert.guglielmetti at nrel.gov
+
+
+
+On 10/25/12 2:03 PM, "Denny" <lumnis at googlemail.com<mailto:lumnis at googlemail.com>> wrote:
+
+
+
+
+Hi Andy,
+
+I seen the video before. That is a great demo. However, it's also confusing to have several options to build available not knowing it which state they are.
+
+
+
+Why I gave cmake a go is quite simple:
+
+In order to create rpm's automatically on a build system, you need to have an non-interactive build process.
+
+The interactive makeall script doesn't help here as it requires user interaction. It would require patching to disable it, what you need to rework everytime things changed in the script.
+
+
+
+Would there be a config file or similar together with a non-interactive mode, I could use that. As it is now, it's quite hard to work around it. I was hoping cmake/scons would help here - as it wasn't my first attempt to package radiance.
+
+
+
+Denny
+
+
+
+
+
+Am Donnerstag, 25. Oktober 2012, 10:12:07 schrieb Andrew McNeil:
+
+Hi Denny,
+
+
+I want to know more about why you're using cmake.  The cmake build system was added by NREL as part of their quest to provide windows installers.  If you're using cmake because you want to try it out and work out all the kinks, then carry on.
+
+
+If your goal is to install a working HEAD version of Radiance on a linux os, then you are probably better served using the makeall script. The makeall script is the most reliable build option for unix type operating systems (since that is what the Greg uses).  Also, makeall.sh is updated by Greg when he adds new programs - cmake updates take longer because NREL needs to do them, and pass them back to Greg.  Someday cmake might be the preferred build platform for Radiance, but for now if you're using Linux, you're better off with makeall.sh.  You can follow these instructions (written for compiling on mac). Ignore the first step - installing xcode.
+
+http://www.radiance-online.org/download-install/installation-information/mac-osx-1#Compiling
+
+
+Andy
+
+
+
+
+On Thu, Oct 25, 2012 at 8:44 AM, Denny <lumnis at googlemail.com<mailto:lumnis at googlemail.com>> wrote:
+
+
+
+Dear all,
+
+when compiling with static libraries, I get a dependency error when the program gets packaged for rpm:
+
+
+
+file:
+
+src/util/trad.wsh:
+
+contains
+
+#!/usr/local/bin/wish4.0
+
+
+
+and therefor a dependency is automatically generated for it, which is not allowed/possible.
+
+
+
+Solution (if wish is still needed):
+
+Replace the line with
+
+#!/usr/bin/wish
+
+
+
+which will create a dependency a tk package meets.
+
+
+
+Regards,
+
+
+
+Denny
+
+
+
+
+
+
+
+Am Dienstag, 23. Oktober 2012, 10:36:47 schrieb Guglielmetti, Robert:
+
+> Hi Denny,
+
+>
+
+> Yeah there really isn't any documentation on the NREL site on how to
+
+> actually use the CMake build system in the Radiance source tree, yet. Pally
+
+> at IESve wrote up a great summary of her experience using CMake and posted
+
+> it here a couple/few months ago.
+
+>
+
+> Sounds like you have CMake on your system. The quick bullet list of steps I
+
+> do is as follows:
+
+>
+
+> 1. create build directory in ray/
+
+> 2. cd ray/build
+
+> 3. cmake ..
+
+> 4. ccmake .
+
+> 4a. In the ccmake "gui", type 'c' to configure, fix any errors found
+
+> 4b. Type 'g' to generate themakefiles; ccmake will then exit
+
+> 5. make
+
+> if all goes well, then:
+
+> 6. sudo make install
+
+>
+
+> Lemme know if that helps.
+
+>
+
+> - Rob
+
+>
+
+> ________________________________________
+
+> From: Denny [lumnis at googlemail.com<mailto:lumnis at googlemail.com>]
+
+> Sent: Tuesday, October 23, 2012 9:10 AM
+
+> To: radiance-dev at radiance-online.org<mailto:radiance-dev at radiance-online.org>
+
+> Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on command
+
+> line / linux
+
+>
+
+> Dear all,
+
+>
+
+> I tried to compile radiance HEAD 3332 from source (snapshot) on an openSUSE
+
+> 12.2 64bit box with cmake 2.8.9; gcc 4.7.1, but don't get a working version
+
+> of radiance.
+
+>
+
+> As I couldn't find much documentation on the cmake build for radiance and I
+
+> haven't used cmake much, It would be good to get some guidance.
+
+>
+
+> Here is what I did:
+
+>
+
+> 1. Untar src
+
+>
+
+> /> tar xvf radiance-HEAD-ecd3332.tar.gz
+
+>
+
+> 2. change into directory and call cmake
+
+>
+
+> />cd radiance-HEAD-ecd3332
+
+>
+
+> />cmake src/
+
+>
+
+> Everything looks good, except for the following warning:
+
+>
+
+> CMake Warning (dev) in CMakeLists.txt:
+
+>
+
+> No cmake_minimum_required command is present. A line of code such as
+
+>
+
+> cmake_minimum_required(VERSION 2.8)
+
+>
+
+> should be added at the top of the file. The version specified may be lower
+
+>
+
+> if you wish to support older CMake versions for this project. For more
+
+>
+
+> information run "cmake --help-policy CMP0000".
+
+>
+
+> This warning is for project developers. Use -Wno-dev to suppress it.
+
+>
+
+> 3. Build binaries from source
+
+>
+
+> />make -i
+
+>
+
+> 4. Install
+
+>
+
+> />make install -i
+
+>
+
+> Following things I noticed:
+
+>
+
+> 1. Build fails when not using -i with make, as there are many issues
+
+> regarding a missing Version.c file, like:
+
+>
+
+>
+
+>
+
+> [ 37%] Built target genworm
+
+>
+
+> [ 37%] Generating /src/rt/Version.c
+
+>
+
+> CMake Error: Error processing file:/src/rt/create_version.cmake
+
+>
+
+> make[2]: *** [/src/rt/Version.c] Error 1
+
+>
+
+> make[1]: *** [rt/CMakeFiles/radiance.dir/all] Error 2
+
+>
+
+> make: *** [all] Error 2
+
+>
+
+> 2. There is no build/ directory created when building that holds the
+
+> resulting binaries etc.
+
+>
+
+> Questions:
+
+>
+
+> 1. Is there anything obvious, I should do differently?
+
+>
+
+> 2. How do I install executables etc. to /usr/ rather than /usr/local/ e.g
+
+> /usr/bin or /usr/share/radiance/ etc. without patching the sources/cmake
+
+> files?
+
+>
+
+> Thanks for your help.
+
+>
+
+> Denny
+
+>
+
+> _______________________________________________
+
+> Radiance-dev mailing list
+
+> Radiance-dev at radiance-online.org<mailto:Radiance-dev at radiance-online.org>
+
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev at radiance-online.org<mailto:Radiance-dev at radiance-online.org>
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+
+
+
+From lumnis at googlemail.com  Thu Oct 25 13:30:35 2012
+From: lumnis at googlemail.com (Denny)
+Date: Thu, 25 Oct 2012 22:30:35 +0200
+Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on command
+	line / linux
+In-Reply-To: <5C7823F8-F09B-4ECF-A252-D8E9B88774DF@gmail.com>
+References: <3346900.IeqWLPaXdv@dbhome> <2203477.VFZuAJg70L@dbhome>
+	<5C7823F8-F09B-4ECF-A252-D8E9B88774DF@gmail.com>
+Message-ID: <2140803.L72tRi01tY@dbhome>
+
+
+Greg,
+
+a non interactive mode of the build process is necessary for packaging, as 
+probably all distributions by now use some sort of automated packaging system, 
+that has to work without any user interaction.
+
+The install option that is provided at the moment has many disadvantages () 
+compared to the package system used by most main distributions, and makes it 
+hard for the normal computer user to install the software.
+
+regards,
+Denny
+
+Am Donnerstag, 25. Oktober 2012, 13:16:47 schrieb Gregory J. Ward:
+> You could just copy the last part of the makeall script and use that to
+> update the binaries once it's been successfully built the first time:
+> 
+> The below assumes a C-Shell.  If you use Bourne or some other shell, you'll
+> need to modify it:
+> 
+> set srcdirs=( common rt meta cv gen ot px hd util cal )
+> cd src
+> echo "Making programs..."
+> set errs=0
+> foreach i ( $srcdirs )
+> 	pushd $i
+> 	echo "In directory $i..."
+> 	$rmake -k
+> 	@ errs += $status
+> 	popd
+> end
+> if ( $errs ) then
+> 	echo "There were some errors."
+> else
+> 	echo "Done."
+> endif
+> 
+> I could probably add a "-b" option for non-interactive mode if it's really
+> that important.
+> 
+> Cheers,
+> -Greg
+> 
+> > From: Denny <lumnis at googlemail.com>
+> > Date: October 25, 2012 1:03:21 PM PDT
+> > 
+> > Hi Andy,
+> > I seen the video before. That is a great demo. However, it's also
+> > confusing to have several options to build available not knowing it which
+> > state they are.
+> > 
+> > Why I gave cmake a go is quite simple:
+> > In order to create rpm's automatically on a build system, you need to have
+> > an non-interactive build process. The interactive makeall script doesn't
+> > help here as it requires user interaction. It would require patching to
+> > disable it, what you need to rework everytime things changed in the
+> > script.
+> > 
+> > Would there be a config file or similar together with a non-interactive
+> > mode, I could use that. As it is now, it's quite hard to work around it.
+> > I was hoping cmake/scons would help here - as it wasn't my first attempt
+> > to package radiance.
+> > 
+> > Denny
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20121025/c2b1f80e/attachment-0001.html>
+
+From gregoryjward at gmail.com  Thu Oct 25 14:24:11 2012
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu, 25 Oct 2012 14:24:11 -0700
+Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on command
+	line / linux
+In-Reply-To: <2140803.L72tRi01tY@dbhome>
+References: <3346900.IeqWLPaXdv@dbhome> <2203477.VFZuAJg70L@dbhome>
+	<5C7823F8-F09B-4ECF-A252-D8E9B88774DF@gmail.com>
+	<2140803.L72tRi01tY@dbhome>
+Message-ID: <17E993A7-B1D9-419E-BACB-302E40A1CD62@gmail.com>
+
+Yes, well, Radiance was never really intended for "the normal computer user."
+
+Nonetheless, I will see about adding a batch option to makeall when I have some time.
+
+-Greg
+
+> From: Denny <lumnis at googlemail.com>
+> Date: October 25, 2012 1:30:35 PM PDT
+>  
+> Greg,
+>  
+> a non interactive mode of the build process is necessary for packaging, as probably all distributions by now use some sort of automated packaging system, that has to work without any user interaction.
+>  
+> The install option that is provided at the moment has many disadvantages () compared to the package system used by most main distributions, and makes it hard for the normal computer user to install the software.
+>  
+> regards,
+> Denny
+> 
+
+
+From RFritz at lbl.gov  Thu Oct 25 15:07:15 2012
+From: RFritz at lbl.gov (Randolph M. Fritz)
+Date: Thu, 25 Oct 2012 15:07:15 -0700
+Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on command
+	line / linux
+References: <3346900.IeqWLPaXdv@dbhome>
+	<FFF56A6D37A3A54F91A03601AC22DA3225FDC07D24@MAILBOX2.nrel.gov>
+	<45042162.aRDyT3dqSX@dbhome>
+	<CAOG+Niwo08j5LvgxYP_Xg+6qFrdLsNGvh-escbM29rX24PdfKA@mail.gmail.com>
+	<2203477.VFZuAJg70L@dbhome>
+	<5C7823F8-F09B-4ECF-A252-D8E9B88774DF@gmail.com>
+	<2140803.L72tRi01tY@dbhome>
+Message-ID: <k6cd6h$tu9$1@ger.gmane.org>
+
+Bernd Zeimtz has modifications to makeall that integrate it into the 
+Debian packaging process--you might look at his work.  Unless I had a 
+substantial time to put into this, that would be the way I would go.  
+I've looked just enough at the cmake scripts--I started on a MacPorts 
+version--to know that there's a fair bit of work to do to make them 
+reliable in Unix environments.
+
+-- 
+Randolph M. Fritz ? RFritz at lbl.gov
+Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+
+
+On 2012-10-25 20:30:35 +0000, Denny said:
+
+> ?
+> Greg,
+> ?
+> a non interactive mode of the build process is necessary for packaging, 
+> as probably all distributions by now use some sort of automated 
+> packaging system, that has to work without any user interaction.
+> ?
+> The install option that is provided at the moment has many 
+> disadvantages () compared to the package system used by most main 
+> distributions, and makes it hard for the normal computer user to 
+> install the software.
+> ?
+> regards,
+> Denny
+> ?
+> Am Donnerstag, 25. Oktober 2012, 13:16:47 schrieb Gregory J. Ward:
+> > You could just copy the last part of the makeall script and use that to
+> > update the binaries once it's been successfully built the first time:
+> > 
+> > The below assumes a C-Shell.  If you use Bourne or some other shell, you'll
+> > need to modify it:
+> > 
+> > set srcdirs=( common rt meta cv gen ot px hd util cal )
+> > cd src
+> > echo "Making programs..."
+> > set errs=0
+> > foreach i ( $srcdirs )
+> > 	pushd $i
+> > 	echo "In directory $i..."
+> > 	$rmake -k
+> > 	@ errs += $status
+> > 	popd
+> > end
+> > if ( $errs ) then
+> > 	echo "There were some errors."
+> > else
+> > 	echo "Done."
+> > endif
+> > 
+> > I could probably add a "-b" option for non-interactive mode if it's really
+> > that important.
+> > 
+> > Cheers,
+> > -Greg
+> > 
+> > > From: Denny <lumnis at googlemail.com>
+> > > Date: October 25, 2012 1:03:21 PM PDT
+> > > 
+> > > Hi Andy,
+> > > I seen the video before. That is a great demo. However, it's also
+> > > confusing to have several options to build available not knowing it which
+> > > state they are.
+> > > 
+> > > Why I gave cmake a go is quite simple:
+> > > In order to create rpm's automatically on a build system, you need to have
+> > > an non-interactive build process. The interactive makeall script doesn't
+> > > help here as it requires user interaction. It would require patching to
+> > > disable it, what you need to rework everytime things changed in the
+> > > script.
+> > > 
+> > > Would there be a config file or similar together with a non-interactive
+> > > mode, I could use that. As it is now, it's quite hard to work around it.
+> > > I was hoping cmake/scons would help here - as it wasn't my first attempt
+> > > to package radiance.
+> > > 
+> > > Denny
+> > 
+> > _______________________________________________
+> > Radiance-dev mailing list
+> > Radiance-dev at radiance-online.org
+> > http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+
+
+
+From Robert.Guglielmetti at nrel.gov  Thu Oct 25 15:46:01 2012
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Thu, 25 Oct 2012 16:46:01 -0600
+Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on
+	command	line / linux
+In-Reply-To: <k6cd6h$tu9$1@ger.gmane.org>
+References: <3346900.IeqWLPaXdv@dbhome>
+	<FFF56A6D37A3A54F91A03601AC22DA3225FDC07D24@MAILBOX2.nrel.gov>
+	<45042162.aRDyT3dqSX@dbhome>
+	<CAOG+Niwo08j5LvgxYP_Xg+6qFrdLsNGvh-escbM29rX24PdfKA@mail.gmail.com>
+	<2203477.VFZuAJg70L@dbhome>	<5C7823F8-F09B-4ECF-A252-D8E9B88774DF@gmail.com>
+	<2140803.L72tRi01tY@dbhome>,<k6cd6h$tu9$1@ger.gmane.org>
+Message-ID: <FFF56A6D37A3A54F91A03601AC22DA3225FDC07D41@MAILBOX2.nrel.gov>
+
+Actually there are no CMake "scripts" in the source tree, merely CMake build system files. Due to dependencies on libtiff (and Qt for the fully cross-platform rvu), and of course CMake, there is slight brain pain in getting your personal system ready to build, but from there a little scripting skill is all you need to use the CMake system. Check it out:
+
+This is the script that we call on our nightly test machines (this builds the project and runs the ctests, and relies on a Kitware git clone of the Radiance CVS repo):
+
+#!/usr/bin/ruby
+
+##############################################################################
+# Build Radiance
+##############################################################################
+
+require 'pathname'
+require 'fileutils'
+require 'erb'
+require 'socket'
+
+##############################################################################
+#Common Functions
+def configure(rcmake,cmake,env)
+  template_text = ''
+  File.open(rcmake) { |f| template_text << f.read }
+  template = ERB.new(template_text)
+
+  FileUtils.mkdir_p(cmake.dirname)
+  File.open(cmake,'w+') { |f| f << template.result(env) }
+end
+
+def run(cmake)
+  build_config = ''
+  verbose_cmd = ''
+  if VERBOSE_OUTPUT
+    verbose_cmd = '-VV'
+  end
+  if /mswin/.match(RUBY_PLATFORM)
+    build_config = "-C \"Release\""
+  end
+  system("ctest #{verbose_cmd} #{build_config} -S #{cmake}")
+end
+
+def run_nightly(rcmake,cmake,env)
+  configure(rcmake,cmake,env)
+  run(cmake)
+end
+
+##############################################################################
+# Script Variables
+case Socket.gethostname
+
+when "hooper-2.local"
+  win_version = "none"
+  site = "hooper"
+  build_name_modifer = "OSX-10.8-Universal"
+  dashroot = Pathname.new("/Users/rpg/repos/radiance_build/radiance/")
+else
+  win_version = "none"
+  build_name_modifer = ""
+end
+
+script_dir = Pathname.new(__FILE__).dirname.realpath
+clean_build = true
+VERBOSE_OUTPUT = true
+if /mswin/.match(RUBY_PLATFORM)
+  dashroot = Pathname.new("C:/radiance_build/radiance/")
+  generator = "Visual Studio 9 2008 Express"
+else generator = "Unix Makefiles"
+end
+jobs = "2"
+if /linux/.match(RUBY_PLATFORM)
+  ENV['LC_CTYPE'] = 'en_US.UTF-8'
+  ENV['LANG'] = 'en_US.UTF-8'
+  display = ENV['DISPLAY']
+  dashroot = Pathname.new("/home/bldadmin/radiance_build/radiance/")
+elsif /darwin/.match(RUBY_PLATFORM)
+  dashroot = Pathname.new("/rad/radiance_build/radiance/")
+end
+
+Dir.chdir(dashroot)
+system("git pull")
+
+source_directory = (dashroot).to_s
+binary_directory = (dashroot + "build").to_s
+radiance_build_dir = binary_directory
+model = "Nightly"
+
+
+run_nightly("#{script_dir}/radiance.rcmake",dashroot + "radiance.cmake",binding)
+
+#EOF
+
+...and this is the .rcmake file contents that I think Denny can get a lot of tips from:
+
+CMAKE_MINIMUM_REQUIRED( VERSION 2.8.4 )
+##############################################################################
+# Build Radiance
+##############################################################################
+# Configuration variables to be set by the managing ruby script
+#
+# Path configuration for build and source directories
+SET( CTEST_SOURCE_DIRECTORY "<%=source_directory%>" )
+SET( CTEST_BINARY_DIRECTORY "<%=binary_directory%>" )
+# generator
+SET( generator "<%=generator%>" )
+# win_version
+SET( win_version "<%=win_version%>" )
+# model
+SET( model "<%=model%>" )
+
+SET( CTEST_ENVIRONMENT "DISPLAY=<%=display%>" )
+
+# clean_build
+SET( clean_build <%=clean_build%> )
+# jobs
+SET( jobs "<%=jobs%>" )
+# build name modifer
+SET( build_name_modifer "<%=build_name_modifer%>" )
+SET( radiance_build_dir "<%=radiance_build_dir%>" )
+SET( site "<%=site%>" )
+
+##############################################################################
+# Project, Site, and Build name configuration
+#SITE_NAME( SITE )
+SET( CTEST_SITE <%=site%> )
+SET( CTEST_BUILD_NAME "${CMAKE_SYSTEM_NAME}-${build_name_modifer}" )
+
+
+###############################################################################
+# Configure for CDash
+SET( CTEST_PROJECT_NAME "Radiance" )
+SET( CTEST_NIGHTLY_START_TIME "00:00:00 MST" )
+SET( CTEST_DROP_METHOD "http" )
+SET( CTEST_DROP_SITE "my.cdash.org" )
+SET( CTEST_DROP_LOCATION "/submit.php?project=Radiance" )
+SET( CTEST_DROP_SITE_CDASH TRUE )
+
+
+###############################################################################
+# Set the package type
+# Can only have one package type
+SET( UNIX_PACKAGE_NAME "all" )
+SET( MSVC_PACKAGE_NAME "ALL_BUILD" )
+
+###############################################################################
+# Build type
+# Configures CTest to use the correct build command depending on platform
+
+#### Linux and Mac
+IF( ${generator} STREQUAL "Unix Makefiles" )
+  SET( CTEST_CMAKE_GENERATOR "Unix Makefiles" )
+  SET( CTEST_BUILD_COMMAND "make ${UNIX_PACKAGE_NAME} -j${jobs}" )
+#### Windows - ${win_version} needs to be set if building on windows 7
+# Visual Studio 2008
+ELSEIF( ${generator} STREQUAL "Visual Studio 9 2008" )
+  SET( CTEST_CMAKE_GENERATOR "Visual Studio 9 2008" )
+  SET( MSVC_IS_EXPRESS "OFF" )
+  IF( ${win_version} STREQUAL "7" )
+    SET( CTEST_BUILD_COMMAND "\"C:\\Program Files (x86)\\Microsoft Visual Studio 9.0\\Common7\\IDE\\devenv.com\" Radiance.sln /build Release /project ${MSVC_PACKAGE_NAME}" ) 
+  ELSE()
+    SET( CTEST_BUILD_COMMAND "\"C:\\Program Files\\Microsoft Visual Studio 9.0\\Common7\\IDE\\devenv.com\" Radiance.sln /build Release /project ${MSVC_PACKAGE_NAME}" ) 
+  ENDIF( ${win_version} STREQUAL "7" )
+# Visual Studio Express 2008
+ELSEIF( ${generator} STREQUAL "Visual Studio 9 2008 Express" )
+  SET( CTEST_CMAKE_GENERATOR "Visual Studio 9 2008" )
+  SET( MSVC_IS_EXPRESS "ON" )
+  IF( ${win_version} STREQUAL "7" )
+    SET( CTEST_BUILD_COMMAND "\"C:\\Program Files (x86)\\Microsoft Visual Studio 9.0\\Common7\\IDE\\vcexpress.exe\" Radiance.sln /build Release /project ${MSVC_PACKAGE_NAME}" ) 
+  ELSE()
+    SET( CTEST_BUILD_COMMAND "\"C:\\Program Files\\Microsoft Visual Studio 9.0\\Common7\\IDE\\vcexpress.exe\" Radiance.sln /build Release /project ${MSVC_PACKAGE_NAME}" ) 
+  ENDIF( ${win_version} STREQUAL "7" )
+# Visual Studio 10
+ELSEIF( ${generator} STREQUAL "Visual Studio 10" )
+  SET( CTEST_CMAKE_GENERATOR "Visual Studio 10" )
+  SET( MSVC_IS_EXPRESS "OFF" )
+  SET( CTEST_BUILD_COMMAND "\"C:\\Program Files\\Microsoft Visual Studio 10.0\\Common7\\IDE\\devenv.com\" Radiance.sln /build Release /project ${MSVC_PACKAGE_NAME}" )
+# Visual Studio Express 10
+ELSEIF( ${generator} STREQUAL "Visual Studio 10 Express" )
+  SET( CTEST_CMAKE_GENERATOR "Visual Studio 10" )
+  SET( MSVC_IS_EXPRESS "ON" )
+  SET( CTEST_BUILD_COMMAND "\"C:\\Program Files\\Microsoft Visual Studio 10.0\\Common7\\IDE\\vcexpress.exe\" Radiance.sln /build Release /project ${MSVC_PACKAGE_NAME}" )  
+ENDIF()
+
+
+###############################################################################
+# Start with a completely empty binary directory?
+IF( clean_build )
+  CTEST_EMPTY_BINARY_DIRECTORY( "${CTEST_BINARY_DIRECTORY}" )
+ENDIF()
+
+
+###############################################################################
+# Start
+message("CTest: Starting ${model} in ${CTEST_BINARY_DIRECTORY}")
+ctest_start("${model}" "${CTEST_SOURCE_DIRECTORY}" "${CTEST_BINARY_DIRECTORY}" )
+
+
+###############################################################################
+# Set the initial cache and other model specific variables
+
+SET( INITIAL_CACHE "
+#  BUILD_TESTING:BOOL=ON
+  MSVC_IS_EXPRESS:BOOL=${MSVC_IS_EXPRESS}
+  CTEST_SITE:STRING=<%=site%>
+")
+
+# Mac specific cache stuff
+IF( APPLE )
+  SET( INITIAL_CACHE "
+     ${INITIAL_CACHE}
+     CMAKE_OSX_DEPLOYMENT_TARGET:STRING=10.5
+     CMAKE_OSX_SYSROOT:STRING=/Developer/SDKs/MacOSX10.5.sdk
+     CMAKE_OSX_ARCHITECTURES:STRING=i386;x86_64
+  ")
+ENDIF()
+
+###############################################################################
+# If binary directory does not exist, we create it and add the initial cache
+# If it does exist we just update the svn version
+IF( NOT EXISTS "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt")
+  # Write initial cache.
+  file(WRITE "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt" "${INITIAL_CACHE}")
+ELSE()
+  file(READ "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt" CACHE_TEXT) 
+  string(REGEX REPLACE "CMAKE_VERSION_BUILD:STRING=[A-Za-z0-9]*"
+        "CMAKE_VERSION_BUILD:STRING=${REPO_VERSION}"
+        NEW_CACHE_TEXT "${CACHE_TEXT}" )
+  file(WRITE "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt" "${NEW_CACHE_TEXT}") 
+ENDIF()
+
+
+###############################################################################
+# Configure
+message("CTest: Configuring ${model}")
+ctest_configure( BUILD "${CTEST_BINARY_DIRECTORY}" SOURCE "${CTEST_SOURCE_DIRECTORY}" RETURN_VALUE res )
+IF(NOT res EQUAL 0 )
+  message("CTest: Configure failed")
+ENDIF()
+
+
+###############################################################################
+# Build
+message("CTest: Building ${model}")
+ctest_build( BUILD "${CTEST_BINARY_DIRECTORY}" NUMBER_ERRORS res )
+IF(NOT res EQUAL 0 )
+  message("CTest: Build failed")
+ELSE()
+  message("CTest: Build succeeded")
+ENDIF()
+
+
+###############################################################################
+# Test
+message("CTest: Testing ${model}")
+ctest_test( BUILD "${CTEST_BINARY_DIRECTORY}" RETURN_VALUE res )
+
+
+###############################################################################
+# Submit
+message("CTest: Submitting results to CDash")
+ctest_submit(RETURN_VALUE res )
+
+# EOF
+
+This is an entirely automated process, just a cron job. No reason why you couldn't request a "make package", here. I know that CMake supports the creation of RPMs too, I'm just not familiar with the specifics.
+
+- Rob
+
+
+
+
+
+From RFritz at lbl.gov  Thu Oct 25 17:50:31 2012
+From: RFritz at lbl.gov (Randolph M. Fritz)
+Date: Thu, 25 Oct 2012 17:50:31 -0700
+Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on command
+	line / linux
+References: <3346900.IeqWLPaXdv@dbhome>
+	<FFF56A6D37A3A54F91A03601AC22DA3225FDC07D24@MAILBOX2.nrel.gov>
+	<45042162.aRDyT3dqSX@dbhome>
+	<CAOG+Niwo08j5LvgxYP_Xg+6qFrdLsNGvh-escbM29rX24PdfKA@mail.gmail.com>
+	<2203477.VFZuAJg70L@dbhome>
+	<5C7823F8-F09B-4ECF-A252-D8E9B88774DF@gmail.com>
+	<FFF56A6D37A3A54F91A03601AC22DA3225FDC07D41@MAILBOX2.nrel.gov>
+Message-ID: <k6cmol$6ri$1@ger.gmane.org>
+
+The current cmake build files don't work on my Mac because I have 
+multiple versions of the X11 include and library files on the system.  
+Cmake unpredictably picks files from different versions and fails to 
+build Radiance.  On a machine with a clean install and nothing extra, 
+the cmake build files will probably work.  On a machine with the wrong 
+history they produce unpredictable results.
+
+I have no idea what behaviors the cmake build files will produce across 
+a broad range of other Unix systems.  :-(
+
+I do have an attempt at a solution to the "random X11 pieces on Mac" 
+problem, but it is not complete and not thorougly tested.  I never got 
+the libtiff part going on my system.  Rob, if you'd like the X11 
+patches for your distribution, you can have them, but they will have to 
+be tested.
+
+Randolph
+
+
+
+
+From lumnis at googlemail.com  Fri Oct 26 02:15:12 2012
+From: lumnis at googlemail.com (Denny Beyer)
+Date: Fri, 26 Oct 2012 11:15:12 +0200
+Subject: [Radiance-dev] compile radiance HEAD 3332 with cmake on command
+	line / linux
+In-Reply-To: <k6cd6h$tu9$1@ger.gmane.org>
+References: <3346900.IeqWLPaXdv@dbhome> <2140803.L72tRi01tY@dbhome>
+	<k6cd6h$tu9$1@ger.gmane.org>
+Message-ID: <2300988.KCdydn1uqv@dbhome>
+
+
+Randolph, 
+thanks for pointing Bernds work out. I've seen the debian/ubuntu packaging and 
+contacted Bernd before I posted to the dev list.
+So far, I didn't get a reply from Bernd. However, Bernd had to do quite a few 
+workarounds with the makeall install procedure and because that has been quite 
+some time ago, I thought I give the new cmake a chance, as that looked more 
+promising.
+
+Regarding the cmake scripts - trying them for some time now, I had the same 
+impression. 
+
+Denny
+
+Am Donnerstag, 25. Oktober 2012, 15:07:15 schrieb Randolph M. Fritz:
+> Bernd Zeimtz has modifications to makeall that integrate it into the
+> Debian packaging process--you might look at his work.  Unless I had a
+> substantial time to put into this, that would be the way I would go.
+> I've looked just enough at the cmake scripts--I started on a MacPorts
+> version--to know that there's a fair bit of work to do to make them
+> reliable in Unix environments.
+> 
+> >  
+> > Greg,
+> >  
+> > a non interactive mode of the build process is necessary for packaging,
+> > as probably all distributions by now use some sort of automated
+> > packaging system, that has to work without any user interaction.
+> >  
+> > The install option that is provided at the moment has many
+> > disadvantages () compared to the package system used by most main
+> > distributions, and makes it hard for the normal computer user to
+> > install the software.
+> >  
+> > regards,
+> > Denny
+> >  
+> > 
+> > Am Donnerstag, 25. Oktober 2012, 13:16:47 schrieb Gregory J. Ward:
+> > > You could just copy the last part of the makeall script and use that to
+> > > update the binaries once it's been successfully built the first time:
+> > > 
+> > > The below assumes a C-Shell.  If you use Bourne or some other shell,
+> > > you'll
+> > > need to modify it:
+> > > 
+> > > set srcdirs=( common rt meta cv gen ot px hd util cal )
+> > > cd src
+> > > echo "Making programs..."
+> > > set errs=0
+> > > foreach i ( $srcdirs )
+> > > 
+> > > 	pushd $i
+> > > 	echo "In directory $i..."
+> > > 	$rmake -k
+> > > 	@ errs += $status
+> > > 	popd
+> > > 
+> > > end
+> > > if ( $errs ) then
+> > > 
+> > > 	echo "There were some errors."
+> > > 
+> > > else
+> > > 
+> > > 	echo "Done."
+> > > 
+> > > endif
+> > > 
+> > > I could probably add a "-b" option for non-interactive mode if it's
+> > > really
+> > > that important.
+> > > 
+> > > Cheers,
+> > > -Greg
+> > > 
+> > > > From: Denny <lumnis at googlemail.com>
+> > > > Date: October 25, 2012 1:03:21 PM PDT
+> > > > 
+> > > > Hi Andy,
+> > > > I seen the video before. That is a great demo. However, it's also
+> > > > confusing to have several options to build available not knowing it
+> > > > which
+> > > > state they are.
+> > > > 
+> > > > Why I gave cmake a go is quite simple:
+> > > > In order to create rpm's automatically on a build system, you need to
+> > > > have
+> > > > an non-interactive build process. The interactive makeall script
+> > > > doesn't
+> > > > help here as it requires user interaction. It would require patching
+> > > > to
+> > > > disable it, what you need to rework everytime things changed in the
+> > > > script.
+> > > > 
+> > > > Would there be a config file or similar together with a
+> > > > non-interactive
+> > > > mode, I could use that. As it is now, it's quite hard to work around
+> > > > it.
+> > > > I was hoping cmake/scons would help here - as it wasn't my first
+> > > > attempt
+> > > > to package radiance.
+> > > > 
+> > > > Denny
+> > > 
+> > > _______________________________________________
+> > > Radiance-dev mailing list
+> > > Radiance-dev at radiance-online.org
+> > > http://www.radiance-online.org/mailman/listinfo/radiance-dev
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20121026/566fe6af/attachment-0001.html>
+

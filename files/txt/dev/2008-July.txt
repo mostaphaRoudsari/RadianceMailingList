@@ -1,0 +1,578 @@
+From rfritz at u.washington.edu  Mon Jul  7 22:24:21 2008
+From: rfritz at u.washington.edu (R Fritz)
+Date: Mon Jul  7 22:24:26 2008
+Subject: [Radiance-dev] Radiance cross-platform issues & GUIs, oh my!
+Message-ID: <4F18A04C-1AF4-4217-A06A-BED83AE88259@u.washington.edu>
+
+I've been looking into this. I'm planning a thesis involving Radiance,  
+so I think I'll have some time to put into this. (I am probably  
+rehashing older discussions here; forgive me.)
+
+I'm looking at a cross-platform set of build scripts, which I think  
+are plausible now that we're down to three or four platforms, though  
+I'm going to carefully avoid the problem of building, for instance, X  
+windows components on Microsoft Windows. These proposed scripts are  
+intended to be in addition to current scripts rather than  
+replacements. I think I can make these simple and effective; we'll  
+have to see how well I do.
+
+Perhaps I can embed most of the the existing commands in C++ classes.  
+Ideally, all the current code would be left unchanged; this would also  
+be "in addition to," rather than "instead of". The classes could then  
+be invoked from conventional cross-platform GUI code. I am looking at  
+WxWidgets for the GUI, but in principle any GUI classes or functions  
+could be used--even native Windows or Mac classes.
+
+One area where I think Radiance might reap some benefit from changes  
+in the core code--though if the community doesn't want to go this way  
+I'll leave it be--would be to integrate some shell functionality in  
+the processing of the Radiance Scene Description Language (RSDL?)  
+Perhaps we can imagine an rdsl_open() routine which contains a simple  
+non-interactive shell and implements pipes, simple argument quoting,  
+xform, tmesh2rad, gen*, and perhaps a few other operations as built- 
+ins. Anything complicated and shellish rdsl_open() would forward to  
+the system shell, with the understanding that this makes the RDSL code  
+system-dependent. This would enormously simplify Microsoft porting,  
+and might even lead to speed improvements in oconv, since it would  
+trade memory for process creation. Memory is cheap these days;  
+probably cheaper than Unix processes and probably much cheaper than MS  
+processes.
+
+What do people think?
+
+Randolph
+
+
+From rfritz at u.washington.edu  Tue Jul  8 11:15:26 2008
+From: rfritz at u.washington.edu (R Fritz)
+Date: Tue Jul  8 11:15:32 2008
+Subject: [Radiance-dev] Fun with Radiance library builds
+Message-ID: <349C6D35-ECF8-43B0-9ECF-262135988873@u.washington.edu>
+
+I accidentally left the OpenGL files out of a Radiance library build,  
+and discovered that the ofun[] table is apparently initialized in  
+rglfile.c. Now, maybe I'm confused about this, but that doesn't look  
+right--isn't that an OpenGL file? And isn't Radiance supposed to build  
+without OpenGL?
+
+Randolph
+
+
+From gregoryjward at gmail.com  Tue Jul  8 11:29:30 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue Jul  8 11:29:36 2008
+Subject: [Radiance-dev] Fun with Radiance library builds
+In-Reply-To: <349C6D35-ECF8-43B0-9ECF-262135988873@u.washington.edu>
+References: <349C6D35-ECF8-43B0-9ECF-262135988873@u.washington.edu>
+Message-ID: <305FCF50-505D-4323-90D4-04247209F92B@gmail.com>
+
+The ofun[] table is initialized in multiple places by multiple  
+programs, depending on what they want done with it.  The gen/xform.c  
+program is another, and ot/obj2mesh.c is another.
+
+-Greg
+
+> From: R Fritz <rfritz@u.washington.edu>
+> Date: July 8, 2008 11:15:26 AM PDT
+>
+> I accidentally left the OpenGL files out of a Radiance library  
+> build, and discovered that the ofun[] table is apparently  
+> initialized in rglfile.c. Now, maybe I'm confused about this, but  
+> that doesn't look right--isn't that an OpenGL file? And isn't  
+> Radiance supposed to build without OpenGL?
+>
+> Randolph
+
+From gregoryjward at gmail.com  Tue Jul  8 12:08:45 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue Jul  8 12:08:51 2008
+Subject: [Radiance-dev] Radiance cross-platform issues & GUIs, oh my!
+In-Reply-To: <4F18A04C-1AF4-4217-A06A-BED83AE88259@u.washington.edu>
+References: <4F18A04C-1AF4-4217-A06A-BED83AE88259@u.washington.edu>
+Message-ID: <EDAC8D2C-92DB-4616-806B-0A5E0CF4E0B3@gmail.com>
+
+Hi Randolph,
+
+Just a quick comment on your idea of implementing a mini-shell within  
+Radiance's scene description language -- I assume you mean this to  
+take care of the "!command" lines in the input, correct?  In any  
+case, you should not underestimate the difficulties in converting  
+even a small number of command-line tools into library calls, as the  
+general assumption of separate process spaces means the use of i/o  
+and globals is a big mess to clean up.  Personally, I can't imagine  
+it being worth the effort, as there would be no real gain in  
+functionality, and worse maintenance headaches down the line.  Taking  
+a system like Radiance, which is based on the Unix toolbox model, and  
+turning it into a set of library routines, is not a weekend task.  Do  
+you know of any examples of systems that have been successfully  
+converted in this way?  I'd be interested to hear of any.
+
+I'm curious how a system like Radiance could be fit into a set of C++  
+classes.  There must be a way, and I'm not saying it's a bad idea,  
+but the general toolbox approach is standardized on a (preferably  
+small) set of stream data formats.  I guess you would try to hook the  
+output of one object into the input of another, or something like  
+that.  It seems feasible, at least in principle.
+
+Anyone else have thoughts on this?
+
+-Greg
+
+> From: R Fritz <rfritz@u.washington.edu>
+> Date: July 7, 2008 10:24:21 PM PDT
+>
+> I've been looking into this. I'm planning a thesis involving  
+> Radiance, so I think I'll have some time to put into this. (I am  
+> probably rehashing older discussions here; forgive me.)
+>
+> I'm looking at a cross-platform set of build scripts, which I think  
+> are plausible now that we're down to three or four platforms,  
+> though I'm going to carefully avoid the problem of building, for  
+> instance, X windows components on Microsoft Windows. These proposed  
+> scripts are intended to be in addition to current scripts rather  
+> than replacements. I think I can make these simple and effective;  
+> we'll have to see how well I do.
+>
+> Perhaps I can embed most of the the existing commands in C++  
+> classes. Ideally, all the current code would be left unchanged;  
+> this would also be "in addition to," rather than "instead of". The  
+> classes could then be invoked from conventional cross-platform GUI  
+> code. I am looking at WxWidgets for the GUI, but in principle any  
+> GUI classes or functions could be used--even native Windows or Mac  
+> classes.
+>
+> One area where I think Radiance might reap some benefit from  
+> changes in the core code--though if the community doesn't want to  
+> go this way I'll leave it be--would be to integrate some shell  
+> functionality in the processing of the Radiance Scene Description  
+> Language (RSDL?) Perhaps we can imagine an rdsl_open() routine  
+> which contains a simple non-interactive shell and implements pipes,  
+> simple argument quoting, xform, tmesh2rad, gen*, and perhaps a few  
+> other operations as built-ins. Anything complicated and shellish  
+> rdsl_open() would forward to the system shell, with the  
+> understanding that this makes the RDSL code system-dependent. This  
+> would enormously simplify Microsoft porting, and might even lead to  
+> speed improvements in oconv, since it would trade memory for  
+> process creation. Memory is cheap these days; probably cheaper than  
+> Unix processes and probably much cheaper than MS processes.
+>
+> What do people think?
+>
+> Randolph
+
+From bernd at bzed.de  Tue Jul  8 13:22:36 2008
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Tue Jul  8 13:22:46 2008
+Subject: [Radiance-dev] Radiance cross-platform issues & GUIs, oh my!
+In-Reply-To: <4F18A04C-1AF4-4217-A06A-BED83AE88259@u.washington.edu>
+References: <4F18A04C-1AF4-4217-A06A-BED83AE88259@u.washington.edu>
+Message-ID: <4873CC8C.2080207@bzed.de>
+
+Hi,
+
+> Perhaps I can embed most of the the existing commands in C++ classes.
+
+Not sure if that's the best way to go, although I didn't look deep into
+the code yet, I could imagine that it would make sense to create one (or
+probaly several) shared libraries, which could be used instead of
+embedding commands.
+
+> Ideally, all the current code would be left unchanged; this would also
+> be "in addition to," rather than "instead of". The classes could then be
+> invoked from conventional cross-platform GUI code. I am looking at
+> WxWidgets for the GUI, but in principle any GUI classes or functions
+> could be used--even native Windows or Mac classes.
+
+if you're looking for c++, platform-compatible toolkits, I'd suggest to
+use QT4 instead of wxwidgets. QT4 is nice to work with, and more
+important, it has - in my opinion - a much more reliable upstream and
+less bugs than wx. QT4 supports all important platforms - including OSX
+and Windows, and supports OpenGL out of the box.
+
+
+Cheers,
+
+Bernd
+
+-- 
+ Bernd Zeimetz                           Debian GNU/Linux Developer
+ GPG Fingerprint: 06C8 C9A2 EAAD E37E 5B2C BE93 067A AD04 C93B FF79
+
+From rfritz at u.washington.edu  Tue Jul  8 15:20:46 2008
+From: rfritz at u.washington.edu (R Fritz)
+Date: Tue Jul  8 15:20:54 2008
+Subject: [Radiance-dev] Radiance cross-platform issues & GUIs, oh my!
+In-Reply-To: <4873CC8C.2080207@bzed.de>
+References: <4F18A04C-1AF4-4217-A06A-BED83AE88259@u.washington.edu>
+	<4873CC8C.2080207@bzed.de>
+Message-ID: <AEB66719-14DF-44E6-BAFC-A8F98FA7DDA8@u.washington.edu>
+
+Qt's great, but it doesn't support Python, my preferred environment,  
+when I don't need great speed. Sigh. What I've seen of WxWidgets  
+doesn't thrill me, either, but it works in a broad range of  
+environments. There aren't  really any good FOSS solutions that I've  
+seen, and the ones that aren't FOSS are too expensive to consider.
+
+Oh, well. Maybe this is less of an issue than I think; right now I'm  
+still struggling to build shared libraries; I'll know more when I  
+start doing serious UI work.
+
+Randolph
+
+On Jul 8, 2008, at 1:22 PM, Bernd Zeimetz wrote:
+
+> Hi,
+>
+>> Perhaps I can embed most of the the existing commands in C++ classes.
+>
+> Not sure if that's the best way to go, although I didn't look deep  
+> into
+> the code yet, I could imagine that it would make sense to create one  
+> (or
+> probaly several) shared libraries, which could be used instead of
+> embedding commands.
+>
+>> Ideally, all the current code would be left unchanged; this would  
+>> also
+>> be "in addition to," rather than "instead of". The classes could  
+>> then be
+>> invoked from conventional cross-platform GUI code. I am looking at
+>> WxWidgets for the GUI, but in principle any GUI classes or functions
+>> could be used--even native Windows or Mac classes.
+>
+> if you're looking for c++, platform-compatible toolkits, I'd suggest  
+> to
+> use QT4 instead of wxwidgets. QT4 is nice to work with, and more
+> important, it has - in my opinion - a much more reliable upstream and
+> less bugs than wx. QT4 supports all important platforms - including  
+> OSX
+> and Windows, and supports OpenGL out of the box.
+>
+>
+> Cheers,
+>
+> Bernd
+>
+> -- 
+> Bernd Zeimetz                           Debian GNU/Linux Developer
+> GPG Fingerprint: 06C8 C9A2 EAAD E37E 5B2C BE93 067A AD04 C93B FF79
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20080708/5e8c999f/attachment.htm
+From rfritz at u.washington.edu  Tue Jul  8 15:22:15 2008
+From: rfritz at u.washington.edu (R Fritz)
+Date: Tue Jul  8 15:22:19 2008
+Subject: [Radiance-dev] Fun with Radiance library builds
+In-Reply-To: <200807081900.m68J0E9d009903@bp15.u.washington.edu>
+References: <200807081900.m68J0E9d009903@bp15.u.washington.edu>
+Message-ID: <851D9FE8-1B5F-4A9D-9F22-90DEB8A66F3E@u.washington.edu>
+
+> The ofun[] table is initialized in multiple places by multiple
+> programs, depending on what they want done with it.  The gen/xform.c
+> program is another, and ot/obj2mesh.c is another.
+
+Oh, it's a template type. Got ya. Now if I can just figure out how to  
+build a Mac shared library that understands that. (Why have these  
+things got so damn complicated?)
+
+Randolph
+
+
+From rfritz at u.washington.edu  Tue Jul  8 15:30:51 2008
+From: rfritz at u.washington.edu (R Fritz)
+Date: Tue Jul  8 15:30:56 2008
+Subject: [Radiance-dev] Radiance cross-platform issues & GUIs, oh my!
+In-Reply-To: <4873CC8C.2080207@bzed.de>
+References: <4F18A04C-1AF4-4217-A06A-BED83AE88259@u.washington.edu>
+	<4873CC8C.2080207@bzed.de>
+Message-ID: <0EB5B07F-06C3-4934-9B24-AF911B078AA2@u.washington.edu>
+
+>> Not sure if that's the best way to go, although I didn't look deep  
+>> into
+>> the code yet, I could imagine that it would make sense to create  
+>> one (or
+>> probaly several) shared libraries, which could be used instead of
+>> embedding commands.
+
+I'm aiming at shared libraries wrapped in C++ classes, actually. I've  
+been digging in the code and it's written so as to use Unix IPC rather  
+than shared libraries. It's elegant, damnably hard to port, and seems  
+central to the design of Radiance, hence this approach. My idea, right  
+now--I may change my idea--is to provide classes which cover the same  
+ground and use most of the same code as the existing commands, which  
+can then be easily invoked in a GUI environment. Right now, though, I  
+am still struggling with Mac shared library system.
+
+Randolph
+
+
+From bernd at bzed.de  Wed Jul  9 01:43:44 2008
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Wed Jul  9 01:43:52 2008
+Subject: [Radiance-dev] Radiance cross-platform issues & GUIs, oh my!
+In-Reply-To: <AEB66719-14DF-44E6-BAFC-A8F98FA7DDA8@u.washington.edu>
+References: <4F18A04C-1AF4-4217-A06A-BED83AE88259@u.washington.edu>	<4873CC8C.2080207@bzed.de>
+	<AEB66719-14DF-44E6-BAFC-A8F98FA7DDA8@u.washington.edu>
+Message-ID: <48747A40.2030609@bzed.de>
+
+R Fritz wrote:
+> Qt's great, but it doesn't support Python,
+
+Uh, it supports python pretty well, I'm just not sure how plat-form
+compatible the bindings are - but as they're only bindings to the QT
+libraries I'd expect that they work on all platforms which are supported
+by python and QT. http://www.riverbankcomputing.co.uk/software/pyqt/ is
+what you want to look at :)
+
+0 bzed@think:~$ apt-cache show python-qt4
+Package: python-qt4
+Priority: optional
+Section: python
+Installed-Size: 22432
+Maintainer: Debian Python Modules Team
+<python-modules-team@lists.alioth.debian.org>
+Architecture: amd64
+Version: 4.4.2-4
+Provides: python2.4-qt4, python2.5-qt4
+Depends: libc6 (>= 2.7-1), libgcc1 (>= 1:4.1.1), libqt4-assistant (>=
+4.4.0), libqt4-designer (>= 4.4.0), libqt4-help (>= 4.4.0),
+libqt4-network (>= 4.4.0), libqt4-script (>= 4.4.0), libqt4-svg (>=
+4.4.0), libqt4-test (>= 4.4.0), libqt4-webkit (>= 4.4.0), libqt4-xml (>=
+4.4.0), libqt4-xmlpatterns (>= 4.4.0), libqtcore4 (>= 4.4.0), libqtgui4
+(>= 4.4.0), libstdc++6 (>= 4.1.1), python2.5 (>= 2.5), python (<< 2.6),
+python (>= 2.4), python-central (>= 0.6.7), python-sip4 (>= 4.7.6),
+python-sip4 (<< 4.8), python-elementtree, python-qt4-common
+Suggests: python-qt4-dbg
+Filename: pool/main/p/python-qt4/python-qt4_4.4.2-4_amd64.deb
+Size: 5706516
+MD5sum: 2b7275f74e76a15110593e2b0ea93f2d
+SHA1: ab36639b61f6fa94eebf7612c45cabeb05e7c926
+SHA256: 512bae33558d8191e56b88fb43dbf147ca6abaf28124d0d6ad3eb3e327481994
+Description: Python bindings for Qt4
+ PyQt4 exposes the Qt4 API to Python. The following modules are supported:
+  * QtCore
+  * QtGui
+  * QtNetwork
+  * QtXml
+  * QtScript
+  * QtSvg
+  * QtTest
+  * QtAssistant
+  * QtWebKit
+  * QtOpenGL (in python-qt4-gl)
+  * QtSql (in python-qt4-sql)
+Homepage: http://www.riverbankcomputing.co.uk/software/pyqt/
+Python-Version: 2.4, 2.5
+Tag: devel::lang:python, devel::ui-builder, uitoolkit::qt
+
+
+
+Cheers,
+
+Bernd
+
+-- 
+ Bernd Zeimetz                           Debian GNU/Linux Developer
+ GPG Fingerprint: 06C8 C9A2 EAAD E37E 5B2C BE93 067A AD04 C93B FF79
+
+From rfritz at u.washington.edu  Wed Jul  9 09:22:57 2008
+From: rfritz at u.washington.edu (R Fritz)
+Date: Wed Jul  9 09:23:05 2008
+Subject: [Radiance-dev] Radiance cross-platform issues & GUIs, oh 	my!
+In-Reply-To: <200807090844.m698i33V017995@bp15.u.washington.edu>
+References: <200807090844.m698i33V017995@bp15.u.washington.edu>
+Message-ID: <CE418972-B789-46B0-82B8-7BA1048BCD9B@u.washington.edu>
+
+> I'm curious how a system like Radiance could be fit into a set of C++
+> classes.  There must be a way, and I'm not saying it's a bad idea,
+> but the general toolbox approach is standardized on a (preferably
+> small) set of stream data formats.  I guess you would try to hook the
+> output of one object into the input of another, or something like
+> that.  It seems feasible, at least in principle.
+
+That was basically my thinking; the C++ streambuf template is a  
+wonderful thing; one might even be able to get away with using the  
+istrstream and ostrstream classes in many cases, preserving the  
+existing model with very little effort. The second thought was to (in  
+places where operations can be serialized) copy globals to class  
+instance variables, thereby encapsulating the existing app in the  
+class. This clearly won't work in all cases, but it might work in  
+enough to be worth using.
+
+> Just a quick comment on your idea of implementing a mini-shell within
+> Radiance's scene description language -- I assume you mean this to
+> take care of the "!command" lines in the input, correct?  In any
+> case, you should not underestimate the difficulties in converting
+> even a small number of command-line tools into library calls, as the
+> general assumption of separate process spaces means the use of i/o
+> and globals is a big mess to clean up.  Personally, I can't imagine
+> it being worth the effort, as there would be no real gain in
+> functionality, and worse maintenance headaches down the line.
+
+If it turns out to be possible, I think there would be a substantial  
+gain in the speed of reading of scene description files because of a  
+reduction in process creation, especially on Windows, where processes  
+are heavyweight. Even on Unix, creating two processes for a common  
+operation like xform seems to me a lot of overhead, especially when  
+one of those processes is a large modern shell. I agree it would be  
+harder to maintain--memory leaks and unbounded pointers are a pain in  
+a large app--but not that much harder; large applications do this all  
+the time, these days. Hopefully, it could be done with a minimum of  
+changes to existing code. I would like to try, at least, provided I  
+can find the time.
+
+> Taking a system like Radiance, which is based on the Unix toolbox  
+> model, and
+> turning it into a set of library routines, is not a weekend task.  Do
+> you know of any examples of systems that have been successfully
+> converted in this way?  I'd be interested to hear of any.
+
+No, that I don't--anyone else? But it seems to me that this is at  
+least a plausible approach, and one that preserves most of the  
+existing code and model. I very much like the Unix toolbox model.  
+Unfortunately, the current widely used UI technologies are hostile to  
+that model and I would like to adapt Radiance to work with those  
+technologies.
+
+> Anyone else have thoughts on this?
+
+Please!
+
+Randolph
+
+
+From gregoryjward at gmail.com  Wed Jul  9 10:32:18 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed Jul  9 10:32:36 2008
+Subject: [Radiance-dev] Radiance cross-platform issues & GUIs, oh 	my!
+In-Reply-To: <CE418972-B789-46B0-82B8-7BA1048BCD9B@u.washington.edu>
+References: <200807090844.m698i33V017995@bp15.u.washington.edu>
+	<CE418972-B789-46B0-82B8-7BA1048BCD9B@u.washington.edu>
+Message-ID: <16CDD128-5E09-4420-8E95-62A81DEDAF08@gmail.com>
+
+Hi Randolph,
+
+ From a performance standpoint, the vast majority of time is spent on  
+the ray-tracing part for most of what people do using Radiance.   
+Hence, there's not much point in optimizing the loading of scene  
+files or connecting up the various subordinate utilities in dynamic  
+libraries.  You simply won't save much over shelling out the commands  
+and reading and writing the files or connecting up pipes (or whatever  
+the Windows equivalent is).  If 99% of the time is consumed by rpict  
+or rtrace or rvu, why bother optimizing the rest, especially if it's  
+a ton of work?  You don't need dynamic libraries to create a GUI --  
+schorsch has done quite well using Rayfront to generate the necessary  
+inputs and parameters for Radiance commands and running them as  
+separate processes.
+
+You also have to think about what kind of functionality you are  
+trying to add with your GUI.  A big reason Radiance is used in so  
+many disciplines is thanks to the toolbox model, which allows you to  
+combine programs in all sorts of ways the authors never intended.  A  
+GUI typically defeats this benefit, unless you follow a data flow  
+model in your interface.  Give the user a menu, take away 1000  
+opportunities.  It makes the easy things easy, but the difficult  
+things become impossible.
+
+Judicious use of make and the oconv -f option ameliorates most of the  
+pain of loading hierarchical Radiance scene descriptions, as the  
+commands are only run the first time (or when the scene changes).
+
+Having worked both on GUI applications (mostly Photosphere) and  
+command-line tools, I know the programming paradigm is very  
+different.  Lots of things will get you in a monolithic application  
+that simply were not a problem with a set of tools.  Although I'm  
+generally pretty good with memory, I don't usually free stuff in a  
+tool when I know I'll need the memory until the process exits.   
+What's worse, I will call exit(1) when something goes wrong, and  
+error handling is generally much less robust in a tool environment,  
+since individual processes are considered expendable.  I have  
+extensive error management in Photosphere compared to Radiance, and  
+it's not something that's easy to add as an afterthought.  You can  
+play some games like "#define exit(s) my_return_jump(s)" using  
+longjump(3), but you end up with a real mess in terms of memory leaks  
+and the like.  (I've had to do this with the JPEG library, so I know.)
+
+-Greg
+
+From rfritz at u.washington.edu  Wed Jul  9 12:41:05 2008
+From: rfritz at u.washington.edu (R Fritz)
+Date: Wed Jul  9 12:41:11 2008
+Subject: [Radiance-dev] Radiance cross-platform issues & GUIs, oh 	my!
+In-Reply-To: <16CDD128-5E09-4420-8E95-62A81DEDAF08@gmail.com>
+References: <200807090844.m698i33V017995@bp15.u.washington.edu>
+	<CE418972-B789-46B0-82B8-7BA1048BCD9B@u.washington.edu>
+	<16CDD128-5E09-4420-8E95-62A81DEDAF08@gmail.com>
+Message-ID: <04B75566-644A-4BDF-B0C3-BB912FD20F24@u.washington.edu>
+
+> From a performance standpoint, the vast majority of time is spent on  
+> the ray-tracing part for most of what people do using Radiance.   
+> Hence, there's not much point in optimizing the loading of scene  
+> files or connecting up the various subordinate utilities in dynamic  
+> libraries.  You simply won't save much over shelling out the  
+> commands and reading and writing the files or connecting up pipes  
+> (or whatever the Windows equivalent is).  If 99% of the time is  
+> consumed by rpict or rtrace or rvu, why bother optimizing the rest,  
+> especially if it's a ton of work?  You don't need dynamic libraries  
+> to create a GUI -- schorsch has done quite well using Rayfront to  
+> generate the necessary inputs and parameters for Radiance commands  
+> and running them as separate processes.
+
+I haven't seen Rayfront in a few years, so I don't know where it's  
+gone; I have seen Ecotect, and it's cranky. And you're right, of  
+course, that to overall rendering time improving oconv doesn't matter  
+very much, but to the user experience it does matter; people complain  
+about oconv delays, even though they're not most of the time it takes  
+to use Radiance.
+
+> You also have to think about what kind of functionality you are  
+> trying to add with your GUI.  A big reason Radiance is used in so  
+> many disciplines is thanks to the toolbox model, which allows you to  
+> combine programs in all sorts of ways the authors never intended.  A  
+> GUI typically defeats this benefit, unless you follow a data flow  
+> model in your interface.  Give the user a menu, take away 1000  
+> opportunities.  It makes the easy things easy, but the difficult  
+> things become impossible.
+
+The intention is to maintain the existing toolbox, and also have a GUI.
+
+> Judicious use of make and the oconv -f option ameliorates most of  
+> the pain of loading hierarchical Radiance scene descriptions, as the  
+> commands are only run the first time (or when the scene changes).
+
+Mmmm...I'm aiming at a different user base.
+
+> Having worked both on GUI applications (mostly Photosphere) and  
+> command-line tools, I know the programming paradigm is very  
+> different.  Lots of things will get you in a monolithic application  
+> that simply were not a problem with a set of tools.  Although I'm  
+> generally pretty good with memory, I don't usually free stuff in a  
+> tool when I know I'll need the memory until the process exits.   
+> What's worse, I will call exit(1) when something goes wrong, and  
+> error handling is generally much less robust in a tool environment,  
+> since individual processes are considered expendable.  I have  
+> extensive error management in Photosphere compared to Radiance, and  
+> it's not something that's easy to add as an afterthought.  You can  
+> play some games like "#define exit(s) my_return_jump(s)" using  
+> longjump(3), but you end up with a real mess in terms of memory  
+> leaks and the like.  (I've had to do this with the JPEG library, so  
+> I know.)
+
+Ow. That's non-trivial. I suppose using garbage collection, and  
+trapping the exit() calls in atexit() would resolve most of these  
+issues, but it would have to be looked at carefully. Ideally only  
+include it in the wrapper code, so that the existing apps would  
+continue to work as before. Maybe the Boehm/Demers/Weiser collector?  
+Anyone have any experience with it?
+
+Randolph
+
+Ref: Boehm GC, <http://www.hpl.hp.com/personal/Hans_Boehm/gc/>
+
+

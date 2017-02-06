@@ -1,0 +1,1749 @@
+From radiance-dev@radiance-online.org  Mon Nov 10 13:10:42 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Mon, 10 Nov 2003 08:10:42 -0500 (EST)
+Subject: [Radiance-dev] SCons/Windows status
+In-Reply-To: <08E3DA88-0A7C-11D8-B064-00306540F848@lmi.net>
+Message-ID: <Pine.BSF.4.44.0311100809090.28106-100000@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> Thanks for doing all this work on the Windows port -- great progress!
+> I'm a little confused as to the benefit(s) of separating the objects
+> into so many libraries.  Is this just to help reduce memory
+> requirements for dynamic linking?  On Unix at least, it complicates the
+> builds considerably, as you need to know the correct link order for the
+> libraries or you get undefined symbol errors at load time.
+
+The library splitting has several reasons:
+First, it made it possible to circumvent the existing name
+conflicts within the code, so that we now can compile with SCons
+on Windows. Once we have those conflicts resolved in other ways,
+that will reduce this particular benefit, of course.
+
+Apart from that, I also used this as a tool to understand the
+internal dependencies within Radiance better. It helped me to build
+a mental map of the code. I don't think that the sequence of
+libraries is a real problem. We just need to get that right for
+each program once. As long as we use static libraries, all errors
+will get caught at compile time anyway.
+
+The current number of seperate libraries clearly isn't final. As
+all the SCons stuff, I still consider this experimental, and will
+continue to look for better ways to do things. We can't really
+find the best build method without trying a few.
+
+
+>> When did anyone check which of the OS replacement functions are
+>> really necessary anymore? Some of them seem to be written to
+>> replace really old and buggy implementations that may have gone
+>> out of use by now anyway.
+>
+> In some cases, they may never be needed again, but how can we know?
+
+Since we always can reanimate files again at any later point (as
+you note below), I think it's better to unclutter the tree
+whenever we have a chance.
+
+My question was targeted at figuring out which of those modules
+are necessary on which platforms *right now*. The current
+selection in makeall appears to include some random elements.
+For example, getpagesize.c is included on at least one platform
+without bmalloc.c, although the latter is the only file that
+contains any reference to the former. I think it would be helpful
+to go through this stuff with a finetoothed comb, but I lack
+access to most of the platforms necessary to do this...
+
+
+>> Can we remove those files that aren't used at all?
+>
+> Yes, I suppose so.  Since they'll live on in the CVS "attic," removing
+> a source file is not irrevocable.
+
+Ok, let's do that then.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Mon Nov 10 15:44:14 2003
+From: radiance-dev@radiance-online.org (Mark Stock)
+Date: Mon, 10 Nov 2003 10:44:14 -0500 (EST)
+Subject: [Radiance-dev] Sun5.8 build balks early
+Message-ID: <Pine.SOL.4.58.0311100959070.22429@tetris.gpcc.itd.umich.edu>
+
+Hello,
+
+[first post to -dev group, tell me if I'm off base here]
+
+I am building the most recent HEAD release under Sun 5.8:
+
+uname -a
+SunOS fxbb085u21.engin.umich.edu 5.8 Generic_108528-23 sun4u sparc
+
+with the Sun cc compiler:
+
+cc -V
+cc: Sun WorkShop 6 update 2 C 5.3 2001/05/15
+
+And, after a few warnings:
+
+-----------
+cc -I/usr/openwin/include -L/usr/openwin/lib -DNOSTEREO -DMC -O -DSPEED=80
+-c -o mesh.o mesh.c
+"mesh.c", line 323: warning: assignment type mismatch:
+        pointer to function(pointer to char) returning unsigned long "="
+pointer to function(pointer
+ to struct  {int fl, array[3] of unsigned long xyz, long norm, array[2] of
+unsigned short uv}) retur
+ning unsigned long
+"mesh.c", line 324: warning: assignment type mismatch:
+        pointer to function(pointer to const char, pointer to const char)
+returning int "=" pointer
+to function(pointer to struct  {int fl, array[3] of unsigned long xyz,
+long norm, array[2] of unsign
+ed short uv}, pointer to struct  {int fl, array[3] of unsigned long xyz,
+long norm, array[2] of unsi
+gned short uv}) returning int
+-----------
+cc -I/usr/openwin/include -L/usr/openwin/lib -DNOSTEREO -DMC -O -DSPEED=80
+-c -o caldefn.o caldefn.c
+"caldefn.c", line 708: warning: integer overflow detected: op "<<"
+"caldefn.c", line 711: warning: integer overflow detected: op "<<"
+"caldefn.c", line 712: warning: integer overflow detected: op "<<"
+-----------
+
+I get the first actual error:
+
+-----------
+cc -I/usr/openwin/include -L/usr/openwin/lib -DNOSTEREO -DMC -O -DSPEED=80
+-c -o unix_process.o unix_process.c
+"./vfork.h", line 12: identifier redeclared: fork
+        current : function() returning int
+        previous: function(void) returning long : "/usr/include/unistd.h",
+line 245
+cc: acomp failed for unix_process.c
+make: *** [unix_process.o] Error 2
+-----------
+
+Then I start getting massive amounts of undefined symbol errors
+like this, the first one:
+
+-----------
+cc -DMDIR=\"/tmp/ray/lib/meta/\" -O -DSPEED=80 -I/usr/openwin/include
+-L/usr/openwin/lib -DNOSTEREO -DMC -I../common -L../lib -o meta2tga
+meta2tga.o rplot.o plot.o mfio.o syscalls.o misc.o \
+palloc.o -lrt -lm
+Undefined                       first referenced
+ symbol                             in file
+freestr                             plot.o
+error                               meta2tga.o
+savestr                             rplot.o
+ld: fatal: Symbol referencing errors. No output written to meta2tga
+make: *** [meta2tga] Error 1
+-----------
+
+So, I changed the last line in common/vfork.h to read
+extern long vfork();
+That seemed to work.
+
+Then, when I build, it gets past that error, but encounters some
+"ld: fatal: Symbol referencing errors" in a few other places
+(normtiff and dev/x11.hdi).
+
+I end up with 75 files in the bin directory, so it's almost a
+working distribution.
+
+What can I do to get the last few things built?
+
+Is this kind of thing a bug, or can it, should it be fixed?
+
+How can I continue to help with this?
+
+Thanks!
+
+Mark
+
+From radiance-dev@radiance-online.org  Mon Nov 10 16:33:35 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Mon, 10 Nov 2003 11:33:35 -0500 (EST)
+Subject: [Radiance-dev] Sun5.8 build balks early
+In-Reply-To: <Pine.SOL.4.58.0311100959070.22429@tetris.gpcc.itd.umich.edu>
+Message-ID: <Pine.BSF.4.44.0311101131140.28106-100000@emancholl.pair.com>
+
+Mark Stock wrote:
+
+> [first post to -dev group, tell me if I'm off base here]
+
+Right on topic!
+
+
+> I am building the most recent HEAD release under Sun 5.8:
+>
+> uname -a
+> SunOS fxbb085u21.engin.umich.edu 5.8 Generic_108528-23 sun4u sparc
+>
+> with the Sun cc compiler:
+>
+> cc -V
+> cc: Sun WorkShop 6 update 2 C 5.3 2001/05/15
+>
+> And, after a few warnings:
+> [...]
+> I get the first actual error:
+>
+> -----------
+> cc -I/usr/openwin/include -L/usr/openwin/lib -DNOSTEREO -DMC -O -DSPEED=80
+> -c -o unix_process.o unix_process.c
+> "./vfork.h", line 12: identifier redeclared: fork
+>         current : function() returning int
+>         previous: function(void) returning long : "/usr/include/unistd.h",
+> line 245
+> cc: acomp failed for unix_process.c
+> make: *** [unix_process.o] Error 2
+> -----------
+
+Your compiler appears to be particularly picky about redundant
+function declarations.
+
+
+> Then I start getting massive amounts of undefined symbol errors
+
+Those are just follow up errors, because the above resulted in
+an incomplete or missing librt.a.
+
+
+> So, I changed the last line in common/vfork.h to read
+> extern long vfork();
+> That seemed to work.
+
+Kind of a coincidence that you stumbled over this, but I had a
+beef with the use of vfork() in Radiance for a while, and would
+like to use this occasion to vote for its elimination.
+
+In the early days there might have been valid reason to consider
+vfork(). But today there are more reasons against it. For one,
+modern virtual memory systems have rendered it unnecessary, as
+fork() is now using copy on write. And then, Radiance uses
+vfork() in a way it was never meant to be used.
+
+The specified semantics of vfork() are quite different to fork().
+In practise, most systems simply implement is as an alias to
+fork(). But on those systems where it is implemented according to
+the full specification (currently only netBSD as far as I know),
+Radiance will crash and burn.
+
+The vfork() specs make it dangerous for the child to call any
+other functions between the vfork() and a following execve() or
+exit(). Everything happening in between may have effects on
+*both* the parent and child process. Most uses of vfork() in
+Radiance are therefore a time bomb waiting to explode in someones
+face.
+
+
+While your current compile troubles are only an unrelated side
+effect, they would also disappear if we fixed the real problem.
+
+
+> Then, when I build, it gets past that error, but encounters some
+> "ld: fatal: Symbol referencing errors" in a few other places
+> (normtiff and dev/x11.hdi).
+
+Can't say anything about those without seeing the specific names.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Mon Nov 10 16:43:49 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Mon, 10 Nov 2003 08:43:49 -0800
+Subject: [Radiance-dev] Sun5.8 build balks early
+In-Reply-To: <Pine.SOL.4.58.0311100959070.22429@tetris.gpcc.itd.umich.edu>
+Message-ID: <0F5D5343-139D-11D8-92B8-000A956D40C8@lmi.net>
+
+Hi Mark,
+
+Thanks for the bug report.  I just made a change that should fix the 
+fork() redeclaration error on tomorrow's HEAD, which caused the main 
+library build to fail and subsequently all the link operations in your 
+build on Solaris.
+
+The warnings can safely be ignored, and there's not much I can do about 
+them, anyway.
+
+-Greg
+
+> From: Mark Stock <mstock@umich.edu>
+> Date: Mon Nov 10, 2003  7:44:14  AM US/Pacific
+>
+> Hello,
+>
+> [first post to -dev group, tell me if I'm off base here]
+>
+> I am building the most recent HEAD release under Sun 5.8:
+>
+> uname -a
+> SunOS fxbb085u21.engin.umich.edu 5.8 Generic_108528-23 sun4u sparc
+> ...
+
+
+From radiance-dev@radiance-online.org  Mon Nov 10 21:23:09 2003
+From: radiance-dev@radiance-online.org (Mark Stock)
+Date: Mon, 10 Nov 2003 16:23:09 -0500 (EST)
+Subject: [Radiance-dev] Sun5.8 build balks early
+In-Reply-To: <0F5D5343-139D-11D8-92B8-000A956D40C8@lmi.net>
+References: <0F5D5343-139D-11D8-92B8-000A956D40C8@lmi.net>
+Message-ID: <Pine.SOL.4.58.0311101550240.24532@tetris.gpcc.itd.umich.edu>
+
+Excellent, thank you. I can usually ignore the warnings, but
+I included them on the chance that they helped find the source
+of the Error. The remaining Errors that I have on compile are:
+
+-------------
+cc -I../common -L../lib -O -DSPEED=80 -I/usr/openwin/include
+-L/usr/openwin/lib -DNOSTEREO -DMC -o normtiff normtiff.o -lrt -ltiff -lm
+Undefined                       first referenced
+ symbol                             in file
+uv_encode                           ../lib/librt.a(tmapluv.o)
+uv_decode                           ../lib/librt.a(tmapluv.o)
+ld: fatal: Symbol referencing errors. No output written to normtiff
+make: *** [normtiff] Error 1
+-------------
+
+librt.a seemed to build with no problems. It seems that uv_encode
+and uv_decode only appear in common/tiffio.h, but that's as far
+as I can get.
+
+The only other error is here:
+
+-------------
+cc -I../common -L../lib -O -DSPEED=80 -I/usr/openwin/include
+-L/usr/openwin/lib -DNOSTEREO -DMC -o
+/usr/contrib/radiance/bin2/dev/x11.hdi rhdisp.o rhdisp2
+.o viewbeams.o \
+rhd_x11.o rhd_qtree.o rhd_qtree2r.o rhd_ctab.o holo.o -lrt -lX11 -lm
+Undefined                       first referenced
+ symbol                             in file
+nanosleep                           rhd_x11.o
+ld: fatal: Symbol referencing errors. No output written to
+/usr/contrib/radiance/bin2/dev/x11.hdi
+make: *** [/usr/contrib/radiance/bin2/dev/x11.hdi] Error 1
+-------------
+
+Any suggestions?
+
+Mark
+
+On Mon, 10 Nov 2003, Greg Ward wrote:
+
+> Hi Mark,
+>
+> Thanks for the bug report.  I just made a change that should fix the
+> fork() redeclaration error on tomorrow's HEAD, which caused the main
+> library build to fail and subsequently all the link operations in your
+> build on Solaris.
+>
+> The warnings can safely be ignored, and there's not much I can do about
+> them, anyway.
+>
+> -Greg
+>
+> > From: Mark Stock <mstock@umich.edu>
+> > Date: Mon Nov 10, 2003  7:44:14  AM US/Pacific
+> >
+> > Hello,
+> >
+> > [first post to -dev group, tell me if I'm off base here]
+> >
+> > I am building the most recent HEAD release under Sun 5.8:
+> >
+> > uname -a
+> > SunOS fxbb085u21.engin.umich.edu 5.8 Generic_108528-23 sun4u sparc
+> > ...
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+
+From radiance-dev@radiance-online.org  Tue Nov 11 02:18:25 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Mon, 10 Nov 2003 18:18:25 -0800
+Subject: [Radiance-dev] Sun5.8 build balks early
+In-Reply-To: <Pine.SOL.4.58.0311101550240.24532@tetris.gpcc.itd.umich.edu>
+Message-ID: <54C69438-13ED-11D8-B198-000A956D40C8@lmi.net>
+
+Hi Mark,
+
+I don't have any direct solutions to your other build problems, but I 
+can offer some suggestions for you to try:
+
+> From: Mark Stock <mstock@umich.edu>
+> Date: Mon Nov 10, 2003  1:23:09  PM US/Pacific
+>
+> Excellent, thank you. I can usually ignore the warnings, but
+> I included them on the chance that they helped find the source
+> of the Error. The remaining Errors that I have on compile are:
+>
+> -------------
+> cc -I../common -L../lib -O -DSPEED=80 -I/usr/openwin/include
+> -L/usr/openwin/lib -DNOSTEREO -DMC -o normtiff normtiff.o -lrt -ltiff 
+> -lm
+> Undefined                       first referenced
+>  symbol                             in file
+> uv_encode                           ../lib/librt.a(tmapluv.o)
+> uv_decode                           ../lib/librt.a(tmapluv.o)
+> ld: fatal: Symbol referencing errors. No output written to normtiff
+> make: *** [normtiff] Error 1
+> -------------
+>
+> librt.a seemed to build with no problems. It seems that uv_encode
+> and uv_decode only appear in common/tiffio.h, but that's as far
+> as I can get.
+
+These functions are defined in the newer version of the TIFF library, 
+but probably not the standard one that's distributed with your system.  
+Most likely, the replacement libtiff.a is not getting installed in the 
+ray/src/lib directory after being built in ray/src/rt/tiff/libtiff.  If 
+the latter directory is missing, it is probably because you forgot to 
+install the overlay.  If it's there and the file 
+ray/src/rt/tiff/libtiff/libtiff.a is present, then it's a known bug in 
+the install program under Solaris, for which I have no fix but to 
+manually move the file "ray/src/rt/tiff/libtiff/libtiff.a" to the 
+"ray/src/lib/" directory and rerunning "rmake install" in ray/src/px/.
+
+> The only other error is here:
+>
+> -------------
+> cc -I../common -L../lib -O -DSPEED=80 -I/usr/openwin/include
+> -L/usr/openwin/lib -DNOSTEREO -DMC -o
+> /usr/contrib/radiance/bin2/dev/x11.hdi rhdisp.o rhdisp2
+> .o viewbeams.o \
+> rhd_x11.o rhd_qtree.o rhd_qtree2r.o rhd_ctab.o holo.o -lrt -lX11 -lm
+> Undefined                       first referenced
+>  symbol                             in file
+> nanosleep                           rhd_x11.o
+> ld: fatal: Symbol referencing errors. No output written to
+> /usr/contrib/radiance/bin2/dev/x11.hdi
+> make: *** [/usr/contrib/radiance/bin2/dev/x11.hdi] Error 1
+> -------------
+>
+> Any suggestions?
+
+On some systems, the nanosleep() function is part of a real-time 
+library, which may have the unfortunate, conflicting name of librt.a.  
+To link to it, you can add /usr/lib/librt.a to the cc link line above 
+and see if that works.  Again, I don't have a fix for this at the 
+moment.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Wed Nov 12 16:55:53 2003
+From: radiance-dev@radiance-online.org (Andy Stone)
+Date: Wed, 12 Nov 2003 16:55:53 -0000
+Subject: [Radiance-dev] RE: Compiling Radiance under Interix (rpict problems)
+Message-ID: <22DEFE50256BD7119F9D00065B1A47AC17022F@bdspserver01>
+
+This message is in MIME format. Since your mail reader does not understand
+this format, some or all of this message may not be legible.
+
+------_=_NextPart_001_01C3A93D.D5A44E40
+Content-Type: text/plain;
+	charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+(Originally posted on radiance-general - see below for original =
+message)
+
+Thanks for the speedy response Greg.  I've tried compiling the latest =
+HEAD
+release (downloaded today, 12/11/03, with overlay) and experienced the =
+same
+problem.
+
+Regards,
+
+Andy
+
+
+
+> -----Original Message-----
+> From: Greg Ward [mailto:gward@lmi.net]
+> Sent: 12 November 2003 16:28
+> To: radiance-general@radiance-online.org
+> Cc: Andy Stone
+> Subject: Re: Compiling Radiance under Interix (rpict problems)
+>=20
+> Are you compiling from the official 3.5 release, or the latest HEAD
+> (available from radiance-online)?  If you are compiling from the
+> official release, the first thing to try (always) is downloading and
+> compiling the HEAD release, which has quite a few bug fixes, =
+especially
+> related to portability across platforms.
+>=20
+>=20
+> > From: Andy Stone <andy.stone@bdsp.com>
+> > Date: Wed Nov 12, 2003  6:23:26  AM US/Pacific
+> >
+> > Hi,
+> >
+> > I'm currently using Radiance compiled to run under Windows Services
+> > for Unix (Interix) and am attempting to upgrade from my current
+> > version (3.1) to the latest version (3.5).=A0 I have managed to get =
+3.5
+> > to compile without any errors (except for trad and rholo, which I'm
+> > not too worried about right now), however I am experiencing =
+problems
+> > when using rpict.=A0 The other components (rtrace, rview, etc) seem =
+to
+> > be working correctly (or at least producing results similar to my
+> > previous installation) however the images produced rpict are =
+looking
+> > very strange (and very different to rview).
+> >
+> > It is kind of hard to describe the results I am getting in plain =
+text,
+> > but if for example I use rpict to produce a fisheye view of a CIE
+> > overcast sky then it produces a luminance pattern that starts off =
+from
+> > the horizon getting brighter as it heads towards the zenith before
+> > suddenly dropping to zero about a third of the way up from where it
+> > increases again until about 2/3rds up where it drops to zero again, =
+so
+> > the luminance distribution from horizon to zenith looks something =
+like
+> > a saw tooth (rather than smoothly increasing from horizon to zenith =
+as
+> > it should).=A0 I get a similar effect across surfaces when I render =
+more
+> > complex scenes.=A0 The same scene with the same settings works on =
+the
+> > older version of rpict.=A0 The effect is as if a variable somewhere =
+is
+> > increasing beyond its maximum range and wrapping back around to =
+zero.
+> >
+> > I'd be very grateful for any help as to what the problem might be =
+(and
+> > how I can fix it).=A0 Perhaps there is some compiler switch that I =
+need
+> > to set?
+> >
+> > Kind regards,
+> >
+> > Andy Stone
+
+------_=_NextPart_001_01C3A93D.D5A44E40
+Content-Type: text/html;
+	charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+<META HTTP-EQUIV=3D"Content-Type" CONTENT=3D"text/html; =
+charset=3Diso-8859-1">
+<META NAME=3D"Generator" CONTENT=3D"MS Exchange Server version =
+5.5.2653.12">
+<TITLE>RE: Compiling Radiance under Interix (rpict problems)</TITLE>
+</HEAD>
+<BODY>
+
+<P><FONT SIZE=3D2>(Originally posted on radiance-general - see below =
+for original message)</FONT>
+</P>
+
+<P><FONT SIZE=3D2>Thanks for the speedy response Greg.&nbsp; I've tried =
+compiling the latest HEAD release (downloaded today, 12/11/03, with =
+overlay) and experienced the same problem.</FONT></P>
+
+<P><FONT SIZE=3D2>Regards,</FONT>
+</P>
+
+<P><FONT SIZE=3D2>Andy</FONT>
+</P>
+<BR>
+<BR>
+
+<P><FONT SIZE=3D2>&gt; -----Original Message-----</FONT>
+<BR><FONT SIZE=3D2>&gt; From: Greg Ward [<A =
+HREF=3D"mailto:gward@lmi.net">mailto:gward@lmi.net</A>]</FONT>
+<BR><FONT SIZE=3D2>&gt; Sent: 12 November 2003 16:28</FONT>
+<BR><FONT SIZE=3D2>&gt; To: radiance-general@radiance-online.org</FONT>
+<BR><FONT SIZE=3D2>&gt; Cc: Andy Stone</FONT>
+<BR><FONT SIZE=3D2>&gt; Subject: Re: Compiling Radiance under Interix =
+(rpict problems)</FONT>
+<BR><FONT SIZE=3D2>&gt; </FONT>
+<BR><FONT SIZE=3D2>&gt; Are you compiling from the official 3.5 =
+release, or the latest HEAD</FONT>
+<BR><FONT SIZE=3D2>&gt; (available from radiance-online)?&nbsp; If you =
+are compiling from the</FONT>
+<BR><FONT SIZE=3D2>&gt; official release, the first thing to try =
+(always) is downloading and</FONT>
+<BR><FONT SIZE=3D2>&gt; compiling the HEAD release, which has quite a =
+few bug fixes, especially</FONT>
+<BR><FONT SIZE=3D2>&gt; related to portability across platforms.</FONT>
+<BR><FONT SIZE=3D2>&gt; </FONT>
+<BR><FONT SIZE=3D2>&gt; </FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; From: Andy Stone =
+&lt;andy.stone@bdsp.com&gt;</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; Date: Wed Nov 12, 2003&nbsp; 6:23:26&nbsp; =
+AM US/Pacific</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt;</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; Hi,</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt;</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; I'm currently using Radiance compiled to =
+run under Windows Services</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; for Unix (Interix) and am attempting to =
+upgrade from my current</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; version (3.1) to the latest version =
+(3.5).=A0 I have managed to get 3.5</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; to compile without any errors (except for =
+trad and rholo, which I'm</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; not too worried about right now), however =
+I am experiencing problems</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; when using rpict.=A0 The other components =
+(rtrace, rview, etc) seem to</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; be working correctly (or at least =
+producing results similar to my</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; previous installation) however the images =
+produced rpict are looking</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; very strange (and very different to =
+rview).</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt;</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; It is kind of hard to describe the results =
+I am getting in plain text,</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; but if for example I use rpict to produce =
+a fisheye view of a CIE</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; overcast sky then it produces a luminance =
+pattern that starts off from</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; the horizon getting brighter as it heads =
+towards the zenith before</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; suddenly dropping to zero about a third of =
+the way up from where it</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; increases again until about 2/3rds up =
+where it drops to zero again, so</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; the luminance distribution from horizon to =
+zenith looks something like</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; a saw tooth (rather than smoothly =
+increasing from horizon to zenith as</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; it should).=A0 I get a similar effect =
+across surfaces when I render more</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; complex scenes.=A0 The same scene with the =
+same settings works on the</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; older version of rpict.=A0 The effect is =
+as if a variable somewhere is</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; increasing beyond its maximum range and =
+wrapping back around to zero.</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt;</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; I'd be very grateful for any help as to =
+what the problem might be (and</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; how I can fix it).=A0 Perhaps there is =
+some compiler switch that I need</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; to set?</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt;</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; Kind regards,</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt;</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; Andy Stone</FONT>
+</P>
+
+</BODY>
+</HTML>
+------_=_NextPart_001_01C3A93D.D5A44E40--
+
+From radiance-dev@radiance-online.org  Wed Nov 12 17:04:10 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Wed, 12 Nov 2003 09:04:10 -0800
+Subject: [Radiance-dev] Re: Compiling Radiance under Interix (rpict problems)
+In-Reply-To: <22DEFE50256BD7119F9D00065B1A47AC17022F@bdspserver01>
+Message-ID: <3BE27D78-1532-11D8-9FFF-000A956D40C8@lmi.net>
+
+Hi Andy,
+
+This problem sounds to me like something to do with the conversion of 
+colors to RGBE.  Could you test this by writing out your rendering from 
+rview using the "write test.pic" and displaying the output?  If it has 
+similar artifacts to what you're seeing from rpict, then it must be in 
+the RGBE color conversion/display somewhere.
+
+-Greg
+
+> From: Andy Stone <andy.stone@bdsp.com>
+> Date: Wed Nov 12, 2003  8:55:53  AM US/Pacific
+>
+> Thanks for the speedy response Greg.  I've tried compiling the latest 
+> HEAD release (downloaded today, 12/11/03, with overlay) and 
+> experienced the same problem.
+>
+> Regards,
+>
+> Andy
+
+
+
+From radiance-dev@radiance-online.org  Wed Nov 12 17:17:45 2003
+From: radiance-dev@radiance-online.org (Andy Stone)
+Date: Wed, 12 Nov 2003 17:17:45 -0000
+Subject: [Radiance-dev] RE: Compiling Radiance under Interix (rpict problems)
+Message-ID: <22DEFE50256BD7119F9D00065B1A47AC170230@bdspserver01>
+
+This message is in MIME format. Since your mail reader does not understand
+this format, some or all of this message may not be legible.
+
+------_=_NextPart_001_01C3A940.E3221A90
+Content-Type: text/plain;
+	charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+Hi Greg,
+
+I've tried writing out the rview rendering and displaying it.  As you
+suspected the artifacts did appear in the image.
+
+Hope this helps,
+Andy
+
+> -----Original Message-----
+> From: Greg Ward [mailto:gward@lmi.net]
+> Sent: 12 November 2003 17:04
+> To: radiance-dev@radiance-online.org
+> Cc: Andy Stone
+> Subject: Re: Compiling Radiance under Interix (rpict problems)
+>=20
+> Hi Andy,
+>=20
+> This problem sounds to me like something to do with the conversion of
+> colors to RGBE.  Could you test this by writing out your rendering =
+from
+> rview using the "write test.pic" and displaying the output?  If it =
+has
+> similar artifacts to what you're seeing from rpict, then it must be =
+in
+> the RGBE color conversion/display somewhere.
+>=20
+> -Greg
+>=20
+> > From: Andy Stone <andy.stone@bdsp.com>
+> > Date: Wed Nov 12, 2003  8:55:53  AM US/Pacific
+> >
+> > Thanks for the speedy response Greg.=A0 I've tried compiling the =
+latest
+> > HEAD release (downloaded today, 12/11/03, with overlay) and
+> > experienced the same problem.
+> >
+> > Regards,
+> >
+> > Andy
+
+------_=_NextPart_001_01C3A940.E3221A90
+Content-Type: text/html;
+	charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+<META HTTP-EQUIV=3D"Content-Type" CONTENT=3D"text/html; =
+charset=3Diso-8859-1">
+<META NAME=3D"Generator" CONTENT=3D"MS Exchange Server version =
+5.5.2653.12">
+<TITLE>RE: Compiling Radiance under Interix (rpict problems)</TITLE>
+</HEAD>
+<BODY>
+
+<P><FONT SIZE=3D2>Hi Greg,</FONT>
+</P>
+
+<P><FONT SIZE=3D2>I've tried writing out the rview rendering and =
+displaying it.&nbsp; As you suspected the artifacts did appear in the =
+image.</FONT>
+</P>
+
+<P><FONT SIZE=3D2>Hope this helps,</FONT>
+<BR><FONT SIZE=3D2>Andy</FONT>
+</P>
+
+<P><FONT SIZE=3D2>&gt; -----Original Message-----</FONT>
+<BR><FONT SIZE=3D2>&gt; From: Greg Ward [<A =
+HREF=3D"mailto:gward@lmi.net">mailto:gward@lmi.net</A>]</FONT>
+<BR><FONT SIZE=3D2>&gt; Sent: 12 November 2003 17:04</FONT>
+<BR><FONT SIZE=3D2>&gt; To: radiance-dev@radiance-online.org</FONT>
+<BR><FONT SIZE=3D2>&gt; Cc: Andy Stone</FONT>
+<BR><FONT SIZE=3D2>&gt; Subject: Re: Compiling Radiance under Interix =
+(rpict problems)</FONT>
+<BR><FONT SIZE=3D2>&gt; </FONT>
+<BR><FONT SIZE=3D2>&gt; Hi Andy,</FONT>
+<BR><FONT SIZE=3D2>&gt; </FONT>
+<BR><FONT SIZE=3D2>&gt; This problem sounds to me like something to do =
+with the conversion of</FONT>
+<BR><FONT SIZE=3D2>&gt; colors to RGBE.&nbsp; Could you test this by =
+writing out your rendering from</FONT>
+<BR><FONT SIZE=3D2>&gt; rview using the &quot;write test.pic&quot; and =
+displaying the output?&nbsp; If it has</FONT>
+<BR><FONT SIZE=3D2>&gt; similar artifacts to what you're seeing from =
+rpict, then it must be in</FONT>
+<BR><FONT SIZE=3D2>&gt; the RGBE color conversion/display =
+somewhere.</FONT>
+<BR><FONT SIZE=3D2>&gt; </FONT>
+<BR><FONT SIZE=3D2>&gt; -Greg</FONT>
+<BR><FONT SIZE=3D2>&gt; </FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; From: Andy Stone =
+&lt;andy.stone@bdsp.com&gt;</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; Date: Wed Nov 12, 2003&nbsp; 8:55:53&nbsp; =
+AM US/Pacific</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt;</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; Thanks for the speedy response Greg.=A0 =
+I've tried compiling the latest</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; HEAD release (downloaded today, 12/11/03, =
+with overlay) and</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; experienced the same problem.</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt;</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; Regards,</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt;</FONT>
+<BR><FONT SIZE=3D2>&gt; &gt; Andy</FONT>
+</P>
+
+</BODY>
+</HTML>
+------_=_NextPart_001_01C3A940.E3221A90--
+
+From radiance-dev@radiance-online.org  Wed Nov 12 18:11:04 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Wed, 12 Nov 2003 10:11:04 -0800
+Subject: [Radiance-dev] Re: Compiling Radiance under Interix (rpict problems)
+In-Reply-To: <22DEFE50256BD7119F9D00065B1A47AC170230@bdspserver01>
+Message-ID: <945CB138-153B-11D8-9FFF-000A956D40C8@lmi.net>
+
+OK, now we need to determine if it's the writing of RGBE or the reading 
+that's to blame.
+
+See if you can display one of the included images and if it looks OK.  
+There are a number of *.pic files in the ray/lib overlay.  Do these 
+look alright?  What are you displaying them with?  Does ximage work?
+
+If so, then take one of these images and pass it through ra_rgbe and 
+pfilt.  Do the outputs look OK?
+
+We should probably take this discussion offline, unless someone else 
+pipes in and says they're interested.  Debugging can be tedious, but 
+without access to your machine, there's no other way I can think to do 
+this.
+
+-Greg
+
+> From: Andy Stone <andy.stone@bdsp.com>
+> Date: Wed Nov 12, 2003  9:17:45  AM US/Pacific
+>
+> Hi Greg,
+>
+> I've tried writing out the rview rendering and displaying it.  As you 
+> suspected the artifacts did appear in the image.
+>
+> Hope this helps,
+> Andy
+
+
+
+From radiance-dev@radiance-online.org  Wed Nov 12 18:54:41 2003
+From: radiance-dev@radiance-online.org (Marcus Jacobs)
+Date: Wed, 12 Nov 2003 18:54:41 +0000
+Subject: [Radiance-dev] Noisy Reflection Problem
+Message-ID: <BAY2-F104lubW1WMfO200010213@hotmail.com>
+
+Dear Group
+
+
+First of all, I ask that you all will please forgive my lack of knowledge on 
+the subject of Monte Carlo importance sampling. Although I am not familiar 
+with this subject, I do possess an engineering degree so I am familiar with 
+some complex mathematical concepts.
+
+As for my question, I have had some issues with reflection on objects 
+composed of metal and metal2 materials. Generally the reflections that I 
+have had problems picking up are bright objects that are non-light sources 
+sources. An example of such is picking up the reflection of a floor with a 
+very bright area due to a light source such as the following example:
+
+http://f1.pg.photos.yahoo.com/ph/marcdevon/vwp?.dir=/RadiancePics&.dnm=room2a_camera4.jpg&.view=t
+
+
+Generally, the reflections of the floor on the appliances will come out very 
+noisy (instead of blurry). I have had some moderate success in eliminating 
+the noise by increasing the rendering resolution. It takes a rendering of 
+about 12 times the final resolution before filtering to reduce the noise. 
+Although this is acceptable, it is inefficient to render an entire scene at 
+this resolution due to the problems of a fraction of the scene. In my 
+opinion, it is far more efficient to have a solution to rectify the problem 
+locally where the problems exist rather than on the entire image.
+
+I have attempted going into the software’s source code to find a solution to 
+this problem. What I hypothesized was that by increasing the specular 
+sampling, I can reduce the pixel variance and the cost of increased 
+computational expense and the loss of some blurriness of the reflection 
+(although I believe I would still capture the roughness of the material). I 
+have read through Chapter 12 of “Rendering with Radiance” and have looked 
+into materials file included with the CD-ROM. While delving into aniso.c, I 
+thought I could accomplish my objective by increasing the value of the 
+constant MAXITER (I actually renamed it to MAXITER2 to avoid any conflict 
+with MAXITER in norm.c) from 10 to 256. Unfortunately, this did not work. I 
+tried to do a small calculation to estimate the number of rays that would 
+have to be traced in order to render the image with these settings. Most of 
+the surfaces of the appliances in the above picture are anisotropic. I 
+estimated that these surfaces comprise of about 1/3 of the scene. If I 
+rendered the image at 1000 x 1000 (1 million total pixels) about 333K pixels 
+would have their specular component sampled. At 256 samples per pixels and a 
+pixel sample rate of 1, specular jittering of 1 and specular threshold of 0, 
+the number of specular samples expected would equal to around 85 million. 
+When I did render the image, a total of about 19 million rays were traced 
+(including ambient). As you can see, the number of actual rays traced is not 
+on the same order of the number that I expected to trace. I did a comparison 
+between a rendering with and without the source code modifications that I 
+had performed. There were differences in the render settings.  The image 
+quality was no different between the two renders and there were only about 
+2-3 million more rays total traces.
+
+
+For my questions:
+
+Firstly, am I off base in my assumption that increasing the number of 
+specular samples will decrease the pixel variance/noise in my renders or am 
+I over simplifying the problem?  Secondly, if this is a proper assumption, 
+would simply changing a few constants in the sources code help achieve my 
+objective or would a lot more work be necessary? Lastly, are my assumptions 
+concerning the number of samples required off base?
+
+
+
+Thanks
+
+Marcus D. Jacobs
+
+_________________________________________________________________
+MSN Messenger with backgrounds, emoticons and more. 
+http://www.msnmessenger-download.com/tracking/cdp_customize
+
+
+From radiance-dev@radiance-online.org  Wed Nov 12 20:57:12 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Wed, 12 Nov 2003 12:57:12 -0800
+Subject: [Radiance-dev] Noisy Reflection Problem
+In-Reply-To: <BAY2-F104lubW1WMfO200010213@hotmail.com>
+Message-ID: <C9F0F4A0-1552-11D8-B33C-000A956D40C8@lmi.net>
+
+Hi Marcus,
+
+The MAXITER macro is not the one to change in aniso.c to get additional 
+specular samples.  In fact, you would have to rewrite a bit of code to 
+do this -- a macro change is not enough.  Something more like a loop at 
+line 276, where agaussamp() is called would be necessary.
+
+Another thing to try is the -m option of pfilt.  Have you tried this, 
+yet?  This option may reduce the appearance of specular noise by 
+blurring these samples more widely.  Play around with some different 
+values -- start at 0.25 and reduce down as low as 0.05 to see the 
+effect.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Wed Nov 12 22:18:07 2003
+From: radiance-dev@radiance-online.org (Mark Stock)
+Date: Wed, 12 Nov 2003 17:18:07 -0500 (EST)
+Subject: [Radiance-dev] Sun5.8 build balks early
+In-Reply-To: <54C69438-13ED-11D8-B198-000A956D40C8@lmi.net>
+References: <54C69438-13ED-11D8-B198-000A956D40C8@lmi.net>
+Message-ID: <Pine.SOL.4.58.0311121654580.22377@tetris.gpcc.itd.umich.edu>
+
+On Mon, 10 Nov 2003, Greg Ward wrote:
+> > From: Mark Stock <mstock@umich.edu>
+> > Date: Mon Nov 10, 2003  1:23:09  PM US/Pacific
+> >
+> > cc -I../common -L../lib -O -DSPEED=80 -I/usr/openwin/include
+> > -L/usr/openwin/lib -DNOSTEREO -DMC -o normtiff normtiff.o -lrt -ltiff
+> > -lm
+> > Undefined                       first referenced
+> >  symbol                             in file
+> > uv_encode                           ../lib/librt.a(tmapluv.o)
+> > uv_decode                           ../lib/librt.a(tmapluv.o)
+> > ld: fatal: Symbol referencing errors. No output written to normtiff
+> > make: *** [normtiff] Error 1
+>
+> These functions are defined in the newer version of the TIFF library,
+> but probably not the standard one that's distributed with your system.
+> Most likely, the replacement libtiff.a is not getting installed in the
+> ray/src/lib directory after being built in ray/src/rt/tiff/libtiff.  If
+> the latter directory is missing, it is probably because you forgot to
+> install the overlay.  If it's there and the file
+> ray/src/rt/tiff/libtiff/libtiff.a is present, then it's a known bug in
+> the install program under Solaris, for which I have no fix but to
+> manually move the file "ray/src/rt/tiff/libtiff/libtiff.a" to the
+> "ray/src/lib/" directory and rerunning "rmake install" in ray/src/px/.
+
+I suppose you meant ray/src/px/tiff/libtiff (and not /rt/). I found
+the libtiff.a there. I also found it in ray/lib, but not in ray/src/lib.
+
+I copied it into there, did the rmake, and I have 114 programs in
+my bin now. Cool.
+
+> > cc -I../common -L../lib -O -DSPEED=80 -I/usr/openwin/include
+> > -L/usr/openwin/lib -DNOSTEREO -DMC -o
+> > /usr/contrib/radiance/bin2/dev/x11.hdi rhdisp.o rhdisp2
+> > .o viewbeams.o \
+> > rhd_x11.o rhd_qtree.o rhd_qtree2r.o rhd_ctab.o holo.o -lrt -lX11 -lm
+> > Undefined                       first referenced
+> >  symbol                             in file
+> > nanosleep                           rhd_x11.o
+> > ld: fatal: Symbol referencing errors. No output written to
+> > /usr/contrib/radiance/bin2/dev/x11.hdi
+> > make: *** [/usr/contrib/radiance/bin2/dev/x11.hdi] Error 1
+>
+> On some systems, the nanosleep() function is part of a real-time
+> library, which may have the unfortunate, conflicting name of librt.a.
+> To link to it, you can add /usr/lib/librt.a to the cc link line above
+> and see if that works.  Again, I don't have a fix for this at the
+> moment.
+
+I added "/usr/lib/librt.so" just before the "-lrt" entry, and
+it built.
+
+Then I did the "rmake install" to put thing where they belong and
+now I have 120 files in my bin. Yay!
+
+Mark
+
+From radiance-dev@radiance-online.org  Thu Nov 13 00:13:44 2003
+From: radiance-dev@radiance-online.org (Roland Schregle)
+Date: Thu, 13 Nov 2003 01:13:44 +0100
+Subject: [Radiance-dev] Noisy Reflection Problem
+In-Reply-To: <BAY2-F104lubW1WMfO200010213@hotmail.com>
+References: <BAY2-F104lubW1WMfO200010213@hotmail.com>
+Message-ID: <3FB2CCB8.1030104@gmx.net>
+
+Marcus Jacobs wrote:
+> Dear Group
+> 
+> First of all, I ask that you all will please forgive my lack of 
+> knowledge on the subject of Monte Carlo importance sampling. Although I 
+> am not familiar with this subject, I do possess an engineering degree so 
+> I am familiar with some complex mathematical concepts.
+> 
+> As for my question, I have had some issues with reflection on objects 
+> composed of metal and metal2 materials. Generally the reflections that I 
+> have had problems picking up are bright objects that are non-light 
+> sources sources. 
+
+Hi Marcus,
+
+if I interpret this correctly, I think you're running into some 
+fundamental limitations of RADIANCE. If you're getting noise from 
+specular reflections off your cool microwaves 'n' stuff, you're looking 
+at so-called *caustics*. RADIANCE is conceptually a backward raytracer, 
+tracing rays from the viewer via surfaces to the light sources. This 
+paradigm, even coupled with importance sampling, will inevitably result 
+in noticeable noise when you're dealing with specular reflections. 
+According to MC theory, variance will *gradually* drop with increasing 
+number of samples, but you'll soon wind up with astronomical rendering 
+times.
+
+The more efficient way to handle this is a forward raytracer, tracing 
+rays from the light sources via surfaces towards the viewer. This 
+paradigm is the method of choice for renderings caustics, and it's 
+situations like the one you decribe that motivated the development of 
+the photon map add-on for RADIANCE (see the URL in my signature). 
+Unfortunately, the RADIANCE photon map is based on the (somewhat buggy) 
+official 3.5 release, and you'll have to BYO (build your own). To my 
+knowledge there are no current binaries available for download. 
+(Volunteers, anyone?)
+
+See ya!
+
+--Roland
+
+
+-- 
+Roland Schregle
+PhD candidate, Fraunhofer Institute for Solar Energy Systems
+RADIANCE Photon Map page: www.ise.fhg.de/radiance/photon-map
+
+END OF LINE. (MCP)
+
+
+From radiance-dev@radiance-online.org  Thu Nov 13 16:46:45 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Thu, 13 Nov 2003 08:46:45 -0800
+Subject: [Radiance-dev] Re: Compiling Radiance under Interix (rpict problems)
+Message-ID: <F78472E4-15F8-11D8-86DC-000A956D40C8@lmi.net>
+
+We seem to have sorted out the Interix run-time problem, which was due 
+to a bad frexp() implementation in their libraries.  Luckily, the 
+Radiance distribution contains a long-unused replacement for frexp(), 
+which we could call into use.  (See Georg?  See?  See?)
+
+Begin forwarded message:
+
+> From: Andy Stone <andy.stone@bdsp.com>
+> Date: Thu Nov 13, 2003  8:37:09  AM US/Pacific
+> To: "'Greg Ward'" <gward@lmi.net>
+> Subject: RE: Compiling Radiance under Interix (rpict problems)
+>
+> According to the man pages they're both declared in math.h:
+> double ldexp(double x, int exp)
+> double frexp (double value, int *exp)
+>
+> -- which agrees with the actual declarations in math.h
+>
+> thanks,
+> Andy
+>
+>
+> > -----Original Message-----
+> > From: Greg Ward [mailto:gward@lmi.net]
+> > Sent: 13 November 2003 16:04
+> > To: Andy Stone
+> > Subject: Re: Compiling Radiance under Interix (rpict problems)
+> >
+> > Great -- I'm glad we found the crux of the problem, at least.  I'm
+> > wondering where the frexp() and ldexp() functions are declared -- is
+> > there a man page that specifies which header you should include for
+> > these functions?  They are in <math.h> on most systems, but it could 
+> be
+> > they are missing in yours.  Could you check?
+> >
+> > Thanks,
+> > -Greg
+> >
+> > P.S.  You should post something to radiance-dev once it's all sorted
+> > out, just to let folks know.
+>
+
+
+
+From radiance-dev@radiance-online.org  Thu Nov 13 23:06:58 2003
+From: radiance-dev@radiance-online.org (Jack de Valpine)
+Date: Thu, 13 Nov 2003 18:06:58 -0500
+Subject: [Radiance-dev] 3.6a - small compile errors
+Message-ID: <3FB40E92.1050509@visarc.com>
+
+This is a multi-part message in MIME format.
+--------------070805010203030509020102
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Transfer-Encoding: 7bit
+
+Hi all,
+
+Just compiled the latest head version now. There were a couple of errors 
+related to strcpy. I think something related came up back in May of this 
+year. The attached text file is the report from the compile. This is on 
+a RedHat system (7.1/7.2 I think) with gcc 2.96.
+
+Let me know if there is further information that I can provide.
+
+Thanks,
+
+-Jack
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+
+--------------070805010203030509020102
+Content-Type: text/plain;
+ name="r36.comp.err"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline;
+ filename="r36.comp.err"
+
+In directory meta...
+gcc -DMDIR=\"/Rlib/lib_r36/meta/\" -O2 -DSPEED=200 -Dlinux -D_FILE_OFFSET_BITS=6
+4 -L/usr/X11R6/lib -I/usr/include/X11 -DNOSTEREO -DMAXOBJBLK=131071 -I../common 
+-L../lib   -c -o mgvars.o mgvars.c
+mgvars.c:542:23: macro "strcpy" requires 2 arguments, but only 1 given
+make: *** [mgvars.o] Error 1
+gcc -DMDIR=\"/Rlib/lib_r36/meta/\" -O2 -DSPEED=200 -Dlinux -D_FILE_OFFSET_BITS=6
+4 -L/usr/X11R6/lib -I/usr/include/X11 -DNOSTEREO -DMAXOBJBLK=131071 -I../common 
+-L../lib   -c -o igraph.o igraph.c
+igraph.c:71:36: macro "strcpy" requires 2 arguments, but only 1 given
+make: *** [igraph.o] Error 1
+make: Target `install' not remade because of errors.
+
+
+
+
+NOTE: strcpy is declared extern char in px/scan.c but this does not produce any errors in compile
+
+--------------070805010203030509020102--
+
+
+From radiance-dev@radiance-online.org  Fri Nov 14 00:29:38 2003
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Thu, 13 Nov 2003 19:29:38 -0500 (EST)
+Subject: [Radiance-dev] 3.6a - small compile errors
+In-Reply-To: <3FB40E92.1050509@visarc.com>
+Message-ID: <Pine.BSF.4.44.0311131915240.92445-100000@emancholl.pair.com>
+
+Jack de Valpine wrote:
+
+> Hi all,
+>
+> Just compiled the latest head version now. There were a couple of errors
+> related to strcpy. I think something related came up back in May of this
+> year. The attached text file is the report from the compile. This is on
+> a RedHat system (7.1/7.2 I think) with gcc 2.96.
+
+
+That's caused by some local declarations, where we should rather
+include <string.h>. I was fiddling around in that area anyway,
+and just checked in cleaned up versions of some files, which
+should fix this for tomorrows HEAD dump.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+From radiance-dev@radiance-online.org  Fri Nov 14 09:15:08 2003
+From: radiance-dev@radiance-online.org (Andy Stone)
+Date: Fri, 14 Nov 2003 09:15:08 -0000
+Subject: [Radiance-dev] Compiling Radiance under Interix (rpict problems) - problem solve
+ d
+Message-ID: <22DEFE50256BD7119F9D00065B1A47AC170238@bdspserver01>
+
+This message is in MIME format. Since your mail reader does not understand
+this format, some or all of this message may not be legible.
+
+------_=_NextPart_001_01C3AA8F.CCD08A10
+Content-Type: text/plain
+
+After following Greg's advice it appears that the problem was something to
+do with the frexp function (supplied with Interix).  Switching to the
+version provided with the Radiance distribution resolved the problem.
+
+Thanks for your help,
+Andy  
+
+
+------_=_NextPart_001_01C3AA8F.CCD08A10
+Content-Type: text/html
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+<META HTTP-EQUIV=3D"Content-Type" CONTENT=3D"text/html; =
+charset=3DUS-ASCII">
+<META NAME=3D"Generator" CONTENT=3D"MS Exchange Server version =
+5.5.2653.12">
+<TITLE>Compiling Radiance under Interix (rpict problems) - problem =
+solved</TITLE>
+</HEAD>
+<BODY>
+
+<P><FONT SIZE=3D2>After following Greg's advice it appears that the =
+problem was something to do with the frexp function (supplied with =
+Interix).&nbsp; Switching to the version provided with the Radiance =
+distribution resolved the problem.</FONT></P>
+
+<P><FONT SIZE=3D2>Thanks for your help,</FONT>
+<BR><FONT SIZE=3D2>Andy&nbsp; </FONT>
+</P>
+
+</BODY>
+</HTML>
+------_=_NextPart_001_01C3AA8F.CCD08A10--
+
+From radiance-dev@radiance-online.org  Fri Nov 14 15:46:46 2003
+From: radiance-dev@radiance-online.org (Jack de Valpine)
+Date: Fri, 14 Nov 2003 10:46:46 -0500
+Subject: [Radiance-dev] 3.6a - small compile errors
+References: <Pine.BSF.4.44.0311131915240.92445-100000@emancholl.pair.com>
+Message-ID: <3FB4F8E6.5010506@visarc.com>
+
+--------------070708050002090105080604
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Transfer-Encoding: 7bit
+
+Thanks Georg, this did the trick and resulted in a clean compile.
+
+Note it looks like the HEAD tarball is not compressed as indicated in 
+the table?
+
+-Jack
+
+
+Georg Mischler wrote:
+
+>Jack de Valpine wrote:
+>
+>  
+>
+>>Hi all,
+>>
+>>Just compiled the latest head version now. There were a couple of errors
+>>related to strcpy. I think something related came up back in May of this
+>>year. The attached text file is the report from the compile. This is on
+>>a RedHat system (7.1/7.2 I think) with gcc 2.96.
+>>    
+>>
+>
+>
+>That's caused by some local declarations, where we should rather
+>include <string.h>. I was fiddling around in that area anyway,
+>and just checked in cleaned up versions of some files, which
+>should fix this for tomorrows HEAD dump.
+>
+>
+>-schorsch
+>
+>  
+>
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+
+
+--------------070708050002090105080604
+Content-Type: text/html; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-1">
+  <title></title>
+</head>
+<body>
+Thanks Georg, this did the trick and resulted in a clean compile. <br>
+<br>
+Note it looks like the HEAD tarball is not compressed as indicated in the
+table?<br>
+<br>
+-Jack<br>
+<br>
+<br>
+Georg Mischler wrote:<br>
+<blockquote type="cite"
+ cite="midPine.BSF.4.44.0311131915240.92445-100000@emancholl.pair.com">
+  <pre wrap="">Jack de Valpine wrote:
+
+  </pre>
+  <blockquote type="cite">
+    <pre wrap="">Hi all,
+
+Just compiled the latest head version now. There were a couple of errors
+related to strcpy. I think something related came up back in May of this
+year. The attached text file is the report from the compile. This is on
+a RedHat system (7.1/7.2 I think) with gcc 2.96.
+    </pre>
+  </blockquote>
+  <pre wrap=""><!---->
+
+That's caused by some local declarations, where we should rather
+include &lt;string.h&gt;. I was fiddling around in that area anyway,
+and just checked in cleaned up versions of some files, which
+should fix this for tomorrows HEAD dump.
+
+
+-schorsch
+
+  </pre>
+</blockquote>
+<br>
+<pre class="moz-signature" cols="$mailwrapcol">-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	<a class="moz-txt-link-freetext" href="http://www.visarc.com">http://www.visarc.com</a>
+#
+#	channeling technology for superior design and construction</pre>
+<br>
+</body>
+</html>
+
+--------------070708050002090105080604--
+
+
+From radiance-dev@radiance-online.org  Fri Nov 14 20:09:43 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Fri, 14 Nov 2003 21:09:43 +0100
+Subject: [Radiance-dev] 3.6a  / tarball compression & content type
+In-Reply-To: <3FB4F8E6.5010506@visarc.com>
+References: <Pine.BSF.4.44.0311131915240.92445-100000@emancholl.pair.com> <3FB4F8E6.5010506@visarc.com>
+Message-ID: <3FB53687.9090707@pab-opto.de>
+
+Jack de Valpine wrote:
+
+> ...
+> Note it looks like the HEAD tarball is not compressed as indicated in 
+> the table?
+> ...
+
+Nop, - on the server it looks like a gzipped tar ball to "file". As it 
+gets compressed elsewhere and than moved to the web directory, there 
+should be a consistent compressed tar ball at any given time t on the 
+server. It is advertised by the server as content-type 
+"application/x-tar" and content-encoding "x-gzip", so some clever 
+browser may do an uncompress-on-the-fly while downloading.
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+From radiance-dev@radiance-online.org  Fri Nov 14 20:29:38 2003
+From: radiance-dev@radiance-online.org (Jack de Valpine)
+Date: Fri, 14 Nov 2003 15:29:38 -0500
+Subject: [Radiance-dev] 3.6a  / tarball compression & content type
+References: <Pine.BSF.4.44.0311131915240.92445-100000@emancholl.pair.com> <3FB4F8E6.5010506@visarc.com> <3FB53687.9090707@pab-opto.de>
+Message-ID: <3FB53B32.1070401@visarc.com>
+
+Ack, you are correct. It looks like my "clever" browser is uncompressing 
+on the fly with the help of stuffit.
+
+Peter Apian-Bennewitz wrote:
+
+> Jack de Valpine wrote:
+>
+>> ...
+>> Note it looks like the HEAD tarball is not compressed as indicated in 
+>> the table?
+>> ...
+>
+>
+> Nop, - on the server it looks like a gzipped tar ball to "file". As it 
+> gets compressed elsewhere and than moved to the web directory, there 
+> should be a consistent compressed tar ball at any given time t on the 
+> server. It is advertised by the server as content-type 
+> "application/x-tar" and content-encoding "x-gzip", so some clever 
+> browser may do an uncompress-on-the-fly while downloading.
+> -Peter
+>
+
+-- 
+#	John E. de Valpine
+#	president
+#
+#	visarc incorporated
+#	http://www.visarc.com
+#
+#	channeling technology for superior design and construction
+
+
+
+
+From radiance-dev@radiance-online.org  Fri Nov 21 02:57:59 2003
+From: radiance-dev@radiance-online.org (Marcus Jacobs)
+Date: Fri, 21 Nov 2003 02:57:59 +0000
+Subject: [Radiance-dev] Noisy Reflection Problem
+Message-ID: <BAY2-F2393MgPPf3L9B00000779@hotmail.com>
+
+Dear Group
+
+Thanks for all of the advise with my problem with noisy reflections.
+
+I have done some experimenting in finding a solution. One solution to the 
+problem iI found is increasing the render resolution. The following picture 
+was rendered at 8500 x 8500 prior to filtering to 500 x 500:
+
+http://f1.pg.photos.yahoo.com/ph/marcdevon/vwp?.dir=/RadiancePics&.dnm=room2d_camera4_DMC_sse_xlarge.jpg&.view=t
+
+As you can see here, just about all of the noise is gone. What noise is 
+remaining can easily be smoothed by using the -m option with pfilt. Although 
+I got the results that I wanted, The render time is quite large (hey, life 
+is a compromise). One way that I have considered to increase quality while 
+minimizing the render time penalty is to render the portions of the scene 
+that would benefit from the increased sampling at the high resolutions while 
+rendering the remainder of the scene at lower resolutions. From the above 
+picture, you can see that only a small portion of the scene has problem 
+areas as far as specular sampling is concerned (the appliances). The 
+remainder of the scene doesn't need to be rendered at such a high resolution 
+(the walls, windows, ceiling and floor). It would be much more efficient to 
+just render the appliances at the higher resolution.
+
+For this, I have been looking in to altering the source code to rpiece to 
+allow me to render specific parts of the scene. HDRShop has a selection tool 
+that allows for a user to precisely specify the boundaries of a selection 
+window. I could pass these parameters to the altered rpiece program and have 
+it render those portions of the scene. I would subsequently use pcompos to 
+stich the scene back together. There is one primary concern for this 
+approach. This issue would be the how seamless would each of the separate 
+renders would blend together given that they are originally rendered at 
+different resolutions. To explore this, I basically used HDRShop to cut and 
+paste two separate renders of my test scene to see if there are any 
+noticable seams in the image. The following picture shows the results:
+
+http://f1.pg.photos.yahoo.com/ph/marcdevon/vwp?.dir=/RadiancePics&.dnm=merge_complete.jpg&.view=t&.done=http%3a//f1.pg.photos.yahoo.com/ph/marcdevon/lst%3f%26.dir=/RadiancePics%26.src=ph%26.view=t
+
+The above picture is consist of two separate renders done at 1500 x 1500 and 
+6000 x 6000. The picture actually is consist of 2 rows each with 5 
+alternating columns taken from both renders (Sort of like a brick wall). 
+HDRShop was used to cut individual columns from each render.  Pcompos was 
+used to stitch each of the colums and rows together. As you can see, the 
+only seams that are visable are at the appliances. The while looking at the 
+walls and floors, one can not detect that the image is actually a composite. 
+I do believe that this may be a viable option.
+
+The other approach that could be used to reduce the noise in the reflection 
+(I think) is by increasing the number of specular samples taken at each 
+pixel. I do understand that convergence occurs at a sub-linear pace while 
+doing Monte Carlo sampling. But if I am correct, couldn't the error be 
+reduced by half by taking 4 times as many samples? If I am correct, does 
+Radiance take only one sample probalistically if the material has a 
+roughness is non-zero. If only one sample is taken, would it be terribly 
+expensive to take four? I am curious to take this approach. Unfortunately, 
+my background in such subjects as Monte Carlo raytracing and random 
+functions is not very strong. I know that there has to be additional source 
+code changes that would involve quite a bit of math (not that I am scared) 
+in order to do what I am trying to accomplish. Any help and insight as to 
+all that is involved on this would be most helpful.
+
+Thanks
+
+Marcus
+
+BTW, I know that we Americans like to eat a lot but the appliances that are 
+mistaken for microwave ovens are actually just normal convection ovens. 
+Normally they would be placed in a wall cabinet. I just brought them out so 
+I could study the reflections.
+
+
+>From: Roland Schregle <ganjatron@gmx.net>
+>Subject: Re: [Radiance-dev] Noisy Reflection Problem
+>
+>
+>Hi Marcus,
+>
+>if I interpret this correctly, I think you're running into some
+>fundamental limitations of RADIANCE. If you're getting noise from
+>specular reflections off your cool microwaves 'n' stuff, you're looking
+>at so-called *caustics*. RADIANCE is conceptually a backward raytracer,
+>tracing rays from the viewer via surfaces to the light sources. This
+>paradigm, even coupled with importance sampling, will inevitably result
+>in noticeable noise when you're dealing with specular reflections.
+>According to MC theory, variance will *gradually* drop with increasing
+>number of samples, but you'll soon wind up with astronomical rendering
+>times.
+>
+>The more efficient way to handle this is a forward raytracer, tracing
+>rays from the light sources via surfaces towards the viewer. This
+>paradigm is the method of choice for renderings caustics, and it's
+>situations like the one you decribe that motivated the development of
+>the photon map add-on for RADIANCE (see the URL in my signature).
+>Unfortunately, the RADIANCE photon map is based on the (somewhat buggy)
+>official 3.5 release, and you'll have to BYO (build your own). To my
+>knowledge there are no current binaries available for download.
+>(Volunteers, anyone?)
+>
+>See ya!
+>
+>--Roland
+>
+>
+>--
+>Roland Schregle
+>PhD candidate, Fraunhofer Institute for Solar Energy Systems
+>RADIANCE Photon Map page: www.ise.fhg.de/radiance/photon-map
+>
+>END OF LINE. (MCP)
+>
+>
+>
+>--__--__--
+>
+>_______________________________________________
+>Radiance-dev mailing list
+>Radiance-dev@radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+>End of Radiance-dev Digest
+
+_________________________________________________________________
+Gift-shop online from the comfort of home at MSN Shopping!  No crowds, free 
+parking.  http://shopping.msn.com
+
+
+From radiance-dev@radiance-online.org  Fri Nov 28 07:47:48 2003
+From: radiance-dev@radiance-online.org (Peter Apian-Bennewitz)
+Date: Fri, 28 Nov 2003 08:47:48 +0100
+Subject: [Radiance-dev] MacOs X support
+Message-ID: <3FC6FDA4.7060204@pab-opto.de>
+
+Hi all,
+
+Since some MacOS X users experienced build problems lately:
+Someone willing to donate a MacOS X machine (CPU speed not a factor) ? - 
+Could be integrated into the upcoming automatic nightly generation of 
+binaries at radiance-online. Replies preferably to the dev list or 
+offlist to techsup@radiance-online.org .
+
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, www.pab-opto.de
+
+
+
+From radiance-dev@radiance-online.org  Sat Nov 29 19:57:50 2003
+From: radiance-dev@radiance-online.org (Marcus Jacobs)
+Date: Sat, 29 Nov 2003 19:57:50 +0000
+Subject: [Radiance-dev] RPIECE Code Modificaiton
+Message-ID: <BAY2-F138g6x53jn6kA0001af21@hotmail.com>
+
+Dear Group
+
+As I have mentioned before, I am attempting to rewrite code for rpiece to 
+allow for me to improve specular sampling of metal and metal2 reflections. I 
+do have some questions that I hope that someone can answer. To give you a 
+basic idea of the concept, see the following link:
+
+http://f1.pg.photos.yahoo.com/ph/marcdevon/vwp?.dir=/RadiancePics&.dnm=example.jpg&.src=ph&.view=t&.hires=t
+
+
+What I wish to do is to render within the highlighted window within a 
+specified view. I have gone the some of the rpiece source code so I do think 
+that I understand how it basically works. My first question deals with the 
+derivation of of pview horizontal and vertical view parameters. In the 
+source code it is given as:
+
+pview.horiz = 2.*180./PI*atan(tan(PI/180./2.*ourview.horiz)/hmult );
+pview.vert = 2.*180./PI*atan(tan(PI/180./2.*ourview.vert)/vmult );
+
+
+In my modified version of rpiece, instead of dividing by hmult/vmult at the 
+end, I multiply times a fraction of the rendered scene. In other words, if 
+the render window is a 100 x 250 portion of a 500 x 500 view, I will 
+multiply times 0.2 and 0.5 to each of the respective equations in lieu of 
+dividing by hmult and vmult. One thing that helps with this approach is that 
+horiz and vert members of the VIEW type are all declared as double such that 
+I should not have any issues with precision when using pcompos to merge the 
+image (I hope).   My question is if there anyone here who can explain the 
+background/derivation of these equations and does anyone know whether they 
+will be applicable to my approach? Also in the program, I modified the 
+equations for hoff and voff to correspondto the lower left corner of the 
+render window (see example picture). Once again this is expressed as a 
+fraction of the entire image. For example, if the lower left corner of the 
+render window correnspond to point (229,125), hoff and voff are 0.458 and 
+0.25 respectively. Similar to vert and horiz, hoff and voff are declared as 
+double such that precision should not present any problems.
+
+Taking this approach has not produced the view that I was expecting to 
+render. For starters, if the overall view is 500 x 500 (the entire image is 
+not rendered in the program, only the portion specified by the user) and I 
+wish to render a 99 x 155 portion, the rendered view comes out as a 99 x 99 
+piece. Also, the view that is rendered isn't where I have theorized it will 
+be based on my assumption of how the horizontal and vertical offsets 
+interact with the program. Any help and/or insight to how I can accomplish 
+my objectives would be very appreciated.
+
+Marcus
+
+_________________________________________________________________
+Set yourself up for fun at home!  Get tips on home entertainment equipment, 
+video game reviews, and more here.   
+http://special.msn.com/home/homeent.armx
+
+
+From radiance-dev@radiance-online.org  Sun Nov 30 16:31:22 2003
+From: radiance-dev@radiance-online.org (Greg Ward)
+Date: Sun, 30 Nov 2003 08:31:22 -0800
+Subject: [Radiance-dev] Re: Photon map addition
+In-Reply-To: <3FC9EAD9.6030708@gmx.net>
+References: <4C165BCC-1F76-11D8-9B69-000A959DDB22@gmx.net> <3FC9EAD9.6030708@gmx.net>
+Message-ID: <A2140E3A-2352-11D8-8DEE-00306540F848@lmi.net>
+
+This is largely my fault for not taking the time to really go through 
+the photon map changes to see what they were about.  I started looking 
+through Roland's docs a year ago, and never got back to it.  I simply 
+haven't had time to play with it, and I don't see the time appearing 
+anywhere in the immediate future.
+
+If the photon map had been implemented as a mkillum substitute, i.e., a 
+separate program that creates light sources for Radiance, there would 
+be no hesitation to include it in the main distribution.  In that case, 
+there would have been no risk whatsoever to the renderer, and it 
+wouldn't have affected any of the rendering options.  However, my 
+understanding is that the photon map has been folded right into the 
+main rendering code, with quite a few new options associated with its 
+use.  This makes it critical to do a fitness evaluation before we fold 
+it into the main source, and that requires testing.
+
+We need to take a very careful look at this module's affect on the code 
+as well as the rendering process -- does it support all material types 
+(or at least do something reasonable with the types it doesn't 
+support)?  Does it place any restrictions on light sources?  
+Participating media?  How does it behave when the geometry gets 
+complex?  Does it burden or otherwise affect the calculation when it is 
+switched off?  Do we get the same results or nearly the same under all 
+important circumstances?
+
+These concerns must be answered, and I'm sure Roland can answer some of 
+them.  For other concerns, I'll just have to pour over the source code 
+and test it and test it.  It would be very helpful to me if Roland and 
+I could get together and run through everything, but that hasn't 
+happened, and e-mail gets mixed in with all the other activities we 
+have going on, making communication slow and difficult.
+
+I really appreciate the efforts Roland has put forth to get this out, 
+and to keep it updated with the latest source changes on our end.  I 
+know this is no small task, and it feels cruel to make new releases 
+without incorporating his changes, because it just means more work for 
+him without any real benefit.
+
+It would help me to hear from users who have successfully applied the 
+photon map.  I'd like to see how it helped them and hear what they have 
+to say about it, on the list or off.  Theoretical discussions and 
+people saying this is a "good idea" are useful only up to a point.  
+Real experience is what matters, and that's what I need to hear from 
+people.  I have not used the photon map myself at this point, so I have 
+no direct experience of my own.
+
+Thanks,
+-Greg
+
+> From: Roland Schregle <ganjatron@gmx.net>
+> Date: November 30, 2003 5:04:25 AM PST
+>
+> Lars O. Grobe wrote:
+>>> (...) Note that RADIANCE modified with pmap behaves exactly like 
+>>> RADIANCE Classic unless you explicitly use pmap options. As such, 
+>>> you don't need the original RADIANCE binaries anyway.
+>>  Hi,
+>> hmmm... maybe this has been on the dev-list before, but if this 
+>> feature can be used like this without problems - will it be included 
+>> in the main distribution of radiance one day?
+>
+> Good question -- that's up to Fraunhofer and Berkeley, I guess. I 
+> don't expect that to be resolved anytime soon... :^(
+>
+> --Roland
+
+

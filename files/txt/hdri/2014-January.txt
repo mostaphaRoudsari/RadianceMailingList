@@ -1,0 +1,279 @@
+From beapiderit at gmail.com  Mon Jan 20 10:36:53 2014
+From: beapiderit at gmail.com (=?iso-8859-1?Q?Mar=EDa_Beatriz_Piderit?=)
+Date: Mon, 20 Jan 2014 15:36:53 -0300
+Subject: [HDRI] mksource and IBL
+Message-ID: <FF441E4A-D4CD-463E-A291-A2C33977C020@ubiobio.cl>
+
+Hi all,
+ 
+I?m trying to extract a concentrated light source from HDR picture of the sky using mksource.
+I run the following script:
+oconv materials.mat geometry.rad lightprobe.rad > scene.oct
+mksource -d 1000000 -t 2 -a 5 scene.oct > srcs.rad
+oconv -i scene.oct srcs.rad ground.rad > finalscene.oct
+rpict -vth -vv 180 -vh 180 -vp 1.8 3 1.2 -vd 1 1 0 finalscene.oct > finalsceneview.hdr
+ra_tiff finalsceneview.hdr finalsceneview.tif
+My results are weird (see https://www.dropbox.com/s/2u4vnsi4ynw0ncz/finalsceneview02.tif)
+Do you have any idea what is wrong? a problem with  the capture of the sun? or rather a matter of parameters ?
+Is it normal that mksource finds several sources ? (see https://www.dropbox.com/s/n7y97ppm1ip1gky/srcs.rad)
+ 
+Thanks in advance for your help !
+
+Beatriz Piderit M.
+Arquitecta UBB, MA, PhD UC Louvain
+
+Departamento Dise?o y Teor?a de la Arquitectura
+Universidad del Bio-Bio Concepci?n, Chile
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20140120/8db5549f/attachment.html>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: Archivo adjunto al mensaje.jpeg
+Type: image/jpeg
+Size: 5939 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20140120/8db5549f/attachment.jpeg>
+
+From gregoryjward at gmail.com  Mon Jan 20 11:28:47 2014
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Mon, 20 Jan 2014 11:28:47 -0800
+Subject: [HDRI] mksource and IBL
+In-Reply-To: <FF441E4A-D4CD-463E-A291-A2C33977C020@ubiobio.cl>
+References: <FF441E4A-D4CD-463E-A291-A2C33977C020@ubiobio.cl>
+Message-ID: <643CDE3C-5E8E-49B2-9BF1-2B5A44FD6E27@gmail.com>
+
+Hi Maria,
+
+Thank you for following good list etiquette and posting your image on a website.  You may want to check to be sure that you are subscribed with the HDRI mailing list <http://www.radiance-online.org/community/mailing-lists>, as I had to manually pass your post onto the list.  We don't seem to have you in our system, at least not at this address.
+
+I can't say seeing your light probe which is just shown as white out the window, but mksource will tend to create multiple sources for long, skinny regions.  Reducing the -d setting will reduce the maximum number of sources created in this way.  Your threshold setting also seems to be quite low, and you might consider letting mksource determine this threshold automatically.
+
+The general idea with mksource is to replace only the very brightest regions in a distant environment map with direct sources.  The rest will be handled well enough in the indirect calculation.  Which brings me to my last point -- are you giving mksource the room description as well as the exterior environment?  It completely ignores the local geometry, using only your environment map (light probe) to decide where to place sources.  Perhaps you could post that?
+
+Best,
+-Greg
+
+> From: "Mar?a Beatriz Piderit" <beapiderit at gmail.com>
+> Date: January 20, 2014 10:36:53 AM PST
+> 
+> Hi all,
+>  
+> I?m trying to extract a concentrated light source from HDR picture of the sky using mksource.
+> I run the following script:
+> oconv materials.mat geometry.rad lightprobe.rad > scene.oct
+> mksource -d 1000000 -t 2 -a 5 scene.oct > srcs.rad
+> oconv -i scene.oct srcs.rad ground.rad > finalscene.oct
+> rpict -vth -vv 180 -vh 180 -vp 1.8 3 1.2 -vd 1 1 0 finalscene.oct > finalsceneview.hdr
+> ra_tiff finalsceneview.hdr finalsceneview.tif
+> My results are weird (see https://www.dropbox.com/s/2u4vnsi4ynw0ncz/finalsceneview02.tif)
+> Do you have any idea what is wrong? a problem with  the capture of the sun? or rather a matter of parameters ?
+> Is it normal that mksource finds several sources ? (see https://www.dropbox.com/s/n7y97ppm1ip1gky/srcs.rad)
+>  
+> Thanks in advance for your help !
+> 
+> Beatriz Piderit M.
+> Arquitecta UBB, MA, PhD UC Louvain
+> 
+> Departamento Dise?o y Teor?a de la Arquitectura
+> Universidad del Bio-Bio Concepci?n, Chile
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20140120/5e38653f/attachment.html>
+
+From beapiderit at gmail.com  Wed Jan 22 04:49:04 2014
+From: beapiderit at gmail.com (=?iso-8859-1?Q?Mar=EDa_Beatriz_Piderit?=)
+Date: Wed, 22 Jan 2014 09:49:04 -0300
+Subject: [HDRI] mksource and IBL
+In-Reply-To: <643CDE3C-5E8E-49B2-9BF1-2B5A44FD6E27@gmail.com>
+References: <FF441E4A-D4CD-463E-A291-A2C33977C020@ubiobio.cl>
+	<643CDE3C-5E8E-49B2-9BF1-2B5A44FD6E27@gmail.com>
+Message-ID: <DA6CA41B-9177-45A8-AD52-5F379CEF29E9@gmail.com>
+
+Hi Greg, 
+
+Thanks for your response. 
+I've also tried to run the simulation using mksource default parameters, I
+obtained this picture but it seems that there is too many sources identified
+(see finalsceneview02.tif in
+https://www.dropbox.com/sh/6ra7xtansk8rdz0/z0aG1qlTHr ). I thought that in
+increasing -d, the problem disappears. In this simulation, I gave the room
+description but the ground is not specified because I was not sure on how to
+describe it in IBL.
+In the following simulation I added the ground in describing it using
+gensky... I am not sure that it is a good idea (see finalsceneview02.tif in
+https://www.dropbox.com/sh/4gu3onc08d933ea/xIwc2E9Kc6 ).
+
+In these two folders you also will find the local geometry, the light probe
+image...
+
+Thanks, 
+Beatriz
+El 20-01-2014, a las 16:28, Gregory J. Ward <gregoryjward at gmail.com> escribi?:
+
+> Hi Maria,
+> 
+> Thank you for following good list etiquette and posting your image on a website.  You may want to check to be sure that you are subscribed with the HDRI mailing list <http://www.radiance-online.org/community/mailing-lists>, as I had to manually pass your post onto the list.  We don't seem to have you in our system, at least not at this address.
+> 
+> I can't say seeing your light probe which is just shown as white out the window, but mksource will tend to create multiple sources for long, skinny regions.  Reducing the -d setting will reduce the maximum number of sources created in this way.  Your threshold setting also seems to be quite low, and you might consider letting mksource determine this threshold automatically.
+> 
+> The general idea with mksource is to replace only the very brightest regions in a distant environment map with direct sources.  The rest will be handled well enough in the indirect calculation.  Which brings me to my last point -- are you giving mksource the room description as well as the exterior environment?  It completely ignores the local geometry, using only your environment map (light probe) to decide where to place sources.  Perhaps you could post that?
+> 
+> Best,
+> -Greg
+> 
+>> From: "Mar?a Beatriz Piderit" <beapiderit at gmail.com>
+>> Date: January 20, 2014 10:36:53 AM PST
+>> 
+>> Hi all,
+>>  
+>> I?m trying to extract a concentrated light source from HDR picture of the sky using mksource.
+>> I run the following script:
+>> oconv materials.mat geometry.rad lightprobe.rad > scene.oct
+>> mksource -d 1000000 -t 2 -a 5 scene.oct > srcs.rad
+>> oconv -i scene.oct srcs.rad ground.rad > finalscene.oct
+>> rpict -vth -vv 180 -vh 180 -vp 1.8 3 1.2 -vd 1 1 0 finalscene.oct > finalsceneview.hdr
+>> ra_tiff finalsceneview.hdr finalsceneview.tif
+>> My results are weird (see https://www.dropbox.com/s/2u4vnsi4ynw0ncz/finalsceneview02.tif)
+>> Do you have any idea what is wrong? a problem with  the capture of the sun? or rather a matter of parameters ?
+>> Is it normal that mksource finds several sources ? (see https://www.dropbox.com/s/n7y97ppm1ip1gky/srcs.rad)
+>>  
+>> Thanks in advance for your help !
+>> 
+>> Beatriz Piderit M.
+>> Arquitecta UBB, MA, PhD UC Louvain
+>> 
+>> Departamento Dise?o y Teor?a de la Arquitectura
+>> Universidad del Bio-Bio Concepci?n, Chile
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20140122/97743a3f/attachment.html>
+
+From kallie at umn.edu  Fri Jan 31 10:13:46 2014
+From: kallie at umn.edu (Chris Kallie)
+Date: Fri, 31 Jan 2014 13:13:46 -0500
+Subject: [HDRI] SMP file busy problem on iterative rendering in Linux
+Message-ID: <52EBE7DA.9070703@umn.edu>
+
+Dear Radiance Users,
+
+I've assembled a simple script that iterates through a folder containing 
+octrees, and renders using SMP. On Mac, everything works as expected. 
+However, on Linux, I get errors suggesting both the syncfile and ppfile 
+are still locked by the OS. I've attempted two solutions, including 
+adding 'sleep 5' after pfilt (first attempt, shown below), and then by 
+externalizing the while loop, with an ending 'exit 0' (second attempt, 
+not shown here), but neither approach fixed the problem.
+
+Here is one version of code which works on Mac but not in Linux:
+
+for file in obj/*.oct
+do
+     filename="${file%.*}"
+     rm -f syncfile argsfile ppfile
+     echo 1 64 > syncfile
+     cat syncfile
+     echo -F syncfile @arguments -vf room.vf -o $filename.unf 
+$filename.oct > argsfile
+     cat argsfile
+     NCPU=2
+     while [ "$NCPU" -gt 0 ]
+     do
+         echo "running proc $NCPU"
+         rpiece -v -PP ppfile  @argsfile &
+         sleep 5
+         NCPU=`expr $NCPU - 1`
+     done
+     wait
+     echo "Filtering File - $filename.unf"
+     pfilt -1 -e -2 -m .25 -r .6 -x /3 -y /3 $filename.unf > $filename.hdr
+     sleep 5
+     rm -f syncfile argsfile ppfile
+done
+
+Interestingly, I do not get an error saying "cannot remove 'argsfile' ". 
+After the first image is successfully rendered, I get the following 
+errors at each successive iteration, indicating the rm only works once 
+(line 4) in the first iteration:
+
+rm: cannot remove 'syncfile': Text file busy
+rm: cannot remove 'ppfile': Text file busy
+rm: cannot remove 'syncfile': Text file busy
+rm: cannot remove 'ppfile': Text file busy
+
+Since the error isn't fatal, the machine keeps rendering, and ends up 
+rendering the same (first) image over and over. Has anyone run into this 
+problem and found a solution? Any advice would be greatly appreciated.
+
+Thanks,
+Chris
+
+
+From gregoryjward at gmail.com  Fri Jan 31 10:38:19 2014
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri, 31 Jan 2014 10:38:19 -0800
+Subject: [HDRI] SMP file busy problem on iterative rendering in Linux
+In-Reply-To: <52EBE7DA.9070703@umn.edu>
+References: <52EBE7DA.9070703@umn.edu>
+Message-ID: <A1E2658F-BF27-4C75-A805-489DA6FB7501@gmail.com>
+
+Hi Chris,
+
+I'm cross-posting answer to Radiance-general where this probably belongs.  You should subscribe there if you aren't already.
+
+Your error message is very strange.  I'd be interested to hear if others have run across this before.  It seems related to attempts to change or remove files that are currently being used as executables.  It doesn't really make sense to me in the context of your script.  This is one of the pages Google pointed me to:
+
+	http://www.cyberciti.biz/faq/binbash-bad-interpreter-text-file-busy/
+
+Best,
+-Greg
+
+Begin forwarded message:
+
+> From: Chris Kallie <kallie at umn.edu>
+> Date: January 31, 2014 10:13:46 AM PST
+> 
+> Dear Radiance Users,
+> 
+> I've assembled a simple script that iterates through a folder containing octrees, and renders using SMP. On Mac, everything works as expected. However, on Linux, I get errors suggesting both the syncfile and ppfile are still locked by the OS. I've attempted two solutions, including adding 'sleep 5' after pfilt (first attempt, shown below), and then by externalizing the while loop, with an ending 'exit 0' (second attempt, not shown here), but neither approach fixed the problem.
+> 
+> Here is one version of code which works on Mac but not in Linux:
+> 
+> for file in obj/*.oct
+> do
+>    filename="${file%.*}"
+>    rm -f syncfile argsfile ppfile
+>    echo 1 64 > syncfile
+>    cat syncfile
+>    echo -F syncfile @arguments -vf room.vf -o $filename.unf $filename.oct > argsfile
+>    cat argsfile
+>    NCPU=2
+>    while [ "$NCPU" -gt 0 ]
+>    do
+>        echo "running proc $NCPU"
+>        rpiece -v -PP ppfile  @argsfile &
+>        sleep 5
+>        NCPU=`expr $NCPU - 1`
+>    done
+>    wait
+>    echo "Filtering File - $filename.unf"
+>    pfilt -1 -e -2 -m .25 -r .6 -x /3 -y /3 $filename.unf > $filename.hdr
+>    sleep 5
+>    rm -f syncfile argsfile ppfile
+> done
+> 
+> Interestingly, I do not get an error saying "cannot remove 'argsfile' ". After the first image is successfully rendered, I get the following errors at each successive iteration, indicating the rm only works once (line 4) in the first iteration:
+> 
+> rm: cannot remove 'syncfile': Text file busy
+> rm: cannot remove 'ppfile': Text file busy
+> rm: cannot remove 'syncfile': Text file busy
+> rm: cannot remove 'ppfile': Text file busy
+> 
+> Since the error isn't fatal, the machine keeps rendering, and ends up rendering the same (first) image over and over. Has anyone run into this problem and found a solution? Any advice would be greatly appreciated.
+> 
+> Thanks,
+> Chris
+
+

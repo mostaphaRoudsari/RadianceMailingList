@@ -1,0 +1,112 @@
+From jan.wienold at epfl.ch  Tue Dec  8 11:24:26 2015
+From: jan.wienold at epfl.ch (Jan Wienold)
+Date: Tue, 8 Dec 2015 20:24:26 +0100
+Subject: [Radiance-dev] rounding problems? when writing colored images
+In-Reply-To: <55B291F2.7010608@epfl.ch>
+References: <55C06953-C9FC-4391-AC5A-053DC085CF70@noback.info>
+	<5E17FEA2-B727-470B-B05B-A2A2B92BB699@gmail.com>
+	<993B9327-E932-40F9-8FC5-39DE68900638@gmail.com>
+	<AA07E01F-5714-4EEA-B726-E6372632284C@noback.info>
+	<55B20734.7070401@epfl.ch>
+	<1F4C7147-9E0A-4384-B89F-B973B864723F@gmail.com>
+	<930011FB-7D8A-4363-96BC-3F97E6D27263@gmail.com>
+	<55B291F2.7010608@epfl.ch>
+Message-ID: <56672E6A.8020701@epfl.ch>
+
+Hi Greg,
+
+I'm not sure if I asked you this already... at least I could not find it 
+in the discussion group...
+While modifying evalglare I encountered some slight deviations when 
+writing colored pixels in an hdr image using fwritescan (in common/color.c).
+
+I 'm coloring parts of the image and try to keep the luminance value. 
+Within evalglare this transformation is correct (I'm using the libraries 
+in color.h/color.c). But as soon as I write the image, the color 
+channels are changed. So the values of each channel differ slightly:
+
+e.g. out of  r=263.133942   g=0.000000   b=1076.202148 (within 
+evalglare)   it gets (in the image) r=2.600e+02    g=4.000e+00 b=1.076e+03
+so the luminance changes from 24970.5 to 25285.6
+The deviation in that case is 1.25% of the corresponding luminance - I 
+also saw more than 2% in other cases.
+
+I guess it comes from the conversion into mantisse and exponent in 
+combination with large differences between the channels, or? Strangely a 
+value of 0 is getting 4 for the green channel.
+
+Is there any possibility to avoid this or to reduce this deviation?
+
+thanks!
+
+best,
+
+Jan
+
+
+
+
+
+
+
+
+-- 
+Dr.-Ing.  Jan Wienold
+Ecole Polytechnique F?d?rale de Lausanne (EPFL)
+EPFL ENAC IA LIPID
+
+http://people.epfl.ch/jan.wienold
+LE 1 111 (Office)
+Phone    +41 21 69 30849
+
+
+
+From gregoryjward at gmail.com  Tue Dec  8 11:49:48 2015
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue, 8 Dec 2015 11:49:48 -0800
+Subject: [Radiance-dev] rounding problems? when writing colored images
+In-Reply-To: <56672E6A.8020701@epfl.ch>
+References: <55C06953-C9FC-4391-AC5A-053DC085CF70@noback.info>
+	<5E17FEA2-B727-470B-B05B-A2A2B92BB699@gmail.com>
+	<993B9327-E932-40F9-8FC5-39DE68900638@gmail.com>
+	<AA07E01F-5714-4EEA-B726-E6372632284C@noback.info>
+	<55B20734.7070401@epfl.ch>
+	<1F4C7147-9E0A-4384-B89F-B973B864723F@gmail.com>
+	<930011FB-7D8A-4363-96BC-3F97E6D27263@gmail.com>
+	<55B291F2.7010608@epfl.ch> <56672E6A.8020701@epfl.ch>
+Message-ID: <FF0919A9-DE91-4CF9-AF0F-24E1ABCABC00@gmail.com>
+
+Hi Jan,
+
+This is as you surmised due to inherent limitations in the accuracy of the 8-bit mantissas used in the RGBE format.  Even a value of 0 in one channel will be "rounded off" to a value of 1/512 (roughly) times 2^Exponent.  There isn't much you can do to improve the roughly +/- 1% luminance accuracy besides going to an IEEE floating-point representation.  Also, the Y-channel error will get worse for certain colors, mostly blue to magenta (where the green channel is small).
+
+Some programs understand the XYZE format, which should maintain slightly better accuracy in the Y channel even with saturated colors.  I haven't done an extensive comparison, however.
+
+-Greg
+
+> From: Jan Wienold <jan.wienold at epfl.ch>
+> Subject: [Radiance-dev] rounding problems? when writing colored images
+> Date: December 8, 2015 11:24:26 AM PST
+> 
+> Hi Greg,
+> 
+> I'm not sure if I asked you this already... at least I could not find it in the discussion group...
+> While modifying evalglare I encountered some slight deviations when writing colored pixels in an hdr image using fwritescan (in common/color.c).
+> 
+> I 'm coloring parts of the image and try to keep the luminance value. Within evalglare this transformation is correct (I'm using the libraries in color.h/color.c). But as soon as I write the image, the color channels are changed. So the values of each channel differ slightly:
+> 
+> e.g. out of  r=263.133942   g=0.000000   b=1076.202148 (within evalglare)   it gets (in the image) r=2.600e+02    g=4.000e+00 b=1.076e+03
+> so the luminance changes from 24970.5 to 25285.6
+> The deviation in that case is 1.25% of the corresponding luminance - I also saw more than 2% in other cases.
+> 
+> I guess it comes from the conversion into mantisse and exponent in combination with large differences between the channels, or? Strangely a value of 0 is getting 4 for the green channel.
+> 
+> Is there any possibility to avoid this or to reduce this deviation?
+> 
+> thanks!
+> 
+> best,
+> 
+> Jan
+
+

@@ -1,0 +1,288 @@
+From mstock at umich.edu  Wed Aug 22 06:45:48 2007
+From: mstock at umich.edu (Mark Stock)
+Date: Wed Aug 22 07:47:13 2007
+Subject: [Radiance-dev] rpiece improper input?
+Message-ID: <Pine.LNX.4.64.0708220938560.8117@rygar.gpcc.itd.umich.edu>
+
+I found what might be a prevantable error in rpiece that occurs 
+when the number of rows in the rpiece array exceeds the number of 
+pixels in the image. I ran
+
+----------
+#!/bin/sh
+
+[ -z "$NCPU" ] && NCPU=2
+[ -z "$COLS" ] && COLS=1
+[ -z "$ROWS" ] && ROWS=2560
+
+echo $COLS $ROWS > syncfile
+rm -f pp
+
+while [ "$NCPU" -gt 0 ]
+do
+         echo "running proc $NCPU"
+         rpiece -v -PP pp -F syncfile @vp_sunrise @opts -t 60 -x 1280 -y 1280 -o img09.pic scene10.oct &
+         NCPU=`expr $NCPU - 1`
+done
+wait
+
+rm -f syncfile pp
+
+exit 0
+----------
+
+and it emitted the following proper error in my nohup.out file:
+
+----------
+running proc 2
+running proc 1
+rpiece: requested piece (59,2559) out of range
+FRAME 1: -vtv -vp 0 0 0 -vd 0 0 1 -vu -1 0 0 -vh 170 -vv 0.511632 
+-vo 0 -va 0 -vs 5
+9.11 -vl 1612.3
+rpict: warning - empty output picture
+rpict: signal - Broken pipe
+rpict: 95282 rays, 0.00% after 0.001u 0.000s 0.001r hours on 
+vortex
+FRAME 1: -vtv -vp 0 0 0 -vd 0 0 1 -vu -1 0 0 -vh 170 -vv 0.511632 
+-vo 0 -va 0 -vs 0
+.11 -vl 1612.3
+rpict: warning - empty output picture
+----------
+
+which is fine, but it also dumped this to the stdout:
+
+*** glibc detected *** double free or corruption (!prev): 
+0x000000001c2a8e30 ***
+
+Here are the stats:
+
+% rpict -version
+RADIANCE 3.8 lastmod Thu Dec 28 15:53:05 EST 2006 by root on vortex
+
+% uname -a
+Linux vortex 2.6.9-42.0.3.plus.c4smp #1 SMP Fri Oct 6 11:42:04 
+CDT 2006 x86_64 x86_64 x86_64 GNU/Linux
+
+% rpm -qa | grep glib
+glibc-2.3.4-2.25
+dbus-glib-0.22-12.EL.7
+glib2-2.4.7-1
+glib-1.2.10-15
+glib2-devel-2.4.7-1
+glibc-common-2.3.4-2.25
+glibc-2.3.4-2.25
+glibc-devel-2.3.4-2.25
+glibc-kernheaders-2.4-9.1.98.EL
+glibc-headers-2.3.4-2.25
+glib2-2.4.7-1
+
+
+Is this anything to worry about? Normally when I see an error 
+like that, something weird had happened in the compilation.
+
+(Normally, I also code in fortran. Take that as you will.)
+
+Mark
+
+From gregoryjward at gmail.com  Wed Aug 22 09:51:29 2007
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed Aug 22 10:52:55 2007
+Subject: [Radiance-dev] Re: rpiece improper input?
+In-Reply-To: <Pine.LNX.4.64.0708220938560.8117@rygar.gpcc.itd.umich.edu>
+References: <Pine.LNX.4.64.0708220938560.8117@rygar.gpcc.itd.umich.edu>
+Message-ID: <9B4BCB12-7F37-4BF8-A3EB-02800DB87E85@gmail.com>
+
+Hi Mark,
+
+I added some error-checking to rpiece.c, which you can download from  
+radiance-online:
+
+	http://www.radiance-online.org/cgi-bin/viewcvs.cgi/ray/src/util/ 
+rpiece.c
+
+Let me know if this fixes the problem.
+
+-Greg
+
+> From: Mark Stock <mstock@umich.edu>
+> Date: August 22, 2007 6:45:48 AM PDT
+>
+> I found what might be a prevantable error in rpiece that occurs  
+> when the number of rows in the rpiece array exceeds the number of  
+> pixels in the image.
+...
+>
+>
+> Is this anything to worry about? Normally when I see an error like  
+> that, something weird had happened in the compilation.
+>
+> (Normally, I also code in fortran. Take that as you will.)
+>
+> Mark
+>
+
+From mstock at umich.edu  Wed Aug 22 10:29:32 2007
+From: mstock at umich.edu (Mark Stock)
+Date: Wed Aug 22 11:31:05 2007
+Subject: [Radiance-dev] Re: rpiece improper input?
+In-Reply-To: <9B4BCB12-7F37-4BF8-A3EB-02800DB87E85@gmail.com>
+References: <Pine.LNX.4.64.0708220938560.8117@rygar.gpcc.itd.umich.edu>
+	<9B4BCB12-7F37-4BF8-A3EB-02800DB87E85@gmail.com>
+Message-ID: <Pine.LNX.4.64.0708221317450.8117@rygar.gpcc.itd.umich.edu>
+
+Greg,
+
+I put the code in, and did a "rmake rpiece" in the src/util 
+directory, but when I do
+
+/usr/local/ray/src/util/rpiece -v -PP ppp -F syncfiletest 
+@vp_sunrise @opts -t 600 -x 1280 -y 1280 -o imgtest.pic 
+scene10.oct
+
+with syncfiletest containing "1 2560" I get a "Segmentation 
+fault". I am rebuilding the whole package from HEAD (with the 
+rpiece change) now to see if that makes any difference.
+
+Mark
+
+On Wed, 22 Aug 2007, Gregory J. Ward wrote:
+
+> Hi Mark,
+>
+> I added some error-checking to rpiece.c, which you can download from 
+> radiance-online:
+>
+> 	http://www.radiance-online.org/cgi-bin/viewcvs.cgi/ray/src/util/rpiece.c
+>
+> Let me know if this fixes the problem.
+>
+> -Greg
+>
+>> From: Mark Stock <mstock@umich.edu>
+>> Date: August 22, 2007 6:45:48 AM PDT
+>> 
+>> I found what might be a prevantable error in rpiece that occurs when the 
+>> number of rows in the rpiece array exceeds the number of pixels in the 
+>> image.
+> ...
+>> 
+>> 
+>> Is this anything to worry about? Normally when I see an error like that, 
+>> something weird had happened in the compilation.
+>> 
+>> (Normally, I also code in fortran. Take that as you will.)
+>> 
+>> Mark
+>> 
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+
+From gregoryjward at gmail.com  Wed Aug 22 10:45:58 2007
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed Aug 22 11:47:23 2007
+Subject: [Radiance-dev] Re: rpiece improper input?
+In-Reply-To: <Pine.LNX.4.64.0708221317450.8117@rygar.gpcc.itd.umich.edu>
+References: <Pine.LNX.4.64.0708220938560.8117@rygar.gpcc.itd.umich.edu>
+	<9B4BCB12-7F37-4BF8-A3EB-02800DB87E85@gmail.com>
+	<Pine.LNX.4.64.0708221317450.8117@rygar.gpcc.itd.umich.edu>
+Message-ID: <6D3FC36F-FF94-4064-9F90-A732275C3E6A@gmail.com>
+
+Sorry!  There was a bug in my bug fix -- try it again.
+
+-G
+
+> From: Mark Stock <mstock@umich.edu>
+> Date: August 22, 2007 10:29:32 AM PDT
+>
+> Greg,
+>
+> I put the code in, and did a "rmake rpiece" in the src/util  
+> directory, but when I do
+>
+> /usr/local/ray/src/util/rpiece -v -PP ppp -F syncfiletest  
+> @vp_sunrise @opts -t 600 -x 1280 -y 1280 -o imgtest.pic scene10.oct
+>
+> with syncfiletest containing "1 2560" I get a "Segmentation fault".  
+> I am rebuilding the whole package from HEAD (with the rpiece  
+> change) now to see if that makes any difference.
+>
+> Mark
+>
+> On Wed, 22 Aug 2007, Gregory J. Ward wrote:
+>
+>> Hi Mark,
+>>
+>> I added some error-checking to rpiece.c, which you can download  
+>> from radiance-online:
+>>
+>> 	http://www.radiance-online.org/cgi-bin/viewcvs.cgi/ray/src/util/ 
+>> rpiece.c
+>>
+>> Let me know if this fixes the problem.
+>>
+>> -Greg
+
+From mstock at umich.edu  Wed Aug 22 11:04:48 2007
+From: mstock at umich.edu (Mark Stock)
+Date: Wed Aug 22 12:06:11 2007
+Subject: [Radiance-dev] Re: rpiece improper input?
+In-Reply-To: <6D3FC36F-FF94-4064-9F90-A732275C3E6A@gmail.com>
+References: <Pine.LNX.4.64.0708220938560.8117@rygar.gpcc.itd.umich.edu>
+	<9B4BCB12-7F37-4BF8-A3EB-02800DB87E85@gmail.com>
+	<Pine.LNX.4.64.0708221317450.8117@rygar.gpcc.itd.umich.edu>
+	<6D3FC36F-FF94-4064-9F90-A732275C3E6A@gmail.com>
+Message-ID: <Pine.LNX.4.64.0708221404330.24426@rygar.gpcc.itd.umich.edu>
+
+Done and working as expected. No ancilliary errors.
+
+Mark
+
+On Wed, 22 Aug 2007, Gregory J. Ward wrote:
+
+> Sorry!  There was a bug in my bug fix -- try it again.
+>
+> -G
+>
+>> From: Mark Stock <mstock@umich.edu>
+>> Date: August 22, 2007 10:29:32 AM PDT
+>> 
+>> Greg,
+>> 
+>> I put the code in, and did a "rmake rpiece" in the src/util directory, but 
+>> when I do
+>> 
+>> /usr/local/ray/src/util/rpiece -v -PP ppp -F syncfiletest @vp_sunrise @opts 
+>> -t 600 -x 1280 -y 1280 -o imgtest.pic scene10.oct
+>> 
+>> with syncfiletest containing "1 2560" I get a "Segmentation fault". I am 
+>> rebuilding the whole package from HEAD (with the rpiece change) now to see 
+>> if that makes any difference.
+>> 
+>> Mark
+>> 
+>> On Wed, 22 Aug 2007, Gregory J. Ward wrote:
+>> 
+>>> Hi Mark,
+>>> 
+>>> I added some error-checking to rpiece.c, which you can download from 
+>>> radiance-online:
+>>>
+>>> 	http://www.radiance-online.org/cgi-bin/viewcvs.cgi/ray/src/util/rpiece.c
+>>> 
+>>> Let me know if this fixes the problem.
+>>> 
+>>> -Greg
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+

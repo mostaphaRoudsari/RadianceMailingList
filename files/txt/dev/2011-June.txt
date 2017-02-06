@@ -1,0 +1,310 @@
+From david.moroder at gmail.com  Thu Jun  9 00:38:51 2011
+From: david.moroder at gmail.com (David Geisler-Moroder)
+Date: Thu, 9 Jun 2011 09:38:51 +0200
+Subject: [Radiance-dev] rttree_reduce - undefined reference to `sqrt'
+Message-ID: <BANLkTinP+Cz3q2DFZURMGfKN7-yZ3NODPw@mail.gmail.com>
+
+Hi Greg,
+
+I just tried to copile the latest Head Version and got the following errors:
+gcc -I../common -I../rt -L../lib -O2 -Dlinux -D_FILE_OFFSET_BITS=64
+-L/usr/X11R6/lib -I/usr/include/X11 -DNOSTEREO -o rttree_reduce
+rttree_reduce.o -lrtrad
+rttree_reduce.o: In function `build_tree':
+rttree_reduce.c:(.text+0x4cf): undefined reference to `sqrt'
+rttree_reduce.o: In function `trim_tree':
+rttree_reduce.c:(.text+0x5d1): undefined reference to `sqrt'
+rttree_reduce.o: In function `print_tree':
+rttree_reduce.c:(.text+0x784): undefined reference to `sqrt'
+
+Linking the math lib fixes the problem:
+in /util/Rmakefile, line 110/111
+
+rttree_reduce:    rttree_reduce.o
+    $(CC) $(CFLAGS) -o rttree_reduce rttree_reduce.o -lrtrad $(MLIB)
+
+Cheers,
+David
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20110609/a20263e0/attachment.html>
+
+From gregoryjward at gmail.com  Thu Jun  9 06:18:58 2011
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu, 9 Jun 2011 06:18:58 -0700
+Subject: [Radiance-dev] rttree_reduce - undefined reference to `sqrt'
+In-Reply-To: <BANLkTinP+Cz3q2DFZURMGfKN7-yZ3NODPw@mail.gmail.com>
+References: <BANLkTinP+Cz3q2DFZURMGfKN7-yZ3NODPw@mail.gmail.com>
+Message-ID: <EEFB0CBA-5E63-44E4-95CA-C62B21BBFC1F@gmail.com>
+
+Thanks, David.  On OS X, the GNU compiler automatically links to libm.a, so I sometimes miss that one....
+
+Cheers,
+-Greg
+
+> From: David Geisler-Moroder <david.moroder at gmail.com>
+> Date: June 9, 2011 12:38:51 AM PDT
+> 
+> Hi Greg,
+> 
+> I just tried to copile the latest Head Version and got the following errors:
+> gcc -I../common -I../rt -L../lib -O2 -Dlinux -D_FILE_OFFSET_BITS=64 -L/usr/X11R6/lib -I/usr/include/X11 -DNOSTEREO -o rttree_reduce rttree_reduce.o -lrtrad
+> rttree_reduce.o: In function `build_tree':
+> rttree_reduce.c:(.text+0x4cf): undefined reference to `sqrt'
+> rttree_reduce.o: In function `trim_tree':
+> rttree_reduce.c:(.text+0x5d1): undefined reference to `sqrt'
+> rttree_reduce.o: In function `print_tree':
+> rttree_reduce.c:(.text+0x784): undefined reference to `sqrt'
+> 
+> Linking the math lib fixes the problem:
+> in /util/Rmakefile, line 110/111
+> 
+> rttree_reduce:    rttree_reduce.o
+>     $(CC) $(CFLAGS) -o rttree_reduce rttree_reduce.o -lrtrad $(MLIB)
+> 
+> Cheers,
+> David
+
+
+From RFritz at lbl.gov  Mon Jun 27 14:18:01 2011
+From: RFritz at lbl.gov (Randolph M. Fritz)
+Date: Mon, 27 Jun 2011 14:18:01 -0700
+Subject: [Radiance-dev] Compiling Radiance with the Intel (Vectorizing) C
+	Compiler
+Message-ID: <iuas29$m2s$1@dough.gmane.org>
+
+I've got it to compile...but rpict crashes.  Anyone tried this before?  
+Did you get it to work?
+
+-- 
+Randolph M. Fritz ? RFritz at lbl.gov
+Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+
+
+
+
+From RFritz at lbl.gov  Mon Jun 27 15:01:36 2011
+From: RFritz at lbl.gov (Randolph M. Fritz)
+Date: Mon, 27 Jun 2011 15:01:36 -0700
+Subject: [Radiance-dev] Possible bug found by Intel cc
+Message-ID: <iuauk0$5f8$1@dough.gmane.org>
+
+In ambient.c:
+
+ambient.c(521): warning #279: controlling expression is constant
+        aflock(creat ? F_WRLCK : F_RDLCK);
+
+That seems odd.  Is it possible that it was supposed to be:
+        aflock(cre8 ? F_WRLCK : F_RDLCK);
+
+-- 
+Randolph M. Fritz ? RFritz at lbl.gov
+Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+
+
+
+
+From gregoryjward at gmail.com  Mon Jun 27 15:11:11 2011
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Mon, 27 Jun 2011 15:11:11 -0700
+Subject: [Radiance-dev] Possible bug found by Intel cc
+In-Reply-To: <iuauk0$5f8$1@dough.gmane.org>
+References: <iuauk0$5f8$1@dough.gmane.org>
+Message-ID: <AC991151-AC5B-4E8C-A96B-49DE489A05D7@gmail.com>
+
+Definitely -- thanks for spotting!
+
+-Greg
+
+> From: "Randolph M. Fritz" <RFritz at lbl.gov>
+> Date: June 27, 2011 3:01:36 PM PDT
+> 
+> In ambient.c:
+> 
+> ambient.c(521): warning #279: controlling expression is constant
+>       aflock(creat ? F_WRLCK : F_RDLCK);
+> 
+> That seems odd.  Is it possible that it was supposed to be:
+>       aflock(cre8 ? F_WRLCK : F_RDLCK);
+> 
+
+
+From RFritz at lbl.gov  Tue Jun 28 10:25:43 2011
+From: RFritz at lbl.gov (Randolph M. Fritz)
+Date: Tue, 28 Jun 2011 10:25:43 -0700
+Subject: [Radiance-dev] Compiling Radiance with the Intel (Vectorizing)
+	C Compiler
+References: <iuas29$m2s$1@dough.gmane.org>
+Message-ID: <iud2qn$so7$1@dough.gmane.org>
+
+On 2011-06-27 14:18:01 -0700, Randolph M. Fritz said:
+
+> I've got it to compile...but rpict crashes.  Anyone tried this before?
+> Did you get it to work?
+
+I think the answer is "no."  The Radiance code doesn't work with that 
+compiler, even with optimization turned off.  I would like to chase 
+those bugs down, but I don't think I have time right now.
+
+Sigh.  Back to the (slower) gcc.
+
+Meantime, here's a few more buglets the icc found:
+
+- In ccyrgb.c, rgb2ccy has two return statements, and only one of them 
+returns a value.
+
+- In tmapcolrs.c, tmMapPicture, returnErr will reference the unset tms 
+pointer if the arguments are bad.  I believe this can be fixed by 
+initializing tms to NULL.
+
+- In tmaptiff.c, tmMapTIFF, same problem.
+
+-- 
+Randolph M. Fritz ? RFritz at lbl.gov
+Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+
+
+
+
+From apian at pab-opto.de  Tue Jun 28 11:05:07 2011
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Tue, 28 Jun 2011 20:05:07 +0200
+Subject: [Radiance-dev] Compiling Radiance with the Intel (Vectorizing)
+ C Compiler
+In-Reply-To: <iud2qn$so7$1@dough.gmane.org>
+References: <iuas29$m2s$1@dough.gmane.org> <iud2qn$so7$1@dough.gmane.org>
+Message-ID: <201106281805.p5SI5Sf7000448@mta2.lbl.gov>
+
+Randolph M. Fritz wrote:
+> On 2011-06-27 14:18:01 -0700, Randolph M. Fritz said:
+>
+>> I've got it to compile...but rpict crashes.  Anyone tried this before?
+>> Did you get it to work?
+>
+> I think the answer is "no."  The Radiance code doesn't work with that 
+> compiler, even with optimization turned off.  I would like to chase 
+> those bugs down, but I don't think I have time right now.
+>
+> Sigh.  Back to the (slower) gcc.
+>
+> Meantime, here's a few more buglets the icc found:
+>
+> - In ccyrgb.c, rgb2ccy has two return statements, and only one of them 
+> returns a value.
+>
+> - In tmapcolrs.c, tmMapPicture, returnErr will reference the unset tms 
+> pointer if the arguments are bad.  I believe this can be fixed by 
+> initializing tms to NULL.
+>
+> - In tmaptiff.c, tmMapTIFF, same problem.
+>
+shouldn't "gcc -O3 -g -Wall " spot all three  ?
+
+btw, in 2004 I had gotten as far as getting the Intel compiler and an
+Intel book "The software Vectorization Handbook" by Aart J.C. Bik, who
+apparently got "the highest Intel award for making (..) SSE easier to
+use through automatic vectorization". (there's probably already a
+posting on the list on that).
+My enquiries into locating industrial funds to look into this had been
+stopped then, mostly by Greg stating that setting up vectors takes
+longer then gaining cycles. I don't have enough insight into the way
+Radiance spends its time and the mystics of automatic vectorizing
+compilers to be definitive there. Industry sources stated that anything
+below a considerable speed-up-factor (say 2 at least) isn't worth
+looking into.
+
+However, between 2004 and 2011, follow-on SSE generations and the
+increased use of computing power graphics cards appeared, whose
+functions should at least be checked.
+If there's someone on the list with some insights and/or experience,
+please drop a note.
+
+One of the mantras I do easily agree with is that dissecting runtime
+profiles of different type of scenes gotta be worth the dirty work.
+
+IMHO, apart from speed-ups, it'll be sound if Radiance compiled on
+different compilers and run.
+
+cheers
+Peter
+
+-- 
+pab-opto, Freiburg, Germany, http://www.pab-opto.de
+[see web page to check digital email signature]
+
+
+
+
+
+From bernd at bzed.de  Tue Jun 28 13:11:20 2011
+From: bernd at bzed.de (Bernd Zeimetz)
+Date: Tue, 28 Jun 2011 22:11:20 +0200
+Subject: [Radiance-dev] Compiling Radiance with the Intel (Vectorizing)
+ C Compiler
+In-Reply-To: <iud2qn$so7$1@dough.gmane.org>
+References: <iuas29$m2s$1@dough.gmane.org> <iud2qn$so7$1@dough.gmane.org>
+Message-ID: <4E0A3568.5070308@bzed.de>
+
+On 06/28/2011 07:25 PM, Randolph M. Fritz wrote:
+> On 2011-06-27 14:18:01 -0700, Randolph M. Fritz said:
+> 
+>> I've got it to compile...but rpict crashes.  Anyone tried this before?
+>> Did you get it to work?
+> 
+> I think the answer is "no."  The Radiance code doesn't work with that compiler,
+> even with optimization turned off.  I would like to chase those bugs down, but I
+> don't think I have time right now.
+
+Try to run it trough clang's scan-build, that should spot a lot of issues. I can
+do that and publish the results if I find the time to do so, but my spare time
+is down to nothing these days :(
+
+
+-- 
+ Bernd Zeimetz                            Debian GNU/Linux Developer
+ http://bzed.de                                http://www.debian.org
+ GPG Fingerprint: ECA1 E3F2 8E11 2432 D485  DD95 EB36 171A 6FF9 435F
+
+
+From RFritz at lbl.gov  Wed Jun 29 15:35:02 2011
+From: RFritz at lbl.gov (Randolph M. Fritz)
+Date: Wed, 29 Jun 2011 15:35:02 -0700
+Subject: [Radiance-dev] Compiling Radiance with the Intel (Vectorizing)
+	C Compiler
+References: <iuas29$m2s$1@dough.gmane.org> <iud2qn$so7$1@dough.gmane.org>
+	<201106281805.p5SI5Sf7000448@mta2.lbl.gov>
+Message-ID: <iug9am$5sd$1@dough.gmane.org>
+
+On 2011-06-28 11:05:07 -0700, Peter Apian-Bennewitz said:
+
+> shouldn't "gcc -O3 -g -Wall " spot all three  ?
+
+I have no idea.
+
+> My enquiries into locating industrial funds to look into this had been
+> stopped then, mostly by Greg stating that setting up vectors takes
+> longer then gaining cycles. I don't have enough insight into the way
+> Radiance spends its time and the mystics of automatic vectorizing
+> compilers to be definitive there. Industry sources stated that anything
+> below a considerable speed-up-factor (say 2 at least) isn't worth
+> looking into.
+
+Well...if it can shave 10% off long simulation runs I'd call that good.
+
+> IMHO, apart from speed-ups, it'll be sound if Radiance compiled on
+> different compilers and run.
+
+It would.  MSVC too.
+
+Also, looking at rtrace running on eight-core systems, I am seeing CPU 
+times of about five times wall-clock time.  I would have hoped for 
+something closer to 8 times wall-clock.  I suspect that NFS file 
+locking has become a performance problem.
+
+-- 
+Randolph M. Fritz ? RFritz at lbl.gov
+Environmental Energy Technologies Division ? Lawrence Berkeley Labs
+
+
+
+

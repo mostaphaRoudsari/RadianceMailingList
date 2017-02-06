@@ -1,0 +1,142 @@
+From brent.huchuk at gmail.com  Wed Jun 26 18:15:34 2013
+From: brent.huchuk at gmail.com (Brent Huchuk)
+Date: Wed, 26 Jun 2013 21:15:34 -0400
+Subject: [HDRI] Calibration of illuminance using canoncap and HDRcapOSX vs
+	Photosphere
+Message-ID: <87B5501C-9254-4DD9-8604-49B15AA401AE@gmail.com>
+
+Hi everyone - 
+
+I have just started using and testing HDR images for glare analysis as part of my research.  The question I face is that when I manually generate an image using Photosphere I am able to calibrate the image using an illuminance meter which, when false colours are applied, generates one range of values.  If I duplicate this scene using canoncap an HDR image is output but one that gives very different  (like 3 times smaller) upper luminance values.   Is there a part to the method I have not accomplished and/or is there a way to calibrate the process in order to get these illuminance values to match the calibrated process?
+
+I am hoping this to be the case so I can set up a time-lapse situation like others have successfully done and process the images using evalglare.
+
+Thanks for any assistance. 
+
+Cheers,
+
+Brent 
+
+Brent Huchuk
+Carleton University 
+MASc Candidate
+
+From gregoryjward at gmail.com  Wed Jun 26 21:07:36 2013
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed, 26 Jun 2013 21:07:36 -0700
+Subject: [HDRI] Calibration of illuminance using canoncap and HDRcapOSX
+	vs Photosphere
+In-Reply-To: <87B5501C-9254-4DD9-8604-49B15AA401AE@gmail.com>
+References: <87B5501C-9254-4DD9-8604-49B15AA401AE@gmail.com>
+Message-ID: <3800EC19-C915-4584-8140-33C372185F7A@gmail.com>
+
+Hi Brent,
+
+First off, how do you use your illuminance meter to calibrate your Photosphere image?  Since Photosphere needs a *luminance* value to calibrate from, you'll need to convert from illuminance to luminance.  For this to work, you need a diffuse, gray surface of known reflectance, such as an 18% gray card.  Measuring the illuminance at the gray card (and in the same orientation as the gray card), you can then compute luminance from:
+
+	Luminance = Illuminance * 0.18 / 3.1416
+
+This of course assumes that the illumination doesn't change between the time you measure it and the time you capture the scene.
+
+Once you are doing this correctly, you can apply a scaling factor equal to the average ratio in the image from Photosphere and the identical scene capture from canoncap.  In fact, you don't really need Photosphere at that point.  You just need the ratio of your actual luminance to that reported by canoncap.
+
+Once you have this ratio, you can use the pcomb program to adjust the exposure like so:
+
+	pcomb -o -s [ratio] input.hdr > output.hdr
+
+There are other, quicker and more clever ways to do it using getinfo and sed, but the above is the simplest.
+
+Cheers,
+-Greg
+
+> From: Brent Huchuk <brent.huchuk at gmail.com>
+> Date: June 26, 2013 6:15:34 PM PDT
+> 
+> Hi everyone - 
+> 
+> I have just started using and testing HDR images for glare analysis as part of my research.  The question I face is that when I manually generate an image using Photosphere I am able to calibrate the image using an illuminance meter which, when false colours are applied, generates one range of values.  If I duplicate this scene using canoncap an HDR image is output but one that gives very different  (like 3 times smaller) upper luminance values.   Is there a part to the method I have not accomplished and/or is there a way to calibrate the process in order to get these illuminance values to match the calibrated process?
+> 
+> I am hoping this to be the case so I can set up a time-lapse situation like others have successfully done and process the images using evalglare.
+> 
+> Thanks for any assistance. 
+> 
+> Cheers,
+> 
+> Brent 
+> 
+> Brent Huchuk
+> Carleton University 
+> MASc Candidate
+
+
+From jacobs.axel at gmail.com  Thu Jun 27 01:11:59 2013
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Thu, 27 Jun 2013 09:11:59 +0100
+Subject: [HDRI] Calibration of illuminance using canoncap and HDRcapOSX
+	vs Photosphere
+In-Reply-To: <3800EC19-C915-4584-8140-33C372185F7A@gmail.com>
+References: <87B5501C-9254-4DD9-8604-49B15AA401AE@gmail.com>
+	<3800EC19-C915-4584-8140-33C372185F7A@gmail.com>
+Message-ID: <CA+dqh632Gw0W4s3Rc9im4+H7wd_uHg06xCub=O_dB89-+EA7cA@mail.gmail.com>
+
+Hi Brent,
+
+HDR glare analysis is VERY sensitiv to the accuracy with which the
+highlights in a scene are captured. You MUST make sure the dynamic
+range of your sequence is sufficient. WebHDRtools come with a program
+called jpgheatmap, which is a Perl script. When you run it against
+your sequence, you should not have any red dots on the heatmap. Blue
+ones are all right.
+http://www.jaloxa.eu/resources/hdr/webhdrtools/index.shtml
+You can try it on-line:
+http://www.jaloxa.eu/webhdr/roll-your-own.shtml
+
+Cheers
+
+Axel
+
+On 27 June 2013 05:07, Gregory J. Ward <gregoryjward at gmail.com> wrote:
+> Hi Brent,
+>
+> First off, how do you use your illuminance meter to calibrate your Photosphere image?  Since Photosphere needs a *luminance* value to calibrate from, you'll need to convert from illuminance to luminance.  For this to work, you need a diffuse, gray surface of known reflectance, such as an 18% gray card.  Measuring the illuminance at the gray card (and in the same orientation as the gray card), you can then compute luminance from:
+>
+>         Luminance = Illuminance * 0.18 / 3.1416
+>
+> This of course assumes that the illumination doesn't change between the time you measure it and the time you capture the scene.
+>
+> Once you are doing this correctly, you can apply a scaling factor equal to the average ratio in the image from Photosphere and the identical scene capture from canoncap.  In fact, you don't really need Photosphere at that point.  You just need the ratio of your actual luminance to that reported by canoncap.
+>
+> Once you have this ratio, you can use the pcomb program to adjust the exposure like so:
+>
+>         pcomb -o -s [ratio] input.hdr > output.hdr
+>
+> There are other, quicker and more clever ways to do it using getinfo and sed, but the above is the simplest.
+>
+> Cheers,
+> -Greg
+>
+>> From: Brent Huchuk <brent.huchuk at gmail.com>
+>> Date: June 26, 2013 6:15:34 PM PDT
+>>
+>> Hi everyone -
+>>
+>> I have just started using and testing HDR images for glare analysis as part of my research.  The question I face is that when I manually generate an image using Photosphere I am able to calibrate the image using an illuminance meter which, when false colours are applied, generates one range of values.  If I duplicate this scene using canoncap an HDR image is output but one that gives very different  (like 3 times smaller) upper luminance values.   Is there a part to the method I have not accomplished and/or is there a way to calibrate the process in order to get these illuminance values to match the calibrated process?
+>>
+>> I am hoping this to be the case so I can set up a time-lapse situation like others have successfully done and process the images using evalglare.
+>>
+>> Thanks for any assistance.
+>>
+>> Cheers,
+>>
+>> Brent
+>>
+>> Brent Huchuk
+>> Carleton University
+>> MASc Candidate
+>
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+

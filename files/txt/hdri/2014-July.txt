@@ -1,0 +1,835 @@
+From Tobias.Porsch at technoteam.de  Wed Jul 23 08:27:01 2014
+From: Tobias.Porsch at technoteam.de (Tobias Porsch)
+Date: Wed, 23 Jul 2014 15:27:01 +0000
+Subject: [HDRI] Question about header information of HDRI
+Message-ID: <FB3CD7EE5372974A93D9AAFC8CC8CD643155BA46@W-TTBV-EX1.ttbv.local>
+
+Hi,
+
+I'm writing you concerning my current project.
+I'm working for TechnoTeam company. Manyfacturer of imaging luminance measuring devices (camera photometer).
+Our aim is to export our own image file format (pixel-wise HDR float values) into the Radiance rgbe file format.
+The aim is to give radiance users access to the measured luminance information combined with our information about lens configuration (geometrical data).
+This may of interest for the "glare" community when analyzing the glare using radiance tools.
+
+Anyway, writing the rgbe information is no problem.
+
+But what about the header structure of the radiance HDRI format?
+I'm a little confused about it and can't find a documentation structure how it is organized?
+Unfortunately I'm no radiance user for carrying out own radiance projects to study it?
+
+With my best regards
+Dipl.-Ing. Tobias Porsch
+TechnoTeam Bildverarbeitung GmbH
+Werner - von - Siemens - Strasse 5
+98693 Ilmenau
+----------------------------------------------------------------------------
+Email:  tobias.porsch at technoteam.de<blocked::mailto:tobias.porsch at technoteam.de>
+Phone: +49 3677 4624 0
+
+TechnoTeam Bildverarbeitung GmbH
+Gesch?ftsf?hrer: apl. Prof. Dr.-Ing. habil. F. Schmidt
+Standort: Ilmenau
+Handelsregistereintrag: Jena HRB 300912
+
+
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20140723/8d3d75c8/attachment.html>
+
+From grobe at gmx.net  Wed Jul 23 08:41:17 2014
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Wed, 23 Jul 2014 17:41:17 +0200
+Subject: [HDRI] Question about header information of HDRI
+In-Reply-To: <FB3CD7EE5372974A93D9AAFC8CC8CD643155BA46@W-TTBV-EX1.ttbv.local>
+References: <FB3CD7EE5372974A93D9AAFC8CC8CD643155BA46@W-TTBV-EX1.ttbv.local>
+Message-ID: <76CF4F3A-8C6E-44A3-9BD0-872961094714@gmx.net>
+
+Hi Tobias,
+
+the file format is described in the Radiance documentation: http://radsite.lbl.gov/radiance/refer/filefmts.pdf
+Please refer to pages 28ff.
+
+It is great to know that you are implementing an export option - I had to do this manually in the past using pvalue ;)
+
+Cheers, Lars.
+
+From gregoryjward at gmail.com  Wed Jul 23 08:57:18 2014
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed, 23 Jul 2014 08:57:18 -0700
+Subject: [HDRI] Question about header information of HDRI
+In-Reply-To: <FB3CD7EE5372974A93D9AAFC8CC8CD643155BA46@W-TTBV-EX1.ttbv.local>
+References: <FB3CD7EE5372974A93D9AAFC8CC8CD643155BA46@W-TTBV-EX1.ttbv.local>
+Message-ID: <6CC28694-1D2E-4258-82E5-50050E88506A@gmail.com>
+
+Well, you asked at the right place!  The Radiance header format is simple, a set of newline ('\n') separated comments, some of which are of the form:
+
+VARIABLE=value
+
+A space may appear after the equals ('=') but rarely/never appears before it.  Other lines in the header do not have this form, and may be anything.  However, the first line identifying the file should be:
+
+#?RADIANCE
+
+The "RADIANCE" portion above is traditional, whereas the "#?" sequence is the so-called "magic number" for Radiance pictures.  Below is a typical information header:
+
+#?RADIANCE
+CAMERA= NIKON CORPORATION NIKON D700 version Ver.1.03
+Photosphere created HDR image from '_DSC7719.JPG' '_DSC7720.JPG' '_DSC7721.JPG' '_DSC7722.JPG' '_DSC7723.JPG' '_DSC7724.JPG' '_DSC7725.JPG' '_DSC7726.JPG' '_DSC7727.JPG'
+EXPOSURE=4.887013e-03
+VIEW= -vtv -vh 51.765083 -vv 71.303574
+OWNER= Greg Ward
+CAPDATE= 2014:02:25 09:49:32
+GMT= 2014:02:25 08:47:39
+LATLONG= 46.948730 7.451972
+FORMAT=32-bit_rle_rgbe
+
+------
+The header is terminated by an empty line (two newlines together "\n\n").  The following line after the empty line is very important, it contains the image resolution.  It is typically in the form:
+
+-Y ysiz +X xsiz
+
+where xsiz and ysiz are the integer number of pixels in the image.  This ASCII string is terminated by another newline ('\n'), immediately followed by the raster image data in the order indicated, Y (vertical) major sort, with Y values decreasing as measured from the bottom-left of the image.  This is explained in more detail in the relevant section (pp. 28-35) of the Radiance file formats document, located here:
+
+	http://radsite.lbl.gov/radiance/refer/filefmts.pdf
+
+I see Lars has provided you with the same information.  I hope this is enough to get you started.  Please note the importance of the EXPOSURE= line in the header and the 179 lumens/watt standard conversion factor in creating a properly calibrated picture.
+
+Let me know if you have further questions.
+
+Best,
+-Greg
+
+> From: Tobias Porsch <Tobias.Porsch at technoteam.de>
+> Subject: [HDRI] Question about header information of HDRI
+> Date: July 23, 2014 8:27:01 AM PDT
+> 
+> Hi,
+>  
+> I'm writing you concerning my current project.
+> I'm working for TechnoTeam company. Manyfacturer of imaging luminance measuring devices (camera photometer).
+> Our aim is to export our own image file format (pixel-wise HDR float values) into the Radiance rgbe file format.
+> The aim is to give radiance users access to the measured luminance information combined with our information about lens configuration (geometrical data).
+> This may of interest for the "glare" community when analyzing the glare using radiance tools.
+> 
+> Anyway, writing the rgbe information is no problem.
+>  
+> But what about the header structure of the radiance HDRI format?
+> I'm a little confused about it and can't find a documentation structure how it is organized?
+> Unfortunately I'm no radiance user for carrying out own radiance projects to study it?
+>  
+> With my best regards
+> Dipl.-Ing. Tobias Porsch
+> TechnoTeam Bildverarbeitung GmbH
+> Werner - von - Siemens - Strasse 5 
+> 98693 Ilmenau
+> ----------------------------------------------------------------------------
+> Email:  tobias.porsch at technoteam.de
+> Phone: +49 3677 4624 0
+>  
+> TechnoTeam Bildverarbeitung GmbH
+> Gesch?ftsf?hrer: apl. Prof. Dr.-Ing. habil. F. Schmidt
+> Standort: Ilmenau
+> Handelsregistereintrag: Jena HRB 300912
+> 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20140723/45bf7357/attachment-0001.html>
+
+From jacobs.axel at gmail.com  Wed Jul 23 08:59:12 2014
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Wed, 23 Jul 2014 16:59:12 +0100
+Subject: [HDRI] Question about header information of HDRI
+In-Reply-To: <76CF4F3A-8C6E-44A3-9BD0-872961094714@gmx.net>
+References: <FB3CD7EE5372974A93D9AAFC8CC8CD643155BA46@W-TTBV-EX1.ttbv.local>
+	<76CF4F3A-8C6E-44A3-9BD0-872961094714@gmx.net>
+Message-ID: <CA+dqh638i+MJj4KQ+sCxA6dGqiP4OVd5i84VOhYn76LO=VeMXA@mail.gmail.com>
+
+Hi Thomas,
+
+here is an example HDR header, as generated by Greg's hdrgen from a
+sequence of exposure-bracketed JPGs:
+
+--------------------- 8< --------------------
+#?RADIANCE
+EXPOSURE=4.335966e+00
+VIEW= -vtv -vh 62.593719 -vv 49.021309
+CAPDATE= 2012:01:04 11:47:01
+CAMERA= Canon Canon PowerShot G12 version v.0
+hdrgen created HDR image from 't5sjf7bvw227iifq.jpg'
+'g5ux42y0sv6ijuaa.jpg' 'rdehbxsuy2deh237.jpg'
+PRIMARIES= 0.6400 0.3300 0.3000 0.6000 0.1500 0.0600 0.3127 0.3290
+FORMAT=32-bit_rle_rgbe
+
+-Y 600 +X 800
+--------------------- 8< --------------------
+
+Apart from the 'VIEW=' line which should represent your camera's lens,
+you'll need to make up a line to replace 'hdrgen created....'
+
+I don't think there are any hard rules for this.
+
+Regards
+Axel
+
+
+
+On 23 July 2014 16:41, Lars O. Grobe <grobe at gmx.net> wrote:
+> Hi Tobias,
+>
+> the file format is described in the Radiance documentation: http://radsite.lbl.gov/radiance/refer/filefmts.pdf
+> Please refer to pages 28ff.
+>
+> It is great to know that you are implementing an export option - I had to do this manually in the past using pvalue ;)
+>
+> Cheers, Lars.
+> _______________________________________________
+> HDRI mailing list
+> HDRI at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/hdri
+
+
+From Tobias.Porsch at technoteam.de  Tue Jul 29 05:01:00 2014
+From: Tobias.Porsch at technoteam.de (Tobias Porsch)
+Date: Tue, 29 Jul 2014 12:01:00 +0000
+Subject: [HDRI] Question about header information of HDRI
+In-Reply-To: <6CC28694-1D2E-4258-82E5-50050E88506A@gmail.com>
+References: <FB3CD7EE5372974A93D9AAFC8CC8CD643155BA46@W-TTBV-EX1.ttbv.local>
+	<6CC28694-1D2E-4258-82E5-50050E88506A@gmail.com>
+Message-ID: <FB3CD7EE5372974A93D9AAFC8CC8CD643165614B@W-TTBV-EX1.ttbv.local>
+
+Hello again,
+
+Thank you all for the many hints. I tried it out and it works now.
+But anyhow I have a following problem now.
+
+When I do insert the following lines to the header for the description of our used angular fish eye lens, radiance tools like 'evalglare' (the author is J. Wienhold) does calculate wrong results.
+
+#?RADIANCE
+FORMAT=32-bit_rle_rgbe
+VIEW= -vta -vv 180 -vh 180 -vp 0 0 0 -vd 0 0 1 -vu 0 1 0
+EXPOSURE=1.79e+02
+
+-Y 1040 +X 1392
+
+
+I do assume this is due to the fact that the circular field of view for our fish eye is just a part of the rectangular aspect ratio of the image.
+For example the center of the circular view is x = 700px; y = 500px and the diameter = 450px.
+Is it possible to tell this within the header?
+
+Another possibility could be to crop the image according to this circular field of view. Is this possible?
+
+Kind regards
+Tobias
+
+
+
+Von: Gregory J. Ward [mailto:gregoryjward at gmail.com]
+Gesendet: Mittwoch, 23. Juli 2014 17:57
+An: High Dynamic Range Imaging
+Betreff: Re: [HDRI] Question about header information of HDRI
+
+Well, you asked at the right place!  The Radiance header format is simple, a set of newline ('\n') separated comments, some of which are of the form:
+
+VARIABLE=value
+
+A space may appear after the equals ('=') but rarely/never appears before it.  Other lines in the header do not have this form, and may be anything.  However, the first line identifying the file should be:
+
+#?RADIANCE
+
+The "RADIANCE" portion above is traditional, whereas the "#?" sequence is the so-called "magic number" for Radiance pictures.  Below is a typical information header:
+
+#?RADIANCE
+CAMERA= NIKON CORPORATION NIKON D700 version Ver.1.03
+Photosphere created HDR image from '_DSC7719.JPG' '_DSC7720.JPG' '_DSC7721.JPG' '_DSC7722.JPG' '_DSC7723.JPG' '_DSC7724.JPG' '_DSC7725.JPG' '_DSC7726.JPG' '_DSC7727.JPG'
+EXPOSURE=4.887013e-03
+VIEW= -vtv -vh 51.765083 -vv 71.303574
+OWNER= Greg Ward
+CAPDATE= 2014:02:25 09:49:32
+GMT= 2014:02:25 08:47:39
+LATLONG= 46.948730 7.451972
+FORMAT=32-bit_rle_rgbe
+
+------
+The header is terminated by an empty line (two newlines together "\n\n").  The following line after the empty line is very important, it contains the image resolution.  It is typically in the form:
+
+-Y ysiz +X xsiz
+
+where xsiz and ysiz are the integer number of pixels in the image.  This ASCII string is terminated by another newline ('\n'), immediately followed by the raster image data in the order indicated, Y (vertical) major sort, with Y values decreasing as measured from the bottom-left of the image.  This is explained in more detail in the relevant section (pp. 28-35) of the Radiance file formats document, located here:
+
+                http://radsite.lbl.gov/radiance/refer/filefmts.pdf
+
+I see Lars has provided you with the same information.  I hope this is enough to get you started.  Please note the importance of the EXPOSURE= line in the header and the 179 lumens/watt standard conversion factor in creating a properly calibrated picture.
+
+Let me know if you have further questions.
+
+Best,
+-Greg
+
+
+
+From: Tobias Porsch <Tobias.Porsch at technoteam.de<mailto:Tobias.Porsch at technoteam.de>>
+
+Subject: [HDRI] Question about header information of HDRI
+
+Date: July 23, 2014 8:27:01 AM PDT
+
+
+Hi,
+
+I'm writing you concerning my current project.
+I'm working for TechnoTeam company. Manyfacturer of imaging luminance measuring devices (camera photometer).
+Our aim is to export our own image file format (pixel-wise HDR float values) into the Radiance rgbe file format.
+The aim is to give radiance users access to the measured luminance information combined with our information about lens configuration (geometrical data).
+This may of interest for the "glare" community when analyzing the glare using radiance tools.
+
+Anyway, writing the rgbe information is no problem.
+
+But what about the header structure of the radiance HDRI format?
+I'm a little confused about it and can't find a documentation structure how it is organized?
+Unfortunately I'm no radiance user for carrying out own radiance projects to study it?
+
+With my best regards
+Dipl.-Ing. Tobias Porsch
+TechnoTeam Bildverarbeitung GmbH
+Werner - von - Siemens - Strasse 5
+98693 Ilmenau
+----------------------------------------------------------------------------
+Email:  tobias.porsch at technoteam.de<blocked::mailto:tobias.porsch at technoteam.de>
+Phone: +49 3677 4624 0
+
+TechnoTeam Bildverarbeitung GmbH
+Gesch?ftsf?hrer: apl. Prof. Dr.-Ing. habil. F. Schmidt
+Standort: Ilmenau
+Handelsregistereintrag: Jena HRB 300912
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/hdri/attachments/20140729/2c071a7b/attachment.html>
+
+From alstan at jakubiec.net  Tue Jul 29 05:39:48 2014
+From: alstan at jakubiec.net (J. Alstan Jakubiec)
+Date: Tue, 29 Jul 2014 08:39:48 -0400
+Subject: [HDRI] Question about header information of HDRI
+In-Reply-To: <FB3CD7EE5372974A93D9AAFC8CC8CD643165614B@W-TTBV-EX1.ttbv.local>
+References: <FB3CD7EE5372974A93D9AAFC8CC8CD643155BA46@W-TTBV-EX1.ttbv.local>
+	<6CC28694-1D2E-4258-82E5-50050E88506A@gmail.com>
+	<FB3CD7EE5372974A93D9AAFC8CC8CD643165614B@W-TTBV-EX1.ttbv.local>
+Message-ID: <op.xjresmqtc8ew1p@bunai.fritz.box>
+
+Hello Tobias,
+
+Unfortuately you will need to crop the image using some of the Radiance  
+tools.
+
+First you have to set the image exposure to 1 using ra_xyze,
+ra_xyze -r -o in.hdr > exposure.hdr
+
+Then use pcompos to do the cropping,
+pcompos -x 450 -y 450 exposure.hdr X Y > cropped.hdr
+
+Where X and Y are the anchor coordinates from the lower left corner of the  
+image, if I recall correctly. I always end up having to tweak them until I  
+get it correct. Some examples can be found by searching the mailing list.
+
+Finally, this process will eliminate the view information you have, so it  
+will need to be put back into the header.
+
+Best,
+Alstan
+
+On Tue, 29 Jul 2014 08:01:00 -0400, Tobias Porsch  
+<Tobias.Porsch at technoteam.de> wrote:
+
+>
+>
+>
+> Hello again,
+>
+>
+>
+>
+>
+>
+> Thank you all for the many hints. I tried it out and it works now.
+>
+>
+>
+> But anyhow I have a following problem now.
+>
+>
+>
+>
+>
+>
+> When I do insert the following lines to the header for the description  
+> of our used angular fish eye >lens, radiance tools like 'evalglare' (the  
+> author is J. Wienhold) does calculate wrong results.
+>
+>
+>
+>
+>
+>
+> #?RADIANCE
+>
+>
+>
+> FORMAT=32-bit_rle_rgbe
+>
+>
+>
+> VIEW= -vta -vv 180 -vh 180 -vp 0 0 0 -vd 0 0 1 -vu 0 1 0
+>
+>
+>
+> EXPOSURE=1.79e+02
+>
+>
+>
+>
+>
+>
+> -Y 1040 +X 1392
+>
+>
+>
+>
+>
+>
+>
+>
+>
+> I do assume this is due to the fact that the circular field of view for  
+> our fish eye is just a part >of the rectangular aspect ratio of the  
+> image.
+>
+>
+>
+> For example the center of the circular view is x = 700px; y = 500px and  
+> the diameter = 450px.
+>
+>
+>
+> Is it possible to tell this within the header?
+>
+>
+>
+>
+>
+>
+> Another possibility could be to crop the image according to this  
+> circular field of view. Is this >possible?
+>
+>
+>
+>
+>
+>
+> Kind regards
+>
+>
+>
+> Tobias
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+> Von: Gregory J. Ward [mailto:gregoryjward at gmail.com]
+>
+>
+> Gesendet: Mittwoch, 23. Juli 2014 17:57
+>
+> An: High Dynamic Range Imaging
+>
+> Betreff: Re: [HDRI] Question about header information of HDRI
+>
+>
+>
+>
+>
+>
+>
+>
+>
+> Well, you asked at the right place!  The Radiance header format is  
+> simple, a set of newline ('\n') >separated comments, some of which are  
+> of the form:
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+> VARIABLE=value
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+> A space may appear after the equals ('=') but rarely/never appears  
+> before it.  Other lines in the >header do not have this form, and may be  
+> anything.  However, the first line identifying the file >should be:
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+> #?RADIANCE
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+> The "RADIANCE" portion above is traditional, whereas the "#?" sequence  
+> is the so-called "magic >number" for Radiance pictures.  Below is a  
+> typical information header:
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+> #?RADIANCE
+>
+>
+>
+>
+>
+> CAMERA= NIKON CORPORATION NIKON D700 version Ver.1.03
+>
+>
+>
+>
+>
+> Photosphere created HDR image from '_DSC7719.JPG' '_DSC7720.JPG'  
+> '_DSC7721.JPG' '_DSC7722.JPG' >'_DSC7723.JPG' '_DSC7724.JPG'  
+> '_DSC7725.JPG' '_DSC7726.JPG' '_DSC7727.JPG'
+>
+>
+>
+>
+>
+> EXPOSURE=4.887013e-03
+>
+>
+>
+>
+>
+> VIEW= -vtv -vh 51.765083 -vv 71.303574
+>
+>
+>
+>
+>
+> OWNER= Greg Ward
+>
+>
+>
+>
+>
+> CAPDATE= 2014:02:25 09:49:32
+>
+>
+>
+>
+>
+> GMT= 2014:02:25 08:47:39
+>
+>
+>
+>
+>
+> LATLONG= 46.948730 7.451972
+>
+>
+>
+>
+>
+> FORMAT=32-bit_rle_rgbe
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+> ------
+>
+>
+>
+>
+>
+> The header is terminated by an empty line (two newlines together  
+> "\n\n").  The following line after >the empty line is very important, it  
+> contains the image resolution.  It is typically in the form:
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+> -Y ysiz +X xsiz
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+> where xsiz and ysiz are the integer number of pixels in the image.  This  
+> ASCII string is terminated >by another newline ('\n'), immediately  
+> followed by the raster image data in the order indicated, Y >(vertical)  
+> major sort, with Y values
+> decreasing as measured from the bottom-left of the image.  This is  
+> explained in more detail in the >relevant section (pp. 28-35) of the  
+> Radiance file formats document, located here:
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>               http://radsite.lbl.gov/radiance/refer/filefmts.pdf
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+> I see Lars has provided you with the same information.  I hope this is  
+> enough to get you started. > Please note the importance of the EXPOSURE=  
+> line in the header and the 179 lumens/watt standard >conversion factor  
+> in creating a properly
+> calibrated picture.
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+> Let me know if you have further questions.
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+> Best,
+>
+>
+>
+>
+>
+> -Greg
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+> From:
+> Tobias Porsch <Tobias.Porsch at technoteam.de>
+>
+>
+>
+>
+> Subject:
+> [HDRI] Question about header information of HDRI
+>
+>
+>
+>
+> Date:
+> July 23, 2014 8:27:01 AM PDT
+>
+>
+>
+>
+>
+>
+>>
+>>
+>> Hi,
+>>
+>>
+>>
+>>
+>>
+>>
+>> I'm writing you concerning my current project.
+>>
+>>
+>>
+>> I'm working for TechnoTeam company. Manyfacturer of imaging luminance  
+>> measuring devices (camera >>photometer).
+>>
+>>
+>>
+>> Our aim is to export our own image file format (pixel-wise HDR float  
+>> values) into the Radiance rgbe >>file format.
+>>
+>>
+>>
+>> The aim is to give radiance users access to the measured luminance  
+>> information combined with our >>information about lens configuration  
+>> (geometrical data).
+>>
+>>
+>>
+>> This may of interest for the "glare" community when analyzing the glare  
+>> using radiance tools.
+>>
+>>
+>>
+>>
+>>>>
+>> Anyway, writing the rgbe information is no problem.
+>>
+>>
+>>
+>>
+>>
+>>
+>> But what about the header structure of the radiance HDRI format?
+>>
+>>
+>>
+>> I'm a little confused about it and can't find a documentation structure  
+>> how it is organized?
+>>
+>>
+>>
+>> Unfortunately I'm no radiance user for carrying out own radiance  
+>> projects to study it?
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>> With my best regards
+>>
+>>
+>>
+>> Dipl.-Ing.
+>> Tobias Porsch
+>>
+>>
+>>>>
+>>
+>>
+>>
+>> TechnoTeam Bildverarbeitung GmbH
+>>
+>> Werner - von - Siemens - Strasse 5
+>> 98693 Ilmenau
+>>
+>> ----------------------------------------------------------------------------
+>>
+>> Email: tobias.porsch at technoteam.de
+>>
+>> Phone: +49 3677 4624 0
+>>
+>>
+>>
+>>
+>>
+>>
+>> TechnoTeam Bildverarbeitung GmbH
+>>
+>>
+>>
+>> Gesch?ftsf?hrer: apl. Prof. Dr.-Ing. habil. F. Schmidt
+>>
+>>
+>>
+>> Standort: Ilmenau
+>>
+>>
+>>
+>> Handelsregistereintrag: Jena HRB 300912
+>>
+>>
+>>
+>>
+
+>>
+>>
+>>
+>>
+>>
+>
+
+

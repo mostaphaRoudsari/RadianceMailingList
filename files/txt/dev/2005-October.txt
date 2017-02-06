@@ -1,0 +1,543 @@
+From apian at pab-opto.de  Sun Oct  2 18:28:10 2005
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Sun Oct  2 18:32:33 2005
+Subject: [Radiance-dev] Re: data test dir (spaces in dirname)
+In-Reply-To: <Pine.BSF.4.58.0509291807550.74399@emancholl.pair.com>
+References: <433A3013.4010400@pab-opto.de>
+	<Pine.BSF.4.58.0509291807550.74399@emancholl.pair.com>
+Message-ID: <43400A9A.8020600@pab-opto.de>
+
+Georg Mischler wrote:
+
+>Peter Apian-Bennewitz wrote:
+>
+>  
+>
+>>Hi folks,
+>>
+>>having fixed a mior bug with the generator of the HEAD zip file (due to
+>>the fact that zip doesn't erase previous content), I found the path
+>>    ray/test/test data/histo.dat
+>>Are you sure you the blank in it is a good thing ? An underscore would
+>>be as feasable, IMHO, and makes life of shell users so much easier. Even
+>>if the original authors of the test scenes prefer a different parser.
+>>    
+>>
+>
+>
+>I used a space there very intentionally.  We need to make sure
+>that Radiance handles this case (among othes) correctly, which
+>is, after all, the sole purpose of the test directory tree.
+>
+>This is again in preparation for the Windows port. Other than on
+>unix, Windows users will uses space characters in file and
+>directory names without thinking about it. And even some system
+>directories are named that way (depending on the language).
+>Whatever we do, we just need to assume that there can be space
+>characters. Any program or script that fails to function
+>correctly under those circumstances is to be considered broken.
+>
+>Sorry for any extra work that might cause for your auxiliary
+>scripting, but I don't see a good way around it.
+>
+>
+>-schorsch
+>
+>  
+>
+You don't cause me worry, but others will be bothered.
+Windows breaks on half-a-dozen characters which are perfectly handled by 
+UNIX shells.  Some backup programs (take HP's Omniback as an example) 
+fail on some of these too. Shells treat spaces as default delimiters. 
+It's all stupid, but it is a fact. That's why there's a somewhat 
+friendly common sense not to use characters which cause problems on 
+other systems (like space, double colon, ambersands, etc) volantarily. 
+If you insist on a space in a directory name of a general test scenario 
+and declare the whole directory, which serves others purposes, a test 
+case for filename handling, that's fine, but a little pointless IMHO.
+
+-Peter
+
+-- 
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+
+From pisuke at blueyonder.co.uk  Sat Oct  8 16:35:50 2005
+From: pisuke at blueyonder.co.uk (pisuke@blueyonder.co.uk)
+Date: Sat Oct  8 16:37:20 2005
+Subject: [Radiance-dev] Radiance compiled with mingw gcc (windows)
+Message-ID: <10276.195.188.213.35.1128782150.squirrel@195.188.213.35>
+
+Hi Greg and Georg,
+
+I've just re-compiled Radiance with mingw, and it has been easier.
+Also, the rtcontrib file output problem has disappeared, and I think
+it has been fixed at revision 1.27
+
+Here is the list of changes I've done to the Scons scripts,
+I hope this time they make more sense:
+
+diff -r ray/platform/mingw.cfg ray_ok/platform/mingw.cfg
+13c13
+< CPPDEFINES: _WIN32 NDEBUG _CONSOLE _MBCS HDSUF=.exe fseeko=fseek
+---
+> CPPDEFINES: _WIN32 MINGW NDEBUG _CONSOLE _MBCS HDSUF=.exe fseeko=fseek
+18c18
+< CPPDEFINES: _WIN32 _DEBUG _CONSOLE _MBCS HDSUF=.exe fseeko=fseek
+---
+> CPPDEFINES: _WIN32 MINGW _DEBUG _CONSOLE _MBCS HDSUF=.exe fseeko=fseek
+
+(I've added the MINGW macro to fix the following problem in rpict)
+
+diff -r ray/src/rt/rpict.c ray_ok/src/rt/rpict.c
+16a17
+> #ifndef MINGW
+17a19,21
+> #else
+> #include  <sys/time.h>
+> #endif /* MINGW */
+
+(this is because <sys/times.h> is not available with mingw,
+while <sys/time.h> is)
+
+diff -r ray/src/gen/SConscript ray_ok/src/gen/SConscript
+6a7
+> socketlib = env['RAD_SOCKETLIB']
+27,28c28,29
+< ('mkillum',     Split('mkillum.c mkillum2.c mkillum3.c'),
+<     ['rtproc','rtscene','rtpath','rtmath','rtio','rtcont','rterror']),
+---
+> #('mkillum',     Split('mkillum.c mkillum2.c mkillum3.c'),
+> #    ['rtproc','rtscene','rtpath','rtmath','rtio','rtcont','rterror']),
+33a35
+>
+44c46,53
+< 		'rtmath','rtcont','rtmem','rtargs','rtpath','rterror'] + mlib)
+---
+> 		'rtmath','rtcont','rtmem','rtargs','rtpath','rterror','rtproc'] + mlib)
+> progs.append(prog)
+>
+> prog = env.Program(target=os.path.join('$RAD_BUILDBIN', 'mkillum'),
+> 		source=Split('mkillum.c mkillum2.c mkillum3.c'),
+> 		CPPPATH=env.get('CPPPATH', []) + ['#src/rt'],
+> 		LIBS=['raycalls','rttrace','rtscene','rtpic','rtfunc','rtio',
+> 		'rtmath','rtcont','rtmem','rtargs','rtpath','rterror','rtproc'] + mlib
++ socketlib)
+
+(I've taken mkillum out of the prog targets, because it needs "socketlib",
+and slightly changed the mksource library list)
+
+
+diff -r ray/src/ot/SConscript ray_ok/src/ot/SConscript
+17,18c17,18
+< 			source=p[1], LIBS=['rtproc','rtscene','rtio','rtpath','rtmath',
+< 			'rtargs','rtcont','rtmem','rterror']+mlib)
+---
+> 			source=p[1], LIBS=['rtscene','rtio','rtpath','rtmath',
+> 			'rtargs','rtcont','rtmem','rterror','rtproc']+mlib)
+
+(worked only when I moved rtproc to the end of the list)
+
+
+diff -r ray/src/px/SConscript ray_ok/src/px/SConscript
+43c43
+< ('ra_bmp',   ['ra_bmp.c'],    ['rtpic','rtproc','rtio','rtmem']),
+---
+> ('ra_bmp',   ['ra_bmp.c'],   
+['rtpic','rtmem','rtproc','rtio','rtargs','rterror','rtpath']),
+
+(additional libraries required to compile ra_bmp)
+
+
+diff -r ray/src/util/rad.c ray_ok/src/util/rad.c
+1515c1515,1516
+< RT_PID pid, sig;
+---
+> RT_PID pid;
+> int sig;
+
+(sig needs to be declared as int)
+
+diff -r ray/src/util/rpiece.c ray_ok/src/util/rpiece.c
+11a12,13
+> #include "platform.h"
+>
+16d17
+< #include "platform.h"
+
+(platform.h needs to be included before #ifndef NON_POSIX)
+
+The binaries are available here:
+
+http://www.bozzograo.net/radiance/modules.php?op=modload&name=Downloads&file=index&req=getit&lid=12
+
+Thanks,
+
+Francesco
+
+
+
+From Riotxix at gmx.net  Sun Oct 16 02:09:29 2005
+From: Riotxix at gmx.net (Rx)
+Date: Sun Oct 16 01:10:32 2005
+Subject: [Radiance-dev] I'd like to create a branch for the project
+Message-ID: <op.syppd3hjupgjca@localhost>
+
+...but I'm not really sure where to start!
+
+Hello all, it's nice to meet you. I'm 21, from England, and I like to  
+code. I'm studying Computer Science at University, which I would like to  
+take into a career of graphical programming. But I think now's the time to  
+start working on my CV, and getting to grips with programming projects  
+like those I would like to work on out of college, because I guess I ought  
+to develop myself as a programmer (& I enjoy it!).
+
+The situation that I'm in is that I'd like to start some branch of project  
+work that I can independently work on, but I really don't know where to  
+begin, or what contribution you would need....my scope of ambition isn't  
+that huge - I'm basically looking for something useful that I could  
+produce for this project, written in c/c++ (but I'm flexible), that an  
+intermediate level programmer could accomplish.
+
+I have attempted contribution to such projects before, but am often  
+presented with a situation where I'm coming into the project as a  
+newcomer, and I'm directed to a hoard of code (tens of megabytes), and  
+it's not that useful. But I'd really like to create/work on little useful  
+branch I could do for this application. By that I mean, I envision a  
+project that (hopefully!) implements some useful algorithm(s), that I can  
+actually research and turn into code myself (even if it's just as a  
+starter, that could lead to more), but I'm not really sure what the  
+project needs, or where I should start looking. I'd really appreciate it  
+if someone could give me some guidance on this - I know a little about  
+stuff like Bezier curves, Matlab, Markov models, and the kind of stuff  
+that undergraduates know about. But I'm willing to do more, and put quite  
+a bit of time into it.
+
+			Anyway, thanks for any guidance you can give me,
+
+			     I just re-read it, and it sounds a bit desperate, but, it's  
+sincere.
+
+			        				Mayur
+
+From gregoryjward at gmail.com  Mon Oct 17 19:05:27 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon Oct 17 19:06:45 2005
+Subject: [Radiance-dev] I'd like to create a branch for the project
+In-Reply-To: <op.syppd3hjupgjca@localhost>
+References: <op.syppd3hjupgjca@localhost>
+Message-ID: <36237DDC-B6CE-449D-BBC5-73DD49250BC2@gmail.com>
+
+Hello Mayur,
+
+Thank you for your generous offer of help.  In Radiance, what we  
+mostly need assistance with at this point is porting work to the  
+Windows platform.  Specifically, we need to replace some of the Unix  
+system facilities, such as subprocesses, interprocess communication,  
+and file locking, and make these work under Windows via system- 
+independent interfaces.  In addition, we have a few programs that  
+produce graphical output using OpenGL or X11, which we need to get  
+ported to Windows.
+
+Here is a partial list of separable tasks we need to complete, for  
+which we have scarce resources (quoting Georg Mischler):
+
+  lock files
+    Very easy to split as a seperate subproject with a clearly
+    defined and simple API. High priority in my opinion.
+
+  Persistence for rtrace and rpict
+    Introduce an abstract level in rt/persist.c, so that fork/exec
+    can be hidden and replaced with an equivalent on Windows.
+
+  Parallel rendering
+    Introduce an abstract layer in rt/raypcalls.c and rt/r[pt]main.c,
+    so that fork/exec can be hidden and replaced with an equivalent
+    on Windows.
+    Among other things, this would make it possible to port ranimove.
+
+    Introduce an abstract layer for next_process() in rad.c, so that
+    fork/exec can be hidden and replaced with an equivalent on Windows.
+
+    Introduce an abstract layer for putpiece() in rpiece.c, so that
+    fork/exec can be hidden and replaced with an equivalent on Windows.
+
+For the graphics porting, we have three programs, the third of which  
+would be significantly more challenging:
+
+rvu driver
+     Need to be able to write out 24-bit colored rectangles and take  
+textual user input.
+
+ximage
+     Need to port X11 picture display program to Windows
+
+rholo
+     Need to write OpenGL display driver for interactive holodeck system
+
+If any of these seem interesting or doable to you, let us know and we  
+can fill you in with more details and provide you with a starting  
+point in the source tree.
+
+If you are principally interested in lighting simulation and graphics  
+algorithms, as opposed to the more systems-related work we have  
+slated, you are welcome to take the source code and experiment with it.
+
+-Greg
+
+From letterrip at gmail.com  Mon Oct 24 23:00:49 2005
+From: letterrip at gmail.com (Tom M)
+Date: Mon Oct 24 23:02:08 2005
+Subject: [Radiance-dev] Radiance license
+Message-ID: <584fe5640510241400y1fac937p14ed4de322981fc3@mail.gmail.com>
+
+Hi,
+
+is the license located here the most recent license?
+
+http://radsite.lbl.gov/radiance/announcement.html
+
+The reason I ask is that I'm fairly certain that I had read a page
+that stated that radiance had been changed to a license that was GPL
+compatible (i don't recall if it was BSD, MIT, LGPL, or another), but
+now I cannot find the page again even after extensive google
+searching,
+
+Thanks for your time,
+
+Tom M.
+
+From grobe at gmx.net  Tue Oct 25 12:54:13 2005
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Tue Oct 25 12:55:42 2005
+Subject: [Radiance-dev] mkillum with multiple processes
+Message-ID: <84b5315852e708ba8f1a54057f7202a0@gmx.net>
+
+Hi,
+
+as I understand that mkillum does nothing more than starting rtraces 
+for each surfaces it processes, I wonder if there is someone out there 
+on the list who might want to try implementing a multi-processing 
+version... :-) afaik each process is rather independent on others, so 
+the task should be not too big if only one knows the infinite wisdom of 
+radiance's source tree...
+
+CU Lars.
+
+(Don't blame me for hours spent on this)
+
+
+From gregoryjward at gmail.com  Tue Oct 25 18:53:48 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed Oct 26 08:18:33 2005
+Subject: [Radiance-dev] Radiance license
+In-Reply-To: <584fe5640510241400y1fac937p14ed4de322981fc3@mail.gmail.com>
+References: <584fe5640510241400y1fac937p14ed4de322981fc3@mail.gmail.com>
+Message-ID: <CD630067-5935-4CE6-B022-E241428FB637@gmail.com>
+
+Hi Tom,
+
+The current license is contained in the "copyright.h" header in the  
+ray/src/common directory, attached.  I don't know whether or not it  
+is GPL-compatible.  Perhaps you can tell me.
+
+-Greg
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: copyright.h
+Type: application/octet-stream
+Size: 3014 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-dev/attachments/20051025/3a7542a7/copyright.obj
+From gregoryjward at gmail.com  Tue Oct 25 19:00:14 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed Oct 26 08:44:22 2005
+Subject: [Radiance-dev] mkillum with multiple processes
+In-Reply-To: <84b5315852e708ba8f1a54057f7202a0@gmx.net>
+References: <84b5315852e708ba8f1a54057f7202a0@gmx.net>
+Message-ID: <E23A2276-84E1-4482-BEF6-68CD1F1022C2@gmail.com>
+
+Already done.  Check out the mkillum -n option in the latest version.
+
+-Greg
+
+> From: "Lars O. Grobe" <grobe@gmx.net>
+> Date: October 25, 2005 3:54:13 AM PDT
+>
+> Hi,
+>
+> as I understand that mkillum does nothing more than starting  
+> rtraces for each surfaces it processes, I wonder if there is  
+> someone out there on the list who might want to try implementing a  
+> multi-processing version... :-) afaik each process is rather  
+> independent on others, so the task should be not too big if only  
+> one knows the infinite wisdom of radiance's source tree...
+>
+> CU Lars.
+>
+> (Don't blame me for hours spent on this)
+
+From grobe at gmx.net  Wed Oct 26 10:08:57 2005
+From: grobe at gmx.net (Lars O. Grobe)
+Date: Wed Oct 26 10:10:24 2005
+Subject: [Radiance-dev] mkillum with multiple processes
+In-Reply-To: <E23A2276-84E1-4482-BEF6-68CD1F1022C2@gmail.com>
+References: <84b5315852e708ba8f1a54057f7202a0@gmx.net>
+	<E23A2276-84E1-4482-BEF6-68CD1F1022C2@gmail.com>
+Message-ID: <cad034810ef6417e12375659cdbb81f0@gmx.net>
+
+> Already done.  Check out the mkillum -n option in the latest version.
+
+Hi,
+
+sorry, I really did not know that. In fact, I am using the 
+online-manpages from radsite.lbl.gov quite often, and these are from 
+2003, so they didn't mention the -n option.
+
+CU Lars.
+
+
+From gregoryjward at gmail.com  Wed Oct 26 14:53:13 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed Oct 26 17:41:15 2005
+Subject: [Radiance-dev] mkillum with multiple processes
+In-Reply-To: <cad034810ef6417e12375659cdbb81f0@gmx.net>
+References: <84b5315852e708ba8f1a54057f7202a0@gmx.net>
+	<E23A2276-84E1-4482-BEF6-68CD1F1022C2@gmail.com>
+	<cad034810ef6417e12375659cdbb81f0@gmx.net>
+Message-ID: <DC5E6526-F6BF-482C-83FA-41A2E1BA6BBD@gmail.com>
+
+Yeah, I really should keep the online pages updated, but the  
+conversion is a bit of a pain and I can't even remember how to do it  
+from one year to the next....
+
+-G
+
+> From: "Lars O. Grobe" <grobe@gmx.net>
+> Date: October 26, 2005 1:08:57 AM PDT
+>
+>> Already done.  Check out the mkillum -n option in the latest version.
+>>
+>
+> Hi,
+>
+> sorry, I really did not know that. In fact, I am using the online- 
+> manpages from radsite.lbl.gov quite often, and these are from 2003,  
+> so they didn't mention the -n option.
+>
+> CU Lars.
+
+From letterrip at gmail.com  Sat Oct 29 22:15:40 2005
+From: letterrip at gmail.com (Tom M)
+Date: Sat Oct 29 22:17:29 2005
+Subject: [Radiance-dev] Radiance license
+In-Reply-To: <CD630067-5935-4CE6-B022-E241428FB637@gmail.com>
+References: <584fe5640510241400y1fac937p14ed4de322981fc3@mail.gmail.com>
+	<CD630067-5935-4CE6-B022-E241428FB637@gmail.com>
+Message-ID: <584fe5640510291315n45a6cf78i3f007acccc061e50@mail.gmail.com>
+
+Hi Greg,
+
+thank you for your response,
+
+I contacted the Free Software Foundation and they stated that the
+license is GPL incompatible.
+
+However there is a more recent license (I think it is revision of the
+license you are using) used by many Lawrence Berkeley National
+Laboratory projects that is GPL compatible
+
+http://crd.lbl.gov/~xiaoye/SuperLU/License.txt
+http://www-didc.lbl.gov/NetLogger/license.html
+http://nowlab.cse.ohio-state.edu/projects/mpi-iba/LICENSE.TXT
+http://archive.nsf-middleware.org/NMIR4/grids-center/license_pyglobus.asp
+
+thanks for your time and thanks for the great piece of software.
+
+Tom M.
+
+From gregoryjward at gmail.com  Sun Oct 30 06:03:29 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Sun Oct 30 06:46:36 2005
+Subject: [Radiance-dev] Radiance license
+In-Reply-To: <584fe5640510291315n45a6cf78i3f007acccc061e50@mail.gmail.com>
+References: <584fe5640510241400y1fac937p14ed4de322981fc3@mail.gmail.com>
+	<CD630067-5935-4CE6-B022-E241428FB637@gmail.com>
+	<584fe5640510291315n45a6cf78i3f007acccc061e50@mail.gmail.com>
+Message-ID: <7B32F294-64F5-4A9D-9B95-709E3A4EEF96@gmail.com>
+
+Hi Tom,
+
+Thanks for the links.  If you think the current license is in some  
+way inadequate, I suggest you write to Steve Selkowitz at LBNL  
+directly, as I don't understand licenses or care about them much.   
+The current license came from the patent office at LBNL, and I had  
+nothing to do with it other than to stuff it into the distribution.   
+I know the general purpose is to provide for the free use of the  
+software for any purpose, and to protect LBNL and the UC Regents from  
+any liability.
+
+-Greg
+
+> From: Tom M <letterrip@gmail.com>
+> Date: October 29, 2005 1:15:40 PM PDT
+>
+> Hi Greg,
+>
+> thank you for your response,
+>
+> I contacted the Free Software Foundation and they stated that the
+> license is GPL incompatible.
+>
+> However there is a more recent license (I think it is revision of the
+> license you are using) used by many Lawrence Berkeley National
+> Laboratory projects that is GPL compatible
+>
+> http://crd.lbl.gov/~xiaoye/SuperLU/License.txt
+> http://www-didc.lbl.gov/NetLogger/license.html
+> http://nowlab.cse.ohio-state.edu/projects/mpi-iba/LICENSE.TXT
+> http://archive.nsf-middleware.org/NMIR4/grids-center/ 
+> license_pyglobus.asp
+>
+> thanks for your time and thanks for the great piece of software.
+>
+> Tom M.
+
+From letterrip at gmail.com  Sun Oct 30 08:04:52 2005
+From: letterrip at gmail.com (Tom M)
+Date: Sun Oct 30 08:06:08 2005
+Subject: [Radiance-dev] Radiance license
+In-Reply-To: <7B32F294-64F5-4A9D-9B95-709E3A4EEF96@gmail.com>
+References: <584fe5640510241400y1fac937p14ed4de322981fc3@mail.gmail.com>
+	<CD630067-5935-4CE6-B022-E241428FB637@gmail.com>
+	<584fe5640510291315n45a6cf78i3f007acccc061e50@mail.gmail.com>
+	<7B32F294-64F5-4A9D-9B95-709E3A4EEF96@gmail.com>
+Message-ID: <584fe5640510300004t5ccd6a1p43c5ed80661fef5f@mail.gmail.com>
+
+Hi Greg,
+
+I don't think the license is inadequate, sorry if I came across that
+way.  Thank you for your suggestion though,
+
+Tom M.
+
+From ckehrlich at yahoo.com  Mon Oct 31 08:52:39 2005
+From: ckehrlich at yahoo.com (Charles Ehrlich)
+Date: Mon Oct 31 08:54:34 2005
+Subject: [Radiance-dev] Re: Radiance license
+In-Reply-To: <7B32F294-64F5-4A9D-9B95-709E3A4EEF96@gmail.com>
+Message-ID: <20051031075239.69157.qmail@web80301.mail.yahoo.com>
+
+Hi Tom,
+ 
+I was working at LBNL during the time that the Radiance license was working its way through the LBNL Patents office.  This was during Greg's stint at SGI then Shutterfly when I acted as the surrogate (illigitimate) father of Radiance.  It was a long and sordid trail through the anals of a huge bureaucracy.  I think I first brought up the idea of an open source license in 1992.  There were at least five different stakeholders whose interests had to be balanced in coming up with the license that exists now.  But before we could even get the Patents office attention, we had to show that it was a commercially viable technology and that it wasn't stepping on any big player's toes.  It was through the sales of 3 or 4 $10,000 older-style licenses to folks like Georg Mischler that got their attention.  I did quite a bit of patent research and found some potentially conflicting claims held by Pixar for stuff related to pseudo-random adaptive subdivision of the image plane.  This was resolved
+ by writing Pixar a letter telling them our plans and never getting a response.  And strangely enough, once the LBNL patents office had some money to stash away to help in the legal defence against the possibility that someone could become "harmed" by using Radiance, they were then willing to listen to another, less costly, open-source-like licensing scheme.  We hammered on them about various license schemes including GPL and OSF, etc.  The final touches on the license were completed after I moved onto greener pastures.  But in the end, what we've got is much better than we expected.  My suggestion is not to bother the likes of Steve Selkowitz, and to make what we've got work for you, and if it doesn't, look for your ray tracing solution elsewhere.
+ 
+-Chas
+ 
+ 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20051030/8c4c77ff/attachment.htm

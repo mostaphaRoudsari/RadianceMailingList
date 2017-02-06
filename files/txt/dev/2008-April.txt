@@ -1,0 +1,725 @@
+From rpg at rumblestrip.org  Tue Apr 15 09:44:41 2008
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Tue Apr 15 09:44:44 2008
+Subject: [Radiance-dev] Compiling rsensor on Windows
+Message-ID: <4804DB79.7030401@rumblestrip.org>
+
+Hi,
+
+I'm trying to compile the new rsensor code* to run on windows.  I know 
+it's possible, but I'm having trouble.  I finally have MINGW and MSYS 
+installed on my computer and gcc as well.  That all works, I can get a 
+running bash shell on my computer.  Problem is the makeall script is a 
+csh script (MSYS, short for Minimal SYStem, is indeed a minimal cygwin 
+installation). 
+
+Plan B was simply to go into the /src/util directory and call "make 
+rsensor".  But even after changing the rmakefile to read CC = gcc from C 
+= cc, I still get an error saying cc not found.  Not sure why it's still 
+trying to use cc instead of gcc; gcc is installed and in the search path. 
+
+So plan C was simply to call gcc directly but the Rmake file references 
+a .o file and I only have your rsensor.c file.  So I'm missing one or 
+more steps that apparently happen ahead of this Rmakefile.  Can anyone 
+help or suggest a way to get this utility to compile?(???????????)
+
+*rsensor is a utility that Architectural Energy Corp. contracted Greg to 
+create.  It's essentially a modified version of rtrace, to be used to 
+read the spatial sensitivity of a photosensor, which Zack is 
+incorporating in to his SPOT program (hence my need to get this to 
+compile for Windows). It's still in test phase, but it's in the HEAD 
+release in the spirit of open source.
+
+- Rob
+
+
+
+From Francesco.Anselmo at arup.com  Wed Apr 16 06:19:08 2008
+From: Francesco.Anselmo at arup.com (Francesco Anselmo)
+Date: Wed Apr 16 06:20:09 2008
+Subject: [Radiance-dev] Compiling rsensor on Windows
+References: <4804DB79.7030401@rumblestrip.org>
+Message-ID: <2C0020B9EB71CE4281B292F0E16A6DDE065CAAC5@ldcexc02.global.arup.com>
+
+Hi Rob,
+
+Very timely ;-) Zack also asked me about this :-)
+
+I have been trying to make a mingw binary package with yesterday's HEAD
+snapshot 
+from the CVS, but a few things have changed in the source code since
+3R8, and
+I am still trying to find my way around them.
+
+rsensor needs libraycalls, libradiance and librtrad, so these have to be
+compiled first, doing an rmake inside src/common and src/rt, and perhaps
+crossing your fingers ;-)
+
+In reality, the best approach I have found is to use scons.
+Unfortunately
+the last changes done on the Sconscript files are two years old 
+(schorsch, where are you? we really miss you!) so I am patching things
+here and there to get the core programs compiled.
+
+I hope to be successful soon, and I'll post my findings to the Radiance
+Wiki.
+
+Keep the faith ;-D
+
+Francesco
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+
+
+From gregoryjward at gmail.com  Wed Apr 16 06:49:08 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed Apr 16 06:57:09 2008
+Subject: [Radiance-dev] Compiling rsensor on Windows
+In-Reply-To: <2C0020B9EB71CE4281B292F0E16A6DDE065CAAC5@ldcexc02.global.arup.com>
+References: <4804DB79.7030401@rumblestrip.org>
+	<2C0020B9EB71CE4281B292F0E16A6DDE065CAAC5@ldcexc02.global.arup.com>
+Message-ID: <11DDE99E-0735-412F-905F-FF0496783397@gmail.com>
+
+Hi Francesco,
+
+Thanks very much for helping with this!  I forgot to mention that I  
+wrote a set of stub routines for Windows in src/rt/raypwin.c that you  
+can use in place of raypcalls.c.  They don't really handle parallel  
+processing, but they'll get things going at least.
+
+-Greg
+
+From Francesco.Anselmo at arup.com  Wed Apr 16 07:07:25 2008
+From: Francesco.Anselmo at arup.com (Francesco Anselmo)
+Date: Wed Apr 16 07:07:29 2008
+Subject: [Radiance-dev] Compiling rsensor on Windows
+References: <4804DB79.7030401@rumblestrip.org><2C0020B9EB71CE4281B292F0E16A6DDE065CAAC5@ldcexc02.global.arup.com>
+	<11DDE99E-0735-412F-905F-FF0496783397@gmail.com>
+Message-ID: <2C0020B9EB71CE4281B292F0E16A6DDE065CAB3B@ldcexc02.global.arup.com>
+
+That's great Greg, fantastic!
+I hadn't noticed this little file before :-)
+I'll try this later and summarise my findings about 
+the recent code additions somewhere on the wiki.
+ 
+Grazie!!!
+
+Francesco
+
+-----Original Message-----
+From: radiance-dev-bounces@radiance-online.org
+[mailto:radiance-dev-bounces@radiance-online.org] On Behalf Of Gregory
+J. Ward
+Sent: 16 April 2008 14:49
+To: code development
+Subject: Re: [Radiance-dev] Compiling rsensor on Windows
+
+Hi Francesco,
+
+Thanks very much for helping with this!  I forgot to mention that I
+wrote a set of stub routines for Windows in src/rt/raypwin.c that you
+can use in place of raypcalls.c.  They don't really handle parallel
+processing, but they'll get things going at least.
+
+-Greg
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+
+
+From tbleicher at arcor.de  Wed Apr 16 10:38:39 2008
+From: tbleicher at arcor.de (Thomas Bleicher)
+Date: Wed Apr 16 10:40:56 2008
+Subject: [Radiance-dev] Compiling rsensor on Windows
+In-Reply-To: <11DDE99E-0735-412F-905F-FF0496783397@gmail.com>
+References: <4804DB79.7030401@rumblestrip.org>
+	<2C0020B9EB71CE4281B292F0E16A6DDE065CAAC5@ldcexc02.global.arup.com>
+	<11DDE99E-0735-412F-905F-FF0496783397@gmail.com>
+Message-ID: <24467AEC-6727-40E0-8AC1-B23DE0429FBC@arcor.de>
+
+
+On 16 Apr 2008, at 14:49, Gregory J. Ward wrote:
+> Hi Francesco,
+>
+> Thanks very much for helping with this!  I forgot to mention that
+> I wrote a set of stub routines for Windows in src/rt/raypwin.c that
+> you can use in place of raypcalls.c.
+
+That's great, Greg. I tried to compile with MS Visual Studio Express
+and scons a few weeks ago. When I realised that there was more to do
+than just fixing the scons files I left it at that. Seems that I should
+pick it up again one of these days.
+
+> They don't really handle parallel processing, but they'll get things
+> going at least.
+
+That's all I was hoping for.
+
+Thanks again,
+Thomas
+
+
+From rpg at rumblestrip.org  Wed Apr 16 12:02:21 2008
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Wed Apr 16 12:02:42 2008
+Subject: [Radiance-dev] Compiling rsensor on Windows
+In-Reply-To: <2C0020B9EB71CE4281B292F0E16A6DDE065CAAC5@ldcexc02.global.arup.com>
+References: <4804DB79.7030401@rumblestrip.org>
+	<2C0020B9EB71CE4281B292F0E16A6DDE065CAAC5@ldcexc02.global.arup.com>
+Message-ID: <48064D3D.3070304@rumblestrip.org>
+
+Francesco Anselmo wrote:
+> Hi Rob,
+>
+> Very timely ;-) Zack also asked me about this :-)
+>   
+Gee, what are the odds?
+
+> I have been trying to make a mingw binary package with yesterday's HEAD
+> snapshot 
+> from the CVS, but a few things have changed in the source code since
+> 3R8, and
+> I am still trying to find my way around them.
+>   
+
+Oh, so you're closer to doing this than I had thought based on your 
+earlier reply to Zack.  Great!
+
+> rsensor needs libraycalls, libradiance and librtrad, so these have to be
+> compiled first, doing an rmake inside src/common and src/rt, and perhaps
+> crossing your fingers ;-)
+>   
+
+Thanks for letting me know I wasn't nearly as close to success as I 
+thought I was...  ~8-/
+
+> In reality, the best approach I have found is to use scons.
+> Unfortunately
+> the last changes done on the Sconscript files are two years old 
+> (schorsch, where are you? we really miss you!) so I am patching things
+> here and there to get the core programs compiled.
+>
+> I hope to be successful soon, and I'll post my findings to the Radiance
+> Wiki.
+>   
+
+OK, I will leave this in your far more capable hands.  Please do share 
+your success!
+
+- Rob
+
+P.S.
+Francesco, you'll be happy to know I am teaching my dog some commands in 
+Italian now; for example, when the licking is a little bit too much, we 
+say "basta"!
+
+
+From pisuke at blueyonder.co.uk  Thu Apr 17 00:19:28 2008
+From: pisuke at blueyonder.co.uk (Francesco Anselmo)
+Date: Thu Apr 17 00:19:37 2008
+Subject: [Radiance-dev] Compiling rsensor on Windows
+In-Reply-To: <48064D3D.3070304@rumblestrip.org>
+References: <4804DB79.7030401@rumblestrip.org>
+	<2C0020B9EB71CE4281B292F0E16A6DDE065CAAC5@ldcexc02.global.arup.com>
+	<48064D3D.3070304@rumblestrip.org>
+Message-ID: <AD3F3275-C5C3-4A5E-B622-0CE3AD002316@blueyonder.co.uk>
+
+Hello,
+
+rsensor is now available from the radtools website:
+http://www.bozzograo.net/radiance/modules.php?op=modload&name=Downloads&file=index&req=viewdownload&cid=4
+Scroll down to find it and let me know if it works, I didn't have time  
+to check it thoroughly.
+
+I'll follow up later with instructions about how to compile on windows  
++ a new mingw installer including
+also rsensor, ranimove and gendaylit.
+
+> Francesco, you'll be happy to know I am teaching my dog some  
+> commands in Italian now; for example, when the licking is a little  
+> bit too much, we say "basta"!
+
+:-)))
+
+Ciao!
+
+F.
+
+
+From gregoryjward at gmail.com  Thu Apr 17 08:14:06 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu Apr 17 08:14:20 2008
+Subject: [Radiance-dev] Compiling rsensor on Windows
+In-Reply-To: <AD3F3275-C5C3-4A5E-B622-0CE3AD002316@blueyonder.co.uk>
+References: <4804DB79.7030401@rumblestrip.org>
+	<2C0020B9EB71CE4281B292F0E16A6DDE065CAAC5@ldcexc02.global.arup.com>
+	<48064D3D.3070304@rumblestrip.org>
+	<AD3F3275-C5C3-4A5E-B622-0CE3AD002316@blueyonder.co.uk>
+Message-ID: <53AF71F5-EA28-4D51-B618-A417D7B59CBC@gmail.com>
+
+Hi Francesco,
+
+I'm sure I speak for everyone when I say THANKS for pulling this  
+together.  The new mkillum also relies on the linked library calls,  
+so it's important we make sure this is working, at least for single  
+processors, in the next release.
+
+Grazie!
+-Greg
+
+> From: Francesco Anselmo <pisuke@blueyonder.co.uk>
+> Date: April 17, 2008 12:19:28 AM PDT
+>
+> Hello,
+>
+> rsensor is now available from the radtools website:
+> http://www.bozzograo.net/radiance/modules.php? 
+> op=modload&name=Downloads&file=index&req=viewdownload&cid=4
+> Scroll down to find it and let me know if it works, I didn't have  
+> time to check it thoroughly.
+>
+> I'll follow up later with instructions about how to compile on  
+> windows + a new mingw installer including
+> also rsensor, ranimove and gendaylit.
+>
+>> Francesco, you'll be happy to know I am teaching my dog some  
+>> commands in Italian now; for example, when the licking is a little  
+>> bit too much, we say "basta"!
+>
+> :-)))
+>
+> Ciao!
+>
+> F.
+
+From rpg at rumblestrip.org  Thu Apr 17 09:51:31 2008
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Thu Apr 17 09:51:54 2008
+Subject: [Radiance-dev] Compiling rsensor on Windows
+In-Reply-To: <53AF71F5-EA28-4D51-B618-A417D7B59CBC@gmail.com>
+References: <4804DB79.7030401@rumblestrip.org>	<2C0020B9EB71CE4281B292F0E16A6DDE065CAAC5@ldcexc02.global.arup.com>	<48064D3D.3070304@rumblestrip.org>	<AD3F3275-C5C3-4A5E-B622-0CE3AD002316@blueyonder.co.uk>
+	<53AF71F5-EA28-4D51-B618-A417D7B59CBC@gmail.com>
+Message-ID: <48078013.8070801@rumblestrip.org>
+
+Gregory J. Ward wrote:
+> Hi Francesco,
+>
+> I'm sure I speak for everyone when I say THANKS for pulling this 
+> together.  
+
+Indeed; thank you very much Francesco!  Also, a clarification to my 
+description of rsensor's purpose is in order, since I see you are also 
+using it for your description on the download page.  rsensor computes a 
+photosensor signal based on a sensor-specific spatial sensitivity, it 
+does not actually calculate the spatial sensitivity.  The sensitivity is 
+read in from a data file, sort-of the inverse of a photometric 
+report/.ies file, provided elsewhere.  This is all based on some 
+research Zack has.  You'd be surprised by the variability in response 
+from the various photosensors out there on the market; some are quite a 
+ways from cosine.  So, rsensor is able to act as a *vendor-specific* 
+virtual photosensor, which is like, totally rad. =8-)
+
+Thanks again Francesco!
+
+- Rob Guglielmetti
+
+From pisuke at blueyonder.co.uk  Sun Apr 20 06:43:58 2008
+From: pisuke at blueyonder.co.uk (Francesco Anselmo)
+Date: Sun Apr 20 06:44:05 2008
+Subject: [Radiance-dev] Compiling rsensor on Windows
+In-Reply-To: <53AF71F5-EA28-4D51-B618-A417D7B59CBC@gmail.com>
+References: <4804DB79.7030401@rumblestrip.org>
+	<2C0020B9EB71CE4281B292F0E16A6DDE065CAAC5@ldcexc02.global.arup.com>
+	<48064D3D.3070304@rumblestrip.org>
+	<AD3F3275-C5C3-4A5E-B622-0CE3AD002316@blueyonder.co.uk>
+	<53AF71F5-EA28-4D51-B618-A417D7B59CBC@gmail.com>
+Message-ID: <89892B19-D238-4484-97D6-323CAD1A6E21@blueyonder.co.uk>
+
+Ciao!
+
+I've finally found some time to describe the compilation process with  
+SCons:
+http://www.bozzograo.net/radiancewiki/doku.php/how_to_compile_radiance_using_the_mingw_tools_and_scons
+
+At the end of the page there is a zipped diff file summarising the  
+changes and workarounds
+I had to use to make the code compile. Minor things, but it would be  
+nice to integrate them
+to the source code (except the "dirty bits").
+
+>> I'll follow up later with instructions about how to compile on  
+>> windows + a new mingw installer including
+>> also rsensor, ranimove and gendaylit.
+
+I have just found out another "Unix for Windows" project, this time  
+from AT&T, where they say
+they provide fork ... has anybody tried this?
+
+Saluti,
+
+Francesco
+
+
+
+
+From apian at pab-opto.de  Mon Apr 28 11:39:52 2008
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Mon Apr 28 11:41:22 2008
+Subject: [Radiance-dev] setting buffer size on octree reads (setvbuf)
+In-Reply-To: <E111C3C3-F81F-4203-8F4F-5DDC15964A05@gmail.com>
+References: <4815c490.033a360a.0327.0d09SMTPIN_ADDED@mx.google.com>
+	<E111C3C3-F81F-4203-8F4F-5DDC15964A05@gmail.com>
+Message-ID: <200804281841.m3SIfHPv015978@mta1.lbl.gov>
+
+Hi Greg,
+
+regarding the long time it takes reading octrees (multiple with sizes > 50MB):
+
+I've tested with setvbuf calls after the fopen in readoct and readobj with a 
+size of 2MB (system default is 4kB).
+
+Well- the number of reads went down, but the time for reading remained 
+unchanged: 2.47min down from 2.48min.
+It seems truly CPU (Xeon) limited, at least in this case, when reading from 
+local disk (bandwidth>20MB).
+Nevertheless, using a larger buffer than the default 4kB may make sense. E.g. in 
+other scenarios (might be usable on NFS reads where mount rsize is larger than 
+4k), with a minor chance of portability problems ("The setbuf() and setvbuf() 
+functions conform to C89 and C99" it says in the man page). Ah, well, setbuf is 
+already in use for setting up the ambient file. IMHO it might be a good thing to 
+add to readoct, unless rendering is done on systems where an increased buffer 
+takes away a significant part of valuable mem.
+
+-Peter
+
+PS: Tested on fresh 'head'  -  cc to the dev list in case anyone stumbles 
+across, comments appreciated.
+-- 
+pab-opto, Freiburg, Germany, http://www.pab-opto.de
+[see web page to check digital email signature]
+
+
+
+
+From gregoryjward at gmail.com  Mon Apr 28 13:47:41 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Mon Apr 28 13:48:02 2008
+Subject: [Radiance-dev] setting buffer size on octree reads (setvbuf)
+In-Reply-To: <200804281841.m3SIfHPv015978@mta1.lbl.gov>
+References: <4815c490.033a360a.0327.0d09SMTPIN_ADDED@mx.google.com>
+	<E111C3C3-F81F-4203-8F4F-5DDC15964A05@gmail.com>
+	<200804281841.m3SIfHPv015978@mta1.lbl.gov>
+Message-ID: <45004264-5E44-4F98-9E39-D05B42EDC0DA@gmail.com>
+
+Hi Peter,
+
+I'm not surprised to hear that readoct is CPU-bound, since it does a  
+fair amount of processing on the buffered input.  Generally, you only  
+reach the system performance limits when you are doing little more  
+than reading data into memory, in which case memory mapping the file  
+makes a lot of sense (for Unix systems that support it, anyway).   
+Since readoct has to unpack the data and allocate octree nodes and  
+leaves and so on, I'm not sure how best to speed up the process.
+
+-Greg
+
+> From: Peter Apian-Bennewitz <apian@pab-opto.de>
+> Date: April 28, 2008 11:39:52 AM PDT
+>
+> Hi Greg,
+>
+> regarding the long time it takes reading octrees (multiple with  
+> sizes > 50MB):
+>
+> I've tested with setvbuf calls after the fopen in readoct and  
+> readobj with a size of 2MB (system default is 4kB).
+>
+> Well- the number of reads went down, but the time for reading  
+> remained unchanged: 2.47min down from 2.48min.
+> It seems truly CPU (Xeon) limited, at least in this case, when  
+> reading from local disk (bandwidth>20MB).
+> Nevertheless, using a larger buffer than the default 4kB may make  
+> sense. E.g. in other scenarios (might be usable on NFS reads where  
+> mount rsize is larger than 4k), with a minor chance of portability  
+> problems ("The setbuf() and setvbuf() functions conform to C89 and  
+> C99" it says in the man page). Ah, well, setbuf is already in use  
+> for setting up the ambient file. IMHO it might be a good thing to  
+> add to readoct, unless rendering is done on systems where an  
+> increased buffer takes away a significant part of valuable mem.
+>
+> -Peter
+>
+> PS: Tested on fresh 'head'  -  cc to the dev list in case anyone  
+> stumbles across, comments appreciated.
+
+From rfritz at u.washington.edu  Tue Apr 29 13:30:06 2008
+From: rfritz at u.washington.edu (R Fritz)
+Date: Tue Apr 29 13:30:10 2008
+Subject: [Radiance-dev] Re: setting buffer size on octree reads (setvbuf)
+Message-ID: <5EDC296A-0E1B-4D80-9400-38DA4A20C233@u.washington.edu>
+
+[Reappearing from under a tub]
+
+> Since readoct has to unpack the data and allocate octree nodes and
+> leaves and so on, I'm not sure how best to speed up the process.
+
+
+Perhaps the data doesn't need to be packed any more? There's hugely  
+more memory available in modern systems than the ones you worked with  
+when you developed that file format. Though I suppose the best thing  
+to do is the by-the-book "instrument, then code" approach.
+
+Randolph Fritz
+   design machine group
+   architecture department
+   university of washington
+rfritz@u.washington.edu
+
+
+From gregoryjward at gmail.com  Tue Apr 29 14:45:43 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue Apr 29 14:45:53 2008
+Subject: [Radiance-dev] Re: setting buffer size on octree reads (setvbuf)
+In-Reply-To: <5EDC296A-0E1B-4D80-9400-38DA4A20C233@u.washington.edu>
+References: <5EDC296A-0E1B-4D80-9400-38DA4A20C233@u.washington.edu>
+Message-ID: <995933B8-8347-4B77-853F-2E4E464C0035@gmail.com>
+
+Hi Randolph,
+
+There's no sensible way to read in an octree without doing some  
+allocation along the way.  The file format is designed more for speed  
+and portability than for speed.  Peter A-B and I found out (after  
+instrumenting the code a bit) that the slow loads in his case are  
+from the modifier usage more than anything else.  Peter will  
+explain.  (Peter?)
+
+-Greg
+
+> From: R Fritz <rfritz@u.washington.edu>
+> Date: April 29, 2008 1:30:06 PM PDT
+>
+> [Reappearing from under a tub]
+>
+>> Since readoct has to unpack the data and allocate octree nodes and
+>> leaves and so on, I'm not sure how best to speed up the process.
+>
+> Perhaps the data doesn't need to be packed any more? There's hugely  
+> more memory available in modern systems than the ones you worked  
+> with when you developed that file format. Though I suppose the best  
+> thing to do is the by-the-book "instrument, then code" approach.
+>
+> Randolph Fritz
+>
+
+From apian at pab-opto.de  Wed Apr 30 02:41:23 2008
+From: apian at pab-opto.de (Peter Apian-Bennewitz)
+Date: Wed Apr 30 02:42:52 2008
+Subject: [Radiance-dev] time needed for octree reading (was Re: setting
+ buffer size on octree reads (setvbuf)  )
+Message-ID: <200804300942.m3U9gmeJ014488@mta2.lbl.gov>
+
+Hi all,
+
+The observed slow reading of frozen octrees happens if and only if:
+- the geometric object (polygons in this case) each have their own, 
+different modifier. This is probably rare, but  may happen if each 
+polygon uses a texfunc to interpolate the normal.
+- each of these modifiers have a unique name
+It is only relevant if there are millions of such objects (e.g. 
+tessellated surfaces imported from CAD).
+
+Then the octree reading spends 96% of its time in otndx() (readoct.c), 
+which handles a hash table. I would *guess* (not be field of expertise 
+anyway) that the hash algorithm is slow under these extreme 
+circumstances, since these unique modifier names are only inserted, but 
+never ever re-used. Effectively this exotic scenario screws up the idea 
+of having a hash table.
+
+The solution (thanks Greg) was to use a modifier name for the texfunc 
+that applies to all polygons with the same material, although each 
+texfunc is different. This works since the texfunc is specified just 
+prior to its polygon.
+The decrease in loading time is noticeable: 18 versus 148 seconds for 
+320MB of frozen octrees.
+
+It is worth to note that, in a wider context and from a different 
+perspective, this specific use of texfunc/polygons might be better 
+served with the Radiance mesh primitive, resulting in less file and 
+memory use and with faster reading and rendering.
+
+As a general hint, reading of non-frozen octrees may be slower. Use of 
+frozen octrees is recommended for speed (by Greg).
+
+Regarding my suggestion to increase the stream buffer size for octree 
+readings: The above timings use a 2MB buffer. Likely the 4k standard 
+buffer size doesn't matter much for local discs, although I'm inclined 
+to stick with the 2MB, because of the reduced. number of system calls. 
+It may have a larger influence on NFS mounts, depending on the mount 
+options. The only reason not to change the source is that *any* 
+non-urgent change may introduce unforeseen side effects on some systems. 
+Even if setvbuf seems to be a pretty much standardized call.
+
+Thanks to Greg and the gprof profiler
+
+cheers
+Peter
+
+-- 
+ pab-opto, Freiburg, Germany, http://www.pab-opto.de
+ [see web page to check digital email signature]
+
+
+From gregoryjward at gmail.com  Wed Apr 30 16:10:19 2008
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed Apr 30 16:10:32 2008
+Subject: [Radiance-dev] Help compiling 3R9 for Linux
+Message-ID: <BC2A68B0-D7FA-4096-A8F7-C4A3DA5A6B2F@lmi.net>
+
+If anyone out there is willing to lend a hand, I'd like to compile  
+Radiance under Linux for a 3.9 release.  Please use whatever method  
+you think will be most portable.  If that requires static links, fine  
+by me.  I don't know Linux well enough to compile things portably,  
+nor to I have convenient access to a machine to do so.  The release  
+source may be downloaded from:
+
+	http://radsite.lbl.gov/radiance/dist/rad3R9.tar.gz
+
+Please respond and CC the list before you begin, so we don't  
+duplicate effort.
+
+Thanks in advance,
+-Greg
+
+From mstock at umich.edu  Wed Apr 30 20:21:53 2008
+From: mstock at umich.edu (Mark Stock)
+Date: Wed Apr 30 20:22:26 2008
+Subject: [Radiance-dev] Help compiling 3R9 for Linux
+In-Reply-To: <BC2A68B0-D7FA-4096-A8F7-C4A3DA5A6B2F@lmi.net>
+References: <BC2A68B0-D7FA-4096-A8F7-C4A3DA5A6B2F@lmi.net>
+Message-ID: <Pine.LNX.4.64.0804302320070.19452@rygar.gpcc.itd.umich.edu>
+
+Greg,
+
+I can take a look at it for a few minutes now, and likely 
+tomorrow morning as well. I'm not too sure if I can be of help, 
+but I'll try.
+
+Mark
+
+On Wed, 30 Apr 2008, Greg Ward wrote:
+
+> If anyone out there is willing to lend a hand, I'd like to compile Radiance 
+> under Linux for a 3.9 release.  Please use whatever method you think will be 
+> most portable.  If that requires static links, fine by me.  I don't know 
+> Linux well enough to compile things portably, nor to I have convenient access 
+> to a machine to do so.  The release source may be downloaded from:
+>
+> 	http://radsite.lbl.gov/radiance/dist/rad3R9.tar.gz
+>
+> Please respond and CC the list before you begin, so we don't duplicate 
+> effort.
+>
+> Thanks in advance,
+> -Greg
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+
+From mstock at umich.edu  Wed Apr 30 20:36:58 2008
+From: mstock at umich.edu (Mark Stock)
+Date: Wed Apr 30 20:37:24 2008
+Subject: [Radiance-dev] Help compiling 3R9 for Linux
+In-Reply-To: <BC2A68B0-D7FA-4096-A8F7-C4A3DA5A6B2F@lmi.net>
+References: <BC2A68B0-D7FA-4096-A8F7-C4A3DA5A6B2F@lmi.net>
+Message-ID: <Pine.LNX.4.64.0804302327540.19452@rygar.gpcc.itd.umich.edu>
+
+Greg,
+
+Reporting for a release (not unstable or testing) version of 
+Fedora 8 i686, using gcc 4.1.2, with the default rmake command, I 
+find that 3R9 builds completely. The dozen or so warnings are 
+mostly about how mktemp is dangerous and that we should use 
+mkstemp. Some other warnings are in libtiff, another about how 
+gets is dangerous.
+
+Mark
+
+On Wed, 30 Apr 2008, Greg Ward wrote:
+
+> If anyone out there is willing to lend a hand, I'd like to compile Radiance 
+> under Linux for a 3.9 release.  Please use whatever method you think will be 
+> most portable.  If that requires static links, fine by me.  I don't know 
+> Linux well enough to compile things portably, nor to I have convenient access 
+> to a machine to do so.  The release source may be downloaded from:
+>
+> 	http://radsite.lbl.gov/radiance/dist/rad3R9.tar.gz
+>
+> Please respond and CC the list before you begin, so we don't duplicate 
+> effort.
+>
+> Thanks in advance,
+> -Greg
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+
+From gregoryjward at gmail.com  Wed Apr 30 20:42:10 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed Apr 30 20:42:27 2008
+Subject: [Radiance-dev] Help compiling 3R9 for Linux
+In-Reply-To: <Pine.LNX.4.64.0804302327540.19452@rygar.gpcc.itd.umich.edu>
+References: <BC2A68B0-D7FA-4096-A8F7-C4A3DA5A6B2F@lmi.net>
+	<Pine.LNX.4.64.0804302327540.19452@rygar.gpcc.itd.umich.edu>
+Message-ID: <D3A61305-14B7-44C3-AFEB-0B27B3F8A80C@gmail.com>
+
+Great, thanks Mark.  That was quick.  Any chance of posting the  
+executables somewhere so I can grab them?  Any comments from the list  
+on how to ensure portability between Linux flavors?
+
+-Greg
+
+> From: Mark Stock <mstock@umich.edu>
+> Date: April 30, 2008 8:36:58 PM PDT
+>
+> Greg,
+>
+> Reporting for a release (not unstable or testing) version of Fedora  
+> 8 i686, using gcc 4.1.2, with the default rmake command, I find  
+> that 3R9 builds completely. The dozen or so warnings are mostly  
+> about how mktemp is dangerous and that we should use mkstemp. Some  
+> other warnings are in libtiff, another about how gets is dangerous.
+>
+> Mark
+>
+> On Wed, 30 Apr 2008, Greg Ward wrote:
+>
+>> If anyone out there is willing to lend a hand, I'd like to compile  
+>> Radiance under Linux for a 3.9 release.  Please use whatever  
+>> method you think will be most portable.  If that requires static  
+>> links, fine by me.  I don't know Linux well enough to compile  
+>> things portably, nor to I have convenient access to a machine to  
+>> do so.  The release source may be downloaded from:
+>>
+>> 	http://radsite.lbl.gov/radiance/dist/rad3R9.tar.gz
+>>
+>> Please respond and CC the list before you begin, so we don't  
+>> duplicate effort.
+>>
+>> Thanks in advance,
+>> -Greg
+

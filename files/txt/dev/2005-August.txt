@@ -1,0 +1,863 @@
+From canoe at onetel.com  Fri Aug 12 12:03:27 2005
+From: canoe at onetel.com (James Lee)
+Date: Fri Aug 12 12:04:47 2005
+Subject: [Radiance-dev] genbeads
+Message-ID: <20050812.10032700.293265803@landeck.jamesipoos.com>
+
+I'm checking my build of 3.7.1 and notice that the source
+for genbeads is provided but it is not listed in the makefile
+for build.   Is this a slip?  Is genbeads part of radiance or
+not?
+
+
+James Lee.
+
+
+From gregoryjward at gmail.com  Fri Aug 12 13:22:59 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri Aug 12 13:23:52 2005
+Subject: [Radiance-dev] genbeads
+In-Reply-To: <20050812.10032700.293265803@landeck.jamesipoos.com>
+References: <20050812.10032700.293265803@landeck.jamesipoos.com>
+Message-ID: <3A889B93-FAB3-42C3-A307-DE020F84DB4F@gmail.com>
+
+Hi James,
+
+Genbeads, gencatenary, and a few other Radiance generators are  
+unsupported but provided for the adventurous as compilable  
+additions.  You're on your own figuring out how they work and if  
+they're useful.  If you really like something, feel free to write a  
+man page for it.
+
+-Greg
+
+> From: James Lee <canoe@onetel.com>
+> Date: August 12, 2005 10:03:27 AM EDT (CA)
+>
+> I'm checking my build of 3.7.1 and notice that the source
+> for genbeads is provided but it is not listed in the makefile
+> for build.   Is this a slip?  Is genbeads part of radiance or
+> not?
+>
+> James Lee.
+>
+
+From canoe at onetel.com  Fri Aug 12 15:00:19 2005
+From: canoe at onetel.com (James Lee)
+Date: Fri Aug 12 15:01:59 2005
+Subject: [Radiance-dev] genbeads
+Message-ID: <20050812.13001900.2825163587@landeck.jamesipoos.com>
+
+On 12/08/05, 12:22:59, Gregory "J." Ward <gregoryjward@gmail.com> wrote
+regarding Re: [Radiance-dev] genbeads:
+
+> Genbeads, gencatenary, and a few other Radiance generators are
+> unsupported but provided for the adventurous as compilable
+> additions.  You're on your own figuring out how they work and if
+> they're useful.  If you really like something, feel free to write a
+> man page for it.
+
+Thanks for the info.  I will leave out of my binary distribution.
+
+I noticed the this when running an old copy (2003 Dec) of the
+"Radiance Testing Framework", is there a newer version?
+
+
+
+James.
+
+From marcdevon at hotmail.com  Sat Aug 13 22:44:23 2005
+From: marcdevon at hotmail.com (Marcus Jacobs)
+Date: Sat Aug 13 22:46:18 2005
+Subject: [Radiance-dev] Ray Parameters
+Message-ID: <BAY102-F37DB4D7EACAF8288A97B0DA4BF0@phx.gbl>
+
+Dear Group
+
+I am seeking to make a minor modification of the Radiance source code to 
+solve an issue that I am having with my renders. The issue that I am trying 
+to resolve is the color shift (i.e. color bleeding) that occurs. My goal is 
+to allow for me or anyone else to wishes to utilize the added functionality 
+to gain some artistic control on the amount of color bleeding that occurs 
+without invalidating the physical accuracy of the result. I have been able 
+to accomplish this in RADZILLA by utilizing its alternate ambient material. 
+I have an idea which may accomplish the same goal in classic Radiance.
+
+In rayinit.cal there are many variables (i.e. Dx, Dy, Dx, Lu, Lv, etc.) that 
+are available to the user for use in function files. What I would like to do 
+is to gain control of the ray type parameter (rtype) defined in ray.h. The 
+basic concept is that in a function file associated with colorpict or 
+colorfunc, if the ray type is equal to anything excluding an ambient ray, 
+the color will remain unchanged. If the ray type is an ambient ray, the 
+color could be defined by the user.  I have created my own function file 
+,colorshift.cal, which would define the ambient color of a material as:
+
+red = (1- B4) * grey(B1,B2,B3) + B4*B1;
+green = (1- B4) * grey(B1,B2,B3) + B4*B2;
+blue = (1- B4) * grey(B1,B2,B3) + B4*B3;
+
+where B1, B2, B3, B4  is the color's red, green, blue components and color 
+bleeding factor (detemined by the user) respectively. This will have the 
+effect of desaturating the color according to the color bleedig factor 
+without altering its overall reflectance (i.e. grey(r,g,b) will remain 
+constant). I have done some research in func.h and func.c to see how I might 
+gain some control over the ray type parameter. I have not had much luck in 
+completely understanding how the code works. I am assuming that many of the 
+standard parameters listed in rayinit.cal are extracted in the function 
+chanvalue. One problem that I am having is that I can find where this 
+particular function is being called elsewhere in the source code. Any 
+insight as to how to accomplish my goal would be greatly appreciated.
+
+Regards,
+
+Marcus Jacobs
+
+
+
+From gregoryjward at gmail.com  Mon Aug 15 16:53:11 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon Aug 15 16:54:14 2005
+Subject: [Radiance-dev] Ray Parameters
+In-Reply-To: <BAY102-F37DB4D7EACAF8288A97B0DA4BF0@phx.gbl>
+References: <BAY102-F37DB4D7EACAF8288A97B0DA4BF0@phx.gbl>
+Message-ID: <83FA6078-77EC-4949-BFA0-847424A667BF@gmail.com>
+
+Hi Marcus,
+
+I think what you are trying to do would be better accomplished by  
+applying a white-balancing step to the rendered image in a post- 
+process.  The reason we don't notice color bleeding as much in real  
+life is that our eye adjusts to the overall color balance in a  
+space.  When we look at an image on a computer monitor or printed  
+page, our eyes are mostly adjusted to the color of the surround, not  
+the image, hence any color cast in the image gets interpreted as an  
+overall shift.  To compensate for this, you should pick out some area  
+that you think should be white in the image, measure its color (using  
+ximage or whatever) and adjust all the image values by this color  
+using pcomb or pfilt.
+
+Let's say you measure an RGB value of a gray patch as (0.53,.91,.67)  
+indicating a greenish tint.  You could apply pfilt to the image thus:
+
+     pfilt -er `ev .91/.53` -eb `ev .91/.67` -1 orig.pic > corrected.pic
+
+This will bring the red and blue channels into line with the green  
+channel, adjusting the exposure setting at the same time in order to  
+maintain luminance calibration.  This is a very crude form of white  
+balancing.  For a better method, see the following paper:
+
+     http://www.anyhere.com/gward/papers/egwr02/
+
+If this really doesn't satisfy your needs, then I'll give you some  
+hints of what to do in the code, but it's a fair amount of work  
+you're looking at for dubious benefits.
+
+-Greg
+
+> From: "Marcus Jacobs" <marcdevon@hotmail.com>
+> Date: August 13, 2005 1:44:23 PM PDT
+>
+> Dear Group
+>
+> I am seeking to make a minor modification of the Radiance source  
+> code to solve an issue that I am having with my renders. The issue  
+> that I am trying to resolve is the color shift (i.e. color  
+> bleeding) that occurs. My goal is to allow for me or anyone else to  
+> wishes to utilize the added functionality to gain some artistic  
+> control on the amount of color bleeding that occurs without  
+> invalidating the physical accuracy of the result. I have been able  
+> to accomplish this in RADZILLA by utilizing its alternate ambient  
+> material. I have an idea which may accomplish the same goal in  
+> classic Radiance.
+>
+> In rayinit.cal there are many variables (i.e. Dx, Dy, Dx, Lu, Lv,  
+> etc.) that are available to the user for use in function files.  
+> What I would like to do is to gain control of the ray type  
+> parameter (rtype) defined in ray.h. The basic concept is that in a  
+> function file associated with colorpict or colorfunc, if the ray  
+> type is equal to anything excluding an ambient ray, the color will  
+> remain unchanged. If the ray type is an ambient ray, the color  
+> could be defined by the user.  I have created my own function  
+> file ,colorshift.cal, which would define the ambient color of a  
+> material as:
+>
+> red = (1- B4) * grey(B1,B2,B3) + B4*B1;
+> green = (1- B4) * grey(B1,B2,B3) + B4*B2;
+> blue = (1- B4) * grey(B1,B2,B3) + B4*B3;
+>
+> where B1, B2, B3, B4  is the color's red, green, blue components  
+> and color bleeding factor (detemined by the user) respectively.  
+> This will have the effect of desaturating the color according to  
+> the color bleedig factor without altering its overall reflectance  
+> (i.e. grey(r,g,b) will remain constant). I have done some research  
+> in func.h and func.c to see how I might gain some control over the  
+> ray type parameter. I have not had much luck in completely  
+> understanding how the code works. I am assuming that many of the  
+> standard parameters listed in rayinit.cal are extracted in the  
+> function chanvalue. One problem that I am having is that I can find  
+> where this particular function is being called elsewhere in the  
+> source code. Any insight as to how to accomplish my goal would be  
+> greatly appreciated.
+>
+> Regards,
+>
+> Marcus Jacobs
+>
+
+From marcdevon at hotmail.com  Wed Aug 17 18:11:01 2005
+From: marcdevon at hotmail.com (Marcus Jacobs)
+Date: Wed Aug 17 18:12:34 2005
+Subject: [Radiance-dev] Ray Parameters
+In-Reply-To: <MC3-F27K6J2DJkhYUjA00157a1a@mc3-f27.hotmail.com>
+Message-ID: <BAY102-F1605E6774E184C0EF8C6E4A4B30@phx.gbl>
+
+You know Greg, I am always impressed with the all that you know. You are 
+like the wise old man on top of the mountain (not that you are old).
+
+Any solution to my problem that would allow for me to use the "stock" 
+Radiance without any code modifications would always be preferable. One 
+consideration that I have to make is how would the suggested technique 
+impact renderings for surfaces that pick less color than others. I tried to 
+employ the method that you previously suggested but I received an error 
+message stating "exposure out of range" or something to that effect. What's 
+cause of this error? Also, the technique that you decribed would work well 
+if I have gray surfaces to use as a some sort of baseline. Are there any 
+techniques that exist for performing a white-balancing if I could not select 
+any white surfaces within a particular view?
+
+For conceptual method that I previously suggested, why would dubious results 
+be produced. I know that I have 0.0000001% (I am probably over estimating) 
+of the Radiance knowledge that you have but I thought that if the overall 
+reflectance of the material would be unchanged (i.e. grey(r,g,b)) but only 
+the color of the material (as seen by an ambient ray) would be changed, I 
+thought the result would remain valid. Why is this not the case?
+
+Thanks
+
+Marcus
+
+
+>Hi Marcus,
+>
+>I think what you are trying to do would be better accomplished by
+>applying a white-balancing step to the rendered image in a post-
+>process.  The reason we don't notice color bleeding as much in real
+>life is that our eye adjusts to the overall color balance in a
+>space.  When we look at an image on a computer monitor or printed
+>page, our eyes are mostly adjusted to the color of the surround, not
+>the image, hence any color cast in the image gets interpreted as an
+>overall shift.  To compensate for this, you should pick out some area
+>that you think should be white in the image, measure its color (using
+>ximage or whatever) and adjust all the image values by this color
+>using pcomb or pfilt.
+>
+>Let's say you measure an RGB value of a gray patch as (0.53,.91,.67)
+>indicating a greenish tint.  You could apply pfilt to the image thus:
+>
+>      pfilt -er `ev .91/.53` -eb `ev .91/.67` -1 orig.pic > corrected.pic
+>
+>This will bring the red and blue channels into line with the green
+>channel, adjusting the exposure setting at the same time in order to
+>maintain luminance calibration.  This is a very crude form of white
+>balancing.  For a better method, see the following paper:
+>
+>      http://www.anyhere.com/gward/papers/egwr02/
+>
+>If this really doesn't satisfy your needs, then I'll give you some
+>hints of what to do in the code, but it's a fair amount of work
+>you're looking at for dubious benefits.
+>
+>-Greg
+>
+> > From: "Marcus Jacobs" <marcdevon@hotmail.com>
+> > Date: August 13, 2005 1:44:23 PM PDT
+> >
+> > Dear Group
+> >
+> > I am seeking to make a minor modification of the Radiance source
+> > code to solve an issue that I am having with my renders. The issue
+> > that I am trying to resolve is the color shift (i.e. color
+> > bleeding) that occurs. My goal is to allow for me or anyone else to
+> > wishes to utilize the added functionality to gain some artistic
+> > control on the amount of color bleeding that occurs without
+> > invalidating the physical accuracy of the result. I have been able
+> > to accomplish this in RADZILLA by utilizing its alternate ambient
+> > material. I have an idea which may accomplish the same goal in
+> > classic Radiance.
+> >
+> > In rayinit.cal there are many variables (i.e. Dx, Dy, Dx, Lu, Lv,
+> > etc.) that are available to the user for use in function files.
+> > What I would like to do is to gain control of the ray type
+> > parameter (rtype) defined in ray.h. The basic concept is that in a
+> > function file associated with colorpict or colorfunc, if the ray
+> > type is equal to anything excluding an ambient ray, the color will
+> > remain unchanged. If the ray type is an ambient ray, the color
+> > could be defined by the user.  I have created my own function
+> > file ,colorshift.cal, which would define the ambient color of a
+> > material as:
+> >
+> > red = (1- B4) * grey(B1,B2,B3) + B4*B1;
+> > green = (1- B4) * grey(B1,B2,B3) + B4*B2;
+> > blue = (1- B4) * grey(B1,B2,B3) + B4*B3;
+> >
+> > where B1, B2, B3, B4  is the color's red, green, blue components
+> > and color bleeding factor (detemined by the user) respectively.
+> > This will have the effect of desaturating the color according to
+> > the color bleedig factor without altering its overall reflectance
+> > (i.e. grey(r,g,b) will remain constant). I have done some research
+> > in func.h and func.c to see how I might gain some control over the
+> > ray type parameter. I have not had much luck in completely
+> > understanding how the code works. I am assuming that many of the
+> > standard parameters listed in rayinit.cal are extracted in the
+> > function chanvalue. One problem that I am having is that I can find
+> > where this particular function is being called elsewhere in the
+> > source code. Any insight as to how to accomplish my goal would be
+> > greatly appreciated.
+> >
+> > Regards,
+> >
+> > Marcus Jacobs
+> >
+
+
+
+From ckehrlich at yahoo.com  Wed Aug 17 18:39:09 2005
+From: ckehrlich at yahoo.com (Charles Ehrlich)
+Date: Wed Aug 17 18:46:46 2005
+Subject: [Radiance-dev] Ray Parameters
+In-Reply-To: <BAY102-F1605E6774E184C0EF8C6E4A4B30@phx.gbl>
+Message-ID: <20050817163909.37826.qmail@web80309.mail.yahoo.com>
+
+Marcus,
+ 
+You share my admiration for the rendering master.
+ 
+You asked if "there any techniques that exist for performing a white-balancing if I could not select any white surfaces within a particular view?"
+ 
+One emprical technique to find the white point that I've considered implementing in Radiance scenes mimicks a traditional lens-and-film photographic technique.  First render the scene in low resolution with one or more "white card" or "grey card" surfaced added to your scene temporarily within the field of view, perhaps close to the center of view...or the direction you think the viewer will be gazing most frequently...or scattered throughout the scene for a good average.  Measure the white point on these temporary surface(s).  Re-render the image without the "white cards" and adjust with pfilt post-processing using the pre-determined whitepoint correction factors.
+ 
+This discussion probably should be moved back to the general category because it does not really involve code development issues.
+ 
+-Chas
+
+Marcus Jacobs <marcdevon@hotmail.com> wrote:
+You know Greg, I am always impressed with the all that you know. You are 
+like the wise old man on top of the mountain (not that you are old).
+
+Any solution to my problem that would allow for me to use the "stock" 
+Radiance without any code modifications would always be preferable. One 
+consideration that I have to make is how would the suggested technique 
+impact renderings for surfaces that pick less color than others. I tried to 
+employ the method that you previously suggested but I received an error 
+message stating "exposure out of range" or something to that effect. What's 
+cause of this error? Also, the technique that you decribed would work well 
+if I have gray surfaces to use as a some sort of baseline. Are there any 
+techniques that exist for performing a white-balancing if I could not select 
+any white surfaces within a particular view?
+
+For conceptual method that I previously suggested, why would dubious results 
+be produced. I know that I have 0.0000001% (I am probably over estimating) 
+of the Radiance knowledge that you have but I thought that if the overall 
+reflectance of the material would be unchanged (i.e. grey(r,g,b)) but only 
+the color of the material (as seen by an ambient ray) would be changed, I 
+thought the result would remain valid. Why is this not the case?
+
+Thanks
+
+Marcus
+
+
+>Hi Marcus,
+>
+>I think what you are trying to do would be better accomplished by
+>applying a white-balancing step to the rendered image in a post-
+>process. The reason we don't notice color bleeding as much in real
+>life is that our eye adjusts to the overall color balance in a
+>space. When we look at an image on a computer monitor or printed
+>page, our eyes are mostly adjusted to the color of the surround, not
+>the image, hence any color cast in the image gets interpreted as an
+>overall shift. To compensate for this, you should pick out some area
+>that you think should be white in the image, measure its color (using
+>ximage or whatever) and adjust all the image values by this color
+>using pcomb or pfilt.
+>
+>Let's say you measure an RGB value of a gray patch as (0.53,.91,.67)
+>indicating a greenish tint. You could apply pfilt to the image thus:
+>
+> pfilt -er `ev .91/.53` -eb `ev .91/.67` -1 orig.pic > corrected.pic
+>
+>This will bring the red and blue channels into line with the green
+>channel, adjusting the exposure setting at the same time in order to
+>maintain luminance calibration. This is a very crude form of white
+>balancing. For a better method, see the following paper:
+>
+> http://www.anyhere.com/gward/papers/egwr02/
+>
+>If this really doesn't satisfy your needs, then I'll give you some
+>hints of what to do in the code, but it's a fair amount of work
+>you're looking at for dubious benefits.
+>
+>-Greg
+>
+> > From: "Marcus Jacobs" 
+> > Date: August 13, 2005 1:44:23 PM PDT
+> >
+> > Dear Group
+> >
+> > I am seeking to make a minor modification of the Radiance source
+> > code to solve an issue that I am having with my renders. The issue
+> > that I am trying to resolve is the color shift (i.e. color
+> > bleeding) that occurs. My goal is to allow for me or anyone else to
+> > wishes to utilize the added functionality to gain some artistic
+> > control on the amount of color bleeding that occurs without
+> > invalidating the physical accuracy of the result. I have been able
+> > to accomplish this in RADZILLA by utilizing its alternate ambient
+> > material. I have an idea which may accomplish the same goal in
+> > classic Radiance.
+> >
+> > In rayinit.cal there are many variables (i.e. Dx, Dy, Dx, Lu, Lv,
+> > etc.) that are available to the user for use in function files.
+> > What I would like to do is to gain control of the ray type
+> > parameter (rtype) defined in ray.h. The basic concept is that in a
+> > function file associated with colorpict or colorfunc, if the ray
+> > type is equal to anything excluding an ambient ray, the color will
+> > remain unchanged. If the ray type is an ambient ray, the color
+> > could be defined by the user. I have created my own function
+> > file ,colorshift.cal, which would define the ambient color of a
+> > material as:
+> >
+> > red = (1- B4) * grey(B1,B2,B3) + B4*B1;
+> > green = (1- B4) * grey(B1,B2,B3) + B4*B2;
+> > blue = (1- B4) * grey(B1,B2,B3) + B4*B3;
+> >
+> > where B1, B2, B3, B4 is the color's red, green, blue components
+> > and color bleeding factor (detemined by the user) respectively.
+> > This will have the effect of desaturating the color according to
+> > the color bleedig factor without altering its overall reflectance
+> > (i.e. grey(r,g,b) will remain constant). I have done some research
+> > in func.h and func.c to see how I might gain some control over the
+> > ray type parameter. I have not had much luck in completely
+> > understanding how the code works. I am assuming that many of the
+> > standard parameters listed in rayinit.cal are extracted in the
+> > function chanvalue. One problem that I am having is that I can find
+> > where this particular function is being called elsewhere in the
+> > source code. Any insight as to how to accomplish my goal would be
+> > greatly appreciated.
+> >
+> > Regards,
+> >
+> > Marcus Jacobs
+> >
+
+
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20050817/b9b72756/attachment.htm
+From gregoryjward at gmail.com  Thu Aug 18 03:53:36 2005
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu Aug 18 03:56:50 2005
+Subject: [Radiance-dev] Ray Parameters
+In-Reply-To: <BAY102-F1605E6774E184C0EF8C6E4A4B30@phx.gbl>
+References: <BAY102-F1605E6774E184C0EF8C6E4A4B30@phx.gbl>
+Message-ID: <71CA02A5-3A7A-4D40-9289-9211CCB0FA88@gmail.com>
+
+Hi Marcus,
+
+Chas' suggestion of rendering small white cards into your scene at  
+low resolution would certainly work.  It would give you a pretty good  
+idea of the color cast resulting from interreflections, which you  
+could then correct using pfilt.  However, it may not be necessary to  
+find a white or gray surface at all, since you know what you want  
+each surface to be based on the diffuse RGB values you've assigned to  
+them in your material description.  Simply divide the RGB's measured  
+from the rendering into the RGB's in your input and apply this as a  
+color correction.  Say you have a diffuse surface whose reddish color  
+cast you don't like, whose specification says it should have an RGB  
+value of (0.35,0.21,0.47) and whose actual RGB value as measured by  
+the 'c' command in ximage gives you back (2.15,1.1,1.5).  You could  
+balance the color of this image with:
+
+     % pfilt -1 -er `ev 0.35/2.15` -eg `ev 0.21/1.1` -eb `ev  
+0.47/1.5` rendered.pic > corrected.pic
+
+You say you are getting an error about "exposure out of range," but  
+you didn't say which program was generating this error or under what  
+circumstances.
+
+The reason I'm less fond of your code change suggestion is because  
+color bleeding really does happen, and if you've modeled your surface  
+colors correctly, your overall result will appear more realistic if  
+you perform white balancing rather than getting rid of color bleeding  
+altogether.
+
+-Greg
+
+> From: "Marcus Jacobs" <marcdevon@hotmail.com>
+> Date: August 17, 2005 11:11:01 AM CDT
+>
+> You know Greg, I am always impressed with the all that you know.  
+> You are like the wise old man on top of the mountain (not that you  
+> are old).
+>
+> Any solution to my problem that would allow for me to use the  
+> "stock" Radiance without any code modifications would always be  
+> preferable. One consideration that I have to make is how would the  
+> suggested technique impact renderings for surfaces that pick less  
+> color than others. I tried to employ the method that you previously  
+> suggested but I received an error message stating "exposure out of  
+> range" or something to that effect. What's cause of this error?  
+> Also, the technique that you decribed would work well if I have  
+> gray surfaces to use as a some sort of baseline. Are there any  
+> techniques that exist for performing a white-balancing if I could  
+> not select any white surfaces within a particular view?
+>
+> For conceptual method that I previously suggested, why would  
+> dubious results be produced. I know that I have 0.0000001% (I am  
+> probably over estimating) of the Radiance knowledge that you have  
+> but I thought that if the overall reflectance of the material would  
+> be unchanged (i.e. grey(r,g,b)) but only the color of the material  
+> (as seen by an ambient ray) would be changed, I thought the result  
+> would remain valid. Why is this not the case?
+>
+> Thanks
+>
+> Marcus
+>
+
+From mstock at umich.edu  Sat Aug 20 07:15:10 2005
+From: mstock at umich.edu (Mark Stock)
+Date: Sat Aug 20 07:16:12 2005
+Subject: [Radiance-dev] Errors in ambient calculation in 3R7P1?
+Message-ID: <Pine.LNX.4.63.0508200101050.28205@arkanoid.gpcc.itd.umich.edu>
+
+I am testing a new benchmark scene to replace the old "mirror 
+pyramid" scene, and I came across some strange behavior in the 
+3R7P1 release.
+
+The benchmark scene and spase table is at:
+http://mark.technolope.org/pages/rad_bench.html
+
+The 3R7P1 image in question is:
+http://mark.technolope.org/radmisc/bench4_02.png
+
+The same commands, under 3R6P1, created this:
+http://mark.technolope.org/radmisc/bench4_01.png
+
+So, neither of the images are perfect, but the large black areas 
+in the 3R7P1 image worry me. I have tried very similar scenes 
+with nearly similar parameters, and every other time I run it, 
+those dark spots appear on the fractal object in the middle. I am 
+still running more tests on every Radiance install that I can 
+find.
+
+Some notes about the benchmark scene: I tried to include a 
+greater variety of commonly-used Radiance objects and modifiers. 
+The majority of the time spent, though, is still in the ambient 
+calculation---the forte of our favorite software. But I included 
+a large colorpict/mixpict, an obj2mesh object (with normals), 
+plastic, interface, glass and metal, daylight and electric light, 
+and large and small features. The render takes long enough that 
+parallel machines of 2010 still won't be able to finish it in 
+less than a minute. The bench2 scene saw speed improvements of 
+nearly 100-fold over it's 5-year history. Any comments about the 
+benchmark scene are also welcome.
+
+Thanks!
+
+Mark
+
+From gregoryjward at gmail.com  Sat Aug 20 18:43:32 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Sat Aug 20 18:44:34 2005
+Subject: [Radiance-dev] Errors in ambient calculation in 3R7P1?
+In-Reply-To: <Pine.LNX.4.63.0508200101050.28205@arkanoid.gpcc.itd.umich.edu>
+References: <Pine.LNX.4.63.0508200101050.28205@arkanoid.gpcc.itd.umich.edu>
+Message-ID: <64692035-A1FC-4501-AA4B-60BFD709BA7C@gmail.com>
+
+Hi Mark,
+
+Thanks for putting together a new benchmark.  I agree that the dark  
+areas are concerning -- there may be a bug in the irradiance gradient  
+calculation, since this is the only thing that could have such an  
+effect.  I made a number of changes to the ambient calculation to  
+accommodate the new rtcontrib program, and it may be that I broke  
+something along the way.  I plan to investigate this weekend to see  
+if I can find an error.  I performed a test of the ambient  
+calculation including the irradiance gradient calc. when I made the  
+changes, but perhaps I missed something.
+
+I shall get back to you regarding what I find by Monday.
+
+-Greg
+
+From mstock at umich.edu  Sun Aug 21 00:35:33 2005
+From: mstock at umich.edu (Mark Stock)
+Date: Sun Aug 21 00:36:40 2005
+Subject: [Radiance-dev] Errors in ambient calculation in 3R7P1?
+In-Reply-To: <64692035-A1FC-4501-AA4B-60BFD709BA7C@gmail.com>
+References: <Pine.LNX.4.63.0508200101050.28205@arkanoid.gpcc.itd.umich.edu>
+	<64692035-A1FC-4501-AA4B-60BFD709BA7C@gmail.com>
+Message-ID: <Pine.LNX.4.63.0508201832380.310@centipede.gpcc.itd.umich.edu>
+
+Greg,
+
+I am sorry if I am responsible for ruining your weekend. Does the 
+benchmark scene look OK to you (exercise the proper calculations, 
+include enough interesting stuff to be general, etc.)?
+
+Would it help your work if I ran more cases with older 
+Radiance versions?
+
+It's a bummer I missed you all at the conference. Hopefully when 
+I get my degree (and a job), I'll be more able to attend.
+
+Thank you.
+
+Mark
+
+On Sat, 20 Aug 2005, Greg Ward wrote:
+
+> Hi Mark,
+>
+> Thanks for putting together a new benchmark.  I agree that the 
+> dark areas are concerning -- there may be a bug in the 
+> irradiance gradient calculation, since this is the only thing 
+> that could have such an effect.  I made a number of changes to 
+> the ambient calculation to accommodate the new rtcontrib 
+> program, and it may be that I broke something along the way. 
+> I plan to investigate this weekend to see if I can find an 
+> error.  I performed a test of the ambient calculation including 
+> the irradiance gradient calc. when I made the changes, but 
+> perhaps I missed something.
+>
+> I shall get back to you regarding what I find by Monday.
+>
+> -Greg
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+
+From canoe at onetel.com  Sun Aug 21 17:05:24 2005
+From: canoe at onetel.com (James Lee)
+Date: Sun Aug 21 17:07:29 2005
+Subject: [Radiance-dev] Errors in ambient calculation in 3R7P1?
+In-Reply-To: <Pine.LNX.4.63.0508200101050.28205@arkanoid.gpcc.itd.umich.edu>
+References: <Pine.LNX.4.63.0508200101050.28205@arkanoid.gpcc.itd.umich.edu>
+Message-ID: <20050821.15052400.3240547625@landeck.jamesipoos.com>
+
+On 20/08/05, 06:15:10, Mark Stock <mstock@umich.edu> wrote regarding 
+[Radiance-dev] Errors in ambient calculation in 3R7P1?:
+
+> I am testing a new benchmark scene to replace the old "mirror
+> pyramid" scene, and I came across some strange behavior in the
+> 3R7P1 release.
+
+I too see some anomalies.  I've run the test on 4 machines and here
+are my pictures:
+
+http://www.blastwave.org/~james/bench4.cthuga.pic
+http://www.blastwave.org/~james/bench4.hastur.pic
+http://www.blastwave.org/~james/bench4.ra.pic
+http://www.blastwave.org/~james/bench4.zeus.pic
+
+My times are here:
+http://www.blastwave.org/~james/bench4.results.html
+
+The best is 3454 seconds.  With 4 CPUs in the Sun Fire V440 and 2
+in the V20z I look forward to an rpiece benchmark test!
+
+
+I can't seen what is causing the black shadows.  Next I will try
+some different settings - and rpiece for multi-CPU speed.
+
+
+James.
+
+
+
+From mstock at umich.edu  Sun Aug 21 17:13:30 2005
+From: mstock at umich.edu (Mark Stock)
+Date: Sun Aug 21 17:14:30 2005
+Subject: [Radiance-dev] Errors in ambient calculation in 3R7P1?
+In-Reply-To: <20050821.15052400.3240547625@landeck.jamesipoos.com>
+References: <Pine.LNX.4.63.0508200101050.28205@arkanoid.gpcc.itd.umich.edu>
+	<20050821.15052400.3240547625@landeck.jamesipoos.com>
+Message-ID: <Pine.LNX.4.63.0508211108070.4644@arkanoid.gpcc.itd.umich.edu>
+
+James,
+
+Since I am not very familiar with rpice and how to get multiple 
+processes started on a list of machines, maybe you could help me 
+write that portion of the benchmark test? I, too, am eager to try 
+it on the 8-proc Opteron system at work.
+
+Also, the rpict times are for serial runs, right?
+
+I'll put your times up, but recognize that we will have to re-do 
+everything when the bug is fixed.
+
+Mark
+
+On Sun, 21 Aug 2005, James Lee wrote:
+
+> On 20/08/05, 06:15:10, Mark Stock <mstock@umich.edu> wrote regarding
+> [Radiance-dev] Errors in ambient calculation in 3R7P1?:
+>
+>> I am testing a new benchmark scene to replace the old "mirror
+>> pyramid" scene, and I came across some strange behavior in the
+>> 3R7P1 release.
+>
+> I too see some anomalies.  I've run the test on 4 machines and here
+> are my pictures:
+>
+> http://www.blastwave.org/~james/bench4.cthuga.pic
+> http://www.blastwave.org/~james/bench4.hastur.pic
+> http://www.blastwave.org/~james/bench4.ra.pic
+> http://www.blastwave.org/~james/bench4.zeus.pic
+>
+> My times are here:
+> http://www.blastwave.org/~james/bench4.results.html
+>
+> The best is 3454 seconds.  With 4 CPUs in the Sun Fire V440 and 2
+> in the V20z I look forward to an rpiece benchmark test!
+>
+> I can't seen what is causing the black shadows.  Next I will try
+> some different settings - and rpiece for multi-CPU speed.
+>
+> James.
+
+From canoe at onetel.com  Sun Aug 21 18:54:38 2005
+From: canoe at onetel.com (James Lee)
+Date: Sun Aug 21 18:56:05 2005
+Subject: [Radiance-dev] Errors in ambient calculation in 3R7P1?
+In-Reply-To: <Pine.LNX.4.63.0508211108070.4644@arkanoid.gpcc.itd.umich.edu>
+References: <Pine.LNX.4.63.0508200101050.28205@arkanoid.gpcc.itd.umich.edu>
+	<20050821.15052400.3240547625@landeck.jamesipoos.com>
+	<Pine.LNX.4.63.0508211108070.4644@arkanoid.gpcc.itd.umich.edu>
+Message-ID: <20050821.16543800.1154581363@landeck.jamesipoos.com>
+
+On 21/08/05, 16:13:30, Mark Stock <mstock@umich.edu> wrote regarding Re: 
+[Radiance-dev] Errors in ambient calculation in 3R7P1?:
+
+> Since I am not very familiar with rpice and how to get multiple
+> processes started on a list of machines, maybe you could help me
+> write that portion of the benchmark test? I, too, am eager to try
+> it on the 8-proc Opteron system at work.
+
+OK, I'll see what I can do.
+
+
+> Also, the rpict times are for serial runs, right?
+
+I just ran "make", so just one CPU for rpict.
+
+
+> I'll put your times up, but recognize that we will have to re-do
+> everything when the bug is fixed.
+
+I understand, that's fine.
+
+
+
+BTW, the link to:
+http://mark.technolope.org/radmisc/bench4_03.png
+is not working.
+
+
+
+James.
+
+
+
+From gregoryjward at gmail.com  Mon Aug 22 06:42:28 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon Aug 22 06:43:34 2005
+Subject: [Radiance-dev] Errors in ambient calculation in 3R7P1?
+In-Reply-To: <Pine.LNX.4.63.0508201832380.310@centipede.gpcc.itd.umich.edu>
+References: <Pine.LNX.4.63.0508200101050.28205@arkanoid.gpcc.itd.umich.edu>
+	<64692035-A1FC-4501-AA4B-60BFD709BA7C@gmail.com>
+	<Pine.LNX.4.63.0508201832380.310@centipede.gpcc.itd.umich.edu>
+Message-ID: <BB349F03-F2AD-48AB-90C8-7981495C2F6B@gmail.com>
+
+Hi Mark,
+
+> I am sorry if I am responsible for ruining your weekend.
+
+Well, it was a difficult weekend on many counts, and I'd rather hear  
+sooner when a new release is broken than later.
+
+> Does the benchmark scene look OK to you (exercise the proper  
+> calculations, include enough interesting stuff to be general, etc.)?
+
+I really like the fact that you incorporated many of Radiance's  
+features in a single test.  It is really impossible to be  
+comprehensive, but I appreciate your effort and I think you did an  
+admirable job.  This is certainly a lot more challenging than any of  
+the test scenes I usually run, which I think is why this problem  
+showed up here rather than in my own prerelease checks.
+
+I may have some tweaks to suggest once I get this bug fixed.  I think  
+I've found the problem, and it wasn't the gradient calculation after  
+all but a ramification of some changes I made to accommodate Russian  
+roulette ray termination.  There were really quite a few changes to  
+the core renderer in this release, and that's the danger of altering  
+something as complicated as Radiance, even for the original author....
+
+> Would it help your work if I ran more cases with older Radiance  
+> versions?
+
+No, that's not necessary, thanks.  I resurrected 3.6 and verified  
+that it works properly with this scene, unlike 3.7.1.
+
+> It's a bummer I missed you all at the conference. Hopefully when I  
+> get my degree (and a job), I'll be more able to attend.
+
+Yes, we definitely missed having you there.  Christoph showed off  
+some of your artistic Radiance renderings to an appreciative  
+audience, and I related how they were even more impressive in a full- 
+sized print, like the one I saw at SIGGRAPH last year.
+
+Thanks again for your help in discovering this bug.  I am running a  
+test now with my hopeful fix, and if that's working, I'll put  
+together a 3.7.2 patch release tomorrow and make an announcement to  
+radiance-general.
+
+-Greg
+
+From mstock at umich.edu  Mon Aug 22 15:04:33 2005
+From: mstock at umich.edu (Mark Stock)
+Date: Mon Aug 22 15:05:35 2005
+Subject: [Radiance-dev] Errors in ambient calculation in 3R7P1?
+In-Reply-To: <BB349F03-F2AD-48AB-90C8-7981495C2F6B@gmail.com>
+References: <Pine.LNX.4.63.0508200101050.28205@arkanoid.gpcc.itd.umich.edu>
+	<64692035-A1FC-4501-AA4B-60BFD709BA7C@gmail.com>
+	<Pine.LNX.4.63.0508201832380.310@centipede.gpcc.itd.umich.edu>
+	<BB349F03-F2AD-48AB-90C8-7981495C2F6B@gmail.com>
+Message-ID: <Pine.LNX.4.63.0508220859140.19948@gyruss.gpcc.itd.umich.edu>
+
+
+On Sun, 21 Aug 2005, Greg Ward wrote:
+>
+>> Does the benchmark scene look OK to you (exercise the proper 
+>> calculations, include enough interesting stuff to be general, 
+>> etc.)?
+>
+> [cut]
+> I may have some tweaks to suggest once I get this bug fixed.
+
+Greg,
+
+I am looking forward to hearing about these as much as I am the 
+patch release!
+
+Mark
+

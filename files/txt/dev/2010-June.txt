@@ -1,0 +1,601 @@
+From maricanis at gmail.com  Wed Jun  2 04:29:34 2010
+From: maricanis at gmail.com (Marija Velickovic)
+Date: Wed Jun  2 04:29:57 2010
+Subject: [Radiance-dev] Scons script updates for MinGW compile of 4.0
+In-Reply-To: <370B5B8C-6442-41F7-A1A7-06BC5005D2DF@gmail.com>
+References: <AANLkTimxqS6Qyp2SSCmNX3AB10iScPmBlsNrbSyo2jp5@mail.gmail.com> 
+	<370B5B8C-6442-41F7-A1A7-06BC5005D2DF@gmail.com>
+Message-ID: <AANLkTimpUSbd1zhaBNRTFlfaDiNuJFduslvITufElljZ@mail.gmail.com>
+
+Hi,
+
+I've just tried latest HEAD version installation on Windows XP, SP3, and
+have next errors:
+
+###############
+
+F:\Instalacije\ray>C:\Python26\Scripts\scons build
+scons: Reading SConscript files ...
+Detected platform "win32" (nt).
+Reading configuration "platform\mingw.cfg"
+
+scons: warning: The Options class is deprecated; use the Variables class
+instead
+.
+File "F:\Instalacije\ray\SConstruct", line 9, in set_opts
+Checking for C library GL... no
+Checking for TIFFInitSGILog() in C library tiff... no
+TypeError: can only concatenate list (not "str") to list:
+  File "F:\Instalacije\ray\SConstruct", line 81:
+    SConscript(os.path.join('src', 'common', 'SConscript'))
+  File
+"C:\Python26\Lib\site-packages\scons-1.3.0\SCons\Script\SConscript.py", l
+ine 616:
+    return apply(method, args, kw)
+  File
+"C:\Python26\Lib\site-packages\scons-1.3.0\SCons\Script\SConscript.py", l
+ine 553:
+    return apply(_SConscript, [self.fs,] + files, subst_kw)
+  File
+"C:\Python26\Lib\site-packages\scons-1.3.0\SCons\Script\SConscript.py", l
+ine 262:
+    exec _file_ in call_stack[-1].globals
+  File "F:\Instalacije\ray\src\common\SConscript", line 47:
+    ALL = RTSCENE + RTPIC + STD + RTNET + env.get('RAD_COMPAT',[])
+
+
+Also it doesn't want to start building if supplementary files aren't
+included (previous version of Scons script build and installed even without
+lib files).
+
+#####
+
+What I have tried to do:
+****
+If I replace line:
+opts = Options(OPTFILE, ARGUMENTS) with
+opts = Variables(OPTFILE, ARGUMENTS)
+only depreciation warning is removed, and the rest of the error remains.
+
+******
+For error in line 81, I've tried to replace this path string with list in
+SConscript(), but the same errors again.
+
+****
+Comment out line 81. I've got next error during building:
+F:\Instalacije\ray>C:\Python26\Scripts\scons build
+scons: Reading SConscript files ...
+Detected platform "win32" (nt).
+Reading configuration "platform\mingw.cfg"
+Checking for C library GL... (cached) no
+Checking for TIFFInitSGILog() in C library tiff... (cached) no
+meta
+cv
+gen
+ot
+rt
+  File "F:\Instalacije\ray\src\rt\SConscript", line 21
+
+    raycalls = env.Object(source="raycalls.c')
+
+                                             ^
+
+SyntaxError: EOL while scanning string literal
+
+****
+Yse old SConstruct file from 25th May instead of current one.
+The same error as previous one:
+...
+SyntaxError: EOL while scanning string literal
+
+################
+
+I'm using Python 2.6 and installed scons 1.3.0
+
+
+
+
+Any ideas?
+
+Marija
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20100602/f94505b7/attachment.html
+From tbleicher at googlemail.com  Wed Jun  2 04:54:54 2010
+From: tbleicher at googlemail.com (Thomas Bleicher)
+Date: Wed Jun  2 04:54:57 2010
+Subject: [Radiance-dev] Scons script updates for MinGW compile of 4.0
+In-Reply-To: <AANLkTimpUSbd1zhaBNRTFlfaDiNuJFduslvITufElljZ@mail.gmail.com>
+References: <AANLkTimxqS6Qyp2SSCmNX3AB10iScPmBlsNrbSyo2jp5@mail.gmail.com>
+	<370B5B8C-6442-41F7-A1A7-06BC5005D2DF@gmail.com>
+	<AANLkTimpUSbd1zhaBNRTFlfaDiNuJFduslvITufElljZ@mail.gmail.com>
+Message-ID: <AANLkTimJim1jQOl5ehbOOiJzRby_7iGJrPO1yjoENrZ2@mail.gmail.com>
+
+On Wed, Jun 2, 2010 at 12:29 PM, Marija Velickovic <maricanis@gmail.com> wrote:
+> Hi,
+>
+> I've just tried latest HEAD version installation on Windows XP, SP3, and
+> have next errors:
+
+> ? File "F:\Instalacije\ray\src\common\SConscript", line 47:
+> ??? ALL = RTSCENE + RTPIC + STD + RTNET + env.get('RAD_COMPAT',[])
+
+I'd say env.get('RAD_COMPAT') returns a string instead of a string
+wrapped in a list. Try to add a print statement before this line to
+see the value of RAD_COMPAT (and possibly all the other vars). Once
+you know which value is not a list you can either search where it get
+set (wrongly) or modify the above line to something like
+
+ALL = RTSCENE + RTPIC + STD + RTNET + [env.get('RAD_COMPAT',"")]
+
+or similar.
+
+> What I have tried to do:
+> ****
+> If I replace line:
+> opts = Options(OPTFILE, ARGUMENTS) with
+> opts = Variables(OPTFILE, ARGUMENTS)
+> only depreciation warning is removed, and the rest of the error remains.
+
+The error is raised by the Python interpreter in the "ALL = ..." line
+above. Modifying "opts=" will have no effect here.
+
+> ******
+> For error in line 81, I've tried to replace this path string with list in
+> SConscript(), but the same errors again.
+> ****
+
+The error is not in line 81; it's in line 47. It just get's passed up
+through the stack until it reaches the top level function SConscript()
+in line 47 where the Python interpreter complains.
+
+> Comment out line 81. I've got next error during building:
+[...]
+> ? File "F:\Instalacije\ray\src\rt\SConscript", line 21
+>
+> ??? raycalls = env.Object(source="raycalls.c')
+>
+> ???????????????????????????????????????????? ^
+>
+> SyntaxError: EOL while scanning string literal
+
+Mix of double and single quotes around "raycalls.c"
+
+
+Regards,
+Thomas
+
+From maricanis at gmail.com  Wed Jun  2 06:31:58 2010
+From: maricanis at gmail.com (Marija Velickovic)
+Date: Wed Jun  2 06:32:24 2010
+Subject: [Radiance-dev] Scons script updates for MinGW compile of 4.0
+In-Reply-To: <AANLkTimJim1jQOl5ehbOOiJzRby_7iGJrPO1yjoENrZ2@mail.gmail.com>
+References: <AANLkTimxqS6Qyp2SSCmNX3AB10iScPmBlsNrbSyo2jp5@mail.gmail.com> 
+	<370B5B8C-6442-41F7-A1A7-06BC5005D2DF@gmail.com>
+	<AANLkTimpUSbd1zhaBNRTFlfaDiNuJFduslvITufElljZ@mail.gmail.com> 
+	<AANLkTimJim1jQOl5ehbOOiJzRby_7iGJrPO1yjoENrZ2@mail.gmail.com>
+Message-ID: <AANLkTilAYhUiY6k2Dz2g5f-7BqH_p-NTRklykwVy4Gvg@mail.gmail.com>
+
+Skipped content of type multipart/alternative-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: SConstruct
+Type: application/octet-stream
+Size: 2891 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-dev/attachments/20100602/851af410/SConstruct-0001.obj
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: SConscript
+Type: application/octet-stream
+Size: 3605 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-dev/attachments/20100602/851af410/SConscript-0002.obj
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: header.c
+Type: application/octet-stream
+Size: 6905 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-dev/attachments/20100602/851af410/header-0001.obj
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: SConscript
+Type: application/octet-stream
+Size: 3583 bytes
+Desc: not available
+Url : http://radiance-online.org/pipermail/radiance-dev/attachments/20100602/851af410/SConscript-0003.obj
+From rpg at rumblestrip.org  Wed Jun  2 08:02:57 2010
+From: rpg at rumblestrip.org (Rob Guglielmetti)
+Date: Wed Jun  2 08:02:59 2010
+Subject: [Radiance-dev] scons
+Message-ID: <A98A7FD7-9CB1-4952-88B4-FB2790DA24FF@rumblestrip.org>
+
+Further to Marija's email, the following notes were sent to me by my colleague the other day. This may be redundant info, but Dan made the following changes:
+
+C:\working\radiance\ray\src\common\SCronstruct:
+line 32) RTIO = Split('''fdate.c fgetline.c fgetval.c fgetword.c fputword.c loadvars.c portio.c wordfile.c words.c header.c''') -> RTIO = Split('''fdate.c fgetline.c fgetval.c fgetword.c fputword.c loadvars.c portio.c wordfile.c words.c header.c timegm.c''')
+
+line 47) ALL = RTSCENE + RTPIC + STD + RTNET + env.get('RAD_COMPAT',[]) -> ALL = RTSCENE + RTPIC + STD + RTNET
+
+C:\working\radiance\ray\src\rt\SCronstruct:
+line 21) raycalls = env.Object(source="raycalls.c') -> raycalls = env.Object(source="raycalls.c")
+
+
+...and this allowed him to compile with MinGW. 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20100602/7a9549f0/attachment.html
+From gregoryjward at gmail.com  Wed Jun  2 09:00:17 2010
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed Jun  2 09:00:19 2010
+Subject: [Radiance-dev] scons
+In-Reply-To: <A98A7FD7-9CB1-4952-88B4-FB2790DA24FF@rumblestrip.org>
+References: <A98A7FD7-9CB1-4952-88B4-FB2790DA24FF@rumblestrip.org>
+Message-ID: <620ECEC4-632C-472B-A673-FEDABC8B210C@gmail.com>
+
+Geez, I hate working on stuff I don't understand...  I just checked in  
+the minimal set of changes Rob suggested below, and am looking forward  
+(yeah) to feedback on whether it works or not.  I gave up on the  
+RAD_COMPAT environment setting.
+
+-Greg
+
+> From: Rob Guglielmetti <rpg@rumblestrip.org>
+> Date: June 2, 2010 8:02:57 AM PDT
+>
+> Further to Marija's email, the following notes were sent to me by my  
+> colleague the other day. This may be redundant info, but Dan made  
+> the following changes:
+>
+> C:\working\radiance\ray\src\common\SCronstruct:
+> line 32) RTIO = Split('''fdate.c fgetline.c fgetval.c fgetword.c  
+> fputword.c loadvars.c portio.c wordfile.c words.c header.c''') ->  
+> RTIO = Split('''fdate.c fgetline.c fgetval.c fgetword.c fputword.c  
+> loadvars.c portio.c wordfile.c words.c header.c timegm.c''')
+>
+> line 47) ALL = RTSCENE + RTPIC + STD + RTNET + env.get('RAD_COMPAT', 
+> []) -> ALL = RTSCENE + RTPIC + STD + RTNET
+>
+> C:\working\radiance\ray\src\rt\SCronstruct:
+> line 21) raycalls = env.Object(source="raycalls.c') -> raycalls =  
+> env.Object(source="raycalls.c")
+>
+>
+> ...and this allowed him to compile with MinGW.
+
+From Robert.Guglielmetti at nrel.gov  Wed Jun  2 09:07:02 2010
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Wed Jun  2 09:09:53 2010
+Subject: [Radiance-dev] scons
+In-Reply-To: <620ECEC4-632C-472B-A673-FEDABC8B210C@gmail.com>
+References: <A98A7FD7-9CB1-4952-88B4-FB2790DA24FF@rumblestrip.org>,
+	<620ECEC4-632C-472B-A673-FEDABC8B210C@gmail.com>
+Message-ID: <FFF56A6D37A3A54F91A03601AC22DA320C46211B5E@MAILBOX2.nrel.gov>
+
+Sorry, I was just passing along some info that I don't understand either, really. Just hoping that the work these other folks are doing moves the community closer to easily compiled Windows binaries of Radiance. I still think everyone should learn to love Linux or OSX, but this seems unlikely...
+________________________________________
+From: radiance-dev-bounces@radiance-online.org [radiance-dev-bounces@radiance-online.org] On Behalf Of Gregory J. Ward [gregoryjward@gmail.com]
+Sent: Wednesday, June 02, 2010 10:00 AM
+To: code development
+Subject: Re: [Radiance-dev] scons
+
+Geez, I hate working on stuff I don't understand...  I just checked in
+the minimal set of changes Rob suggested below, and am looking forward
+(yeah) to feedback on whether it works or not.  I gave up on the
+RAD_COMPAT environment setting.
+
+-Greg
+
+> From: Rob Guglielmetti <rpg@rumblestrip.org>
+> Date: June 2, 2010 8:02:57 AM PDT
+>
+> Further to Marija's email, the following notes were sent to me by my
+> colleague the other day. This may be redundant info, but Dan made
+> the following changes:
+>
+> C:\working\radiance\ray\src\common\SCronstruct:
+> line 32) RTIO = Split('''fdate.c fgetline.c fgetval.c fgetword.c
+> fputword.c loadvars.c portio.c wordfile.c words.c header.c''') ->
+> RTIO = Split('''fdate.c fgetline.c fgetval.c fgetword.c fputword.c
+> loadvars.c portio.c wordfile.c words.c header.c timegm.c''')
+>
+> line 47) ALL = RTSCENE + RTPIC + STD + RTNET + env.get('RAD_COMPAT',
+> []) -> ALL = RTSCENE + RTPIC + STD + RTNET
+>
+> C:\working\radiance\ray\src\rt\SCronstruct:
+> line 21) raycalls = env.Object(source="raycalls.c') -> raycalls =
+> env.Object(source="raycalls.c")
+>
+>
+> ...and this allowed him to compile with MinGW.
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+From gregoryjward at gmail.com  Wed Jun  2 09:44:11 2010
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed Jun  2 09:44:15 2010
+Subject: [Radiance-dev] scons
+In-Reply-To: <FFF56A6D37A3A54F91A03601AC22DA320C46211B5E@MAILBOX2.nrel.gov>
+References: <A98A7FD7-9CB1-4952-88B4-FB2790DA24FF@rumblestrip.org>,
+	<620ECEC4-632C-472B-A673-FEDABC8B210C@gmail.com>
+	<FFF56A6D37A3A54F91A03601AC22DA320C46211B5E@MAILBOX2.nrel.gov>
+Message-ID: <535C02F9-C4FA-446F-ABFC-0C29535C0C04@gmail.com>
+
+Don't get me wrong -- I do appreciate the help.  The simpler and less  
+ambiguous the instructions, the better, which is why I went with  
+yours.  If not all of the problems got addressed this time, I'm hoping  
+to hear about it so I can fix it.  It would be better if someone else  
+took over management of the SCONS build system in the long run.
+
+-Greg
+
+> From: "Guglielmetti, Robert" <Robert.Guglielmetti@nrel.gov>
+> Date: June 2, 2010 9:07:02 AM PDT
+>
+> Sorry, I was just passing along some info that I don't understand  
+> either, really. Just hoping that the work these other folks are  
+> doing moves the community closer to easily compiled Windows binaries  
+> of Radiance. I still think everyone should learn to love Linux or  
+> OSX, but this seems unlikely...
+
+From cjkohler at lbl.gov  Wed Jun  2 16:39:36 2010
+From: cjkohler at lbl.gov (Christian Kohler)
+Date: Wed Jun  2 16:40:43 2010
+Subject: [Radiance-dev] scons
+In-Reply-To: <FFF56A6D37A3A54F91A03601AC22DA320C46211B5E@MAILBOX2.nrel.gov>
+References: <A98A7FD7-9CB1-4952-88B4-FB2790DA24FF@rumblestrip.org>
+	<620ECEC4-632C-472B-A673-FEDABC8B210C@gmail.com>
+	<FFF56A6D37A3A54F91A03601AC22DA320C46211B5E@MAILBOX2.nrel.gov>
+Message-ID: <AANLkTiltWmEgRq9yCdMuE3GuNOjydcqE893yPs3bdswa@mail.gmail.com>
+
+Greg,
+
+The latest changes in CVS look good to us (getting rid of RAD_COMPAT, and
+adding timegm.c and fixing the mismatched quotes on raycalls.c).
+
+Just to confirm we used Scons 1.3.0 and gcc 3.4.5 to build
+
+We'll do a test build in the morning with the nightly snapshot.
+
+Christian
+**************
+Christian Kohler, CJKohler@lbl.gov, (510) 486-5040, http://windows.lbl.gov ,
+Windows & Daylighting Research Group, Lawrence Berkeley National Laboratory
+1 Cyclotron Rd, Berkeley, California, 94720, USA
+
+
+On Wed, Jun 2, 2010 at 9:07 AM, Guglielmetti, Robert <
+Robert.Guglielmetti@nrel.gov> wrote:
+
+> Sorry, I was just passing along some info that I don't understand either,
+> really. Just hoping that the work these other folks are doing moves the
+> community closer to easily compiled Windows binaries of Radiance. I still
+> think everyone should learn to love Linux or OSX, but this seems unlikely...
+> ________________________________________
+> From: radiance-dev-bounces@radiance-online.org [
+> radiance-dev-bounces@radiance-online.org] On Behalf Of Gregory J. Ward [
+> gregoryjward@gmail.com]
+> Sent: Wednesday, June 02, 2010 10:00 AM
+> To: code development
+> Subject: Re: [Radiance-dev] scons
+>
+> Geez, I hate working on stuff I don't understand...  I just checked in
+> the minimal set of changes Rob suggested below, and am looking forward
+> (yeah) to feedback on whether it works or not.  I gave up on the
+> RAD_COMPAT environment setting.
+>
+> -Greg
+>
+> > From: Rob Guglielmetti <rpg@rumblestrip.org>
+> > Date: June 2, 2010 8:02:57 AM PDT
+> >
+> > Further to Marija's email, the following notes were sent to me by my
+> > colleague the other day. This may be redundant info, but Dan made
+> > the following changes:
+> >
+> > C:\working\radiance\ray\src\common\SCronstruct:
+> > line 32) RTIO = Split('''fdate.c fgetline.c fgetval.c fgetword.c
+> > fputword.c loadvars.c portio.c wordfile.c words.c header.c''') ->
+> > RTIO = Split('''fdate.c fgetline.c fgetval.c fgetword.c fputword.c
+> > loadvars.c portio.c wordfile.c words.c header.c timegm.c''')
+> >
+> > line 47) ALL = RTSCENE + RTPIC + STD + RTNET + env.get('RAD_COMPAT',
+> > []) -> ALL = RTSCENE + RTPIC + STD + RTNET
+> >
+> > C:\working\radiance\ray\src\rt\SCronstruct:
+> > line 21) raycalls = env.Object(source="raycalls.c') -> raycalls =
+> > env.Object(source="raycalls.c")
+> >
+> >
+> > ...and this allowed him to compile with MinGW.
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20100602/dbe7962a/attachment.htm
+From pally.sandher at iesve.com  Tue Jun 29 04:49:16 2010
+From: pally.sandher at iesve.com (Pally Sandher)
+Date: Tue Jun 29 04:49:29 2010
+Subject: [Radiance-dev] scons
+In-Reply-To: <AANLkTiltWmEgRq9yCdMuE3GuNOjydcqE893yPs3bdswa@mail.gmail.com>
+References: <A98A7FD7-9CB1-4952-88B4-FB2790DA24FF@rumblestrip.org><620ECEC4-632C-472B-A673-FEDABC8B210C@gmail.com><FFF56A6D37A3A54F91A03601AC22DA320C46211B5E@MAILBOX2.nrel.gov>
+	<AANLkTiltWmEgRq9yCdMuE3GuNOjydcqE893yPs3bdswa@mail.gmail.com>
+Message-ID: <7E4EF7766063EC4091542B5B3E671EC402CAF447@MAIL.iesve.com>
+
+Skipped content of type multipart/alternative-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: not available
+Type: image/jpeg
+Size: 3472 bytes
+Desc: attbc506.jpg
+Url : http://radiance-online.org/pipermail/radiance-dev/attachments/20100629/8f59faf9/attachment-0001.jpe
+From gregoryjward at gmail.com  Tue Jun 29 11:51:30 2010
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue Jun 29 11:51:17 2010
+Subject: [Radiance-dev] scons
+In-Reply-To: <7E4EF7766063EC4091542B5B3E671EC402CAF447@MAIL.iesve.com>
+References: <A98A7FD7-9CB1-4952-88B4-FB2790DA24FF@rumblestrip.org><620ECEC4-632C-472B-A673-FEDABC8B210C@gmail.com><FFF56A6D37A3A54F91A03601AC22DA320C46211B5E@MAILBOX2.nrel.gov>
+	<AANLkTiltWmEgRq9yCdMuE3GuNOjydcqE893yPs3bdswa@mail.gmail.com>
+	<7E4EF7766063EC4091542B5B3E671EC402CAF447@MAIL.iesve.com>
+Message-ID: <8B53D57E-F7B6-47CD-BFE0-F81923071EDC@gmail.com>
+
+Thanks, Pally.
+
+I don't know what to do about most of this, as I don't understand the  
+SCONS build system Schorsch developed.  I did remove the outdated  
+links to the zip archives from radiance-online.org.  I would have  
+liked to update these, but I don't know where they are supposed to get  
+built or why they are not.
+
+Regarding the problems with Radiance4R0.tar.gz, this file does not  
+have the since-release changes to the HEAD, but the idea always is to  
+drop the HEAD on top of whatever you have and update it that way, so I  
+see nothing to do there.  I have copied the 4R0 sources and libraries  
+over to radiance-online, but I'm afraid it's a bit of a mess right  
+now.  The scripts aren't computing the correct patches, and a number  
+of other things are broken there as no one is maintaining that website  
+at the moment.  (The usual resource allocation issues.)
+
+On your 2nd issue below, I am looking at Sconscript and I see  
+clockface.hex and surf.cal mentioned only once, so maybe this has  
+already been fixed?  As I said, I don't really understand this build  
+system.  If you can be more specific about which lines you had to  
+change, that would be helpful.
+
+I don't know what to say or do about your 3rd issue, as there could be  
+any number of things going wrong, and no way for me to tell from here.
+
+Best,
+-Greg
+
+> From: "Pally Sandher" <pally.sandher@iesve.com>
+> Date: June 29, 2010 4:49:16 AM PDT
+>
+> Finally got some time to try & get this to build.
+>
+> 1st issue - http://www.radiance-online.org/software/snapshots/radiance-HEAD.zip 
+>  hasn't been updated since 14th May 2008. Contrary to what the  
+> radiance-online.org download page advises for Windows users you must  
+> use radiance-HEAD.tgz to get the latest code (didn't check radiance- 
+> HEAD.cpio.bz2). Also http://radsite.lbl.gov/radiance/dist/rad4R0all.tar.gz 
+>  was last updated on 18th March 2010 & thus won't build with MinGW/ 
+> Scons since it doesn't have the changes required.
+>
+> Using MinGW 5.1.6 (gcc 3.4.5), Python 2.6.5 & Scons 2.0 final I can  
+> get Radiance HEAD to build without any issues (built on XP 64-bit).
+>
+> 2nd issue - install command still fails due to duplicated files as  
+> discussed previously on this list. To fix these I edited ray/src/gen/ 
+> Sconscript to remove duplicate installation of clockface.hex &  
+> surf.cal & ray/src/cv/Sconscript to remove duplicate installation of  
+> lamp.tab. it then works as expected.
+>
+> 3rd issue - Diff'ing the ray\bin directory against the install\bin  
+> directory shows that the install command misses 2 built files from  
+> the copy.
+>
+> Binary Comparison of <C:\ray\bin> to <C:\radiance4.0\bin>
+> 89 files in 0 folders
+>
+> 87 files match exactly
+> ----------------------
+> <snipped>
+>
+> 2 folders and files only on left
+> --------------------------------
+>  mgf2meta.exe
+>  mkillum.exe
+> 4th issue - Diff'ing the contents of http://radsite.lbl.gov/radiance/dist/rad4R0_macosx.tar.gz 
+>  against the install\bin directory after building successfully &  
+> copying the 2 missing files over shows the following differences:
+>
+> Binary Comparison of <C:\rad4R0_macosx> to <C:\radiance4.0\bin>
+> 57 folders and files only on left
+> ---------------------------------
+>  commake
+>  compamb
+>  dayfact
+>  dctimestep
+>  debugcal
+>  dmake
+>  evalglare
+>  falsecolor
+>  fieldcomb
+>  genambpos
+>  genbackg
+>  gendaylit
+>  genklemsamp
+>  genrhgrid
+>  genskyvec
+>  glare
+>  glaze
+>  glrad
+>  markpath
+>  normpat
+>  normtiff
+>  objline
+>  objpict
+>  objview
+>  optics2rad
+>  pbilat
+>  pbilat2
+>  pdelta
+>  pdfblur
+>  pgblur
+>  phisto
+>  pmblur
+>  pmdblur
+>  ra_pfm
+>  ra_tiff
+>  raddepend
+>  ran2tiff
+>  rhcopy
+>  rhinfo
+>  rholo
+>  rhoptimize
+>  rhpict
+>  rlux
+>  rmake
+>  rvcalc
+>  rview
+>  rvu
+>  trad
+>  trad-orig
+>  vinfo
+>  x11meta
+>  xglaresrc
+>  ximage
+>  xshowtrace
+>  xyzimage
+>
+> 4 folders and files only on right
+> ---------------------------------
+>  genbeads.exe
+>  genbranch.exe
+>  gencatenary.exe
+>  genmarble.exe
+> I understand a lot of the missing files from the OSX binaries will  
+> be shell scripts & X window/GUI applications but stuff like ra_tiff  
+> missing from the windows build is an issue. From looking at the man  
+> pages I estimate about half of the 57 missing binaries are not  
+> applicable to Windows so there are still around 20 missing binaries.  
+> If anyone can help shed some light on how to get these apps building  
+> in Windows it would be most appreciated.
+>
+> Cheers,
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20100629/1e996804/attachment.html

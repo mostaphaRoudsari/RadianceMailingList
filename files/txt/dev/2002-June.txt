@@ -1,0 +1,1376 @@
+From randolph@panix.com  Wed Jun 12 07:51:22 2002
+From: randolph@panix.com (Randolph Fritz)
+Date: Tue, 11 Jun 2002 23:51:22 -0700
+Subject: [Radiance-dev] Re: [Radiance-general] Re: CVS, ANSI, C++
+In-Reply-To: <DDB18A78-7BB9-11D6-A4D5-00306540F848@lmi.net>; from gward@lmi.net on Sun, Jun 09, 2002 at 08:02:07AM -0700
+References: <200206091001.g59A11M30392@darkside-animation.com> <DDB18A78-7BB9-11D6-A4D5-00306540F848@lmi.net>
+Message-ID: <20020611235119.A4474@panix.com>
+
+[Copied to both lists.  Until a few more people--including Greg
+Ward!--sign up for radiance-dev I don't feel right about using it
+exclusively for this discussion.]
+
+On Sun, Jun 09, 2002 at 08:02:07AM -0700, Greg Ward wrote:
+> I like what Randolph had to say about code conversion.
+
+Thank you.
+
+> I never bothered to take them out because they still seem to compile, 
+> and they don't affect anything (other than taking up a bit of space on 
+> everyone's systems) since Radiance programs that are never run never 
+> interact with the rest of the codebase...
+
+I agree...but I don't see good reasons to preserve some of them
+through an extensive rewrite.  If they're hard to ANSIfy, I think we'd
+be advised to just put them aside.
+
+> We're probably looking at a week or two of one programmer's time, and a 
+> few hours from each volunteer.  Who wants to step forward?
+
+I can offer a few hours, but exactly when is uncertain.
+
+> An afterthought to my last message.  The process of ANSI-fication should 
+> probably include a merge of the Desktop Radiance version, at least 
+> insofar as supporting Windows compilation as well.  
+
+How do people feel about Cygwin/gcc
+<http://sources.redhat.com/cygwin/> under Windows?  I don't know the
+package, and it probably still needs an MS compiler for the header
+files, but otherwise we can use the familiar Unix tools on Windows.  I
+have, however, only a bit of experience with cygwin, and don't how
+well it works for a large project.
+
+Georg Mischler:
+> It could also be interesting to consider another implementation
+> framework for all the helper programs circulating around the actual
+> Radiance core. Some of the csh scripts have been rewritten in C for
+> Windows, with limited flexibility and robustness. My personal
+> favourite language for this kind of task would be Python (with some
+> parts already existing).
+
+I like this very much, but am a bit concerned about requiring all
+users to install Python libraries.  Also, some users will want other
+scripting languages; TCL, Perl, and (gack!) Visual Basic are likely
+candidates.  Ummm...probably Mathematica.
+
+> The problem of platform specific code variations is actually
+> independent from the ANSI conversion. In part, the ANSI standard was
+> supposed to reduce those incompatiblities, but succeeded in that
+> point only to a certain degree. I have no experience with GNU
+> autoconf myself, but maybe that would be a reasonable way to
+> eliminate the need to actually know which platform has what kind of
+> quirks.
+
+Autoconf...scares me.  It's one of the most difficult scripting
+languages and it actively encourages #ifdef-laden code.  Personally, I
+favor the Kernighan and Pike (*The Practice of Programming*) approach
+to portability; write the base code portably, and bottle up the OS
+dependencies in separate libraries and APIs.
+
+Peter Apian-Bennewitz <apian@pab-opto.de>:
+> Thoughts on a rewrite were founded on the limited and cumbersome
+> "interface" for extending the core rendering. 
+> [...]
+> However, that interface is not changed solely by prototyping functions.
+> Doing more than that risks new bugs- well, we'll get them out. Maybe
+> there's a core structure between just-prototypes and a full rewrite ?
+
+Hmmmm...Radiance plug-ins.  Most Unices support some version of
+dynamic loading these days.  Windows does.  I don't think Plan 9 does...
+
+Now, I'm interested in ways to standardize the GUI API.  In my
+opinion, it would be useful if we could customize ximage and rview to
+native OS conventions easily, perhaps by providing an OS specific
+library.  It might also be useful to embed the core rendering tools in
+a dynamic loading environment.  But, again, I don't know what it would
+take.
+
+-- 
+Randolph Fritz
+Eugene, Oregon, USA
+
+From schorsch@schorsch.com  Wed Jun 12 13:00:07 2002
+From: schorsch@schorsch.com (Georg Mischler)
+Date: Wed, 12 Jun 2002 08:00:07 -0400 (EDT)
+Subject: [Radiance-dev] Re: [Radiance-general] Re: CVS, ANSI, C++
+In-Reply-To: <20020611235119.A4474@panix.com>
+Message-ID: <Pine.BSF.4.30.0206120735591.14170-100000@emancholl.pair.com>
+
+Randolph Fritz wrote:
+
+> [Copied to both lists.  Until a few more people--including Greg
+> Ward!--sign up for radiance-dev I don't feel right about using it
+> exclusively for this discussion.]
+
+I din't even know that list existed. When was it created?
+I'm also posting to both for the moment, but I'd suggest that we
+move this discussion over completely from now on.
+
+
+> How do people feel about Cygwin/gcc
+> <http://sources.redhat.com/cygwin/> under Windows?  I don't know the
+> package, and it probably still needs an MS compiler for the header
+> files, but otherwise we can use the familiar Unix tools on Windows.  I
+> have, however, only a bit of experience with cygwin, and don't how
+> well it works for a large project.
+
+Cygwin is a wonderful hacker's tool, but I wouldn't recommend it
+to the typical Windows user. I think the MS header files can be
+downloaded somewhere, so that wouldn't necessarily be a problem.
+But there are still a lot of issues that require custom coding
+for Windows, as cygwin doesn't support all the unix APIs, and
+some are only supported in relatively hackish ways. Apart from
+that, as much as I hate to admit it, the MS compilers still
+optimize a lot better than any gcc version I have seen so far.
+
+This just reminds me of another problem that we'll have to solve
+in this context. Since Windows doesn't support NFS file locking
+(and neither did cygwin, last time I looked), we'll need to find
+a better solution for concurrent access to ambient files. I can
+think of two portable ways to do this: Either we invent a file
+based locking mechanism, or we establish a seperate server
+process that accepts network store and retreival requests by the
+actual simulation processes. The latter would be more technicall
+involved, but probably a lot more robust. Any thoughts?
+
+
+> Georg Mischler wrote:
+> > It could also be interesting to consider another implementation
+> > framework for all the helper programs circulating around the actual
+> > Radiance core. Some of the csh scripts have been rewritten in C for
+> > Windows, with limited flexibility and robustness. My personal
+> > favourite language for this kind of task would be Python (with some
+> > parts already existing).
+>
+> I like this very much, but am a bit concerned about requiring all
+> users to install Python libraries.  Also, some users will want other
+> scripting languages; TCL, Perl, and (gack!) Visual Basic are likely
+> candidates.  Ummm...probably Mathematica.
+
+Python is trivial to install on every supported platform (which
+are a lot more than even Radiance supports). Most unix systems
+nowadays come with a preinstalled Python interpreter, (plus Tcl
+and Perl, of course). The reason why I prefer Python in this
+context is that it can be easily understood even by normal users
+(in contrast to Perl), and that it has a very robust and stable
+feature set, so that programs usually don't break with the next
+release (in contrast to Tcl, as Gregs heroic efforts with trad
+have demonstrated).
+
+On top of that, a large body of related code in Python already
+exists, parts of which may eventually be released as Open Source
+as well (tough I can't make any promises just yet). In any case,
+this is more a general thought for the future than an immediate
+requirement. The basic core of Radiance should probably continue
+to work without too many external dependencies. But a second
+layer of tools could profit a lot of some improved flexibility
+and portability.
+
+Anyone who wants to use proprietary stuff like VB is always free
+to do so, but I'm not sure about the chances of such code to be
+included in the core distribution of Radiance even in the long run.
+
+
+> Autoconf...scares me.  It's one of the most difficult scripting
+> languages and it actively encourages #ifdef-laden code.  Personally, I
+> favor the Kernighan and Pike (*The Practice of Programming*) approach
+> to portability; write the base code portably, and bottle up the OS
+> dependencies in separate libraries and APIs.
+
+I don't think that those two approaches are mutually exclusive.
+Some more complex dependencies certainly belong into seperate
+modules with a thick layer of barbed wire around them. But there
+are also many other small variations and bugs among different
+systems with no clear borderlines between vendors, kernel and
+library versions, etc. Keeping track of those without a tool like
+autoconf is a real pain for both developers and users.
+
+Have you had a look at the makeall script lately? This is
+complexity that the user has to handle when something goes wrong.
+Autoconf is generally a one-time effort, that only needs to be
+handled by one or two of the developers. Once that is done, the
+trusty mantra of "./configure; make; make install" just magically
+works on pretty much any system, whether its specific quirks have
+been cataloged before or not. Not every user can grant Greg ssh
+access to solve compile problems, and Greg probably wouldn't have
+the time to do this for every user anyway.
+
+The Radiance sources are currently littered with hundreds of
+instances of preprocessor symbols referencing more than a dozen
+individual operating systems. This has almost worked yesterday,
+it's already breaking today with very current systems, and it's
+garanteed to break in the future, unless someone constantly keeps
+a list of all the systems out there and their specific bugs and
+other nonstandard behaviour. I will chose #ifdefs of the form
+"HAS_<feature>" any time, against the alternative of multiple
+nested OS specific conditionals in the same place.
+
+
+> Peter Apian-Bennewitz wrote:
+> > However, that interface is not changed solely by prototyping functions.
+> > Doing more than that risks new bugs- well, we'll get them out. Maybe
+> > there's a core structure between just-prototypes and a full rewrite ?
+>
+> Hmmmm...Radiance plug-ins.  Most Unices support some version of
+> dynamic loading these days.  Windows does.  I don't think Plan 9 does...
+
+Prototypes and the elimination of global variables will make the
+*internal* interfaces of Radiance a lot clearer and more obvious
+than they are right now. After that, it will be much easier to
+isolate those parts that need to be changed to better accomodate
+any present or future extensions, and the risk of breaking all
+the rest when doing so will become much smaller.
+
+The default compile and installation should probably be designed
+for static linking, but on most systems it will be relatively
+easy to generate dynamic options from there. Creating dynamically
+loadable extension modules for Python from existing C libraries
+is almost trivial, btw. (the image converter module in Rayfront
+is just one practical example involving Radiance code).
+
+
+> Now, I'm interested in ways to standardize the GUI API.  In my
+> opinion, it would be useful if we could customize ximage and rview to
+> native OS conventions easily, perhaps by providing an OS specific
+> library.  It might also be useful to embed the core rendering tools in
+> a dynamic loading environment.  But, again, I don't know what it would
+> take.
+
+You're not the first one to think that thought.
+
+In the end it won't really take a lot of effort, but only after
+the above steps have been taken. Despite all its shortcomings,
+the Windows version of rview already points into the right
+direction here, by demonstrating approximately where the
+interfaces between the simulation core and a display framework
+should be placed. Unfortunately, the existing implementation is a
+horrible mess, due to the difficulties of integrating the current
+Radiance code on one hand, and some other obstacles the original
+developers were facing on the other. I realize that most of you
+haven't seen those sources yet, so you'll simply have to take my
+word for it... ;)
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch.com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From gward@lmi.net  Wed Jun 12 17:57:39 2002
+From: gward@lmi.net (Greg Ward)
+Date: Wed, 12 Jun 2002 09:57:39 -0700
+Subject: [Radiance-dev] Re: CVS, ANSI, C++
+Message-ID: <810899D1-7E25-11D6-8016-00306540F848@lmi.net>
+
+I didn't cross-post this to radiance-general...
+
+ > Georg Mischler wrote:
+> This just reminds me of another problem that we'll have to solve
+> in this context. Since Windows doesn't support NFS file locking
+> (and neither did cygwin, last time I looked), we'll need to find
+> a better solution for concurrent access to ambient files. I can
+> think of two portable ways to do this: Either we invent a file
+> based locking mechanism, or we establish a seperate server
+> process that accepts network store and retreival requests by the
+> actual simulation processes. The latter would be more technicall
+> involved, but probably a lot more robust. Any thoughts?
+
+Ewww.  Can't we just say that if you want to do parallel rendering, you 
+need to install Unix?
+
+> > Autoconf...scares me.  It's one of the most difficult scripting
+> > languages and it actively encourages #ifdef-laden code.  Personally, I
+> > favor the Kernighan and Pike (*The Practice of Programming*) approach
+> > to portability; write the base code portably, and bottle up the OS
+> > dependencies in separate libraries and APIs.
+>
+> I don't think that those two approaches are mutually exclusive.
+> Some more complex dependencies certainly belong into seperate
+> modules with a thick layer of barbed wire around them. But there
+> are also many other small variations and bugs among different
+> systems with no clear borderlines between vendors, kernel and
+> library versions, etc. Keeping track of those without a tool like
+> autoconf is a real pain for both developers and users.
+>
+> Have you had a look at the makeall script lately? This is
+> complexity that the user has to handle when something goes wrong.
+> Autoconf is generally a one-time effort, that only needs to be
+> handled by one or two of the developers. Once that is done, the
+> trusty mantra of "./configure; make; make install" just magically
+> works on pretty much any system, whether its specific quirks have
+> been cataloged before or not. Not every user can grant Greg ssh
+> access to solve compile problems, and Greg probably wouldn't have
+> the time to do this for every user anyway.
+>
+> The Radiance sources are currently littered with hundreds of
+> instances of preprocessor symbols referencing more than a dozen
+> individual operating systems. This has almost worked yesterday,
+> it's already breaking today with very current systems, and it's
+> garanteed to break in the future, unless someone constantly keeps
+> a list of all the systems out there and their specific bugs and
+> other nonstandard behaviour. I will chose #ifdefs of the form
+> "HAS_<feature>" any time, against the alternative of multiple
+> nested OS specific conditionals in the same place.
+
+OK, that's a bit of an exaggeration.  I did a quick grep of the source 
+tree, and I found 8 instances of system-dependent code in 6 files.  
+These are typically limited to a #define or a declaration or two, and I 
+expect that we could eliminate most of these with a little effort -- 
+much less than it would take to change over to a HAS_<feature> sort of 
+coding strategy.  I've found that by doing some homework, it is usually 
+possible to find a solution that works on all systems without any 
+conditional compiles.  The ones that are in there now are either 
+necessary because there aren't any general solutions, or more likely, 
+they could be eliminated.  The least-common-denominator approach to 
+portability is still the best in my opinion.  You miss out on a few 
+features on a few systems, but you get a more consistent result in the 
+end (with cleaner code).
+
+> > Peter Apian-Bennewitz wrote:
+> > > However, that interface is not changed solely by prototyping 
+> functions.
+> > > Doing more than that risks new bugs- well, we'll get them out. Maybe
+> > > there's a core structure between just-prototypes and a full 
+> rewrite ?
+> >
+> > Hmmmm...Radiance plug-ins.  Most Unices support some version of
+> > dynamic loading these days.  Windows does.  I don't think Plan 9 
+> does...
+>
+> Prototypes and the elimination of global variables will make the
+> *internal* interfaces of Radiance a lot clearer and more obvious
+> than they are right now. After that, it will be much easier to
+> isolate those parts that need to be changed to better accomodate
+> any present or future extensions, and the risk of breaking all
+> the rest when doing so will become much smaller.
+
+I support this suggestion whole-heartedly.  The global variables 
+currently in use in the renderers could be eliminated with a single 
+structure and a reference to it in the ray struct.  In principle, the 
+bulk of the renderer could then be consolidated into a library, which 
+could be multi-threaded with a bit more work....
+
+> > Now, I'm interested in ways to standardize the GUI API.  In my
+> > opinion, it would be useful if we could customize ximage and rview to
+> > native OS conventions easily, perhaps by providing an OS specific
+> > library.  It might also be useful to embed the core rendering tools in
+> > a dynamic loading environment.  But, again, I don't know what it would
+> > take.
+>
+> You're not the first one to think that thought.
+>
+> In the end it won't really take a lot of effort, but only after
+> the above steps have been taken. Despite all its shortcomings,
+> the Windows version of rview already points into the right
+> direction here, by demonstrating approximately where the
+> interfaces between the simulation core and a display framework
+> should be placed. Unfortunately, the existing implementation is a
+> horrible mess, due to the difficulties of integrating the current
+> Radiance code on one hand, and some other obstacles the original
+> developers were facing on the other. I realize that most of you
+> haven't seen those sources yet, so you'll simply have to take my
+> word for it... ;)
+
+I haven't seen this code, either, and from what you say, I'm not sure I 
+want to...  I thought I had defined an interface for rview pretty well 
+in rt/driver.h.  This is where I began when I wrote different drivers.  
+(There was a little-used NeWS driver at one time, as well as one for 
+Suntools -- anyone remember those systems?)  As for ximage, this program 
+was meant to be replaced in its entirety, not built upon.  I assume 
+that's what they did for Windows, but I don't know.  The programming 
+interface for image display is the Radiance picture format!
+
+
+
+From gward@lmi.net  Wed Jun 12 18:14:24 2002
+From: gward@lmi.net (Greg Ward)
+Date: Wed, 12 Jun 2002 10:14:24 -0700
+Subject: [Radiance-dev] Re: CVS, ANSI, C++
+In-Reply-To: <810899D1-7E25-11D6-8016-00306540F848@lmi.net>
+Message-ID: <D7FC4677-7E27-11D6-8016-00306540F848@lmi.net>
+
+A P.S. on my previous post.  When I did the grep for system 
+dependencies, I was only looking for conditional compiles specific to 
+one system, and I sort of missed Georg's point, that the makeall script 
+contains a lot of system-specific stuff in it.  I agree, though I'm 
+continually surprised by how few problems this actually has caused over 
+the years.  Still, I imagine a HAS_<feature>  approach could be better 
+in the long run.
+
+Be that as it may, if you look at makeall, you will see that the things 
+I test for are not the sorts of things that autoconf tests for.  For 
+example, whether the system qsort() routine works, or if the system 
+malloc() function can be overridden.  The other symbols I commonly 
+define are BSD, for systems with good BSD library support, and DCL_ATOF, 
+for systems that don't declare atof() in the expected place.  I suspect 
+I could eliminate DCL_ATOF by including stdlib.h at this point, but I 
+would have to make a few other changes to allow this.  If we could 
+eliminate the other 8 system defines I used, that would leave BSD as the 
+only remaining symbol of any consequence.
+
+
+From ckehrlich@yahoo.com  Wed Jun 12 21:19:51 2002
+From: ckehrlich@yahoo.com (Charles Ehrlich)
+Date: Wed, 12 Jun 2002 13:19:51 -0700 (PDT)
+Subject: [Radiance-dev] Re: CVS, ANSI, C++
+In-Reply-To: <D7FC4677-7E27-11D6-8016-00306540F848@lmi.net>
+Message-ID: <20020612201951.63331.qmail@web20706.mail.yahoo.com>
+
+--0-785423700-1023913191=:63308
+Content-Type: text/plain; charset=us-ascii
+
+
+There are at least two efforts which happened in parallel to Greg's development of Radiance 3.4 which I think will be useful for the overall efforts to streamline portability of Radiance.  As part of the LDRD (Laboratory Directed Research and Development) efforts to develop YAPR (Yet Another Parallel Radiance), David Robertson separated out all of the platform-specific and operating system code into a set of independent files.  In order to do this, he de-IFDEF'd one particularly nasty piece of code.  And, to some extent, he also ANSI-fied the code.    I know that Greg is hesitant to blindly accept all of what David Robertson contributed, but I think it ought to be evaluated by someone to see what can be salvaged. There are a great many parts of Radiance which have not changed with Greg's latest release. And, seeing the David Robertson in person, I actually have some faith that he did his work carefully and thoroughly.  He developed a test suite and repeatedly tested his version against the original to ensure that it was running the same.  No doubt there will be annoyances.  For example, he globally renamed some of the variables.  He mentioned, for example, some two-letter variables that kept appearing and confusing him.
+The Radiance licensees all have the source code for this "LDRD" version of Radiance on the CD-ROM.
+Then, Ken Revzan took this code and put it into MicroSloft Visual C++.  It compiled with relative ease and he made rapid progress.  In our earlier efforts, we looked at Cygwin extensively.  I favor the MS C++ compiler for the reasons mentioned earlier.  Greg might even like the command-line version of the complier.  <cough-cough>  It understands makefiles with little modification.
+In developing the Desktop Radiance "Winimage" program, we did not use the ximage core program...we did use the Radiance Image File interfaces.  We first built the viewer on top of GL for Windows. Ken Revzan then re-implemented in with the native Windows driver because it was faster and less buggy.
+The Desktop Radiance "Interactive Renderer" or Win-rview was built using the ASCII-interface to rview, as does (did) rshow.  Ken Revzan learned a lot from Peter by looking at rshow.  However, Ken failed to implement a proper trap for some high-level interrupts in rview.  This continues to plage the original version, but I think George has fixed many of these problems.  Last I remember, George declared that it was, alas, fundamentally flawed and needed to be re-written.  But, I remember that Ken Revzan complained about the underlying rview code because it did things that C++ doesn't like.  It was either related to long-address jumps or something related to the handling of interrupts for the indirect calculatoin.  So, this might be another thing to consider.
+And for the wish-list, there was a paper submitted to SIGGRAPH in 1998 by a guy (?) from Intel that used a type of Fourrier transform analysis of the image plane--as it was being developed--to drasitically reduce the required sampling density.  He claimed to be able to sample only 7% of the image plane and acheive identical results.  Last I heard, Intel planned to patent his approach, but if anyone has not read his paper, they could probably re-implement it without infringing upon the patent.  Or, perhaps Intel would donate it to the open source effort.
+-Chas
+  Greg Ward <gward@lmi.net> wrote: A P.S. on my previous post. When I did the grep for system 
+dependencies, I was only looking for conditional compiles specific to 
+one system, and I sort of missed Georg's point, that the makeall script 
+contains a lot of system-specific stuff in it. I agree, though I'm 
+continually surprised by how few problems this actually has caused over 
+the years. Still, I imagine a HAS_ approach could be better 
+in the long run.
+
+Be that as it may, if you look at makeall, you will see that the things 
+I test for are not the sorts of things that autoconf tests for. For 
+example, whether the system qsort() routine works, or if the system 
+malloc() function can be overridden. The other symbols I commonly 
+define are BSD, for systems with good BSD library support, and DCL_ATOF, 
+for systems that don't declare atof() in the expected place. I suspect 
+I could eliminate DCL_ATOF by including stdlib.h at this point, but I 
+would have to make a few other changes to allow this. If we could 
+eliminate the other 8 system defines I used, that would leave BSD as the 
+only remaining symbol of any consequence.
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev@radiance-online.org
+http://darkside-animation.com/mailman/listinfo/radiance-dev
+
+
+---------------------------------
+Do You Yahoo!?
+Sign-up for Video Highlights of 2002 FIFA World Cup
+--0-785423700-1023913191=:63308
+Content-Type: text/html; charset=us-ascii
+
+<P>There are at least two efforts which happened in parallel to Greg's development of Radiance 3.4 which I think will be useful for the overall efforts to streamline portability of Radiance.&nbsp; As part of the LDRD (Laboratory Directed Research and Development) efforts to develop YAPR (Yet Another Parallel Radiance), David Robertson separated out all of the platform-specific and operating system code into a set of independent files.&nbsp; In order to do this, he de-IFDEF'd one particularly nasty piece of code.&nbsp; And, to some extent, he also ANSI-fied the code.&nbsp;&nbsp;&nbsp; I know that Greg is hesitant to blindly accept all of what David Robertson contributed, but I think it ought to be evaluated by someone to see what can be salvaged.&nbsp;There are a great many parts of Radiance which have not changed&nbsp;with Greg's latest release. And, seeing the David Robertson in person, I actually have some faith that he did&nbsp;his work carefully and thoroughly.&nbsp; He developed a test suite and repeatedly tested his version against the original to ensure that it was running the same. &nbsp;No doubt there will be annoyances.&nbsp; For example, he globally renamed some of the variables.&nbsp;&nbsp;He mentioned, for example,&nbsp;some two-letter variables that kept appearing and confusing him.
+<P>The Radiance licensees all have the source code for this "LDRD" version of Radiance on the CD-ROM.
+<P>Then, Ken Revzan took this code and put it into MicroSloft Visual C++.&nbsp; It compiled with relative ease and he made rapid progress.&nbsp; In our earlier efforts, we looked at Cygwin extensively.&nbsp; I favor the MS C++ compiler for the reasons mentioned earlier.&nbsp; Greg might even like the command-line version of the complier.&nbsp; &lt;cough-cough&gt;&nbsp; It understands makefiles with little modification.
+<P>In developing the Desktop Radiance&nbsp;"Winimage" program, we did not use the ximage core program...we did use the&nbsp;Radiance Image File&nbsp;interfaces.&nbsp; We first built the viewer on top of GL for Windows. Ken Revzan then re-implemented in with the native Windows driver because it was faster and less buggy.
+<P>The Desktop Radiance "Interactive Renderer" or Win-rview was built using the ASCII-interface to rview, as does&nbsp;(did)&nbsp;rshow.&nbsp; Ken Revzan learned a lot from Peter by looking at rshow.&nbsp; However, Ken failed to implement a proper trap for some high-level interrupts in rview.&nbsp; This continues to plage the original version, but I think George has fixed many of these problems.&nbsp; Last I remember, George declared that it was, alas, fundamentally flawed and needed to be re-written.&nbsp; But, I remember that Ken Revzan complained about the underlying rview code because it did things that C++ doesn't like.&nbsp; It was either related to long-address jumps or something related to the handling of interrupts for the indirect calculatoin.&nbsp; So, this might be another thing to consider.
+<P>And for the wish-list, there was a paper submitted to SIGGRAPH in 1998 by a guy&nbsp;(?) from Intel that used a type of Fourrier transform analysis of the image plane--as it was being developed--to drasitically reduce the required sampling density.&nbsp; He claimed to be able to sample only 7% of the image plane and acheive identical results.&nbsp; Last I heard, Intel planned to patent his approach, but if anyone has not read his paper, they could probably re-implement it without infringing upon the patent.&nbsp; Or, perhaps Intel would donate it to the open source effort.
+<P>-Chas
+<P>&nbsp; <B><I>Greg Ward &lt;gward@lmi.net&gt;</I></B> wrote: 
+<BLOCKQUOTE style="PADDING-LEFT: 5px; MARGIN-LEFT: 5px; BORDER-LEFT: #1010ff 2px solid">A P.S. on my previous post. When I did the grep for system <BR>dependencies, I was only looking for conditional compiles specific to <BR>one system, and I sort of missed Georg's point, that the makeall script <BR>contains a lot of system-specific stuff in it. I agree, though I'm <BR>continually surprised by how few problems this actually has caused over <BR>the years. Still, I imagine a HAS_<FEATURE> approach could be better <BR>in the long run.<BR><BR>Be that as it may, if you look at makeall, you will see that the things <BR>I test for are not the sorts of things that autoconf tests for. For <BR>example, whether the system qsort() routine works, or if the system <BR>malloc() function can be overridden. The other symbols I commonly <BR>define are BSD, for systems with good BSD library support, and DCL_ATOF, <BR>for systems that don't declare atof() in the expected place. I suspect <BR>I could eliminate DCL_ATOF by including stdlib.h at this point, but I <BR>would have to make a few other changes to allow this. If we could <BR>eliminate the other 8 system defines I used, that would leave BSD as the <BR>only remaining symbol of any consequence.<BR><BR>_______________________________________________<BR>Radiance-dev mailing list<BR>Radiance-dev@radiance-online.org<BR>http://darkside-animation.com/mailman/listinfo/radiance-dev</BLOCKQUOTE><p><br><hr size=1><b>Do You Yahoo!?</b><br>
+<a href="http://rd.yahoo.com/welcome/*http://fifaworldcup.yahoo.com/fc/en/spl">Sign-up for Video Highlights</a> of 2002 FIFA World Cup
+--0-785423700-1023913191=:63308--
+
+From ckehrlich@yahoo.com  Wed Jun 12 21:37:53 2002
+From: ckehrlich@yahoo.com (Charles Ehrlich)
+Date: Wed, 12 Jun 2002 13:37:53 -0700 (PDT)
+Subject: [Radiance-dev] Re: CVS, ANSI, C++
+In-Reply-To: <D7FC4677-7E27-11D6-8016-00306540F848@lmi.net>
+Message-ID: <20020612203753.72282.qmail@web20707.mail.yahoo.com>
+
+--0-1910699007-1023914273=:70722
+Content-Type: text/plain; charset=us-ascii
+
+
+ ...and a P.S. to my previous post.  Windows networking has a very robust file locking mechanism that is implemented in the public domain code called "Samba".  In an earlier version of Radiance for Windows built on top of Cygwin, we implemented the Samba file protocols into the Radiance ambient code and into rpiece.  They worked very well.  I could dig up the original contributor and his code very easily.  Since Samba is available for just about every unix platform, we could IFDEF a few lines of code that would allow the user to select which protocol to use.  In my use of samba-locking, I've never encountered the kinds of problems I've experienced with NFS lock manager.  One of the nastiest is that NFS locking is implemented differently on different operating systems.  One can not, for example, render an image on a heterogenous network of SGI's and Linux boxes.
+-Chas
+
+
+
+---------------------------------
+Do You Yahoo!?
+Sign-up for Video Highlights of 2002 FIFA World Cup
+--0-1910699007-1023914273=:70722
+Content-Type: text/html; charset=us-ascii
+
+<P>&nbsp;...and a P.S. to my previous post.&nbsp; Windows networking&nbsp;has a very robust file locking mechanism that is implemented in the public domain code called "Samba".&nbsp; In an earlier version of Radiance for Windows built on top of Cygwin, we implemented the Samba file protocols into the Radiance ambient code and into rpiece.&nbsp; They worked very well.&nbsp; I could dig up the original contributor and his code very easily.&nbsp; Since Samba is available for just about every unix platform, we could IFDEF a few lines of code that would allow the user to select which protocol to use.&nbsp; In my use of samba-locking, I've never encountered the kinds of problems I've experienced with NFS lock manager.&nbsp; One of the nastiest is that NFS locking is implemented differently on different operating systems.&nbsp; One can not, for example, render an image on a heterogenous network of SGI's and Linux boxes.
+<P>-Chas</P><p><br><hr size=1><b>Do You Yahoo!?</b><br>
+<a href="http://rd.yahoo.com/welcome/*http://fifaworldcup.yahoo.com/fc/en/spl">Sign-up for Video Highlights</a> of 2002 FIFA World Cup
+--0-1910699007-1023914273=:70722--
+
+From schorsch@schorsch.com  Thu Jun 13 00:32:18 2002
+From: schorsch@schorsch.com (Georg Mischler)
+Date: Wed, 12 Jun 2002 19:32:18 -0400 (EDT)
+Subject: [Radiance-dev] CVS, ANSI, C++
+Message-ID: <Pine.BSF.4.30.0206121930370.23814-100000@emancholl.pair.com>
+
+I accidentally sent this to Greg directly instead of to the list.
+Peter, could you set the Reply-to to the list for this one as well?
+
+
+Greg Ward wrote:
+
+> Ewww.  Can't we just say that if you want to do parallel rendering, you
+> need to install Unix?
+
+Hehe...
+
+If you were asking me for my purely emotional response, then
+you'd probably like my answer better than the one you'll actually
+get. But I think we should face reality and accept that in the
+near future, most people using Radiance will be sitting in front
+of Windows boxes.
+
+They may well be sending long simulations to some linux cluster
+in the basement, but their CAD system will probably run under
+Windows, and having to switch back and forth more of a pain than
+working with the "wrong" system all the time. Others will really
+distribute stuff across their Windows network, as not everybody
+may have the funding for establishing a parallel infrastructure
+just for Radiance.
+
+Maybe what we really need is some kind of switch that allows to
+access different locking mechanisms depending on the situation. I
+didn't check in detail, but I assume there are two functions, one
+for fetching ambient data and one for storing it. Such a very
+narrow interface lends itself relatively well to this approach.
+It's not that I can easily pull a good file or server based
+locking strategy out of my ears, but I think it would be worth a
+little effort. We have had enough problems with NFS locking in
+the past to appreciate the advantages that a working and truly
+portable solution will bring.
+
+
+> > The Radiance sources are currently littered with hundreds of
+> > instances of preprocessor symbols referencing more than a dozen
+> > individual operating systems. This has almost worked yesterday,
+
+> OK, that's a bit of an exaggeration.
+
+I wasn't really exaggerating that much as far as the numbers go.
+But of course I didn't check how many of those are really still
+needed or could be eliminated in other ways. I'm not sure, for
+example, how many of the MSDOS special cases are really still
+required on modern Windows systems, and most of the UNIX
+conditionals may fall away with the reverse argument. Those and
+BSD seem to be responsible for more than half the OS specific code.
+
+I also didn't mean to insinuate that we need autoconv right now
+and at any price. I think we'll know more about what we really
+need after ANSIfication, as this may already eliminate quite a
+few dependencies.  If we then end up with so little that a
+homebrew script gets us the same result, so much the better. The
+differences between BSD and SYSV have been reduced to a large
+degree by the ongoing implementation of the posix standards by
+most vendors.
+
+
+> > Prototypes and the elimination of global variables will make the
+> > *internal* interfaces of Radiance a lot clearer and more obvious
+> > than they are right now.
+>
+> I support this suggestion whole-heartedly. The global variables
+> currently in use in the renderers could be eliminated with a single
+> structure and a reference to it in the ray struct. In principle, the
+> bulk of the renderer could then be consolidated into a library, which
+> could be multi-threaded with a bit more work....
+
+I was actually thinking about a slightly finer granularity, but I
+guess we'll see what makes sense when we get there. One of the
+more interesting tasks might turn out to be the elimination of
+exit() calls in code that is considered part of a library. I
+don't think there's any part of Radiance that currently hesitates
+to kill the whole process whenever something goes wrong, which
+would be very surprising for a program using such a library.
+
+
+> > I realize that most of you
+> > haven't seen those sources yet, so you'll simply have to take my
+> > word for it... ;)
+>
+> I haven't seen this code, either, and from what you say, I'm not sure I
+> want to...
+
+Well, it's C++ code for Windows, apparently written by someone
+who didn't bother to read the very decent documentation about the
+system APIs coming with his compiler and IDE. I'm clearly no
+expert in Windows programming (let alone in C++), but there's no
+feeling of loneliness in that corner...
+
+
+> I thought I had defined an interface for rview pretty well
+> in rt/driver.h.  This is where I began when I wrote different drivers.
+> (There was a little-used NeWS driver at one time, as well as one for
+> Suntools -- anyone remember those systems?)  As for ximage, this program
+> was meant to be replaced in its entirety, not built upon.  I assume
+> that's what they did for Windows, but I don't know.
+
+I couldn't say for sure. My primary fight was on the Windows
+side, to turn the whole thing into a conforming and well behaved
+program (with at least partial success). As far as I remember
+right now, they directly hooked into the raytracing routines.
+
+One of the trickier problems is how to make the raytracer return
+prematurely out of its recursive ambient calculations upon user
+input. The lack of this possibility (and thus often significantly
+delayed response) can also be quite annoying with ximage. On Windows
+this becomes a serious issue, as you can't just kill a program
+without the risk of losing a bunch of system resources.
+
+I'm not sure if I understand the concept behind driver.h
+correctly yet. It looks like it wants to do all the event
+handling itself, and reduces the "driver" to subordinate tasks
+like providing mouse coordinates etc.  Modern window management
+systems rather lend itself to the opposite approach, where the
+user interface runs the event loop and calls the simulation code
+in the background (possible in a seperate thread). This makes it
+possible to offer menus and other interaction possibilities,
+which gives the user better control about what happens.
+
+The possibility to interrupt the simulation at any point in its
+recursion is mandatory to garantee this responsiveness.  As far
+as I could figure out, this possibility isn't currently
+implemented (and the implementation in winimage is not as clean
+as it should be). I haven't checked if the holodeck stuff does
+anything different in that regard.
+
+
+> The programming
+> interface for image display is the Radiance picture format!
+
+Hmmm... and reinvent all the tonemapping stuff?
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch.com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+From ckehrlich@yahoo.com  Thu Jun 13 00:53:36 2002
+From: ckehrlich@yahoo.com (Charles Ehrlich)
+Date: Wed, 12 Jun 2002 16:53:36 -0700 (PDT)
+Subject: [Radiance-dev] CVS, ANSI, C++
+In-Reply-To: <Pine.BSF.4.30.0206121930370.23814-100000@emancholl.pair.com>
+Message-ID: <20020612235336.79498.qmail@web20702.mail.yahoo.com>
+
+--0-1450676656-1023926016=:79369
+Content-Type: text/plain; charset=us-ascii
+
+
+I totally agree with Georg's comments about Windows machines and networking--of course.  His idea for a run-time flag for which locking mechanism to use is great, but the default should be the one that works.  But, fetching data is not a problem for any of the NFS implementations because even the broken ones do that correctly.  But, a re-implementation is not necessary--samba code and Radiance implementation is already done, available and working.
+
+Some of the MSDOS special cases were necessary when dealing with the headers from Unix versus Windows image files.  
+
+-Chas
+
+
+
+---------------------------------
+Do You Yahoo!?
+Sign-up for Video Highlights of 2002 FIFA World Cup
+--0-1450676656-1023926016=:79369
+Content-Type: text/html; charset=us-ascii
+
+<P>I totally agree with Georg's comments about Windows machines and networking--of course.&nbsp; His idea for a run-time flag for which locking mechanism to use is great, but the default should be the one that works.&nbsp; But,&nbsp;fetching&nbsp;data is not a problem for any of the NFS implementations because even the broken ones do that correctly.&nbsp; But, a re-implementation is not necessary--samba code and Radiance implementation is already done, available and working.</P>
+<P>Some of the MSDOS special cases were necessary when dealing with the headers from&nbsp;Unix versus Windows&nbsp;image files.&nbsp; </P>
+<P>-Chas</P><p><br><hr size=1><b>Do You Yahoo!?</b><br>
+<a href="http://rd.yahoo.com/welcome/*http://fifaworldcup.yahoo.com/fc/en/spl">Sign-up for Video Highlights</a> of 2002 FIFA World Cup
+--0-1450676656-1023926016=:79369--
+
+From schorsch@schorsch.com  Thu Jun 13 01:27:04 2002
+From: schorsch@schorsch.com (Georg Mischler)
+Date: Wed, 12 Jun 2002 20:27:04 -0400 (EDT)
+Subject: [Radiance-dev] CVS, ANSI, C++ (fwd)
+Message-ID: <Pine.BSF.4.30.0206122025010.23814-100000@emancholl.pair.com>
+
+Well then, let's put the full discussion online.
+My goof will mess up threading in the archive, but we'll
+have to live with that...
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch.com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+---------- Forwarded message ----------
+Date: Wed, 12 Jun 2002 15:25:31 -0700
+From: Greg Ward <gward@lmi.net>
+To: Georg Mischler <schorsch@schorsch.com>
+Subject: Re: [Radiance-dev] CVS, ANSI, C++
+
+Hi schorsch,
+
+Did you mean to make our discussion private, or did you want this on the
+dev-list?  I think others might be interested.  I'll leave it to you to
+copy there if you like...
+
+> From: Georg Mischler <schorsch@schorsch.com>
+> Date: Wed Jun 12, 2002  12:17:57 PM US/Pacific
+> To: Greg Ward <gward@lmi.net>
+> Subject: Re: [Radiance-dev] CVS, ANSI, C++
+>
+> Greg Ward wrote:
+>
+>> Ewww.  Can't we just say that if you want to do parallel rendering, you
+>> need to install Unix?
+>
+> Hehe...
+>
+> If you were asking me for my purely emotional response, then
+> you'd probably like my answer better than the one you'll actually
+> get. But I think we should face reality and accept that in the
+> near future, most people using Radiance will be sitting in front
+> of Windows boxes.
+>
+> They may well be sending long simulations to some linux cluster
+> in the basement, but their CAD system will probably run under
+> Windows, and having to switch back and forth more of a pain than
+> working with the "wrong" system all the time. Others will really
+> distribute stuff across their Windows network, as not everybody
+> may have the funding for establishing a parallel infrastructure
+> just for Radiance.
+
+
+Having dealt just a little with Windows networks, I have to say that my
+interest in supporting them is identically 0 over all time and space.
+I'll leave it to you and others who think it worthwhile.
+
+> Maybe what we really need is some kind of switch that allows to
+> access different locking mechanisms depending on the situation. I
+> didn't check in detail, but I assume there are two functions, one
+> for fetching ambient data and one for storing it. Such a very
+> narrow interface lends itself relatively well to this approach.
+> It's not that I can easily pull a good file or server based
+> locking strategy out of my ears, but I think it would be worth a
+> little effort. We have had enough problems with NFS locking in
+> the past to appreciate the advantages that a working and truly
+> portable solution will bring.
+
+
+Another reason to use a file lock manager rather than a server process
+besides simplicity is that the lock manager is robust to individual
+systems going down (or should be), whereas everything dies if your
+server process dies.  What about Chas' suggestion of offering Samba as a
+substitute lock manager?
+
+>>> The Radiance sources are currently littered with hundreds of
+>>> instances of preprocessor symbols referencing more than a dozen
+>>> individual operating systems. This has almost worked yesterday,
+>
+>> OK, that's a bit of an exaggeration.
+>
+> I wasn't really exaggerating that much as far as the numbers go.
+> But of course I didn't check how many of those are really still
+> needed or could be eliminated in other ways. I'm not sure, for
+> example, how many of the MSDOS special cases are really still
+> required on modern Windows systems, and most of the UNIX
+> conditionals may fall away with the reverse argument. Those and
+> BSD seem to be responsible for more than half the OS specific code.
+>
+> I also didn't mean to insinuate that we need autoconv right now
+> and at any price. I think we'll know more about what we really
+> need after ANSIfication, as this may already eliminate quite a
+> few dependencies.  If we then end up with so little that a
+> homebrew script gets us the same result, so much the better. The
+> differences between BSD and SYSV have been reduced to a large
+> degree by the ongoing implementation of the posix standards by
+> most vendors.
+
+
+It's true that there are quite a few BSD and MSDOS conditionals in
+there, and I would recommend these be replaced by isolating the
+corresponding system calls with a system-independent interface as
+necessary.  I agree that a closer inspecition may determine that most of
+these are no longer needed.
+
+>>> Prototypes and the elimination of global variables will make the
+>>> *internal* interfaces of Radiance a lot clearer and more obvious
+>>> than they are right now.
+>>
+>> I support this suggestion whole-heartedly. The global variables
+>> currently in use in the renderers could be eliminated with a single
+>> structure and a reference to it in the ray struct. In principle, the
+>> bulk of the renderer could then be consolidated into a library, which
+>> could be multi-threaded with a bit more work....
+>
+> I was actually thinking about a slightly finer granularity, but I
+> guess we'll see what makes sense when we get there. One of the
+> more interesting tasks might turn out to be the elimination of
+> exit() calls in code that is considered part of a library. I
+> don't think there's any part of Radiance that currently hesitates
+> to kill the whole process whenever something goes wrong, which
+> would be very surprising for a program using such a library.
+
+
+Ah, yes.  I agree -- although I usually call quit(), which then calls
+exit() if it isn't overridden by the calling program.  The only way to
+avoid exit() is with a long jump, however, and this is not a generally
+recommended practice, so it remains a problem.  In general, it is safest
+to call the renderer as a subprocess, which is how it is handled in
+rholo.
+
+>>> I realize that most of you
+>>> haven't seen those sources yet, so you'll simply have to take my
+>>> word for it... ;)
+>>
+>> I haven't seen this code, either, and from what you say, I'm not sure I
+>> want to...
+>
+> Well, it's C++ code for Windows, apparently written by someone
+> who didn't bother to read the very decent documentation about the
+> system APIs coming with his compiler and IDE. I'm clearly no
+> expert in Windows programming (let alone in C++), but there's no
+> feeling of loneliness in that corner...
+>
+>> I thought I had defined an interface for rview pretty well
+>> in rt/driver.h.  This is where I began when I wrote different drivers.
+>> (There was a little-used NeWS driver at one time, as well as one for
+>> Suntools -- anyone remember those systems?)  As for ximage, this
+>> program
+>> was meant to be replaced in its entirety, not built upon.  I assume
+>> that's what they did for Windows, but I don't know.
+>
+> I couldn't say for sure. My primary fight was on the Windows
+> side, to turn the whole thing into a conforming and well behaved
+> program (with at least partial success). As far as I remember
+> right now, they directly hooked into the raytracing routines.
+>
+> One of the trickier problems is how to make the raytracer return
+> prematurely out of its recursive ambient calculations upon user
+> input. The lack of this possibility (and thus often significantly
+> delayed response) can also be quite annoying with ximage. On Windows
+> this becomes a serious issue, as you can't just kill a program
+> without the risk of losing a bunch of system resources.
+>
+> I'm not sure if I understand the concept behind driver.h
+> correctly yet. It looks like it wants to do all the event
+> handling itself, and reduces the "driver" to subordinate tasks
+> like providing mouse coordinates etc.  Modern window management
+> systems rather lend itself to the opposite approach, where the
+> user interface runs the event loop and calls the simulation code
+> in the background (possible in a seperate thread). This makes it
+> possible to offer menus and other interaction possibilities,
+> which gives the user better control about what happens.
+
+
+It sounds like you understand it fairly well.
+
+> The possibility to interrupt the simulation at any point in its
+> recursion is mandatory to garantee this responsiveness.  As far
+> as I could figure out, this possibility isn't currently
+> implemented (and the implementation in winimage is not as clean
+> as it should be). I haven't checked if the holodeck stuff does
+> anything different in that regard.
+
+
+Rholo also hangs on a long ambient calculation sometimes, as it has to
+wait for at least one ray value to return before it can respond to the
+driver process.  Since it is a separate process, however, the driver is
+free to display menus and move around the scene, even if it can't get
+the rays it wants from the holodeck server.  This could be fixed with a
+better call to select() that included the driver process, but I never
+bothered with it because it was more complicated and the most I was
+waiting was 10 seconds or so for the calculation to catch up.  (I tend
+to be more patient with my own software.)
+
+If the ambient calculation is the only barrier to responsiveness in
+rview, it wouldn't be too difficult to query the value of some variable
+set asynchronously by the caller and make a hasty retreat.  However,
+we'd have to work long and hard before we got the renderer code into
+thread-safe shape.  Another option is to use the Unix signal facility to
+send an interrupt to the rendering process, causing premature
+termination of any ambient calculation in progress.  This wouldn't
+require much coding effort at all.
+
+Another, possibly better solution would be to have the renderer call a
+global "checkInput()" routine every so many rays, which is the way rview
+is _supposed_ to work but doesn't, simply because the call to
+checkInput() is handled at too high a level.  If we moved this into the
+low-level raytrace() routine, I think we'd have responsiveness licked
+without having to change to a background rendering process.  I might
+even give this a go to try it out.
+
+>> The programming
+>> interface for image display is the Radiance picture format!
+>
+> Hmmm... and reinvent all the tonemapping stuff?
+
+
+Not necessarily.  The tone-mapping stuff is all incorporated into a nice
+set of library routines, which are even written in ANSI-C!  (They were
+the last thing I wrote before leaving LBNL.)  It's not too difficult to
+use them from a new program.  I use them a lot in Photophile, the HDR
+image browser I'm developing.
+
+-Greg
+
+
+From radiance-dev@radiance-online.org  Thu Jun 13 15:14:23 2002
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Thu, 13 Jun 2002 10:14:23 -0400 (EDT)
+Subject: [Radiance-dev] CVS, ANSI, C++
+In-Reply-To: <Pine.BSF.4.30.0206122025010.23814-100000@emancholl.pair.com>
+Message-ID: <Pine.BSF.4.30.0206131002330.73196-100000@emancholl.pair.com>
+
+Greg Ward wrote:
+
+> Having dealt just a little with Windows networks, I have to say that my
+> interest in supporting them is identically 0 over all time and space.
+> I'll leave it to you and others who think it worthwhile.
+
+Very understandably. I'd like to try to stay away from any
+Windows specific stuff as much as possible myself. Any solution
+should be either file or IP based, to make it portable across
+all platforms.
+
+
+> Another reason to use a file lock manager rather than a server process
+> besides simplicity is that the lock manager is robust to individual
+> systems going down (or should be), whereas everything dies if your
+> server process dies.  What about Chas' suggestion of offering Samba as a
+> substitute lock manager?
+
+The lock manager ultimately dies with the machine where the
+locked file resides, which is just as good or bad. Ideally, any
+other server process would run on this same machine as well. Only
+when this isn't possible will there be two seperate points of
+failure.
+
+I'm not sure yet what Samba exactly does here, apart from the
+fact that it involves yet another extra server process. One one
+side, Samba offers the standard Windows network locking API to
+processes connecting from that end. And it looks like it *can*
+translate those into flock() calls on the unix side. Does this
+mean that unix processes accessing the same file per NFS would
+see the lock too?
+
+Chas, is this code included in the Radiance for Windows sources I
+have or was it added later? Because I'm pretty sure that my
+version corrupts the ambient files on concurrent access.
+The ultimate goal should be that every process on every OS type
+can access the same file without getting in each others way.
+
+
+> >  One of the
+> > more interesting tasks might turn out to be the elimination of
+> > exit() calls in code that is considered part of a library. I
+> > don't think there's any part of Radiance that currently hesitates
+> > to kill the whole process whenever something goes wrong, which
+> > would be very surprising for a program using such a library.
+>
+> Ah, yes.  I agree -- although I usually call quit(), which then calls
+> exit() if it isn't overridden by the calling program.  The only way to
+> avoid exit() is with a long jump, however, and this is not a generally
+> recommended practice, so it remains a problem.
+
+One of my modifications to winrview was to establish a safe
+return path from very deep recursion levels when user interaction
+stops the current simulation. This may involve a few additional
+return value checks, but I think in this specific case those were
+already in place.  Similar scenarios, in the worst case with an
+extra flag somewhere to indicate an error condition, should be
+possible in most if not all places where exit/quit are invoked.
+But I think we're discussing pretty far in future mode here already...
+
+
+> If the ambient calculation is the only barrier to responsiveness in
+> rview, it wouldn't be too difficult to query the value of some variable
+> set asynchronously by the caller and make a hasty retreat.
+
+Yup, exactly.
+
+
+> However,
+> we'd have to work long and hard before we got the renderer code into
+> thread-safe shape.
+
+Maybe, maybe not. There are at least two levels of thread safety.
+One is to have the critical code running independently in its own
+thread *once*, which is no problem as long as there aren't any
+global variables. The other would be to allow several instances
+running in parallel threads, which in addition requires the
+elimination of all static variables in functions. I think both
+conditions could be met quite easily when all state (including
+any stop condition flags that the parent thread might want to
+set) is encapsulated eg. in the ray struct. Future mode again,
+though.
+
+
+> Another option is to use the Unix signal facility to
+> send an interrupt to the rendering process, causing premature
+> termination of any ambient calculation in progress.  This wouldn't
+> require much coding effort at all.
+
+Unfortunately, signals and Windows don't match very well...
+
+
+> Another, possibly better solution would be to have the renderer call a
+> global "checkInput()" routine every so many rays, which is the way rview
+> is _supposed_ to work but doesn't, simply because the call to
+> checkInput() is handled at too high a level.  If we moved this into the
+> low-level raytrace() routine, I think we'd have responsiveness licked
+> without having to change to a background rendering process.  I might
+> even give this a go to try it out.
+
+Whichever stopping signalization is chosen should indeed be
+checked somewhere down there. Winrview currently does this at the
+beginning of ambient(), sets a flag for the original caller (not
+really necessary), assigns zero values to the current rgb set
+(should probably use the ambient values instead), and returns.
+I don't know if this is the optimal place to do this, but it
+worked well enough for me at the time.
+
+
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch.com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Thu Jun 13 17:25:09 2002
+From: radiance-dev@radiance-online.org (Randolph Fritz)
+Date: Thu, 13 Jun 2002 09:25:09 -0700
+Subject: [Radiance-dev] CVS, ANSI, C++
+In-Reply-To: <Pine.BSF.4.30.0206131002330.73196-100000@emancholl.pair.com>
+References: <Pine.BSF.4.30.0206122025010.23814-100000@emancholl.pair.com> <Pine.BSF.4.30.0206131002330.73196-100000@emancholl.pair.com>
+Message-ID: <20020613162508.GA5125@panix.com>
+
+On Thu, Jun 13, 2002 at 10:14:23AM -0400, Georg Mischler wrote:
+> 
+> > Another reason to use a file lock manager rather than a server process
+> > besides simplicity is that the lock manager is robust to individual
+> > systems going down (or should be), whereas everything dies if your
+> > server process dies.  What about Chas' suggestion of offering Samba as a
+> > substitute lock manager?
+> 
+> The lock manager ultimately dies with the machine where the
+> locked file resides, which is just as good or bad. Ideally, any
+> other server process would run on this same machine as well. Only
+> when this isn't possible will there be two seperate points of
+> failure.
+> 
+
+It seems like establishing a Radiance locking manager--perhaps just a
+problem which managed the global ambient file--might be a good idea.
+NFS locking doesn't even work on all systems, unfortunately, so that
+would also fix that problem.
+
+> 
+> > >  One of the
+> > > more interesting tasks might turn out to be the elimination of
+> > > exit() calls in code that is considered part of a library. I
+> > > don't think there's any part of Radiance that currently hesitates
+> > > to kill the whole process whenever something goes wrong, which
+> > > would be very surprising for a program using such a library.
+> >
+> > Ah, yes.  I agree -- although I usually call quit(), which then calls
+> > exit() if it isn't overridden by the calling program.  The only way to
+> > avoid exit() is with a long jump, however, and this is not a generally
+> > recommended practice, so it remains a problem.
+> 
+
+I believe longjmp() has been standardized in ANSI C, so this has become
+safer.
+
+> 
+> Maybe, maybe not. There are at least two levels of thread safety.
+> One is to have the critical code running independently in its own
+> thread *once*, which is no problem as long as there aren't any
+> global variables. The other would be to allow several instances
+> running in parallel threads, which in addition requires the
+> elimination of all static variables in functions. I think both
+> conditions could be met quite easily when all state (including
+> any stop condition flags that the parent thread might want to
+> set) is encapsulated eg. in the ray struct. Future mode again,
+> though.
+> 
+
+This, plus the previous issue is starting to be a powerful argument
+for C++, which solves this problem by making globals into instance
+variables and the exit problem with the exception mechanism.  With a
+hypothetical C++ embedded renderer one could simply instantiate a
+renderer object.
+
+OK, then....looking at C++...I think it might be possible.  If we left
+most of the code as straight C, not using the fancy OO features, only
+gathering up--no, wait.  We could combine the two solutions.  Gather up
+the globals into a structure which is referenced throughout the
+renderer and use longjmp() to handle exceptions.  Then wrap the whole
+thing up in a C++ (or Objective C) class.  The only issue I can
+see--and it is potentially major--would be potential memory leaks.
+
+Randolph
+
+
+From radiance-dev@radiance-online.org  Thu Jun 13 17:50:40 2002
+From: radiance-dev@radiance-online.org (Charles Ehrlich)
+Date: Thu, 13 Jun 2002 09:50:40 -0700 (PDT)
+Subject: [Radiance-dev] CVS, ANSI, C++
+In-Reply-To: <Pine.BSF.4.30.0206131002330.73196-100000@emancholl.pair.com>
+Message-ID: <20020613165040.50767.qmail@web20703.mail.yahoo.com>
+
+--0-2106539197-1023987040=:49654
+Content-Type: text/plain; charset=us-ascii
+
+
+ I see that Peter fixed the reply-to field.  Thank you!
+The samba code is not part of the current Radiance for Windows release built with MS VC++.  It was part of the Desktop Radiance BETA release built with the Cygwin version of Radiance for Windows.  Samba works multi-directionally from Unix client to Windows server, Unix client to Unix Samba server, Windows client to Unix Samba server, and of course, Windows client to Windows server.  We tested each of these configurations.  The kernel of the server cpu will know about the file lock.  You ask a good question about what happens when an NFS lock tries to get ahold of the file?  I dunno.  I presume the lock fails or hangs the client CPU like NFS usually does. :-)  Samba exists for just about every flavor of Unix known, Macintosh OSX included, and it is reliable and has a dedicated open source support staff.  Even older Mac's can use a low-cost proprietary solution called DAVE.
+If we're going to implement a custom file locking mechanism, then why reinvent the wheel?  There have got to be several different open source file locking systems.  What about PovRay?  They've stolen enough from Radiance...perhaps it our turn to collect. :-)  The Samba mods are just a no-brainer.  About 30 lines of code max.
+-Chas
+  Georg Mischler <schorsch@schorsch.com> wrote: Greg Ward wrote:
+
+> Having dealt just a little with Windows networks, I have to say that my
+> interest in supporting them is identically 0 over all time and space.
+> I'll leave it to you and others who think it worthwhile.
+
+Very understandably. I'd like to try to stay away from any
+Windows specific stuff as much as possible myself. Any solution
+should be either file or IP based, to make it portable across
+all platforms.
+
+
+> Another reason to use a file lock manager rather than a server process
+> besides simplicity is that the lock manager is robust to individual
+> systems going down (or should be), whereas everything dies if your
+> server process dies. What about Chas' suggestion of offering Samba as a
+> substitute lock manager?
+
+The lock manager ultimately dies with the machine where the
+locked file resides, which is just as good or bad. Ideally, any
+other server process would run on this same machine as well. Only
+when this isn't possible will there be two seperate points of
+failure.
+
+I'm not sure yet what Samba exactly does here, apart from the
+fact that it involves yet another extra server process. One one
+side, Samba offers the standard Windows network locking API to
+processes connecting from that end. And it looks like it *can*
+translate those into flock() calls on the unix side. Does this
+mean that unix processes accessing the same file per NFS would
+see the lock too?
+
+Chas, is this code included in the Radiance for Windows sources I
+have or was it added later? Because I'm pretty sure that my
+version corrupts the ambient files on concurrent access.
+The ultimate goal should be that every process on every OS type
+can access the same file without getting in each others way.
+
+
+> > One of the
+> > more interesting tasks might turn out to be the elimination of
+> > exit() calls in code that is considered part of a library. I
+> > don't think there's any part of Radiance that currently hesitates
+> > to kill the whole process whenever something goes wrong, which
+> > would be very surprising for a program using such a library.
+>
+> Ah, yes. I agree -- although I usually call quit(), which then calls
+> exit() if it isn't overridden by the calling program. The only way to
+> avoid exit() is with a long jump, however, and this is not a generally
+> recommended practice, so it remains a problem.
+
+One of my modifications to winrview was to establish a safe
+return path from very deep recursion levels when user interaction
+stops the current simulation. This may involve a few additional
+return value checks, but I think in this specific case those were
+already in place. Similar scenarios, in the worst case with an
+extra flag somewhere to indicate an error condition, should be
+possible in most if not all places where exit/quit are invoked.
+But I think we're discussing pretty far in future mode here already...
+
+
+> If the ambient calculation is the only barrier to responsiveness in
+> rview, it wouldn't be too difficult to query the value of some variable
+> set asynchronously by the caller and make a hasty retreat.
+
+Yup, exactly.
+
+
+> However,
+> we'd have to work long and hard before we got the renderer code into
+> thread-safe shape.
+
+Maybe, maybe not. There are at least two levels of thread safety.
+One is to have the critical code running independently in its own
+thread *once*, which is no problem as long as there aren't any
+global variables. The other would be to allow several instances
+running in parallel threads, which in addition requires the
+elimination of all static variables in functions. I think both
+conditions could be met quite easily when all state (including
+any stop condition flags that the parent thread might want to
+set) is encapsulated eg. in the ray struct. Future mode again,
+though.
+
+
+> Another option is to use the Unix signal facility to
+> send an interrupt to the rendering process, causing premature
+> termination of any ambient calculation in progress. This wouldn't
+> require much coding effort at all.
+
+Unfortunately, signals and Windows don't match very well...
+
+
+> Another, possibly better solution would be to have the renderer call a
+> global "checkInput()" routine every so many rays, which is the way rview
+> is _supposed_ to work but doesn't, simply because the call to
+> checkInput() is handled at too high a level. If we moved this into the
+> low-level raytrace() routine, I think we'd have responsiveness licked
+> without having to change to a background rendering process. I might
+> even give this a go to try it out.
+
+Whichever stopping signalization is chosen should indeed be
+checked somewhere down there. Winrview currently does this at the
+beginning of ambient(), sets a flag for the original caller (not
+really necessary), assigns zero values to the current rgb set
+(should probably use the ambient values instead), and returns.
+I don't know if this is the optimal place to do this, but it
+worked well enough for me at the time.
+
+
+-schorsch
+
+-- 
+Georg Mischler -- simulations developer -- schorsch at schorsch.com
++schorsch.com+ -- lighting design tools -- http://www.schorsch.com/
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev@radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+---------------------------------
+Do You Yahoo!?
+Sign-up for Video Highlights of 2002 FIFA World Cup
+--0-2106539197-1023987040=:49654
+Content-Type: text/html; charset=us-ascii
+
+<P> I see that Peter fixed the reply-to field.&nbsp; Thank you!
+<P>The samba code is <STRONG>not</STRONG> part of the current Radiance for Windows release built with MS VC++.&nbsp; It was part of the Desktop Radiance BETA release built with the Cygwin version of Radiance for Windows.&nbsp; Samba works multi-directionally from Unix client to Windows server, Unix client to Unix Samba server, Windows client to Unix Samba server, and of course, Windows client to Windows server.&nbsp; We tested&nbsp;each of&nbsp;these configurations.&nbsp;&nbsp;The kernel&nbsp;of the server cpu will know about the file lock.&nbsp; You ask a good question about what happens when an NFS lock tries to get ahold of the file?&nbsp; I dunno.&nbsp; I presume the lock&nbsp;fails or hangs the client CPU like NFS usually does. :-)&nbsp; Samba exists for just about every flavor of Unix known, Macintosh OSX included, and it is reliable and has a dedicated open source support staff.&nbsp; Even older Mac's can use a low-cost proprietary solution called DAVE.
+<P>If we're going to implement a custom file locking mechanism, then why reinvent the wheel?&nbsp; There have got to be several different open source file locking systems.&nbsp; What about PovRay?&nbsp; They've stolen enough from Radiance...perhaps it our turn to collect. :-)&nbsp; The Samba mods are just a no-brainer.&nbsp; About 30 lines of code max.
+<P>-Chas
+<P>&nbsp; <B><I>Georg Mischler &lt;schorsch@schorsch.com&gt;</I></B> wrote: 
+<BLOCKQUOTE style="PADDING-LEFT: 5px; MARGIN-LEFT: 5px; BORDER-LEFT: #1010ff 2px solid">Greg Ward wrote:<BR><BR>&gt; Having dealt just a little with Windows networks, I have to say that my<BR>&gt; interest in supporting them is identically 0 over all time and space.<BR>&gt; I'll leave it to you and others who think it worthwhile.<BR><BR>Very understandably. I'd like to try to stay away from any<BR>Windows specific stuff as much as possible myself. Any solution<BR>should be either file or IP based, to make it portable across<BR>all platforms.<BR><BR><BR>&gt; Another reason to use a file lock manager rather than a server process<BR>&gt; besides simplicity is that the lock manager is robust to individual<BR>&gt; systems going down (or should be), whereas everything dies if your<BR>&gt; server process dies. What about Chas' suggestion of offering Samba as a<BR>&gt; substitute lock manager?<BR><BR>The lock manager ultimately dies with the machine where the<BR>locked file resides, which is just as good or bad. Ideally, any<BR>other server process would run on this same machine as well. Only<BR>when this isn't possible will there be two seperate points of<BR>failure.<BR><BR>I'm not sure yet what Samba exactly does here, apart from the<BR>fact that it involves yet another extra server process. One one<BR>side, Samba offers the standard Windows network locking API to<BR>processes connecting from that end. And it looks like it *can*<BR>translate those into flock() calls on the unix side. Does this<BR>mean that unix processes accessing the same file per NFS would<BR>see the lock too?<BR><BR>Chas, is this code included in the Radiance for Windows sources I<BR>have or was it added later? Because I'm pretty sure that my<BR>version corrupts the ambient files on concurrent access.<BR>The ultimate goal should be that every process on every OS type<BR>can access the same file without getting in each others way.<BR><BR><BR>&gt; &gt; One of the<BR>&gt; &gt; more interesting tasks might turn out to be the elimination of<BR>&gt; &gt; exit() calls in code that is considered part of a library. I<BR>&gt; &gt; don't think there's any part of Radiance that currently hesitates<BR>&gt; &gt; to kill the whole process whenever something goes wrong, which<BR>&gt; &gt; would be very surprising for a program using such a library.<BR>&gt;<BR>&gt; Ah, yes. I agree -- although I usually call quit(), which then calls<BR>&gt; exit() if it isn't overridden by the calling program. The only way to<BR>&gt; avoid exit() is with a long jump, however, and this is not a generally<BR>&gt; recommended practice, so it remains a problem.<BR><BR>One of my modifications to winrview was to establish a safe<BR>return path from very deep recursion levels when user interaction<BR>stops the current simulation. This may involve a few additional<BR>return value checks, but I think in this specific case those were<BR>already in place. Similar scenarios, in the worst case with an<BR>extra flag somewhere to indicate an error condition, should be<BR>possible in most if not all places where exit/quit are invoked.<BR>But I think we're discussing pretty far in future mode here already...<BR><BR><BR>&gt; If the ambient calculation is the only barrier to responsiveness in<BR>&gt; rview, it wouldn't be too difficult to query the value of some variable<BR>&gt; set asynchronously by the caller and make a hasty retreat.<BR><BR>Yup, exactly.<BR><BR><BR>&gt; However,<BR>&gt; we'd have to work long and hard before we got the renderer code into<BR>&gt; thread-safe shape.<BR><BR>Maybe, maybe not. There are at least two levels of thread safety.<BR>One is to have the critical code running independently in its own<BR>thread *once*, which is no problem as long as there aren't any<BR>global variables. The other would be to allow several instances<BR>running in parallel threads, which in addition requires the<BR>elimination of all static variables in functions. I think both<BR>conditions could be met quite easily when all state (including<BR>any stop condition flags that the parent thread might want to<BR>set) is encapsulated eg. in the ray struct. Future mode again,<BR>though.<BR><BR><BR>&gt; Another option is to use the Unix signal facility to<BR>&gt; send an interrupt to the rendering process, causing premature<BR>&gt; termination of any ambient calculation in progress. This wouldn't<BR>&gt; require much coding effort at all.<BR><BR>Unfortunately, signals and Windows don't match very well...<BR><BR><BR>&gt; Another, possibly better solution would be to have the renderer call a<BR>&gt; global "checkInput()" routine every so many rays, which is the way rview<BR>&gt; is _supposed_ to work but doesn't, simply because the call to<BR>&gt; checkInput() is handled at too high a level. If we moved this into the<BR>&gt; low-level raytrace() routine, I think we'd have responsiveness licked<BR>&gt; without having to change to a background rendering process. I might<BR>&gt; even give this a go to try it out.<BR><BR>Whichever stopping signalization is chosen should indeed be<BR>checked somewhere down there. Winrview currently does this at the<BR>beginning of ambient(), sets a flag for the original caller (not<BR>really necessary), assigns zero values to the current rgb set<BR>(should probably use the ambient values instead), and returns.<BR>I don't know if this is the optimal place to do this, but it<BR>worked well enough for me at the time.<BR><BR><BR>-schorsch<BR><BR>-- <BR>Georg Mischler -- simulations developer -- schorsch at schorsch.com<BR>+schorsch.com+ -- lighting design tools -- http://www.schorsch.com/<BR><BR>_______________________________________________<BR>Radiance-dev mailing list<BR>Radiance-dev@radiance-online.org<BR>http://www.radiance-online.org/mailman/listinfo/radiance-dev</BLOCKQUOTE><p><br><hr size=1><b>Do You Yahoo!?</b><br>
+<a href="http://rd.yahoo.com/welcome/*http://fifaworldcup.yahoo.com/fc/en/spl">Sign-up for Video Highlights</a> of 2002 FIFA World Cup
+--0-2106539197-1023987040=:49654--
+
+From radiance-dev@radiance-online.org  Fri Jun 14 23:49:53 2002
+From: radiance-dev@radiance-online.org (Georg Mischler)
+Date: Fri, 14 Jun 2002 18:49:53 -0400 (EDT)
+Subject: [Radiance-dev] CVS, ANSI, C++
+In-Reply-To: <20020613165040.50767.qmail@web20703.mail.yahoo.com>
+Message-ID: <Pine.BSF.4.30.0206141842001.55108-100000@emancholl.pair.com>
+
+Charles Ehrlich wrote:
+
+> Samba works multi-directionally from Unix client
+> to Windows server, Unix client to Unix Samba server, Windows client to Unix
+> Samba server, and of course, Windows client to Windows server. We tested
+> each of these configurations. The kernel of the server cpu will know about
+> the file lock. You ask a good question about what happens when an NFS lock
+> tries to get ahold of the file? I dunno. I presume the lock fails or hangs
+> the client CPU like NFS usually does. :-)
+
+I have been using Samba for years, and know it's a reliable and
+robust piece of software. In fact, Samba is one of the main reasons
+why Microsoft started to run PR campaigns against Linux (and unix
+in general), after it could be shown that the "fastest Windows
+server in existence" was actually an sgi box...
+
+
+> If we're going to implement a custom file locking mechanism, then why
+> reinvent the wheel? There have got to be several different open source file
+> locking systems. What about PovRay? They've stolen enough from
+> Radiance...perhaps it our turn to collect. :-) The Samba mods are just a
+> no-brainer. About 30 lines of code max.
+
+I would like to avoid reinventing the wheel just as much as the
+next guy, but I also don't want to install a monster truck wheel
+on a Ferrari (nor the other way round). Most portable locking
+implementations in Open Source software seem to be file based,
+which is enough reason for checking out why. It's also clear that
+locks that are managed by the OS have the potential to be more
+reliable, but that generally comes at the price of portability.
+
+If it turns out that Samba really bridges that portability gap,
+then I'll be the last one to stand in its way. I just want to
+make sure that it does so beyond any doubt, even by looking at
+the code, if I have to. If we're lucky, then we can change Gregs
+"if you want to do parallel rendering, you need to install unix"
+into a "if you want to do parallel rendering on both unix and
+Windows at the same time, use Samba". Since Samba aleady is the
+most popular connectivity solution between the two, I think we
+could live with this restriction.
+
+If I understand the principle correctly, then that would mean
+to simply use the standard Windows locking APIs, which are
+implemented by the OS for local files, and by Samba when
+accessing unix based drives. This would also mean that locking
+within either world alone would work by default.
+
+Speaking of that, can anyone authoritatively confirm or reject
+the theory that current Linux systems still make problems sharing
+locks with Irix? I think that there has gone some work into the
+locking code of the more current Linux kernels, but I don't know
+for sure if that really fixed all the issues.
+
+
+-schorsch
+
+PS:
+Chas (and possibly others), could you try to make a habit of not
+including *all* of the messages you're replying to? Just so we
+don't clog the archives with multiple full copies of everything.
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch.com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From radiance-dev@radiance-online.org  Thu Jun 27 22:26:30 2002
+From: radiance-dev@radiance-online.org (Navin Thadani)
+Date: Thu, 27 Jun 2002 16:26:30 -0500 (CDT)
+Subject: [Radiance-dev] Compiling Radiance
+Message-ID: <Pine.SOL.4.44.0206271621320.423-100000@durer.dtc.umn.edu>
+
+hi,
+I was trying to compile the radiance software on a Sun. I am getting the
+following errors
+
+cc -I../common -L../lib -O -DSPEED=80 -DALIGN=double
+-I/usr/openwin/include -L/usr/openwin/lib -DNOSTEREO -DDCL_ATOF -DBIGMEM
+-o normtiff normtiff.o -lrt -ltiff -lm
+Undefined                       first referenced
+ symbol                             in file
+uv_encode                           ../lib/librt.a(tmapluv.o)
+uv_decode                           ../lib/librt.a(tmapluv.o)
+ld: fatal: Symbol referencing errors. No output written to normtiff
+*** Error code 1
+
+------------------------------------------------------------------------------
+csh -f tradinstall.csh /home/dtc/thadani/radiance/bin
+/home/dtc/thadani/radiance/lib/tcl
+Cannot find wish executable in current path -- trad not installed.
+*** Error code 1
+
+I am not installing radiance in the default locations but instead in my
+home directory at ~/radiance/lib and ~/radiance/bin
+
+I have set the LD_LIBRARY_PATH to include ~/radiance/lib
+I have also set PATH to include ~/radiance/bin
+
+I tried the ftp site radsite.lbl.gov but Access was denied, hence I could
+not get the patches (as instructed in the README file).
+
+Any suggestions as to what is going wrong here.
+Any help will be greatly appreciated.
+
+Thank You.
+Navin Thadani.
+Dept Of Computer Science & Engg
+University of Minnesota-Twin Cities.
+
+

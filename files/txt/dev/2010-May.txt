@@ -1,0 +1,327 @@
+From mstock at umich.edu  Fri May 14 20:25:23 2010
+From: mstock at umich.edu (Mark Stock)
+Date: Fri May 14 20:25:27 2010
+Subject: [Radiance-dev] rpict's -pd skewed
+Message-ID: <Pine.LNX.4.64.1005142318360.17492@goldenaxe.gpcc.itd.umich.edu>
+
+I was playing with the -pd option in rpict in Apr 27th HEAD and 
+noticed that the blurred portion of the image was always skewed 
+to the up and left. See the following movie:
+
+http://markjstock.org/transfer/dofblur_test.mov
+
+I think this change would fix it:
+
+--- rpict.c_orig	2009-05-11 17:46:31.000000000 -0400
++++ rpict.c_new	2010-05-14 23:09:33.000000000 -0400
+@@ -701,8 +701,8 @@
+  	if (dblur > FTINY && vdist > FTINY) {
+  		double  vc, dfh, dfv;
+  						/* square/circle conv. */
+-		dfh = vc = frandom();
+-		dfv = frandom();
++		dfh = vc = 2.*frandom() - 1.;
++		dfv = 2.*frandom() - 1.;
+  		dfh *= .5*dblur*sqrt(1. - .5*dfv*dfv);
+  		dfv *= .5*dblur*sqrt(1. - .5*vc*vc);
+  		if (ourview.type == VT_PER || ourview.type == VT_PAR) {
+
+Mark
+
+From gregoryjward at gmail.com  Sat May 15 08:33:12 2010
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Sat May 15 08:33:12 2010
+Subject: [Radiance-dev] rpict's -pd skewed
+In-Reply-To: <Pine.LNX.4.64.1005142318360.17492@goldenaxe.gpcc.itd.umich.edu>
+References: <Pine.LNX.4.64.1005142318360.17492@goldenaxe.gpcc.itd.umich.edu>
+Message-ID: <8B281D1E-F31B-40B6-9C43-63F403EEB508@gmail.com>
+
+Hi Mark,
+
+Thanks for finding (and fixing!) this bug, which I inadvertently  
+introduced while changing the square sampling to disk sampling.  I've  
+checked the change into CVS, which should show up in the HEAD in a day  
+or two.
+
+Cheers,
+-Greg
+
+> From: Mark Stock <mstock@umich.edu>
+> Date: May 14, 2010 8:25:23 PM PDT
+>
+> I was playing with the -pd option in rpict in Apr 27th HEAD and  
+> noticed that the blurred portion of the image was always skewed to  
+> the up and left. See the following movie:
+>
+> http://markjstock.org/transfer/dofblur_test.mov
+>
+> I think this change would fix it:
+>
+> --- rpict.c_orig	2009-05-11 17:46:31.000000000 -0400
+> +++ rpict.c_new	2010-05-14 23:09:33.000000000 -0400
+> @@ -701,8 +701,8 @@
+> 	if (dblur > FTINY && vdist > FTINY) {
+> 		double  vc, dfh, dfv;
+> 						/* square/circle conv. */
+> -		dfh = vc = frandom();
+> -		dfv = frandom();
+> +		dfh = vc = 2.*frandom() - 1.;
+> +		dfv = 2.*frandom() - 1.;
+> 		dfh *= .5*dblur*sqrt(1. - .5*dfv*dfv);
+> 		dfv *= .5*dblur*sqrt(1. - .5*vc*vc);
+> 		if (ourview.type == VT_PER || ourview.type == VT_PAR) {
+>
+> Mark
+
+From cjkohler at lbl.gov  Fri May 21 17:09:30 2010
+From: cjkohler at lbl.gov (Christian Kohler)
+Date: Fri May 21 17:09:36 2010
+Subject: [Radiance-dev] Modifications to compile 4.0 with MinGW
+Message-ID: <AANLkTimHeRXEqdIQBwm_TnKpPx1jIDncmNlXyKGYn1Bg@mail.gmail.com>
+
+We have been working at LBNL to compile Radiance 4.0 for inclusion in
+WINDOW6 (win32).
+We managed to compile it, based on Francesco's MinGW instructions, but
+here are a few small code issues we need to resolve.
+
+The gcc compiler complains while compiling mkillum.exe
+it reports that the 'quit' function is defined both in
+/src/rt/raypwin.c and /src/gen/mkillum.c
+We commented out the 'quit' function in raypwin.c and were able to
+compile, but there are cleaner solutions. Any suggestions on how to do
+solve this?
+
+As others reported before, we also found the issue with the call to
+timegm in /src/common/header.c
+
+Here is out proposed change:
+change this:
+tms.tm_year -= 1900;
+*tloc = timegm(&tms);
+
+to this:
+tms.tm_year -= 1900;
+#ifdef _WIN32
+*tloc = time(&tms);
+#else
+*tloc = timegm(&tms);
+#endif
+
+We also made some changes to the Scons scripts, but I will send those
+in a separate e-mail, since it is not a direct source code issue.
+
+Christian
+
+**************
+Christian Kohler, CJKohler@lbl.gov, (510) 486-5040, http://windows.lbl.gov ,
+Windows & Daylighting Research Group, Lawrence Berkeley National Laboratory
+1 Cyclotron Rd, Berkeley, California, 94720, USA
+
+From cjkohler at lbl.gov  Fri May 21 17:22:41 2010
+From: cjkohler at lbl.gov (Christian Kohler)
+Date: Fri May 21 17:22:49 2010
+Subject: [Radiance-dev] Scons script updates for MinGW compile of 4.0
+Message-ID: <AANLkTimxqS6Qyp2SSCmNX3AB10iScPmBlsNrbSyo2jp5@mail.gmail.com>
+
+Here are some changes to make to the Scons scripts, to get 4.0 to
+compile on Windows using MinGW. These were compiled on Windows 7, but
+it should work for XP as well.
+
+************
+This one was previously reported on the dev-list.
+/ray/build_utils/find_libs.py
+
+Change:
+v = env.FindFile('Verdana.fnt', './lib')
+
+to:
+v = env.FindFile('Veerdana.fnt', './lib')
+***********
+
+***********
+Add some new files to the script:
+/ray/src/rt/SConscript
+
+Change:
+  duphead = env.Object(source="duphead.c")
+  persist = env.Object(source="persist.c")
+  ambio = env.Object(source="ambio.c")
+
+to:
+  duphead = env.Object(source="duphead.c")
+  persist = env.Object(source="persist.c")
+  ambio = env.Object(source="ambio.c")
+  rayfifo = env.Object(source="rayfifo.c")
+  raypwin = env.Object(source="raypwin.c")
+  raycalls = env.Object(source="raycalls.c")
+
+Change:
+rtsrc = ['rtrace.c', duphead, persist, rtmain]
+
+to:
+rtsrc = ['rtrace.c', duphead, persist, rtmain, rayfifo, raypwin, raycalls]
+************
+
+*********
+I couldn't figure out how to cleanly set the tools environment from
+win32 (which uses the Microsoft Visual Studio compiler) to mingw.
+I made this crude change to the main Sconscript, please tell me the
+proper way to force it to use the mingw environment:
+/ray/SConstruct
+
+Change:
+# Set up build environment
+ -env = Environment()
+
+to:
+# Set up build environment
+env = Environment(tools = ['mingw'])
+*********
+
+Christian
+
+
+**************
+Christian Kohler, CJKohler@lbl.gov, (510) 486-5040, http://windows.lbl.gov ,
+Windows & Daylighting Research Group, Lawrence Berkeley National Laboratory
+1 Cyclotron Rd, Berkeley, California, 94720, USA
+
+From gregoryjward at gmail.com  Fri May 21 18:12:36 2010
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri May 21 18:12:32 2010
+Subject: [Radiance-dev] Modifications to compile 4.0 with MinGW
+In-Reply-To: <AANLkTimHeRXEqdIQBwm_TnKpPx1jIDncmNlXyKGYn1Bg@mail.gmail.com>
+References: <AANLkTimHeRXEqdIQBwm_TnKpPx1jIDncmNlXyKGYn1Bg@mail.gmail.com>
+Message-ID: <CAE9B114-EF44-441C-AD96-00E4C56BDD07@gmail.com>
+
+Hi Christian,
+
+I really appreciate your efforts on this.  I took out the redundant  
+definition of quit() in raypwin.c -- this should have been removed  
+earlier.  I will check this in along with the other changes needed to  
+the SCONS system.
+
+As for the timegm() -> time() substitution, are you sure these calls  
+have the same semantics?  It seems to be a direct conflict with the  
+standard POSIX call, which returns the current time.  Very different  
+from timegm(), which converts calendar times to seconds elapsed since  
+the epoch.  Can you point me to an online API somewhere?
+
+Thanks!
+-Greg
+
+> From: Christian Kohler <cjkohler@lbl.gov>
+> Date: May 21, 2010 5:09:30 PM PDT
+>
+> We have been working at LBNL to compile Radiance 4.0 for inclusion in
+> WINDOW6 (win32).
+> We managed to compile it, based on Francesco's MinGW instructions, but
+> here are a few small code issues we need to resolve.
+>
+> The gcc compiler complains while compiling mkillum.exe
+> it reports that the 'quit' function is defined both in
+> /src/rt/raypwin.c and /src/gen/mkillum.c
+> We commented out the 'quit' function in raypwin.c and were able to
+> compile, but there are cleaner solutions. Any suggestions on how to do
+> solve this?
+>
+> As others reported before, we also found the issue with the call to
+> timegm in /src/common/header.c
+>
+> Here is out proposed change:
+> change this:
+> tms.tm_year -= 1900;
+> *tloc = timegm(&tms);
+>
+> to this:
+> tms.tm_year -= 1900;
+> #ifdef _WIN32
+> *tloc = time(&tms);
+> #else
+> *tloc = timegm(&tms);
+> #endif
+>
+> We also made some changes to the Scons scripts, but I will send those
+> in a separate e-mail, since it is not a direct source code issue.
+>
+> Christian
+
+From gregoryjward at gmail.com  Thu May 27 12:34:32 2010
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu May 27 12:34:04 2010
+Subject: [Radiance-dev] Scons script updates for MinGW compile of 4.0
+In-Reply-To: <AANLkTimxqS6Qyp2SSCmNX3AB10iScPmBlsNrbSyo2jp5@mail.gmail.com>
+References: <AANLkTimxqS6Qyp2SSCmNX3AB10iScPmBlsNrbSyo2jp5@mail.gmail.com>
+Message-ID: <370B5B8C-6442-41F7-A1A7-06BC5005D2DF@gmail.com>
+
+Hi Christian, All:
+
+I just checked in the changes you recommended along with a new  
+compatibility module for timegm() that Ling tested for me.  I hope it  
+all works, but I have no way to try it out.  Could someone give it a  
+go?  The HEAD should update by tomorrow (Friday).
+
+Cheers,
+-Greg
+
+> From: Christian Kohler <cjkohler@lbl.gov>
+> Date: May 21, 2010 5:22:41 PM PDT
+>
+> Here are some changes to make to the Scons scripts, to get 4.0 to
+> compile on Windows using MinGW. These were compiled on Windows 7, but
+> it should work for XP as well.
+>
+> ************
+> This one was previously reported on the dev-list.
+> /ray/build_utils/find_libs.py
+>
+> Change:
+> v = env.FindFile('Verdana.fnt', './lib')
+>
+> to:
+> v = env.FindFile('Veerdana.fnt', './lib')
+> ***********
+>
+> ***********
+> Add some new files to the script:
+> /ray/src/rt/SConscript
+>
+> Change:
+>  duphead = env.Object(source="duphead.c")
+>  persist = env.Object(source="persist.c")
+>  ambio = env.Object(source="ambio.c")
+>
+> to:
+>  duphead = env.Object(source="duphead.c")
+>  persist = env.Object(source="persist.c")
+>  ambio = env.Object(source="ambio.c")
+>  rayfifo = env.Object(source="rayfifo.c")
+>  raypwin = env.Object(source="raypwin.c")
+>  raycalls = env.Object(source="raycalls.c")
+>
+> Change:
+> rtsrc = ['rtrace.c', duphead, persist, rtmain]
+>
+> to:
+> rtsrc = ['rtrace.c', duphead, persist, rtmain, rayfifo, raypwin,  
+> raycalls]
+> ************
+>
+> *********
+> I couldn't figure out how to cleanly set the tools environment from
+> win32 (which uses the Microsoft Visual Studio compiler) to mingw.
+> I made this crude change to the main Sconscript, please tell me the
+> proper way to force it to use the mingw environment:
+> /ray/SConstruct
+>
+> Change:
+> # Set up build environment
+> -env = Environment()
+>
+> to:
+> # Set up build environment
+> env = Environment(tools = ['mingw'])
+> *********
+>
+> Christian
+

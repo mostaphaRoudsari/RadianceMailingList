@@ -1,0 +1,1233 @@
+From schorsch at schorsch.com  Mon Apr  4 14:24:33 2016
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Mon, 04 Apr 2016 23:24:33 +0200
+Subject: [Radiance-dev] Python scripts for Radiance
+In-Reply-To: <56F06A82.5030004@ascendilex.nl>
+References: <989bfc6028f1e25b0ac1f17a7c65139d@tanha.pair.com>
+	<56F06A82.5030004@ascendilex.nl>
+Message-ID: <d0b72919542bbc6e3029d543bc94396e@tanha.pair.com>
+
+Hi Wouter,
+
+such "interactive" scripts present a special challenge.
+
+I made an experiment with this one, and you'll find the resulting
+glaze.py on GitHub. The user interface works a bit different than
+in the original, but I'm sure you'll figure it out.
+Automatic testing is difficult here, so I didn't systematically test
+all the possible permutations. But as far as I could tell so far it
+should produce the same results as the original.
+
+Cheers!
+-schorsch
+
+
+Am 2016-03-21 22:41, schrieb ascendilex | Wouter Beck:
+> Dear Georg,
+> 
+> I would vote for the glaze csh script.
+> 
+> Best,
+> Wouter
+> 
+> On 03/21/2016 05:02 PM, Georg Mischler wrote:
+> 
+>> Hi again!
+>> 
+>> I have converted some of the original Radiance shell scripts into
+>> Python.
+>> https://github.com/gmischler/PyRad [1]
+>> 
+>> The examples so far are exact drop-in replacements of the original
+>> csh
+>> or Perl versions, but with some extra functionality and benefits.
+>> 
+>> * usage instructions (-H)
+>> * progress report (-V)
+>> * dry-run mode (-N)
+>> * detailed error diagnostics
+>> * compatible with Python 2.7 and Python 3.x
+>> * self contained (all functionality can be combined in one file)
+>> * truly cross-platform (no dependencies other than Python and
+>> Radiance)
+>> * direct process management (no intermediate shell calls)
+>> * immune to whitespace in file names
+>> * tamper-proof use of temporary files
+>> * instrumented for building a single-file *.exe with pyinstaller
+>> 
+>> The current selection is still small, the examples were chosen for
+>> varying reasons:
+>> 
+>> * falsecolor.py
+>> This one has been sitting on my disk (in much less refined form)
+>> for
+>> many years. Now I've updated it to using color palettes and to
+>> satisfy
+>> all the points above.
+>> 
+>> * phisto.py
+>> * rlux.py
+>> * pveil.py
+>> Those three became test candidates because they are simple and
+>> have
+>> a straightforward command line.
+>> 
+>> I'm looking for ideas (and contributions) on where to continue next.
+>> 
+>> 
+>> Good candidates are scripts that are commonly used.
+>> It is also very helpful if a script includes documentation about
+>> what
+>> it's actually supposed to do. Ideally with a set of test data to
+>> verify that it really does that.
+>> Actually, a solid set of test cases for the current collection would
+>> 
+>> be very helpful too.
+>> 
+>> Some of the csh/Perl scripts present a challenge, because they have
+>> rather unconventional command lines. In those cases, we might want
+>> to
+>> consider changing the interface to something more regular, provided
+>> this is possible.
+>> 
+>> Not all of the existing scripts are really worth the effort.
+>> The Python versions with the extra functionality are definitively
+>> not
+>> as simple as the originals. Flexibility and safety has its price.
+>> On the other hand, they will definitively be *much* easier to
+>> maintain.
+>> 
+>> Many of the current scripts (csh *and* Perl) blindly assume the
+>> existence of a unix type shell, a number of other posix tools
+>> (grep/awk/sed/etc.), and they often fail with spaces in file and
+>> directory names. Fixing this would introduce additional overhead
+>> in any language.
+>> 
+>> Why Python?
+>> 
+>> For developers, it is simply one of the most productive tools
+>> around.
+>> Python has grown into one of the most popular languages just by its
+>> practical merits, without any corporate backing, and without a very
+>> strong web appeal.
+>> 
+>> Most Radiance users will already have it installed, no matter the
+>> platform.
+>> 
+>> On unix, scripts can be invoked by "#!" (like any other).
+>> 
+>> Any script can be "compiled" into a standalone executable file.
+>> This is important on Windows, because invoking scripts (Python,
+>> *.bat, or otherwise) from within programs is a real hassle there.
+>> In fact, it ended up being the simplest way to get winimage to
+>> perform falsecolor analysis.
+>> (This could also be done with Perl, but...)
+>> 
+>> I expect Python to play an increasing role in Radiance development
+>> in
+>> the future, with or without my own involvement. So we might just as
+>> 
+>> well embrace it.
+>> 
+>> I would like to suggest adding Python versions of the most commonly
+>> used scripts to the distribution. There are several possible
+>> configurations how this could be done, so we'd have to discuss a
+>> number of technical details first. And yes, verification before
+>> inclusion would be an important step.
+>> 
+>> Opinions?
+>> 
+>> -schorsch
+> 
+> 
+> 
+> Links:
+> ------
+> [1] https://github.com/gmischler/PyRad
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+From schorsch at schorsch.com  Tue Apr 19 14:44:12 2016
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Tue, 19 Apr 2016 23:44:12 +0200
+Subject: [Radiance-dev] Pipe problems on Windows - BUG in Universal CRT
+In-Reply-To: <28B2A37B-D36E-4030-9E28-D6476CC037AD@gmail.com>
+References: <24d4200a1ea89ee01193132859fb4473@tanha.pair.com>
+	<d9dbf03a0f5afcc86cd782a782875f27@tanha.pair.com>
+	<092BC57B-4514-42DE-ADE9-DCE72195E308@gmail.com>
+	<16a246fe0c6b436250f7cd05dec82307@tanha.pair.com>
+	<ee7dbd80d8c1fc70a24cbf6d699cd053@tanha.pair.com>
+	<5f02d11719a84233d46ec430d023e951@tanha.pair.com>
+	<28B2A37B-D36E-4030-9E28-D6476CC037AD@gmail.com>
+Message-ID: <573c0f9e7d4524286da8b8566bdf198a@tanha.pair.com>
+
+Update:
+In the report mentioned earlier, the same MS person now said that an 
+update
+of the universal CRT will probably be rolled out at around the same time
+as the "anniversary update" of Windows 10 this summer. After that, I 
+expect
+we can use VS 2015 without further problems.
+
+In the mean time, I have modified the SCons build system so that you can
+select the version of Visual Studio to use. The current default is
+   MSVC_VERSION=12.0
+which selects VS 2013 (better don't try to understand their numbering).
+
+The binaries created that way pass all the currently available tests,
+including the ones I explicitly added to catch the text pipe CRT bug.
+Those tests shove large amounts of data through both text and (all types
+of) binary pipes, and currently do so without a hitch.
+
+Cheers
+-schorsch
+
+
+Am 2016-03-28 02:03, schrieb Gregory J. Ward:
+> Good that you tracked this down, but as you say, we still have the
+> rumored issue with binary data we need to sort out.
+> 
+> Regarding Microsoft (by analogy):
+> 
+> 	https://www.youtube.com/watch?v=CHgUN_95UAw
+> 
+> Power to the monopolies!
+> 
+> -Greg
+> 
+>> From: Georg Mischler <schorsch at schorsch.com>
+>> Subject: Re: [Radiance-dev] Pipe problems on Windows - BUG in 
+>> Universal CRT
+>> Date: March 27, 2016 6:21:27 AM PDT
+>> 
+>> Keep talking to myself...
+>> 
+>> The MS feedback site has those entries
+>> https://connect.microsoft.com/VisualStudio/Feedback/Details/1902345
+>> https://connect.microsoft.com/VisualStudio/Feedback/Details/2419638
+>> both of which seem to describe incarnations of our problem.
+>> 
+>> In the first one, a MS person added a comment saying:
+>>  We have fixed this bug; the fix will be present in an upcoming
+>>  update to the Universal CRT.
+>> 
+>> So all hope is not lost.
+>> 
+>> -schorsch
+
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+From schorsch at schorsch.com  Sun Apr 24 12:12:58 2016
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Sun, 24 Apr 2016 21:12:58 +0200
+Subject: [Radiance-dev] Glrad on Linux
+Message-ID: <d90e175acb4b359268f90a3e68519806@tanha.pair.com>
+
+Hi,
+
+after Sarith Subramaniam volunteered successfully to create objview.py,
+we started wondering why makeall doesn't build glrad on Linux.
+SCons builds it without complaints, but it doesn't actually work.
+If I understand the debugger correctly, it seems to have difficulties
+setting the view size, hanging in an infinite loop around line 541 in
+glrad.c.
+
+Is there any specific reason why it's not supposed to work on Linux,
+or is it just that nobody ever managed to find a solution?
+Unfortunately, I'm not familiar with the involved APIs at all, so I
+don't really know where to start looking for problems.
+I just assume that it actually does work on MacOS and with Cygwin, where
+makeall includes it in the build (if not, why would it still be there?).
+
+Cheers
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+From gregoryjward at gmail.com  Sun Apr 24 19:05:59 2016
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Sun, 24 Apr 2016 19:05:59 -0700
+Subject: [Radiance-dev] Glrad on Linux
+In-Reply-To: <d90e175acb4b359268f90a3e68519806@tanha.pair.com>
+References: <d90e175acb4b359268f90a3e68519806@tanha.pair.com>
+Message-ID: <D9F6D83A-3EBB-46B1-9C61-D44BED5F249C@gmail.com>
+
+Yeah, one of the pieces of code I haven't really kept up with.  I just checked in a fix for the broken window size negotiation that doesn't seem to work as it used to.  This wasn't working under OS X either, and no one had noticed.  That's just how important this program is to people.....
+
+Cheers,
+-Greg
+
+> From: Georg Mischler <schorsch at schorsch.com>
+> Subject: [Radiance-dev] Glrad on Linux
+> Date: April 24, 2016 12:12:58 PM PDT
+> 
+> Hi,
+> 
+> after Sarith Subramaniam volunteered successfully to create objview.py,
+> we started wondering why makeall doesn't build glrad on Linux.
+> SCons builds it without complaints, but it doesn't actually work.
+> If I understand the debugger correctly, it seems to have difficulties
+> setting the view size, hanging in an infinite loop around line 541 in
+> glrad.c.
+> 
+> Is there any specific reason why it's not supposed to work on Linux,
+> or is it just that nobody ever managed to find a solution?
+> Unfortunately, I'm not familiar with the involved APIs at all, so I
+> don't really know where to start looking for problems.
+> I just assume that it actually does work on MacOS and with Cygwin, where
+> makeall includes it in the build (if not, why would it still be there?).
+> 
+> Cheers
+> -schorsch
+> 
+> -- 
+> Georg Mischler  --  simulations developer  --  schorsch at schorsch com
+> +schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From schorsch at schorsch.com  Mon Apr 25 12:27:44 2016
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Mon, 25 Apr 2016 21:27:44 +0200
+Subject: [Radiance-dev] Glrad on Linux
+In-Reply-To: <D9F6D83A-3EBB-46B1-9C61-D44BED5F249C@gmail.com>
+References: <d90e175acb4b359268f90a3e68519806@tanha.pair.com>
+	<D9F6D83A-3EBB-46B1-9C61-D44BED5F249C@gmail.com>
+Message-ID: <7af48bf80a635e2571036f2901f78a2f@tanha.pair.com>
+
+Cool, now I get to see something! I don't remember ever having seen
+this working before, but I may have just forgotten...
+
+Motion is *very* fast and jumpy. It was probably calibrated decades ago
+with a much less powerfull graphics system (despite me trying it on an
+onboard graphics module with Mesa in software mode).
+The mouse wheel moves the view back, no matter which way it is turned.
+
+Why isn't this used more often?
+For one, all the tutorials instruct new users to use rvu (not sure
+if glrad is actually ever mentioned). So many people probably don't even
+know it exists.
+
+The user interaction is also a bit limited in comparison.
+With smoother motion, more motion options (eg. lateral and vertical),
+and configurable speed, it probably could be quite popular.
+Of course, those things might be somewhat fiddly to implement.
+
+But the good news for now: it *does* work on Linux!
+
+Cheers
+-schorsch
+
+
+Am 2016-04-25 04:05, schrieb Gregory J. Ward:
+> Yeah, one of the pieces of code I haven't really kept up with.  I just
+> checked in a fix for the broken window size negotiation that doesn't
+> seem to work as it used to.  This wasn't working under OS X either,
+> and no one had noticed.  That's just how important this program is to
+> people.....
+> 
+> Cheers,
+> -Greg
+> 
+>> From: Georg Mischler <schorsch at schorsch.com>
+>> Subject: [Radiance-dev] Glrad on Linux
+>> Date: April 24, 2016 12:12:58 PM PDT
+>> 
+>> Hi,
+>> 
+>> after Sarith Subramaniam volunteered successfully to create 
+>> objview.py,
+>> we started wondering why makeall doesn't build glrad on Linux.
+>> SCons builds it without complaints, but it doesn't actually work.
+>> If I understand the debugger correctly, it seems to have difficulties
+>> setting the view size, hanging in an infinite loop around line 541 in
+>> glrad.c.
+>> 
+>> Is there any specific reason why it's not supposed to work on Linux,
+>> or is it just that nobody ever managed to find a solution?
+>> Unfortunately, I'm not familiar with the involved APIs at all, so I
+>> don't really know where to start looking for problems.
+>> I just assume that it actually does work on MacOS and with Cygwin, 
+>> where
+>> makeall includes it in the build (if not, why would it still be 
+>> there?).
+>> 
+>> Cheers
+>> -schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+From gregoryjward at gmail.com  Mon Apr 25 12:58:58 2016
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Mon, 25 Apr 2016 12:58:58 -0700
+Subject: [Radiance-dev] Glrad on Linux
+In-Reply-To: <7af48bf80a635e2571036f2901f78a2f@tanha.pair.com>
+References: <d90e175acb4b359268f90a3e68519806@tanha.pair.com>
+	<D9F6D83A-3EBB-46B1-9C61-D44BED5F249C@gmail.com>
+	<7af48bf80a635e2571036f2901f78a2f@tanha.pair.com>
+Message-ID: <050CE931-1AAA-4578-958A-BF46F7D3C523@gmail.com>
+
+I agree that the interaction speed is way too fast.  I'll see if I can tweak it a bit, but this was something I wrote because I had the routines from rholo and decided it might be useful to have a geometry-only preview.
+
+Cheers,
+-Greg
+
+> From: Georg Mischler <schorsch at schorsch.com>
+> Subject: Re: [Radiance-dev] Glrad on Linux
+> Date: April 25, 2016 12:27:44 PM PDT
+> 
+> Cool, now I get to see something! I don't remember ever having seen
+> this working before, but I may have just forgotten...
+> 
+> Motion is *very* fast and jumpy. It was probably calibrated decades ago
+> with a much less powerfull graphics system (despite me trying it on an
+> onboard graphics module with Mesa in software mode).
+> The mouse wheel moves the view back, no matter which way it is turned.
+> 
+> Why isn't this used more often?
+> For one, all the tutorials instruct new users to use rvu (not sure
+> if glrad is actually ever mentioned). So many people probably don't even
+> know it exists.
+> 
+> The user interaction is also a bit limited in comparison.
+> With smoother motion, more motion options (eg. lateral and vertical),
+> and configurable speed, it probably could be quite popular.
+> Of course, those things might be somewhat fiddly to implement.
+> 
+> But the good news for now: it *does* work on Linux!
+> 
+> Cheers
+> -schorsch
+> 
+> 
+> Am 2016-04-25 04:05, schrieb Gregory J. Ward:
+>> Yeah, one of the pieces of code I haven't really kept up with.  I just
+>> checked in a fix for the broken window size negotiation that doesn't
+>> seem to work as it used to.  This wasn't working under OS X either,
+>> and no one had noticed.  That's just how important this program is to
+>> people.....
+>> Cheers,
+>> -Greg
+>>> From: Georg Mischler <schorsch at schorsch.com>
+>>> Subject: [Radiance-dev] Glrad on Linux
+>>> Date: April 24, 2016 12:12:58 PM PDT
+>>> Hi,
+>>> after Sarith Subramaniam volunteered successfully to create objview.py,
+>>> we started wondering why makeall doesn't build glrad on Linux.
+>>> SCons builds it without complaints, but it doesn't actually work.
+>>> If I understand the debugger correctly, it seems to have difficulties
+>>> setting the view size, hanging in an infinite loop around line 541 in
+>>> glrad.c.
+>>> Is there any specific reason why it's not supposed to work on Linux,
+>>> or is it just that nobody ever managed to find a solution?
+>>> Unfortunately, I'm not familiar with the involved APIs at all, so I
+>>> don't really know where to start looking for problems.
+>>> I just assume that it actually does work on MacOS and with Cygwin, where
+>>> makeall includes it in the build (if not, why would it still be there?).
+>>> Cheers
+>>> -schorsch
+> 
+> -- 
+> Georg Mischler  --  simulations developer  --  schorsch at schorsch com
+> +schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+> 
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+From schorsch at schorsch.com  Mon Apr 25 22:55:12 2016
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Tue, 26 Apr 2016 07:55:12 +0200
+Subject: [Radiance-dev] Glrad on Linux
+In-Reply-To: <050CE931-1AAA-4578-958A-BF46F7D3C523@gmail.com>
+References: <d90e175acb4b359268f90a3e68519806@tanha.pair.com>
+	<D9F6D83A-3EBB-46B1-9C61-D44BED5F249C@gmail.com>
+	<7af48bf80a635e2571036f2901f78a2f@tanha.pair.com>
+	<050CE931-1AAA-4578-958A-BF46F7D3C523@gmail.com>
+Message-ID: <b34c0e277e86a8e476bbf670e9639c9c@tanha.pair.com>
+
+Ah yes, that's a much better speed.
+
+Most walkthrough viewers seem to use arrow keys for basic navigation.
+Is the program even checking the mouse wheel, or is that a Mesa 
+weirdness?
+
+Colors also seem rather high contrast. Are surface colors taken directly
+from Radiance reflectivities? If so, then maybe there should be some
+non-linear scaling there.
+
+Enough nits picked for the moment...
+
+Cheers
+-schorsch
+
+Am 2016-04-25 21:58, schrieb Gregory J. Ward:
+> I agree that the interaction speed is way too fast.  I'll see if I can
+> tweak it a bit, but this was something I wrote because I had the
+> routines from rholo and decided it might be useful to have a
+> geometry-only preview.
+> 
+> Cheers,
+> -Greg
+> 
+>> From: Georg Mischler <schorsch at schorsch.com>
+>> Subject: Re: [Radiance-dev] Glrad on Linux
+>> Date: April 25, 2016 12:27:44 PM PDT
+>> 
+>> Cool, now I get to see something! I don't remember ever having seen
+>> this working before, but I may have just forgotten...
+>> 
+>> Motion is *very* fast and jumpy. It was probably calibrated decades 
+>> ago
+>> with a much less powerfull graphics system (despite me trying it on an
+>> onboard graphics module with Mesa in software mode).
+>> The mouse wheel moves the view back, no matter which way it is turned.
+>> 
+>> Why isn't this used more often?
+>> For one, all the tutorials instruct new users to use rvu (not sure
+>> if glrad is actually ever mentioned). So many people probably don't 
+>> even
+>> know it exists.
+>> 
+>> The user interaction is also a bit limited in comparison.
+>> With smoother motion, more motion options (eg. lateral and vertical),
+>> and configurable speed, it probably could be quite popular.
+>> Of course, those things might be somewhat fiddly to implement.
+>> 
+>> But the good news for now: it *does* work on Linux!
+>> 
+>> Cheers
+>> -schorsch
+>> 
+>> 
+>> Am 2016-04-25 04:05, schrieb Gregory J. Ward:
+>>> Yeah, one of the pieces of code I haven't really kept up with.  I 
+>>> just
+>>> checked in a fix for the broken window size negotiation that doesn't
+>>> seem to work as it used to.  This wasn't working under OS X either,
+>>> and no one had noticed.  That's just how important this program is to
+>>> people.....
+>>> Cheers,
+>>> -Greg
+>>>> From: Georg Mischler <schorsch at schorsch.com>
+>>>> Subject: [Radiance-dev] Glrad on Linux
+>>>> Date: April 24, 2016 12:12:58 PM PDT
+>>>> Hi,
+>>>> after Sarith Subramaniam volunteered successfully to create 
+>>>> objview.py,
+>>>> we started wondering why makeall doesn't build glrad on Linux.
+>>>> SCons builds it without complaints, but it doesn't actually work.
+>>>> If I understand the debugger correctly, it seems to have 
+>>>> difficulties
+>>>> setting the view size, hanging in an infinite loop around line 541 
+>>>> in
+>>>> glrad.c.
+>>>> Is there any specific reason why it's not supposed to work on Linux,
+>>>> or is it just that nobody ever managed to find a solution?
+>>>> Unfortunately, I'm not familiar with the involved APIs at all, so I
+>>>> don't really know where to start looking for problems.
+>>>> I just assume that it actually does work on MacOS and with Cygwin, 
+>>>> where
+>>>> makeall includes it in the build (if not, why would it still be 
+>>>> there?).
+>>>> Cheers
+>>>> -schorsch
+>> 
+>> --
+>> Georg Mischler  --  simulations developer  --  schorsch at schorsch 
+>> com
+>> +schorsch.com+  --  lighting design tools  --  
+>> http://www.schorsch.com/
+>> 
+>> 
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+From gregoryjward at gmail.com  Tue Apr 26 08:04:32 2016
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue, 26 Apr 2016 08:04:32 -0700
+Subject: [Radiance-dev] Glrad on Linux
+In-Reply-To: <b34c0e277e86a8e476bbf670e9639c9c@tanha.pair.com>
+References: <d90e175acb4b359268f90a3e68519806@tanha.pair.com>
+	<D9F6D83A-3EBB-46B1-9C61-D44BED5F249C@gmail.com>
+	<7af48bf80a635e2571036f2901f78a2f@tanha.pair.com>
+	<050CE931-1AAA-4578-958A-BF46F7D3C523@gmail.com>
+	<b34c0e277e86a8e476bbf670e9639c9c@tanha.pair.com>
+Message-ID: <4CE7DC2E-F7AC-47DE-9CAA-A1C031D09F43@gmail.com>
+
+I don't know how to get to the mouse wheel events from X11, so I'm not using that information.  The '+' and '-' keys affect zoom as stated in the man page, but the arrow controls are also not standards in X11 as far as I know, so I'm not listening for those.  If you have some insight on how to handle such events, I can try, but we might confirm first that people use this utility or have a desire for it.  The controls were designed to mimic those in rholo, which I and perhaps a handful of others still use.
+
+I don't remember how I light the objects -- I think it tries to use the light sources, specular and diffuse materials, etc.  You would have to look in the src/common/rgl* routines.  There are no cast shadows (or interreflections, obviously).
+
+-Greg
+
+> From: Georg Mischler <schorsch at schorsch.com>
+> Subject: Re: [Radiance-dev] Glrad on Linux
+> Date: April 25, 2016 10:55:12 PM PDT
+> 
+> Ah yes, that's a much better speed.
+> 
+> Most walkthrough viewers seem to use arrow keys for basic navigation.
+> Is the program even checking the mouse wheel, or is that a Mesa weirdness?
+> 
+> Colors also seem rather high contrast. Are surface colors taken directly
+> from Radiance reflectivities? If so, then maybe there should be some
+> non-linear scaling there.
+> 
+> Enough nits picked for the moment...
+> 
+> Cheers
+> -schorsch
+> 
+> Am 2016-04-25 21:58, schrieb Gregory J. Ward:
+>> I agree that the interaction speed is way too fast.  I'll see if I can
+>> tweak it a bit, but this was something I wrote because I had the
+>> routines from rholo and decided it might be useful to have a
+>> geometry-only preview.
+>> Cheers,
+>> -Greg
+>>> From: Georg Mischler <schorsch at schorsch.com>
+>>> Subject: Re: [Radiance-dev] Glrad on Linux
+>>> Date: April 25, 2016 12:27:44 PM PDT
+>>> Cool, now I get to see something! I don't remember ever having seen
+>>> this working before, but I may have just forgotten...
+>>> Motion is *very* fast and jumpy. It was probably calibrated decades ago
+>>> with a much less powerfull graphics system (despite me trying it on an
+>>> onboard graphics module with Mesa in software mode).
+>>> The mouse wheel moves the view back, no matter which way it is turned.
+>>> Why isn't this used more often?
+>>> For one, all the tutorials instruct new users to use rvu (not sure
+>>> if glrad is actually ever mentioned). So many people probably don't even
+>>> know it exists.
+>>> The user interaction is also a bit limited in comparison.
+>>> With smoother motion, more motion options (eg. lateral and vertical),
+>>> and configurable speed, it probably could be quite popular.
+>>> Of course, those things might be somewhat fiddly to implement.
+>>> But the good news for now: it *does* work on Linux!
+>>> Cheers
+>>> -schorsch
+>>> Am 2016-04-25 04:05, schrieb Gregory J. Ward:
+>>>> Yeah, one of the pieces of code I haven't really kept up with.  I just
+>>>> checked in a fix for the broken window size negotiation that doesn't
+>>>> seem to work as it used to.  This wasn't working under OS X either,
+>>>> and no one had noticed.  That's just how important this program is to
+>>>> people.....
+>>>> Cheers,
+>>>> -Greg
+>>>>> From: Georg Mischler <schorsch at schorsch.com>
+>>>>> Subject: [Radiance-dev] Glrad on Linux
+>>>>> Date: April 24, 2016 12:12:58 PM PDT
+>>>>> Hi,
+>>>>> after Sarith Subramaniam volunteered successfully to create objview.py,
+>>>>> we started wondering why makeall doesn't build glrad on Linux.
+>>>>> SCons builds it without complaints, but it doesn't actually work.
+>>>>> If I understand the debugger correctly, it seems to have difficulties
+>>>>> setting the view size, hanging in an infinite loop around line 541 in
+>>>>> glrad.c.
+>>>>> Is there any specific reason why it's not supposed to work on Linux,
+>>>>> or is it just that nobody ever managed to find a solution?
+>>>>> Unfortunately, I'm not familiar with the involved APIs at all, so I
+>>>>> don't really know where to start looking for problems.
+>>>>> I just assume that it actually does work on MacOS and with Cygwin, where
+>>>>> makeall includes it in the build (if not, why would it still be there?).
+>>>>> Cheers
+>>>>> -schorsch
+>>> --
+>>> Georg Mischler  --  simulations developer  --  schorsch at schorsch com
+>>> +schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+>>> _______________________________________________
+>>> Radiance-dev mailing list
+>>> Radiance-dev at radiance-online.org
+>>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+> 
+> -- 
+> Georg Mischler  --  simulations developer  --  schorsch at schorsch com
+> +schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+> 
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+From rmfritz3 at gmail.com  Wed Apr 27 18:36:20 2016
+From: rmfritz3 at gmail.com (Randolph M. Fritz)
+Date: Wed, 27 Apr 2016 18:36:20 -0700
+Subject: [Radiance-dev] Glrad on Linux
+In-Reply-To: <4CE7DC2E-F7AC-47DE-9CAA-A1C031D09F43@gmail.com>
+References: <d90e175acb4b359268f90a3e68519806@tanha.pair.com>
+	<D9F6D83A-3EBB-46B1-9C61-D44BED5F249C@gmail.com>
+	<7af48bf80a635e2571036f2901f78a2f@tanha.pair.com>
+	<050CE931-1AAA-4578-958A-BF46F7D3C523@gmail.com>
+	<b34c0e277e86a8e476bbf670e9639c9c@tanha.pair.com>
+	<4CE7DC2E-F7AC-47DE-9CAA-A1C031D09F43@gmail.com>
+Message-ID: <CANeAMo+_jih09GzvQftrr2a1_bFAMhnUfDRLxvsaApe5_SuvqQ@mail.gmail.com>
+
+Mouse wheel events are reported as mouse button presses; there's a list at
+this web site: http://xahlee.info/kbd/X11_mouse_button_numbering.html. That
+list is for Linux; I'm not sure if the same list is used on Mac OS.
+
+YMMV.
+
+Randolph
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20160427/05e73ff3/attachment.html>
+
+From rmfritz3 at gmail.com  Wed Apr 27 18:49:43 2016
+From: rmfritz3 at gmail.com (Randolph M. Fritz)
+Date: Wed, 27 Apr 2016 18:49:43 -0700
+Subject: [Radiance-dev] Glrad on Linux
+In-Reply-To: <CANeAMo+_jih09GzvQftrr2a1_bFAMhnUfDRLxvsaApe5_SuvqQ@mail.gmail.com>
+References: <d90e175acb4b359268f90a3e68519806@tanha.pair.com>
+	<D9F6D83A-3EBB-46B1-9C61-D44BED5F249C@gmail.com>
+	<7af48bf80a635e2571036f2901f78a2f@tanha.pair.com>
+	<050CE931-1AAA-4578-958A-BF46F7D3C523@gmail.com>
+	<b34c0e277e86a8e476bbf670e9639c9c@tanha.pair.com>
+	<4CE7DC2E-F7AC-47DE-9CAA-A1C031D09F43@gmail.com>
+	<CANeAMo+_jih09GzvQftrr2a1_bFAMhnUfDRLxvsaApe5_SuvqQ@mail.gmail.com>
+Message-ID: <CANeAMoJd7uiyJr5j1wc=2=KDBeKsb_eb1-r717Urz4=43h6Xuw@mail.gmail.com>
+
+I have confirmed using xev that button 4 is scroll up and 5 is scroll down
+on Mac OS. Anything fancier, I don't know.?
+
+Randolph
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20160427/73df404d/attachment.html>
+
+From dlr1 at centurylink.net  Wed Apr 27 18:50:01 2016
+From: dlr1 at centurylink.net (Douglas L Reeder)
+Date: Wed, 27 Apr 2016 19:50:01 -0600
+Subject: [Radiance-dev] Glrad on Linux
+In-Reply-To: <CANeAMo+_jih09GzvQftrr2a1_bFAMhnUfDRLxvsaApe5_SuvqQ@mail.gmail.com>
+References: <d90e175acb4b359268f90a3e68519806@tanha.pair.com>
+	<D9F6D83A-3EBB-46B1-9C61-D44BED5F249C@gmail.com>
+	<7af48bf80a635e2571036f2901f78a2f@tanha.pair.com>
+	<050CE931-1AAA-4578-958A-BF46F7D3C523@gmail.com>
+	<b34c0e277e86a8e476bbf670e9639c9c@tanha.pair.com>
+	<4CE7DC2E-F7AC-47DE-9CAA-A1C031D09F43@gmail.com>
+	<CANeAMo+_jih09GzvQftrr2a1_bFAMhnUfDRLxvsaApe5_SuvqQ@mail.gmail.com>
+Message-ID: <A950F6FA-4226-42EE-B2C6-60898C188492@centurylink.net>
+
+Randolph,
+
+On os x with a logitech 3 button mouse with the center button being a mouse wheel xev returns button 1 for the left button, 2 for depressing the wheel, 3 for the right button, and 4 for rotating the wheel.
+
+Doug
+> On Apr 27, 2016, at 7:36 PM, Randolph M. Fritz <rmfritz3 at gmail.com> wrote:
+> 
+> Mouse wheel events are reported as mouse button presses; there's a list at this web site: http://xahlee.info/kbd/X11_mouse_button_numbering.html <http://xahlee.info/kbd/X11_mouse_button_numbering.html>. That list is for Linux; I'm not sure if the same list is used on Mac OS.
+> 
+> YMMV.
+> 
+> Randolph
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20160427/15bda3f3/attachment.html>
+
+From rmfritz3 at gmail.com  Wed Apr 27 19:25:44 2016
+From: rmfritz3 at gmail.com (Randolph M. Fritz)
+Date: Wed, 27 Apr 2016 19:25:44 -0700
+Subject: [Radiance-dev] Glrad on Linux
+In-Reply-To: <A950F6FA-4226-42EE-B2C6-60898C188492@centurylink.net>
+References: <d90e175acb4b359268f90a3e68519806@tanha.pair.com>
+	<D9F6D83A-3EBB-46B1-9C61-D44BED5F249C@gmail.com>
+	<7af48bf80a635e2571036f2901f78a2f@tanha.pair.com>
+	<050CE931-1AAA-4578-958A-BF46F7D3C523@gmail.com>
+	<b34c0e277e86a8e476bbf670e9639c9c@tanha.pair.com>
+	<4CE7DC2E-F7AC-47DE-9CAA-A1C031D09F43@gmail.com>
+	<CANeAMo+_jih09GzvQftrr2a1_bFAMhnUfDRLxvsaApe5_SuvqQ@mail.gmail.com>
+	<A950F6FA-4226-42EE-B2C6-60898C188492@centurylink.net>
+Message-ID: <CANeAMoJCZCNe5zPBBNjzjAHSKwfx9nDzCdsQoZMW6Zp1wUqv-Q@mail.gmail.com>
+
+On Apr 27, 2016 6:50 PM, "Douglas L Reeder" <dlr1 at centurylink.net> wrote:
+>
+> Randolph,
+>
+> On os x with a logitech 3 button mouse with the center button being a
+mouse wheel xev returns button 1 for the left button, 2 for depressing the
+wheel, 3 for the right button, and 4 for rotating the wheel.
+>
+>
+
+Hunh, interesting. Did you try rotating the wheel both ways?
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20160427/49f95d9a/attachment.html>
+
+From dlr1 at centurylink.net  Wed Apr 27 20:17:26 2016
+From: dlr1 at centurylink.net (Douglas L Reeder)
+Date: Wed, 27 Apr 2016 21:17:26 -0600
+Subject: [Radiance-dev] Glrad on Linux
+In-Reply-To: <CANeAMoJCZCNe5zPBBNjzjAHSKwfx9nDzCdsQoZMW6Zp1wUqv-Q@mail.gmail.com>
+References: <d90e175acb4b359268f90a3e68519806@tanha.pair.com>
+	<D9F6D83A-3EBB-46B1-9C61-D44BED5F249C@gmail.com>
+	<7af48bf80a635e2571036f2901f78a2f@tanha.pair.com>
+	<050CE931-1AAA-4578-958A-BF46F7D3C523@gmail.com>
+	<b34c0e277e86a8e476bbf670e9639c9c@tanha.pair.com>
+	<4CE7DC2E-F7AC-47DE-9CAA-A1C031D09F43@gmail.com>
+	<CANeAMo+_jih09GzvQftrr2a1_bFAMhnUfDRLxvsaApe5_SuvqQ@mail.gmail.com>
+	<A950F6FA-4226-42EE-B2C6-60898C188492@centurylink.net>
+	<CANeAMoJCZCNe5zPBBNjzjAHSKwfx9nDzCdsQoZMW6Zp1wUqv-Q@mail.gmail.com>
+Message-ID: <7140FE84-8772-407E-8C0B-27B8D6092243@centurylink.net>
+
+Randolph,
+
+Yes, after I saw your 5 values I rotated it both ways and got/duplicated your results.
+
+Doug
+> On Apr 27, 2016, at 8:25 PM, Randolph M. Fritz <rmfritz3 at gmail.com> wrote:
+> 
+> 
+> On Apr 27, 2016 6:50 PM, "Douglas L Reeder" <dlr1 at centurylink.net <mailto:dlr1 at centurylink.net>> wrote:
+> >
+> > Randolph,
+> >
+> > On os x with a logitech 3 button mouse with the center button being a mouse wheel xev returns button 1 for the left button, 2 for depressing the wheel, 3 for the right button, and 4 for rotating the wheel.
+> >
+> >
+> 
+> Hunh, interesting. Did you try rotating the wheel both ways?
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20160427/5f8b9cb4/attachment.html>
+
+From apian at pab.eu  Wed Apr 27 22:17:56 2016
+From: apian at pab.eu (Peter Apian-Bennewitz)
+Date: Thu, 28 Apr 2016 07:17:56 +0200
+Subject: [Radiance-dev] Radiance and Open-Gl [Was: Radiance-dev Glrad on
+	Linux]
+In-Reply-To: <7140FE84-8772-407E-8C0B-27B8D6092243@centurylink.net>
+References: <d90e175acb4b359268f90a3e68519806@tanha.pair.com>
+	<D9F6D83A-3EBB-46B1-9C61-D44BED5F249C@gmail.com>
+	<7af48bf80a635e2571036f2901f78a2f@tanha.pair.com>
+	<050CE931-1AAA-4578-958A-BF46F7D3C523@gmail.com>
+	<b34c0e277e86a8e476bbf670e9639c9c@tanha.pair.com>
+	<4CE7DC2E-F7AC-47DE-9CAA-A1C031D09F43@gmail.com>
+	<CANeAMo+_jih09GzvQftrr2a1_bFAMhnUfDRLxvsaApe5_SuvqQ@mail.gmail.com>
+	<A950F6FA-4226-42EE-B2C6-60898C188492@centurylink.net>
+	<CANeAMoJCZCNe5zPBBNjzjAHSKwfx9nDzCdsQoZMW6Zp1wUqv-Q@mail.gmail.com>
+	<7140FE84-8772-407E-8C0B-27B8D6092243@centurylink.net>
+Message-ID: <mailman.0.1461820745.1265.radiance-dev@radiance-online.org>
+
+Hi folks,
+
+before you get all carried away with Xlib events for mouse scroll , - and to add 
+some thoughts on the rediscovery of glrad:
+
+Rshow, http://www.pab-opto.de/progs/rshow/ , the current Open-Gl version of my 
+1993 rshow on the then Iris-Gl, is still existing. Comes with GUI and some extra 
+features, like generating image mapping, data display, grid generation, 
+raytracing and multiple windows. Not much advertising for it over the years 
+(except this one, also see 1998 paper on rshow), it is still in daily use here 
+and at Fraunhofer ISE. (Note to LBNL: ISE is /not/ IBP, in case you shift all 
+credit to IBP again).
+
+Lessons learned:
+The core problem with Open-Gl display in practice seems complexity. E.g.: Being 
+inside a cabin with a forest outside doesn't matter for raytracing speed, but it 
+does for plain Open-Gl, since it tries to draw all trees outside, visible or 
+not. Today?s entry graphic cards have more power then a 1995 SGI Onyx2 , yes, 
+but scenes have become more complex too, so brute force works only so much.
+Rshow has a commandline option to ignore geometry below a certain size, so that 
+allow interactive navigation with smooth, tessellated CAD surfaces, but it is a 
+rather amateurish solution. Its Tcl/Tk GUI is a bit dated too, although, Tcl/Tk 
+libraries are still supported by Debian and others. Apart from all this, I had 
+not a single project in the last 20 years where rshow was not used, - "works for 
+me".
+
+There's at least one other Radiance geometry renderer out there, written by 
+Andreas Gerber, based on some graphics library, but I don't further details at hand.
+And one of the nicest Open-GL renderers had been the one in "Ecotect", - before 
+it disappeared in the garbage bin of Autodesk.
+
+Both rshow and glrad use the legacy API of Open-Gl, which has changed since then 
+with the introduction of "shaders". It is still backward compatible (and 
+probably will be a while with the mass of existing programs), but users are 
+encouraged to upgrade.
+
+Actually, I would have a look at the rendering engines available for some games 
+if I were to start a very fast hardware Radiance-previewer from scratch today. 
+They probably solved the Level-of-detail problem neatly. The drawback is, of 
+course, the dependency on their feature library.
+
+cheers
+Peter
+
+On 04/28/16 05:17, Douglas L Reeder wrote:
+> Randolph,
+>
+> Yes, after I saw your 5 values I rotated it both ways and got/duplicated your
+> results.
+>
+> Doug
+>> On Apr 27, 2016, at 8:25 PM, Randolph M. Fritz <rmfritz3 at gmail.com
+>> <mailto:rmfritz3 at gmail.com>> wrote:
+>>
+>>
+>> On Apr 27, 2016 6:50 PM, "Douglas L Reeder" <dlr1 at centurylink.net
+>> <mailto:dlr1 at centurylink.net>> wrote:
+>> >
+>> > Randolph,
+>> >
+>> > On os x with a logitech 3 button mouse with the center button being a mouse
+>> wheel xev returns button 1 for the left button, 2 for depressing the wheel, 3
+>> for the right button, and 4 for rotating the wheel.
+>> >
+>> >
+>>
+>> Hunh, interesting. Did you try rotating the wheel both ways?
+>>
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev at radiance-online.org <mailto:Radiance-dev at radiance-online.org>
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+> --
+>   pab-opto, Freiburg, Germany, http://www.pab-opto.de
+
+
+From schorsch at schorsch.com  Wed Apr 27 23:59:25 2016
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Thu, 28 Apr 2016 08:59:25 +0200
+Subject: [Radiance-dev] Radiance and Open-Gl
+In-Reply-To: <E1aveLx-0006rR-QF@radiance-online.lbl.gov>
+References: <d90e175acb4b359268f90a3e68519806@tanha.pair.com>
+	<D9F6D83A-3EBB-46B1-9C61-D44BED5F249C@gmail.com>
+	<7af48bf80a635e2571036f2901f78a2f@tanha.pair.com>
+	<050CE931-1AAA-4578-958A-BF46F7D3C523@gmail.com>
+	<b34c0e277e86a8e476bbf670e9639c9c@tanha.pair.com>
+	<4CE7DC2E-F7AC-47DE-9CAA-A1C031D09F43@gmail.com>
+	<CANeAMo+_jih09GzvQftrr2a1_bFAMhnUfDRLxvsaApe5_SuvqQ@mail.gmail.com>
+	<A950F6FA-4226-42EE-B2C6-60898C188492@centurylink.net>
+	<CANeAMoJCZCNe5zPBBNjzjAHSKwfx9nDzCdsQoZMW6Zp1wUqv-Q@mail.gmail.com>
+	<7140FE84-8772-407E-8C0B-27B8D6092243@centurylink.net>
+	<E1aveLx-0006rR-QF@radiance-online.lbl.gov>
+Message-ID: <c25044e4f8c310c20d88f43c2aa778d5@tanha.pair.com>
+
+That's quite interesting information (at least for me, after
+being out of the loop for a while).
+
+But I think there are two different contexts to consider here.
+Glrad is obviously a quick-and-dirty solution, but it works and is
+included in the distribution. I think it's absolutely worth it to
+fix some small stuff in there like checking for another two event
+keys to get the scroll wheel working properly.
+
+For more advanced features, I'd prefer a less platform dependent
+solution (which then in turn tends to add toolkit dependencies).
+
+I've already wondered what might have happened with rshow.
+I don't see Tk as a problem at all. I use it all the time (it comes
+included with Python) and consider it the most underestimated GUI
+toolkit on the planet.
+Tcl as a language though... might be hard for anyone but you to
+maintain.
+Btw: The simplest approach for the complexity problem seems to be
+frustrum clipping. Probably works well for trees in a forest, but not
+so well when you have very detailed geometry within the space you're
+looking at.
+
+I've looked at higher level 3d toolkits from time to time out of a
+more general interest (again from a Python perspective). Many are
+rather huge and loaded with game-related features that we wouldn't
+need. My current favourites are Panda3D and VTK. They both are
+sufficiently powerful, cross-platform, with mature APIs in several
+languages, and adequately free licenses.
+But I haven't managed to actually play around with either of them yet.
+
+Cheers
+-schorsch
+
+
+Am 2016-04-28 07:17, schrieb Peter Apian-Bennewitz:
+> Hi folks,
+> 
+> before you get all carried away with Xlib events for mouse scroll , -
+> and to add some thoughts on the rediscovery of glrad:
+> 
+> Rshow, http://www.pab-opto.de/progs/rshow/ , the current Open-Gl
+> version of my 1993 rshow on the then Iris-Gl, is still existing. Comes
+> with GUI and some extra features, like generating image mapping, data
+> display, grid generation, raytracing and multiple windows. Not much
+> advertising for it over the years (except this one, also see 1998
+> paper on rshow), it is still in daily use here and at Fraunhofer ISE.
+> (Note to LBNL: ISE is /not/ IBP, in case you shift all credit to IBP
+> again).
+> 
+> Lessons learned:
+> The core problem with Open-Gl display in practice seems complexity.
+> E.g.: Being inside a cabin with a forest outside doesn't matter for
+> raytracing speed, but it does for plain Open-Gl, since it tries to
+> draw all trees outside, visible or not. Today?s entry graphic cards
+> have more power then a 1995 SGI Onyx2 , yes, but scenes have become
+> more complex too, so brute force works only so much.
+> Rshow has a commandline option to ignore geometry below a certain
+> size, so that allow interactive navigation with smooth, tessellated
+> CAD surfaces, but it is a rather amateurish solution. Its Tcl/Tk GUI
+> is a bit dated too, although, Tcl/Tk libraries are still supported by
+> Debian and others. Apart from all this, I had not a single project in
+> the last 20 years where rshow was not used, - "works for me".
+> 
+> There's at least one other Radiance geometry renderer out there,
+> written by Andreas Gerber, based on some graphics library, but I don't
+> further details at hand.
+> And one of the nicest Open-GL renderers had been the one in "Ecotect",
+> - before it disappeared in the garbage bin of Autodesk.
+> 
+> Both rshow and glrad use the legacy API of Open-Gl, which has changed
+> since then with the introduction of "shaders". It is still backward
+> compatible (and probably will be a while with the mass of existing
+> programs), but users are encouraged to upgrade.
+> 
+> Actually, I would have a look at the rendering engines available for
+> some games if I were to start a very fast hardware Radiance-previewer
+> from scratch today. They probably solved the Level-of-detail problem
+> neatly. The drawback is, of course, the dependency on their feature
+> library.
+> 
+> cheers
+> Peter
+> 
+> On 04/28/16 05:17, Douglas L Reeder wrote:
+>> Randolph,
+>> 
+>> Yes, after I saw your 5 values I rotated it both ways and 
+>> got/duplicated your
+>> results.
+>> 
+>> Doug
+>>> On Apr 27, 2016, at 8:25 PM, Randolph M. Fritz <rmfritz3 at gmail.com
+>>> <mailto:rmfritz3 at gmail.com>> wrote:
+>>> 
+>>> 
+>>> On Apr 27, 2016 6:50 PM, "Douglas L Reeder" <dlr1 at centurylink.net
+>>> <mailto:dlr1 at centurylink.net>> wrote:
+>>> >
+>>> > Randolph,
+>>> >
+>>> > On os x with a logitech 3 button mouse with the center button being a mouse
+>>> wheel xev returns button 1 for the left button, 2 for depressing the 
+>>> wheel, 3
+>>> for the right button, and 4 for rotating the wheel.
+>>> >
+>>> >
+>>> 
+>>> Hunh, interesting. Did you try rotating the wheel both ways?
+>>> 
+>>> _______________________________________________
+>>> Radiance-dev mailing list
+>>> Radiance-dev at radiance-online.org 
+>>> <mailto:Radiance-dev at radiance-online.org>
+>>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>> 
+>> 
+>> 
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>> 
+>> --
+>>   pab-opto, Freiburg, Germany, http://www.pab-opto.de
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+From gregoryjward at gmail.com  Thu Apr 28 09:31:02 2016
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu, 28 Apr 2016 09:31:02 -0700
+Subject: [Radiance-dev] Radiance and Open-Gl
+In-Reply-To: <c25044e4f8c310c20d88f43c2aa778d5@tanha.pair.com>
+References: <d90e175acb4b359268f90a3e68519806@tanha.pair.com>
+	<D9F6D83A-3EBB-46B1-9C61-D44BED5F249C@gmail.com>
+	<7af48bf80a635e2571036f2901f78a2f@tanha.pair.com>
+	<050CE931-1AAA-4578-958A-BF46F7D3C523@gmail.com>
+	<b34c0e277e86a8e476bbf670e9639c9c@tanha.pair.com>
+	<4CE7DC2E-F7AC-47DE-9CAA-A1C031D09F43@gmail.com>
+	<CANeAMo+_jih09GzvQftrr2a1_bFAMhnUfDRLxvsaApe5_SuvqQ@mail.gmail.com>
+	<A950F6FA-4226-42EE-B2C6-60898C188492@centurylink.net>
+	<CANeAMoJCZCNe5zPBBNjzjAHSKwfx9nDzCdsQoZMW6Zp1wUqv-Q@mail.gmail.com>
+	<7140FE84-8772-407E-8C0B-27B8D6092243@centurylink.net>
+	<E1aveLx-0006rR-QF@radiance-online.lbl.gov>
+	<c25044e4f8c310c20d88f43c2aa778d5@tanha.pair.com>
+Message-ID: <04772404-A4C3-4CA4-ADBF-ACCB049C10B3@gmail.com>
+
+Yes, agreed 100%.  If you are serious about geometry preview, you are certainly better off with rshow.  I wrote glrad only because it was low-hanging fruit at the time, having written all this OpenGL stuff to support rholo.
+
+That said, I have added listening for the mouse wheel, and glrad will now zoom in response.  The rholo drivers will ignore it, rather than responding inappropriately, since zooming doesn't really make sense in that tool.
+
+Cheers,
+-Greg
+
+> From: Georg Mischler <schorsch at schorsch.com>
+> Subject: Re: [Radiance-dev] Radiance and Open-Gl
+> Date: April 27, 2016 11:59:25 PM PDT
+> 
+> That's quite interesting information (at least for me, after
+> being out of the loop for a while).
+> 
+> But I think there are two different contexts to consider here.
+> Glrad is obviously a quick-and-dirty solution, but it works and is
+> included in the distribution. I think it's absolutely worth it to
+> fix some small stuff in there like checking for another two event
+> keys to get the scroll wheel working properly.
+> 
+> For more advanced features, I'd prefer a less platform dependent
+> solution (which then in turn tends to add toolkit dependencies).
+> 
+> I've already wondered what might have happened with rshow.
+> I don't see Tk as a problem at all. I use it all the time (it comes
+> included with Python) and consider it the most underestimated GUI
+> toolkit on the planet.
+> Tcl as a language though... might be hard for anyone but you to
+> maintain.
+> Btw: The simplest approach for the complexity problem seems to be
+> frustrum clipping. Probably works well for trees in a forest, but not
+> so well when you have very detailed geometry within the space you're
+> looking at.
+> 
+> I've looked at higher level 3d toolkits from time to time out of a
+> more general interest (again from a Python perspective). Many are
+> rather huge and loaded with game-related features that we wouldn't
+> need. My current favourites are Panda3D and VTK. They both are
+> sufficiently powerful, cross-platform, with mature APIs in several
+> languages, and adequately free licenses.
+> But I haven't managed to actually play around with either of them yet.
+> 
+> Cheers
+> -schorsch
+> 
+> 
+> Am 2016-04-28 07:17, schrieb Peter Apian-Bennewitz:
+>> Hi folks,
+>> before you get all carried away with Xlib events for mouse scroll , -
+>> and to add some thoughts on the rediscovery of glrad:
+>> Rshow, http://www.pab-opto.de/progs/rshow/ , the current Open-Gl
+>> version of my 1993 rshow on the then Iris-Gl, is still existing. Comes
+>> with GUI and some extra features, like generating image mapping, data
+>> display, grid generation, raytracing and multiple windows. Not much
+>> advertising for it over the years (except this one, also see 1998
+>> paper on rshow), it is still in daily use here and at Fraunhofer ISE.
+>> (Note to LBNL: ISE is /not/ IBP, in case you shift all credit to IBP
+>> again).
+>> Lessons learned:
+>> The core problem with Open-Gl display in practice seems complexity.
+>> E.g.: Being inside a cabin with a forest outside doesn't matter for
+>> raytracing speed, but it does for plain Open-Gl, since it tries to
+>> draw all trees outside, visible or not. Today?s entry graphic cards
+>> have more power then a 1995 SGI Onyx2 , yes, but scenes have become
+>> more complex too, so brute force works only so much.
+>> Rshow has a commandline option to ignore geometry below a certain
+>> size, so that allow interactive navigation with smooth, tessellated
+>> CAD surfaces, but it is a rather amateurish solution. Its Tcl/Tk GUI
+>> is a bit dated too, although, Tcl/Tk libraries are still supported by
+>> Debian and others. Apart from all this, I had not a single project in
+>> the last 20 years where rshow was not used, - "works for me".
+>> There's at least one other Radiance geometry renderer out there,
+>> written by Andreas Gerber, based on some graphics library, but I don't
+>> further details at hand.
+>> And one of the nicest Open-GL renderers had been the one in "Ecotect",
+>> - before it disappeared in the garbage bin of Autodesk.
+>> Both rshow and glrad use the legacy API of Open-Gl, which has changed
+>> since then with the introduction of "shaders". It is still backward
+>> compatible (and probably will be a while with the mass of existing
+>> programs), but users are encouraged to upgrade.
+>> Actually, I would have a look at the rendering engines available for
+>> some games if I were to start a very fast hardware Radiance-previewer
+>> from scratch today. They probably solved the Level-of-detail problem
+>> neatly. The drawback is, of course, the dependency on their feature
+>> library.
+>> cheers
+>> Peter
+>> On 04/28/16 05:17, Douglas L Reeder wrote:
+>>> Randolph,
+>>> Yes, after I saw your 5 values I rotated it both ways and got/duplicated your
+>>> results.
+>>> Doug
+>>>> On Apr 27, 2016, at 8:25 PM, Randolph M. Fritz <rmfritz3 at gmail.com
+>>>> <mailto:rmfritz3 at gmail.com>> wrote:
+>>>> On Apr 27, 2016 6:50 PM, "Douglas L Reeder" <dlr1 at centurylink.net
+>>>> <mailto:dlr1 at centurylink.net>> wrote:
+>>>> >
+>>>> > Randolph,
+>>>> >
+>>>> > On os x with a logitech 3 button mouse with the center button being a mouse
+>>>> wheel xev returns button 1 for the left button, 2 for depressing the wheel, 3
+>>>> for the right button, and 4 for rotating the wheel.
+>>>> >
+>>>> >
+>>>> Hunh, interesting. Did you try rotating the wheel both ways?
+>>>> 
+
+

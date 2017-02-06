@@ -1,0 +1,1035 @@
+From rfritz at u.washington.edu  Thu Nov  6 15:06:57 2008
+From: rfritz at u.washington.edu (R Fritz)
+Date: Thu Nov  6 15:07:01 2008
+Subject: [Radiance-dev] Radiane MIME types
+In-Reply-To: <5C346694-2014-4586-A688-B4213BF30FA4@u.washington.edu>
+References: <100441490810251133i276ee9a5ge3d9fe77dd342edd@mail.gmail.com>
+	<5C346694-2014-4586-A688-B4213BF30FA4@u.washington.edu>
+Message-ID: <B3B95C78-E417-4FBF-B233-DF71CA1BF4DB@u.washington.edu>
+
+I've now reviewed RFC 4288, *Media Type Specifications and  
+Registration Procedures* (current best practices) with an eye to  
+registering Radiance .pic/.hdr files as an internet type. I've avoided  
+looking at other file types, at least for the moment. Here's some of  
+my notes on this:
+
+1. Since 2005, only a standards body can register an unqualified type;  
+image/hdr, say. So we'd probably best come in as a "vendor" (broadly  
+construed) type; image/vnd.radiance, perhaps. (I can make a case for  
+vnd.radiance.hdr, but it seems like overkill).
+
+2. We're encouraged (but not required) to submit information about the  
+format of our files. I think it would be a good idea to submit the  
+Radiance picture file format, possibly lightly edited and expanded.  
+I'll sign up for the ietf-types@iana.org mailing list and see what we  
+might submit.
+
+3. We need to conduct a security analysis, though I don't think we  
+have major issues here. The main one is that .pic format does use  
+compression, which might be used in a resource-denial attack.
+
+...to be continued...
+
+Randolph
+
+On Oct 25, 2008, at 2:51 PM, R Fritz wrote:
+
+> It looks pretty straightforward; I'll have to review the submission  
+> requirements in more detail, but I don't see serious problems. We'll  
+> probably have to come in as an organization-specific type ("image/ 
+> vnd.radiance"), since an unqualified type now has to come from a  
+> recognized standards body. I'll get back with more details later  
+> this week.
+>
+> Randolph
+>
+> On Oct 25, 2008, at 11:33 AM, Axel Jacobs wrote:
+>
+>> Randolph,
+>>
+>> The official mime types are assined by the IANA:
+>> http://www.iana.org/assignments/media-types/
+>>
+>> Getting .hdr accepted by IANA would mean that eventually all other
+>> mime assignment, e.g.
+>> for the various LINUX desktops:
+>> http://standards.freedesktop.org/shared-mime-info-spec/shared-mime-info-spec-latest.html
+>> will pick it up
+>>
+>> I started a thread here:
+>> http://luminance.londonmet.ac.uk/radiance_mailinglists/dev/2006-November/000761.html
+>> but it didn't lead anywhere.
+>>
+>> When I said I was not sufficiently confident about the file format,
+>> then this is what I meant:
+>> (see http://radsite.lbl.gov/radiance/refer/filefmts.pdf)
+>>
+>> HDR comes in two flavours:
+>> - RGBE
+>> - XYZE
+>>
+>> Each of those two flavours has three sub-flavours:
+>> - non-rle
+>> - rle
+>> - mixed
+>>
+>> Greg (http://luminance.londonmet.ac.uk/radiance_mailinglists/dev/2006-November/000766.html 
+>> ):
+>> -----------8<--------------
+>>> Both, RGBE and XYZE come in flat and in RLE flavours. However, the
+>>> official file specs only mention two FORMAT= string, i.e. 32-
+>>> bit_rle_rgbe
+>>> and 32-bit_rle_xyze. How does this work?
+>>
+>> I decided not to sub-type based on the presence or absence of run-
+>> length encoding.  Since the reader routines identify RLE on a per
+>> scanline basis (and in fact there can be a mix of RLE and
+>> uncompressed scanlines), there seemed no need for a separate format
+>> specifier.
+>>
+>>> The MIME specs have the notion of subclasses. So would RGBE and
+>>> XYZE be
+>>> subclasses of RADIANCE HDR?
+>>
+>> Again, I wouldn't bother to distinguish these within MIME.  It would
+>> be like distinguishing between different classes of TIFF.  Any
+>> software that opens an RGBE file will also open an XYZE file, even if
+>> it won't display the colors correctly.
+>> -----------8<--------------
+>>
+>> So there you go...
+>>
+>> I've started working on a mime XML file following the freedesktop.org
+>> style. This is to make my yearly chore of rolling LEARNIX somewhat
+>> easier. It's not well tested yet, but here is the first draft. The  
+>> bit
+>> with the extensions seems to work, but I haven't tried yet what
+>> happens when the extension is removed (mime magick).
+>>
+>> Ignore all non-HDR stuff. I just thought I might as well leave it in,
+>> in the hope of getting some comments.
+>>
+>> <?xml version="1.0" encoding="UTF-8"?>
+>> <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info 
+>> ">
+>>
+>>  <mime-type type="image/x-hdr">
+>>    <comment xml:lang="en">HDR image</comment>
+>> 	<alias type="image/x-radiance"/>
+>> 	<alias type="image/x-rgbe"/>
+>>    <magic priority="50">
+>>      <match type="string" value="#?RADIANCE" offset="0"/>
+>>      <match type="string" value="FORMAT=32-bit_rle_rgbe"  
+>> offset="0:500"/>
+>>    </magic>
+>>    <glob pattern="*.hdr"/>
+>>    <glob pattern="*.unf"/>
+>>    <glob pattern="*.xyze"/>
+>>    <glob pattern="*.rgbe"/>
+>>  </mime-type>
+>>
+>>  <mime-type type="model/x-radiance-control">
+>> 	<sub-class-of type="text/plain"/>
+>>    <comment xml:lang="en">Radiance input</comment>
+>>    <glob pattern="*.rif"/>
+>>  </mime-type>
+>>
+>>  <mime-type type="application/x-radiance-octree">
+>>    <comment xml:lang="en">Radiance octree</comment>
+>>    <magic priority="50">
+>>      <match type="string" value="#?RADIANCE" offset="0"/>
+>>      <match type="string" value="FORMAT=Radiance_octree"  
+>> offset="0:500"/>
+>>    </magic>
+>>    <glob pattern="*.oct"/>
+>>  </mime-type>
+>>
+>>  <mime-type type="application/x-radiance-ambient-cache">
+>>    <comment xml:lang="en">Radiance ambient cache</comment>
+>>    <glob pattern="*.amb"/>
+>>  </mime-type>
+>>
+>>  <mime-type type="model/x-radiance-holodeck-control">
+>> 	<sub-class-of type="text/plain"/>
+>>    <comment xml:lang="en">Radiance holodeck input</comment>
+>>    <glob pattern="*.hif"/>
+>>  </mime-type>
+>>
+>>  <mime-type type="application/x-radiance-holodeck">
+>>    <comment xml:lang="en">Radiance holodeck</comment>
+>>    <glob pattern="*.hdk"/>
+>>  </mime-type>
+>>
+>>  <mime-type type="model/x-radiance-geometry">
+>> 	<sub-class-of type="text/plain"/>
+>>    <comment xml:lang="en">Radiance geometry</comment>
+>>    <glob pattern="*.rad"/>
+>>    <glob pattern="*.norm"/>
+>>  </mime-type>
+>>
+>>  <mime-type type="model/x-radiance-triangle-mesh">
+>>    <comment xml:lang="en">Radiance triangle mesh</comment>
+>>    <glob pattern="*.rtm"/>
+>>  </mime-type>
+>>
+>>  <mime-type type="model/x-radiance-material">
+>> 	<sub-class-of type="text/plain"/>
+>>    <comment xml:lang="en">Radiance material</comment>
+>>    <glob pattern="*.mat"/>
+>>  </mime-type>
+>>
+>>  <mime-type type="model/x-radiance-view">
+>> 	<sub-class-of type="text/plain"/>
+>>    <comment xml:lang="en">Radiance view</comment>
+>>    <glob pattern="*.vf"/>
+>>  </mime-type>
+>>
+>>  <mime-type type="model/x-radiance-cal">
+>> 	<sub-class-of type="text/plain"/>
+>>    <comment xml:lang="en">Radiance cal</comment>
+>>    <glob pattern="*.cal"/>
+>>  </mime-type>
+>>
+>>  <mime-type type="model/x-radiance-bgraph">
+>> 	<sub-class-of type="text/plain"/>
+>>    <comment xml:lang="en">Radiance bgraph</comment>
+>>    <glob pattern="*.bgraph"/>
+>>  </mime-type>
+>>
+>>  <mime-type type="model/x-radiance-options">
+>> 	<sub-class-of type="text/plain"/>
+>>    <comment xml:lang="en">Radiance options</comment>
+>>    <glob pattern="*.opt"/>
+>>  </mime-type>
+>>
+>> </mime-info>
+>>
+>> Axel
+>>
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev@radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+
+
+From rfritz at u.washington.edu  Thu Nov  6 16:05:14 2008
+From: rfritz at u.washington.edu (R Fritz)
+Date: Thu Nov  6 16:05:18 2008
+Subject: [Radiance-dev] MIME type registration notes
+Message-ID: <5726A7AA-5658-429C-95C4-C0A2D38AB31F@u.washington.edu>
+
+My review of the relevant documents is available in <http://students.washington.edu/rfritz/radreg/ 
+ >; there's an annotated RFC (in PDF format) and a proposed  
+registration form. If anyone would care to take a look (Axel?) and see  
+if I've missed anything obvious, please let me know. The directory is  
+passworded to keep it from showing up in Google; the username/password  
+is rad/rad.
+
+Randolph
+
+
+From jacobs.axel at gmail.com  Fri Nov  7 15:25:42 2008
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Fri Nov  7 15:25:56 2008
+Subject: [Radiance-dev] Radiane MIME types
+Message-ID: <100441490811071525y78bd2ac6wf6d3c40333eae063@mail.gmail.com>
+
+Hi Randolph,
+
+thanks for chasing this up. My comments are below...
+
+
+Encoding considerations: Binary preferred.  This is a binary image
+  type with a text header; "binary" or "base64" are the only
+  reasonable choices.
+
+Applications that use this media type: Radiance, HDR Workshop,
+    Photoshop, TBD
+
++++ pfstools
+more here: http://luxal.dachary.org/webhdr/software.shtml
+.hdr is listed as RGBE
+
+Additional information:
+     Magic number(s): Text "#?RADIANCE\n" (octet sequence 23 3f 52 41
+       44 49 41 4e 43 45 0a) at the beginning of the file
+     File extension(s): pic, hdr
+     Macintosh file type code(s): TBD
+
+--- The .pic extension is officially dead and buried. Stick to .hdr.
+It might be worthwhile also aiming for .rgbe and .xyze
+
++++ I don't think #?RADIANCE\n is quite good enough. It also matches
+octrees (FORMAT=Radiance_octree). I would suggest that
+FORMAT=32-bit_rle_rgbe or FORMAT=32-bit_rle_xyze needs to be in the
+specs as well. The problem is that they don't have a fix position,
+since this depends on the commands which were used to generate the
+image.
+I believe this is what the offset thingy is there for (although this
+particular line does not work somehow):
+<match type="string" value="FORMAT=32-bit_rle_rgbe" offset="0:500"/>
+
+Here is a full .hdr header:
+
+----------8<--------------
+#?RADIANCE
+oconv skies/sky.mat materials/barnsley2.mat skies/sky.rad
+objects/barnsley-1.8m_7.5deep.rad objects/lightshelf_horizontal2.rad
+rpict -vu 0 0 1 -vf views/floor2.vf -x 1600 -y 1600 -ps 4 -pt .08 -dp
+1024 -ar 80 -ms 0.08 -ds .3 -dt .1 -dc .5 -dr 1 -sj .7 -st .1 -ab 4
+-af tmp/b2.amb -aa .1 -ad 1536 -as 392 -av 0.01 0.01 0.01 -lr 8 -lw
+.002
+SOFTWARE= RADIANCE 3.8 lastmod Mon Dec  3 11:50:14 GMT 2007 by root on
+axel-desktop
+VIEW= -vtl -vp 3.75 3.75 1.5 -vd 0 0 -1 -vu -1 0 0 -vh 7.5 -vv 7.5 -vo
+0 -va 0 -vs 0 -vl 0
+CAPDATE= 2008:03:13 12:04:37
+FORMAT=32-bit_rle_rgbe
+pfilt -r .6 -x /2 -y /2
+EXPOSURE=3.078936e+00
+<blank line>
+-Y 800 +X 800
+
+... and an octree header:
+
+#?RADIANCE
+oconv materials/barnsley.mat skies/sky.mat objects/gnd_floor.rad
+objects/top_floor.rad skies/sky.rad objects/lightshelf_sloped.rad
+FORMAT=Radiance_octree
+<blank line>
+----------8<--------------
+
+Would you mind if I forwarded your email to the pfstools mailing list?
+I'd be happy to act as a gatekeeper and feed you only sensible
+comments back. Can I leave the username/password in there?
+
+Regards
+
+Axel
+
+From gregoryjward at gmail.com  Mon Nov 10 11:12:16 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Mon Nov 10 11:12:27 2008
+Subject: [Radiance-dev] Radiane MIME types
+In-Reply-To: <100441490811071525y78bd2ac6wf6d3c40333eae063@mail.gmail.com>
+References: <100441490811071525y78bd2ac6wf6d3c40333eae063@mail.gmail.com>
+Message-ID: <52AF05DC-8483-4912-B7EE-84B5BB83C548@gmail.com>
+
+I apologize that I don't have time at the moment to look at this  
+thoroughly.
+
+I just checked in the switch from ".pic" to ".hdr" throughout the  
+HEAD release of Radiance 4.0a.
+
+The "#?RADIANCE" line at the beginning of the file is, as Axel notes,  
+not a unique indicator of a RGBE or XYZE file.  For that, you really  
+need to find the format string, and I think the notion of "magic  
+numbers" fails in most specifications of a header that could be any  
+size, with the important string buried in it somewhere.  I only added  
+the "#?RADIANCE" line as an afterthought in fact to provide something  
+basic for the Unix "file" command to work with.
+
+-Greg
+
+> From: "Axel Jacobs" <jacobs.axel@gmail.com>
+> Date: November 7, 2008 3:25:42 PM PST
+>
+> Hi Randolph,
+>
+> thanks for chasing this up. My comments are below...
+>
+>
+> Encoding considerations: Binary preferred.  This is a binary image
+>   type with a text header; "binary" or "base64" are the only
+>   reasonable choices.
+>
+> Applications that use this media type: Radiance, HDR Workshop,
+>     Photoshop, TBD
+>
+> +++ pfstools
+> more here: http://luxal.dachary.org/webhdr/software.shtml
+> .hdr is listed as RGBE
+>
+> Additional information:
+>      Magic number(s): Text "#?RADIANCE\n" (octet sequence 23 3f 52 41
+>        44 49 41 4e 43 45 0a) at the beginning of the file
+>      File extension(s): pic, hdr
+>      Macintosh file type code(s): TBD
+
+From rfritz at u.washington.edu  Mon Nov 10 16:56:39 2008
+From: rfritz at u.washington.edu (R Fritz)
+Date: Mon Nov 10 17:02:08 2008
+Subject: [Radiance-dev] Radiance MIME types
+In-Reply-To: <52AF05DC-8483-4912-B7EE-84B5BB83C548@gmail.com>
+References: <100441490811071525y78bd2ac6wf6d3c40333eae063@mail.gmail.com>
+	<52AF05DC-8483-4912-B7EE-84B5BB83C548@gmail.com>
+Message-ID: <FB822F6D-76A3-479E-91DC-A0652B6EA617@u.washington.edu>
+
+I've updated the registration form to account for the suggested changes:
+
+1. Listed as many apps as I can find which work with the format.
+2. Added the "rgbe" and "xyze" extensions.
+3. Added a notes section at the end which indicates that the "pic"  
+extension is deprecated, and explains that "?RADIANCE\n" is not a  
+reliable identifier, as indeed no magic number is.
+
+For the moment I am leaving Greg's email off the form; Greg, if you  
+want direct e-mails on this, let me know and I'll add it. Once the  
+spec is submitted, you'll be the change controller, with the final  
+word on the format, but unless you really want the work, I don't see  
+any reason for you to be getting direct e-mails.
+
+Next to edit the specification, which may take a while because I am  
+busy with other matters.
+
+Meantime, yes, Axel go ahead and forward the proposal to the pfstools  
+list. The username/password may stay in; the point is to keep the  
+thing from showing up in Google searches, not to keep it truly secret.
+
+Do keep in mind that the registration form is not the place for  
+specification of the file format; there's only so much it can contain  
+or, customarily, does contain.
+
+Randolph
+
+
+From gregoryjward at gmail.com  Mon Nov 10 17:06:49 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Mon Nov 10 17:07:04 2008
+Subject: [Radiance-dev] Radiance MIME types
+In-Reply-To: <FB822F6D-76A3-479E-91DC-A0652B6EA617@u.washington.edu>
+References: <100441490811071525y78bd2ac6wf6d3c40333eae063@mail.gmail.com>
+	<52AF05DC-8483-4912-B7EE-84B5BB83C548@gmail.com>
+	<FB822F6D-76A3-479E-91DC-A0652B6EA617@u.washington.edu>
+Message-ID: <5A27A238-A1F7-4386-B452-17BF8F7FCB8F@gmail.com>
+
+Thanks so much for the follow-through, Randolph.  (And Axel as well)
+
+Let me know if you need anything else from me, such as an updated  
+document describing the format.  I could probably edit the one I have  
+to single out the picture format and add in whatever may be missing.
+
+Cheers,
+-Greg
+
+> From: R Fritz <rfritz@u.washington.edu>
+> Date: November 10, 2008 4:56:39 PM PST
+>
+> I've updated the registration form to account for the suggested  
+> changes:
+>
+> 1. Listed as many apps as I can find which work with the format.
+> 2. Added the "rgbe" and "xyze" extensions.
+> 3. Added a notes section at the end which indicates that the "pic"  
+> extension is deprecated, and explains that "?RADIANCE\n" is not a  
+> reliable identifier, as indeed no magic number is.
+>
+> For the moment I am leaving Greg's email off the form; Greg, if you  
+> want direct e-mails on this, let me know and I'll add it. Once the  
+> spec is submitted, you'll be the change controller, with the final  
+> word on the format, but unless you really want the work, I don't  
+> see any reason for you to be getting direct e-mails.
+>
+> Next to edit the specification, which may take a while because I am  
+> busy with other matters.
+>
+> Meantime, yes, Axel go ahead and forward the proposal to the  
+> pfstools list. The username/password may stay in; the point is to  
+> keep the thing from showing up in Google searches, not to keep it  
+> truly secret.
+>
+> Do keep in mind that the registration form is not the place for  
+> specification of the file format; there's only so much it can  
+> contain or, customarily, does contain.
+>
+> Randolph
+
+From maricanis at gmail.com  Tue Nov 11 01:52:37 2008
+From: maricanis at gmail.com (Marija Velickovic)
+Date: Tue Nov 11 01:52:40 2008
+Subject: [Radiance-dev] Radiance MIME types
+In-Reply-To: <FB822F6D-76A3-479E-91DC-A0652B6EA617@u.washington.edu>
+References: <100441490811071525y78bd2ac6wf6d3c40333eae063@mail.gmail.com>
+	<52AF05DC-8483-4912-B7EE-84B5BB83C548@gmail.com>
+	<FB822F6D-76A3-479E-91DC-A0652B6EA617@u.washington.edu>
+Message-ID: <124b40400811110152p3afe8393naa249119466263d2@mail.gmail.com>
+
+Hi Randolph,
+
+I've updated the registration form to account for the suggested changes:
+>
+> 1. Listed as many apps as I can find which work with the format.
+
+
+Can you add to the apps RadDisplay which is used for preview and analysis of
+Radiance images?
+
+Regards,
+Marija
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20081111/430f3ccd/attachment.html
+From rfritz at u.washington.edu  Tue Nov 11 11:24:04 2008
+From: rfritz at u.washington.edu (R Fritz)
+Date: Tue Nov 11 11:24:11 2008
+Subject: [Radiance-dev] Radiance MIME types
+In-Reply-To: <124b40400811110152p3afe8393naa249119466263d2@mail.gmail.com>
+References: <100441490811071525y78bd2ac6wf6d3c40333eae063@mail.gmail.com>
+	<52AF05DC-8483-4912-B7EE-84B5BB83C548@gmail.com>
+	<FB822F6D-76A3-479E-91DC-A0652B6EA617@u.washington.edu>
+	<124b40400811110152p3afe8393naa249119466263d2@mail.gmail.com>
+Message-ID: <7CAFE384-D36E-47CE-A82B-0611FFB12C51@u.washington.edu>
+
+D'oh! And I use RadDisplay, too. Done. Sorry.
+
+Randolph
+
+On Nov 11, 2008, at 1:52 AM, Marija Velickovic wrote:
+
+> Hi Randolph,
+>
+> I've updated the registration form to account for the suggested  
+> changes:
+>
+> 1. Listed as many apps as I can find which work with the format.
+>
+> Can you add to the apps RadDisplay which is used for preview and  
+> analysis of Radiance images?
+>
+> Regards,
+> Marija
+>
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20081111/faae10f8/attachment.htm
+From rfritz at u.washington.edu  Tue Nov 11 11:56:37 2008
+From: rfritz at u.washington.edu (R Fritz)
+Date: Tue Nov 11 11:56:44 2008
+Subject: [Radiance-dev] Radiance MIME types
+In-Reply-To: <5A27A238-A1F7-4386-B452-17BF8F7FCB8F@gmail.com>
+References: <100441490811071525y78bd2ac6wf6d3c40333eae063@mail.gmail.com>
+	<52AF05DC-8483-4912-B7EE-84B5BB83C548@gmail.com>
+	<FB822F6D-76A3-479E-91DC-A0652B6EA617@u.washington.edu>
+	<5A27A238-A1F7-4386-B452-17BF8F7FCB8F@gmail.com>
+Message-ID: <DB7188BA-09CE-4DDD-8C39-D7F307B23956@u.washington.edu>
+
+I'm not sure how much we need to do here; citing RwR ch 18 might be  
+enough, if that is still current. If it's not, an updated version  
+would be very much appreciated; while we are not obliged to publish a  
+specification for the format, it would probably save much confusion  
+and many interoperability problems if we did.
+
+Randolph
+
+On Nov 10, 2008, at 5:06 PM, Gregory J. Ward wrote:
+
+> Thanks so much for the follow-through, Randolph.  (And Axel as well)
+>
+> Let me know if you need anything else from me, such as an updated  
+> document describing the format.  I could probably edit the one I  
+> have to single out the picture format and add in whatever may be  
+> missing.
+>
+> Cheers,
+> -Greg
+>
+>> From: R Fritz <rfritz@u.washington.edu>
+>> Date: November 10, 2008 4:56:39 PM PST
+>>
+>> I've updated the registration form to account for the suggested  
+>> changes:
+>>
+>> 1. Listed as many apps as I can find which work with the format.
+>> 2. Added the "rgbe" and "xyze" extensions.
+>> 3. Added a notes section at the end which indicates that the "pic"  
+>> extension is deprecated, and explains that "?RADIANCE\n" is not a  
+>> reliable identifier, as indeed no magic number is.
+>>
+>> For the moment I am leaving Greg's email off the form; Greg, if you  
+>> want direct e-mails on this, let me know and I'll add it. Once the  
+>> spec is submitted, you'll be the change controller, with the final  
+>> word on the format, but unless you really want the work, I don't  
+>> see any reason for you to be getting direct e-mails.
+>>
+>> Next to edit the specification, which may take a while because I am  
+>> busy with other matters.
+>>
+>> Meantime, yes, Axel go ahead and forward the proposal to the  
+>> pfstools list. The username/password may stay in; the point is to  
+>> keep the thing from showing up in Google searches, not to keep it  
+>> truly secret.
+>>
+>> Do keep in mind that the registration form is not the place for  
+>> specification of the file format; there's only so much it can  
+>> contain or, customarily, does contain.
+>>
+>> Randolph
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20081111/632df341/attachment.html
+From rfritz at u.washington.edu  Tue Nov 11 12:29:43 2008
+From: rfritz at u.washington.edu (R Fritz)
+Date: Tue Nov 11 12:29:47 2008
+Subject: [Radiance-dev] Small changes to support native Windows compilation.
+Message-ID: <CBC90971-95A9-484C-AFE6-751441AB527F@u.washington.edu>
+
+The following two diffs make the last version of Radiance I downloaded  
+compile natively with Visual Studio 2005. I hope they're appropriate  
+for inclusion in the source.
+
+===================================================================
+--- ezxml.c	(.../trunk/src/gen/ezxml.c)	(revision 2)
++++ ezxml.c	(.../branches/radx/src/gen/ezxml.c)	(working copy)
+@@ -30,9 +30,11 @@
+  #include <stdarg.h>
+  #include <string.h>
+  #include <ctype.h>
+-#include <unistd.h>
+  #include <sys/types.h>
+  #ifndef EZXML_NOMMAP
++/* This placement of unistd.h allows ezxml.c to compile natively on
++   MS-Windows */
++#include <unistd.h>
+  #include <sys/mman.h>
+  #endif // EZXML_NOMMAP
+  #include <sys/stat.h>
+===================================================================
+--- obj2mesh.c	(.../trunk/src/ot/obj2mesh.c)	(revision 2)
++++ obj2mesh.c	(.../branches/radx/src/ot/obj2mesh.c)	(working copy)
+@@ -5,6 +5,7 @@
+   *  Main program to compile a Wavefront .OBJ file into a Radiance mesh
+   */
+
++#include "paths.h"
+  #include "copyright.h"
+  #include "platform.h"
+  #include "standard.h"
+
+
+Randolph
+
+
+From gregoryjward at gmail.com  Tue Nov 11 15:59:18 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue Nov 11 15:59:24 2008
+Subject: [Radiance-dev] Radiance MIME types
+In-Reply-To: <DB7188BA-09CE-4DDD-8C39-D7F307B23956@u.washington.edu>
+References: <100441490811071525y78bd2ac6wf6d3c40333eae063@mail.gmail.com>
+	<52AF05DC-8483-4912-B7EE-84B5BB83C548@gmail.com>
+	<FB822F6D-76A3-479E-91DC-A0652B6EA617@u.washington.edu>
+	<5A27A238-A1F7-4386-B452-17BF8F7FCB8F@gmail.com>
+	<DB7188BA-09CE-4DDD-8C39-D7F307B23956@u.washington.edu>
+Message-ID: <956B9519-4102-43E5-BB19-0F9A10DFF376@gmail.com>
+
+Hi Randolph,
+
+If by Chapter 18, you mean "filefmts.pdf" from the website, then I  
+agree.  The only thing I could add are a few more header variables,  
+but I lost the original source for this document, so editing it would  
+be difficult.
+
+-Greg
+
+> From: R Fritz <rfritz@u.washington.edu>
+> Date: November 11, 2008 11:56:37 AM PST
+>
+> I'm not sure how much we need to do here; citing RwR ch 18 might be  
+> enough, if that is still current. If it's not, an updated version  
+> would be very much appreciated; while we are not obliged to publish  
+> a specification for the format, it would probably save much  
+> confusion and many interoperability problems if we did.
+>
+> Randolph
+
+From gregoryjward at gmail.com  Tue Nov 11 19:55:00 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue Nov 11 19:55:12 2008
+Subject: [Radiance-dev] Small changes to support native Windows
+	compilation.
+In-Reply-To: <CBC90971-95A9-484C-AFE6-751441AB527F@u.washington.edu>
+References: <CBC90971-95A9-484C-AFE6-751441AB527F@u.washington.edu>
+Message-ID: <51D0DE33-DFBA-4748-916A-FAC0BBCAB693@gmail.com>
+
+Just checked into HEAD -- thanks.
+
+-Greg
+
+> From: R Fritz <rfritz@u.washington.edu>
+> Date: November 11, 2008 12:29:43 PM PST
+>
+> The following two diffs make the last version of Radiance I  
+> downloaded compile natively with Visual Studio 2005. I hope they're  
+> appropriate for inclusion in the source.
+>
+> ===================================================================
+> --- ezxml.c	(.../trunk/src/gen/ezxml.c)	(revision 2)
+> +++ ezxml.c	(.../branches/radx/src/gen/ezxml.c)	(working copy)
+> @@ -30,9 +30,11 @@
+>  #include <stdarg.h>
+>  #include <string.h>
+>  #include <ctype.h>
+> -#include <unistd.h>
+>  #include <sys/types.h>
+>  #ifndef EZXML_NOMMAP
+> +/* This placement of unistd.h allows ezxml.c to compile natively on
+> +   MS-Windows */
+> +#include <unistd.h>
+>  #include <sys/mman.h>
+>  #endif // EZXML_NOMMAP
+>  #include <sys/stat.h>
+> ===================================================================
+> --- obj2mesh.c	(.../trunk/src/ot/obj2mesh.c)	(revision 2)
+> +++ obj2mesh.c	(.../branches/radx/src/ot/obj2mesh.c)	(working copy)
+> @@ -5,6 +5,7 @@
+>   *  Main program to compile a Wavefront .OBJ file into a Radiance  
+> mesh
+>   */
+>
+> +#include "paths.h"
+>  #include "copyright.h"
+>  #include "platform.h"
+>  #include "standard.h"
+>
+>
+> Randolph
+
+From rfritz at u.washington.edu  Wed Nov 12 16:18:11 2008
+From: rfritz at u.washington.edu (R Fritz)
+Date: Wed Nov 12 16:18:17 2008
+Subject: [Radiance-dev] Radiance MIME types
+In-Reply-To: <956B9519-4102-43E5-BB19-0F9A10DFF376@gmail.com>
+References: <100441490811071525y78bd2ac6wf6d3c40333eae063@mail.gmail.com>
+	<52AF05DC-8483-4912-B7EE-84B5BB83C548@gmail.com>
+	<FB822F6D-76A3-479E-91DC-A0652B6EA617@u.washington.edu>
+	<5A27A238-A1F7-4386-B452-17BF8F7FCB8F@gmail.com>
+	<DB7188BA-09CE-4DDD-8C39-D7F307B23956@u.washington.edu>
+	<956B9519-4102-43E5-BB19-0F9A10DFF376@gmail.com>
+Message-ID: <28F8CD78-B750-479A-99BC-037147EB92FC@u.washington.edu>
+
+That sounds good. BTW, if you want to recover the document, I can get  
+Acrobat Pro to export the text; I think it will even export to MS-Word  
+or HTML-ish code.
+
+Randolph
+
+On Nov 11, 2008, at 3:59 PM, Gregory J. Ward wrote:
+
+> Hi Randolph,
+>
+> If by Chapter 18, you mean "filefmts.pdf" from the website, then I  
+> agree.  The only thing I could add are a few more header variables,  
+> but I lost the original source for this document, so editing it  
+> would be difficult.
+>
+> -Greg
+>
+>> From: R Fritz <rfritz@u.washington.edu>
+>> Date: November 11, 2008 11:56:37 AM PST
+>>
+>> I'm not sure how much we need to do here; citing RwR ch 18 might be  
+>> enough, if that is still current. If it's not, an updated version  
+>> would be very much appreciated; while we are not obliged to publish  
+>> a specification for the format, it would probably save much  
+>> confusion and many interoperability problems if we did.
+>>
+>> Randolph
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20081112/f4a19fee/attachment.htm
+From rfritz at u.washington.edu  Wed Nov 12 16:18:33 2008
+From: rfritz at u.washington.edu (R Fritz)
+Date: Wed Nov 12 16:18:35 2008
+Subject: [Radiance-dev] Small changes to support native Windows
+	compilation.
+In-Reply-To: <51D0DE33-DFBA-4748-916A-FAC0BBCAB693@gmail.com>
+References: <CBC90971-95A9-484C-AFE6-751441AB527F@u.washington.edu>
+	<51D0DE33-DFBA-4748-916A-FAC0BBCAB693@gmail.com>
+Message-ID: <51711BA4-8491-404F-8FCA-4AF669EB5716@u.washington.edu>
+
+Great, thanks!
+
+Randolph
+
+On Nov 11, 2008, at 7:55 PM, Gregory J. Ward wrote:
+
+> Just checked into HEAD -- thanks.
+>
+> -Greg
+>
+>> From: R Fritz <rfritz@u.washington.edu>
+>> Date: November 11, 2008 12:29:43 PM PST
+>>
+>> The following two diffs make the last version of Radiance I  
+>> downloaded compile natively with Visual Studio 2005. I hope they're  
+>> appropriate for inclusion in the source.
+>>
+>> ===================================================================
+>> --- ezxml.c	(.../trunk/src/gen/ezxml.c)	(revision 2)
+>> +++ ezxml.c	(.../branches/radx/src/gen/ezxml.c)	(working copy)
+>> @@ -30,9 +30,11 @@
+>> #include <stdarg.h>
+>> #include <string.h>
+>> #include <ctype.h>
+>> -#include <unistd.h>
+>> #include <sys/types.h>
+>> #ifndef EZXML_NOMMAP
+>> +/* This placement of unistd.h allows ezxml.c to compile natively on
+>> +   MS-Windows */
+>> +#include <unistd.h>
+>> #include <sys/mman.h>
+>> #endif // EZXML_NOMMAP
+>> #include <sys/stat.h>
+>> ===================================================================
+>> --- obj2mesh.c	(.../trunk/src/ot/obj2mesh.c)	(revision 2)
+>> +++ obj2mesh.c	(.../branches/radx/src/ot/obj2mesh.c)	(working copy)
+>> @@ -5,6 +5,7 @@
+>>  *  Main program to compile a Wavefront .OBJ file into a Radiance  
+>> mesh
+>>  */
+>>
+>> +#include "paths.h"
+>> #include "copyright.h"
+>> #include "platform.h"
+>> #include "standard.h"
+>>
+>>
+>> Randolph
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20081112/66c9e033/attachment.html
+From gregoryjward at gmail.com  Wed Nov 12 16:54:40 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed Nov 12 16:54:50 2008
+Subject: [Radiance-dev] Radiance MIME types
+In-Reply-To: <28F8CD78-B750-479A-99BC-037147EB92FC@u.washington.edu>
+References: <100441490811071525y78bd2ac6wf6d3c40333eae063@mail.gmail.com>
+	<52AF05DC-8483-4912-B7EE-84B5BB83C548@gmail.com>
+	<FB822F6D-76A3-479E-91DC-A0652B6EA617@u.washington.edu>
+	<5A27A238-A1F7-4386-B452-17BF8F7FCB8F@gmail.com>
+	<DB7188BA-09CE-4DDD-8C39-D7F307B23956@u.washington.edu>
+	<956B9519-4102-43E5-BB19-0F9A10DFF376@gmail.com>
+	<28F8CD78-B750-479A-99BC-037147EB92FC@u.washington.edu>
+Message-ID: <1031AA12-7738-442A-B7ED-A413E5CBBA7A@gmail.com>
+
+Cool -- I didn't realize you could do that with Acrobat.  I just  
+tried, and it gets out the text and some of the formatting, but loses  
+tables and things like that.  Still, a starting place for the  
+desperate...
+
+-Greg
+
+> From: R Fritz <rfritz@u.washington.edu>
+> Date: November 12, 2008 4:18:11 PM PST
+>
+> That sounds good. BTW, if you want to recover the document, I can  
+> get Acrobat Pro to export the text; I think it will even export to  
+> MS-Word or HTML-ish code.
+>
+> Randolph
+>
+> On Nov 11, 2008, at 3:59 PM, Gregory J. Ward wrote:
+>
+>> Hi Randolph,
+>>
+>> If by Chapter 18, you mean "filefmts.pdf" from the website, then I  
+>> agree.  The only thing I could add are a few more header  
+>> variables, but I lost the original source for this document, so  
+>> editing it would be difficult.
+>>
+>> -Greg
+
+From rfritz at u.washington.edu  Wed Nov 12 18:25:25 2008
+From: rfritz at u.washington.edu (R Fritz)
+Date: Wed Nov 12 18:25:33 2008
+Subject: [Radiance-dev] PDF doc recovery (was: Radiance MIME types)
+In-Reply-To: <1031AA12-7738-442A-B7ED-A413E5CBBA7A@gmail.com>
+References: <100441490811071525y78bd2ac6wf6d3c40333eae063@mail.gmail.com>
+	<52AF05DC-8483-4912-B7EE-84B5BB83C548@gmail.com>
+	<FB822F6D-76A3-479E-91DC-A0652B6EA617@u.washington.edu>
+	<5A27A238-A1F7-4386-B452-17BF8F7FCB8F@gmail.com>
+	<DB7188BA-09CE-4DDD-8C39-D7F307B23956@u.washington.edu>
+	<956B9519-4102-43E5-BB19-0F9A10DFF376@gmail.com>
+	<28F8CD78-B750-479A-99BC-037147EB92FC@u.washington.edu>
+	<1031AA12-7738-442A-B7ED-A413E5CBBA7A@gmail.com>
+Message-ID: <99ABDAB4-65AA-47B3-A01F-85F7C7C1B07F@u.washington.edu>
+
+The XML export does pick up the tables and the format is relatively  
+straightforward; I think you could just edit it back into tbl form, if  
+that's what you use.
+
+Randolph
+
+On Nov 12, 2008, at 4:54 PM, Gregory J. Ward wrote:
+
+> Cool -- I didn't realize you could do that with Acrobat.  I just  
+> tried, and it gets out the text and some of the formatting, but  
+> loses tables and things like that.  Still, a starting place for the  
+> desperate...
+>
+> -Greg
+>
+>> From: R Fritz <rfritz@u.washington.edu>
+>> Date: November 12, 2008 4:18:11 PM PST
+>>
+>> That sounds good. BTW, if you want to recover the document, I can  
+>> get Acrobat Pro to export the text; I think it will even export to  
+>> MS-Word or HTML-ish code.
+>>
+>> Randolph
+>>
+>> On Nov 11, 2008, at 3:59 PM, Gregory J. Ward wrote:
+>>
+>>> Hi Randolph,
+>>>
+>>> If by Chapter 18, you mean "filefmts.pdf" from the website, then I  
+>>> agree.  The only thing I could add are a few more header  
+>>> variables, but I lost the original source for this document, so  
+>>> editing it would be difficult.
+>>>
+>>> -Greg
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: http://radiance-online.org/pipermail/radiance-dev/attachments/20081112/e6deb361/attachment.htm
+From jacobs.axel at gmail.com  Wed Nov 26 08:23:39 2008
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Wed Nov 26 08:23:46 2008
+Subject: [Radiance-dev] Who is radiance?
+Message-ID: <100441490811260823u457792efg20e33c21710296cd@mail.gmail.com>
+
+as in:
+radiance@radsite.lbl.gov
+
+My email bounced back. Has anybody every used this email to get a
+permission to use Radiance code and/or the name?
+
+Cheers
+
+Axel
+
+From jacobs.axel at gmail.com  Sun Nov 30 06:33:08 2008
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Sun Nov 30 06:33:10 2008
+Subject: [Radiance-dev] fix for objline to handle directories
+Message-ID: <100441490811300633h73961250j70a7fefda0fd79e@mail.gmail.com>
+
+Dear Greg,
+
+here is a fix which makes objline handle objects in subdirectories. It
+used to only work in this form:
+$ objline object1.rad
+with the fix, it now also works like so:
+$ objline objects/object1.rad
+
+I had to use a few commands (dirname, basename, find) which weren't
+utilised before, but hope that
+a) they are available on other systems, too (Mac, Win). I've no way to
+test this;
+b) I didn't mess anything else up. It still works with input from STDIN.
+
+Regards
+
+Axel
+
+
+12a13,17
+> 		set dir=`dirname $f`
+> 		set base=`basename $f`
+> 		if ($dir != '.') then
+> 			mkdir -p $d/$dir
+> 		endif
+16c21,23
+< 		echo i $f:r.orig.mgf $oblqxf > $d/$f:r.oblq.mgf
+---
+> 		if ($dir != '.') then
+> 			echo i $base:r.orig.mgf $oblqxf > $d/$f:r.oblq.mgf
+> 		endif
+30,31c37,38
+< set origdim=`getbbox -h *.orig | rcalc -e $rce:q`
+< set oblqdim=`xform $oblqxf *.orig | getbbox -h | rcalc -e $rce:q`
+---
+> set origdim=`find . -name '*.orig' -exec cat {} \; | getbbox -h - | rcalc -e $rce:q`
+> set oblqdim=`find . -name '*.orig' -exec cat {} \; | xform $oblqxf | getbbox -h | rcalc -e $rce:q`
+
+From jacobs.axel at gmail.com  Sun Nov 30 06:41:31 2008
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Sun Nov 30 06:41:32 2008
+Subject: [Radiance-dev] Re: fix for objline to handle directories
+In-Reply-To: <100441490811300633h73961250j70a7fefda0fd79e@mail.gmail.com>
+References: <100441490811300633h73961250j70a7fefda0fd79e@mail.gmail.com>
+Message-ID: <100441490811300641s11b8ba6aiaf90dfa85e87e2ff@mail.gmail.com>
+
+Oh, and I also forgot to ask this:
+
+You are using the undocumented -e switch to xform in objline. It seems
+to do some expanding of something. Could you slip a note in the man
+page?
+
+Many thanks
+
+Axel
+
+From gregoryjward at gmail.com  Sun Nov 30 11:58:30 2008
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Sun Nov 30 11:58:27 2008
+Subject: [Radiance-dev] Re: fix for objline to handle directories
+In-Reply-To: <100441490811300641s11b8ba6aiaf90dfa85e87e2ff@mail.gmail.com>
+References: <100441490811300633h73961250j70a7fefda0fd79e@mail.gmail.com>
+	<100441490811300641s11b8ba6aiaf90dfa85e87e2ff@mail.gmail.com>
+Message-ID: <B79D772E-6D13-4D2F-86B9-E6040B7A5411@gmail.com>
+
+Hi Axel,
+
+The xform -e option is now the default, so is simply ignored.  I  
+removed it all the same in my modifications to objline.
+
+Download the HEAD sometime tomorrow and see if it works.  I took a  
+slightly different approach than yours, and it may not work as you  
+expect, but matches the behavior of xform exactly.
+
+Best,
+-Greg
+
+> From: "Axel Jacobs" <jacobs.axel@gmail.com>
+> Date: November 30, 2008 6:41:31 AM PST
+>
+> Oh, and I also forgot to ask this:
+>
+> You are using the undocumented -e switch to xform in objline. It seems
+> to do some expanding of something. Could you slip a note in the man
+> page?
+>
+> Many thanks
+>
+> Axel
+

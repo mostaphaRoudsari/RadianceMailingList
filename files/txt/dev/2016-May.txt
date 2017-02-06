@@ -1,0 +1,4851 @@
+From schorsch at schorsch.com  Tue May 10 01:02:07 2016
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Tue, 10 May 2016 10:02:07 +0200
+Subject: [Radiance-dev] Meta files and library
+Message-ID: <331427a7625cd3dc8e0694eb9fba381e@tanha.pair.com>
+
+Hi,
+
+our volunteer Sarith Subramaniam is currently working on objline.py.
+When trying to test it, he noticed that the NREL releases do not include
+the supporting meta files in lib/meta. Since they do include the
+executables that require those files, that seems slightly suboptimal...
+But it shouldn't be hard to fix. Just copy over "ray/lib/meta/*.mta".
+
+I've found a previous mention of the topic here:
+http://radiance-online.org/pipermail/radiance-general/2015-October/011273.html
+
+
+Some unsorted thoughts on the topic of meta files in general, given that
+due to the availability of objline.csh/py, and some newer tutorials, 
+they
+will inevitably get more attention in times to come:
+
+A few messages down the above thread, Greg mentions the undocumented(!)
+envvar "MLIB". The first thing running through my mind seeing this was:
+"This must be the worst possible name for an environment variable, ever"
+(way to generic).
+
+I also never quite understood the point of inventing yet another
+proprietary vector format just for Radiance. Or are such meta files used
+anywhere else that I'm not aware of?
+They do not seem to be the same as the ISO standardized "Computer 
+Graphics
+Meta Files" (http://www.fileformat.info/format/cgm/egff.htm), which 
+would
+be a possible candidate for something like that.
+Another possible approach would be SVG (or a suitable subset thereof),
+which has excellent support libaries available nowadays.
+
+Of course, I haven't looked into how much work it would be to use either
+of those (or yet something else), so this basically just amounts to me
+ranting at the moment without any real purpose. But I'm still just 
+curious
+what the motivation behind this format was (or which format it actually
+is), and what other people are thinking about possible alternatives.
+
+Cheers
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From Robert.Guglielmetti at nrel.gov  Tue May 10 07:44:49 2016
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Tue, 10 May 2016 14:44:49 +0000
+Subject: [Radiance-dev] Meta files and library
+In-Reply-To: <331427a7625cd3dc8e0694eb9fba381e@tanha.pair.com>
+References: <331427a7625cd3dc8e0694eb9fba381e@tanha.pair.com>
+Message-ID: <D3574DFA.25505%Robert.Guglielmetti@nrel.gov>
+
+I thought this got resolved with the NREL packages, but I guess not. I
+don't see anything in the commit history where I had changed/fixed
+anything in the CMake files so I think we still have an issue here.
+Sarith, what version of the NREL installer are you currently using, where
+objline does not work?
+
+I agree with Schorsch, if we could use a standard vector format for this
+it would be nice...
+
+
+
+On 5/10/16, 2:02 AM, "Georg Mischler" <schorsch at schorsch.com> wrote:
+
+>Hi,
+>
+>our volunteer Sarith Subramaniam is currently working on objline.py.
+>When trying to test it, he noticed that the NREL releases do not include
+>the supporting meta files in lib/meta. Since they do include the
+>executables that require those files, that seems slightly suboptimal...
+>But it shouldn't be hard to fix. Just copy over "ray/lib/meta/*.mta".
+>
+>I've found a previous mention of the topic here:
+>http://radiance-online.org/pipermail/radiance-general/2015-October/011273.
+>html
+>
+>
+>Some unsorted thoughts on the topic of meta files in general, given that
+>due to the availability of objline.csh/py, and some newer tutorials,
+>they
+>will inevitably get more attention in times to come:
+>
+>A few messages down the above thread, Greg mentions the undocumented(!)
+>envvar "MLIB". The first thing running through my mind seeing this was:
+>"This must be the worst possible name for an environment variable, ever"
+>(way to generic).
+>
+>I also never quite understood the point of inventing yet another
+>proprietary vector format just for Radiance. Or are such meta files used
+>anywhere else that I'm not aware of?
+>They do not seem to be the same as the ISO standardized "Computer
+>Graphics
+>Meta Files" (http://www.fileformat.info/format/cgm/egff.htm), which
+>would
+>be a possible candidate for something like that.
+>Another possible approach would be SVG (or a suitable subset thereof),
+>which has excellent support libaries available nowadays.
+>
+>Of course, I haven't looked into how much work it would be to use either
+>of those (or yet something else), so this basically just amounts to me
+>ranting at the moment without any real purpose. But I'm still just
+>curious
+>what the motivation behind this format was (or which format it actually
+>is), and what other people are thinking about possible alternatives.
+>
+>Cheers
+>-schorsch
+>
+>-- 
+>Georg Mischler  --  simulations developer  --  schorsch at schorsch com
+>+schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+>
+>_______________________________________________
+>Radiance-dev mailing list
+>Radiance-dev at radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+From gregoryjward at gmail.com  Tue May 10 07:48:45 2016
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue, 10 May 2016 07:48:45 -0700
+Subject: [Radiance-dev] Meta files and library
+In-Reply-To: <331427a7625cd3dc8e0694eb9fba381e@tanha.pair.com>
+References: <331427a7625cd3dc8e0694eb9fba381e@tanha.pair.com>
+Message-ID: <88E567C5-80D6-46E6-AA05-0E7E0ED2C904@gmail.com>
+
+Hi Schorsch,
+
+Yes, "MLIB" was probably not the best choice of environment variable, and there are more standardized vector graphics formats around these days.  The reason behind these choices is mostly historical.  When I developed this format circa 1984, there wasn't much else around other than the plot package, which wasn't very capable and wasn't portable across architectures.  At the time, I was relying on CP/M as well as Unix, and dot matrix printers for most of my output, so I rolled my own solution.
+
+If you have a good, cross-platform alternative that wouldn't require much work or additional dependencies, we could certainly look into replacing this, but I've found it difficult to come up with something easier than just maintaining what we have.
+
+Cheers,
+-Greg
+
+> From: Georg Mischler <schorsch at schorsch.com>
+> Subject: [Radiance-dev] Meta files and library
+> Date: May 10, 2016 1:02:07 AM PDT
+> 
+> Hi,
+> 
+> our volunteer Sarith Subramaniam is currently working on objline.py.
+> When trying to test it, he noticed that the NREL releases do not include
+> the supporting meta files in lib/meta. Since they do include the
+> executables that require those files, that seems slightly suboptimal...
+> But it shouldn't be hard to fix. Just copy over "ray/lib/meta/*.mta".
+> 
+> I've found a previous mention of the topic here:
+> http://radiance-online.org/pipermail/radiance-general/2015-October/011273.html
+> 
+> 
+> Some unsorted thoughts on the topic of meta files in general, given that
+> due to the availability of objline.csh/py, and some newer tutorials, they
+> will inevitably get more attention in times to come:
+> 
+> A few messages down the above thread, Greg mentions the undocumented(!)
+> envvar "MLIB". The first thing running through my mind seeing this was:
+> "This must be the worst possible name for an environment variable, ever"
+> (way to generic).
+> 
+> I also never quite understood the point of inventing yet another
+> proprietary vector format just for Radiance. Or are such meta files used
+> anywhere else that I'm not aware of?
+> They do not seem to be the same as the ISO standardized "Computer Graphics
+> Meta Files" (http://www.fileformat.info/format/cgm/egff.htm), which would
+> be a possible candidate for something like that.
+> Another possible approach would be SVG (or a suitable subset thereof),
+> which has excellent support libaries available nowadays.
+> 
+> Of course, I haven't looked into how much work it would be to use either
+> of those (or yet something else), so this basically just amounts to me
+> ranting at the moment without any real purpose. But I'm still just curious
+> what the motivation behind this format was (or which format it actually
+> is), and what other people are thinking about possible alternatives.
+> 
+> Cheers
+> -schorsch
+> 
+> -- 
+> Georg Mischler  --  simulations developer  --  schorsch at schorsch com
+> +schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+> 
+
+
+From sarith at psu.edu  Tue May 10 12:18:45 2016
+From: sarith at psu.edu (Sarith Subramaniam)
+Date: Tue, 10 May 2016 15:18:45 -0400
+Subject: [Radiance-dev] Meta files and library
+Message-ID: <003d01d1aaf0$c5cb6810$51623830$@psu.edu>
+
+Hi Rob,
+
+ 
+
+ 
+
+I am using the win64 version of 5.0.a.10 that I found here:
+https://github.com/NREL/Radiance/releases. I had the official 5.0 release
+before that. Objline works fine on my Linux system. I was just testing see
+if it is possible to implement it in a Windows environment by following the
+workflow in the original csh script
+<https://github.com/NREL/Radiance/blob/master/src/util/objline.csh>  .
+
+ 
+
+ 
+
+Sarith
+
+ 
+
+(In case this unintentionally starts a new thread, this email was a reply to
+http://www.radiance-online.org/pipermail/radiance-dev/2016-May/001600.html .
+I have just subscribed to this mailing list.)
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20160510/737b6619/attachment.html>
+
+From schorsch at schorsch.com  Tue May 10 13:35:15 2016
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Tue, 10 May 2016 22:35:15 +0200
+Subject: [Radiance-dev] Meta files and library
+In-Reply-To: <D3574DFA.25505%Robert.Guglielmetti@nrel.gov>
+References: <331427a7625cd3dc8e0694eb9fba381e@tanha.pair.com>
+	<D3574DFA.25505%Robert.Guglielmetti@nrel.gov>
+Message-ID: <332b04dbb73959e1f60a487f61e19366@tanha.pair.com>
+
+To add to the confusion, the distribution (via CVS) includes two of the
+files with a *.met extension in ray/src/meta/.
+Makeall installs those in parallel and redundantly to the *.mta files
+coming with rad5R0supp.tar.gz. The executables are only looking for the
+*.mta versions, though.
+
+Cheers
+-schorsch
+
+Am 2016-05-10 16:44, schrieb Guglielmetti, Robert:
+> I thought this got resolved with the NREL packages, but I guess not. I
+> don't see anything in the commit history where I had changed/fixed
+> anything in the CMake files so I think we still have an issue here.
+> Sarith, what version of the NREL installer are you currently using, 
+> where
+> objline does not work?
+> 
+> I agree with Schorsch, if we could use a standard vector format for 
+> this
+> it would be nice...
+> 
+> 
+> 
+> On 5/10/16, 2:02 AM, "Georg Mischler" <schorsch at schorsch.com> wrote:
+> 
+>> Hi,
+>> 
+>> our volunteer Sarith Subramaniam is currently working on objline.py.
+>> When trying to test it, he noticed that the NREL releases do not 
+>> include
+>> the supporting meta files in lib/meta. Since they do include the
+>> executables that require those files, that seems slightly 
+>> suboptimal...
+>> But it shouldn't be hard to fix. Just copy over "ray/lib/meta/*.mta".
+>> 
+>> I've found a previous mention of the topic here:
+>> http://radiance-online.org/pipermail/radiance-general/2015-October/011273.
+>> html
+>> 
+>> 
+>> Some unsorted thoughts on the topic of meta files in general, given 
+>> that
+>> due to the availability of objline.csh/py, and some newer tutorials,
+>> they
+>> will inevitably get more attention in times to come:
+>> 
+>> A few messages down the above thread, Greg mentions the 
+>> undocumented(!)
+>> envvar "MLIB". The first thing running through my mind seeing this 
+>> was:
+>> "This must be the worst possible name for an environment variable, 
+>> ever"
+>> (way to generic).
+>> 
+>> I also never quite understood the point of inventing yet another
+>> proprietary vector format just for Radiance. Or are such meta files 
+>> used
+>> anywhere else that I'm not aware of?
+>> They do not seem to be the same as the ISO standardized "Computer
+>> Graphics
+>> Meta Files" (http://www.fileformat.info/format/cgm/egff.htm), which
+>> would
+>> be a possible candidate for something like that.
+>> Another possible approach would be SVG (or a suitable subset thereof),
+>> which has excellent support libaries available nowadays.
+>> 
+>> Of course, I haven't looked into how much work it would be to use 
+>> either
+>> of those (or yet something else), so this basically just amounts to me
+>> ranting at the moment without any real purpose. But I'm still just
+>> curious
+>> what the motivation behind this format was (or which format it 
+>> actually
+>> is), and what other people are thinking about possible alternatives.
+>> 
+>> Cheers
+>> -schorsch
+>> 
+>> --
+>> Georg Mischler  --  simulations developer  --  schorsch at schorsch 
+>> com
+>> +schorsch.com+  --  lighting design tools  --  
+>> http://www.schorsch.com/
+>> 
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+> 
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From Robert.Guglielmetti at nrel.gov  Tue May 10 13:50:26 2016
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Tue, 10 May 2016 20:50:26 +0000
+Subject: [Radiance-dev] Meta files and library
+In-Reply-To: <003d01d1aaf0$c5cb6810$51623830$@psu.edu>
+References: <003d01d1aaf0$c5cb6810$51623830$@psu.edu>
+Message-ID: <D357A472.25583%Robert.Guglielmetti@nrel.gov>
+
+Oh you know what, I don't think we ever followed this through on the Windows side since the default workflow is to pass the output from objline to X11meta. So far the only executable that depends upon X11 support we've attempted to support is rvu. Since the main benefit of you going through all the trouble to move csh scripts to Python is the Windows support, perhaps we should sort this out. =)  I think this is one more reason to look at a standard vector format.
+
+On 5/10/16, 1:18 PM, "Sarith Subramaniam" <sarith at psu.edu<mailto:sarith at psu.edu>> wrote:
+
+Hi Rob,
+
+
+I am using the win64 version of 5.0.a.10 that I found here: https://github.com/NREL/Radiance/releases. I had the official 5.0 release before that. Objline works fine on my Linux system. I was just testing see if it is possible to implement it in a Windows environment by following the workflow in the original csh script<https://github.com/NREL/Radiance/blob/master/src/util/objline.csh> .
+
+
+Sarith
+
+(In case this unintentionally starts a new thread, this email was a reply to http://www.radiance-online.org/pipermail/radiance-dev/2016-May/001600.html . I have just subscribed to this mailing list.)
+
+
+From schorsch at schorsch.com  Tue May 10 14:43:29 2016
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Tue, 10 May 2016 23:43:29 +0200
+Subject: [Radiance-dev] Meta files and library
+In-Reply-To: <D357A472.25583%Robert.Guglielmetti@nrel.gov>
+References: <003d01d1aaf0$c5cb6810$51623830$@psu.edu>
+	<D357A472.25583%Robert.Guglielmetti@nrel.gov>
+Message-ID: <33dbd89b815a37e54375abdf330e971d@tanha.pair.com>
+
+But surely looking at diagrams with x11meta is only an intermediate 
+step?
+The real goal is to convert them to something that can be included in
+whatever kind of documentation you're generating from your project.
+
+Nonetheless, as long as the meta files are still there, having a way to
+look at them on Windows would be nice. Maybe I can teach winimage to
+convert them to an image on the fly...
+
+Cheers
+-schorsch
+
+
+Am 2016-05-10 22:50, schrieb Guglielmetti, Robert:
+> Oh you know what, I don't think we ever followed this through on the
+> Windows side since the default workflow is to pass the output from
+> objline to X11meta. So far the only executable that depends upon X11
+> support we've attempted to support is rvu. Since the main benefit of
+> you going through all the trouble to move csh scripts to Python is the
+> Windows support, perhaps we should sort this out. =)  I think this is
+> one more reason to look at a standard vector format.
+> 
+> On 5/10/16, 1:18 PM, "Sarith Subramaniam"
+> <sarith at psu.edu<mailto:sarith at psu.edu>> wrote:
+> 
+> Hi Rob,
+> 
+> 
+> I am using the win64 version of 5.0.a.10 that I found here:
+> https://github.com/NREL/Radiance/releases. I had the official 5.0
+> release before that. Objline works fine on my Linux system. I was just
+> testing see if it is possible to implement it in a Windows environment
+> by following the workflow in the original csh
+> script<https://github.com/NREL/Radiance/blob/master/src/util/objline.csh>
+> .
+> 
+> 
+> Sarith
+> 
+> (In case this unintentionally starts a new thread, this email was a
+> reply to
+> http://www.radiance-online.org/pipermail/radiance-dev/2016-May/001600.html
+> . I have just subscribed to this mailing list.)
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From gregoryjward at gmail.com  Tue May 10 14:46:52 2016
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue, 10 May 2016 14:46:52 -0700
+Subject: [Radiance-dev] Meta files and library
+In-Reply-To: <332b04dbb73959e1f60a487f61e19366@tanha.pair.com>
+References: <331427a7625cd3dc8e0694eb9fba381e@tanha.pair.com>
+	<D3574DFA.25505%Robert.Guglielmetti@nrel.gov>
+	<332b04dbb73959e1f60a487f61e19366@tanha.pair.com>
+Message-ID: <79C2C37E-BD29-43C2-89EE-821516CFBEC2@gmail.com>
+
+The .met files are the hand-build ASCII originals.  The .mta files are the converted binary files needed by the other programs.  So, the .met files are sources in other words.
+
+-Greg
+
+> From: Georg Mischler <schorsch at schorsch.com>
+> Subject: Re: [Radiance-dev] Meta files and library
+> Date: May 10, 2016 1:35:15 PM PDT
+> 
+> To add to the confusion, the distribution (via CVS) includes two of the
+> files with a *.met extension in ray/src/meta/.
+> Makeall installs those in parallel and redundantly to the *.mta files
+> coming with rad5R0supp.tar.gz. The executables are only looking for the
+> *.mta versions, though.
+> 
+> Cheers
+> -schorsch
+> 
+> Am 2016-05-10 16:44, schrieb Guglielmetti, Robert:
+>> I thought this got resolved with the NREL packages, but I guess not. I
+>> don't see anything in the commit history where I had changed/fixed
+>> anything in the CMake files so I think we still have an issue here.
+>> Sarith, what version of the NREL installer are you currently using, where
+>> objline does not work?
+>> I agree with Schorsch, if we could use a standard vector format for this
+>> it would be nice...
+>> On 5/10/16, 2:02 AM, "Georg Mischler" <schorsch at schorsch.com> wrote:
+>>> Hi,
+>>> our volunteer Sarith Subramaniam is currently working on objline.py.
+>>> When trying to test it, he noticed that the NREL releases do not include
+>>> the supporting meta files in lib/meta. Since they do include the
+>>> executables that require those files, that seems slightly suboptimal...
+>>> But it shouldn't be hard to fix. Just copy over "ray/lib/meta/*.mta".
+>>> I've found a previous mention of the topic here:
+>>> http://radiance-online.org/pipermail/radiance-general/2015-October/011273.
+>>> html
+>>> Some unsorted thoughts on the topic of meta files in general, given that
+>>> due to the availability of objline.csh/py, and some newer tutorials,
+>>> they
+>>> will inevitably get more attention in times to come:
+>>> A few messages down the above thread, Greg mentions the undocumented(!)
+>>> envvar "MLIB". The first thing running through my mind seeing this was:
+>>> "This must be the worst possible name for an environment variable, ever"
+>>> (way to generic).
+>>> I also never quite understood the point of inventing yet another
+>>> proprietary vector format just for Radiance. Or are such meta files used
+>>> anywhere else that I'm not aware of?
+>>> They do not seem to be the same as the ISO standardized "Computer
+>>> Graphics
+>>> Meta Files" (http://www.fileformat.info/format/cgm/egff.htm), which
+>>> would
+>>> be a possible candidate for something like that.
+>>> Another possible approach would be SVG (or a suitable subset thereof),
+>>> which has excellent support libaries available nowadays.
+>>> Of course, I haven't looked into how much work it would be to use either
+>>> of those (or yet something else), so this basically just amounts to me
+>>> ranting at the moment without any real purpose. But I'm still just
+>>> curious
+>>> what the motivation behind this format was (or which format it actually
+>>> is), and what other people are thinking about possible alternatives.
+>>> Cheers
+>>> -schorsch
+>>> --
+>>> Georg Mischler  --  simulations developer  --  schorsch at schorsch com
+>>> +schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+>>> _______________________________________________
+>>> Radiance-dev mailing list
+>>> Radiance-dev at radiance-online.org
+>>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+> 
+> -- 
+> Georg Mischler  --  simulations developer  --  schorsch at schorsch com
+> +schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+From gregoryjward at gmail.com  Tue May 10 14:49:14 2016
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue, 10 May 2016 14:49:14 -0700
+Subject: [Radiance-dev] Meta files and library
+In-Reply-To: <D357A472.25583%Robert.Guglielmetti@nrel.gov>
+References: <003d01d1aaf0$c5cb6810$51623830$@psu.edu>
+	<D357A472.25583%Robert.Guglielmetti@nrel.gov>
+Message-ID: <B088A471-0F1F-4837-99E3-AA14C23DB35D@gmail.com>
+
+True, but there are converters from metafile to encapsulated PostScript, Targa, and BMP files that can be used and viewed on Windows.
+
+All the same, I'm not opposed to converting to an existing cross-platform vector format if there's one that comes preinstalled everywhere.  Is there one?
+
+-Greg
+
+> From: "Guglielmetti, Robert" <Robert.Guglielmetti at nrel.gov>
+> Subject: Re: [Radiance-dev] Meta files and library
+> Date: May 10, 2016 1:50:26 PM PDT
+> 
+> Oh you know what, I don't think we ever followed this through on the Windows side since the default workflow is to pass the output from objline to X11meta. So far the only executable that depends upon X11 support we've attempted to support is rvu. Since the main benefit of you going through all the trouble to move csh scripts to Python is the Windows support, perhaps we should sort this out. =)  I think this is one more reason to look at a standard vector format.
+> 
+> On 5/10/16, 1:18 PM, "Sarith Subramaniam" <sarith at psu.edu<mailto:sarith at psu.edu>> wrote:
+> 
+> Hi Rob,
+> 
+> 
+> I am using the win64 version of 5.0.a.10 that I found here: https://github.com/NREL/Radiance/releases. I had the official 5.0 release before that. Objline works fine on my Linux system. I was just testing see if it is possible to implement it in a Windows environment by following the workflow in the original csh script<https://github.com/NREL/Radiance/blob/master/src/util/objline.csh> .
+> 
+> 
+> Sarith
+> 
+> (In case this unintentionally starts a new thread, this email was a reply to http://www.radiance-online.org/pipermail/radiance-dev/2016-May/001600.html . I have just subscribed to this mailing list.)
+
+
+From schorsch at schorsch.com  Tue May 10 15:41:21 2016
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Wed, 11 May 2016 00:41:21 +0200
+Subject: [Radiance-dev] Meta files and library
+In-Reply-To: <88E567C5-80D6-46E6-AA05-0E7E0ED2C904@gmail.com>
+References: <331427a7625cd3dc8e0694eb9fba381e@tanha.pair.com>
+	<88E567C5-80D6-46E6-AA05-0E7E0ED2C904@gmail.com>
+Message-ID: <ff2fa5167ab9e38ee9eb5956f20a5522@tanha.pair.com>
+
+Ah, I didn't remember that the history of meta files goes that far back.
+
+If I understand it right, the primary purpose of the package is to
+create diagrams from tabular numerical data. Its functionality is almost
+completely independent from the rest of Radiance, with mgf2meta as the
+lonely exception that actually processes Radiance specific data.
+
+Compared to more "friendly" ways to create diagrams (spreadsheets,
+statistical software), the current approach has the following
+advantages:
+
+- simple implementation
+- included in the distribution
+- scriptable within pipelines
+- no thirdparty dependencies
+
+The disadvantages:
+
+- limited output connectivity (conversion is currently only possible
+   into Windows bitmaps, targa, and postscript).
+- limited graphics resolution (2^14 units), possibly not accurate
+   enough for large format high resolution output
+- limited graphics capabilities (no curves, only 5 colors)
+
+So what we're looking for would be a diagramming toolkit with more
+flexibility on the output side, and not too many other disadvantages.
+
+The least invasive solution would be to simply add a few converters,
+eg. meta2svg or meta2pdf. This would at least widen the path to
+downstream processing.
+
+On the other hand, if we ignore mgf2meta, we could use pretty much any
+open source diagramming tool out there that we like. There will be
+nothing that is "preinstalled everywhere" though, the topic is simply
+too diverse for that.
+
+In between, using eg. SVG as an internal format might be an option.
+Writing is easy, since we have very simple content. Reading is slightly
+more involved, even when we're restricting it to our self-generated 
+files.
+But then we already have ezxml in the distribution, so it might actually
+be manageable.
+
+Cheers
+-schorsch
+
+
+Am 2016-05-10 16:48, schrieb Gregory J. Ward:
+> Hi Schorsch,
+> 
+> Yes, "MLIB" was probably not the best choice of environment variable,
+> and there are more standardized vector graphics formats around these
+> days.  The reason behind these choices is mostly historical.  When I
+> developed this format circa 1984, there wasn't much else around other
+> than the plot package, which wasn't very capable and wasn't portable
+> across architectures.  At the time, I was relying on CP/M as well as
+> Unix, and dot matrix printers for most of my output, so I rolled my
+> own solution.
+> 
+> If you have a good, cross-platform alternative that wouldn't require
+> much work or additional dependencies, we could certainly look into
+> replacing this, but I've found it difficult to come up with something
+> easier than just maintaining what we have.
+> 
+> Cheers,
+> -Greg
+> 
+>> From: Georg Mischler <schorsch at schorsch.com>
+>> Subject: [Radiance-dev] Meta files and library
+>> Date: May 10, 2016 1:02:07 AM PDT
+>> 
+>> Hi,
+>> 
+>> our volunteer Sarith Subramaniam is currently working on objline.py.
+>> When trying to test it, he noticed that the NREL releases do not 
+>> include
+>> the supporting meta files in lib/meta. Since they do include the
+>> executables that require those files, that seems slightly 
+>> suboptimal...
+>> But it shouldn't be hard to fix. Just copy over "ray/lib/meta/*.mta".
+>> 
+>> I've found a previous mention of the topic here:
+>> http://radiance-online.org/pipermail/radiance-general/2015-October/011273.html
+>> 
+>> 
+>> Some unsorted thoughts on the topic of meta files in general, given 
+>> that
+>> due to the availability of objline.csh/py, and some newer tutorials, 
+>> they
+>> will inevitably get more attention in times to come:
+>> 
+>> A few messages down the above thread, Greg mentions the 
+>> undocumented(!)
+>> envvar "MLIB". The first thing running through my mind seeing this 
+>> was:
+>> "This must be the worst possible name for an environment variable, 
+>> ever"
+>> (way to generic).
+>> 
+>> I also never quite understood the point of inventing yet another
+>> proprietary vector format just for Radiance. Or are such meta files 
+>> used
+>> anywhere else that I'm not aware of?
+>> They do not seem to be the same as the ISO standardized "Computer 
+>> Graphics
+>> Meta Files" (http://www.fileformat.info/format/cgm/egff.htm), which 
+>> would
+>> be a possible candidate for something like that.
+>> Another possible approach would be SVG (or a suitable subset thereof),
+>> which has excellent support libaries available nowadays.
+>> 
+>> Of course, I haven't looked into how much work it would be to use 
+>> either
+>> of those (or yet something else), so this basically just amounts to me
+>> ranting at the moment without any real purpose. But I'm still just 
+>> curious
+>> what the motivation behind this format was (or which format it 
+>> actually
+>> is), and what other people are thinking about possible alternatives.
+>> 
+>> Cheers
+>> -schorsch
+>> 
+>> --
+>> Georg Mischler  --  simulations developer  --  schorsch at schorsch 
+>> com
+>> +schorsch.com+  --  lighting design tools  --  
+>> http://www.schorsch.com/
+>> 
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From gregoryjward at gmail.com  Tue May 10 16:00:23 2016
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue, 10 May 2016 16:00:23 -0700
+Subject: [Radiance-dev] Meta files and library
+In-Reply-To: <ff2fa5167ab9e38ee9eb5956f20a5522@tanha.pair.com>
+References: <331427a7625cd3dc8e0694eb9fba381e@tanha.pair.com>
+	<88E567C5-80D6-46E6-AA05-0E7E0ED2C904@gmail.com>
+	<ff2fa5167ab9e38ee9eb5956f20a5522@tanha.pair.com>
+Message-ID: <B47F7C3B-6AB1-4552-9EC4-812792147FCC@gmail.com>
+
+Indeed, the metafile tools were dragged into Radiance at some point I wanted to be able to script things like plots and diagrams when doing data analysis, and it was just more convenient.  They have very little in common with the rest of Radiance, though they were the first appearance of the .cal language in tools like bgraph.
+
+We can pipe the output of psmeta to ps2pdf or similar.
+
+How is SVG supported on different systems?  I hadn't heard of it before.  Can you just send output to a web browser, or ??
+
+As I said, these tools have been no effort for me to maintain for many decades, so unless we really need better vector output for some reason, it's not that big a deal to write a converter to SVG or PDF if that's all we're talking about.  On the other hand, it wouldn't be that difficult to replace it as far as Radiance is concerned -- I would still use it for automating plot generation, since I've no way to pipe data to Excel.
+
+Cheers,
+-Greg
+
+> From: Georg Mischler <schorsch at schorsch.com>
+> Subject: Re: [Radiance-dev] Meta files and library
+> Date: May 10, 2016 3:41:21 PM PDT
+> 
+> Ah, I didn't remember that the history of meta files goes that far back.
+> 
+> If I understand it right, the primary purpose of the package is to
+> create diagrams from tabular numerical data. Its functionality is almost
+> completely independent from the rest of Radiance, with mgf2meta as the
+> lonely exception that actually processes Radiance specific data.
+> 
+> Compared to more "friendly" ways to create diagrams (spreadsheets,
+> statistical software), the current approach has the following
+> advantages:
+> 
+> - simple implementation
+> - included in the distribution
+> - scriptable within pipelines
+> - no thirdparty dependencies
+> 
+> The disadvantages:
+> 
+> - limited output connectivity (conversion is currently only possible
+>  into Windows bitmaps, targa, and postscript).
+> - limited graphics resolution (2^14 units), possibly not accurate
+>  enough for large format high resolution output
+> - limited graphics capabilities (no curves, only 5 colors)
+> 
+> So what we're looking for would be a diagramming toolkit with more
+> flexibility on the output side, and not too many other disadvantages.
+> 
+> The least invasive solution would be to simply add a few converters,
+> eg. meta2svg or meta2pdf. This would at least widen the path to
+> downstream processing.
+> 
+> On the other hand, if we ignore mgf2meta, we could use pretty much any
+> open source diagramming tool out there that we like. There will be
+> nothing that is "preinstalled everywhere" though, the topic is simply
+> too diverse for that.
+> 
+> In between, using eg. SVG as an internal format might be an option.
+> Writing is easy, since we have very simple content. Reading is slightly
+> more involved, even when we're restricting it to our self-generated files.
+> But then we already have ezxml in the distribution, so it might actually
+> be manageable.
+> 
+> Cheers
+> -schorsch
+> 
+> 
+> Am 2016-05-10 16:48, schrieb Gregory J. Ward:
+>> Hi Schorsch,
+>> Yes, "MLIB" was probably not the best choice of environment variable,
+>> and there are more standardized vector graphics formats around these
+>> days.  The reason behind these choices is mostly historical.  When I
+>> developed this format circa 1984, there wasn't much else around other
+>> than the plot package, which wasn't very capable and wasn't portable
+>> across architectures.  At the time, I was relying on CP/M as well as
+>> Unix, and dot matrix printers for most of my output, so I rolled my
+>> own solution.
+>> If you have a good, cross-platform alternative that wouldn't require
+>> much work or additional dependencies, we could certainly look into
+>> replacing this, but I've found it difficult to come up with something
+>> easier than just maintaining what we have.
+>> Cheers,
+>> -Greg
+>>> From: Georg Mischler <schorsch at schorsch.com>
+>>> Subject: [Radiance-dev] Meta files and library
+>>> Date: May 10, 2016 1:02:07 AM PDT
+>>> Hi,
+>>> our volunteer Sarith Subramaniam is currently working on objline.py.
+>>> When trying to test it, he noticed that the NREL releases do not include
+>>> the supporting meta files in lib/meta. Since they do include the
+>>> executables that require those files, that seems slightly suboptimal...
+>>> But it shouldn't be hard to fix. Just copy over "ray/lib/meta/*.mta".
+>>> I've found a previous mention of the topic here:
+>>> http://radiance-online.org/pipermail/radiance-general/2015-October/011273.html
+>>> Some unsorted thoughts on the topic of meta files in general, given that
+>>> due to the availability of objline.csh/py, and some newer tutorials, they
+>>> will inevitably get more attention in times to come:
+>>> A few messages down the above thread, Greg mentions the undocumented(!)
+>>> envvar "MLIB". The first thing running through my mind seeing this was:
+>>> "This must be the worst possible name for an environment variable, ever"
+>>> (way to generic).
+>>> I also never quite understood the point of inventing yet another
+>>> proprietary vector format just for Radiance. Or are such meta files used
+>>> anywhere else that I'm not aware of?
+>>> They do not seem to be the same as the ISO standardized "Computer Graphics
+>>> Meta Files" (http://www.fileformat.info/format/cgm/egff.htm), which would
+>>> be a possible candidate for something like that.
+>>> Another possible approach would be SVG (or a suitable subset thereof),
+>>> which has excellent support libaries available nowadays.
+>>> Of course, I haven't looked into how much work it would be to use either
+>>> of those (or yet something else), so this basically just amounts to me
+>>> ranting at the moment without any real purpose. But I'm still just curious
+>>> what the motivation behind this format was (or which format it actually
+>>> is), and what other people are thinking about possible alternatives.
+>>> Cheers
+>>> -schorsch
+
+
+From S.HUET at vs-a.eu  Wed May 11 00:20:07 2016
+From: S.HUET at vs-a.eu (=?iso-8859-1?Q?S=E9verine_HUET?=)
+Date: Wed, 11 May 2016 07:20:07 +0000
+Subject: [Radiance-dev] running genBSDF
+Message-ID: <2E843DD8F22525499598FADDBD7704FC2D0BD036@SBS2011.VANSANTEN.local>
+
+--------
+WARNING: At least one of the links in the message below goes to an .exe file, 
+which could be malicious. To learn how to protect yourself, please go here:
+https://commons.lbl.gov/x/_591B
+--------
+
+Dear List,
+
+
+
+I am currently doing my final internship as part of my engineering studies.
+
+I need to use Radiance software and encounter difficulties running "genBSDF" program.
+
+I have followed the example 1 of the "genBSDF Tutorial" but an error message appears in my DOS, saying : "can't load the Radiance input"
+
+I'm working on Windows 7 & Radiance version 5.0.a.8, and I have downloaded the genBSDF.exe file from  http://www.jaloxa.eu/resources/radiance/radwinexe.shtml.
+
+My batch file is :
+
+-----
+
+SET PATH=.;C:\Radiance\lib;C:\Radiance\bin;$RAYPATH;$PATH
+
+SET RAYPATH=.;C:\Radiance\lib;C:\Radiance\bin;$RAYPATH
+
+c:
+
+cd C:\VSA_SolarFactor\test160428_01\
+
+C:\Radiance\bin\objview.exe  blind1.rad
+
+pause
+
+C:\Radiance\bin\getbbox  blind1.rad
+
+pause
+
+C:\Radiance\bin\genBSDF.exe +f +b -c 500 -geom inch blind1.rad > blind1.xml
+
+-----
+
+
+
+I have no idea how to fix it because it is perfectly working with the other programs of Radiance software like getbox or objview. Now, my internship ends soon, that's why I'm writing to you; I would be grateful if you have any suggestion about what is wrong with my batch file.
+
+
+
+Thank you in advance for your help,
+
+
+
+Best regards,
+
+
+Severine
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20160511/c96b4d94/attachment-0001.html>
+
+From schorsch at schorsch.com  Wed May 11 01:31:34 2016
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Wed, 11 May 2016 10:31:34 +0200
+Subject: [Radiance-dev] Meta files and library
+In-Reply-To: <B47F7C3B-6AB1-4552-9EC4-812792147FCC@gmail.com>
+References: <331427a7625cd3dc8e0694eb9fba381e@tanha.pair.com>
+	<88E567C5-80D6-46E6-AA05-0E7E0ED2C904@gmail.com>
+	<ff2fa5167ab9e38ee9eb5956f20a5522@tanha.pair.com>
+	<B47F7C3B-6AB1-4552-9EC4-812792147FCC@gmail.com>
+Message-ID: <662d33817c3dc1d9ff50aa6166fdb98d@tanha.pair.com>
+
+So the plot files are really cal files?
+Or just a very similar, but subtly incompatible variation thereof?
+The documentation sometimes talks about "plot files", and sometimes
+about "graph files". Are those the same?
+
+
+SVG has pretty much become the standard for vector graphics on the web
+(and elsewhere, such as scalable icons in Linux GUIs). All modern
+browsers can render it. As an XML format it may even be embedded 
+directly
+in the HTML of a web page. Pretty much all other relevant and up-to-date
+vector graphics software understands the format. The most popular free
+tool for editing seems to be Inkscape.
+
+The format has several advanced capabilities that most people rarely
+use, if at all, and would probably be irrelevant to us (eg. styling with
+external css, animation with Javascript). A file containing a diagram
+with some lines, fills, and text can actually be very straightforward
+and simple. There are also defined subsets of the format (eg. "SVG 
+Tiny"),
+primarily intended for mobile use.
+
+
+As long as nobody complains eg. about output resolution, it's clearly
+easier to keep working with meta files internally for the moment.
+But then, it would still be nice if we could simplify things a bit.
+Is there really still a need for pexpand? And I'm not quite sure
+what psort is good for to begin with.
+
+Since those tools are not used anywhere else, wouldn't it make sense to
+ditch $MLIB, and simply use $RAYPATH/meta instead?
+
+The documentation also mentions (usually under "see also") a number of
+manpages that either never existed or have been removed:  graph(1G),
+plot(1), plot(5), plotout(1), primout(3), t4014(1), mx80(1), impress(1).
+
+And last (for the moment): Looking at the manpage, it appears that
+plotin(1) has a very similar if not identical purpose as bgraph(1).
+What am I missing there?
+
+
+Cheers
+-schorsch
+
+
+Am 2016-05-11 01:00, schrieb Gregory J. Ward:
+> Indeed, the metafile tools were dragged into Radiance at some point I
+> wanted to be able to script things like plots and diagrams when doing
+> data analysis, and it was just more convenient.  They have very little
+> in common with the rest of Radiance, though they were the first
+> appearance of the .cal language in tools like bgraph.
+> 
+> We can pipe the output of psmeta to ps2pdf or similar.
+> 
+> How is SVG supported on different systems?  I hadn't heard of it
+> before.  Can you just send output to a web browser, or ??
+> 
+> As I said, these tools have been no effort for me to maintain for many
+> decades, so unless we really need better vector output for some
+> reason, it's not that big a deal to write a converter to SVG or PDF if
+> that's all we're talking about.  On the other hand, it wouldn't be
+> that difficult to replace it as far as Radiance is concerned -- I
+> would still use it for automating plot generation, since I've no way
+> to pipe data to Excel.
+> 
+> Cheers,
+> -Greg
+> 
+>> From: Georg Mischler <schorsch at schorsch.com>
+>> Subject: Re: [Radiance-dev] Meta files and library
+>> Date: May 10, 2016 3:41:21 PM PDT
+>> 
+>> Ah, I didn't remember that the history of meta files goes that far 
+>> back.
+>> 
+>> If I understand it right, the primary purpose of the package is to
+>> create diagrams from tabular numerical data. Its functionality is 
+>> almost
+>> completely independent from the rest of Radiance, with mgf2meta as the
+>> lonely exception that actually processes Radiance specific data.
+>> 
+>> Compared to more "friendly" ways to create diagrams (spreadsheets,
+>> statistical software), the current approach has the following
+>> advantages:
+>> 
+>> - simple implementation
+>> - included in the distribution
+>> - scriptable within pipelines
+>> - no thirdparty dependencies
+>> 
+>> The disadvantages:
+>> 
+>> - limited output connectivity (conversion is currently only possible
+>>  into Windows bitmaps, targa, and postscript).
+>> - limited graphics resolution (2^14 units), possibly not accurate
+>>  enough for large format high resolution output
+>> - limited graphics capabilities (no curves, only 5 colors)
+>> 
+>> So what we're looking for would be a diagramming toolkit with more
+>> flexibility on the output side, and not too many other disadvantages.
+>> 
+>> The least invasive solution would be to simply add a few converters,
+>> eg. meta2svg or meta2pdf. This would at least widen the path to
+>> downstream processing.
+>> 
+>> On the other hand, if we ignore mgf2meta, we could use pretty much any
+>> open source diagramming tool out there that we like. There will be
+>> nothing that is "preinstalled everywhere" though, the topic is simply
+>> too diverse for that.
+>> 
+>> In between, using eg. SVG as an internal format might be an option.
+>> Writing is easy, since we have very simple content. Reading is 
+>> slightly
+>> more involved, even when we're restricting it to our self-generated 
+>> files.
+>> But then we already have ezxml in the distribution, so it might 
+>> actually
+>> be manageable.
+>> 
+>> Cheers
+>> -schorsch
+>> 
+>> 
+>> Am 2016-05-10 16:48, schrieb Gregory J. Ward:
+>>> Hi Schorsch,
+>>> Yes, "MLIB" was probably not the best choice of environment variable,
+>>> and there are more standardized vector graphics formats around these
+>>> days.  The reason behind these choices is mostly historical.  When I
+>>> developed this format circa 1984, there wasn't much else around other
+>>> than the plot package, which wasn't very capable and wasn't portable
+>>> across architectures.  At the time, I was relying on CP/M as well as
+>>> Unix, and dot matrix printers for most of my output, so I rolled my
+>>> own solution.
+>>> If you have a good, cross-platform alternative that wouldn't require
+>>> much work or additional dependencies, we could certainly look into
+>>> replacing this, but I've found it difficult to come up with something
+>>> easier than just maintaining what we have.
+>>> Cheers,
+>>> -Greg
+>>>> From: Georg Mischler <schorsch at schorsch.com>
+>>>> Subject: [Radiance-dev] Meta files and library
+>>>> Date: May 10, 2016 1:02:07 AM PDT
+>>>> Hi,
+>>>> our volunteer Sarith Subramaniam is currently working on objline.py.
+>>>> When trying to test it, he noticed that the NREL releases do not 
+>>>> include
+>>>> the supporting meta files in lib/meta. Since they do include the
+>>>> executables that require those files, that seems slightly 
+>>>> suboptimal...
+>>>> But it shouldn't be hard to fix. Just copy over 
+>>>> "ray/lib/meta/*.mta".
+>>>> I've found a previous mention of the topic here:
+>>>> http://radiance-online.org/pipermail/radiance-general/2015-October/011273.html
+>>>> Some unsorted thoughts on the topic of meta files in general, given 
+>>>> that
+>>>> due to the availability of objline.csh/py, and some newer tutorials, 
+>>>> they
+>>>> will inevitably get more attention in times to come:
+>>>> A few messages down the above thread, Greg mentions the 
+>>>> undocumented(!)
+>>>> envvar "MLIB". The first thing running through my mind seeing this 
+>>>> was:
+>>>> "This must be the worst possible name for an environment variable, 
+>>>> ever"
+>>>> (way to generic).
+>>>> I also never quite understood the point of inventing yet another
+>>>> proprietary vector format just for Radiance. Or are such meta files 
+>>>> used
+>>>> anywhere else that I'm not aware of?
+>>>> They do not seem to be the same as the ISO standardized "Computer 
+>>>> Graphics
+>>>> Meta Files" (http://www.fileformat.info/format/cgm/egff.htm), which 
+>>>> would
+>>>> be a possible candidate for something like that.
+>>>> Another possible approach would be SVG (or a suitable subset 
+>>>> thereof),
+>>>> which has excellent support libaries available nowadays.
+>>>> Of course, I haven't looked into how much work it would be to use 
+>>>> either
+>>>> of those (or yet something else), so this basically just amounts to 
+>>>> me
+>>>> ranting at the moment without any real purpose. But I'm still just 
+>>>> curious
+>>>> what the motivation behind this format was (or which format it 
+>>>> actually
+>>>> is), and what other people are thinking about possible alternatives.
+>>>> Cheers
+>>>> -schorsch
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From Robert.Guglielmetti at nrel.gov  Wed May 11 08:31:32 2016
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Wed, 11 May 2016 15:31:32 +0000
+Subject: [Radiance-dev] running genBSDF
+Message-ID: <D358A46A.255A6%Robert.Guglielmetti@nrel.gov>
+
+--------
+WARNING: At least one of the links in the message below goes to an .exe file, 
+which could be malicious. To learn how to protect yourself, please go here:
+https://commons.lbl.gov/x/_591B
+--------
+
+On the second command, are you sure your batch file calls "getbbox", and not "getbbox.exe? My sense is that your system is not set up to execute .exe files without explicitly calling them as such. The genBSDF script calls xform on line 150 (note the lack of the '.exe' or any kind of operating system-specific conditional), and if it fails to run the script generates the error you are seeing.
+
+I think there's something you can set up in Windows to automatically try appending ".exe" (and ".bat" and .com) to any program calls on the command line, but it has to be set up, I guess.
+
+On 5/11/16, 1:20 AM, "S?verine HUET" <S.HUET at vs-a.eu<mailto:S.HUET at vs-a.eu>> wrote:
+
+
+--------
+WARNING: At least one of the links in the message below goes to an .exe file,
+which could be malicious. To learn how to protect yourself, please go here:
+https://commons.lbl.gov/x/_591B
+--------
+
+Dear List,
+
+
+
+I am currently doing my final internship as part of my engineering studies.
+
+I need to use Radiance software and encounter difficulties running "genBSDF" program.
+
+I have followed the example 1 of the "genBSDF Tutorial" but an error message appears in my DOS, saying : "can't load the Radiance input"
+
+I'm working on Windows 7 & Radiance version 5.0.a.8, and I have downloaded the genBSDF.exe file from  http://www.jaloxa.eu/resources/radiance/radwinexe.shtml.
+
+My batch file is :
+
+-----
+
+SET PATH=.;C:\Radiance\lib;C:\Radiance\bin;$RAYPATH;$PATH
+
+SET RAYPATH=.;C:\Radiance\lib;C:\Radiance\bin;$RAYPATH
+
+c:
+
+cd C:\VSA_SolarFactor\test160428_01\
+
+C:\Radiance\bin\objview.exe  blind1.rad
+
+pause
+
+C:\Radiance\bin\getbbox  blind1.rad
+
+pause
+
+C:\Radiance\bin\genBSDF.exe +f +b -c 500 -geom inch blind1.rad > blind1.xml
+
+-----
+
+
+
+I have no idea how to fix it because it is perfectly working with the other programs of Radiance software like getbox or objview. Now, my internship ends soon, that's why I'm writing to you; I would be grateful if you have any suggestion about what is wrong with my batch file.
+
+
+
+Thank you in advance for your help,
+
+
+
+Best regards,
+
+
+Severine
+
+
+
+
+From rmfritz3 at gmail.com  Wed May 11 08:32:46 2016
+From: rmfritz3 at gmail.com (Randolph M. Fritz)
+Date: Wed, 11 May 2016 08:32:46 -0700
+Subject: [Radiance-dev] running genBSDF
+In-Reply-To: <2E843DD8F22525499598FADDBD7704FC2D0BD036@SBS2011.VANSANTEN.local>
+References: <2E843DD8F22525499598FADDBD7704FC2D0BD036@SBS2011.VANSANTEN.local>
+Message-ID: <CANeAMoLT8uQ4df5Kq4NEAiqUvMJQSeXUmM4bsX1qcLs=z6CO+Q@mail.gmail.com>
+
+What's in blind1.rad?
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20160511/c0419294/attachment.html>
+
+From schorsch at schorsch.com  Wed May 11 11:17:07 2016
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Wed, 11 May 2016 20:17:07 +0200
+Subject: [Radiance-dev] running genBSDF
+In-Reply-To: <D358A46A.255A6%Robert.Guglielmetti@nrel.gov>
+References: <D358A46A.255A6%Robert.Guglielmetti@nrel.gov>
+Message-ID: <f585aeedfbb4af4c1081036dcd6e7683@tanha.pair.com>
+
+--------
+WARNING: At least one of the links in the message below goes to an .exe file, 
+which could be malicious. To learn how to protect yourself, please go here:
+https://commons.lbl.gov/x/_591B
+--------
+
+The executable file types are configured in the PATHEXT environment
+variable. Its default contents are (for Win7/8):
+
+    .COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC
+
+It would be VERY unusual for .EXE to be missing there, and an
+indication of a severely misconfigured system.
+
+Cheers
+-schorsch
+
+
+Am 2016-05-11 17:31, schrieb Guglielmetti, Robert:
+> 
+> On the second command, are you sure your batch file calls "getbbox",
+> and not "getbbox.exe? My sense is that your system is not set up to
+> execute .exe files without explicitly calling them as such. The
+> genBSDF script calls xform on line 150 (note the lack of the '.exe' or
+> any kind of operating system-specific conditional), and if it fails to
+> run the script generates the error you are seeing.
+> 
+> I think there's something you can set up in Windows to automatically
+> try appending ".exe" (and ".bat" and .com) to any program calls on the
+> command line, but it has to be set up, I guess.
+> 
+> On 5/11/16, 1:20 AM, "S?verine HUET"
+> <S.HUET at vs-a.eu<mailto:S.HUET at vs-a.eu>> wrote:
+> 
+> Dear List,
+> 
+> I am currently doing my final internship as part of my engineering 
+> studies.
+> 
+> I need to use Radiance software and encounter difficulties running
+> "genBSDF" program.
+> 
+> I have followed the example 1 of the "genBSDF Tutorial" but an error
+> message appears in my DOS, saying : "can't load the Radiance input"
+> 
+> I'm working on Windows 7 & Radiance version 5.0.a.8, and I have
+> downloaded the genBSDF.exe file from
+> http://www.jaloxa.eu/resources/radiance/radwinexe.shtml.
+> 
+> My batch file is :
+> 
+> -----
+> 
+> SET PATH=.;C:\Radiance\lib;C:\Radiance\bin;$RAYPATH;$PATH
+> 
+> SET RAYPATH=.;C:\Radiance\lib;C:\Radiance\bin;$RAYPATH
+> 
+> c:
+> 
+> cd C:\VSA_SolarFactor\test160428_01\
+> 
+> C:\Radiance\bin\objview.exe  blind1.rad
+> 
+> pause
+> 
+> C:\Radiance\bin\getbbox  blind1.rad
+> 
+> pause
+> 
+> C:\Radiance\bin\genBSDF.exe +f +b -c 500 -geom inch blind1.rad > 
+> blind1.xml
+> 
+> -----
+> 
+> 
+> 
+> I have no idea how to fix it because it is perfectly working with the
+> other programs of Radiance software like getbox or objview. Now, my
+> internship ends soon, that's why I'm writing to you; I would be
+> grateful if you have any suggestion about what is wrong with my batch
+> file.
+> 
+> Thank you in advance for your help,
+> 
+> Best regards,
+> 
+> Severine
+
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+From Robert.Guglielmetti at nrel.gov  Wed May 11 12:05:31 2016
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Wed, 11 May 2016 19:05:31 +0000
+Subject: [Radiance-dev] running genBSDF
+In-Reply-To: <f585aeedfbb4af4c1081036dcd6e7683@tanha.pair.com>
+References: <D358A46A.255A6%Robert.Guglielmetti@nrel.gov>
+	<f585aeedfbb4af4c1081036dcd6e7683@tanha.pair.com>
+Message-ID: <D358DE8B.2563A%Robert.Guglielmetti@nrel.gov>
+
+--------
+WARNING: At least one of the links in the message below goes to an .exe file, 
+which could be malicious. To learn how to protect yourself, please go here:
+https://commons.lbl.gov/x/_591B
+--------
+
+I'm admittedly grasping at straws...
+
+On 5/11/16, 12:17 PM, "Georg Mischler" <schorsch at schorsch.com> wrote:
+
+>--------
+>WARNING: At least one of the links in the message below goes to an .exe
+>file, 
+>which could be malicious. To learn how to protect yourself, please go
+>here:
+>https://commons.lbl.gov/x/_591B
+>--------
+>
+>The executable file types are configured in the PATHEXT environment
+>variable. Its default contents are (for Win7/8):
+>
+>    .COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC
+>
+>It would be VERY unusual for .EXE to be missing there, and an
+>indication of a severely misconfigured system.
+>
+>Cheers
+>-schorsch
+>
+>
+>Am 2016-05-11 17:31, schrieb Guglielmetti, Robert:
+>> 
+>> On the second command, are you sure your batch file calls "getbbox",
+>> and not "getbbox.exe? My sense is that your system is not set up to
+>> execute .exe files without explicitly calling them as such. The
+>> genBSDF script calls xform on line 150 (note the lack of the '.exe' or
+>> any kind of operating system-specific conditional), and if it fails to
+>> run the script generates the error you are seeing.
+>> 
+>> I think there's something you can set up in Windows to automatically
+>> try appending ".exe" (and ".bat" and .com) to any program calls on the
+>> command line, but it has to be set up, I guess.
+>> 
+>> On 5/11/16, 1:20 AM, "S?verine HUET"
+>> <S.HUET at vs-a.eu<mailto:S.HUET at vs-a.eu>> wrote:
+>> 
+>> Dear List,
+>> 
+>> I am currently doing my final internship as part of my engineering
+>> studies.
+>> 
+>> I need to use Radiance software and encounter difficulties running
+>> "genBSDF" program.
+>> 
+>> I have followed the example 1 of the "genBSDF Tutorial" but an error
+>> message appears in my DOS, saying : "can't load the Radiance input"
+>> 
+>> I'm working on Windows 7 & Radiance version 5.0.a.8, and I have
+>> downloaded the genBSDF.exe file from
+>> http://www.jaloxa.eu/resources/radiance/radwinexe.shtml.
+>> 
+>> My batch file is :
+>> 
+>> -----
+>> 
+>> SET PATH=.;C:\Radiance\lib;C:\Radiance\bin;$RAYPATH;$PATH
+>> 
+>> SET RAYPATH=.;C:\Radiance\lib;C:\Radiance\bin;$RAYPATH
+>> 
+>> c:
+>> 
+>> cd C:\VSA_SolarFactor\test160428_01\
+>> 
+>> C:\Radiance\bin\objview.exe  blind1.rad
+>> 
+>> pause
+>> 
+>> C:\Radiance\bin\getbbox  blind1.rad
+>> 
+>> pause
+>> 
+>> C:\Radiance\bin\genBSDF.exe +f +b -c 500 -geom inch blind1.rad >
+>> blind1.xml
+>> 
+>> -----
+>> 
+>> 
+>> 
+>> I have no idea how to fix it because it is perfectly working with the
+>> other programs of Radiance software like getbox or objview. Now, my
+>> internship ends soon, that's why I'm writing to you; I would be
+>> grateful if you have any suggestion about what is wrong with my batch
+>> file.
+>> 
+>> Thank you in advance for your help,
+>> 
+>> Best regards,
+>> 
+>> Severine
+>
+>
+>-- 
+>Georg Mischler  --  simulations developer  --  schorsch at schorsch com
+>+schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+>_______________________________________________
+>Radiance-dev mailing list
+>Radiance-dev at radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+
+From gregoryjward at gmail.com  Wed May 11 17:27:54 2016
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Wed, 11 May 2016 17:27:54 -0700
+Subject: [Radiance-dev] Meta files and library
+In-Reply-To: <662d33817c3dc1d9ff50aa6166fdb98d@tanha.pair.com>
+References: <331427a7625cd3dc8e0694eb9fba381e@tanha.pair.com>
+	<88E567C5-80D6-46E6-AA05-0E7E0ED2C904@gmail.com>
+	<ff2fa5167ab9e38ee9eb5956f20a5522@tanha.pair.com>
+	<B47F7C3B-6AB1-4552-9EC4-812792147FCC@gmail.com>
+	<662d33817c3dc1d9ff50aa6166fdb98d@tanha.pair.com>
+Message-ID: <95B8832F-70E1-4394-8B01-DB0F74601894@gmail.com>
+
+Hi Schorsch,
+
+I only have a response to a few of these, so I'll pull them out...
+
+> From: Georg Mischler <schorsch at schorsch.com>
+> Date: May 11, 2016 1:31:34 AM PDT
+> 
+> So the plot files are really cal files?
+> Or just a very similar, but subtly incompatible variation thereof?
+> The documentation sometimes talks about "plot files", and sometimes
+> about "graph files". Are those the same?
+
+The "graph files" are related to .cal files in an odd way.  Specifically, functions in graph files use the .cal language, but you only get one line per definition, so end-of-line must be escaped with a backslash ('\') if you want to keep a function neat and semicolons at the end are optional.  You can specify as many variables and related functions as you need, subject to the same restrictions.  Other lines in the graph file define strings rather than expressions, and are parsed differently.  So, it's a mix, but pretty easy to work with.  I use it all the time when I want to make a quick plot.  Try:
+
+include=function.plt
+include=polar.plt
+DEG:PI/180
+xmin=0
+xmax=360
+abs(x):if(x,x,-x)
+A(x)=abs(sin(x*DEG)+cos(x*DEG))
+
+Then, give the file to bgraph and pipe the output to psmeta or meta2bmp to see what comes out.
+
+> ...
+> As long as nobody complains eg. about output resolution, it's clearly
+> easier to keep working with meta files internally for the moment.
+> But then, it would still be nice if we could simplify things a bit.
+> Is there really still a need for pexpand? And I'm not quite sure
+> what psort is good for to begin with.
+
+The pexpand command is called internally, as is psort by image converters that want their vector primitives sorted.
+
+> Since those tools are not used anywhere else, wouldn't it make sense to
+> ditch $MLIB, and simply use $RAYPATH/meta instead?
+
+Except that RAYPATH is a list of directories, where MDIR is a single location.  All the same, a function that finds the first meta directory in $RAYPATH could be used instead.
+
+> The documentation also mentions (usually under "see also") a number of
+> manpages that either never existed or have been removed:  graph(1G),
+> plot(1), plot(5), plotout(1), primout(3), t4014(1), mx80(1), impress(1).
+
+Yeah, RIP many disused graphics output devices.  We could remove the references if anyone cares.
+
+> And last (for the moment): Looking at the manpage, it appears that
+> plotin(1) has a very similar if not identical purpose as bgraph(1).
+> What am I missing there?
+
+The plotin tool converts from old-school plot primitives to metafile equivalents.  I don't know if anyone uses the original graph or plot routines anymore, so this could probably be retired as well.  The functionality is better in bgraph, anyway.
+
+-Greg
+
+From schorsch at schorsch.com  Thu May 12 00:10:56 2016
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Thu, 12 May 2016 09:10:56 +0200
+Subject: [Radiance-dev] NREL Radiance re-distribution
+In-Reply-To: <3C0648EB-437E-4C93-A0BA-94661AD94590@gmail.com>
+References: <CADoiYWQVXJ5s6muWpy3=VTPWDQFN0J9sKnJK_=g1Wk_xAG382w@mail.gmail.com>
+	<D33E59BE.246D7%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSbdgxRJJhnPEOaK3+N=sZ7Yd1uSjgrHSG=YEMq-_a3nQ@mail.gmail.com>
+	<D33E5D06.246F4%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWQMNuMBu-LBFiR+U_-Ha5ZuYR=rnMPZnxPP-o3zDbCRjg@mail.gmail.com>
+	<D33E8839.24873%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRuYss8-sC5vL+XawsTm8fUB7Na8u=tULT7n82Nka2QJw@mail.gmail.com>
+	<CADoiYWR0THhLfCv1v8=6zHi00XE6an2p-wr1a2_ivCP7CCA=zg@mail.gmail.com>
+	<D3438A49.24D35%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRfp+O9OETO7Lru+08aLm27q8QUFs-Szb3KATOKZFjnKA@mail.gmail.com>
+	<D345353D.2505A%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSQFPMOkj9E8r8Jt9M0cpLY9z1g51-fYBYuzPVXez7Xcw@mail.gmail.com>
+	<D345375A.25060%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTjbSpKXbEFBnM=+GNX9KCE7+p=sgKUSkLhkdedmd7T0Q@mail.gmail.com>
+	<CAAd_PgRh8rHBGCJb+doV_nf6AM510XNU9S1Nfhrz_vtOUkqWrQ@mail.gmail.com>
+	<D3457C00.2511F%Robert.Guglielmetti@nrel.gov>
+	<73189bde01b1aae114f7a9635230e6c9@tanha.pair.com>
+	<5AE7562D-CB96-45F5-AEA8-3E1C5361601D@gmail.com>
+	<2689f7a827f90185a7c8d6506bf1741d@tanha.pair.com>
+	<D3466C67.2531A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTFUUNHFGMiOFAoNeddQFqES-3jsj9cYoFFxDoZMAAc3A@mail.gmail.com>
+	<B9E95BC6-5BC7-48B1-B448-2FA9F867B976@gmail.com>
+	<D358B2C9.255F2%Robert.Guglielmetti@nrel.gov>
+	<2BD5E177-AF9B-4176-84E1-1C990D988CC5@gmail.com>
+	<CAAd_PgRR-s16pALr9R6tsMVassZ0QGTXa7jzB+PdFyzKUyR4XQ@mail.gmail.com>
+	<D358DE3D.25637%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgR7gyKHJSgmVaiiF+NDm3qGeqV30a4JRZz4CgMWm3_dZg@mail.gmail.com>
+	<D358FF86.2564A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgS+1iJig2ZO=HQBgiwv8=f6-r0XUbh25Aod0YqdUYWhBw@mail.gmail.com>
+	<1697C07A-A415-44A1-A647-79EBEB2BD2F0@gmail.com>
+	<CAAd_PgRJ0EoHWpDMt_76oDuaeVsD0F=UZPKvH+=SVuHYiwD8hg@mail.gmail.com>
+	<3C0648EB-437E-4C93-A0BA-94661AD94590@gmail.com>
+Message-ID: <0936bdef527c57e0fc9b9b6f11d2c78d@tanha.pair.com>
+
+--------
+WARNING: At least one of the links in the message below goes to an .exe file, 
+which could be malicious. To learn how to protect yourself, please go here:
+https://commons.lbl.gov/x/_591B
+--------
+
+There's no way for this to be the same problem we recently identified.
+For one, I don't think Robs gcc is using the MS Universal CRT from
+Windows 10 which caused that one. And secondly, the character that gets
+eaten here is nowhere near a line ending.
+
+Mostapha, can you send me your current test dataset? I only have the
+version with 420 names, which does not seem to cause trouble anymore.
+Then I'll check if the SCons build has the same issue, and if so,
+walk through it to see what really happens.
+
+Cheers
+-schorsch
+
+PS: I'm following radiance-dev, no need for a seperate cc.
+
+
+Am 2016-05-12 00:39, schrieb Gregory J. Ward:
+> OK, this seems to happen when a Windows read operation ends halfway
+> through a "\r\n" sequence, leaving a '\r' at the end of one buffer and
+> reading a '\n' character at the beginning of the next read() call.  It
+> isn't a bug in my code as far as I'm concerned, as Unix handles this
+> case just fine.  Rather, I think there's a bug in the way Windows
+> replaces "\r\n" with "\n" so that it ends up replacing "\ns" in this
+> case with the empty string, effectively lobbing the first character
+> off the returned buffer.
+> 
+> We can test this by running a couple of read() calls on an input
+> buffer such that the length of the read splits an EOL sequence.  This
+> may be the source of the occasional dropped characters Schorsch was
+> seeing in his earlier tests.  Microsoft said they will fix this at
+> some point....
+> 
+> Meanwhile, we could try setting the _O_BINARY flag in the open()
+> command in wordfile(), assuming we won't run into the ^Z EOF marker
+> that Schorsch claims is just a childhood trauma of mine and nothing to
+> fear these days...
+> 
+> If Rob is willing to re-compile the librt.a in src/common using the
+> attached version of wordfile.c and link it with the debug version of
+> rcontrib, we can see if it makes any difference to test my hypothesis.
+> 
+> Cheers,
+> -Greg
+> 
+> 
+>> FROM: Mostapha Sadeghipour <sadeghipour at gmail.com>
+>> 
+>> SUBJECT: Re: NREL Radiance re-distribution
+>> 
+>> DATE: May 11, 2016 3:17:59 PM PDT
+> 
+>> Thanks Greg! Let me know if there is anything that I can do on my
+>> side to help.
+>> Mostapha
+>> 
+>> On Wed, May 11, 2016 at 6:09 PM, Gregory J. Ward
+>> <gregoryjward at gmail.com> wrote:
+>> 
+>> Hi Mostapha,
+>> 
+>> Your screen capture came through -- now we're getting somewhere!
+>> The error again happens near the boundary between read() calls, so
+>> it's a matter of figuring out what could be going wrong on Windows
+>> even after the earlier bug fix.
+>> 
+>> Schorsch has noticed issues with dropped bytes on stdin, but I don't
+>> think we've seen this sort of problem with file input.  It could
+>> still have something to do with the conversion of "\r\n" EOL
+>> sequences to "\n" in O_TEXT input files, but I need to think how
+>> this might happen.
+>> 
+>> More later,
+>> -Greg
+>> 
+>> FROM: Mostapha Sadeghipour <sadeghipour at gmail.com>
+>> 
+>> DATE: May 11, 2016 2:44:18 PM PDT
+>> 
+>> Thanks Rob! Dropbox link worked. Maybe I was doing something wrong.
+>> 
+>> I think we're close. New rcontrib prints out some notes which show
+>> that solar1216 is picked up as 8-letter modifier `olar1216` missing
+>> the starting s. The rest are 9 letter modifiers. That should be why
+>> it never shows up?
+>> 
+>> I almost never copy images in an email but I hope this one shows up
+>> right. Let me know if it wasn't and I can save and attach it.
+>> 
+>> Mostapha
+>> 
+>> On Wed, May 11, 2016 at 5:31 PM, Guglielmetti, Robert
+>> <Robert.Guglielmetti at nrel.gov> wrote:
+>> Mo, I'm confused. I double checked the build, and it's 64-bit. What
+>> makes you think it's 32-bit? I didn't run your specific test, but I
+>> ran it with the '-version' flag and it worked fine. Only thing I can
+>> think of is it somehow got messed up as an attachment.(?) Try
+>> downloading this re-re-rebuilt copy from Dropbox:
+>> 
+>> https://www.dropbox.com/s/4qnqnd6cz5btppt/rcontrib.exe?dl=0
+>> 
+>> A tutorial on how to use the CMake crap we put in there would be
+>> nice, wouldn't it? Someday...
+>> 
+>> On 5/11/16, 1:26 PM, "Mostapha Sadeghipour"
+>> <sadeghipour at gmail.com<mailto:sadeghipour at gmail.com>> wrote:
+>> 
+>> Thanks Rob. I couldn't get the new rcontrib to run. It gives me the
+>> same error. I will wait for you.
+>> 
+>> PS: I should start to learn how to compile Radiance for Windows from
+>> source code. Is there a tutorial somewhere?
+>> 
+>> On Wed, May 11, 2016 at 3:05 PM, Guglielmetti, Robert
+>> <Robert.Guglielmetti at nrel.gov<mailto:Robert.Guglielmetti at nrel.gov>>
+>> wrote:
+>> Sorry about that, it shouldn't have been (that's scary). I'm in a
+>> meeting right now but can look into this in a bit...
+>> 
+>> On 5/11/16, 1:02 PM, "Mostapha Sadeghipour"
+>> 
+> <sadeghipour at gmail.com<mailto:sadeghipour at gmail.com><mailto:sadeghipour at gmail.com<mailto:sadeghipour at gmail.com>>>
+>> wrote:
+>> 
+>> Hello all,
+>> 
+>> Thanks Greg and Rob. Sorry for the delay! I just saw this.
+>> 
+>> Hey Rob. This is again 32-bit. =) I'm downloading the Radiance
+>> 32-bit built to test it again. I will report back shortly.
+>> 
+>> Mostapha
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+From schorsch at schorsch.com  Thu May 12 00:58:14 2016
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Thu, 12 May 2016 09:58:14 +0200
+Subject: [Radiance-dev] Meta files and library
+In-Reply-To: <95B8832F-70E1-4394-8B01-DB0F74601894@gmail.com>
+References: <331427a7625cd3dc8e0694eb9fba381e@tanha.pair.com>
+	<88E567C5-80D6-46E6-AA05-0E7E0ED2C904@gmail.com>
+	<ff2fa5167ab9e38ee9eb5956f20a5522@tanha.pair.com>
+	<B47F7C3B-6AB1-4552-9EC4-812792147FCC@gmail.com>
+	<662d33817c3dc1d9ff50aa6166fdb98d@tanha.pair.com>
+	<95B8832F-70E1-4394-8B01-DB0F74601894@gmail.com>
+Message-ID: <acaa8a9d11ad1b64bf6d74d50007db27@tanha.pair.com>
+
+Am 2016-05-12 02:27, schrieb Gregory J. Ward:
+> The "graph files" are related to .cal files in an odd way.
+
+"Subtly incompatible" it is then...
+So a parser needs to use different patterns/escapes for seperating
+statements from each other.  Apart from not seeing any of the simulation
+specific variables, is that the only difference?
+
+
+> The pexpand command is called internally, as is psort by image
+> converters that want their vector primitives sorted.
+
+That would seem to make more sense as library routines then.
+Not sure if refactoring as such would be worth the effort now, though.
+
+
+>> Since those tools are not used anywhere else, wouldn't it make sense 
+>> to
+>> ditch $MLIB, and simply use $RAYPATH/meta instead?
+> 
+> Except that RAYPATH is a list of directories, where MDIR is a single
+> location.  All the same, a function that finds the first meta
+> directory in $RAYPATH could be used instead.
+
+The new Python scripts do exactly that to find their "pyradlib" support
+library. Granted, that one has a more unique name (deliberately so),
+which is less likely to collide with something a user might have within
+their project.
+
+
+> Yeah, RIP many disused graphics output devices.  We could remove the
+> references if anyone cares.
+
+If you have any interest in avoiding confusion among new users,
+you should care.
+
+
+> The plotin tool converts from old-school plot primitives to metafile
+> equivalents.  I don't know if anyone uses the original graph or plot
+> routines anymore, so this could probably be retired as well.  The
+> functionality is better in bgraph, anyway.
+
+Ah, so "plot files" are indeed something different from "graph files".
+Since the plot(5) man page presumably documenting that format is gone,
+keeping a program around that depends on it doesn't make much sense.
+
+
+Cheers
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From schorsch at schorsch.com  Thu May 12 01:09:36 2016
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Thu, 12 May 2016 10:09:36 +0200
+Subject: [Radiance-dev] NREL Radiance re-distribution
+In-Reply-To: <0936bdef527c57e0fc9b9b6f11d2c78d@tanha.pair.com>
+References: <CADoiYWQVXJ5s6muWpy3=VTPWDQFN0J9sKnJK_=g1Wk_xAG382w@mail.gmail.com>
+	<D33E59BE.246D7%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSbdgxRJJhnPEOaK3+N=sZ7Yd1uSjgrHSG=YEMq-_a3nQ@mail.gmail.com>
+	<D33E5D06.246F4%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWQMNuMBu-LBFiR+U_-Ha5ZuYR=rnMPZnxPP-o3zDbCRjg@mail.gmail.com>
+	<D33E8839.24873%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRuYss8-sC5vL+XawsTm8fUB7Na8u=tULT7n82Nka2QJw@mail.gmail.com>
+	<CADoiYWR0THhLfCv1v8=6zHi00XE6an2p-wr1a2_ivCP7CCA=zg@mail.gmail.com>
+	<D3438A49.24D35%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRfp+O9OETO7Lru+08aLm27q8QUFs-Szb3KATOKZFjnKA@mail.gmail.com>
+	<D345353D.2505A%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSQFPMOkj9E8r8Jt9M0cpLY9z1g51-fYBYuzPVXez7Xcw@mail.gmail.com>
+	<D345375A.25060%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTjbSpKXbEFBnM=+GNX9KCE7+p=sgKUSkLhkdedmd7T0Q@mail.gmail.com>
+	<CAAd_PgRh8rHBGCJb+doV_nf6AM510XNU9S1Nfhrz_vtOUkqWrQ@mail.gmail.com>
+	<D3457C00.2511F%Robert.Guglielmetti@nrel.gov>
+	<73189bde01b1aae114f7a9635230e6c9@tanha.pair.com>
+	<5AE7562D-CB96-45F5-AEA8-3E1C5361601D@gmail.com>
+	<2689f7a827f90185a7c8d6506bf1741d@tanha.pair.com>
+	<D3466C67.2531A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTFUUNHFGMiOFAoNeddQFqES-3jsj9cYoFFxDoZMAAc3A@mail.gmail.com>
+	<B9E95BC6-5BC7-48B1-B448-2FA9F867B976@gmail.com>
+	<D358B2C9.255F2%Robert.Guglielmetti@nrel.gov>
+	<2BD5E177-AF9B-4176-84E1-1C990D988CC5@gmail.com>
+	<CAAd_PgRR-s16pALr9R6tsMVassZ0QGTXa7jzB+PdFyzKUyR4XQ@mail.gmail.com>
+	<D358DE3D.25637%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgR7gyKHJSgmVaiiF+NDm3qGeqV30a4JRZz4CgMWm3_dZg@mail.gmail.com>
+	<D358FF86.2564A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgS+1iJig2ZO=HQBgiwv8=f6-r0XUbh25Aod0YqdUYWhBw@mail.gmail.com>
+	<1697C07A-A415-44A1-A647-79EBEB2BD2F0@gmail.com>
+	<CAAd_PgRJ0EoHWpDMt_76oDuaeVsD0F=UZPKvH+=SVuHYiwD8hg@mail.gmail.com>
+	<3C0648EB-437E-4C93-A0BA-94661AD94590@gmail.com>
+	<0936bdef527c57e0fc9b9b6f11d2c78d@tanha.pair.com>
+Message-ID: <130b642f69941144cf272a5932ca1494@tanha.pair.com>
+
+Ah, so now I figured that this wasn't actually on radiance-dev to begin 
+with...
+Mostapha, have you considered joining the list for a while?
+And please see my query just below.
+
+Cheers
+-schorsch
+
+Am 2016-05-12 09:10, schrieb Georg Mischler:
+> 
+> There's no way for this to be the same problem we recently identified.
+> For one, I don't think Robs gcc is using the MS Universal CRT from
+> Windows 10 which caused that one. And secondly, the character that gets
+> eaten here is nowhere near a line ending.
+> 
+> Mostapha, can you send me your current test dataset? I only have the
+> version with 420 names, which does not seem to cause trouble anymore.
+> Then I'll check if the SCons build has the same issue, and if so,
+> walk through it to see what really happens.
+> 
+> Cheers
+> -schorsch
+> 
+> PS: I'm following radiance-dev, no need for a seperate cc.
+> 
+> 
+> Am 2016-05-12 00:39, schrieb Gregory J. Ward:
+>> OK, this seems to happen when a Windows read operation ends halfway
+>> through a "\r\n" sequence, leaving a '\r' at the end of one buffer and
+>> reading a '\n' character at the beginning of the next read() call.  It
+>> isn't a bug in my code as far as I'm concerned, as Unix handles this
+>> case just fine.  Rather, I think there's a bug in the way Windows
+>> replaces "\r\n" with "\n" so that it ends up replacing "\ns" in this
+>> case with the empty string, effectively lobbing the first character
+>> off the returned buffer.
+>> 
+>> We can test this by running a couple of read() calls on an input
+>> buffer such that the length of the read splits an EOL sequence.  This
+>> may be the source of the occasional dropped characters Schorsch was
+>> seeing in his earlier tests.  Microsoft said they will fix this at
+>> some point....
+>> 
+>> Meanwhile, we could try setting the _O_BINARY flag in the open()
+>> command in wordfile(), assuming we won't run into the ^Z EOF marker
+>> that Schorsch claims is just a childhood trauma of mine and nothing to
+>> fear these days...
+>> 
+>> If Rob is willing to re-compile the librt.a in src/common using the
+>> attached version of wordfile.c and link it with the debug version of
+>> rcontrib, we can see if it makes any difference to test my hypothesis.
+>> 
+>> Cheers,
+>> -Greg
+>> 
+>> 
+>>> FROM: Mostapha Sadeghipour <sadeghipour at gmail.com>
+>>> 
+>>> SUBJECT: Re: NREL Radiance re-distribution
+>>> 
+>>> DATE: May 11, 2016 3:17:59 PM PDT
+>> 
+>>> Thanks Greg! Let me know if there is anything that I can do on my
+>>> side to help.
+>>> Mostapha
+>>> 
+>>> On Wed, May 11, 2016 at 6:09 PM, Gregory J. Ward
+>>> <gregoryjward at gmail.com> wrote:
+>>> 
+>>> Hi Mostapha,
+>>> 
+>>> Your screen capture came through -- now we're getting somewhere!
+>>> The error again happens near the boundary between read() calls, so
+>>> it's a matter of figuring out what could be going wrong on Windows
+>>> even after the earlier bug fix.
+>>> 
+>>> Schorsch has noticed issues with dropped bytes on stdin, but I don't
+>>> think we've seen this sort of problem with file input.  It could
+>>> still have something to do with the conversion of "\r\n" EOL
+>>> sequences to "\n" in O_TEXT input files, but I need to think how
+>>> this might happen.
+>>> 
+>>> More later,
+>>> -Greg
+>>> 
+>>> FROM: Mostapha Sadeghipour <sadeghipour at gmail.com>
+>>> 
+>>> DATE: May 11, 2016 2:44:18 PM PDT
+>>> 
+>>> Thanks Rob! Dropbox link worked. Maybe I was doing something wrong.
+>>> 
+>>> I think we're close. New rcontrib prints out some notes which show
+>>> that solar1216 is picked up as 8-letter modifier `olar1216` missing
+>>> the starting s. The rest are 9 letter modifiers. That should be why
+>>> it never shows up?
+>>> 
+>>> I almost never copy images in an email but I hope this one shows up
+>>> right. Let me know if it wasn't and I can save and attach it.
+>>> 
+>>> Mostapha
+>>> 
+
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From S.HUET at vs-a.eu  Thu May 12 03:35:24 2016
+From: S.HUET at vs-a.eu (=?iso-8859-1?Q?S=E9verine_HUET?=)
+Date: Thu, 12 May 2016 10:35:24 +0000
+Subject: [Radiance-dev] Re : running genBSDF
+Message-ID: <2E843DD8F22525499598FADDBD7704FC2D0BE0C6@SBS2011.VANSANTEN.local>
+
+--------
+WARNING: At least one of the links in the message below goes to an .exe file, 
+which could be malicious. To learn how to protect yourself, please go here:
+https://commons.lbl.gov/x/_591B
+--------
+
+Hi everybody,
+
+First, thank you very much for your interest in my issue !
+Actually, my system execute .exe file without explicitly calling them as such. I wrote the entire directory path just to compare...
+So, I rewrote the batch file as following :
+----
+SET PATH=.;C:\Radiance\lib;C:\Radiance\bin;$RAYPATH;$PATH 
+SET RAYPATH=.;C:\Radiance\lib;C:\Radiance\bin;$RAYPATH 
+c:
+cd C:\VSA_SolarFactor\test160428_01\
+
+
+objview  blind1.rad
+pause
+getbbox  blind1.rad
+pause
+xform -e blind1.rad > blind2.rad
+pause
+genBSDF +f +b -c 500 -geom inch blind1.rad > blind1.xml
+pause
+-----
+
+Every program work well, except genBSDF.
+As you mentioned it, Robert Guglielmetti, something wrong is going under the hood with xform. That is why I have tried to run xform, as written in genBSDF.pl file line 149, and it works well providing blind2.rad. 
+
+Would you advise me to run genBSDF.pl file instead of genBSDF.exe ? I am quite beginner and tried to but I guess I didn't enter the right command line...
+
+Is there something wrong in my files ? They are located in C:\VSA_SolarFactor\test160428_01\
+My files are :
+
+---------blind1.rad ------
+
+### blind1.rad
+void plastic white
+0
+0
+5 0.7 0.7 0.7 0 0
+
+!genblinds white blind1 1 3 4 4 20 | xform -rz
+
+----- And blind2.rad provided by xform -------
+
+# xform -e
+### blind1.rad
+
+void plastic white
+0
+0
+5                0.7                0.7                0.7                  0                  0
+# xform -rz -90 -rx -90 -t 0 0 -0.939693
+# genblinds white blind1 1 3 4 4 20
+
+white polygon blind1.1.0
+0
+0
+12
+                  0                0.5          -0.939693
+                  3                0.5          -0.939693
+                  3     0.842020143326 -3.79214000201e-007
+ 5.75395780114e-017     0.842020143326 -3.79213999979e-007
+
+white polygon blind1.2.0
+0
+0
+12
+                  0                1.5          -0.939693
+                  3                1.5          -0.939693
+                  3      1.84202014333 -3.7921400009e-007
+ 5.75395780114e-017      1.84202014333 -3.79213999868e-007
+
+white polygon blind1.3.0
+0
+0
+12
+                  0                2.5          -0.939693
+                  3                2.5          -0.939693
+                  3      2.84202014333 -3.79213999979e-007
+ 5.75395780114e-017      2.84202014333 -3.79213999757e-007
+
+white polygon blind1.4.0
+0
+0
+12
+                  0                3.5          -0.939693
+                  3                3.5          -0.939693
+                  3      3.84202014333 -3.79213999979e-007
+ 5.75395780114e-017      3.84202014333 -3.79213999757e-007
+--------------
+
+Thank you in advance,
+Severine
+
+-----Message d'origine-----
+De?: radiance-dev-request at radiance-online.org [mailto:radiance-dev-request at radiance-online.org] 
+Envoy??: jeudi 12 mai 2016 10:10
+??: radiance-dev at radiance-online.org
+Objet?: Radiance-dev Digest, Vol 110, Issue 5
+
+Send Radiance-dev mailing list submissions to
+	radiance-dev at radiance-online.org
+
+To subscribe or unsubscribe via the World Wide Web, visit
+	http://www.radiance-online.org/mailman/listinfo/radiance-dev
+or, via email, send a message with subject or body 'help' to
+	radiance-dev-request at radiance-online.org
+
+You can reach the person managing the list at
+	radiance-dev-owner at radiance-online.org
+
+When replying, please edit your Subject line so it is more specific than "Re: Contents of Radiance-dev digest..."
+
+
+Today's Topics:
+
+   1. Re: running genBSDF (Guglielmetti, Robert)
+   2. Re: Meta files and library (Gregory J. Ward)
+   3. Re: NREL Radiance re-distribution (Georg Mischler)
+   4. Re: Meta files and library (Georg Mischler)
+   5. Re: NREL Radiance re-distribution (Georg Mischler)
+
+
+----------------------------------------------------------------------
+
+Message: 1
+Date: Wed, 11 May 2016 19:05:31 +0000
+From: "Guglielmetti, Robert" <Robert.Guglielmetti at nrel.gov>
+To: code development <radiance-dev at radiance-online.org>
+Subject: Re: [Radiance-dev] running genBSDF
+Message-ID: <D358DE8B.2563A%Robert.Guglielmetti at nrel.gov>
+Content-Type: text/plain; charset="iso-8859-1"
+
+--------
+WARNING: At least one of the links in the message below goes to an .exe file, which could be malicious. To learn how to protect yourself, please go here:
+https://commons.lbl.gov/x/_591B
+--------
+
+I'm admittedly grasping at straws...
+
+On 5/11/16, 12:17 PM, "Georg Mischler" <schorsch at schorsch.com> wrote:
+
+>--------
+>WARNING: At least one of the links in the message below goes to an .exe 
+>file, which could be malicious. To learn how to protect yourself, 
+>please go
+>here:
+>https://commons.lbl.gov/x/_591B
+>--------
+>
+>The executable file types are configured in the PATHEXT environment 
+>variable. Its default contents are (for Win7/8):
+>
+>    .COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC
+>
+>It would be VERY unusual for .EXE to be missing there, and an 
+>indication of a severely misconfigured system.
+>
+>Cheers
+>-schorsch
+>
+>
+>Am 2016-05-11 17:31, schrieb Guglielmetti, Robert:
+>> 
+>> On the second command, are you sure your batch file calls "getbbox", 
+>> and not "getbbox.exe? My sense is that your system is not set up to 
+>> execute .exe files without explicitly calling them as such. The 
+>> genBSDF script calls xform on line 150 (note the lack of the '.exe' 
+>> or any kind of operating system-specific conditional), and if it 
+>> fails to run the script generates the error you are seeing.
+>> 
+>> I think there's something you can set up in Windows to automatically 
+>> try appending ".exe" (and ".bat" and .com) to any program calls on 
+>> the command line, but it has to be set up, I guess.
+>> 
+>> On 5/11/16, 1:20 AM, "S?verine HUET"
+>> <S.HUET at vs-a.eu<mailto:S.HUET at vs-a.eu>> wrote:
+>> 
+>> Dear List,
+>> 
+>> I am currently doing my final internship as part of my engineering 
+>> studies.
+>> 
+>> I need to use Radiance software and encounter difficulties running 
+>> "genBSDF" program.
+>> 
+>> I have followed the example 1 of the "genBSDF Tutorial" but an error 
+>> message appears in my DOS, saying : "can't load the Radiance input"
+>> 
+>> I'm working on Windows 7 & Radiance version 5.0.a.8, and I have 
+>> downloaded the genBSDF.exe file from 
+>> http://www.jaloxa.eu/resources/radiance/radwinexe.shtml.
+>> 
+>> My batch file is :
+>> 
+>> -----
+>> 
+>> SET PATH=.;C:\Radiance\lib;C:\Radiance\bin;$RAYPATH;$PATH
+>> 
+>> SET RAYPATH=.;C:\Radiance\lib;C:\Radiance\bin;$RAYPATH
+>> 
+>> c:
+>> 
+>> cd C:\VSA_SolarFactor\test160428_01\
+>> 
+>> C:\Radiance\bin\objview.exe  blind1.rad
+>> 
+>> pause
+>> 
+>> C:\Radiance\bin\getbbox  blind1.rad
+>> 
+>> pause
+>> 
+>> C:\Radiance\bin\genBSDF.exe +f +b -c 500 -geom inch blind1.rad > 
+>> blind1.xml
+>> 
+>> -----
+>> 
+>> 
+>> 
+>> I have no idea how to fix it because it is perfectly working with the 
+>> other programs of Radiance software like getbox or objview. Now, my 
+>> internship ends soon, that's why I'm writing to you; I would be 
+>> grateful if you have any suggestion about what is wrong with my batch 
+>> file.
+>> 
+>> Thank you in advance for your help,
+>> 
+>> Best regards,
+>> 
+>> Severine
+>
+>
+>--
+>Georg Mischler  --  simulations developer  --  schorsch at schorsch com
+>+schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+>_______________________________________________
+>Radiance-dev mailing list
+>Radiance-dev at radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+
+
+
+------------------------------
+
+Message: 2
+Date: Wed, 11 May 2016 17:27:54 -0700
+From: "Gregory J. Ward" <gregoryjward at gmail.com>
+To: code development <radiance-dev at radiance-online.org>
+Subject: Re: [Radiance-dev] Meta files and library
+Message-ID: <95B8832F-70E1-4394-8B01-DB0F74601894 at gmail.com>
+Content-Type: text/plain; charset=us-ascii
+
+Hi Schorsch,
+
+I only have a response to a few of these, so I'll pull them out...
+
+> From: Georg Mischler <schorsch at schorsch.com>
+> Date: May 11, 2016 1:31:34 AM PDT
+> 
+> So the plot files are really cal files?
+> Or just a very similar, but subtly incompatible variation thereof?
+> The documentation sometimes talks about "plot files", and sometimes 
+> about "graph files". Are those the same?
+
+The "graph files" are related to .cal files in an odd way.  Specifically, functions in graph files use the .cal language, but you only get one line per definition, so end-of-line must be escaped with a backslash ('\') if you want to keep a function neat and semicolons at the end are optional.  You can specify as many variables and related functions as you need, subject to the same restrictions.  Other lines in the graph file define strings rather than expressions, and are parsed differently.  So, it's a mix, but pretty easy to work with.  I use it all the time when I want to make a quick plot.  Try:
+
+include=function.plt
+include=polar.plt
+DEG:PI/180
+xmin=0
+xmax=360
+abs(x):if(x,x,-x)
+A(x)=abs(sin(x*DEG)+cos(x*DEG))
+
+Then, give the file to bgraph and pipe the output to psmeta or meta2bmp to see what comes out.
+
+> ...
+> As long as nobody complains eg. about output resolution, it's clearly 
+> easier to keep working with meta files internally for the moment.
+> But then, it would still be nice if we could simplify things a bit.
+> Is there really still a need for pexpand? And I'm not quite sure what 
+> psort is good for to begin with.
+
+The pexpand command is called internally, as is psort by image converters that want their vector primitives sorted.
+
+> Since those tools are not used anywhere else, wouldn't it make sense 
+> to ditch $MLIB, and simply use $RAYPATH/meta instead?
+
+Except that RAYPATH is a list of directories, where MDIR is a single location.  All the same, a function that finds the first meta directory in $RAYPATH could be used instead.
+
+> The documentation also mentions (usually under "see also") a number of 
+> manpages that either never existed or have been removed:  graph(1G), 
+> plot(1), plot(5), plotout(1), primout(3), t4014(1), mx80(1), impress(1).
+
+Yeah, RIP many disused graphics output devices.  We could remove the references if anyone cares.
+
+> And last (for the moment): Looking at the manpage, it appears that
+> plotin(1) has a very similar if not identical purpose as bgraph(1).
+> What am I missing there?
+
+The plotin tool converts from old-school plot primitives to metafile equivalents.  I don't know if anyone uses the original graph or plot routines anymore, so this could probably be retired as well.  The functionality is better in bgraph, anyway.
+
+-Greg
+
+
+------------------------------
+
+Message: 3
+Date: Thu, 12 May 2016 09:10:56 +0200
+From: Georg Mischler <schorsch at schorsch.com>
+To: Radiance Dev <radiance-dev at radiance-online.org>
+Subject: Re: [Radiance-dev] NREL Radiance re-distribution
+Message-ID: <0936bdef527c57e0fc9b9b6f11d2c78d at tanha.pair.com>
+Content-Type: text/plain; charset=US-ASCII; format=flowed
+
+--------
+WARNING: At least one of the links in the message below goes to an .exe file, which could be malicious. To learn how to protect yourself, please go here:
+https://commons.lbl.gov/x/_591B
+--------
+
+There's no way for this to be the same problem we recently identified.
+For one, I don't think Robs gcc is using the MS Universal CRT from Windows 10 which caused that one. And secondly, the character that gets eaten here is nowhere near a line ending.
+
+Mostapha, can you send me your current test dataset? I only have the version with 420 names, which does not seem to cause trouble anymore.
+Then I'll check if the SCons build has the same issue, and if so, walk through it to see what really happens.
+
+Cheers
+-schorsch
+
+PS: I'm following radiance-dev, no need for a seperate cc.
+
+
+Am 2016-05-12 00:39, schrieb Gregory J. Ward:
+> OK, this seems to happen when a Windows read operation ends halfway 
+> through a "\r\n" sequence, leaving a '\r' at the end of one buffer and 
+> reading a '\n' character at the beginning of the next read() call.  It 
+> isn't a bug in my code as far as I'm concerned, as Unix handles this 
+> case just fine.  Rather, I think there's a bug in the way Windows 
+> replaces "\r\n" with "\n" so that it ends up replacing "\ns" in this 
+> case with the empty string, effectively lobbing the first character 
+> off the returned buffer.
+> 
+> We can test this by running a couple of read() calls on an input 
+> buffer such that the length of the read splits an EOL sequence.  This 
+> may be the source of the occasional dropped characters Schorsch was 
+> seeing in his earlier tests.  Microsoft said they will fix this at 
+> some point....
+> 
+> Meanwhile, we could try setting the _O_BINARY flag in the open() 
+> command in wordfile(), assuming we won't run into the ^Z EOF marker 
+> that Schorsch claims is just a childhood trauma of mine and nothing to 
+> fear these days...
+> 
+> If Rob is willing to re-compile the librt.a in src/common using the 
+> attached version of wordfile.c and link it with the debug version of 
+> rcontrib, we can see if it makes any difference to test my hypothesis.
+> 
+> Cheers,
+> -Greg
+> 
+> 
+>> FROM: Mostapha Sadeghipour <sadeghipour at gmail.com>
+>> 
+>> SUBJECT: Re: NREL Radiance re-distribution
+>> 
+>> DATE: May 11, 2016 3:17:59 PM PDT
+> 
+>> Thanks Greg! Let me know if there is anything that I can do on my 
+>> side to help.
+>> Mostapha
+>> 
+>> On Wed, May 11, 2016 at 6:09 PM, Gregory J. Ward 
+>> <gregoryjward at gmail.com> wrote:
+>> 
+>> Hi Mostapha,
+>> 
+>> Your screen capture came through -- now we're getting somewhere!
+>> The error again happens near the boundary between read() calls, so 
+>> it's a matter of figuring out what could be going wrong on Windows 
+>> even after the earlier bug fix.
+>> 
+>> Schorsch has noticed issues with dropped bytes on stdin, but I don't 
+>> think we've seen this sort of problem with file input.  It could 
+>> still have something to do with the conversion of "\r\n" EOL 
+>> sequences to "\n" in O_TEXT input files, but I need to think how this 
+>> might happen.
+>> 
+>> More later,
+>> -Greg
+>> 
+>> FROM: Mostapha Sadeghipour <sadeghipour at gmail.com>
+>> 
+>> DATE: May 11, 2016 2:44:18 PM PDT
+>> 
+>> Thanks Rob! Dropbox link worked. Maybe I was doing something wrong.
+>> 
+>> I think we're close. New rcontrib prints out some notes which show 
+>> that solar1216 is picked up as 8-letter modifier `olar1216` missing 
+>> the starting s. The rest are 9 letter modifiers. That should be why 
+>> it never shows up?
+>> 
+>> I almost never copy images in an email but I hope this one shows up 
+>> right. Let me know if it wasn't and I can save and attach it.
+>> 
+>> Mostapha
+>> 
+>> On Wed, May 11, 2016 at 5:31 PM, Guglielmetti, Robert 
+>> <Robert.Guglielmetti at nrel.gov> wrote:
+>> Mo, I'm confused. I double checked the build, and it's 64-bit. What 
+>> makes you think it's 32-bit? I didn't run your specific test, but I 
+>> ran it with the '-version' flag and it worked fine. Only thing I can 
+>> think of is it somehow got messed up as an attachment.(?) Try 
+>> downloading this re-re-rebuilt copy from Dropbox:
+>> 
+>> https://www.dropbox.com/s/4qnqnd6cz5btppt/rcontrib.exe?dl=0
+>> 
+>> A tutorial on how to use the CMake crap we put in there would be 
+>> nice, wouldn't it? Someday...
+>> 
+>> On 5/11/16, 1:26 PM, "Mostapha Sadeghipour"
+>> <sadeghipour at gmail.com<mailto:sadeghipour at gmail.com>> wrote:
+>> 
+>> Thanks Rob. I couldn't get the new rcontrib to run. It gives me the 
+>> same error. I will wait for you.
+>> 
+>> PS: I should start to learn how to compile Radiance for Windows from 
+>> source code. Is there a tutorial somewhere?
+>> 
+>> On Wed, May 11, 2016 at 3:05 PM, Guglielmetti, Robert 
+>> <Robert.Guglielmetti at nrel.gov<mailto:Robert.Guglielmetti at nrel.gov>>
+>> wrote:
+>> Sorry about that, it shouldn't have been (that's scary). I'm in a 
+>> meeting right now but can look into this in a bit...
+>> 
+>> On 5/11/16, 1:02 PM, "Mostapha Sadeghipour"
+>> 
+> <sadeghipour at gmail.com<mailto:sadeghipour at gmail.com><mailto:sadeghipou
+> r at gmail.com<mailto:sadeghipour at gmail.com>>>
+>> wrote:
+>> 
+>> Hello all,
+>> 
+>> Thanks Greg and Rob. Sorry for the delay! I just saw this.
+>> 
+>> Hey Rob. This is again 32-bit. =) I'm downloading the Radiance 32-bit 
+>> built to test it again. I will report back shortly.
+>> 
+>> Mostapha
+
+--
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+
+------------------------------
+
+Message: 4
+Date: Thu, 12 May 2016 09:58:14 +0200
+From: Georg Mischler <schorsch at schorsch.com>
+To: code development <radiance-dev at radiance-online.org>
+Subject: Re: [Radiance-dev] Meta files and library
+Message-ID: <acaa8a9d11ad1b64bf6d74d50007db27 at tanha.pair.com>
+Content-Type: text/plain; charset=US-ASCII; format=flowed
+
+Am 2016-05-12 02:27, schrieb Gregory J. Ward:
+> The "graph files" are related to .cal files in an odd way.
+
+"Subtly incompatible" it is then...
+So a parser needs to use different patterns/escapes for seperating
+statements from each other.  Apart from not seeing any of the simulation
+specific variables, is that the only difference?
+
+
+> The pexpand command is called internally, as is psort by image
+> converters that want their vector primitives sorted.
+
+That would seem to make more sense as library routines then.
+Not sure if refactoring as such would be worth the effort now, though.
+
+
+>> Since those tools are not used anywhere else, wouldn't it make sense 
+>> to
+>> ditch $MLIB, and simply use $RAYPATH/meta instead?
+> 
+> Except that RAYPATH is a list of directories, where MDIR is a single
+> location.  All the same, a function that finds the first meta
+> directory in $RAYPATH could be used instead.
+
+The new Python scripts do exactly that to find their "pyradlib" support
+library. Granted, that one has a more unique name (deliberately so),
+which is less likely to collide with something a user might have within
+their project.
+
+
+> Yeah, RIP many disused graphics output devices.  We could remove the
+> references if anyone cares.
+
+If you have any interest in avoiding confusion among new users,
+you should care.
+
+
+> The plotin tool converts from old-school plot primitives to metafile
+> equivalents.  I don't know if anyone uses the original graph or plot
+> routines anymore, so this could probably be retired as well.  The
+> functionality is better in bgraph, anyway.
+
+Ah, so "plot files" are indeed something different from "graph files".
+Since the plot(5) man page presumably documenting that format is gone,
+keeping a program around that depends on it doesn't make much sense.
+
+
+Cheers
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+------------------------------
+
+Message: 5
+Date: Thu, 12 May 2016 10:09:36 +0200
+From: Georg Mischler <schorsch at schorsch.com>
+To: code development <radiance-dev at radiance-online.org>
+Cc: sadeghipour at gmail.com
+Subject: Re: [Radiance-dev] NREL Radiance re-distribution
+Message-ID: <130b642f69941144cf272a5932ca1494 at tanha.pair.com>
+Content-Type: text/plain; charset=US-ASCII; format=flowed
+
+Ah, so now I figured that this wasn't actually on radiance-dev to begin 
+with...
+Mostapha, have you considered joining the list for a while?
+And please see my query just below.
+
+Cheers
+-schorsch
+
+Am 2016-05-12 09:10, schrieb Georg Mischler:
+> 
+> There's no way for this to be the same problem we recently identified.
+> For one, I don't think Robs gcc is using the MS Universal CRT from
+> Windows 10 which caused that one. And secondly, the character that gets
+> eaten here is nowhere near a line ending.
+> 
+> Mostapha, can you send me your current test dataset? I only have the
+> version with 420 names, which does not seem to cause trouble anymore.
+> Then I'll check if the SCons build has the same issue, and if so,
+> walk through it to see what really happens.
+> 
+> Cheers
+> -schorsch
+> 
+> PS: I'm following radiance-dev, no need for a seperate cc.
+> 
+> 
+> Am 2016-05-12 00:39, schrieb Gregory J. Ward:
+>> OK, this seems to happen when a Windows read operation ends halfway
+>> through a "\r\n" sequence, leaving a '\r' at the end of one buffer and
+>> reading a '\n' character at the beginning of the next read() call.  It
+>> isn't a bug in my code as far as I'm concerned, as Unix handles this
+>> case just fine.  Rather, I think there's a bug in the way Windows
+>> replaces "\r\n" with "\n" so that it ends up replacing "\ns" in this
+>> case with the empty string, effectively lobbing the first character
+>> off the returned buffer.
+>> 
+>> We can test this by running a couple of read() calls on an input
+>> buffer such that the length of the read splits an EOL sequence.  This
+>> may be the source of the occasional dropped characters Schorsch was
+>> seeing in his earlier tests.  Microsoft said they will fix this at
+>> some point....
+>> 
+>> Meanwhile, we could try setting the _O_BINARY flag in the open()
+>> command in wordfile(), assuming we won't run into the ^Z EOF marker
+>> that Schorsch claims is just a childhood trauma of mine and nothing to
+>> fear these days...
+>> 
+>> If Rob is willing to re-compile the librt.a in src/common using the
+>> attached version of wordfile.c and link it with the debug version of
+>> rcontrib, we can see if it makes any difference to test my hypothesis.
+>> 
+>> Cheers,
+>> -Greg
+>> 
+>> 
+>>> FROM: Mostapha Sadeghipour <sadeghipour at gmail.com>
+>>> 
+>>> SUBJECT: Re: NREL Radiance re-distribution
+>>> 
+>>> DATE: May 11, 2016 3:17:59 PM PDT
+>> 
+>>> Thanks Greg! Let me know if there is anything that I can do on my
+>>> side to help.
+>>> Mostapha
+>>> 
+>>> On Wed, May 11, 2016 at 6:09 PM, Gregory J. Ward
+>>> <gregoryjward at gmail.com> wrote:
+>>> 
+>>> Hi Mostapha,
+>>> 
+>>> Your screen capture came through -- now we're getting somewhere!
+>>> The error again happens near the boundary between read() calls, so
+>>> it's a matter of figuring out what could be going wrong on Windows
+>>> even after the earlier bug fix.
+>>> 
+>>> Schorsch has noticed issues with dropped bytes on stdin, but I don't
+>>> think we've seen this sort of problem with file input.  It could
+>>> still have something to do with the conversion of "\r\n" EOL
+>>> sequences to "\n" in O_TEXT input files, but I need to think how
+>>> this might happen.
+>>> 
+>>> More later,
+>>> -Greg
+>>> 
+>>> FROM: Mostapha Sadeghipour <sadeghipour at gmail.com>
+>>> 
+>>> DATE: May 11, 2016 2:44:18 PM PDT
+>>> 
+>>> Thanks Rob! Dropbox link worked. Maybe I was doing something wrong.
+>>> 
+>>> I think we're close. New rcontrib prints out some notes which show
+>>> that solar1216 is picked up as 8-letter modifier `olar1216` missing
+>>> the starting s. The rest are 9 letter modifiers. That should be why
+>>> it never shows up?
+>>> 
+>>> I almost never copy images in an email but I hope this one shows up
+>>> right. Let me know if it wasn't and I can save and attach it.
+>>> 
+>>> Mostapha
+>>> 
+
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+
+------------------------------
+
+_______________________________________________
+Radiance-dev mailing list
+Radiance-dev at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+End of Radiance-dev Digest, Vol 110, Issue 5
+********************************************
+
+
+
+From sadeghipour at gmail.com  Thu May 12 04:38:11 2016
+From: sadeghipour at gmail.com (Mostapha Sadeghipour)
+Date: Thu, 12 May 2016 07:38:11 -0400
+Subject: [Radiance-dev] NREL Radiance re-distribution
+In-Reply-To: <130b642f69941144cf272a5932ca1494@tanha.pair.com>
+References: <CADoiYWQVXJ5s6muWpy3=VTPWDQFN0J9sKnJK_=g1Wk_xAG382w@mail.gmail.com>
+	<D33E59BE.246D7%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSbdgxRJJhnPEOaK3+N=sZ7Yd1uSjgrHSG=YEMq-_a3nQ@mail.gmail.com>
+	<D33E5D06.246F4%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWQMNuMBu-LBFiR+U_-Ha5ZuYR=rnMPZnxPP-o3zDbCRjg@mail.gmail.com>
+	<D33E8839.24873%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRuYss8-sC5vL+XawsTm8fUB7Na8u=tULT7n82Nka2QJw@mail.gmail.com>
+	<CADoiYWR0THhLfCv1v8=6zHi00XE6an2p-wr1a2_ivCP7CCA=zg@mail.gmail.com>
+	<D3438A49.24D35%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRfp+O9OETO7Lru+08aLm27q8QUFs-Szb3KATOKZFjnKA@mail.gmail.com>
+	<D345353D.2505A%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSQFPMOkj9E8r8Jt9M0cpLY9z1g51-fYBYuzPVXez7Xcw@mail.gmail.com>
+	<D345375A.25060%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTjbSpKXbEFBnM=+GNX9KCE7+p=sgKUSkLhkdedmd7T0Q@mail.gmail.com>
+	<CAAd_PgRh8rHBGCJb+doV_nf6AM510XNU9S1Nfhrz_vtOUkqWrQ@mail.gmail.com>
+	<D3457C00.2511F%Robert.Guglielmetti@nrel.gov>
+	<73189bde01b1aae114f7a9635230e6c9@tanha.pair.com>
+	<5AE7562D-CB96-45F5-AEA8-3E1C5361601D@gmail.com>
+	<2689f7a827f90185a7c8d6506bf1741d@tanha.pair.com>
+	<D3466C67.2531A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTFUUNHFGMiOFAoNeddQFqES-3jsj9cYoFFxDoZMAAc3A@mail.gmail.com>
+	<B9E95BC6-5BC7-48B1-B448-2FA9F867B976@gmail.com>
+	<D358B2C9.255F2%Robert.Guglielmetti@nrel.gov>
+	<2BD5E177-AF9B-4176-84E1-1C990D988CC5@gmail.com>
+	<CAAd_PgRR-s16pALr9R6tsMVassZ0QGTXa7jzB+PdFyzKUyR4XQ@mail.gmail.com>
+	<D358DE3D.25637%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgR7gyKHJSgmVaiiF+NDm3qGeqV30a4JRZz4CgMWm3_dZg@mail.gmail.com>
+	<D358FF86.2564A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgS+1iJig2ZO=HQBgiwv8=f6-r0XUbh25Aod0YqdUYWhBw@mail.gmail.com>
+	<1697C07A-A415-44A1-A647-79EBEB2BD2F0@gmail.com>
+	<CAAd_PgRJ0EoHWpDMt_76oDuaeVsD0F=UZPKvH+=SVuHYiwD8hg@mail.gmail.com>
+	<3C0648EB-437E-4C93-A0BA-94661AD94590@gmail.com>
+	<0936bdef527c57e0fc9b9b6f11d2c78d@tanha.pair.com>
+	<130b642f69941144cf272a5932ca1494@tanha.pair.com>
+Message-ID: <CAAd_PgQS7_8kBNOX0XrY1ONfLa=VoxddVZC2vRb2guiAEhj_jw@mail.gmail.com>
+
+Hi Schorsch,
+
+You can download the files from this link
+<https://dl.dropboxusercontent.com/u/16228160/sunlighthours_round_III.zip>.
+
+For anyone who might be interested here is the original discussion
+<https://unmethours.com/question/17201/rcontrib-misses-one-of-the-modifiers-if-number-of-modifiers-between-240-420/>
+on
+unmethours.
+
+Thanks,
+Mostapha
+
+On Thu, May 12, 2016 at 4:09 AM, Georg Mischler <schorsch at schorsch.com>
+wrote:
+
+> Ah, so now I figured that this wasn't actually on radiance-dev to begin
+> with...
+> Mostapha, have you considered joining the list for a while?
+> And please see my query just below.
+>
+> Cheers
+> -schorsch
+>
+> Am 2016-05-12 09:10, schrieb Georg Mischler:
+>
+>>
+>> There's no way for this to be the same problem we recently identified.
+>> For one, I don't think Robs gcc is using the MS Universal CRT from
+>> Windows 10 which caused that one. And secondly, the character that gets
+>> eaten here is nowhere near a line ending.
+>>
+>> Mostapha, can you send me your current test dataset? I only have the
+>> version with 420 names, which does not seem to cause trouble anymore.
+>> Then I'll check if the SCons build has the same issue, and if so,
+>> walk through it to see what really happens.
+>>
+>> Cheers
+>> -schorsch
+>>
+>> PS: I'm following radiance-dev, no need for a seperate cc.
+>>
+>>
+>>
+>> Am 2016-05-12 00:39, schrieb Gregory J. Ward:
+>>
+>>> OK, this seems to happen when a Windows read operation ends halfway
+>>> through a "\r\n" sequence, leaving a '\r' at the end of one buffer and
+>>> reading a '\n' character at the beginning of the next read() call.  It
+>>> isn't a bug in my code as far as I'm concerned, as Unix handles this
+>>> case just fine.  Rather, I think there's a bug in the way Windows
+>>> replaces "\r\n" with "\n" so that it ends up replacing "\ns" in this
+>>> case with the empty string, effectively lobbing the first character
+>>> off the returned buffer.
+>>>
+>>> We can test this by running a couple of read() calls on an input
+>>> buffer such that the length of the read splits an EOL sequence.  This
+>>> may be the source of the occasional dropped characters Schorsch was
+>>> seeing in his earlier tests.  Microsoft said they will fix this at
+>>> some point....
+>>>
+>>> Meanwhile, we could try setting the _O_BINARY flag in the open()
+>>> command in wordfile(), assuming we won't run into the ^Z EOF marker
+>>> that Schorsch claims is just a childhood trauma of mine and nothing to
+>>> fear these days...
+>>>
+>>> If Rob is willing to re-compile the librt.a in src/common using the
+>>> attached version of wordfile.c and link it with the debug version of
+>>> rcontrib, we can see if it makes any difference to test my hypothesis.
+>>>
+>>> Cheers,
+>>> -Greg
+>>>
+>>>
+>>> FROM: Mostapha Sadeghipour <sadeghipour at gmail.com>
+>>>>
+>>>> SUBJECT: Re: NREL Radiance re-distribution
+>>>>
+>>>> DATE: May 11, 2016 3:17:59 PM PDT
+>>>>
+>>>
+>>> Thanks Greg! Let me know if there is anything that I can do on my
+>>>> side to help.
+>>>> Mostapha
+>>>>
+>>>> On Wed, May 11, 2016 at 6:09 PM, Gregory J. Ward
+>>>> <gregoryjward at gmail.com> wrote:
+>>>>
+>>>> Hi Mostapha,
+>>>>
+>>>> Your screen capture came through -- now we're getting somewhere!
+>>>> The error again happens near the boundary between read() calls, so
+>>>> it's a matter of figuring out what could be going wrong on Windows
+>>>> even after the earlier bug fix.
+>>>>
+>>>> Schorsch has noticed issues with dropped bytes on stdin, but I don't
+>>>> think we've seen this sort of problem with file input.  It could
+>>>> still have something to do with the conversion of "\r\n" EOL
+>>>> sequences to "\n" in O_TEXT input files, but I need to think how
+>>>> this might happen.
+>>>>
+>>>> More later,
+>>>> -Greg
+>>>>
+>>>> FROM: Mostapha Sadeghipour <sadeghipour at gmail.com>
+>>>>
+>>>> DATE: May 11, 2016 2:44:18 PM PDT
+>>>>
+>>>> Thanks Rob! Dropbox link worked. Maybe I was doing something wrong.
+>>>>
+>>>> I think we're close. New rcontrib prints out some notes which show
+>>>> that solar1216 is picked up as 8-letter modifier `olar1216` missing
+>>>> the starting s. The rest are 9 letter modifiers. That should be why
+>>>> it never shows up?
+>>>>
+>>>> I almost never copy images in an email but I hope this one shows up
+>>>> right. Let me know if it wasn't and I can save and attach it.
+>>>>
+>>>> Mostapha
+>>>>
+>>>>
+>
+> --
+> Georg Mischler  --  simulations developer  --  schorsch at schorsch com
+> +schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20160512/382e2efe/attachment-0001.html>
+
+From gregoryjward at gmail.com  Thu May 12 08:49:48 2016
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu, 12 May 2016 08:49:48 -0700
+Subject: [Radiance-dev] NREL Radiance re-distribution
+In-Reply-To: <0936bdef527c57e0fc9b9b6f11d2c78d@tanha.pair.com>
+References: <CADoiYWQVXJ5s6muWpy3=VTPWDQFN0J9sKnJK_=g1Wk_xAG382w@mail.gmail.com>
+	<D33E59BE.246D7%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSbdgxRJJhnPEOaK3+N=sZ7Yd1uSjgrHSG=YEMq-_a3nQ@mail.gmail.com>
+	<D33E5D06.246F4%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWQMNuMBu-LBFiR+U_-Ha5ZuYR=rnMPZnxPP-o3zDbCRjg@mail.gmail.com>
+	<D33E8839.24873%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRuYss8-sC5vL+XawsTm8fUB7Na8u=tULT7n82Nka2QJw@mail.gmail.com>
+	<CADoiYWR0THhLfCv1v8=6zHi00XE6an2p-wr1a2_ivCP7CCA=zg@mail.gmail.com>
+	<D3438A49.24D35%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRfp+O9OETO7Lru+08aLm27q8QUFs-Szb3KATOKZFjnKA@mail.gmail.com>
+	<D345353D.2505A%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSQFPMOkj9E8r8Jt9M0cpLY9z1g51-fYBYuzPVXez7Xcw@mail.gmail.com>
+	<D345375A.25060%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTjbSpKXbEFBnM=+GNX9KCE7+p=sgKUSkLhkdedmd7T0Q@mail.gmail.com>
+	<CAAd_PgRh8rHBGCJb+doV_nf6AM510XNU9S1Nfhrz_vtOUkqWrQ@mail.gmail.com>
+	<D3457C00.2511F%Robert.Guglielmetti@nrel.gov>
+	<73189bde01b1aae114f7a9635230e6c9@tanha.pair.com>
+	<5AE7562D-CB96-45F5-AEA8-3E1C5361601D@gmail.com>
+	<2689f7a827f90185a7c8d6506bf1741d@tanha.pair.com>
+	<D3466C67.2531A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTFUUNHFGMiOFAoNeddQFqES-3jsj9cYoFFxDoZMAAc3A@mail.gmail.com>
+	<B9E95BC6-5BC7-48B1-B448-2FA9F867B976@gmail.com>
+	<D358B2C9.255F2%Robert.Guglielmetti@nrel.gov>
+	<2BD5E177-AF9B-4176-84E1-1C990D988CC5@gmail.com>
+	<CAAd_PgRR-s16pALr9R6tsMVassZ0QGTXa7jzB+PdFyzKUyR4XQ@mail.gmail.com>
+	<D358DE3D.25637%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgR7gyKHJSgmVaiiF+NDm3qGeqV30a4JRZz4CgMWm3_dZg@mail.gmail.com>
+	<D358FF86.2564A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgS+1iJig2ZO=HQBgiwv8=f6-r0XUbh25Aod0YqdUYWhBw@mail.gmail.com>
+	<1697C07A-A415-44A1-A647-79EBEB2BD2F0@gmail.com>
+	<CAAd_PgRJ0EoHWpDMt_76oDuaeVsD0F=UZPKvH+=SVuHYiwD8hg@mail.gmail.com>
+	<3C0648EB-437E-4C93-A0BA-94661AD94590@gmail.com>
+	<0936bdef527c57e0fc9b9b6f11d2c78d@tanha.pair.com>
+Message-ID: <B0094431-7446-4960-B5AE-198BBB04758C@gmail.com>
+
+Well, due to the way wordfile.c backs up over words split by read buffer boundaries, its effective buffer length changes, so it does in fact read this particular line in a way that splits the EOL character.  I had to simulate it, but I think I counted correctly.
+
+It will be interesting to see if your build has the same issue....
+
+Cheers,
+-Greg
+
+> From: Georg Mischler <schorsch at schorsch.com>
+> Subject: Re: [Radiance-dev] NREL Radiance re-distribution
+> Date: May 12, 2016 12:10:56 AM PDT
+> 
+> There's no way for this to be the same problem we recently identified.
+> For one, I don't think Robs gcc is using the MS Universal CRT from
+> Windows 10 which caused that one. And secondly, the character that gets
+> eaten here is nowhere near a line ending.
+> 
+> Mostapha, can you send me your current test dataset? I only have the
+> version with 420 names, which does not seem to cause trouble anymore.
+> Then I'll check if the SCons build has the same issue, and if so,
+> walk through it to see what really happens.
+> 
+> Cheers
+> -schorsch
+> 
+> PS: I'm following radiance-dev, no need for a seperate cc.
+
+
+From gregoryjward at gmail.com  Thu May 12 09:06:45 2016
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu, 12 May 2016 09:06:45 -0700
+Subject: [Radiance-dev] Meta files and library
+In-Reply-To: <acaa8a9d11ad1b64bf6d74d50007db27@tanha.pair.com>
+References: <331427a7625cd3dc8e0694eb9fba381e@tanha.pair.com>
+	<88E567C5-80D6-46E6-AA05-0E7E0ED2C904@gmail.com>
+	<ff2fa5167ab9e38ee9eb5956f20a5522@tanha.pair.com>
+	<B47F7C3B-6AB1-4552-9EC4-812792147FCC@gmail.com>
+	<662d33817c3dc1d9ff50aa6166fdb98d@tanha.pair.com>
+	<95B8832F-70E1-4394-8B01-DB0F74601894@gmail.com>
+	<acaa8a9d11ad1b64bf6d74d50007db27@tanha.pair.com>
+Message-ID: <8796FE08-CDBB-4162-95F8-05E5C0D2CA04@gmail.com>
+
+Responses inline...
+
+> From: Georg Mischler <schorsch at schorsch.com>
+> Subject: Re: [Radiance-dev] Meta files and library
+> Date: May 12, 2016 12:58:14 AM PDT
+> 
+> Am 2016-05-12 02:27, schrieb Gregory J. Ward:
+>> The "graph files" are related to .cal files in an odd way.
+> 
+> "Subtly incompatible" it is then...
+> So a parser needs to use different patterns/escapes for seperating
+> statements from each other.  Apart from not seeing any of the simulation
+> specific variables, is that the only difference?
+
+Well, the .cal routines have their own set of runtime flags that determine which features are supported.  The bgraph program uses the default flags, which are (E_VARIABLE | E_FUNCTION), so it doesn't support input channels as in Radiance (although most users never see or use these).
+
+Also, the syntax is similar but the interpretation is very different when the variables match any of the standard ones ("keywords") such as "include", which loads another file, and the many string variables like "title", "Blabel", etc.  The variables "?data" are also special with their own syntax, and load an array of floating-point data that ends with a semicolon or EOF.  So, quite a bit different.
+
+>> The pexpand command is called internally, as is psort by image
+>> converters that want their vector primitives sorted.
+> 
+> That would seem to make more sense as library routines then.
+> Not sure if refactoring as such would be worth the effort now, though.
+
+Yes, I suppose, although rholo also calls separate driver programs (in a subdirectory of the executables), and rvu is capable of something similar.
+
+>>> Since those tools are not used anywhere else, wouldn't it make sense to
+>>> ditch $MLIB, and simply use $RAYPATH/meta instead?
+>> Except that RAYPATH is a list of directories, where MDIR is a single
+>> location.  All the same, a function that finds the first meta
+>> directory in $RAYPATH could be used instead.
+> 
+> The new Python scripts do exactly that to find their "pyradlib" support
+> library. Granted, that one has a more unique name (deliberately so),
+> which is less likely to collide with something a user might have within
+> their project.
+
+Yeah.  We should decide if it's worth the risk to change it.
+
+>> Yeah, RIP many disused graphics output devices.  We could remove the
+>> references if anyone cares.
+> 
+> If you have any interest in avoiding confusion among new users,
+> you should care.
+
+Of course I care -- I just wonder if anyone else looks at these man pages, anymore.  Easy enough to change.
+
+>> The plotin tool converts from old-school plot primitives to metafile
+>> equivalents.  I don't know if anyone uses the original graph or plot
+>> routines anymore, so this could probably be retired as well.  The
+>> functionality is better in bgraph, anyway.
+> 
+> Ah, so "plot files" are indeed something different from "graph files".
+> Since the plot(5) man page presumably documenting that format is gone,
+> keeping a program around that depends on it doesn't make much sense.
+
+Well, it was never my package, so I've no idea if it's still "out there," somewhere.  Used to be standard on BSD Unix, anyway.  Anyone else know what we're talking about?
+
+-Greg
+
+From rmfritz3 at gmail.com  Thu May 12 10:37:59 2016
+From: rmfritz3 at gmail.com (Randolph M. Fritz)
+Date: Thu, 12 May 2016 10:37:59 -0700
+Subject: [Radiance-dev] Meta files and library
+In-Reply-To: <8796FE08-CDBB-4162-95F8-05E5C0D2CA04@gmail.com>
+References: <331427a7625cd3dc8e0694eb9fba381e@tanha.pair.com>
+	<88E567C5-80D6-46E6-AA05-0E7E0ED2C904@gmail.com>
+	<ff2fa5167ab9e38ee9eb5956f20a5522@tanha.pair.com>
+	<B47F7C3B-6AB1-4552-9EC4-812792147FCC@gmail.com>
+	<662d33817c3dc1d9ff50aa6166fdb98d@tanha.pair.com>
+	<95B8832F-70E1-4394-8B01-DB0F74601894@gmail.com>
+	<acaa8a9d11ad1b64bf6d74d50007db27@tanha.pair.com>
+	<8796FE08-CDBB-4162-95F8-05E5C0D2CA04@gmail.com>
+Message-ID: <CANeAMoJBwfcSGaqw99TCXXA_gi3kOfYhcveznJWXUmEXqkRhXw@mail.gmail.com>
+
+>
+> > Ah, so "plot files" are indeed something different from "graph files".
+> > Since the plot(5) man page presumably documenting that format is gone,
+> > keeping a program around that depends on it doesn't make much sense.
+>
+> Well, it was never my package, so I've no idea if it's still "out there,"
+> somewhere.  Used to be standard on BSD Unix, anyway.  Anyone else know what
+> we're talking about?
+>
+> Plot goes all the way back to Unix v7. It appears that the GNU plotting
+utilities (https://www.gnu.org/software/plotutils/), not to be confused
+with gnuplot will still read the format.
+
+So I suppose it is still "out there," but I am not sure that it matters
+much any more.
+
+Randolph
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20160512/523e42b8/attachment.html>
+
+From schorsch at schorsch.com  Thu May 12 12:12:09 2016
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Thu, 12 May 2016 21:12:09 +0200
+Subject: [Radiance-dev] Meta files and library
+In-Reply-To: <CANeAMoJBwfcSGaqw99TCXXA_gi3kOfYhcveznJWXUmEXqkRhXw@mail.gmail.com>
+References: <331427a7625cd3dc8e0694eb9fba381e@tanha.pair.com>
+	<88E567C5-80D6-46E6-AA05-0E7E0ED2C904@gmail.com>
+	<ff2fa5167ab9e38ee9eb5956f20a5522@tanha.pair.com>
+	<B47F7C3B-6AB1-4552-9EC4-812792147FCC@gmail.com>
+	<662d33817c3dc1d9ff50aa6166fdb98d@tanha.pair.com>
+	<95B8832F-70E1-4394-8B01-DB0F74601894@gmail.com>
+	<acaa8a9d11ad1b64bf6d74d50007db27@tanha.pair.com>
+	<8796FE08-CDBB-4162-95F8-05E5C0D2CA04@gmail.com>
+	<CANeAMoJBwfcSGaqw99TCXXA_gi3kOfYhcveznJWXUmEXqkRhXw@mail.gmail.com>
+Message-ID: <98d921d89a617a57e8b4648ac5493021@tanha.pair.com>
+
+Just checked the SuSe installation DVD:
+Besides gnuplot there's also a gnu plotutils package containing
+"libplot" and commands like "plot", "graph", etc.
+Not installed by default, but with a deeply nested package
+productivity/graphics/visualization/graph.
+
+So it evidently still exists in some form or other.
+Which probably also means we should keep "plotin" and the related
+manpage references around for another while. There's even a
+"plotout" still sitting in the attic...
+
+Cheers
+-schorsch
+
+
+Am 2016-05-12 19:37, schrieb Randolph M. Fritz:
+>>> Ah, so "plot files" are indeed something different from "graph
+>> files".
+>>> Since the plot(5) man page presumably documenting that format is
+>> gone,
+>>> keeping a program around that depends on it doesn't make much
+>> sense.
+>> 
+>> Well, it was never my package, so I've no idea if it's still "out
+>> there," somewhere.  Used to be standard on BSD Unix, anyway.  Anyone
+>> else know what we're talking about?
+> 
+> Plot goes all the way back to Unix v7. It appears that the GNU
+> plotting utilities (https://www.gnu.org/software/plotutils/), not to
+> be confused with gnuplot will still read the format.
+> 
+> So I suppose it is still "out there," but I am not sure that it
+> matters much any more.
+> 
+> Randolph
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From schorsch at schorsch.com  Thu May 12 12:29:03 2016
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Thu, 12 May 2016 21:29:03 +0200
+Subject: [Radiance-dev] NREL Radiance re-distribution
+In-Reply-To: <B0094431-7446-4960-B5AE-198BBB04758C@gmail.com>
+References: <CADoiYWQVXJ5s6muWpy3=VTPWDQFN0J9sKnJK_=g1Wk_xAG382w@mail.gmail.com>
+	<D33E59BE.246D7%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSbdgxRJJhnPEOaK3+N=sZ7Yd1uSjgrHSG=YEMq-_a3nQ@mail.gmail.com>
+	<D33E5D06.246F4%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWQMNuMBu-LBFiR+U_-Ha5ZuYR=rnMPZnxPP-o3zDbCRjg@mail.gmail.com>
+	<D33E8839.24873%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRuYss8-sC5vL+XawsTm8fUB7Na8u=tULT7n82Nka2QJw@mail.gmail.com>
+	<CADoiYWR0THhLfCv1v8=6zHi00XE6an2p-wr1a2_ivCP7CCA=zg@mail.gmail.com>
+	<D3438A49.24D35%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRfp+O9OETO7Lru+08aLm27q8QUFs-Szb3KATOKZFjnKA@mail.gmail.com>
+	<D345353D.2505A%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSQFPMOkj9E8r8Jt9M0cpLY9z1g51-fYBYuzPVXez7Xcw@mail.gmail.com>
+	<D345375A.25060%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTjbSpKXbEFBnM=+GNX9KCE7+p=sgKUSkLhkdedmd7T0Q@mail.gmail.com>
+	<CAAd_PgRh8rHBGCJb+doV_nf6AM510XNU9S1Nfhrz_vtOUkqWrQ@mail.gmail.com>
+	<D3457C00.2511F%Robert.Guglielmetti@nrel.gov>
+	<73189bde01b1aae114f7a9635230e6c9@tanha.pair.com>
+	<5AE7562D-CB96-45F5-AEA8-3E1C5361601D@gmail.com>
+	<2689f7a827f90185a7c8d6506bf1741d@tanha.pair.com>
+	<D3466C67.2531A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTFUUNHFGMiOFAoNeddQFqES-3jsj9cYoFFxDoZMAAc3A@mail.gmail.com>
+	<B9E95BC6-5BC7-48B1-B448-2FA9F867B976@gmail.com>
+	<D358B2C9.255F2%Robert.Guglielmetti@nrel.gov>
+	<2BD5E177-AF9B-4176-84E1-1C990D988CC5@gmail.com>
+	<CAAd_PgRR-s16pALr9R6tsMVassZ0QGTXa7jzB+PdFyzKUyR4XQ@mail.gmail.com>
+	<D358DE3D.25637%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgR7gyKHJSgmVaiiF+NDm3qGeqV30a4JRZz4CgMWm3_dZg@mail.gmail.com>
+	<D358FF86.2564A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgS+1iJig2ZO=HQBgiwv8=f6-r0XUbh25Aod0YqdUYWhBw@mail.gmail.com>
+	<1697C07A-A415-44A1-A647-79EBEB2BD2F0@gmail.com>
+	<CAAd_PgRJ0EoHWpDMt_76oDuaeVsD0F=UZPKvH+=SVuHYiwD8hg@mail.gmail.com>
+	<3C0648EB-437E-4C93-A0BA-94661AD94590@gmail.com>
+	<0936bdef527c57e0fc9b9b6f11d2c78d@tanha.pair.com>
+	<B0094431-7446-4960-B5AE-198BBB04758C@gmail.com>
+Message-ID: <c161943726eb564b828397e04130da8d@tanha.pair.com>
+
+Adding 9-letter modifier 'solar1215'
+Adding 8-letter modifier 'olar1216'
+Adding 9-letter modifier 'solar1217'
+
+Not really looking forward to the digging...
+
+Cheers
+-schorsch
+
+Am 2016-05-12 17:49, schrieb Gregory J. Ward:
+> Well, due to the way wordfile.c backs up over words split by read
+> buffer boundaries, its effective buffer length changes, so it does in
+> fact read this particular line in a way that splits the EOL character.
+>  I had to simulate it, but I think I counted correctly.
+> 
+> It will be interesting to see if your build has the same issue....
+> 
+> Cheers,
+> -Greg
+> 
+>> From: Georg Mischler <schorsch at schorsch.com>
+>> Subject: Re: [Radiance-dev] NREL Radiance re-distribution
+>> Date: May 12, 2016 12:10:56 AM PDT
+>> 
+>> There's no way for this to be the same problem we recently identified.
+>> For one, I don't think Robs gcc is using the MS Universal CRT from
+>> Windows 10 which caused that one. And secondly, the character that 
+>> gets
+>> eaten here is nowhere near a line ending.
+>> 
+>> Mostapha, can you send me your current test dataset? I only have the
+>> version with 420 names, which does not seem to cause trouble anymore.
+>> Then I'll check if the SCons build has the same issue, and if so,
+>> walk through it to see what really happens.
+>> 
+>> Cheers
+>> -schorsch
+>> 
+>> PS: I'm following radiance-dev, no need for a seperate cc.
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From rmfritz3 at gmail.com  Thu May 12 13:21:52 2016
+From: rmfritz3 at gmail.com (Randolph M. Fritz)
+Date: Thu, 12 May 2016 13:21:52 -0700
+Subject: [Radiance-dev] Meta files and library
+In-Reply-To: <98d921d89a617a57e8b4648ac5493021@tanha.pair.com>
+References: <331427a7625cd3dc8e0694eb9fba381e@tanha.pair.com>
+	<88E567C5-80D6-46E6-AA05-0E7E0ED2C904@gmail.com>
+	<ff2fa5167ab9e38ee9eb5956f20a5522@tanha.pair.com>
+	<B47F7C3B-6AB1-4552-9EC4-812792147FCC@gmail.com>
+	<662d33817c3dc1d9ff50aa6166fdb98d@tanha.pair.com>
+	<95B8832F-70E1-4394-8B01-DB0F74601894@gmail.com>
+	<acaa8a9d11ad1b64bf6d74d50007db27@tanha.pair.com>
+	<8796FE08-CDBB-4162-95F8-05E5C0D2CA04@gmail.com>
+	<CANeAMoJBwfcSGaqw99TCXXA_gi3kOfYhcveznJWXUmEXqkRhXw@mail.gmail.com>
+	<98d921d89a617a57e8b4648ac5493021@tanha.pair.com>
+Message-ID: <CANeAMoKNMU2KcUFJCQF_ge+hOxUtn6rPSSUb9BH3jp47v8BqmQ@mail.gmail.com>
+
+Just to be confusing "gnuplot" and "GNU plotutils" are entirely different
+programs. The gnuplot developers had the name first and are keeping it.
+
+In any event, the GNU plotutils will, as far as i know, work with plotin
+and (if it is resurrected) plotout.
+
+Randolph
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20160512/83abb6c7/attachment.html>
+
+From gregoryjward at gmail.com  Thu May 12 15:02:53 2016
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu, 12 May 2016 15:02:53 -0700
+Subject: [Radiance-dev] NREL Radiance re-distribution
+In-Reply-To: <c161943726eb564b828397e04130da8d@tanha.pair.com>
+References: <CADoiYWQVXJ5s6muWpy3=VTPWDQFN0J9sKnJK_=g1Wk_xAG382w@mail.gmail.com>
+	<D33E59BE.246D7%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSbdgxRJJhnPEOaK3+N=sZ7Yd1uSjgrHSG=YEMq-_a3nQ@mail.gmail.com>
+	<D33E5D06.246F4%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWQMNuMBu-LBFiR+U_-Ha5ZuYR=rnMPZnxPP-o3zDbCRjg@mail.gmail.com>
+	<D33E8839.24873%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRuYss8-sC5vL+XawsTm8fUB7Na8u=tULT7n82Nka2QJw@mail.gmail.com>
+	<CADoiYWR0THhLfCv1v8=6zHi00XE6an2p-wr1a2_ivCP7CCA=zg@mail.gmail.com>
+	<D3438A49.24D35%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRfp+O9OETO7Lru+08aLm27q8QUFs-Szb3KATOKZFjnKA@mail.gmail.com>
+	<D345353D.2505A%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSQFPMOkj9E8r8Jt9M0cpLY9z1g51-fYBYuzPVXez7Xcw@mail.gmail.com>
+	<D345375A.25060%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTjbSpKXbEFBnM=+GNX9KCE7+p=sgKUSkLhkdedmd7T0Q@mail.gmail.com>
+	<CAAd_PgRh8rHBGCJb+doV_nf6AM510XNU9S1Nfhrz_vtOUkqWrQ@mail.gmail.com>
+	<D3457C00.2511F%Robert.Guglielmetti@nrel.gov>
+	<73189bde01b1aae114f7a9635230e6c9@tanha.pair.com>
+	<5AE7562D-CB96-45F5-AEA8-3E1C5361601D@gmail.com>
+	<2689f7a827f90185a7c8d6506bf1741d@tanha.pair.com>
+	<D3466C67.2531A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTFUUNHFGMiOFAoNeddQFqES-3jsj9cYoFFxDoZMAAc3A@mail.gmail.com>
+	<B9E95BC6-5BC7-48B1-B448-2FA9F867B976@gmail.com>
+	<D358B2C9.255F2%Robert.Guglielmetti@nrel.gov>
+	<2BD5E177-AF9B-4176-84E1-1C990D988CC5@gmail.com>
+	<CAAd_PgRR-s16pALr9R6tsMVassZ0QGTXa7jzB+PdFyzKUyR4XQ@mail.gmail.com>
+	<D358DE3D.25637%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgR7gyKHJSgmVaiiF+NDm3qGeqV30a4JRZz4CgMWm3_dZg@mail.gmail.com>
+	<D358FF86.2564A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgS+1iJig2ZO=HQBgiwv8=f6-r0XUbh25Aod0YqdUYWhBw@mail.gmail.com>
+	<1697C07A-A415-44A1-A647-79EBEB2BD2F0@gmail.com>
+	<CAAd_PgRJ0EoHWpDMt_76oDuaeVsD0F=UZPKvH+=SVuHYiwD8hg@mail.gmail.com>
+	<3C0648EB-437E-4C93-A0BA-94661AD94590@gmail.com>
+	<0936bdef527c57e0fc9b9b6f11d2c78d@tanha.pair.com>
+	<B0094431-7446-4960-B5AE-198BBB04758C@gmail.com>
+	<c161943726eb564b828397e04130da8d@tanha.pair.com>
+Message-ID: <750B8822-656F-4B55-893F-8E01C42E7DFE@gmail.com>
+
+Should be reproducible with a sequence of read calls on a file with one or two printing characters per line, followed by "\r\n" as usual.  If a character gets eaten, then it must be the _O_TEXT processing at fault, somehow.
+
+-Greg
+
+> From: Georg Mischler <schorsch at schorsch.com>
+> Subject: Re: [Radiance-dev] NREL Radiance re-distribution
+> Date: May 12, 2016 12:29:03 PM PDT
+> 
+> Adding 9-letter modifier 'solar1215'
+> Adding 8-letter modifier 'olar1216'
+> Adding 9-letter modifier 'solar1217'
+> 
+> Not really looking forward to the digging...
+> 
+> Cheers
+> -schorsch
+> 
+> Am 2016-05-12 17:49, schrieb Gregory J. Ward:
+>> Well, due to the way wordfile.c backs up over words split by read
+>> buffer boundaries, its effective buffer length changes, so it does in
+>> fact read this particular line in a way that splits the EOL character.
+>> I had to simulate it, but I think I counted correctly.
+>> It will be interesting to see if your build has the same issue....
+>> Cheers,
+>> -Greg
+>>> From: Georg Mischler <schorsch at schorsch.com>
+>>> Subject: Re: [Radiance-dev] NREL Radiance re-distribution
+>>> Date: May 12, 2016 12:10:56 AM PDT
+>>> There's no way for this to be the same problem we recently identified.
+>>> For one, I don't think Robs gcc is using the MS Universal CRT from
+>>> Windows 10 which caused that one. And secondly, the character that gets
+>>> eaten here is nowhere near a line ending.
+>>> Mostapha, can you send me your current test dataset? I only have the
+>>> version with 420 names, which does not seem to cause trouble anymore.
+>>> Then I'll check if the SCons build has the same issue, and if so,
+>>> walk through it to see what really happens.
+>>> Cheers
+>>> -schorsch
+>>> PS: I'm following radiance-dev, no need for a seperate cc.
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+> 
+> -- 
+> Georg Mischler  --  simulations developer  --  schorsch at schorsch com
+> +schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+
+From schorsch at schorsch.com  Thu May 12 15:53:43 2016
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Fri, 13 May 2016 00:53:43 +0200
+Subject: [Radiance-dev] NREL Radiance re-distribution
+In-Reply-To: <750B8822-656F-4B55-893F-8E01C42E7DFE@gmail.com>
+References: <CADoiYWQVXJ5s6muWpy3=VTPWDQFN0J9sKnJK_=g1Wk_xAG382w@mail.gmail.com>
+	<D33E59BE.246D7%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSbdgxRJJhnPEOaK3+N=sZ7Yd1uSjgrHSG=YEMq-_a3nQ@mail.gmail.com>
+	<D33E5D06.246F4%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWQMNuMBu-LBFiR+U_-Ha5ZuYR=rnMPZnxPP-o3zDbCRjg@mail.gmail.com>
+	<D33E8839.24873%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRuYss8-sC5vL+XawsTm8fUB7Na8u=tULT7n82Nka2QJw@mail.gmail.com>
+	<CADoiYWR0THhLfCv1v8=6zHi00XE6an2p-wr1a2_ivCP7CCA=zg@mail.gmail.com>
+	<D3438A49.24D35%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRfp+O9OETO7Lru+08aLm27q8QUFs-Szb3KATOKZFjnKA@mail.gmail.com>
+	<D345353D.2505A%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSQFPMOkj9E8r8Jt9M0cpLY9z1g51-fYBYuzPVXez7Xcw@mail.gmail.com>
+	<D345375A.25060%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTjbSpKXbEFBnM=+GNX9KCE7+p=sgKUSkLhkdedmd7T0Q@mail.gmail.com>
+	<CAAd_PgRh8rHBGCJb+doV_nf6AM510XNU9S1Nfhrz_vtOUkqWrQ@mail.gmail.com>
+	<D3457C00.2511F%Robert.Guglielmetti@nrel.gov>
+	<73189bde01b1aae114f7a9635230e6c9@tanha.pair.com>
+	<5AE7562D-CB96-45F5-AEA8-3E1C5361601D@gmail.com>
+	<2689f7a827f90185a7c8d6506bf1741d@tanha.pair.com>
+	<D3466C67.2531A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTFUUNHFGMiOFAoNeddQFqES-3jsj9cYoFFxDoZMAAc3A@mail.gmail.com>
+	<B9E95BC6-5BC7-48B1-B448-2FA9F867B976@gmail.com>
+	<D358B2C9.255F2%Robert.Guglielmetti@nrel.gov>
+	<2BD5E177-AF9B-4176-84E1-1C990D988CC5@gmail.com>
+	<CAAd_PgRR-s16pALr9R6tsMVassZ0QGTXa7jzB+PdFyzKUyR4XQ@mail.gmail.com>
+	<D358DE3D.25637%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgR7gyKHJSgmVaiiF+NDm3qGeqV30a4JRZz4CgMWm3_dZg@mail.gmail.com>
+	<D358FF86.2564A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgS+1iJig2ZO=HQBgiwv8=f6-r0XUbh25Aod0YqdUYWhBw@mail.gmail.com>
+	<1697C07A-A415-44A1-A647-79EBEB2BD2F0@gmail.com>
+	<CAAd_PgRJ0EoHWpDMt_76oDuaeVsD0F=UZPKvH+=SVuHYiwD8hg@mail.gmail.com>
+	<3C0648EB-437E-4C93-A0BA-94661AD94590@gmail.com>
+	<0936bdef527c57e0fc9b9b6f11d2c78d@tanha.pair.com>
+	<B0094431-7446-4960-B5AE-198BBB04758C@gmail.com>
+	<c161943726eb564b828397e04130da8d@tanha.pair.com>
+	<750B8822-656F-4B55-893F-8E01C42E7DFE@gmail.com>
+Message-ID: <18cfd5a1aaa7fe5b7393852a99e7d2b0@tanha.pair.com>
+
+The problem is that in wordfile(), crem still gets incremented even 
+after
+passing the null byte in buf. I must admit that I don't quite understand
+the counting logic in there yet, the function looks unnecessarily 
+complicated
+to me. Maybe I'll see clearer tomorrow when I'm fully awake again...
+
+Cheers
+-schorsch
+
+
+Am 2016-05-13 00:02, schrieb Gregory J. Ward:
+> Should be reproducible with a sequence of read calls on a file with
+> one or two printing characters per line, followed by "\r\n" as usual.
+> If a character gets eaten, then it must be the _O_TEXT processing at
+> fault, somehow.
+> 
+> -Greg
+> 
+>> From: Georg Mischler <schorsch at schorsch.com>
+>> Subject: Re: [Radiance-dev] NREL Radiance re-distribution
+>> Date: May 12, 2016 12:29:03 PM PDT
+>> 
+>> Adding 9-letter modifier 'solar1215'
+>> Adding 8-letter modifier 'olar1216'
+>> Adding 9-letter modifier 'solar1217'
+>> 
+>> Not really looking forward to the digging...
+>> 
+>> Cheers
+>> -schorsch
+>> 
+>> Am 2016-05-12 17:49, schrieb Gregory J. Ward:
+>>> Well, due to the way wordfile.c backs up over words split by read
+>>> buffer boundaries, its effective buffer length changes, so it does in
+>>> fact read this particular line in a way that splits the EOL 
+>>> character.
+>>> I had to simulate it, but I think I counted correctly.
+>>> It will be interesting to see if your build has the same issue....
+>>> Cheers,
+>>> -Greg
+>>>> From: Georg Mischler <schorsch at schorsch.com>
+>>>> Subject: Re: [Radiance-dev] NREL Radiance re-distribution
+>>>> Date: May 12, 2016 12:10:56 AM PDT
+>>>> There's no way for this to be the same problem we recently 
+>>>> identified.
+>>>> For one, I don't think Robs gcc is using the MS Universal CRT from
+>>>> Windows 10 which caused that one. And secondly, the character that 
+>>>> gets
+>>>> eaten here is nowhere near a line ending.
+>>>> Mostapha, can you send me your current test dataset? I only have the
+>>>> version with 420 names, which does not seem to cause trouble 
+>>>> anymore.
+>>>> Then I'll check if the SCons build has the same issue, and if so,
+>>>> walk through it to see what really happens.
+>>>> Cheers
+>>>> -schorsch
+>>>> PS: I'm following radiance-dev, no need for a seperate cc.
+>>> _______________________________________________
+>>> Radiance-dev mailing list
+>>> Radiance-dev at radiance-online.org
+>>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>> 
+>> --
+>> Georg Mischler  --  simulations developer  --  schorsch at schorsch 
+>> com
+>> +schorsch.com+  --  lighting design tools  --  
+>> http://www.schorsch.com/
+>> 
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From schorsch at schorsch.com  Thu May 12 16:17:50 2016
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Fri, 13 May 2016 01:17:50 +0200
+Subject: [Radiance-dev] NREL Radiance re-distribution
+In-Reply-To: <18cfd5a1aaa7fe5b7393852a99e7d2b0@tanha.pair.com>
+References: <CADoiYWQVXJ5s6muWpy3=VTPWDQFN0J9sKnJK_=g1Wk_xAG382w@mail.gmail.com>
+	<D33E59BE.246D7%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSbdgxRJJhnPEOaK3+N=sZ7Yd1uSjgrHSG=YEMq-_a3nQ@mail.gmail.com>
+	<D33E5D06.246F4%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWQMNuMBu-LBFiR+U_-Ha5ZuYR=rnMPZnxPP-o3zDbCRjg@mail.gmail.com>
+	<D33E8839.24873%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRuYss8-sC5vL+XawsTm8fUB7Na8u=tULT7n82Nka2QJw@mail.gmail.com>
+	<CADoiYWR0THhLfCv1v8=6zHi00XE6an2p-wr1a2_ivCP7CCA=zg@mail.gmail.com>
+	<D3438A49.24D35%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRfp+O9OETO7Lru+08aLm27q8QUFs-Szb3KATOKZFjnKA@mail.gmail.com>
+	<D345353D.2505A%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSQFPMOkj9E8r8Jt9M0cpLY9z1g51-fYBYuzPVXez7Xcw@mail.gmail.com>
+	<D345375A.25060%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTjbSpKXbEFBnM=+GNX9KCE7+p=sgKUSkLhkdedmd7T0Q@mail.gmail.com>
+	<CAAd_PgRh8rHBGCJb+doV_nf6AM510XNU9S1Nfhrz_vtOUkqWrQ@mail.gmail.com>
+	<D3457C00.2511F%Robert.Guglielmetti@nrel.gov>
+	<73189bde01b1aae114f7a9635230e6c9@tanha.pair.com>
+	<5AE7562D-CB96-45F5-AEA8-3E1C5361601D@gmail.com>
+	<2689f7a827f90185a7c8d6506bf1741d@tanha.pair.com>
+	<D3466C67.2531A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTFUUNHFGMiOFAoNeddQFqES-3jsj9cYoFFxDoZMAAc3A@mail.gmail.com>
+	<B9E95BC6-5BC7-48B1-B448-2FA9F867B976@gmail.com>
+	<D358B2C9.255F2%Robert.Guglielmetti@nrel.gov>
+	<2BD5E177-AF9B-4176-84E1-1C990D988CC5@gmail.com>
+	<CAAd_PgRR-s16pALr9R6tsMVassZ0QGTXa7jzB+PdFyzKUyR4XQ@mail.gmail.com>
+	<D358DE3D.25637%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgR7gyKHJSgmVaiiF+NDm3qGeqV30a4JRZz4CgMWm3_dZg@mail.gmail.com>
+	<D358FF86.2564A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgS+1iJig2ZO=HQBgiwv8=f6-r0XUbh25Aod0YqdUYWhBw@mail.gmail.com>
+	<1697C07A-A415-44A1-A647-79EBEB2BD2F0@gmail.com>
+	<CAAd_PgRJ0EoHWpDMt_76oDuaeVsD0F=UZPKvH+=SVuHYiwD8hg@mail.gmail.com>
+	<3C0648EB-437E-4C93-A0BA-94661AD94590@gmail.com>
+	<0936bdef527c57e0fc9b9b6f11d2c78d@tanha.pair.com>
+	<B0094431-7446-4960-B5AE-198BBB04758C@gmail.com>
+	<c161943726eb564b828397e04130da8d@tanha.pair.com>
+	<750B8822-656F-4B55-893F-8E01C42E7DFE@gmail.com>
+	<18cfd5a1aaa7fe5b7393852a99e7d2b0@tanha.pair.com>
+Message-ID: <0ce646872d1927fd27488b04b5f72279@tanha.pair.com>
+
+Hmmm... I really seem to be tired.
+That null byte is the one we just wrote ourselfes...
+
+But something in the counting is definitively off.
+"buf+MAXWLEN-crem"  will point to the second character of the next word,
+and memmove() probably reads one beyond the buffer.
+
+More tomorrow.
+
+
+Cheers
+-schorsch
+
+Am 2016-05-13 00:53, schrieb Georg Mischler:
+> The problem is that in wordfile(), crem still gets incremented even 
+> after
+> passing the null byte in buf. I must admit that I don't quite 
+> understand
+> the counting logic in there yet, the function looks unnecessarily 
+> complicated
+> to me. Maybe I'll see clearer tomorrow when I'm fully awake again...
+> 
+> Cheers
+> -schorsch
+> 
+> 
+> Am 2016-05-13 00:02, schrieb Gregory J. Ward:
+>> Should be reproducible with a sequence of read calls on a file with
+>> one or two printing characters per line, followed by "\r\n" as usual.
+>> If a character gets eaten, then it must be the _O_TEXT processing at
+>> fault, somehow.
+>> 
+>> -Greg
+>> 
+>>> From: Georg Mischler <schorsch at schorsch.com>
+>>> Subject: Re: [Radiance-dev] NREL Radiance re-distribution
+>>> Date: May 12, 2016 12:29:03 PM PDT
+>>> 
+>>> Adding 9-letter modifier 'solar1215'
+>>> Adding 8-letter modifier 'olar1216'
+>>> Adding 9-letter modifier 'solar1217'
+>>> 
+>>> Not really looking forward to the digging...
+>>> 
+>>> Cheers
+>>> -schorsch
+>>> 
+>>> Am 2016-05-12 17:49, schrieb Gregory J. Ward:
+>>>> Well, due to the way wordfile.c backs up over words split by read
+>>>> buffer boundaries, its effective buffer length changes, so it does 
+>>>> in
+>>>> fact read this particular line in a way that splits the EOL 
+>>>> character.
+>>>> I had to simulate it, but I think I counted correctly.
+>>>> It will be interesting to see if your build has the same issue....
+>>>> Cheers,
+>>>> -Greg
+>>>>> From: Georg Mischler <schorsch at schorsch.com>
+>>>>> Subject: Re: [Radiance-dev] NREL Radiance re-distribution
+>>>>> Date: May 12, 2016 12:10:56 AM PDT
+>>>>> There's no way for this to be the same problem we recently 
+>>>>> identified.
+>>>>> For one, I don't think Robs gcc is using the MS Universal CRT from
+>>>>> Windows 10 which caused that one. And secondly, the character that 
+>>>>> gets
+>>>>> eaten here is nowhere near a line ending.
+>>>>> Mostapha, can you send me your current test dataset? I only have 
+>>>>> the
+>>>>> version with 420 names, which does not seem to cause trouble 
+>>>>> anymore.
+>>>>> Then I'll check if the SCons build has the same issue, and if so,
+>>>>> walk through it to see what really happens.
+>>>>> Cheers
+>>>>> -schorsch
+>>>>> PS: I'm following radiance-dev, no need for a seperate cc.
+>>>> _______________________________________________
+>>>> Radiance-dev mailing list
+>>>> Radiance-dev at radiance-online.org
+>>>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>>> 
+>>> --
+>>> Georg Mischler  --  simulations developer  --  schorsch at schorsch 
+>>> com
+>>> +schorsch.com+  --  lighting design tools  --  
+>>> http://www.schorsch.com/
+>>> 
+>>> _______________________________________________
+>>> Radiance-dev mailing list
+>>> Radiance-dev at radiance-online.org
+>>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>> 
+>> _______________________________________________
+>> Radiance-dev mailing list
+>> Radiance-dev at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From gregoryjward at gmail.com  Thu May 12 17:06:44 2016
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Thu, 12 May 2016 17:06:44 -0700
+Subject: [Radiance-dev] NREL Radiance re-distribution
+In-Reply-To: <0ce646872d1927fd27488b04b5f72279@tanha.pair.com>
+References: <CADoiYWQVXJ5s6muWpy3=VTPWDQFN0J9sKnJK_=g1Wk_xAG382w@mail.gmail.com>
+	<D33E59BE.246D7%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSbdgxRJJhnPEOaK3+N=sZ7Yd1uSjgrHSG=YEMq-_a3nQ@mail.gmail.com>
+	<D33E5D06.246F4%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWQMNuMBu-LBFiR+U_-Ha5ZuYR=rnMPZnxPP-o3zDbCRjg@mail.gmail.com>
+	<D33E8839.24873%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRuYss8-sC5vL+XawsTm8fUB7Na8u=tULT7n82Nka2QJw@mail.gmail.com>
+	<CADoiYWR0THhLfCv1v8=6zHi00XE6an2p-wr1a2_ivCP7CCA=zg@mail.gmail.com>
+	<D3438A49.24D35%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRfp+O9OETO7Lru+08aLm27q8QUFs-Szb3KATOKZFjnKA@mail.gmail.com>
+	<D345353D.2505A%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSQFPMOkj9E8r8Jt9M0cpLY9z1g51-fYBYuzPVXez7Xcw@mail.gmail.com>
+	<D345375A.25060%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTjbSpKXbEFBnM=+GNX9KCE7+p=sgKUSkLhkdedmd7T0Q@mail.gmail.com>
+	<CAAd_PgRh8rHBGCJb+doV_nf6AM510XNU9S1Nfhrz_vtOUkqWrQ@mail.gmail.com>
+	<D3457C00.2511F%Robert.Guglielmetti@nrel.gov>
+	<73189bde01b1aae114f7a9635230e6c9@tanha.pair.com>
+	<5AE7562D-CB96-45F5-AEA8-3E1C5361601D@gmail.com>
+	<2689f7a827f90185a7c8d6506bf1741d@tanha.pair.com>
+	<D3466C67.2531A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTFUUNHFGMiOFAoNeddQFqES-3jsj9cYoFFxDoZMAAc3A@mail.gmail.com>
+	<B9E95BC6-5BC7-48B1-B448-2FA9F867B976@gmail.com>
+	<D358B2C9.255F2%Robert.Guglielmetti@nrel.gov>
+	<2BD5E177-AF9B-4176-84E1-1C990D988CC5@gmail.com>
+	<CAAd_PgRR-s16pALr9R6tsMVassZ0QGTXa7jzB+PdFyzKUyR4XQ@mail.gmail.com>
+	<D358DE3D.25637%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgR7gyKHJSgmVaiiF+NDm3qGeqV30a4JRZz4CgMWm3_dZg@mail.gmail.com>
+	<D358FF86.2564A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgS+1iJig2ZO=HQBgiwv8=f6-r0XUbh25Aod0YqdUYWhBw@mail.gmail.com>
+	<1697C07A-A415-44A1-A647-79EBEB2BD2F0@gmail.com>
+	<CAAd_PgRJ0EoHWpDMt_76oDuaeVsD0F=UZPKvH+=SVuHYiwD8hg@mail.gmail.com>
+	<3C0648EB-437E-4C93-A0BA-94661AD94590@gmail.com>
+	<0936bdef527c57e0fc9b9b6f11d2c78d@tanha.pair.com>
+	<B0094431-7446-4960-B5AE-198BBB04758C@gmail.com>
+	<c161943726eb564b828397e04130da8d@tanha.pair.com>
+	<750B8822-656F-4B55-893F-8E01C42E7DFE@gmail.com>
+	<18cfd5a1aaa7fe5b7393852a99e7d2b0@tanha.pair.com>
+	<0ce646872d1927fd27488b04b5f72279@tanha.pair.com>
+Message-ID: <AFBD9D54-C5E1-4671-9EDE-6CFCF81524F8@gmail.com>
+
+I agree the code in wordfile.c is a bit over-complex and confusing.  Hopefully, it will make more sense to you tomorrow.
+
+Meanwhile, you can try running the following code on the attached files:
+
+#include <stdio.h>
+#include "platform.h"
+
+int
+main(int argc, char *argv[])
+{
+	char	rdbuf[40];
+	int	n;
+
+	while ((n = read(0, rdbuf, sizeof(rdbuf))) > 0) {
+		char	*cp = rdbuf;
+		printf("Read %d characters:\n\"", n);
+		while (n--)
+			fputc(*cp++, stdout);
+		fputs("\"\n", stdout);
+	}
+	return 0;
+}
+
+Running "checkread < testfile_unix.txt" gives me the following on Mac OS X:
+
+Read 40 characters:
+"123456789
+123456789
+123456789
+123456789
+"
+Read 20 characters:
+"123456789
+123456789
+"
+
+You should get the same result on Windows using this file.  However, using the "testfile_dos.txt" as your input, you might get:
+
+Read 37 characters:
+"123456789
+123456789
+123456789
+1234567"
+Read 23 characters:
+"89
+123456789
+123456789
+"
+
+Using "testfile_dos2.txt", I get:
+
+Read 40 characters:
+"12345678
+12345678
+12345678
+12345678
+"
+Read 20 characters:
+"12345678
+12345678
+"
+You should get the same, but with different character counts -- 36 in the first read and 18 in the second as it removes the '\r' characters from the result in the default _O_TEXT mode.  Now, try adding an extra character to the beginning of the "testfile_dos2.txt" file, so that the "\r\n" sequence splits the read calls.  I'm hoping this will demonstrate the bug, or else I'm still confused about what's going wrong in Windows.
+
+Cheers,
+-Greg
+
+-------------- next part --------------
+An embedded and charset-unspecified text was scrubbed...
+Name: testfile_unix.txt
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20160512/6fe4b107/attachment.txt>
+-------------- next part --------------
+An embedded and charset-unspecified text was scrubbed...
+Name: testfile_dos.txt
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20160512/6fe4b107/attachment-0001.txt>
+-------------- next part --------------
+An embedded and charset-unspecified text was scrubbed...
+Name: testfile_dos2.txt
+URL: <http://www.radiance-online.org/pipermail/radiance-dev/attachments/20160512/6fe4b107/attachment-0002.txt>
+-------------- next part --------------
+
+
+> From: Georg Mischler <schorsch at schorsch.com>
+> Subject: Re: [Radiance-dev] NREL Radiance re-distribution
+> Date: May 12, 2016 4:17:50 PM PDT
+> 
+> Hmmm... I really seem to be tired.
+> That null byte is the one we just wrote ourselfes...
+> 
+> But something in the counting is definitively off.
+> "buf+MAXWLEN-crem"  will point to the second character of the next word,
+> and memmove() probably reads one beyond the buffer.
+> 
+> More tomorrow.
+> 
+> Cheers
+> -schorsch
+> 
+> Am 2016-05-13 00:53, schrieb Georg Mischler:
+>> The problem is that in wordfile(), crem still gets incremented even after
+>> passing the null byte in buf. I must admit that I don't quite understand
+>> the counting logic in there yet, the function looks unnecessarily complicated
+>> to me. Maybe I'll see clearer tomorrow when I'm fully awake again...
+>> Cheers
+>> -schorsch
+>> Am 2016-05-13 00:02, schrieb Gregory J. Ward:
+>>> Should be reproducible with a sequence of read calls on a file with
+>>> one or two printing characters per line, followed by "\r\n" as usual.
+>>> If a character gets eaten, then it must be the _O_TEXT processing at
+>>> fault, somehow.
+>>> -Greg
+
+From schorsch at schorsch.com  Fri May 13 02:08:12 2016
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Fri, 13 May 2016 11:08:12 +0200
+Subject: [Radiance-dev] NREL Radiance re-distribution
+In-Reply-To: <AFBD9D54-C5E1-4671-9EDE-6CFCF81524F8@gmail.com>
+References: <CADoiYWQVXJ5s6muWpy3=VTPWDQFN0J9sKnJK_=g1Wk_xAG382w@mail.gmail.com>
+	<D33E59BE.246D7%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSbdgxRJJhnPEOaK3+N=sZ7Yd1uSjgrHSG=YEMq-_a3nQ@mail.gmail.com>
+	<D33E5D06.246F4%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWQMNuMBu-LBFiR+U_-Ha5ZuYR=rnMPZnxPP-o3zDbCRjg@mail.gmail.com>
+	<D33E8839.24873%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRuYss8-sC5vL+XawsTm8fUB7Na8u=tULT7n82Nka2QJw@mail.gmail.com>
+	<CADoiYWR0THhLfCv1v8=6zHi00XE6an2p-wr1a2_ivCP7CCA=zg@mail.gmail.com>
+	<D3438A49.24D35%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRfp+O9OETO7Lru+08aLm27q8QUFs-Szb3KATOKZFjnKA@mail.gmail.com>
+	<D345353D.2505A%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSQFPMOkj9E8r8Jt9M0cpLY9z1g51-fYBYuzPVXez7Xcw@mail.gmail.com>
+	<D345375A.25060%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTjbSpKXbEFBnM=+GNX9KCE7+p=sgKUSkLhkdedmd7T0Q@mail.gmail.com>
+	<CAAd_PgRh8rHBGCJb+doV_nf6AM510XNU9S1Nfhrz_vtOUkqWrQ@mail.gmail.com>
+	<D3457C00.2511F%Robert.Guglielmetti@nrel.gov>
+	<73189bde01b1aae114f7a9635230e6c9@tanha.pair.com>
+	<5AE7562D-CB96-45F5-AEA8-3E1C5361601D@gmail.com>
+	<2689f7a827f90185a7c8d6506bf1741d@tanha.pair.com>
+	<D3466C67.2531A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTFUUNHFGMiOFAoNeddQFqES-3jsj9cYoFFxDoZMAAc3A@mail.gmail.com>
+	<B9E95BC6-5BC7-48B1-B448-2FA9F867B976@gmail.com>
+	<D358B2C9.255F2%Robert.Guglielmetti@nrel.gov>
+	<2BD5E177-AF9B-4176-84E1-1C990D988CC5@gmail.com>
+	<CAAd_PgRR-s16pALr9R6tsMVassZ0QGTXa7jzB+PdFyzKUyR4XQ@mail.gmail.com>
+	<D358DE3D.25637%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgR7gyKHJSgmVaiiF+NDm3qGeqV30a4JRZz4CgMWm3_dZg@mail.gmail.com>
+	<D358FF86.2564A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgS+1iJig2ZO=HQBgiwv8=f6-r0XUbh25Aod0YqdUYWhBw@mail.gmail.com>
+	<1697C07A-A415-44A1-A647-79EBEB2BD2F0@gmail.com>
+	<CAAd_PgRJ0EoHWpDMt_76oDuaeVsD0F=UZPKvH+=SVuHYiwD8hg@mail.gmail.com>
+	<3C0648EB-437E-4C93-A0BA-94661AD94590@gmail.com>
+	<0936bdef527c57e0fc9b9b6f11d2c78d@tanha.pair.com>
+	<B0094431-7446-4960-B5AE-198BBB04758C@gmail.com>
+	<c161943726eb564b828397e04130da8d@tanha.pair.com>
+	<750B8822-656F-4B55-893F-8E01C42E7DFE@gmail.com>
+	<18cfd5a1aaa7fe5b7393852a99e7d2b0@tanha.pair.com>
+	<0ce646872d1927fd27488b04b5f72279@tanha.pair.com>
+	<AFBD9D54-C5E1-4671-9EDE-6CFCF81524F8@gmail.com>
+Message-ID: <68df2b46b0b6b7f46aa1c55946cb86f1@tanha.pair.com>
+
+Ok, I think I got it figured out.
+
+The code in wordfile() blindly assumed that read() would always return
+exactly the number of bytes requested. This is NOT garanteed by the
+specification. It's perfectly valid for read() to return less, but
+never more data than requested.
+
+Windows is doing something very reasonable here. When the requested
+read size would split up a CRNL, then it stops reading one byte earlier.
+This ensures that the next read() will be able to correctly convert the
+CRNL into a single NL.
+
+The consequence for us is that counting back from the end of MAXWLEN 
+will
+give us the wrong position in the data. We need to save the value of n
+right after the read(), and use that instead of MAXWLEN in the 
+memmove().
+Reading in binary mode is unnecessary.
+
+I've checked a working version into CVS.
+
+Cheers
+-schorsch
+
+
+Am 2016-05-13 02:06, schrieb Gregory J. Ward:
+> I agree the code in wordfile.c is a bit over-complex and confusing.
+> Hopefully, it will make more sense to you tomorrow.
+> 
+> Meanwhile, you can try running the following code on the attached 
+> files:
+> 
+> #include <stdio.h>
+> #include "platform.h"
+> 
+> int
+> main(int argc, char *argv[])
+> {
+> 	char	rdbuf[40];
+> 	int	n;
+> 
+> 	while ((n = read(0, rdbuf, sizeof(rdbuf))) > 0) {
+> 		char	*cp = rdbuf;
+> 		printf("Read %d characters:\n\"", n);
+> 		while (n--)
+> 			fputc(*cp++, stdout);
+> 		fputs("\"\n", stdout);
+> 	}
+> 	return 0;
+> }
+> 
+> Running "checkread < testfile_unix.txt" gives me the following on Mac 
+> OS X:
+> 
+> Read 40 characters:
+> "123456789
+> 123456789
+> 123456789
+> 123456789
+> "
+> Read 20 characters:
+> "123456789
+> 123456789
+> "
+> 
+> You should get the same result on Windows using this file.  However,
+> using the "testfile_dos.txt" as your input, you might get:
+> 
+> Read 37 characters:
+> "123456789
+> 123456789
+> 123456789
+> 1234567"
+> Read 23 characters:
+> "89
+> 123456789
+> 123456789
+> "
+> 
+> Using "testfile_dos2.txt", I get:
+> 
+> Read 40 characters:
+> "12345678
+> 12345678
+> 12345678
+> 12345678
+> "
+> Read 20 characters:
+> "12345678
+> 12345678
+> "
+> You should get the same, but with different character counts -- 36 in
+> the first read and 18 in the second as it removes the '\r' characters
+> from the result in the default _O_TEXT mode.  Now, try adding an extra
+> character to the beginning of the "testfile_dos2.txt" file, so that
+> the "\r\n" sequence splits the read calls.  I'm hoping this will
+> demonstrate the bug, or else I'm still confused about what's going
+> wrong in Windows.
+> 
+> Cheers,
+> -Greg
+> 
+> 
+> 
+> 
+>> From: Georg Mischler <schorsch at schorsch.com>
+>> Subject: Re: [Radiance-dev] NREL Radiance re-distribution
+>> Date: May 12, 2016 4:17:50 PM PDT
+>> 
+>> Hmmm... I really seem to be tired.
+>> That null byte is the one we just wrote ourselfes...
+>> 
+>> But something in the counting is definitively off.
+>> "buf+MAXWLEN-crem"  will point to the second character of the next 
+>> word,
+>> and memmove() probably reads one beyond the buffer.
+>> 
+>> More tomorrow.
+>> 
+>> Cheers
+>> -schorsch
+>> 
+>> Am 2016-05-13 00:53, schrieb Georg Mischler:
+>>> The problem is that in wordfile(), crem still gets incremented even 
+>>> after
+>>> passing the null byte in buf. I must admit that I don't quite 
+>>> understand
+>>> the counting logic in there yet, the function looks unnecessarily 
+>>> complicated
+>>> to me. Maybe I'll see clearer tomorrow when I'm fully awake again...
+>>> Cheers
+>>> -schorsch
+>>> Am 2016-05-13 00:02, schrieb Gregory J. Ward:
+>>>> Should be reproducible with a sequence of read calls on a file with
+>>>> one or two printing characters per line, followed by "\r\n" as 
+>>>> usual.
+>>>> If a character gets eaten, then it must be the _O_TEXT processing at
+>>>> fault, somehow.
+>>>> -Greg
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From rmfritz3 at gmail.com  Fri May 13 04:36:10 2016
+From: rmfritz3 at gmail.com (Randolph Fritz)
+Date: Fri, 13 May 2016 04:36:10 -0700
+Subject: [Radiance-dev] NREL Radiance re-distribution
+In-Reply-To: <68df2b46b0b6b7f46aa1c55946cb86f1@tanha.pair.com>
+References: <CADoiYWQVXJ5s6muWpy3=VTPWDQFN0J9sKnJK_=g1Wk_xAG382w@mail.gmail.com>
+	<D33E59BE.246D7%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSbdgxRJJhnPEOaK3+N=sZ7Yd1uSjgrHSG=YEMq-_a3nQ@mail.gmail.com>
+	<D33E5D06.246F4%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWQMNuMBu-LBFiR+U_-Ha5ZuYR=rnMPZnxPP-o3zDbCRjg@mail.gmail.com>
+	<D33E8839.24873%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRuYss8-sC5vL+XawsTm8fUB7Na8u=tULT7n82Nka2QJw@mail.gmail.com>
+	<CADoiYWR0THhLfCv1v8=6zHi00XE6an2p-wr1a2_ivCP7CCA=zg@mail.gmail.com>
+	<D3438A49.24D35%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRfp+O9OETO7Lru+08aLm27q8QUFs-Szb3KATOKZFjnKA@mail.gmail.com>
+	<D345353D.2505A%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSQFPMOkj9E8r8Jt9M0cpLY9z1g51-fYBYuzPVXez7Xcw@mail.gmail.com>
+	<D345375A.25060%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTjbSpKXbEFBnM=+GNX9KCE7+p=sgKUSkLhkdedmd7T0Q@mail.gmail.com>
+	<CAAd_PgRh8rHBGCJb+doV_nf6AM510XNU9S1Nfhrz_vtOUkqWrQ@mail.gmail.com>
+	<D3457C00.2511F%Robert.Guglielmetti@nrel.gov>
+	<73189bde01b1aae114f7a9635230e6c9@tanha.pair.com>
+	<5AE7562D-CB96-45F5-AEA8-3E1C5361601D@gmail.com>
+	<2689f7a827f90185a7c8d6506bf1741d@tanha.pair.com>
+	<D3466C67.2531A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTFUUNHFGMiOFAoNeddQFqES-3jsj9cYoFFxDoZMAAc3A@mail.gmail.com>
+	<B9E95BC6-5BC7-48B1-B448-2FA9F867B976@gmail.com>
+	<D358B2C9.255F2%Robert.Guglielmetti@nrel.gov>
+	<2BD5E177-AF9B-4176-84E1-1C990D988CC5@gmail.com>
+	<CAAd_PgRR-s16pALr9R6tsMVassZ0QGTXa7jzB+PdFyzKUyR4XQ@mail.gmail.com>
+	<D358DE3D.25637%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgR7gyKHJSgmVaiiF+NDm3qGeqV30a4JRZz4CgMWm3_dZg@mail.gmail.com>
+	<D358FF86.2564A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgS+1iJig2ZO=HQBgiwv8=f6-r0XUbh25Aod0YqdUYWhBw@mail.gmail.com>
+	<1697C07A-A415-44A1-A647-79EBEB2BD2F0@gmail.com>
+	<CAAd_PgRJ0EoHWpDMt_76oDuaeVsD0F=UZPKvH+=SVuHYiwD8hg@mail.gmail.com>
+	<3C0648EB-437E-4C93-A0BA-94661AD94590@gmail.com>
+	<0936bdef527c57e0fc9b9b6f11d2c78d@tanha.pair.com>
+	<B0094431-7446-4960-B5AE-198BBB04758C@gmail.com>
+	<c161943726eb564b828397e04130da8d@tanha.pair.com>
+	<750B8822-656F-4B55-893F-8E01C42E7DFE@gmail.com>
+	<18cfd5a1aaa7fe5b7393852a99e7d2b0@tanha.pair.com>
+	<0ce646872d1927fd27488b04b5f72279@tanha.pair.com>
+	<AFBD9D54-C5E1-4671-9EDE-6CFCF81524F8@gmail.com>
+	<68df2b46b0b6b7f46aa1c55946cb86f1@tanha.pair.com>
+Message-ID: <B5DAEC9E-CA2A-4820-B171-2F7E5EBA1B02@gmail.com>
+
+
+> On May 13, 2016, at 2:08 AM, Georg Mischler <schorsch at schorsch.com> wrote:
+> 
+> Ok, I think I got it figured out.
+> 
+> The code in wordfile() blindly assumed that read() would always return
+> exactly the number of bytes requested. This is NOT garanteed by the
+> specification. It's perfectly valid for read() to return less, but
+> never more data than requested.
+
+On Unix a short read from a regular file always means EOF.  Read(2) is an operating system function call.
+
+> Windows is doing something very reasonable here. When the requested
+> read size would split up a CRNL, then it stops reading one byte earlier.
+> This ensures that the next read() will be able to correctly convert the
+> CRNL into a single NL.
+
+On Windows, apparently, not always.  Unix handles such things in the stdio library.
+
+Bah!
+
+Randolph
+
+
+
+From schorsch at schorsch.com  Fri May 13 05:04:24 2016
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Fri, 13 May 2016 14:04:24 +0200
+Subject: [Radiance-dev] NREL Radiance re-distribution
+In-Reply-To: <B5DAEC9E-CA2A-4820-B171-2F7E5EBA1B02@gmail.com>
+References: <CADoiYWQVXJ5s6muWpy3=VTPWDQFN0J9sKnJK_=g1Wk_xAG382w@mail.gmail.com>
+	<D33E59BE.246D7%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSbdgxRJJhnPEOaK3+N=sZ7Yd1uSjgrHSG=YEMq-_a3nQ@mail.gmail.com>
+	<D33E5D06.246F4%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWQMNuMBu-LBFiR+U_-Ha5ZuYR=rnMPZnxPP-o3zDbCRjg@mail.gmail.com>
+	<D33E8839.24873%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRuYss8-sC5vL+XawsTm8fUB7Na8u=tULT7n82Nka2QJw@mail.gmail.com>
+	<CADoiYWR0THhLfCv1v8=6zHi00XE6an2p-wr1a2_ivCP7CCA=zg@mail.gmail.com>
+	<D3438A49.24D35%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRfp+O9OETO7Lru+08aLm27q8QUFs-Szb3KATOKZFjnKA@mail.gmail.com>
+	<D345353D.2505A%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSQFPMOkj9E8r8Jt9M0cpLY9z1g51-fYBYuzPVXez7Xcw@mail.gmail.com>
+	<D345375A.25060%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTjbSpKXbEFBnM=+GNX9KCE7+p=sgKUSkLhkdedmd7T0Q@mail.gmail.com>
+	<CAAd_PgRh8rHBGCJb+doV_nf6AM510XNU9S1Nfhrz_vtOUkqWrQ@mail.gmail.com>
+	<D3457C00.2511F%Robert.Guglielmetti@nrel.gov>
+	<73189bde01b1aae114f7a9635230e6c9@tanha.pair.com>
+	<5AE7562D-CB96-45F5-AEA8-3E1C5361601D@gmail.com>
+	<2689f7a827f90185a7c8d6506bf1741d@tanha.pair.com>
+	<D3466C67.2531A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTFUUNHFGMiOFAoNeddQFqES-3jsj9cYoFFxDoZMAAc3A@mail.gmail.com>
+	<B9E95BC6-5BC7-48B1-B448-2FA9F867B976@gmail.com>
+	<D358B2C9.255F2%Robert.Guglielmetti@nrel.gov>
+	<2BD5E177-AF9B-4176-84E1-1C990D988CC5@gmail.com>
+	<CAAd_PgRR-s16pALr9R6tsMVassZ0QGTXa7jzB+PdFyzKUyR4XQ@mail.gmail.com>
+	<D358DE3D.25637%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgR7gyKHJSgmVaiiF+NDm3qGeqV30a4JRZz4CgMWm3_dZg@mail.gmail.com>
+	<D358FF86.2564A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgS+1iJig2ZO=HQBgiwv8=f6-r0XUbh25Aod0YqdUYWhBw@mail.gmail.com>
+	<1697C07A-A415-44A1-A647-79EBEB2BD2F0@gmail.com>
+	<CAAd_PgRJ0EoHWpDMt_76oDuaeVsD0F=UZPKvH+=SVuHYiwD8hg@mail.gmail.com>
+	<3C0648EB-437E-4C93-A0BA-94661AD94590@gmail.com>
+	<0936bdef527c57e0fc9b9b6f11d2c78d@tanha.pair.com>
+	<B0094431-7446-4960-B5AE-198BBB04758C@gmail.com>
+	<c161943726eb564b828397e04130da8d@tanha.pair.com>
+	<750B8822-656F-4B55-893F-8E01C42E7DFE@gmail.com>
+	<18cfd5a1aaa7fe5b7393852a99e7d2b0@tanha.pair.com>
+	<0ce646872d1927fd27488b04b5f72279@tanha.pair.com>
+	<AFBD9D54-C5E1-4671-9EDE-6CFCF81524F8@gmail.com>
+	<68df2b46b0b6b7f46aa1c55946cb86f1@tanha.pair.com>
+	<B5DAEC9E-CA2A-4820-B171-2F7E5EBA1B02@gmail.com>
+Message-ID: <2867bbdd0e8347d195b313f00d889b53@tanha.pair.com>
+
+Am 2016-05-13 13:36, schrieb Randolph Fritz:
+>> On May 13, 2016, at 2:08 AM, Georg Mischler <schorsch at schorsch.com> 
+>> wrote:
+> 
+> On Unix a short read from a regular file always means EOF.  Read(2) is
+> an operating system function call.
+
+Not necessarily. It could also mean having been interrupted by a signal
+(except on systems with BSD semantics). I think we had a similar 
+discussion
+just recently here, though I can't find it anymore...
+
+The Linux manpage very succinctly tells us to expect "up to count 
+bytes".
+This means that we *must* be prepared for it to deliver a smaller 
+amount.
+It usually happens to be the case that unix systems (barring any 
+external
+intervention like signals) don't have a reason to read less than was 
+asked for.
+But that is just a happy coincidence, and not part of the specification.
+
+
+>> Windows is doing something very reasonable here. When the requested
+>> read size would split up a CRNL, then it stops reading one byte 
+>> earlier.
+>> This ensures that the next read() will be able to correctly convert 
+>> the
+>> CRNL into a single NL.
+> 
+> On Windows, apparently, not always.  Unix handles such things in the
+> stdio library.
+
+This is managed by the CRT on all systems. The thing on Windows is that
+there are many seperate versions of the CRT around, because in the past 
+it
+was considered part of the compiler. In the future (starting with Win 10
+and VS 2015), the new "universal" CRT is considered part of the OS like
+on unix, which will eliminate most inconistencies in the long run.
+
+Cheers
+-schorsch
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From rmfritz3 at gmail.com  Fri May 13 05:19:35 2016
+From: rmfritz3 at gmail.com (Randolph Fritz)
+Date: Fri, 13 May 2016 05:19:35 -0700
+Subject: [Radiance-dev] NREL Radiance re-distribution
+In-Reply-To: <2867bbdd0e8347d195b313f00d889b53@tanha.pair.com>
+References: <CADoiYWQVXJ5s6muWpy3=VTPWDQFN0J9sKnJK_=g1Wk_xAG382w@mail.gmail.com>
+	<D33E59BE.246D7%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSbdgxRJJhnPEOaK3+N=sZ7Yd1uSjgrHSG=YEMq-_a3nQ@mail.gmail.com>
+	<D33E5D06.246F4%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWQMNuMBu-LBFiR+U_-Ha5ZuYR=rnMPZnxPP-o3zDbCRjg@mail.gmail.com>
+	<D33E8839.24873%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRuYss8-sC5vL+XawsTm8fUB7Na8u=tULT7n82Nka2QJw@mail.gmail.com>
+	<CADoiYWR0THhLfCv1v8=6zHi00XE6an2p-wr1a2_ivCP7CCA=zg@mail.gmail.com>
+	<D3438A49.24D35%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRfp+O9OETO7Lru+08aLm27q8QUFs-Szb3KATOKZFjnKA@mail.gmail.com>
+	<D345353D.2505A%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSQFPMOkj9E8r8Jt9M0cpLY9z1g51-fYBYuzPVXez7Xcw@mail.gmail.com>
+	<D345375A.25060%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTjbSpKXbEFBnM=+GNX9KCE7+p=sgKUSkLhkdedmd7T0Q@mail.gmail.com>
+	<CAAd_PgRh8rHBGCJb+doV_nf6AM510XNU9S1Nfhrz_vtOUkqWrQ@mail.gmail.com>
+	<D3457C00.2511F%Robert.Guglielmetti@nrel.gov>
+	<73189bde01b1aae114f7a9635230e6c9@tanha.pair.com>
+	<5AE7562D-CB96-45F5-AEA8-3E1C5361601D@gmail.com>
+	<2689f7a827f90185a7c8d6506bf1741d@tanha.pair.com>
+	<D3466C67.2531A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTFUUNHFGMiOFAoNeddQFqES-3jsj9cYoFFxDoZMAAc3A@mail.gmail.com>
+	<B9E95BC6-5BC7-48B1-B448-2FA9F867B976@gmail.com>
+	<D358B2C9.255F2%Robert.Guglielmetti@nrel.gov>
+	<2BD5E177-AF9B-4176-84E1-1C990D988CC5@gmail.com>
+	<CAAd_PgRR-s16pALr9R6tsMVassZ0QGTXa7jzB+PdFyzKUyR4XQ@mail.gmail.com>
+	<D358DE3D.25637%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgR7gyKHJSgmVaiiF+NDm3qGeqV30a4JRZz4CgMWm3_dZg@mail.gmail.com>
+	<D358FF86.2564A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgS+1iJig2ZO=HQBgiwv8=f6-r0XUbh25Aod0YqdUYWhBw@mail.gmail.com>
+	<1697C07A-A415-44A1-A647-79EBEB2BD2F0@gmail.com>
+	<CAAd_PgRJ0EoHWpDMt_76oDuaeVsD0F=UZPKvH+=SVuHYiwD8hg@mail.gmail.com>
+	<3C0648EB-437E-4C93-A0BA-94661AD94590@gmail.com>
+	<0936bdef527c57e0fc9b9b6f11d2c78d@tanha.pair.com>
+	<B0094431-7446-4960-B5AE-198BBB04758C@gmail.com>
+	<c161943726eb564b828397e04130da8d@tanha.pair.com>
+	<750B8822-656F-4B55-893F-8E01C42E7DFE@gmail.com>
+	<18cfd5a1aaa7fe5b7393852a99e7d2b0@tanha.pair.com>
+	<0ce646872d1927fd27488b04b5f72279@tanha.pair.com>
+	<AFBD9D54-C5E1-4671-9EDE-6CFCF81524F8@gmail.com>
+	<68df2b46b0b6b7f46aa1c55946cb86f1@tanha.pair.com>
+	<B5DAEC9E-CA2A-4820-B171-2F7E5EBA1B02@gmail.com>
+	<2867bbdd0e8347d195b313f00d889b53@tanha.pair.com>
+Message-ID: <7FA1A2B9-AE78-4D37-AEA2-AA5799C21792@gmail.com>
+
+> On May 13, 2016, at 5:04 AM, Georg Mischler <schorsch at schorsch.com> wrote:
+> 
+> Not necessarily. It could also mean having been interrupted by a signal
+> (except on systems with BSD semantics). I think we had a similar discussion
+> just recently here, though I can't find it anymore?
+
+You?re right; the Linux man page says:
+> It is not an error if this number is smaller than the number of bytes requested; this may happen for example because fewer bytes are actually available right now (maybe because we were close to end-of-file, or because we are reading from a pipe, or from a terminal), or because 
+> read() was interrupted by a signal.
+
+Which means this would be an intermittent bug on Unix systems as well.  Arrgh.
+
+Randolph
+
+From gregoryjward at gmail.com  Fri May 13 09:24:03 2016
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri, 13 May 2016 09:24:03 -0700
+Subject: [Radiance-dev] NREL Radiance re-distribution
+In-Reply-To: <68df2b46b0b6b7f46aa1c55946cb86f1@tanha.pair.com>
+References: <CADoiYWQVXJ5s6muWpy3=VTPWDQFN0J9sKnJK_=g1Wk_xAG382w@mail.gmail.com>
+	<D33E59BE.246D7%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSbdgxRJJhnPEOaK3+N=sZ7Yd1uSjgrHSG=YEMq-_a3nQ@mail.gmail.com>
+	<D33E5D06.246F4%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWQMNuMBu-LBFiR+U_-Ha5ZuYR=rnMPZnxPP-o3zDbCRjg@mail.gmail.com>
+	<D33E8839.24873%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRuYss8-sC5vL+XawsTm8fUB7Na8u=tULT7n82Nka2QJw@mail.gmail.com>
+	<CADoiYWR0THhLfCv1v8=6zHi00XE6an2p-wr1a2_ivCP7CCA=zg@mail.gmail.com>
+	<D3438A49.24D35%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRfp+O9OETO7Lru+08aLm27q8QUFs-Szb3KATOKZFjnKA@mail.gmail.com>
+	<D345353D.2505A%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSQFPMOkj9E8r8Jt9M0cpLY9z1g51-fYBYuzPVXez7Xcw@mail.gmail.com>
+	<D345375A.25060%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTjbSpKXbEFBnM=+GNX9KCE7+p=sgKUSkLhkdedmd7T0Q@mail.gmail.com>
+	<CAAd_PgRh8rHBGCJb+doV_nf6AM510XNU9S1Nfhrz_vtOUkqWrQ@mail.gmail.com>
+	<D3457C00.2511F%Robert.Guglielmetti@nrel.gov>
+	<73189bde01b1aae114f7a9635230e6c9@tanha.pair.com>
+	<5AE7562D-CB96-45F5-AEA8-3E1C5361601D@gmail.com>
+	<2689f7a827f90185a7c8d6506bf1741d@tanha.pair.com>
+	<D3466C67.2531A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTFUUNHFGMiOFAoNeddQFqES-3jsj9cYoFFxDoZMAAc3A@mail.gmail.com>
+	<B9E95BC6-5BC7-48B1-B448-2FA9F867B976@gmail.com>
+	<D358B2C9.255F2%Robert.Guglielmetti@nrel.gov>
+	<2BD5E177-AF9B-4176-84E1-1C990D988CC5@gmail.com>
+	<CAAd_PgRR-s16pALr9R6tsMVassZ0QGTXa7jzB+PdFyzKUyR4XQ@mail.gmail.com>
+	<D358DE3D.25637%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgR7gyKHJSgmVaiiF+NDm3qGeqV30a4JRZz4CgMWm3_dZg@mail.gmail.com>
+	<D358FF86.2564A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgS+1iJig2ZO=HQBgiwv8=f6-r0XUbh25Aod0YqdUYWhBw@mail.gmail.com>
+	<1697C07A-A415-44A1-A647-79EBEB2BD2F0@gmail.com>
+	<CAAd_PgRJ0EoHWpDMt_76oDuaeVsD0F=UZPKvH+=SVuHYiwD8hg@mail.gmail.com>
+	<3C0648EB-437E-4C93-A0BA-94661AD94590@gmail.com>
+	<0936bdef527c57e0fc9b9b6f11d2c78d@tanha.pair.com>
+	<B0094431-7446-4960-B5AE-198BBB04758C@gmail.com>
+	<c161943726eb564b828397e04130da8d@tanha.pair.com>
+	<750B8822-656F-4B55-893F-8E01C42E7DFE@gmail.com>
+	<18cfd5a1aaa7fe5b7393852a99e7d2b0@tanha.pair.com>
+	<0ce646872d1927fd27488b04b5f72279@tanha.pair.com>
+	<AFBD9D54-C5E1-4671-9EDE-6CFCF81524F8@gmail.com>
+	<68df2b46b0b6b7f46aa1c55946cb86f1@tanha.pair.com>
+Message-ID: <FDF4BB8E-74B0-443E-A6D9-775B2AC0E97D@gmail.com>
+
+Wow -- missed that one!  I'm kind of surprised it didn't fail more often...  Now, I'm extra curious to see what the test I sent you returns on Windows, since I was assuming the earlier bug (which *was* caused by assuming the requested buffer length was always returned) was caused by short counts in a different context.  The bug you just fixed was a remnant of that earlier bug.
+
+-Greg
+
+> From: Georg Mischler <schorsch at schorsch.com>
+> Subject: Re: [Radiance-dev] NREL Radiance re-distribution
+> Date: May 13, 2016 2:08:12 AM PDT
+> 
+> Ok, I think I got it figured out.
+> 
+> The code in wordfile() blindly assumed that read() would always return
+> exactly the number of bytes requested. This is NOT garanteed by the
+> specification. It's perfectly valid for read() to return less, but
+> never more data than requested.
+> 
+> Windows is doing something very reasonable here. When the requested
+> read size would split up a CRNL, then it stops reading one byte earlier.
+> This ensures that the next read() will be able to correctly convert the
+> CRNL into a single NL.
+> 
+> The consequence for us is that counting back from the end of MAXWLEN will
+> give us the wrong position in the data. We need to save the value of n
+> right after the read(), and use that instead of MAXWLEN in the memmove().
+> Reading in binary mode is unnecessary.
+> 
+> I've checked a working version into CVS.
+> 
+> Cheers
+> -schorsch
+> 
+> 
+> Am 2016-05-13 02:06, schrieb Gregory J. Ward:
+>> I agree the code in wordfile.c is a bit over-complex and confusing.
+>> Hopefully, it will make more sense to you tomorrow.
+>> Meanwhile, you can try running the following code on the attached files:
+>> #include <stdio.h>
+>> #include "platform.h"
+>> int
+>> main(int argc, char *argv[])
+>> {
+>> 	char	rdbuf[40];
+>> 	int	n;
+>> 	while ((n = read(0, rdbuf, sizeof(rdbuf))) > 0) {
+>> 		char	*cp = rdbuf;
+>> 		printf("Read %d characters:\n\"", n);
+>> 		while (n--)
+>> 			fputc(*cp++, stdout);
+>> 		fputs("\"\n", stdout);
+>> 	}
+>> 	return 0;
+>> }
+>> Running "checkread < testfile_unix.txt" gives me the following on Mac OS X:
+>> Read 40 characters:
+>> "123456789
+>> 123456789
+>> 123456789
+>> 123456789
+>> "
+>> Read 20 characters:
+>> "123456789
+>> 123456789
+>> "
+>> You should get the same result on Windows using this file.  However,
+>> using the "testfile_dos.txt" as your input, you might get:
+>> Read 37 characters:
+>> "123456789
+>> 123456789
+>> 123456789
+>> 1234567"
+>> Read 23 characters:
+>> "89
+>> 123456789
+>> 123456789
+>> "
+>> Using "testfile_dos2.txt", I get:
+>> Read 40 characters:
+>> "12345678
+>> 12345678
+>> 12345678
+>> 12345678
+>> "
+>> Read 20 characters:
+>> "12345678
+>> 12345678
+>> "
+>> You should get the same, but with different character counts -- 36 in
+>> the first read and 18 in the second as it removes the '\r' characters
+>> from the result in the default _O_TEXT mode.  Now, try adding an extra
+>> character to the beginning of the "testfile_dos2.txt" file, so that
+>> the "\r\n" sequence splits the read calls.  I'm hoping this will
+>> demonstrate the bug, or else I'm still confused about what's going
+>> wrong in Windows.
+>> Cheers,
+>> -Greg
+>>> From: Georg Mischler <schorsch at schorsch.com>
+>>> Subject: Re: [Radiance-dev] NREL Radiance re-distribution
+>>> Date: May 12, 2016 4:17:50 PM PDT
+>>> Hmmm... I really seem to be tired.
+>>> That null byte is the one we just wrote ourselfes...
+>>> But something in the counting is definitively off.
+>>> "buf+MAXWLEN-crem"  will point to the second character of the next word,
+>>> and memmove() probably reads one beyond the buffer.
+>>> More tomorrow.
+>>> Cheers
+>>> -schorsch
+>>> Am 2016-05-13 00:53, schrieb Georg Mischler:
+>>>> The problem is that in wordfile(), crem still gets incremented even after
+>>>> passing the null byte in buf. I must admit that I don't quite understand
+>>>> the counting logic in there yet, the function looks unnecessarily complicated
+>>>> to me. Maybe I'll see clearer tomorrow when I'm fully awake again...
+>>>> Cheers
+>>>> -schorsch
+>>>> Am 2016-05-13 00:02, schrieb Gregory J. Ward:
+>>>>> Should be reproducible with a sequence of read calls on a file with
+>>>>> one or two printing characters per line, followed by "\r\n" as usual.
+>>>>> If a character gets eaten, then it must be the _O_TEXT processing at
+>>>>> fault, somehow.
+>>>>> -Greg
+
+
+From schorsch at schorsch.com  Fri May 13 10:28:31 2016
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Fri, 13 May 2016 19:28:31 +0200
+Subject: [Radiance-dev] NREL Radiance re-distribution
+In-Reply-To: <FDF4BB8E-74B0-443E-A6D9-775B2AC0E97D@gmail.com>
+References: <CADoiYWQVXJ5s6muWpy3=VTPWDQFN0J9sKnJK_=g1Wk_xAG382w@mail.gmail.com>
+	<D33E59BE.246D7%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSbdgxRJJhnPEOaK3+N=sZ7Yd1uSjgrHSG=YEMq-_a3nQ@mail.gmail.com>
+	<D33E5D06.246F4%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWQMNuMBu-LBFiR+U_-Ha5ZuYR=rnMPZnxPP-o3zDbCRjg@mail.gmail.com>
+	<D33E8839.24873%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRuYss8-sC5vL+XawsTm8fUB7Na8u=tULT7n82Nka2QJw@mail.gmail.com>
+	<CADoiYWR0THhLfCv1v8=6zHi00XE6an2p-wr1a2_ivCP7CCA=zg@mail.gmail.com>
+	<D3438A49.24D35%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRfp+O9OETO7Lru+08aLm27q8QUFs-Szb3KATOKZFjnKA@mail.gmail.com>
+	<D345353D.2505A%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSQFPMOkj9E8r8Jt9M0cpLY9z1g51-fYBYuzPVXez7Xcw@mail.gmail.com>
+	<D345375A.25060%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTjbSpKXbEFBnM=+GNX9KCE7+p=sgKUSkLhkdedmd7T0Q@mail.gmail.com>
+	<CAAd_PgRh8rHBGCJb+doV_nf6AM510XNU9S1Nfhrz_vtOUkqWrQ@mail.gmail.com>
+	<D3457C00.2511F%Robert.Guglielmetti@nrel.gov>
+	<73189bde01b1aae114f7a9635230e6c9@tanha.pair.com>
+	<5AE7562D-CB96-45F5-AEA8-3E1C5361601D@gmail.com>
+	<2689f7a827f90185a7c8d6506bf1741d@tanha.pair.com>
+	<D3466C67.2531A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTFUUNHFGMiOFAoNeddQFqES-3jsj9cYoFFxDoZMAAc3A@mail.gmail.com>
+	<B9E95BC6-5BC7-48B1-B448-2FA9F867B976@gmail.com>
+	<D358B2C9.255F2%Robert.Guglielmetti@nrel.gov>
+	<2BD5E177-AF9B-4176-84E1-1C990D988CC5@gmail.com>
+	<CAAd_PgRR-s16pALr9R6tsMVassZ0QGTXa7jzB+PdFyzKUyR4XQ@mail.gmail.com>
+	<D358DE3D.25637%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgR7gyKHJSgmVaiiF+NDm3qGeqV30a4JRZz4CgMWm3_dZg@mail.gmail.com>
+	<D358FF86.2564A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgS+1iJig2ZO=HQBgiwv8=f6-r0XUbh25Aod0YqdUYWhBw@mail.gmail.com>
+	<1697C07A-A415-44A1-A647-79EBEB2BD2F0@gmail.com>
+	<CAAd_PgRJ0EoHWpDMt_76oDuaeVsD0F=UZPKvH+=SVuHYiwD8hg@mail.gmail.com>
+	<3C0648EB-437E-4C93-A0BA-94661AD94590@gmail.com>
+	<0936bdef527c57e0fc9b9b6f11d2c78d@tanha.pair.com>
+	<B0094431-7446-4960-B5AE-198BBB04758C@gmail.com>
+	<c161943726eb564b828397e04130da8d@tanha.pair.com>
+	<750B8822-656F-4B55-893F-8E01C42E7DFE@gmail.com>
+	<18cfd5a1aaa7fe5b7393852a99e7d2b0@tanha.pair.com>
+	<0ce646872d1927fd27488b04b5f72279@tanha.pair.com>
+	<AFBD9D54-C5E1-4671-9EDE-6CFCF81524F8@gmail.com>
+	<68df2b46b0b6b7f46aa1c55946cb86f1@tanha.pair.com>
+	<FDF4BB8E-74B0-443E-A6D9-775B2AC0E97D@gmail.com>
+Message-ID: <de944a25ba77ad45461d830092edf74a@tanha.pair.com>
+
+I didn't actually look very closely at your test code before, going for 
+the
+real thing first. But now I see what you're trying to figure out.
+We couldn't have caught our bug that way, but other than that your 
+prediction
+is quite correct:
+
+test.exe < testfile_unix.txt
+Read 40 characters:
+"123456789
+123456789
+123456789
+123456789
+"
+Read 20 characters:
+"123456789
+123456789
+"
+
+test.exe < testfile_dos.txt
+Read 37 characters:
+"123456789
+123456789
+123456789
+1234567"
+Read 23 characters:
+"89
+123456789
+123456789
+"
+
+test.exe < testfile_dos2.txt
+Read 36 characters:
+"12345678
+12345678
+12345678
+12345678
+"
+Read 18 characters:
+"12345678
+12345678
+"
+
+Cheers
+-schorsch
+
+
+Am 2016-05-13 18:24, schrieb Gregory J. Ward:
+> Wow -- missed that one!  I'm kind of surprised it didn't fail more
+> often...  Now, I'm extra curious to see what the test I sent you
+> returns on Windows, since I was assuming the earlier bug (which *was*
+> caused by assuming the requested buffer length was always returned)
+> was caused by short counts in a different context.  The bug you just
+> fixed was a remnant of that earlier bug.
+> 
+> -Greg
+> 
+>> From: Georg Mischler <schorsch at schorsch.com>
+>> Subject: Re: [Radiance-dev] NREL Radiance re-distribution
+>> Date: May 13, 2016 2:08:12 AM PDT
+>> 
+>> Ok, I think I got it figured out.
+>> 
+>> The code in wordfile() blindly assumed that read() would always return
+>> exactly the number of bytes requested. This is NOT garanteed by the
+>> specification. It's perfectly valid for read() to return less, but
+>> never more data than requested.
+>> 
+>> Windows is doing something very reasonable here. When the requested
+>> read size would split up a CRNL, then it stops reading one byte 
+>> earlier.
+>> This ensures that the next read() will be able to correctly convert 
+>> the
+>> CRNL into a single NL.
+>> 
+>> The consequence for us is that counting back from the end of MAXWLEN 
+>> will
+>> give us the wrong position in the data. We need to save the value of n
+>> right after the read(), and use that instead of MAXWLEN in the 
+>> memmove().
+>> Reading in binary mode is unnecessary.
+>> 
+>> I've checked a working version into CVS.
+>> 
+>> Cheers
+>> -schorsch
+>> 
+>> 
+>> Am 2016-05-13 02:06, schrieb Gregory J. Ward:
+>>> I agree the code in wordfile.c is a bit over-complex and confusing.
+>>> Hopefully, it will make more sense to you tomorrow.
+>>> Meanwhile, you can try running the following code on the attached 
+>>> files:
+>>> #include <stdio.h>
+>>> #include "platform.h"
+>>> int
+>>> main(int argc, char *argv[])
+>>> {
+>>> 	char	rdbuf[40];
+>>> 	int	n;
+>>> 	while ((n = read(0, rdbuf, sizeof(rdbuf))) > 0) {
+>>> 		char	*cp = rdbuf;
+>>> 		printf("Read %d characters:\n\"", n);
+>>> 		while (n--)
+>>> 			fputc(*cp++, stdout);
+>>> 		fputs("\"\n", stdout);
+>>> 	}
+>>> 	return 0;
+>>> }
+>>> Running "checkread < testfile_unix.txt" gives me the following on Mac 
+>>> OS X:
+>>> Read 40 characters:
+>>> "123456789
+>>> 123456789
+>>> 123456789
+>>> 123456789
+>>> "
+>>> Read 20 characters:
+>>> "123456789
+>>> 123456789
+>>> "
+>>> You should get the same result on Windows using this file.  However,
+>>> using the "testfile_dos.txt" as your input, you might get:
+>>> Read 37 characters:
+>>> "123456789
+>>> 123456789
+>>> 123456789
+>>> 1234567"
+>>> Read 23 characters:
+>>> "89
+>>> 123456789
+>>> 123456789
+>>> "
+>>> Using "testfile_dos2.txt", I get:
+>>> Read 40 characters:
+>>> "12345678
+>>> 12345678
+>>> 12345678
+>>> 12345678
+>>> "
+>>> Read 20 characters:
+>>> "12345678
+>>> 12345678
+>>> "
+>>> You should get the same, but with different character counts -- 36 in
+>>> the first read and 18 in the second as it removes the '\r' characters
+>>> from the result in the default _O_TEXT mode.  Now, try adding an 
+>>> extra
+>>> character to the beginning of the "testfile_dos2.txt" file, so that
+>>> the "\r\n" sequence splits the read calls.  I'm hoping this will
+>>> demonstrate the bug, or else I'm still confused about what's going
+>>> wrong in Windows.
+>>> Cheers,
+>>> -Greg
+>>>> From: Georg Mischler <schorsch at schorsch.com>
+>>>> Subject: Re: [Radiance-dev] NREL Radiance re-distribution
+>>>> Date: May 12, 2016 4:17:50 PM PDT
+>>>> Hmmm... I really seem to be tired.
+>>>> That null byte is the one we just wrote ourselfes...
+>>>> But something in the counting is definitively off.
+>>>> "buf+MAXWLEN-crem"  will point to the second character of the next 
+>>>> word,
+>>>> and memmove() probably reads one beyond the buffer.
+>>>> More tomorrow.
+>>>> Cheers
+>>>> -schorsch
+>>>> Am 2016-05-13 00:53, schrieb Georg Mischler:
+>>>>> The problem is that in wordfile(), crem still gets incremented even 
+>>>>> after
+>>>>> passing the null byte in buf. I must admit that I don't quite 
+>>>>> understand
+>>>>> the counting logic in there yet, the function looks unnecessarily 
+>>>>> complicated
+>>>>> to me. Maybe I'll see clearer tomorrow when I'm fully awake 
+>>>>> again...
+>>>>> Cheers
+>>>>> -schorsch
+>>>>> Am 2016-05-13 00:02, schrieb Gregory J. Ward:
+>>>>>> Should be reproducible with a sequence of read calls on a file 
+>>>>>> with
+>>>>>> one or two printing characters per line, followed by "\r\n" as 
+>>>>>> usual.
+>>>>>> If a character gets eaten, then it must be the _O_TEXT processing 
+>>>>>> at
+>>>>>> fault, somehow.
+>>>>>> -Greg
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From gregoryjward at gmail.com  Fri May 13 11:58:03 2016
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri, 13 May 2016 11:58:03 -0700
+Subject: [Radiance-dev] NREL Radiance re-distribution
+In-Reply-To: <de944a25ba77ad45461d830092edf74a@tanha.pair.com>
+References: <CADoiYWQVXJ5s6muWpy3=VTPWDQFN0J9sKnJK_=g1Wk_xAG382w@mail.gmail.com>
+	<D33E59BE.246D7%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSbdgxRJJhnPEOaK3+N=sZ7Yd1uSjgrHSG=YEMq-_a3nQ@mail.gmail.com>
+	<D33E5D06.246F4%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWQMNuMBu-LBFiR+U_-Ha5ZuYR=rnMPZnxPP-o3zDbCRjg@mail.gmail.com>
+	<D33E8839.24873%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRuYss8-sC5vL+XawsTm8fUB7Na8u=tULT7n82Nka2QJw@mail.gmail.com>
+	<CADoiYWR0THhLfCv1v8=6zHi00XE6an2p-wr1a2_ivCP7CCA=zg@mail.gmail.com>
+	<D3438A49.24D35%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRfp+O9OETO7Lru+08aLm27q8QUFs-Szb3KATOKZFjnKA@mail.gmail.com>
+	<D345353D.2505A%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSQFPMOkj9E8r8Jt9M0cpLY9z1g51-fYBYuzPVXez7Xcw@mail.gmail.com>
+	<D345375A.25060%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTjbSpKXbEFBnM=+GNX9KCE7+p=sgKUSkLhkdedmd7T0Q@mail.gmail.com>
+	<CAAd_PgRh8rHBGCJb+doV_nf6AM510XNU9S1Nfhrz_vtOUkqWrQ@mail.gmail.com>
+	<D3457C00.2511F%Robert.Guglielmetti@nrel.gov>
+	<73189bde01b1aae114f7a9635230e6c9@tanha.pair.com>
+	<5AE7562D-CB96-45F5-AEA8-3E1C5361601D@gmail.com>
+	<2689f7a827f90185a7c8d6506bf1741d@tanha.pair.com>
+	<D3466C67.2531A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTFUUNHFGMiOFAoNeddQFqES-3jsj9cYoFFxDoZMAAc3A@mail.gmail.com>
+	<B9E95BC6-5BC7-48B1-B448-2FA9F867B976@gmail.com>
+	<D358B2C9.255F2%Robert.Guglielmetti@nrel.gov>
+	<2BD5E177-AF9B-4176-84E1-1C990D988CC5@gmail.com>
+	<CAAd_PgRR-s16pALr9R6tsMVassZ0QGTXa7jzB+PdFyzKUyR4XQ@mail.gmail.com>
+	<D358DE3D.25637%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgR7gyKHJSgmVaiiF+NDm3qGeqV30a4JRZz4CgMWm3_dZg@mail.gmail.com>
+	<D358FF86.2564A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgS+1iJig2ZO=HQBgiwv8=f6-r0XUbh25Aod0YqdUYWhBw@mail.gmail.com>
+	<1697C07A-A415-44A1-A647-79EBEB2BD2F0@gmail.com>
+	<CAAd_PgRJ0EoHWpDMt_76oDuaeVsD0F=UZPKvH+=SVuHYiwD8hg@mail.gmail.com>
+	<3C0648EB-437E-4C93-A0BA-94661AD94590@gmail.com>
+	<0936bdef527c57e0fc9b9b6f11d2c78d@tanha.pair.com>
+	<B0094431-7446-4960-B5AE-198BBB04758C@gmail.com>
+	<c161943726eb564b828397e04130da8d@tanha.pair.com>
+	<750B8822-656F-4B55-893F-8E01C42E7DFE@gmail.com>
+	<18cfd5a1aaa7fe5b7393852a99e7d2b0@tanha.pair.com>
+	<0ce646872d1927fd27488b04b5f72279@tanha.pair.com>
+	<AFBD9D54-C5E1-4671-9EDE-6CFCF81524F8@gmail.com>
+	<68df2b46b0b6b7f46aa1c55946cb86f1@tanha.pair.com>
+	<FDF4BB8E-74B0-443E-A6D9-775B2AC0E97D@gmail.com>
+	<de944a25ba77ad45461d830092edf74a@tanha.pair.com>
+Message-ID: <40691ED2-1C2D-43C5-A601-0EA2983E965D@gmail.com>
+
+Thanks, Schorsch,
+
+Would you mind adding the final tests, where you add a character and remove a character from the beginning of testfile_dos2.txt to see what happens?  I should have explained that better in my post.
+
+-Greg
+
+> From: Georg Mischler <schorsch at schorsch.com>
+> Date: May 13, 2016 10:28:31 AM PDT
+> 
+> I didn't actually look very closely at your test code before, going for the
+> real thing first. But now I see what you're trying to figure out.
+> We couldn't have caught our bug that way, but other than that your prediction
+> is quite correct:
+> 
+> test.exe < testfile_unix.txt
+> Read 40 characters:
+> "123456789
+> 123456789
+> 123456789
+> 123456789
+> "
+> Read 20 characters:
+> "123456789
+> 123456789
+> "
+> 
+> test.exe < testfile_dos.txt
+> Read 37 characters:
+> "123456789
+> 123456789
+> 123456789
+> 1234567"
+> Read 23 characters:
+> "89
+> 123456789
+> 123456789
+> "
+> 
+> test.exe < testfile_dos2.txt
+> Read 36 characters:
+> "12345678
+> 12345678
+> 12345678
+> 12345678
+> "
+> Read 18 characters:
+> "12345678
+> 12345678
+> "
+> 
+> Cheers
+> -schorsch
+> 
+
+
+From schorsch at schorsch.com  Fri May 13 12:33:59 2016
+From: schorsch at schorsch.com (Georg Mischler)
+Date: Fri, 13 May 2016 21:33:59 +0200
+Subject: [Radiance-dev] NREL Radiance re-distribution
+In-Reply-To: <40691ED2-1C2D-43C5-A601-0EA2983E965D@gmail.com>
+References: <CADoiYWQVXJ5s6muWpy3=VTPWDQFN0J9sKnJK_=g1Wk_xAG382w@mail.gmail.com>
+	<D33E59BE.246D7%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSbdgxRJJhnPEOaK3+N=sZ7Yd1uSjgrHSG=YEMq-_a3nQ@mail.gmail.com>
+	<D33E5D06.246F4%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWQMNuMBu-LBFiR+U_-Ha5ZuYR=rnMPZnxPP-o3zDbCRjg@mail.gmail.com>
+	<D33E8839.24873%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRuYss8-sC5vL+XawsTm8fUB7Na8u=tULT7n82Nka2QJw@mail.gmail.com>
+	<CADoiYWR0THhLfCv1v8=6zHi00XE6an2p-wr1a2_ivCP7CCA=zg@mail.gmail.com>
+	<D3438A49.24D35%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRfp+O9OETO7Lru+08aLm27q8QUFs-Szb3KATOKZFjnKA@mail.gmail.com>
+	<D345353D.2505A%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSQFPMOkj9E8r8Jt9M0cpLY9z1g51-fYBYuzPVXez7Xcw@mail.gmail.com>
+	<D345375A.25060%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTjbSpKXbEFBnM=+GNX9KCE7+p=sgKUSkLhkdedmd7T0Q@mail.gmail.com>
+	<CAAd_PgRh8rHBGCJb+doV_nf6AM510XNU9S1Nfhrz_vtOUkqWrQ@mail.gmail.com>
+	<D3457C00.2511F%Robert.Guglielmetti@nrel.gov>
+	<73189bde01b1aae114f7a9635230e6c9@tanha.pair.com>
+	<5AE7562D-CB96-45F5-AEA8-3E1C5361601D@gmail.com>
+	<2689f7a827f90185a7c8d6506bf1741d@tanha.pair.com>
+	<D3466C67.2531A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTFUUNHFGMiOFAoNeddQFqES-3jsj9cYoFFxDoZMAAc3A@mail.gmail.com>
+	<B9E95BC6-5BC7-48B1-B448-2FA9F867B976@gmail.com>
+	<D358B2C9.255F2%Robert.Guglielmetti@nrel.gov>
+	<2BD5E177-AF9B-4176-84E1-1C990D988CC5@gmail.com>
+	<CAAd_PgRR-s16pALr9R6tsMVassZ0QGTXa7jzB+PdFyzKUyR4XQ@mail.gmail.com>
+	<D358DE3D.25637%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgR7gyKHJSgmVaiiF+NDm3qGeqV30a4JRZz4CgMWm3_dZg@mail.gmail.com>
+	<D358FF86.2564A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgS+1iJig2ZO=HQBgiwv8=f6-r0XUbh25Aod0YqdUYWhBw@mail.gmail.com>
+	<1697C07A-A415-44A1-A647-79EBEB2BD2F0@gmail.com>
+	<CAAd_PgRJ0EoHWpDMt_76oDuaeVsD0F=UZPKvH+=SVuHYiwD8hg@mail.gmail.com>
+	<3C0648EB-437E-4C93-A0BA-94661AD94590@gmail.com>
+	<0936bdef527c57e0fc9b9b6f11d2c78d@tanha.pair.com>
+	<B0094431-7446-4960-B5AE-198BBB04758C@gmail.com>
+	<c161943726eb564b828397e04130da8d@tanha.pair.com>
+	<750B8822-656F-4B55-893F-8E01C42E7DFE@gmail.com>
+	<18cfd5a1aaa7fe5b7393852a99e7d2b0@tanha.pair.com>
+	<0ce646872d1927fd27488b04b5f72279@tanha.pair.com>
+	<AFBD9D54-C5E1-4671-9EDE-6CFCF81524F8@gmail.com>
+	<68df2b46b0b6b7f46aa1c55946cb86f1@tanha.pair.com>
+	<FDF4BB8E-74B0-443E-A6D9-775B2AC0E97D@gmail.com>
+	<de944a25ba77ad45461d830092edf74a@tanha.pair.com>
+	<40691ED2-1C2D-43C5-A601-0EA2983E965D@gmail.com>
+Message-ID: <62d49098ed1050ff31f832153ed77860@tanha.pair.com>
+
+No problem.
+
+### original file
+test.exe < testfile_dos2.txt
+Read 36 characters:
+"12345678
+12345678
+12345678
+12345678
+"
+Read 18 characters:
+"12345678
+12345678
+"
+
+### insert a character
+test.exe < testfile_dos2.txt
+Read 36 characters:
+"a12345678
+12345678
+12345678
+12345678"
+Read 19 characters:
+"
+12345678
+12345678
+"
+
+### remove first character
+test.exe < testfile_dos2.txt
+Read 36 characters:
+"2345678
+12345678
+12345678
+12345678
+1"
+Read 17 characters:
+"2345678
+12345678
+"
+
+
+Am 2016-05-13 20:58, schrieb Gregory J. Ward:
+> Thanks, Schorsch,
+> 
+> Would you mind adding the final tests, where you add a character and
+> remove a character from the beginning of testfile_dos2.txt to see what
+> happens?  I should have explained that better in my post.
+> 
+> -Greg
+> 
+>> From: Georg Mischler <schorsch at schorsch.com>
+>> Date: May 13, 2016 10:28:31 AM PDT
+>> 
+>> I didn't actually look very closely at your test code before, going 
+>> for the
+>> real thing first. But now I see what you're trying to figure out.
+>> We couldn't have caught our bug that way, but other than that your 
+>> prediction
+>> is quite correct:
+>> 
+>> test.exe < testfile_unix.txt
+>> Read 40 characters:
+>> "123456789
+>> 123456789
+>> 123456789
+>> 123456789
+>> "
+>> Read 20 characters:
+>> "123456789
+>> 123456789
+>> "
+>> 
+>> test.exe < testfile_dos.txt
+>> Read 37 characters:
+>> "123456789
+>> 123456789
+>> 123456789
+>> 1234567"
+>> Read 23 characters:
+>> "89
+>> 123456789
+>> 123456789
+>> "
+>> 
+>> test.exe < testfile_dos2.txt
+>> Read 36 characters:
+>> "12345678
+>> 12345678
+>> 12345678
+>> 12345678
+>> "
+>> Read 18 characters:
+>> "12345678
+>> 12345678
+>> "
+>> 
+>> Cheers
+>> -schorsch
+>> 
+> 
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+
+-- 
+Georg Mischler  --  simulations developer  --  schorsch at schorsch com
++schorsch.com+  --  lighting design tools  --  http://www.schorsch.com/
+
+
+From gregoryjward at gmail.com  Fri May 13 12:45:33 2016
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Fri, 13 May 2016 12:45:33 -0700
+Subject: [Radiance-dev] NREL Radiance re-distribution
+In-Reply-To: <62d49098ed1050ff31f832153ed77860@tanha.pair.com>
+References: <CADoiYWQVXJ5s6muWpy3=VTPWDQFN0J9sKnJK_=g1Wk_xAG382w@mail.gmail.com>
+	<D33E59BE.246D7%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSbdgxRJJhnPEOaK3+N=sZ7Yd1uSjgrHSG=YEMq-_a3nQ@mail.gmail.com>
+	<D33E5D06.246F4%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWQMNuMBu-LBFiR+U_-Ha5ZuYR=rnMPZnxPP-o3zDbCRjg@mail.gmail.com>
+	<D33E8839.24873%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRuYss8-sC5vL+XawsTm8fUB7Na8u=tULT7n82Nka2QJw@mail.gmail.com>
+	<CADoiYWR0THhLfCv1v8=6zHi00XE6an2p-wr1a2_ivCP7CCA=zg@mail.gmail.com>
+	<D3438A49.24D35%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWRfp+O9OETO7Lru+08aLm27q8QUFs-Szb3KATOKZFjnKA@mail.gmail.com>
+	<D345353D.2505A%Robert.Guglielmetti@nrel.gov>
+	<CADoiYWSQFPMOkj9E8r8Jt9M0cpLY9z1g51-fYBYuzPVXez7Xcw@mail.gmail.com>
+	<D345375A.25060%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTjbSpKXbEFBnM=+GNX9KCE7+p=sgKUSkLhkdedmd7T0Q@mail.gmail.com>
+	<CAAd_PgRh8rHBGCJb+doV_nf6AM510XNU9S1Nfhrz_vtOUkqWrQ@mail.gmail.com>
+	<D3457C00.2511F%Robert.Guglielmetti@nrel.gov>
+	<73189bde01b1aae114f7a9635230e6c9@tanha.pair.com>
+	<5AE7562D-CB96-45F5-AEA8-3E1C5361601D@gmail.com>
+	<2689f7a827f90185a7c8d6506bf1741d@tanha.pair.com>
+	<D3466C67.2531A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgTFUUNHFGMiOFAoNeddQFqES-3jsj9cYoFFxDoZMAAc3A@mail.gmail.com>
+	<B9E95BC6-5BC7-48B1-B448-2FA9F867B976@gmail.com>
+	<D358B2C9.255F2%Robert.Guglielmetti@nrel.gov>
+	<2BD5E177-AF9B-4176-84E1-1C990D988CC5@gmail.com>
+	<CAAd_PgRR-s16pALr9R6tsMVassZ0QGTXa7jzB+PdFyzKUyR4XQ@mail.gmail.com>
+	<D358DE3D.25637%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgR7gyKHJSgmVaiiF+NDm3qGeqV30a4JRZz4CgMWm3_dZg@mail.gmail.com>
+	<D358FF86.2564A%Robert.Guglielmetti@nrel.gov>
+	<CAAd_PgS+1iJig2ZO=HQBgiwv8=f6-r0XUbh25Aod0YqdUYWhBw@mail.gmail.com>
+	<1697C07A-A415-44A1-A647-79EBEB2BD2F0@gmail.com>
+	<CAAd_PgRJ0EoHWpDMt_76oDuaeVsD0F=UZPKvH+=SVuHYiwD8hg@mail.gmail.com>
+	<3C0648EB-437E-4C93-A0BA-94661AD94590@gmail.com>
+	<0936bdef527c57e0fc9b9b6f11d2c78d@tanha.pair.com>
+	<B0094431-7446-4960-B5AE-198BBB04758C@gmail.com>
+	<c161943726eb564b828397e04130da8d@tanha.pair.com>
+	<750B8822-656F-4B55-893F-8E01C42E7DFE@gmail.com>
+	<18cfd5a1aaa7fe5b7393852a99e7d2b0@tanha.pair.com>
+	<0ce646872d1927fd27488b04b5f72279@tanha.pair.com>
+	<AFBD9D54-C5E1-4671-9EDE-6CFCF81524F8@gmail.com>
+	<68df2b46b0b6b7f46aa1c55946cb86f1@tanha.pair.com>
+	<FDF4BB8E-74B0-443E-A6D9-775B2AC0E97D@gmail.com>
+	<de944a25ba77ad45461d830092edf74a@tanha.pair.com>
+	<40691ED2-1C2D-43C5-A601-0EA2983E965D@gmail.com>
+	<62d49098ed1050ff31f832153ed77860@tanha.pair.com>
+Message-ID: <EEDD369B-B1A6-4005-A0CE-A822FC57F5A8@gmail.com>
+
+Cool -- thanks!  This demonstrates the behavior you pointed out where it backs over the '\r' of a "\r\n" sequence in the input, providing it for decode in the next buffer read.  As you say, this makes sense.
+
+Cheers,
+-Greg
+
+> From: Georg Mischler <schorsch at schorsch.com>
+> Subject: Re: [Radiance-dev] NREL Radiance re-distribution
+> Date: May 13, 2016 12:33:59 PM PDT
+> 
+> No problem.
+> 
+> ### original file
+> test.exe < testfile_dos2.txt
+> Read 36 characters:
+> "12345678
+> 12345678
+> 12345678
+> 12345678
+> "
+> Read 18 characters:
+> "12345678
+> 12345678
+> "
+> 
+> ### insert a character
+> test.exe < testfile_dos2.txt
+> Read 36 characters:
+> "a12345678
+> 12345678
+> 12345678
+> 12345678"
+> Read 19 characters:
+> "
+> 12345678
+> 12345678
+> "
+> 
+> ### remove first character
+> test.exe < testfile_dos2.txt
+> Read 36 characters:
+> "2345678
+> 12345678
+> 12345678
+> 12345678
+> 1"
+> Read 17 characters:
+> "2345678
+> 12345678
+> "
+> 
+> 
+> Am 2016-05-13 20:58, schrieb Gregory J. Ward:
+>> Thanks, Schorsch,
+>> Would you mind adding the final tests, where you add a character and
+>> remove a character from the beginning of testfile_dos2.txt to see what
+>> happens?  I should have explained that better in my post.
+>> -Greg
+>>> From: Georg Mischler <schorsch at schorsch.com>
+>>> Date: May 13, 2016 10:28:31 AM PDT
+>>> I didn't actually look very closely at your test code before, going for the
+>>> real thing first. But now I see what you're trying to figure out.
+>>> We couldn't have caught our bug that way, but other than that your prediction
+>>> is quite correct:
+>>> test.exe < testfile_unix.txt
+>>> Read 40 characters:
+>>> "123456789
+>>> 123456789
+>>> 123456789
+>>> 123456789
+>>> "
+>>> Read 20 characters:
+>>> "123456789
+>>> 123456789
+>>> "
+>>> test.exe < testfile_dos.txt
+>>> Read 37 characters:
+>>> "123456789
+>>> 123456789
+>>> 123456789
+>>> 1234567"
+>>> Read 23 characters:
+>>> "89
+>>> 123456789
+>>> 123456789
+>>> "
+>>> test.exe < testfile_dos2.txt
+>>> Read 36 characters:
+>>> "12345678
+>>> 12345678
+>>> 12345678
+>>> 12345678
+>>> "
+>>> Read 18 characters:
+>>> "12345678
+>>> 12345678
+>>> "
+>>> Cheers
+>>> -schorsch
+
+

@@ -1,0 +1,169 @@
+From mstock at umich.edu  Thu Jun 16 15:01:40 2005
+From: mstock at umich.edu (Mark Stock)
+Date: Thu Jun 16 15:02:30 2005
+Subject: [Radiance-dev] Mesh normals in cal files
+Message-ID: <Pine.LNX.4.61.0506160856250.9825@galaxian.gpcc.itd.umich.edu>
+
+I just noticed that the perturbed mesh normal is unavailable in 
+the .cal file language. Is that an oversight, or a major 
+difficulty?
+
+When I use the following code, my mesh appears very triangulated, 
+but when I use "void plastic def" it appears smooth.
+
+Mark
+
+---------
+{
+   brighten_normal.cal
+   make a surface brighter if the normal faces the viewer
+}
+
+br = Rdot*Rdot;
+
+---------
+void brightfunc surffunc
+2 br brighten_normal.cal
+0
+0
+
+surffunc plastic def
+0
+0
+5  0.14 0.07 0.07  0.0 0.0
+
+def mesh theblob
+13 smoothed.msh -t 0 0 -1.75 -rx 180 -rz 45 -rx -35 -rz 30
+0
+0
+
+
+From gregoryjward at gmail.com  Thu Jun 16 18:02:50 2005
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu Jun 16 18:03:44 2005
+Subject: [Radiance-dev] Mesh normals in cal files
+In-Reply-To: <Pine.LNX.4.61.0506160856250.9825@galaxian.gpcc.itd.umich.edu>
+References: <Pine.LNX.4.61.0506160856250.9825@galaxian.gpcc.itd.umich.edu>
+Message-ID: <71C12E75-A91F-44CC-8CAD-CD286D1BE802@gmail.com>
+
+Hi Mark,
+
+Just like a tessellated surface, a mesh in Radiance is represented as  
+the individual polygons and the Nx, Ny, Nz, and Rdot variables  
+correspond to the actual "unperturbed" surface normals.  The only  
+time the perturbed values are known is during material evaluation,  
+which is why plastic comes out looking smooth.  If you want to play  
+with the perturbed value, you'll have to utilize the NxP, NyP, NzP,  
+and RdotP variables that are available from the brdf primitives.
+
+-Greg
+
+> From: Mark Stock <mstock@umich.edu>
+> Date: June 16, 2005 6:01:40 AM PDT
+>
+> I just noticed that the perturbed mesh normal is unavailable in  
+> the .cal file language. Is that an oversight, or a major difficulty?
+>
+> When I use the following code, my mesh appears very triangulated,  
+> but when I use "void plastic def" it appears smooth.
+>
+> Mark
+>
+> ---------
+> {
+>   brighten_normal.cal
+>   make a surface brighter if the normal faces the viewer
+> }
+>
+> br = Rdot*Rdot;
+>
+> ---------
+> void brightfunc surffunc
+> 2 br brighten_normal.cal
+> 0
+> 0
+>
+> surffunc plastic def
+> 0
+> 0
+> 5  0.14 0.07 0.07  0.0 0.0
+>
+> def mesh theblob
+> 13 smoothed.msh -t 0 0 -1.75 -rx 180 -rz 45 -rx -35 -rz 30
+> 0
+> 0
+
+From mstock at umich.edu  Thu Jun 16 18:22:28 2005
+From: mstock at umich.edu (Mark Stock)
+Date: Thu Jun 16 18:23:15 2005
+Subject: [Radiance-dev] Mesh normals in cal files
+In-Reply-To: <71C12E75-A91F-44CC-8CAD-CD286D1BE802@gmail.com>
+References: <Pine.LNX.4.61.0506160856250.9825@galaxian.gpcc.itd.umich.edu>
+	<71C12E75-A91F-44CC-8CAD-CD286D1BE802@gmail.com>
+Message-ID: <Pine.LNX.4.61.0506161218230.9825@galaxian.gpcc.itd.umich.edu>
+
+But won't solve the problem, though, of defining a surface 
+attribute based on the normal of a smoothed mesh object. It seems 
+that the only way to do this would be to try to encode the normal 
+direction into the texture coordinates. Hmmm.
+
+Mark
+
+On Thu, 16 Jun 2005, Greg Ward wrote:
+
+> Hi Mark,
+>
+> Just like a tessellated surface, a mesh in Radiance is 
+> represented as the individual polygons and the Nx, Ny, Nz, and 
+> Rdot variables correspond to the actual "unperturbed" surface 
+> normals.  The only time the perturbed values are known is 
+> during material evaluation, which is why plastic comes out 
+> looking smooth.  If you want to play with the perturbed value, 
+> you'll have to utilize the NxP, NyP, NzP, and RdotP variables 
+> that are available from the brdf primitives.
+>
+> -Greg
+>
+>> From: Mark Stock <mstock@umich.edu>
+>> Date: June 16, 2005 6:01:40 AM PDT
+>> 
+>> I just noticed that the perturbed mesh normal is unavailable in the .cal 
+>> file language. Is that an oversight, or a major difficulty?
+>> 
+>> When I use the following code, my mesh appears very triangulated, but when 
+>> I use "void plastic def" it appears smooth.
+>> 
+>> Mark
+>> 
+>> ---------
+>> {
+>>   brighten_normal.cal
+>>   make a surface brighter if the normal faces the viewer
+>> }
+>> 
+>> br = Rdot*Rdot;
+>> 
+>> ---------
+>> void brightfunc surffunc
+>> 2 br brighten_normal.cal
+>> 0
+>> 0
+>> 
+>> surffunc plastic def
+>> 0
+>> 0
+>> 5  0.14 0.07 0.07  0.0 0.0
+>> 
+>> def mesh theblob
+>> 13 smoothed.msh -t 0 0 -1.75 -rx 180 -rz 45 -rx -35 -rz 30
+>> 0
+>> 0
+>
+> _______________________________________________
+> Radiance-dev mailing list
+> Radiance-dev@radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-dev
+>
+>
+>
+
