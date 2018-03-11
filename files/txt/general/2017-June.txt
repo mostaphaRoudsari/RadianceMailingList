@@ -1,0 +1,1498 @@
+From alenmahic at gmail.com  Fri Jun  2 15:22:12 2017
+From: alenmahic at gmail.com (Alen Mahic)
+Date: Fri, 2 Jun 2017 15:22:12 -0700
+Subject: [Radiance-general] 2017 International Radiance Workshop -- Call for
+ presenters extended to June 15th
+Message-ID: <CAJgQ_PNWQiyazLqFi__LuE-=0+qkhHo-eB2vNvZ6-Ju_nxWvRw@mail.gmail.com>
+
+Greetings all,
+
+The call for presenters has been extended to June 15th! For those
+interested in sharing their work (always highly encouraged!) at the
+Portland workshop please head to
+https://radiance.uoregon.edu/call-for-presenters and submit a short
+abstract (up to 250-words; 1 optional figure/image). Multiple proposals per
+presenter are welcome!
+
+Thank you and have a great a weekend!
+
+Alen
+
+//
+*Energy Studies in Buildings Laboratory, University of Oregon*
+// *alen at uoregon.edu <alen at uoregon.edu>*
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170602/e7012fbb/attachment.html>
+
+From rioboo at gmail.com  Tue Jun  6 07:02:59 2017
+From: rioboo at gmail.com (Victor LRG)
+Date: Tue, 6 Jun 2017 15:02:59 +0100
+Subject: [Radiance-general] rcalc and tabs/spaces
+Message-ID: <CADr1nSFLfwQLk3TjHEDOesEi5qOXBC7VRw37oMF3pzay_jmAkA@mail.gmail.com>
+
+Dear all,
+
+The man page for rcalc says "By default, tabs and spaces are ignored except
+as field separators". I wonder if there is a way to overrule this default
+behavior. For example:
+
+echo 1,2,3 4,5 | rcalc -t, -e '$1=if($2-$1,$3,0)' gives '3' as result. Can
+it be forced to give '3 4'?
+
+In this case the space is not a field separator, but it causes the rest of
+the field be missing from the ouput.
+
+Many thanks,
+
+Victor Lopez-Rioboo Gil
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170606/fddc7997/attachment.html>
+
+From gregoryjward at gmail.com  Tue Jun  6 07:49:42 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue, 6 Jun 2017 07:49:42 -0700
+Subject: [Radiance-general] rcalc and tabs/spaces
+In-Reply-To: <CADr1nSFLfwQLk3TjHEDOesEi5qOXBC7VRw37oMF3pzay_jmAkA@mail.gmail.com>
+References: <CADr1nSFLfwQLk3TjHEDOesEi5qOXBC7VRw37oMF3pzay_jmAkA@mail.gmail.com>
+Message-ID: <4EE0BE7D-A35B-412F-A77F-21DCEB26D64B@lmi.net>
+
+Hi Victor,
+
+I am not sure there is a way to do what you are asking with rcalc.  You can use input fields rather than separators with an input format, e.g.:
+
+	rcalc -i '${n1},${n2},$(s3),${n4}'
+
+This loads the first two comma-separated values as numbers, the third as a string, and the fourth as a number again.  (This is the difference between using curly braces and parentheses in rcalc format fields.)  However, there is not much you can do with string fields other than repeat them in the output.  They cannot be the arguments or results of any expressions or formulas.  Generally, they are simply used as place-holders or a means to repeat the input in the output using a similarly constructed output format (-o option).
+
+You could use the "cond" variable to decide whether to output a record or not in your example, like so:
+
+	rcalc -i '${n1},${n2},$(s3),${n4}' -e 'cond=n2-n1' -o '$(s3)'
+
+This would only output the third field when the second is greater than the first.  It would not output "0" otherwise, but no line at all.
+
+I don't know if this helps.
+
+-Greg
+
+> From: Victor LRG <rioboo at gmail.com>
+> Date: June 6, 2017 7:02:59 AM PDT
+> 
+> Dear all,
+> 
+> The man page for rcalc says "By default, tabs and spaces are ignored except as field separators". I wonder if there is a way to overrule this default behavior. For example:
+> 
+> echo 1,2,3 4,5 | rcalc -t, -e '$1=if($2-$1,$3,0)' gives '3' as result. Can it be forced to give '3 4'?
+> 
+> In this case the space is not a field separator, but it causes the rest of the field be missing from the ouput.
+> 
+> Many thanks,
+> 
+> Victor Lopez-Rioboo Gil
+> 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170606/b04f9043/attachment.html>
+
+From mcneil.andrew at gmail.com  Wed Jun  7 15:03:57 2017
+From: mcneil.andrew at gmail.com (Andy McNeil)
+Date: Wed, 7 Jun 2017 15:03:57 -0700
+Subject: [Radiance-general] rcalc and tabs/spaces
+In-Reply-To: <4EE0BE7D-A35B-412F-A77F-21DCEB26D64B@lmi.net>
+References: <CADr1nSFLfwQLk3TjHEDOesEi5qOXBC7VRw37oMF3pzay_jmAkA@mail.gmail.com>
+ <4EE0BE7D-A35B-412F-A77F-21DCEB26D64B@lmi.net>
+Message-ID: <CAEFJVk9roLouTYS_EWUNE+55DVEEXd9FKm=W6=nqrhL1aZKM5Q@mail.gmail.com>
+
+Hi Victor,
+
+If you are using linux or mac, this sort of thing is simple with awk. There
+might be an equivalent with windows.
+
+echo 1,2,3 4,5 | awk -F, '{if($2>$1)print $3;else print 0}'
+output:
+3 4
+
+Andy
+
+On Tue, Jun 6, 2017 at 7:49 AM, Greg Ward <gregoryjward at gmail.com> wrote:
+
+> Hi Victor,
+>
+> I am not sure there is a way to do what you are asking with rcalc.  You
+> can use input fields rather than separators with an input format, e.g.:
+>
+> rcalc -i '${n1},${n2},$(s3),${n4}'
+>
+> This loads the first two comma-separated values as numbers, the third as a
+> string, and the fourth as a number again.  (This is the difference between
+> using curly braces and parentheses in rcalc format fields.)  However, there
+> is not much you can do with string fields other than repeat them in the
+> output.  They cannot be the arguments or results of any expressions or
+> formulas.  Generally, they are simply used as place-holders or a means to
+> repeat the input in the output using a similarly constructed output format
+> (-o option).
+>
+> You could use the "cond" variable to decide whether to output a record or
+> not in your example, like so:
+>
+> rcalc -i '${n1},${n2},$(s3),${n4}' -e 'cond=n2-n1' -o '$(s3)'
+>
+> This would only output the third field when the second is greater than the
+> first.  It would not output "0" otherwise, but no line at all.
+>
+> I don't know if this helps.
+>
+> -Greg
+>
+> *From: *Victor LRG <rioboo at gmail.com>
+>
+> *Date: *June 6, 2017 7:02:59 AM PDT
+>
+>
+> Dear all,
+>
+> The man page for rcalc says "By default, tabs and spaces are ignored
+> except as field separators". I wonder if there is a way to overrule this
+> default behavior. For example:
+>
+> echo 1,2,3 4,5 | rcalc -t, -e '$1=if($2-$1,$3,0)' gives '3' as result. Can
+> it be forced to give '3 4'?
+>
+> In this case the space is not a field separator, but it causes the rest of
+> the field be missing from the ouput.
+>
+> Many thanks,
+>
+> Victor Lopez-Rioboo Gil
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170607/1b3b740a/attachment.html>
+
+From Marouane.Boudhaim at ise.fraunhofer.de  Fri Jun 23 07:25:25 2017
+From: Marouane.Boudhaim at ise.fraunhofer.de (Marouane.Boudhaim at ise.fraunhofer.de)
+Date: Fri, 23 Jun 2017 16:25:25 +0200
+Subject: [Radiance-general] Non symmetrical BSDF from symmetrical geometry
+Message-ID: <OF074179BA.FD10BA4F-ONC1258148.004CAE43-C1258148.004F3B41@ise.fhg.de>
+
+Hi all,
+
+
+I am trying to generate a BSDF of a profile angle symmetrical textile. The 
+problem is that the BSDF is supposed to be left and right symmetric (as is 
+the geometry). In practice the BSDF doesn't look left/right symmetric in 
+BSDFviewer. Is it a problem due to the ray-tracing calculation with many 
+small objects or did I mess up something? here is the command I have run 
+to generate the BSDF :
+
+genBSDF +f +b -geom millimeter -n 5 0.rad > 0.xml
+
+I attach the 0.rad file used to the email. Thanks in advance for your 
+help!
+
+Sincerely,
+Marouane Boudhaim.
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170623/76c95e26/attachment-0001.html>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 0.rad
+Type: application/octet-stream
+Size: 94084 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170623/76c95e26/attachment-0001.obj>
+
+From gregoryjward at gmail.com  Fri Jun 23 08:17:28 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri, 23 Jun 2017 08:17:28 -0700
+Subject: [Radiance-general] Non symmetrical BSDF from symmetrical
+ geometry
+In-Reply-To: <OF074179BA.FD10BA4F-ONC1258148.004CAE43-C1258148.004F3B41@ise.fhg.de>
+References: <OF074179BA.FD10BA4F-ONC1258148.004CAE43-C1258148.004F3B41@ise.fhg.de>
+Message-ID: <E1F07763-989A-40CC-B88E-2F53F970CA25@lmi.net>
+
+Hi Marouane,
+
+Your fabric has very thin lines in it, which may be difficult to integrate with the normal sampling density.  Since the pattern seems to repeat, I recommend that you restrict your sampling area using the genBSDF -dim option to set a bounding box.  Looking at your file, the pattern appears to repeat every 42 mm.  You can set a square area near the middle of your fabric with this diameter like so:
+
+	genBSDF +f +b -geom millimeter -dim 1500 1542 1500 1542 -1 0 0.rad > 0.xml
+
+This seems to produce something reasonably symmetric when I try it.
+
+Cheers,
+-Greg
+
+> From: Marouane.Boudhaim at ise.fraunhofer.de
+> Date: June 23, 2017 7:25:25 AM PDT
+> 
+> Hi all, 
+> 
+> 
+> I am trying to generate a BSDF of a profile angle symmetrical textile. The problem is that the BSDF is supposed to be left and right symmetric (as is the geometry). In practice the BSDF doesn't look left/right symmetric in BSDFviewer. Is it a problem due to the ray-tracing calculation with many small objects or did I mess up something? here is the command I have run to generate the BSDF : 
+> 
+> genBSDF +f +b -geom millimeter -n 5 0.rad > 0.xml 
+> 
+> I attach the 0.rad file used to the email. Thanks in advance for your help! 
+> 
+> Sincerely, 
+> Marouane Boudhaim. 
+> 
+
+
+From kalyanam at rhrk.uni-kl.de  Mon Jun 26 07:37:35 2017
+From: kalyanam at rhrk.uni-kl.de (Raghuram Kalyanam)
+Date: Mon, 26 Jun 2017 16:37:35 +0200
+Subject: [Radiance-general] 360 degree rendering
+Message-ID: <C812F12E-FB22-4BE9-B07B-6CAFD35C4317@rhrk.uni-kl.de>
+
+Hi All,
+
+I wanted to render a 360 degree image ( precisely to see it in VR glasses). I tried the options -vta, -vts options in rpict with not much success. It would be very helpful if some one could let me know the right options or some relevant info.
+
+Best Regards,
+Raghu
+
+
+
+From gregoryjward at gmail.com  Mon Jun 26 07:57:54 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon, 26 Jun 2017 07:57:54 -0700
+Subject: [Radiance-general] 360 degree rendering
+In-Reply-To: <C812F12E-FB22-4BE9-B07B-6CAFD35C4317@rhrk.uni-kl.de>
+References: <C812F12E-FB22-4BE9-B07B-6CAFD35C4317@rhrk.uni-kl.de>
+Message-ID: <01F07958-E7EB-4AF9-B834-579854D41BFD@lmi.net>
+
+Hi Raghu,
+
+Mark Stock created the attached file "view360stereo.cal" that makes a 360? stereo panorama in the standard format for such viewers.  This was checked into the Radiance HEAD back in January.
+
+Cheers,
+-Greg
+
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: view360stereo.cal
+Type: application/octet-stream
+Size: 1972 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170626/8ed24e96/attachment.obj>
+
+From keralagios at gmail.com  Mon Jun 26 15:02:21 2017
+From: keralagios at gmail.com (Kera Lagios)
+Date: Mon, 26 Jun 2017 15:02:21 -0700
+Subject: [Radiance-general] ies2rad Question - specifying color temperature
+Message-ID: <CAP0o02LYcPsbuZJJpM1ATu=z_-TadnYZAUHzMHAqsDo4=uG+0A@mail.gmail.com>
+
+Hi Everyone,
+
+When using ies2rad, I am trying to set the color temperature of a various
+LED light sources to a specific color temperature that I want (e.g. 2700k
+or 2400k...).
+
+Background:
+According to the ies2rad man page
+<http://radsite.lbl.gov/radiance/man_html/ies2rad.1.html>, there are a few
+variables that govern this:
+-f *lampdat*
+-t *lamp*
+-c *red grn blu*
+*-*u *lamp*
+
+The man page refers to the lamp.tab look up table which lists items in the
+following format:
+#
+/deluxe warm white/ .440 .403 .85
+/warm white deluxe/ (deluxe warm white)
+/deluxe cool white/ .376 .368 .85
+etc.
+
+If I am looking to set my own x y chromaticity, rather than use whatever is
+in the .ies file header, which option should I use?
+
+When I try to use the "-u" option, which allows you to set the default lamp
+color according to the entry for *lamp* in the lookup table (*lamp.tab), *I
+have tried including the lamp lookup term as both: -u deluxe warm white and
+-u /deluxe warm white/ in the ies2rad command but I get the following
+errors:
+[image: Inline image 2]When I run the command with simple variables,  e.g.:
+ies2rad -df -m 0.88 -o CAT CL_TokistarG14Clear_VI-EX_2400K_G14-C.ies
+
+it runs fine.
+
+I'm not sure how to use the -u (or -t, or -f) in conjunction with the
+lamp.tab look up table to specify my own color temperature.  The only way I
+have had success in doing this is to convert a particular color temperature
+(e.g. 2400k) to R, G, B values and then use the -c term followed by the
+converted RGB values.
+
+Thank you!
+Kera
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170626/ab786868/attachment.html>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: image.png
+Type: image/png
+Size: 8386 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170626/ab786868/attachment.png>
+
+From gregoryjward at gmail.com  Mon Jun 26 16:04:32 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon, 26 Jun 2017 16:04:32 -0700
+Subject: [Radiance-general] ies2rad Question - specifying color
+ temperature
+In-Reply-To: <CAP0o02LYcPsbuZJJpM1ATu=z_-TadnYZAUHzMHAqsDo4=uG+0A@mail.gmail.com>
+References: <CAP0o02LYcPsbuZJJpM1ATu=z_-TadnYZAUHzMHAqsDo4=uG+0A@mail.gmail.com>
+Message-ID: <BA7DAC6E-B99E-4F52-9160-B1290526468F@lmi.net>
+
+Hi Kera,
+
+Lamp color settings in ies2rad are admittedly odd.  What you probably want to use is something like:
+
+	ies2rad -df -m 0.88 -t default -c my_red my_green my_blue
+
+The red, green and blue values will be multiplied by the 0.88 factor, so I guess you want the RGB to normalize to 1.0.  To get these from CIE (x,y) chromaticities, you can use rcalc like so:
+
+	rcalc -n -e "ix=...;iy=...;" -f xyz_rgb.cal  -e "Xi=ix/iy;Yi=1;Zi=(1-ix-iy)/iy" -e "$1=R(Xi,Yi,Zi);$2=G(Xi,Yi,Zi);$3=B(Xi,Yi,Zi)"
+
+The file "xyz_rgb.cal" is in the standard distribution in src/cal/cal/, along with other files like it.  Put your desired (x,y) coordinates in the first setting, e.g., -e "ix=0.3153;iy=0.3417".  (On Unix, replace the double-quotes with single-quotes above.)
+
+Alternatively, you can edit the "lamp.tab" file or make your own, adding a line near the top for your particular source:
+
+/my special LED/		0.3153 0.3417 0.88
+
+To use this in your command, you need to enclose the argument in quotes, so it doesn't think the arguments after the first one are input files, e.g.:
+
+	ies2rad -f my_lamps.tab -t "my special LED" ...
+
+Although I caution strongly against it for LED sources, you can also compute CIE (x,y) from black body temp using:
+
+	rcalc -f blackbody.cal -e T=2700 -e "$1=cct_x(T);$2=cct_y(T)"
+
+The reason I don't recommend this for non-tungsten source is that they almost never match a black body spectrum, and their actual chromaticity will therefore disagree with their claimed CCT.
+
+Cheers,
+-Greg
+
+> From: Kera Lagios <keralagios at gmail.com>
+> Date: June 26, 2017 3:02:21 PM PDT
+> 
+> Hi Everyone,
+> 
+> When using ies2rad, I am trying to set the color temperature of a various LED light sources to a specific color temperature that I want (e.g. 2700k or 2400k...). 
+> 
+> Background:
+> According to the ies2rad man page, there are a few variables that govern this:
+> -f lampdat
+> -t lamp
+> -c red grn blu
+> -u lamp
+> 
+> The man page refers to the lamp.tab look up table which lists items in the following format:
+> #
+> /deluxe warm white/			.440 .403 .85
+> /warm white deluxe/			(deluxe warm white)
+> /deluxe cool white/			.376 .368 .85
+> etc.
+> 
+> If I am looking to set my own x y chromaticity, rather than use whatever is in the .ies file header, which option should I use? 
+> 
+> When I try to use the "-u" option, which allows you to set the default lamp color according to the entry for lamp in the lookup table (lamp.tab), I have tried including the lamp lookup term as both: -u deluxe warm white and -u /deluxe warm white/ in the ies2rad command but I get the following errors:
+> When I run the command with simple variables,  e.g.:
+> ies2rad -df -m 0.88 -o CAT CL_TokistarG14Clear_VI-EX_2400K_G14-C.ies
+> 
+> it runs fine. 
+> 
+> I'm not sure how to use the -u (or -t, or -f) in conjunction with the lamp.tab look up table to specify my own color temperature.  The only way I have had success in doing this is to convert a particular color temperature (e.g. 2400k) to R, G, B values and then use the -c term followed by the converted RGB values.
+> 
+> Thank you!
+> Kera
+> ________________
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170626/2d207075/attachment-0001.html>
+
+From keralagios at gmail.com  Mon Jun 26 17:05:54 2017
+From: keralagios at gmail.com (Kera Lagios)
+Date: Mon, 26 Jun 2017 17:05:54 -0700
+Subject: [Radiance-general] ies2rad Question - specifying color
+ temperature
+In-Reply-To: <BA7DAC6E-B99E-4F52-9160-B1290526468F@lmi.net>
+References: <CAP0o02LYcPsbuZJJpM1ATu=z_-TadnYZAUHzMHAqsDo4=uG+0A@mail.gmail.com>
+ <BA7DAC6E-B99E-4F52-9160-B1290526468F@lmi.net>
+Message-ID: <CAP0o02JwZE=qr=HLnAMt4paWCyG0mcxS+ETWQhG-a8Qwk0OyOA@mail.gmail.com>
+
+Thanks, Greg! That's what I needed.
+
+Kera
+
+On Mon, Jun 26, 2017 at 4:04 PM, Greg Ward <gregoryjward at gmail.com> wrote:
+
+> Hi Kera,
+>
+> Lamp color settings in ies2rad are admittedly odd.  What you probably want
+> to use is something like:
+>
+> ies2rad -df -m 0.88 -t default -c my_red my_green my_blue
+>
+> The red, green and blue values will be multiplied by the 0.88 factor, so I
+> guess you want the RGB to normalize to 1.0.  To get these from CIE (x,y)
+> chromaticities, you can use rcalc like so:
+>
+> rcalc -n -e "ix=...;iy=...;" -f xyz_rgb.cal  -e
+> "Xi=ix/iy;Yi=1;Zi=(1-ix-iy)/iy" -e "$1=R(Xi,Yi,Zi);$2=G(Xi,Yi,Zi)
+> ;$3=B(Xi,Yi,Zi)"
+>
+> The file "xyz_rgb.cal" is in the standard distribution in src/cal/cal/,
+> along with other files like it.  Put your desired (x,y) coordinates in the
+> first setting, e.g., -e "ix=0.3153;iy=0.3417".  (On Unix, replace the
+> double-quotes with single-quotes above.)
+>
+> Alternatively, you can edit the "lamp.tab" file or make your own, adding a
+> line near the top for your particular source:
+>
+> /my special LED/ 0.3153 0.3417 0.88
+>
+> To use this in your command, you need to enclose the argument in quotes,
+> so it doesn't think the arguments after the first one are input files, e.g.:
+>
+> ies2rad -f my_lamps.tab -t "my special LED" ...
+>
+> Although I caution strongly against it for LED sources, you can also
+> compute CIE (x,y) from black body temp using:
+>
+> rcalc -f blackbody.cal -e T=2700 -e "$1=cct_x(T);$2=cct_y(T)"
+>
+> The reason I don't recommend this for non-tungsten source is that they
+> almost never match a black body spectrum, and their actual chromaticity
+> will therefore disagree with their claimed CCT.
+>
+> Cheers,
+> -Greg
+>
+> *From: *Kera Lagios <keralagios at gmail.com>
+>
+> *Date: *June 26, 2017 3:02:21 PM PDT
+>
+>
+> Hi Everyone,
+>
+> When using ies2rad, I am trying to set the color temperature of a various
+> LED light sources to a specific color temperature that I want (e.g. 2700k
+> or 2400k...).
+>
+> Background:
+> According to the ies2rad man page
+> <http://radsite.lbl.gov/radiance/man_html/ies2rad.1.html>, there are a
+> few variables that govern this:
+> -f *lampdat*
+> -t *lamp*
+> -c *red grn blu*
+> *-*u *lamp*
+>
+> The man page refers to the lamp.tab look up table which lists items in the
+> following format:
+> #
+> /deluxe warm white/ .440 .403 .85
+> /warm white deluxe/ (deluxe warm white)
+> /deluxe cool white/ .376 .368 .85
+> etc.
+>
+> If I am looking to set my own x y chromaticity, rather than use whatever
+> is in the .ies file header, which option should I use?
+>
+> When I try to use the "-u" option, which allows you to set the default
+> lamp color according to the entry for *lamp* in the lookup table (*lamp.tab),
+> *I have tried including the lamp lookup term as both: -u deluxe warm
+> white and -u /deluxe warm white/ in the ies2rad command but I get the
+> following errors:
+> When I run the command with simple variables,  e.g.:
+> ies2rad -df -m 0.88 -o CAT CL_TokistarG14Clear_VI-EX_2400K_G14-C.ies
+>
+> it runs fine.
+>
+> I'm not sure how to use the -u (or -t, or -f) in conjunction with the
+> lamp.tab look up table to specify my own color temperature.  The only way I
+> have had success in doing this is to convert a particular color temperature
+> (e.g. 2400k) to R, G, B values and then use the -c term followed by the
+> converted RGB values.
+>
+> Thank you!
+> Kera
+> ________________
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170626/a21db42d/attachment.html>
+
+From stephen at coolshadow.com  Thu Jun 29 14:48:34 2017
+From: stephen at coolshadow.com (Stephen Wasilewski)
+Date: Thu, 29 Jun 2017 14:48:34 -0700
+Subject: [Radiance-general] irradiance calc that ignores incident angle
+Message-ID: <CAK5mS-_O2KssN5Pd2ZZ0E7UEh-aKLiV_uKmFngJ6dTuvBMoavw@mail.gmail.com>
+
+I'm curious if anyone knows of a way to simulate a sensor point that has a
+constant response (not cosine corrected) for all incident angles (at least
+over a hemisphere).  I know I can do this with an angular fisheye image and
+I assume I could use rsensor, but i would like a way to do this with a
+single rtrace or rpict calculation.  Applications include:
+
+1. measuring direct normal irradiance (when I know the source is small
+(cos(x) ~ 1), but not the incident angle.
+2. calculating percent of a sky/source description that is visible from a
+point.
+
+The one though I have is to place an analysis plane with a BRTDfunc
+material assigned and then do a radiance calc looking at the plane, but
+this only works for the 1st case, where it is part of the direct
+calculation.  For the second case I tried making a bsdf with bsdf2ttree (or
+bsdf2klems) but it seems to introduce a lot of sampling error and doesn't
+appear to be working quite right.
+
+BRTDfunc approach:
+
+#cal file:
+r(x,y,z) = 1/(x*NxP+y*NyP+z*NzP)/PI;
+
+#material:
+void BRTDfunc test
+10 0 0 0 0 0 0 r r r test.cal
+0
+9 0 0 0 0 0 0 0 0 0
+
+BSDF approach:
+#cal file:
+rdif(ix,iy,iz,ox,oy,oz) = if(oz*iz,1/(ix*ox+iy*oy+iz*oz)/PI,0);
+
+#bsdf2ttree:
+bsdf2ttree -t3 -g 7 -forward -f test.cal rdif > test.xml
+
+#material:
+void BSDF test
+6 0 test.xml 0 1 0 .
+0
+0
+
+Either way, this feels like an inelegant approach, so anyone have a better
+idea or a way to get this working for a diffuse calculation?
+
+Stephen Wasilewski
+*LOISOS *+* UBBELOHDE*
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+1917 Clement Avenue  Building 10A
+Alameda, CA  94501 USA
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+510 521 3800 VOICE
+510 521 3820 FAX
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+www.coolshadow.com
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170629/2a1d375f/attachment.html>
+
+From gregoryjward at gmail.com  Thu Jun 29 19:20:24 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri, 30 Jun 2017 08:50:24 +0630
+Subject: [Radiance-general] irradiance calc that ignores incident angle
+In-Reply-To: <CAK5mS-_O2KssN5Pd2ZZ0E7UEh-aKLiV_uKmFngJ6dTuvBMoavw@mail.gmail.com>
+References: <CAK5mS-_O2KssN5Pd2ZZ0E7UEh-aKLiV_uKmFngJ6dTuvBMoavw@mail.gmail.com>
+Message-ID: <565330A8-4618-42C3-95E5-C129A6B15ACF@lmi.net>
+
+Hi Stephen,
+
+The simplest method is to use rsensor to generate a set of uniformly distributed rays over the hemisphere, which you can re-use as often as you like.  The sensor file below specifies a uniform distribution out to 90?, and even samples a few rays below the horizon  Let's call it "uniform.dat":
+
+degrees	0	90	180	270
+0	1	1	1	1
+5	1	1	1	1
+85	1	1	1	1
+90	1	1	1	1
+95	0	0	0	0
+
+You can run rsensor on the above file and either use it to call rtrace, or since you seem to want to call rtrace yourself, create instead a set of sample rays:
+
+	rsensor -h -rd 100000 -vp 0 0 0 -vd 0 0 1 -vu 0 1 0 uniform.dat > uniform_znorm_samp.txt
+
+You can then give this as input to rtrace with whatever model you like:
+
+	rtrace -h [options] octree < uniform_znorm_samp.txt | total -m
+
+I've passed the output to total with the -m option, assuming you just want the average result.  If you're willing to call rsensor in place of rtrace, you can shorten the calculation time with:
+
+	rsensor -rd 100000 -vp 0 0 0 -vd 0 0 1 -vu 0 1 0 uniform.dat [rtrace options] octree
+
+This has the added advantage of sampling light sources directly (unless you set -dn 0), and it even supports the -n multiprocessing option on Unix.  You will need to divide the result by the hemispherical solid angle (2?), or else change all your sensor file values by 1/(2?) to get a uniform average.
+
+I did spent quite a bit of time writing and debugging rsensor for just this sort of thing, so you may as well use it.  (Thanks to Zack Rogers for specifying the problem and funding the initial work, and to David Geisler-Moroder for doggedly testing the code & helping me sort out its many issues.)
+
+Cheers,
+-Greg
+
+> From: Stephen Wasilewski <stephen at coolshadow.com>
+> Date: June 30, 2017 4:18:34 AM GMT+06:30
+> 
+> I'm curious if anyone knows of a way to simulate a sensor point that has a constant response (not cosine corrected) for all incident angles (at least over a hemisphere).  I know I can do this with an angular fisheye image and I assume I could use rsensor, but i would like a way to do this with a single rtrace or rpict calculation.  Applications include:
+> 
+> 1. measuring direct normal irradiance (when I know the source is small (cos(x) ~ 1), but not the incident angle.
+> 2. calculating percent of a sky/source description that is visible from a point.
+> 
+> The one though I have is to place an analysis plane with a BRTDfunc material assigned and then do a radiance calc looking at the plane, but this only works for the 1st case, where it is part of the direct calculation.  For the second case I tried making a bsdf with bsdf2ttree (or bsdf2klems) but it seems to introduce a lot of sampling error and doesn't appear to be working quite right.
+> 
+> BRTDfunc approach:
+> 
+> #cal file:
+> r(x,y,z) = 1/(x*NxP+y*NyP+z*NzP)/PI;
+> 
+> #material:
+> void BRTDfunc test
+> 10 0 0 0 0 0 0 r r r test.cal
+> 0
+> 9 0 0 0 0 0 0 0 0 0
+> 
+> BSDF approach:
+> #cal file:
+> rdif(ix,iy,iz,ox,oy,oz) = if(oz*iz,1/(ix*ox+iy*oy+iz*oz)/PI,0);
+> 
+> #bsdf2ttree:
+> bsdf2ttree -t3 -g 7 -forward -f test.cal rdif > test.xml
+> 
+> #material:
+> void BSDF test
+> 6 0 test.xml 0 1 0 .
+> 0
+> 0
+> 
+> Either way, this feels like an inelegant approach, so anyone have a better idea or a way to get this working for a diffuse calculation?
+> 
+> Stephen Wasilewski
+> LOISOS + UBBELOHDE
+> - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+> 1917 Clement Avenue  Building 10A
+> Alameda, CA  94501 USA
+> - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+> 510 521 3800 VOICE
+> 510 521 3820 FAX
+> - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+> www.coolshadow.com
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170630/f38e5269/attachment.html>
+
+From kalyanam at rhrk.uni-kl.de  Fri Jun 30 04:26:08 2017
+From: kalyanam at rhrk.uni-kl.de (Raghuram Kalyanam)
+Date: Fri, 30 Jun 2017 13:26:08 +0200
+Subject: [Radiance-general] 360 degree rendering
+In-Reply-To: <01F07958-E7EB-4AF9-B834-579854D41BFD@lmi.net>
+References: <C812F12E-FB22-4BE9-B07B-6CAFD35C4317@rhrk.uni-kl.de>
+ <01F07958-E7EB-4AF9-B834-579854D41BFD@lmi.net>
+Message-ID: <F68D1B3E-AC03-499E-8833-B8A6D874B1C3@rhrk.uni-kl.de>
+
+Thanks Greg. That was helpful. I generated the VR images. Could I get only get the 360 degree projection only for one eye  using that cal file, if so which variable should i tweak. Here <https://seafile.rlp.net/f/5c3a3a6aeecb42faa3de/?dl=1> is a sample image i wanted to produce.
+ 
+Also there is lot of noise in the picture and appears grainy. I increased -ab but it didn't improve much. i tried other parameters, here is a glimpse of the command.
+
+X=2048; Y=2048; cnt $Y $X | rcalc -f view360stereo.cal -e "XD:$X;YD:$Y;X:0;Y:0;Z:1.25;IPD:0.06;EX:0;EZ:0" | rtrace -dp 4096 -ar 256 -ds .02 -dj .9 -dt .05 -dc .75 -dr 3 -ss 16 -st .01 -ab 5 -aa .03 -ad 1024 -as 512 -lr 12 -lw 1e-5 -x $X -y $Y -fac scene.oct  > out4.hdr <https://seafile.rlp.net/f/7f343d2d476e43b2b546/?dl=1>
+
+Best Regards,
+Raghu
+
+> On Jun 26, 2017, at 4:57 PM, Greg Ward <gregoryjward at gmail.com> wrote:
+> 
+> Hi Raghu,
+> 
+> Mark Stock created the attached file "view360stereo.cal" that makes a 360? stereo panorama in the standard format for such viewers.  This was checked into the Radiance HEAD back in January.
+> 
+> Cheers,
+> -Greg
+> 
+> <view360stereo.cal>_______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170630/1673a9a2/attachment-0001.html>
+
+From mstock at umich.edu  Fri Jun 30 07:27:03 2017
+From: mstock at umich.edu (Mark Stock)
+Date: Fri, 30 Jun 2017 10:27:03 -0400
+Subject: [Radiance-general] 360 degree rendering
+In-Reply-To: <F68D1B3E-AC03-499E-8833-B8A6D874B1C3@rhrk.uni-kl.de>
+References: <C812F12E-FB22-4BE9-B07B-6CAFD35C4317@rhrk.uni-kl.de>
+ <01F07958-E7EB-4AF9-B834-579854D41BFD@lmi.net>
+ <F68D1B3E-AC03-499E-8833-B8A6D874B1C3@rhrk.uni-kl.de>
+Message-ID: <CADoMKs0zD4nuH1PJOUx9rSfW_6bZ8MMaYYUZt=Uicu99guem0g@mail.gmail.com>
+
+Raghu,
+
+An easy, though somewhat inefficient, way to get a single-eye view
+without digging into the script would be to change the IPD to 0.
+
+Mark
+
+On 6/30/17, Raghuram Kalyanam <kalyanam at rhrk.uni-kl.de> wrote:
+> Thanks Greg. That was helpful. I generated the VR images. Could I get only
+> get the 360 degree projection only for one eye  using that cal file, if so
+> which variable should i tweak. Here
+> <https://seafile.rlp.net/f/5c3a3a6aeecb42faa3de/?dl=1> is a sample image i
+> wanted to produce.
+>
+> Also there is lot of noise in the picture and appears grainy. I increased
+> -ab but it didn't improve much. i tried other parameters, here is a glimpse
+> of the command.
+>
+> X=2048; Y=2048; cnt $Y $X | rcalc -f view360stereo.cal -e
+> "XD:$X;YD:$Y;X:0;Y:0;Z:1.25;IPD:0.06;EX:0;EZ:0" | rtrace -dp 4096 -ar 256
+> -ds .02 -dj .9 -dt .05 -dc .75 -dr 3 -ss 16 -st .01 -ab 5 -aa .03 -ad 1024
+> -as 512 -lr 12 -lw 1e-5 -x $X -y $Y -fac scene.oct  > out4.hdr
+> <https://seafile.rlp.net/f/7f343d2d476e43b2b546/?dl=1>
+>
+> Best Regards,
+> Raghu
+>
+>> On Jun 26, 2017, at 4:57 PM, Greg Ward <gregoryjward at gmail.com> wrote:
+>>
+>> Hi Raghu,
+>>
+>> Mark Stock created the attached file "view360stereo.cal" that makes a 360?
+>> stereo panorama in the standard format for such viewers.  This was checked
+>> into the Radiance HEAD back in January.
+>>
+>> Cheers,
+>> -Greg
+>>
+>> <view360stereo.cal>_______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general at radiance-online.org
+>> https://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+
+From kalyanam at rhrk.uni-kl.de  Fri Jun 30 07:38:06 2017
+From: kalyanam at rhrk.uni-kl.de (Raghuram Kalyanam)
+Date: Fri, 30 Jun 2017 16:38:06 +0200
+Subject: [Radiance-general] 360 degree rendering
+In-Reply-To: <CADoMKs0zD4nuH1PJOUx9rSfW_6bZ8MMaYYUZt=Uicu99guem0g@mail.gmail.com>
+References: <C812F12E-FB22-4BE9-B07B-6CAFD35C4317@rhrk.uni-kl.de>
+ <01F07958-E7EB-4AF9-B834-579854D41BFD@lmi.net>
+ <F68D1B3E-AC03-499E-8833-B8A6D874B1C3@rhrk.uni-kl.de>
+ <CADoMKs0zD4nuH1PJOUx9rSfW_6bZ8MMaYYUZt=Uicu99guem0g@mail.gmail.com>
+Message-ID: <CDBE4D69-B9DB-4D31-A7BA-BF8C2A7DD69A@rhrk.uni-kl.de>
+
+Hi Mark,
+
+Thanks for answering, I tried with IPD 0 and its still same. I changed the default to also zero in cal file. Any idea how do i improve the graininess of the picture?
+
+Best Regards,
+Raghu
+
+> On Jun 30, 2017, at 4:27 PM, Mark Stock <mstock at umich.edu> wrote:
+> 
+> Raghu,
+> 
+> An easy, though somewhat inefficient, way to get a single-eye view
+> without digging into the script would be to change the IPD to 0.
+> 
+> Mark
+> 
+> On 6/30/17, Raghuram Kalyanam <kalyanam at rhrk.uni-kl.de> wrote:
+>> Thanks Greg. That was helpful. I generated the VR images. Could I get only
+>> get the 360 degree projection only for one eye  using that cal file, if so
+>> which variable should i tweak. Here
+>> <https://seafile.rlp.net/f/5c3a3a6aeecb42faa3de/?dl=1> is a sample image i
+>> wanted to produce.
+>> 
+>> Also there is lot of noise in the picture and appears grainy. I increased
+>> -ab but it didn't improve much. i tried other parameters, here is a glimpse
+>> of the command.
+>> 
+>> X=2048; Y=2048; cnt $Y $X | rcalc -f view360stereo.cal -e
+>> "XD:$X;YD:$Y;X:0;Y:0;Z:1.25;IPD:0.06;EX:0;EZ:0" | rtrace -dp 4096 -ar 256
+>> -ds .02 -dj .9 -dt .05 -dc .75 -dr 3 -ss 16 -st .01 -ab 5 -aa .03 -ad 1024
+>> -as 512 -lr 12 -lw 1e-5 -x $X -y $Y -fac scene.oct  > out4.hdr
+>> <https://seafile.rlp.net/f/7f343d2d476e43b2b546/?dl=1>
+>> 
+>> Best Regards,
+>> Raghu
+>> 
+>>> On Jun 26, 2017, at 4:57 PM, Greg Ward <gregoryjward at gmail.com> wrote:
+>>> 
+>>> Hi Raghu,
+>>> 
+>>> Mark Stock created the attached file "view360stereo.cal" that makes a 360?
+>>> stereo panorama in the standard format for such viewers.  This was checked
+>>> into the Radiance HEAD back in January.
+>>> 
+>>> Cheers,
+>>> -Greg
+>>> 
+>>> <view360stereo.cal>_______________________________________________
+>>> Radiance-general mailing list
+>>> Radiance-general at radiance-online.org
+>>> https://www.radiance-online.org/mailman/listinfo/radiance-general
+>> 
+>> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+
+From gward at lmi.net  Fri Jun 30 07:58:10 2017
+From: gward at lmi.net (Greg Ward)
+Date: Fri, 30 Jun 2017 21:28:10 +0630
+Subject: [Radiance-general] 360 degree rendering
+In-Reply-To: <CDBE4D69-B9DB-4D31-A7BA-BF8C2A7DD69A@rhrk.uni-kl.de>
+References: <C812F12E-FB22-4BE9-B07B-6CAFD35C4317@rhrk.uni-kl.de>
+ <01F07958-E7EB-4AF9-B834-579854D41BFD@lmi.net>
+ <F68D1B3E-AC03-499E-8833-B8A6D874B1C3@rhrk.uni-kl.de>
+ <CADoMKs0zD4nuH1PJOUx9rSfW_6bZ8MMaYYUZt=Uicu99guem0g@mail.gmail.com>
+ <CDBE4D69-B9DB-4D31-A7BA-BF8C2A7DD69A@rhrk.uni-kl.de>
+Message-ID: <11A1C1F3-74D2-4FD7-A4A6-3258EEBAE7DF@lmi.net>
+
+If you send me your input files and exact commands in a private message, I'll have a look. There's nothing in your parameters to explain your grainy results. My only guess at this point is that your light sources might be right triangles rather than rectangles, which screws up source sampling.
+
+Cheers,
+-Greg
+
+Sent from my iPad
+
+> On Jun 30, 2017, at 9:08 PM, Raghuram Kalyanam <kalyanam at rhrk.uni-kl.de> wrote:
+> 
+> Hi Mark,
+> 
+> Thanks for answering, I tried with IPD 0 and its still same. I changed the default to also zero in cal file. Any idea how do i improve the graininess of the picture?
+> 
+> Best Regards,
+> Raghu
+> 
+>> On Jun 30, 2017, at 4:27 PM, Mark Stock <mstock at umich.edu> wrote:
+>> 
+>> Raghu,
+>> 
+>> An easy, though somewhat inefficient, way to get a single-eye view
+>> without digging into the script would be to change the IPD to 0.
+>> 
+>> Mark
+>> 
+>>> On 6/30/17, Raghuram Kalyanam <kalyanam at rhrk.uni-kl.de> wrote:
+>>> Thanks Greg. That was helpful. I generated the VR images. Could I get only
+>>> get the 360 degree projection only for one eye  using that cal file, if so
+>>> which variable should i tweak. Here
+>>> <https://seafile.rlp.net/f/5c3a3a6aeecb42faa3de/?dl=1> is a sample image i
+>>> wanted to produce.
+>>> 
+>>> Also there is lot of noise in the picture and appears grainy. I increased
+>>> -ab but it didn't improve much. i tried other parameters, here is a glimpse
+>>> of the command.
+>>> 
+>>> X=2048; Y=2048; cnt $Y $X | rcalc -f view360stereo.cal -e
+>>> "XD:$X;YD:$Y;X:0;Y:0;Z:1.25;IPD:0.06;EX:0;EZ:0" | rtrace -dp 4096 -ar 256
+>>> -ds .02 -dj .9 -dt .05 -dc .75 -dr 3 -ss 16 -st .01 -ab 5 -aa .03 -ad 1024
+>>> -as 512 -lr 12 -lw 1e-5 -x $X -y $Y -fac scene.oct  > out4.hdr
+>>> <https://seafile.rlp.net/f/7f343d2d476e43b2b546/?dl=1>
+>>> 
+>>> Best Regards,
+>>> Raghu
+>>> 
+>>>> On Jun 26, 2017, at 4:57 PM, Greg Ward <gregoryjward at gmail.com> wrote:
+>>>> 
+>>>> Hi Raghu,
+>>>> 
+>>>> Mark Stock created the attached file "view360stereo.cal" that makes a 360?
+>>>> stereo panorama in the standard format for such viewers.  This was checked
+>>>> into the Radiance HEAD back in January.
+>>>> 
+>>>> Cheers,
+>>>> -Greg
+>>>> 
+>>>> <view360stereo.cal>_______________________________________________
+>>>> Radiance-general mailing list
+>>>> Radiance-general at radiance-online.org
+>>>> https://www.radiance-online.org/mailman/listinfo/radiance-general
+>> 
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general at radiance-online.org
+>> https://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+
+From stephen at coolshadow.com  Fri Jun 30 10:55:51 2017
+From: stephen at coolshadow.com (Stephen Wasilewski)
+Date: Fri, 30 Jun 2017 10:55:51 -0700
+Subject: [Radiance-general] irradiance calc that ignores incident angle
+In-Reply-To: <565330A8-4618-42C3-95E5-C129A6B15ACF@lmi.net>
+References: <CAK5mS-_O2KssN5Pd2ZZ0E7UEh-aKLiV_uKmFngJ6dTuvBMoavw@mail.gmail.com>
+ <565330A8-4618-42C3-95E5-C129A6B15ACF@lmi.net>
+Message-ID: <CAK5mS--m86ezNrzMO8_HzY+9VtWBi1BW-1WbJy8_xxtDtjHzuQ@mail.gmail.com>
+
+Greg,
+
+the reason I want to call rtrace is because I want to run the uniform
+distribution for a large number of points/pixels
+is there a way to feed a points file into either of your example commands
+to run the sensor for all points (and accumulate result for each point).
+I'm looking to be able to do something like this:
+
+rtrace -n 8 -ffc -w -I -ov -x 3000 -y 1163 -ld- [options] test.oct  <
+test.pts  > test.hdr
+
+or
+
+vwrays -fa refs/L2.hdr refs/L2.zbf | rcalc -of -e
+'$1=$1;$2=$2;$3=$3+2.5;$4=0;$5=0;$6=if($3-1,1,0)' | rtrace -n 8 -ffc -w -I
+-ov -x 3000 -y 1163 -ld- [options] test.oct > test.hdr
+
+and have it run fairly quickly, but with a uniform distribution.
+
+thanks,
+
+Stephen Wasilewski
+*LOISOS *+* UBBELOHDE*
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+1917 Clement Avenue  Building 10A
+Alameda, CA  94501 USA
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+510 521 3800 VOICE
+510 521 3820 FAX
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+www.coolshadow.com
+
+On Thu, Jun 29, 2017 at 7:20 PM, Greg Ward <gregoryjward at gmail.com> wrote:
+
+> Hi Stephen,
+>
+> The simplest method is to use rsensor to generate a set of uniformly
+> distributed rays over the hemisphere, which you can re-use as often as you
+> like.  The sensor file below specifies a uniform distribution out to 90?,
+> and even samples a few rays below the horizon  Let's call it "uniform.dat":
+>
+> degrees 0 90 180 270
+> 0 1 1 1 1
+> 5 1 1 1 1
+> 85 1 1 1 1
+> 90 1 1 1 1
+> 95 0 0 0 0
+>
+> You can run rsensor on the above file and either use it to call rtrace, or
+> since you seem to want to call rtrace yourself, create instead a set of
+> sample rays:
+>
+> rsensor -h -rd 100000 -vp 0 0 0 -vd 0 0 1 -vu 0 1 0 uniform.dat >
+> uniform_znorm_samp.txt
+>
+> You can then give this as input to rtrace with whatever model you like:
+>
+> rtrace -h [options] octree < uniform_znorm_samp.txt | total -m
+>
+> I've passed the output to total with the -m option, assuming you just want
+> the average result.  If you're willing to call rsensor in place of rtrace,
+> you can shorten the calculation time with:
+>
+> rsensor -rd 100000 -vp 0 0 0 -vd 0 0 1 -vu 0 1 0 uniform.dat [rtrace
+> options] octree
+>
+> This has the added advantage of sampling light sources directly (unless
+> you set -dn 0), and it even supports the -n multiprocessing option on
+> Unix.  You will need to divide the result by the hemispherical solid angle
+> (2?), or else change all your sensor file values by 1/(2?) to get a uniform
+> average.
+>
+> I did spent quite a bit of time writing and debugging rsensor for just
+> this sort of thing, so you may as well use it.  (Thanks to Zack Rogers for
+> specifying the problem and funding the initial work, and to David
+> Geisler-Moroder for doggedly testing the code & helping me sort out its
+> many issues.)
+>
+> Cheers,
+> -Greg
+>
+> *From: *Stephen Wasilewski <stephen at coolshadow.com>
+>
+> *Date: *June 30, 2017 4:18:34 AM GMT+06:30
+>
+>
+> I'm curious if anyone knows of a way to simulate a sensor point that has a
+> constant response (not cosine corrected) for all incident angles (at least
+> over a hemisphere).  I know I can do this with an angular fisheye image and
+> I assume I could use rsensor, but i would like a way to do this with a
+> single rtrace or rpict calculation.  Applications include:
+>
+> 1. measuring direct normal irradiance (when I know the source is small
+> (cos(x) ~ 1), but not the incident angle.
+> 2. calculating percent of a sky/source description that is visible from a
+> point.
+>
+> The one though I have is to place an analysis plane with a BRTDfunc
+> material assigned and then do a radiance calc looking at the plane, but
+> this only works for the 1st case, where it is part of the direct
+> calculation.  For the second case I tried making a bsdf with bsdf2ttree (or
+> bsdf2klems) but it seems to introduce a lot of sampling error and doesn't
+> appear to be working quite right.
+>
+> BRTDfunc approach:
+>
+> #cal file:
+> r(x,y,z) = 1/(x*NxP+y*NyP+z*NzP)/PI;
+>
+> #material:
+> void BRTDfunc test
+> 10 0 0 0 0 0 0 r r r test.cal
+> 0
+> 9 0 0 0 0 0 0 0 0 0
+>
+> BSDF approach:
+> #cal file:
+> rdif(ix,iy,iz,ox,oy,oz) = if(oz*iz,1/(ix*ox+iy*oy+iz*oz)/PI,0);
+>
+> #bsdf2ttree:
+> bsdf2ttree -t3 -g 7 -forward -f test.cal rdif > test.xml
+>
+> #material:
+> void BSDF test
+> 6 0 test.xml 0 1 0 .
+> 0
+> 0
+>
+> Either way, this feels like an inelegant approach, so anyone have a better
+> idea or a way to get this working for a diffuse calculation?
+>
+> Stephen Wasilewski
+> *LOISOS *+* UBBELOHDE*
+> - - - - - - - - - - - - - - - - - - - - - - - - - - -
+> 1917 Clement Avenue  Building 10A
+> Alameda, CA  94501 USA
+> - - - - - - - - - - - - - - - - - - - - - - - - - - -
+> 510 521 3800 VOICE
+> 510 521 3820 FAX
+> - - - - - - - - - - - - - - - - - - - - - - - - - - -
+> www.coolshadow.com
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170630/7b115e2d/attachment-0001.html>
+
+From gregoryjward at gmail.com  Fri Jun 30 17:29:31 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Sat, 1 Jul 2017 06:59:31 +0630
+Subject: [Radiance-general] irradiance calc that ignores incident angle
+In-Reply-To: <CAK5mS--m86ezNrzMO8_HzY+9VtWBi1BW-1WbJy8_xxtDtjHzuQ@mail.gmail.com>
+References: <CAK5mS-_O2KssN5Pd2ZZ0E7UEh-aKLiV_uKmFngJ6dTuvBMoavw@mail.gmail.com>
+ <565330A8-4618-42C3-95E5-C129A6B15ACF@lmi.net>
+ <CAK5mS--m86ezNrzMO8_HzY+9VtWBi1BW-1WbJy8_xxtDtjHzuQ@mail.gmail.com>
+Message-ID: <5FDEC987-A965-4310-9354-CBD3E1F2585B@lmi.net>
+
+It sounds like you want to be able to specify a list of points and orientations at which to compute this uniform (non-cosine) average.  In other words, replacing the -I option in rtrace with something that computes a uniform hemispherical integral.
+
+You could take the first part of your command to generate the points and normals.  Then, call  rsensor in a loop like so:
+
+vwrays -fa refs/L2.hdr refs/L2.zbf | rcalc -of -e '$1=$1;$2=$2;$3=$3+2.5;$4=0;$5=0;$6=if($3-1,1,0)' > orig_dir.txt
+foreach orig_dir ( " `cat orig_dir.txt` " )
+	rsensor -n 8 [rtrace options] [-rd $N1] [-dn $N2] -vp $orig_dir[1-3] -vd $orig_dir[4-6] uniform.dat test.oct >> results.txt
+end
+
+(I apologize that I don't know the bash syntax for the loop.  I never really understood bash.)
+
+If you really, really want to use rtrace, you can instead use the above loop with "." in place of the octree to create a really long list of ray samples, which you can give to rtrace and send it's output again to total using an option to average every N values.  The result would be about the same, though rsensor is more accurate/efficient because of the separate source sampling, which you can control with the -dn option.
+
+Cheers,
+-Greg
+
+> From: Stephen Wasilewski <stephen at coolshadow.com>
+> Date: July 1, 2017 12:25:51 AM GMT+06:30
+> 
+> Greg,
+> 
+> the reason I want to call rtrace is because I want to run the uniform distribution for a large number of points/pixels
+> is there a way to feed a points file into either of your example commands to run the sensor for all points (and accumulate result for each point).  I'm looking to be able to do something like this:
+> 
+> rtrace -n 8 -ffc -w -I -ov -x 3000 -y 1163 -ld- [options] test.oct  < test.pts  > test.hdr
+> 
+> or
+> 
+> vwrays -fa refs/L2.hdr refs/L2.zbf | rcalc -of -e '$1=$1;$2=$2;$3=$3+2.5;$4=0;$5=0;$6=if($3-1,1,0)' | rtrace -n 8 -ffc -w -I -ov -x 3000 -y 1163 -ld- [options] test.oct > test.hdr
+> 
+> and have it run fairly quickly, but with a uniform distribution.
+> 
+> thanks,
+> 
+> Stephen Wasilewski
+> - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+> 
+> On Thu, Jun 29, 2017 at 7:20 PM, Greg Ward <gregoryjward at gmail.com> wrote:
+> Hi Stephen,
+> 
+> The simplest method is to use rsensor to generate a set of uniformly distributed rays over the hemisphere, which you can re-use as often as you like.  The sensor file below specifies a uniform distribution out to 90?, and even samples a few rays below the horizon  Let's call it "uniform.dat":
+> 
+> degrees	0	90	180	270
+> 0	1	1	1	1
+> 5	1	1	1	1
+> 85	1	1	1	1
+> 90	1	1	1	1
+> 95	0	0	0	0
+> 
+> You can run rsensor on the above file and either use it to call rtrace, or since you seem to want to call rtrace yourself, create instead a set of sample rays:
+> 
+> 	rsensor -h -rd 100000 -vp 0 0 0 -vd 0 0 1 -vu 0 1 0 uniform.dat > uniform_znorm_samp.txt
+> 
+> You can then give this as input to rtrace with whatever model you like:
+> 
+> 	rtrace -h [options] octree < uniform_znorm_samp.txt | total -m
+> 
+> I've passed the output to total with the -m option, assuming you just want the average result.  If you're willing to call rsensor in place of rtrace, you can shorten the calculation time with:
+> 
+> 	rsensor -rd 100000 -vp 0 0 0 -vd 0 0 1 -vu 0 1 0 uniform.dat [rtrace options] octree
+> 
+> This has the added advantage of sampling light sources directly (unless you set -dn 0), and it even supports the -n multiprocessing option on Unix.  You will need to divide the result by the hemispherical solid angle (2?), or else change all your sensor file values by 1/(2?) to get a uniform average.
+> 
+> I did spent quite a bit of time writing and debugging rsensor for just this sort of thing, so you may as well use it.  (Thanks to Zack Rogers for specifying the problem and funding the initial work, and to David Geisler-Moroder for doggedly testing the code & helping me sort out its many issues.)
+> 
+> Cheers,
+> -Greg
+> 
+>> From: Stephen Wasilewski <stephen at coolshadow.com>
+>> Date: June 30, 2017 4:18:34 AM GMT+06:30
+>> 
+>> I'm curious if anyone knows of a way to simulate a sensor point that has a constant response (not cosine corrected) for all incident angles (at least over a hemisphere).  I know I can do this with an angular fisheye image and I assume I could use rsensor, but i would like a way to do this with a single rtrace or rpict calculation.  Applications include:
+>> 
+>> 1. measuring direct normal irradiance (when I know the source is small (cos(x) ~ 1), but not the incident angle.
+>> 2. calculating percent of a sky/source description that is visible from a point.
+>> 
+>> The one though I have is to place an analysis plane with a BRTDfunc material assigned and then do a radiance calc looking at the plane, but this only works for the 1st case, where it is part of the direct calculation.  For the second case I tried making a bsdf with bsdf2ttree (or bsdf2klems) but it seems to introduce a lot of sampling error and doesn't appear to be working quite right.
+>> 
+>> BRTDfunc approach:
+>> 
+>> #cal file:
+>> r(x,y,z) = 1/(x*NxP+y*NyP+z*NzP)/PI;
+>> 
+>> #material:
+>> void BRTDfunc test
+>> 10 0 0 0 0 0 0 r r r test.cal
+>> 0
+>> 9 0 0 0 0 0 0 0 0 0
+>> 
+>> BSDF approach:
+>> #cal file:
+>> rdif(ix,iy,iz,ox,oy,oz) = if(oz*iz,1/(ix*ox+iy*oy+iz*oz)/PI,0);
+>> 
+>> #bsdf2ttree:
+>> bsdf2ttree -t3 -g 7 -forward -f test.cal rdif > test.xml
+>> 
+>> #material:
+>> void BSDF test
+>> 6 0 test.xml 0 1 0 .
+>> 0
+>> 0
+>> 
+>> Either way, this feels like an inelegant approach, so anyone have a better idea or a way to get this working for a diffuse calculation?
+>> 
+>> Stephen Wasilewski
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170701/a7d08176/attachment.html>
+
+From gregoryjward at gmail.com  Fri Jun 30 18:00:18 2017
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Sat, 1 Jul 2017 07:30:18 +0630
+Subject: [Radiance-general] 360 degree rendering
+In-Reply-To: <FE34835F-D09F-4377-8694-9915C3D7F1A2@rhrk.uni-kl.de>
+References: <C812F12E-FB22-4BE9-B07B-6CAFD35C4317@rhrk.uni-kl.de>
+ <01F07958-E7EB-4AF9-B834-579854D41BFD@lmi.net>
+ <F68D1B3E-AC03-499E-8833-B8A6D874B1C3@rhrk.uni-kl.de>
+ <CADoMKs0zD4nuH1PJOUx9rSfW_6bZ8MMaYYUZt=Uicu99guem0g@mail.gmail.com>
+ <CDBE4D69-B9DB-4D31-A7BA-BF8C2A7DD69A@rhrk.uni-kl.de>
+ <11A1C1F3-74D2-4FD7-A4A6-3258EEBAE7DF@lmi.net>
+ <FE34835F-D09F-4377-8694-9915C3D7F1A2@rhrk.uni-kl.de>
+Message-ID: <2C7382D6-0B2E-44AB-9EE9-807B302D1596@gmail.com>
+
+Hi Raghu,
+
+I had a look at your files.  Thanks for providing a link.
+
+Line 48 of the file Components/Group_1.rad has a duplicate real argument count, which causes this file not be be included:
+
+	## guessed Material
+
+	void    glass   glass1_Group_1
+	0
+	0
+	3       3       0.75 0.75 0.75
+
+Deleting the second '3' above fixes the issue.  If this file was generated automatically, you should talk to the people who wrote that software.  It's also apparent that they aren't putting the proper dependencies into the "scene.rif" file.  This should include lines like:
+
+	objects= Materials/[Color_M06].mat Materials/[Color_M05].mat Materials/glass3.mat Materials/glass1.mat Materials/Default_Material.mat
+	objects= Materials/[Color_M00].mat Materials/Lisanne_Boots.mat Materials/[Color_M04].mat Materials/Color_M1.mat
+
+...and so on.
+
+Also, the "guessed" materials are terrible.  Most of them have 50% specular reflectance, which makes them metallic.  This is probably the main cause of noise in your images.  If you put in more reasonable material values, preferably with specularity less than 0.04 or so, your results will improve substantially.  Reserve specularities above 0.05 for metallic materials.
+
+Cheers,
+-Greg
+
+> From: Raghuram Kalyanam <kalyanam at rhrk.uni-kl.de>
+> Date: June 30, 2017 9:39:19 PM GMT+06:30
+> 
+> Hi Greg,
+> 
+> Thanks for answering, here are the files. I have tried out rvu also to check out, if normal image also the same (grainy). I guess you are right, it could be with the light sources. I am using only direct sun light. you can find it in sky.rad file.
+> 
+> The below command 
+> rvu -vtc -vh 360 -vv 130 -vp 0 0 1.25 -vd 1 1 0 -n 4 -ab 7 -as 1024 scene.oct
+> results  this image
+> 
+> Thanks & Regards,
+> Raghu
+> 
+>> On Jun 30, 2017, at 4:58 PM, Greg Ward <gward at lmi.net> wrote:
+>> 
+>> If you send me your input files and exact commands in a private message, I'll have a look. There's nothing in your parameters to explain your grainy results. My only guess at this point is that your light sources might be right triangles rather than rectangles, which screws up source sampling.
+>> 
+>> Cheers,
+>> -Greg
+>> 
+>> Sent from my iPad
+>> 
+>>> On Jun 30, 2017, at 9:08 PM, Raghuram Kalyanam <kalyanam at rhrk.uni-kl.de> wrote:
+>>> 
+>>> Hi Mark,
+>>> 
+>>> Thanks for answering, I tried with IPD 0 and its still same. I changed the default to also zero in cal file. Any idea how do i improve the graininess of the picture?
+>>> 
+>>> Best Regards,
+>>> Raghu
+>>> 
+>>>> On Jun 30, 2017, at 4:27 PM, Mark Stock <mstock at umich.edu> wrote:
+>>>> 
+>>>> Raghu,
+>>>> 
+>>>> An easy, though somewhat inefficient, way to get a single-eye view
+>>>> without digging into the script would be to change the IPD to 0.
+>>>> 
+>>>> Mark
+>>>> 
+>>>>> On 6/30/17, Raghuram Kalyanam <kalyanam at rhrk.uni-kl.de> wrote:
+>>>>> Thanks Greg. That was helpful. I generated the VR images. Could I get only
+>>>>> get the 360 degree projection only for one eye  using that cal file, if so
+>>>>> which variable should i tweak. Here
+>>>>> <https://seafile.rlp.net/f/5c3a3a6aeecb42faa3de/?dl=1> is a sample image i
+>>>>> wanted to produce.
+>>>>> 
+>>>>> Also there is lot of noise in the picture and appears grainy. I increased
+>>>>> -ab but it didn't improve much. i tried other parameters, here is a glimpse
+>>>>> of the command.
+>>>>> 
+>>>>> X=2048; Y=2048; cnt $Y $X | rcalc -f view360stereo.cal -e
+>>>>> "XD:$X;YD:$Y;X:0;Y:0;Z:1.25;IPD:0.06;EX:0;EZ:0" | rtrace -dp 4096 -ar 256
+>>>>> -ds .02 -dj .9 -dt .05 -dc .75 -dr 3 -ss 16 -st .01 -ab 5 -aa .03 -ad 1024
+>>>>> -as 512 -lr 12 -lw 1e-5 -x $X -y $Y -fac scene.oct  > out4.hdr
+>>>>> <https://seafile.rlp.net/f/7f343d2d476e43b2b546/?dl=1>
+>>>>> 
+>>>>> Best Regards,
+>>>>> Raghu
+>>>>> 
+>>>>>> On Jun 26, 2017, at 4:57 PM, Greg Ward <gregoryjward at gmail.com> wrote:
+>>>>>> 
+>>>>>> Hi Raghu,
+>>>>>> 
+>>>>>> Mark Stock created the attached file "view360stereo.cal" that makes a 360?
+>>>>>> stereo panorama in the standard format for such viewers.  This was checked
+>>>>>> into the Radiance HEAD back in January.
+>>>>>> 
+>>>>>> Cheers,
+>>>>>> -Greg
+>>>>>> 
+>>>>>> <view360stereo.cal>
+> 
+
+
+From xsujanova at stuba.sk  Fri Jun 23 07:59:28 2017
+From: xsujanova at stuba.sk (Paulina Sujanova)
+Date: Fri, 23 Jun 2017 16:59:28 +0200
+Subject: [Radiance-general] Non symmetrical BSDF from symmetrical
+ geometry
+In-Reply-To: <mailman.126.1498227939.8662.radiance-general@radiance-online.org>
+References: <mailman.126.1498227939.8662.radiance-general@radiance-online.org>
+Message-ID: <web-69764062@stuba.sk>
+
+Hi Marouane,
+
+I am not the best to answer this, but as I struggled recently with this, here
+is my cheat sheet (also maybe someone could check it whether it is really OK).
+You need to set up the genBSDF options and rfluxmtx parameters according to
+your geometry. Seems like the default set up was insufficient for your
+geometry.
+
+-ab n
+ambient bounces - according to material reflectance 
+p^n - should be less than 5 %
+
+-c 
+number of rays per incident patch - Klems - means 145 patches
+the resulting transmission flux is averaged per patch
+depends on bsdf model tensor or Klems
+number of rays per hemisphere - tensor
+
+
+-t3|4 n 
+tensor 3rd or 4th rank
+3rd for isotropic - 2^(2*n) - result for c  
+	2^n - resulting patches - means transfers to angle resolution
+	(2^n)*(2^n) - incident and leaving
+4th for nonisotropic - 2^(4*n) - result for c
+	2^(2*n) - resulting patches - means transfers to angle resolution
+	(2^(2*n))*(2^(2*n)) - incident and leaving
+nmax = 7  - correspods to angle resolution < 2?
+
+
+-ad n
+ambient division
+number of daughter rays spawned at each ambient ray intersection
+contingent on the ray weight being above the lw setting
+
+-lw
+limit weight
+minimum weight of a ray being traced
+at a ray intersection of n ambient division rays are spawned the weight of each
+of those rays is 1/(n* the diffuse reflectance of the intersected material)
+
+-st
+treschold for specular sampling
+if the specular reflection of transmission of a material is below this value,
+specular sampling will not occur
+should be less than specular reflectance of material (rs)
+rs^2 - will include secondary reflections
+
+Kind regards,
+
+Paulina
+
+
+On Fri, 23 Jun 2017 07:25:39 -0700
+ radiance-general-request at radiance-online.org wrote:
+>Send Radiance-general mailing list submissions to
+>	radiance-general at radiance-online.org
+>
+>To subscribe or unsubscribe via the World Wide Web, visit
+>	https://www.radiance-online.org/mailman/listinfo/radiance-general
+>or, via email, send a message with subject or body 'help' to
+>	radiance-general-request at radiance-online.org
+>
+>You can reach the person managing the list at
+>	radiance-general-owner at radiance-online.org
+>
+>When replying, please edit your Subject line so it is more specific
+>than "Re: Contents of Radiance-general digest..."
+>
+>
+>Today's Topics:
+>
+>   1. Non symmetrical BSDF from symmetrical geometry
+>      (Marouane.Boudhaim at ise.fraunhofer.de)
+>
+>
+>----------------------------------------------------------------------
+>
+>Message: 1
+>Date: Fri, 23 Jun 2017 16:25:25 +0200
+>From: Marouane.Boudhaim at ise.fraunhofer.de
+>To: radiance-general at radiance-online.org
+>Subject: [Radiance-general] Non symmetrical BSDF from symmetrical
+>	geometry
+>Message-ID:
+>	<OF074179BA.FD10BA4F-ONC1258148.004CAE43-C1258148.004F3B41 at ise.fhg.de>
+>Content-Type: text/plain; charset="us-ascii"
+>
+>Hi all,
+>
+>
+>I am trying to generate a BSDF of a profile angle symmetrical textile. The 
+>problem is that the BSDF is supposed to be left and right symmetric (as is 
+>the geometry). In practice the BSDF doesn't look left/right symmetric in 
+>BSDFviewer. Is it a problem due to the ray-tracing calculation with many 
+>small objects or did I mess up something? here is the command I have run 
+>to generate the BSDF :
+>
+>genBSDF +f +b -geom millimeter -n 5 0.rad > 0.xml
+>
+>I attach the 0.rad file used to the email. Thanks in advance for your 
+>help!
+>
+>Sincerely,
+>Marouane Boudhaim.
+>
+>-------------- next part --------------
+>An HTML attachment was scrubbed...
+>URL:
+><http://www.radiance-online.org/pipermail/radiance-general/attachments/20170623/76c95e26/attachment.html>
+>-------------- next part --------------
+>A non-text attachment was scrubbed...
+>Name: 0.rad
+>Type: application/octet-stream
+>Size: 94084 bytes
+>Desc: not available
+>URL:
+><http://www.radiance-online.org/pipermail/radiance-general/attachments/20170623/76c95e26/attachment.obj>
+>
+>------------------------------
+>
+>Subject: Digest Footer
+>
+>_______________________________________________
+>Radiance-general mailing list
+>Radiance-general at radiance-online.org
+>https://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>------------------------------
+>
+>End of Radiance-general Digest, Vol 160, Issue 4
+>************************************************
+
+
+

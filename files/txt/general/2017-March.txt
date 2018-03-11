@@ -1,0 +1,3577 @@
+From jacobs.axel at gmail.com  Wed Mar  1 02:36:30 2017
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Wed, 1 Mar 2017 10:36:30 +0000
+Subject: [Radiance-general] Slow spawning of rtrace -n,
+ mkillum -n with many light sources
+In-Reply-To: <CA+dqh63EGaxcZ60Q-tB+1+11oqeLQHRL5dwtjYsdB=zazuFxsg@mail.gmail.com>
+References: <CA+dqh62ruHFs37K+4EwB=BtcKSSpfrkL9HgtB6J-EC5HRQOX6A@mail.gmail.com>
+ <D857C449-3BF7-4EFB-99A6-43C0A5BA0AF6@lmi.net>
+ <CA+dqh63nwY9YGHuneEiuCakn1Kju2XCPirbwZiMqyLxsSN799g@mail.gmail.com>
+ <CACBDBD9-BFF8-4E4F-9898-2C2FA4BD711B@lmi.net>
+ <CA+dqh62ZvfbHVKCKW+Mxz4SsX+FQtgLZgS+Y2CfbdGYNX2Wx3w@mail.gmail.com>
+ <DF4995EC-D4C0-41B6-BD58-FD00D15F1B49@lmi.net>
+ <CA+dqh63EGaxcZ60Q-tB+1+11oqeLQHRL5dwtjYsdB=zazuFxsg@mail.gmail.com>
+Message-ID: <CA+dqh62+-aRuOrtVSkG+RP-OxG2ZuG06FM0M+N7jxP9-6LDRGg@mail.gmail.com>
+
+Hi Greg,
+
+https://giauk.sharefile.com/d-s0cd3657a8b54fa9b
+
+Here is the first scene.  This one does actually compile, but takes
+forever with RTMs.
+Compiling from obj2rad output takes just over a minute and creates an
+octree of 136MB.  Compiling from RTMs (with some polygon files) takes
+200 minutes, resulting in an octree 37GB in size.  What we normally do
+in such a situation is to either reduce the number of RTMs to one per
+material, or to go via obj2rad.
+
+I also noticed on a project I worked on a couple of years ago that the
+order in which the RTMs are listed in our master xform file matters.
+I was able back then to compile by listing the largest object
+(terrain) first.  Trying to replicating this behaviour today did not
+get the intended result.  The octree would compile either way.
+
+So let me hunt down some more examples for you.
+
+Let me know if you need the OBJs for your testing.
+
+Cheers
+
+Axel
+
+
+
+On 22 February 2017 at 17:11, Axel Jacobs <jacobs.axel at gmail.com> wrote:
+> Hi Greg,
+>
+> I'll ask around and find you some projects.  Give me a few days, and
+> I'll get back to you.
+>
+> Cheers
+>
+> Axel
+>
+>
+> On 22 February 2017 at 16:41, Greg Ward <gregoryjward at gmail.com> wrote:
+>> Hi Axel,
+>>
+>> I'd be interested in looking at OBJ files where obj2mesh fails.
+>>
+>> Cheers,
+>> -Greg
+>>
+>>> From: Axel Jacobs <jacobs.axel at gmail.com>
+>>> Date: February 22, 2017 1:55:48 AM PST
+>>>
+>>> Hi Greg,
+>>>
+>>> thank you so much for solving this riddle.  I have to admit I have
+>>> been blissfully unaware of the drawbacks of using RTMs. We use them as
+>>> much as possible now, since I have come to appreciate the fast compile
+>>> times and small octree sizes this can give us.  However, there have
+>>> been quite a few projects where RTMs would take hours to compile,
+>>> generating octrees many GB in size.  In such instances, we convert the
+>>> OBJs into polygon, but without the normals.  Occasionally, we also
+>>> need to go via obj2rad, simply because obj2mesh fails to generate the
+>>> RTMs.
+>>>
+>>> Looks as if we need to take a fresh look at our workflow.
+>>>
+>>> Thank you for adding the limit on the source obstruction code.  I'll
+>>> try this out in the next few days, and re-run the project
+>>>
+>>> Thanks again
+>>>
+>>> Axel
+>>>
+>>>
+>>> On 20 February 2017 at 18:00, Greg Ward <gregoryjward at gmail.com> wrote:
+>>>> Oh, I just remembered -- there's also the shadow cache, which gets initialized in marksources() as well.  This also ends up tracing some number of rays, about 400 per source, to look for near-source obstructions before the main calculation begins.  So, that could be part of your slow-down.  I guess 6,000 light sources would be about 2.5 million rays to trace, though I have trouble seeing how that would take 45 minutes even on one process.  It should only take a couple of minutes on a modern processor with enough memory to hold the scene.
+>>>>
+>>>> You could try recompiling with -DSHADCACHE=0, but I don't think you would want to, as the shadow cache is the thing that really saves you with so many light sources.  I'd only do it to determine if that's what slows down the start-up.  (Although it would be an interesting test of the shadow cache under extreme conditions.)
+>>>>
+>>>> I don't know how to sample running processes on your system, but it would be interesting to find out where rtrace is spending all its time during start-up....
+>>>>
+>>>> Cheers,
+>>>> -Greg
+>>>>
+>>>> P.S.  More info on shadow cache in 2004 workshop program:       http://www.radiance-online.org/community/workshops/2004-fribourg/Ward_talk.pdf
+>>>>
+>>>>> From: Axel Jacobs <jacobs.axel at gmail.com>
+>>>>> Date: February 20, 2017 9:28:36 AM PST
+>>>>>
+>>>>> Thanks for your answer, Greg.
+>>>>>
+>>>>> There are no mirror or prism surfaces in this scene.  Just glass and
+>>>>> plastic.  So this is weird, then.
+>>>>>
+>>>>> I did notice this behaviour on previous projects where we had
+>>>>> thousands of light sources, but didn't look into it back then.
+>>>>>
+>>>>> Cheers
+>>>>>
+>>>>> Axel
+>>>>>
+>>>>>
+>>>>> On 20 February 2017 at 17:18, Greg Ward <gregoryjward at gmail.com> wrote:
+>>>>>> Hi Axel,
+>>>>>>
+>>>>>> There is quite a bit of initialization code, the goal of which is to get as much common data into shared memory as possible before calling fork().  This reduces the memory footprint of your processes, as well as avoiding redundant work that wouldn't make it go faster, anyway.
+>>>>>>
+>>>>>> Included in this preamble are initializing the photon maps (if any), loading the octree, marking light sources (including virtual sources), and preloading the ambient cache (if one).  It also preloads all object data, including instanced octrees, meshes, pictures used in patterns, and so on.
+>>>>>>
+>>>>>> Even with 6,000 light soruce, marking light sources shouldn't take all that long, *unless* you have "mirror" or "prism" surfaces in your scene.  These will create virtual light sources, multiplying the number of sources potentially by many times.  (Mirror surfaces that face each other are the worst case.)  The virtual light source preamble can take quite some time in such cases, as it tries to eliminate virtual source paths that would never pass light due to obstructions, etc.
+>>>>>>
+>>>>>> If you don't have any mirror or prism surfaces, then I'm not sure why it would be taking so long.
+>>>>>>
+>>>>>> Cheers,
+>>>>>> -Greg
+>>>>>>
+>>>>>>> From: Axel Jacobs <jacobs.axel at gmail.com>
+>>>>>>> Date: February 20, 2017 4:01:33 AM PST
+>>>>>>>
+>>>>>>> Dear list,
+>>>>>>>
+>>>>>>> I'm running some rtrace -n xx calculations, and noticed that there is
+>>>>>>> only one thread for 30 to 45 minutes, before the -n xx kicks in.  My
+>>>>>>> scene contains some 6,000 artificial light sources.
+>>>>>>>
+>>>>>>> The question I have is this:  Is there something within rtrace/mkillum
+>>>>>>> that is not multi-threaded that is run before the actual ray tracing
+>>>>>>> part starts (which does honour the -n option)?  I could think of some
+>>>>>>> light source visibility or intensity test that need to be done before
+>>>>>>> the actual ray tracing.
+>>>>>>>
+>>>>>>> Many thanks for your thoughts
+>>>>>>>
+>>>>>>> Best regards
+>>>>>>>
+>>>>>>> Axel
+>>>>
+>>>> _______________________________________________
+>>>> Radiance-general mailing list
+>>>> Radiance-general at radiance-online.org
+>>>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>>
+>>> _______________________________________________
+>>> Radiance-general mailing list
+>>> Radiance-general at radiance-online.org
+>>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From gregoryjward at gmail.com  Wed Mar  1 10:34:22 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed, 1 Mar 2017 10:34:22 -0800
+Subject: [Radiance-general] Slow spawning of rtrace -n,
+ mkillum -n with many light sources
+In-Reply-To: <CA+dqh62+-aRuOrtVSkG+RP-OxG2ZuG06FM0M+N7jxP9-6LDRGg@mail.gmail.com>
+References: <CA+dqh62ruHFs37K+4EwB=BtcKSSpfrkL9HgtB6J-EC5HRQOX6A@mail.gmail.com>
+ <D857C449-3BF7-4EFB-99A6-43C0A5BA0AF6@lmi.net>
+ <CA+dqh63nwY9YGHuneEiuCakn1Kju2XCPirbwZiMqyLxsSN799g@mail.gmail.com>
+ <CACBDBD9-BFF8-4E4F-9898-2C2FA4BD711B@lmi.net>
+ <CA+dqh62ZvfbHVKCKW+Mxz4SsX+FQtgLZgS+Y2CfbdGYNX2Wx3w@mail.gmail.com>
+ <DF4995EC-D4C0-41B6-BD58-FD00D15F1B49@lmi.net>
+ <CA+dqh63EGaxcZ60Q-tB+1+11oqeLQHRL5dwtjYsdB=zazuFxsg@mail.gmail.com>
+ <CA+dqh62+-aRuOrtVSkG+RP-OxG2ZuG06FM0M+N7jxP9-6LDRGg@mail.gmail.com>
+Message-ID: <B6BC5BB7-B6A5-48A1-871E-2217C5EE17D1@lmi.net>
+
+Hi Axel,
+
+I thought you said that the actual obj2mesh call was taking forever, not the oconv operation afterwards.  If it's oconv, this is due to having many overlapping volumes, which oconv attempts to resolve.  If you didn't have so many RTM's (instanced octrees are also an issue), this would not be a problem.
+
+The rules of thumb on RTMs and instanced octrees is that if you don't have multiple occurrences of something, don't use either.  And if you do, then still avoid them unless you can packaged together at least 10,000 surfaces or so per octree/RTM.  Finally, it's best if your octree or RTM fills are more-or-less cubic volume, or is well-separated from other instanced volumes.  Overlapping volumes cause issues for oconv.
+
+If I understood correctly the first time, and it is obj2mesh that is taking a long time, let me know which files to check out.
+
+Cheers,
+-Greg
+
+> From: Axel Jacobs <jacobs.axel at gmail.com>
+> Date: March 1, 2017 2:36:30 AM PST
+> 
+> Hi Greg,
+> 
+> https://giauk.sharefile.com/d-s0cd3657a8b54fa9b
+> 
+> Here is the first scene.  This one does actually compile, but takes
+> forever with RTMs.
+> Compiling from obj2rad output takes just over a minute and creates an
+> octree of 136MB.  Compiling from RTMs (with some polygon files) takes
+> 200 minutes, resulting in an octree 37GB in size.  What we normally do
+> in such a situation is to either reduce the number of RTMs to one per
+> material, or to go via obj2rad.
+> 
+> I also noticed on a project I worked on a couple of years ago that the
+> order in which the RTMs are listed in our master xform file matters.
+> I was able back then to compile by listing the largest object
+> (terrain) first.  Trying to replicating this behaviour today did not
+> get the intended result.  The octree would compile either way.
+> 
+> So let me hunt down some more examples for you.
+> 
+> Let me know if you need the OBJs for your testing.
+> 
+> Cheers
+> 
+> Axel
+> 
+> 
+> 
+> On 22 February 2017 at 17:11, Axel Jacobs <jacobs.axel at gmail.com> wrote:
+>> Hi Greg,
+>> 
+>> I'll ask around and find you some projects.  Give me a few days, and
+>> I'll get back to you.
+>> 
+>> Cheers
+>> 
+>> Axel
+>> 
+>> 
+>> On 22 February 2017 at 16:41, Greg Ward <gregoryjward at gmail.com> wrote:
+>>> Hi Axel,
+>>> 
+>>> I'd be interested in looking at OBJ files where obj2mesh fails.
+>>> 
+>>> Cheers,
+>>> -Greg
+>>> 
+>>>> From: Axel Jacobs <jacobs.axel at gmail.com>
+>>>> Date: February 22, 2017 1:55:48 AM PST
+>>>> 
+>>>> Hi Greg,
+>>>> 
+>>>> thank you so much for solving this riddle.  I have to admit I have
+>>>> been blissfully unaware of the drawbacks of using RTMs. We use them as
+>>>> much as possible now, since I have come to appreciate the fast compile
+>>>> times and small octree sizes this can give us.  However, there have
+>>>> been quite a few projects where RTMs would take hours to compile,
+>>>> generating octrees many GB in size.  In such instances, we convert the
+>>>> OBJs into polygon, but without the normals.  Occasionally, we also
+>>>> need to go via obj2rad, simply because obj2mesh fails to generate the
+>>>> RTMs.
+>>>> 
+>>>> Looks as if we need to take a fresh look at our workflow.
+>>>> 
+>>>> Thank you for adding the limit on the source obstruction code.  I'll
+>>>> try this out in the next few days, and re-run the project
+>>>> 
+>>>> Thanks again
+>>>> 
+>>>> Axel
+>>>> 
+>>>> 
+>>>> On 20 February 2017 at 18:00, Greg Ward <gregoryjward at gmail.com> wrote:
+>>>>> Oh, I just remembered -- there's also the shadow cache, which gets initialized in marksources() as well.  This also ends up tracing some number of rays, about 400 per source, to look for near-source obstructions before the main calculation begins.  So, that could be part of your slow-down.  I guess 6,000 light sources would be about 2.5 million rays to trace, though I have trouble seeing how that would take 45 minutes even on one process.  It should only take a couple of minutes on a modern processor with enough memory to hold the scene.
+>>>>> 
+>>>>> You could try recompiling with -DSHADCACHE=0, but I don't think you would want to, as the shadow cache is the thing that really saves you with so many light sources.  I'd only do it to determine if that's what slows down the start-up.  (Although it would be an interesting test of the shadow cache under extreme conditions.)
+>>>>> 
+>>>>> I don't know how to sample running processes on your system, but it would be interesting to find out where rtrace is spending all its time during start-up....
+>>>>> 
+>>>>> Cheers,
+>>>>> -Greg
+>>>>> 
+>>>>> P.S.  More info on shadow cache in 2004 workshop program:       http://www.radiance-online.org/community/workshops/2004-fribourg/Ward_talk.pdf
+>>>>> 
+>>>>>> From: Axel Jacobs <jacobs.axel at gmail.com>
+>>>>>> Date: February 20, 2017 9:28:36 AM PST
+>>>>>> 
+>>>>>> Thanks for your answer, Greg.
+>>>>>> 
+>>>>>> There are no mirror or prism surfaces in this scene.  Just glass and
+>>>>>> plastic.  So this is weird, then.
+>>>>>> 
+>>>>>> I did notice this behaviour on previous projects where we had
+>>>>>> thousands of light sources, but didn't look into it back then.
+>>>>>> 
+>>>>>> Cheers
+>>>>>> 
+>>>>>> Axel
+>>>>>> 
+>>>>>> 
+>>>>>> On 20 February 2017 at 17:18, Greg Ward <gregoryjward at gmail.com> wrote:
+>>>>>>> Hi Axel,
+>>>>>>> 
+>>>>>>> There is quite a bit of initialization code, the goal of which is to get as much common data into shared memory as possible before calling fork().  This reduces the memory footprint of your processes, as well as avoiding redundant work that wouldn't make it go faster, anyway.
+>>>>>>> 
+>>>>>>> Included in this preamble are initializing the photon maps (if any), loading the octree, marking light sources (including virtual sources), and preloading the ambient cache (if one).  It also preloads all object data, including instanced octrees, meshes, pictures used in patterns, and so on.
+>>>>>>> 
+>>>>>>> Even with 6,000 light soruce, marking light sources shouldn't take all that long, *unless* you have "mirror" or "prism" surfaces in your scene.  These will create virtual light sources, multiplying the number of sources potentially by many times.  (Mirror surfaces that face each other are the worst case.)  The virtual light source preamble can take quite some time in such cases, as it tries to eliminate virtual source paths that would never pass light due to obstructions, etc.
+>>>>>>> 
+>>>>>>> If you don't have any mirror or prism surfaces, then I'm not sure why it would be taking so long.
+>>>>>>> 
+>>>>>>> Cheers,
+>>>>>>> -Greg
+>>>>>>> 
+>>>>>>>> From: Axel Jacobs <jacobs.axel at gmail.com>
+>>>>>>>> Date: February 20, 2017 4:01:33 AM PST
+>>>>>>>> 
+>>>>>>>> Dear list,
+>>>>>>>> 
+>>>>>>>> I'm running some rtrace -n xx calculations, and noticed that there is
+>>>>>>>> only one thread for 30 to 45 minutes, before the -n xx kicks in.  My
+>>>>>>>> scene contains some 6,000 artificial light sources.
+>>>>>>>> 
+>>>>>>>> The question I have is this:  Is there something within rtrace/mkillum
+>>>>>>>> that is not multi-threaded that is run before the actual ray tracing
+>>>>>>>> part starts (which does honour the -n option)?  I could think of some
+>>>>>>>> light source visibility or intensity test that need to be done before
+>>>>>>>> the actual ray tracing.
+>>>>>>>> 
+>>>>>>>> Many thanks for your thoughts
+>>>>>>>> 
+>>>>>>>> Best regards
+>>>>>>>> 
+>>>>>>>> Axel
+>>>>> 
+
+
+From jacobs.axel at gmail.com  Wed Mar  1 11:30:00 2017
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Wed, 1 Mar 2017 19:30:00 +0000
+Subject: [Radiance-general] Slow spawning of rtrace -n,
+ mkillum -n with many light sources
+In-Reply-To: <B6BC5BB7-B6A5-48A1-871E-2217C5EE17D1@lmi.net>
+References: <CA+dqh62ruHFs37K+4EwB=BtcKSSpfrkL9HgtB6J-EC5HRQOX6A@mail.gmail.com>
+ <D857C449-3BF7-4EFB-99A6-43C0A5BA0AF6@lmi.net>
+ <CA+dqh63nwY9YGHuneEiuCakn1Kju2XCPirbwZiMqyLxsSN799g@mail.gmail.com>
+ <CACBDBD9-BFF8-4E4F-9898-2C2FA4BD711B@lmi.net>
+ <CA+dqh62ZvfbHVKCKW+Mxz4SsX+FQtgLZgS+Y2CfbdGYNX2Wx3w@mail.gmail.com>
+ <DF4995EC-D4C0-41B6-BD58-FD00D15F1B49@lmi.net>
+ <CA+dqh63EGaxcZ60Q-tB+1+11oqeLQHRL5dwtjYsdB=zazuFxsg@mail.gmail.com>
+ <CA+dqh62+-aRuOrtVSkG+RP-OxG2ZuG06FM0M+N7jxP9-6LDRGg@mail.gmail.com>
+ <B6BC5BB7-B6A5-48A1-871E-2217C5EE17D1@lmi.net>
+Message-ID: <ca92da4c-2ea3-4c34-9c33-de57e264faae@gmail.com>
+
+Hi Greg,
+
+
+On 01/03/17 18:34, Greg Ward wrote:
+> Hi Axel,
+>
+> I thought you said that the actual obj2mesh call was taking forever,
+not the oconv operation afterwards. If it's oconv, this is due to having
+many overlapping volumes, which oconv attempts to resolve. If you didn't
+have so many RTM's (instanced octrees are also an issue), this would not
+be a problem.
+>
+
+Sorry about this misunderstanding.  obj2mesh is always very fast, but 
+might fail.  What can take so long is the oconv compilation
+
+> The rules of thumb on RTMs and instanced octrees is that if you
+> don't
+have multiple occurrences of something, don't use either. And if you do,
+then still avoid them unless you can packaged together at least 10,000
+surfaces or so per octree/RTM. Finally, it's best if your octree or RTM
+fills are more-or-less cubic volume, or is well-separated from other
+instanced volumes. Overlapping volumes cause issues for oconv.
+>
+
+This pretty much explains the issues we've been having occasionally. 
+Thank you so much for clarifying.  What I thought your mesh 
+presentations at the workshops over the last few years were telling me 
+is that RTMs are always better due to the small octree size and fast 
+oconv times.  Should have paid more attention to the small print, I guess.
+
+> If I understood correctly the first time, and it is obj2mesh that is
+taking a long time, let me know which files to check out.
+
+No, it's oconv.  Problem solved, I think.  Thank you so much for taking 
+the time to look into this.
+
+Cheers
+
+Axel
+
+
+> Cheers,
+> -Greg
+>
+>> From: Axel Jacobs <jacobs.axel at gmail.com>
+>> Date: March 1, 2017 2:36:30 AM PST
+>>
+>> Hi Greg,
+>>
+>> https://giauk.sharefile.com/d-s0cd3657a8b54fa9b
+>>
+>> Here is the first scene.  This one does actually compile, but takes
+>> forever with RTMs.
+>> Compiling from obj2rad output takes just over a minute and creates an
+>> octree of 136MB.  Compiling from RTMs (with some polygon files) takes
+>> 200 minutes, resulting in an octree 37GB in size.  What we normally do
+>> in such a situation is to either reduce the number of RTMs to one per
+>> material, or to go via obj2rad.
+>>
+>> I also noticed on a project I worked on a couple of years ago that the
+>> order in which the RTMs are listed in our master xform file matters.
+>> I was able back then to compile by listing the largest object
+>> (terrain) first.  Trying to replicating this behaviour today did not
+>> get the intended result.  The octree would compile either way.
+>>
+>> So let me hunt down some more examples for you.
+>>
+>> Let me know if you need the OBJs for your testing.
+>>
+>> Cheers
+>>
+>> Axel
+>>
+>>
+>>
+>> On 22 February 2017 at 17:11, Axel Jacobs <jacobs.axel at gmail.com> wrote:
+>>> Hi Greg,
+>>>
+>>> I'll ask around and find you some projects.  Give me a few days, and
+>>> I'll get back to you.
+>>>
+>>> Cheers
+>>>
+>>> Axel
+>>>
+>>>
+>>> On 22 February 2017 at 16:41, Greg Ward <gregoryjward at gmail.com> wrote:
+>>>> Hi Axel,
+>>>>
+>>>> I'd be interested in looking at OBJ files where obj2mesh fails.
+>>>>
+>>>> Cheers,
+>>>> -Greg
+>>>>
+>>>>> From: Axel Jacobs <jacobs.axel at gmail.com>
+>>>>> Date: February 22, 2017 1:55:48 AM PST
+>>>>>
+>>>>> Hi Greg,
+>>>>>
+>>>>> thank you so much for solving this riddle.  I have to admit I have
+>>>>> been blissfully unaware of the drawbacks of using RTMs. We use them as
+>>>>> much as possible now, since I have come to appreciate the fast compile
+>>>>> times and small octree sizes this can give us.  However, there have
+>>>>> been quite a few projects where RTMs would take hours to compile,
+>>>>> generating octrees many GB in size.  In such instances, we convert the
+>>>>> OBJs into polygon, but without the normals.  Occasionally, we also
+>>>>> need to go via obj2rad, simply because obj2mesh fails to generate the
+>>>>> RTMs.
+>>>>>
+>>>>> Looks as if we need to take a fresh look at our workflow.
+>>>>>
+>>>>> Thank you for adding the limit on the source obstruction code.  I'll
+>>>>> try this out in the next few days, and re-run the project
+>>>>>
+>>>>> Thanks again
+>>>>>
+>>>>> Axel
+>>>>>
+>>>>>
+>>>>> On 20 February 2017 at 18:00, Greg Ward <gregoryjward at gmail.com> wrote:
+>>>>>> Oh, I just remembered -- there's also the shadow cache, which gets initialized in marksources() as well.  This also ends up tracing some number of rays, about 400 per source, to look for near-source obstructions before the main calculation begins.  So, that could be part of your slow-down.  I guess 6,000 light sources would be about 2.5 million rays to trace, though I have trouble seeing how that would take 45 minutes even on one process.  It should only take a couple of minutes on a modern processor with enough memory to hold the scene.
+>>>>>>
+>>>>>> You could try recompiling with -DSHADCACHE=0, but I don't think you would want to, as the shadow cache is the thing that really saves you with so many light sources.  I'd only do it to determine if that's what slows down the start-up.  (Although it would be an interesting test of the shadow cache under extreme conditions.)
+>>>>>>
+>>>>>> I don't know how to sample running processes on your system, but it would be interesting to find out where rtrace is spending all its time during start-up....
+>>>>>>
+>>>>>> Cheers,
+>>>>>> -Greg
+>>>>>>
+>>>>>> P.S.  More info on shadow cache in 2004 workshop program:       http://www.radiance-online.org/community/workshops/2004-fribourg/Ward_talk.pdf
+>>>>>>
+>>>>>>> From: Axel Jacobs <jacobs.axel at gmail.com>
+>>>>>>> Date: February 20, 2017 9:28:36 AM PST
+>>>>>>>
+>>>>>>> Thanks for your answer, Greg.
+>>>>>>>
+>>>>>>> There are no mirror or prism surfaces in this scene.  Just glass and
+>>>>>>> plastic.  So this is weird, then.
+>>>>>>>
+>>>>>>> I did notice this behaviour on previous projects where we had
+>>>>>>> thousands of light sources, but didn't look into it back then.
+>>>>>>>
+>>>>>>> Cheers
+>>>>>>>
+>>>>>>> Axel
+>>>>>>>
+>>>>>>>
+>>>>>>> On 20 February 2017 at 17:18, Greg Ward <gregoryjward at gmail.com> wrote:
+>>>>>>>> Hi Axel,
+>>>>>>>>
+>>>>>>>> There is quite a bit of initialization code, the goal of which is to get as much common data into shared memory as possible before calling fork().  This reduces the memory footprint of your processes, as well as avoiding redundant work that wouldn't make it go faster, anyway.
+>>>>>>>>
+>>>>>>>> Included in this preamble are initializing the photon maps (if any), loading the octree, marking light sources (including virtual sources), and preloading the ambient cache (if one).  It also preloads all object data, including instanced octrees, meshes, pictures used in patterns, and so on.
+>>>>>>>>
+>>>>>>>> Even with 6,000 light soruce, marking light sources shouldn't take all that long, *unless* you have "mirror" or "prism" surfaces in your scene.  These will create virtual light sources, multiplying the number of sources potentially by many times.  (Mirror surfaces that face each other are the worst case.)  The virtual light source preamble can take quite some time in such cases, as it tries to eliminate virtual source paths that would never pass light due to obstructions, etc.
+>>>>>>>>
+>>>>>>>> If you don't have any mirror or prism surfaces, then I'm not sure why it would be taking so long.
+>>>>>>>>
+>>>>>>>> Cheers,
+>>>>>>>> -Greg
+>>>>>>>>
+>>>>>>>>> From: Axel Jacobs <jacobs.axel at gmail.com>
+>>>>>>>>> Date: February 20, 2017 4:01:33 AM PST
+>>>>>>>>>
+>>>>>>>>> Dear list,
+>>>>>>>>>
+>>>>>>>>> I'm running some rtrace -n xx calculations, and noticed that there is
+>>>>>>>>> only one thread for 30 to 45 minutes, before the -n xx kicks in.  My
+>>>>>>>>> scene contains some 6,000 artificial light sources.
+>>>>>>>>>
+>>>>>>>>> The question I have is this:  Is there something within rtrace/mkillum
+>>>>>>>>> that is not multi-threaded that is run before the actual ray tracing
+>>>>>>>>> part starts (which does honour the -n option)?  I could think of some
+>>>>>>>>> light source visibility or intensity test that need to be done before
+>>>>>>>>> the actual ray tracing.
+>>>>>>>>>
+>>>>>>>>> Many thanks for your thoughts
+>>>>>>>>>
+>>>>>>>>> Best regards
+>>>>>>>>>
+>>>>>>>>> Axel
+>>>>>>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+
+
+
+From gregoryjward at gmail.com  Wed Mar  1 11:38:01 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed, 1 Mar 2017 11:38:01 -0800
+Subject: [Radiance-general] Slow spawning of rtrace -n,
+ mkillum -n with many light sources
+In-Reply-To: <ca92da4c-2ea3-4c34-9c33-de57e264faae@gmail.com>
+References: <CA+dqh62ruHFs37K+4EwB=BtcKSSpfrkL9HgtB6J-EC5HRQOX6A@mail.gmail.com>
+ <D857C449-3BF7-4EFB-99A6-43C0A5BA0AF6@lmi.net>
+ <CA+dqh63nwY9YGHuneEiuCakn1Kju2XCPirbwZiMqyLxsSN799g@mail.gmail.com>
+ <CACBDBD9-BFF8-4E4F-9898-2C2FA4BD711B@lmi.net>
+ <CA+dqh62ZvfbHVKCKW+Mxz4SsX+FQtgLZgS+Y2CfbdGYNX2Wx3w@mail.gmail.com>
+ <DF4995EC-D4C0-41B6-BD58-FD00D15F1B49@lmi.net>
+ <CA+dqh63EGaxcZ60Q-tB+1+11oqeLQHRL5dwtjYsdB=zazuFxsg@mail.gmail.com>
+ <CA+dqh62+-aRuOrtVSkG+RP-OxG2ZuG06FM0M+N7jxP9-6LDRGg@mail.gmail.com>
+ <B6BC5BB7-B6A5-48A1-871E-2217C5EE17D1@lmi.net>
+ <ca92da4c-2ea3-4c34-9c33-de57e264faae@gmail.com>
+Message-ID: <03977A13-B909-4480-82C4-66CB967FB50F@lmi.net>
+
+No worries, Axel.
+
+Large models are a challenge, no matter what you do.  And it *can* be advantageous to use a Radiance triangle mesh for extremely complex geometry, even if it appears just once.  (Not true of octree instances, however.)  The intended use in such cases might be for a library object, such as a sculpture or highly detailed furnishing, which would be put in a mesh in a library.  Some objects like this from the CSAIL databased are provided in the Radiance library.
+
+When obj2mesh fails, this can sometimes be remedied by changing the -r and/or -n options, but not always.
+
+Cheers,
+-Greg
+
+> From: Axel Jacobs <jacobs.axel at gmail.com>
+> Date: March 1, 2017 11:30:00 AM PST
+> 
+> Hi Greg,
+> 
+> On 01/03/17 18:34, Greg Ward wrote:
+>> Hi Axel,
+>> 
+>> I thought you said that the actual obj2mesh call was taking forever,
+> not the oconv operation afterwards. If it's oconv, this is due to having
+> many overlapping volumes, which oconv attempts to resolve. If you didn't
+> have so many RTM's (instanced octrees are also an issue), this would not
+> be a problem.
+>> 
+> 
+> Sorry about this misunderstanding.  obj2mesh is always very fast, but might fail.  What can take so long is the oconv compilation
+> 
+>> The rules of thumb on RTMs and instanced octrees is that if you
+>> don't
+> have multiple occurrences of something, don't use either. And if you do,
+> then still avoid them unless you can packaged together at least 10,000
+> surfaces or so per octree/RTM. Finally, it's best if your octree or RTM
+> fills are more-or-less cubic volume, or is well-separated from other
+> instanced volumes. Overlapping volumes cause issues for oconv.
+>> 
+> 
+> This pretty much explains the issues we've been having occasionally. Thank you so much for clarifying.  What I thought your mesh presentations at the workshops over the last few years were telling me is that RTMs are always better due to the small octree size and fast oconv times.  Should have paid more attention to the small print, I guess.
+> 
+>> If I understood correctly the first time, and it is obj2mesh that is
+> taking a long time, let me know which files to check out.
+> 
+> No, it's oconv.  Problem solved, I think.  Thank you so much for taking the time to look into this.
+> 
+> Cheers
+> 
+> Axel
+> 
+> 
+>> Cheers,
+>> -Greg
+>> 
+>>> From: Axel Jacobs <jacobs.axel at gmail.com>
+>>> Date: March 1, 2017 2:36:30 AM PST
+>>> 
+>>> Hi Greg,
+>>> 
+>>> https://giauk.sharefile.com/d-s0cd3657a8b54fa9b
+>>> 
+>>> Here is the first scene.  This one does actually compile, but takes
+>>> forever with RTMs.
+>>> Compiling from obj2rad output takes just over a minute and creates an
+>>> octree of 136MB.  Compiling from RTMs (with some polygon files) takes
+>>> 200 minutes, resulting in an octree 37GB in size.  What we normally do
+>>> in such a situation is to either reduce the number of RTMs to one per
+>>> material, or to go via obj2rad.
+>>> 
+>>> I also noticed on a project I worked on a couple of years ago that the
+>>> order in which the RTMs are listed in our master xform file matters.
+>>> I was able back then to compile by listing the largest object
+>>> (terrain) first.  Trying to replicating this behaviour today did not
+>>> get the intended result.  The octree would compile either way.
+>>> 
+>>> So let me hunt down some more examples for you.
+>>> 
+>>> Let me know if you need the OBJs for your testing.
+>>> 
+>>> Cheers
+>>> 
+>>> Axel
+>>> 
+>>> 
+>>> 
+>>> On 22 February 2017 at 17:11, Axel Jacobs <jacobs.axel at gmail.com> wrote:
+>>>> Hi Greg,
+>>>> 
+>>>> I'll ask around and find you some projects.  Give me a few days, and
+>>>> I'll get back to you.
+>>>> 
+>>>> Cheers
+>>>> 
+>>>> Axel
+>>>> 
+>>>> 
+>>>> On 22 February 2017 at 16:41, Greg Ward <gregoryjward at gmail.com> wrote:
+>>>>> Hi Axel,
+>>>>> 
+>>>>> I'd be interested in looking at OBJ files where obj2mesh fails.
+>>>>> 
+>>>>> Cheers,
+>>>>> -Greg
+>>>>> 
+>>>>>> From: Axel Jacobs <jacobs.axel at gmail.com>
+>>>>>> Date: February 22, 2017 1:55:48 AM PST
+>>>>>> 
+>>>>>> Hi Greg,
+>>>>>> 
+>>>>>> thank you so much for solving this riddle.  I have to admit I have
+>>>>>> been blissfully unaware of the drawbacks of using RTMs. We use them as
+>>>>>> much as possible now, since I have come to appreciate the fast compile
+>>>>>> times and small octree sizes this can give us.  However, there have
+>>>>>> been quite a few projects where RTMs would take hours to compile,
+>>>>>> generating octrees many GB in size.  In such instances, we convert the
+>>>>>> OBJs into polygon, but without the normals.  Occasionally, we also
+>>>>>> need to go via obj2rad, simply because obj2mesh fails to generate the
+>>>>>> RTMs.
+>>>>>> 
+>>>>>> Looks as if we need to take a fresh look at our workflow.
+>>>>>> 
+>>>>>> Thank you for adding the limit on the source obstruction code.  I'll
+>>>>>> try this out in the next few days, and re-run the project
+>>>>>> 
+>>>>>> Thanks again
+>>>>>> 
+>>>>>> Axel
+>>>>>> 
+>>>>>> 
+>>>>>> On 20 February 2017 at 18:00, Greg Ward <gregoryjward at gmail.com> wrote:
+>>>>>>> Oh, I just remembered -- there's also the shadow cache, which gets initialized in marksources() as well.  This also ends up tracing some number of rays, about 400 per source, to look for near-source obstructions before the main calculation begins.  So, that could be part of your slow-down.  I guess 6,000 light sources would be about 2.5 million rays to trace, though I have trouble seeing how that would take 45 minutes even on one process.  It should only take a couple of minutes on a modern processor with enough memory to hold the scene.
+>>>>>>> 
+>>>>>>> You could try recompiling with -DSHADCACHE=0, but I don't think you would want to, as the shadow cache is the thing that really saves you with so many light sources.  I'd only do it to determine if that's what slows down the start-up.  (Although it would be an interesting test of the shadow cache under extreme conditions.)
+>>>>>>> 
+>>>>>>> I don't know how to sample running processes on your system, but it would be interesting to find out where rtrace is spending all its time during start-up....
+>>>>>>> 
+>>>>>>> Cheers,
+>>>>>>> -Greg
+>>>>>>> 
+>>>>>>> P.S.  More info on shadow cache in 2004 workshop program:       http://www.radiance-online.org/community/workshops/2004-fribourg/Ward_talk.pdf
+>>>>>>> 
+>>>>>>>> From: Axel Jacobs <jacobs.axel at gmail.com>
+>>>>>>>> Date: February 20, 2017 9:28:36 AM PST
+>>>>>>>> 
+>>>>>>>> Thanks for your answer, Greg.
+>>>>>>>> 
+>>>>>>>> There are no mirror or prism surfaces in this scene.  Just glass and
+>>>>>>>> plastic.  So this is weird, then.
+>>>>>>>> 
+>>>>>>>> I did notice this behaviour on previous projects where we had
+>>>>>>>> thousands of light sources, but didn't look into it back then.
+>>>>>>>> 
+>>>>>>>> Cheers
+>>>>>>>> 
+>>>>>>>> Axel
+>>>>>>>> 
+>>>>>>>> 
+>>>>>>>> On 20 February 2017 at 17:18, Greg Ward <gregoryjward at gmail.com> wrote:
+>>>>>>>>> Hi Axel,
+>>>>>>>>> 
+>>>>>>>>> There is quite a bit of initialization code, the goal of which is to get as much common data into shared memory as possible before calling fork().  This reduces the memory footprint of your processes, as well as avoiding redundant work that wouldn't make it go faster, anyway.
+>>>>>>>>> 
+>>>>>>>>> Included in this preamble are initializing the photon maps (if any), loading the octree, marking light sources (including virtual sources), and preloading the ambient cache (if one).  It also preloads all object data, including instanced octrees, meshes, pictures used in patterns, and so on.
+>>>>>>>>> 
+>>>>>>>>> Even with 6,000 light soruce, marking light sources shouldn't take all that long, *unless* you have "mirror" or "prism" surfaces in your scene.  These will create virtual light sources, multiplying the number of sources potentially by many times.  (Mirror surfaces that face each other are the worst case.)  The virtual light source preamble can take quite some time in such cases, as it tries to eliminate virtual source paths that would never pass light due to obstructions, etc.
+>>>>>>>>> 
+>>>>>>>>> If you don't have any mirror or prism surfaces, then I'm not sure why it would be taking so long.
+>>>>>>>>> 
+>>>>>>>>> Cheers,
+>>>>>>>>> -Greg
+>>>>>>>>> 
+>>>>>>>>>> From: Axel Jacobs <jacobs.axel at gmail.com>
+>>>>>>>>>> Date: February 20, 2017 4:01:33 AM PST
+>>>>>>>>>> 
+>>>>>>>>>> Dear list,
+>>>>>>>>>> 
+>>>>>>>>>> I'm running some rtrace -n xx calculations, and noticed that there is
+>>>>>>>>>> only one thread for 30 to 45 minutes, before the -n xx kicks in.  My
+>>>>>>>>>> scene contains some 6,000 artificial light sources.
+>>>>>>>>>> 
+>>>>>>>>>> The question I have is this:  Is there something within rtrace/mkillum
+>>>>>>>>>> that is not multi-threaded that is run before the actual ray tracing
+>>>>>>>>>> part starts (which does honour the -n option)?  I could think of some
+>>>>>>>>>> light source visibility or intensity test that need to be done before
+>>>>>>>>>> the actual ray tracing.
+>>>>>>>>>> 
+>>>>>>>>>> Many thanks for your thoughts
+>>>>>>>>>> 
+>>>>>>>>>> Best regards
+>>>>>>>>>> 
+>>>>>>>>>> Axel
+>>>>>>> 
+
+
+From jacobs.axel at gmail.com  Fri Mar  3 08:30:58 2017
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Fri, 3 Mar 2017 16:30:58 +0000
+Subject: [Radiance-general] Slow spawning of rtrace -n,
+ mkillum -n with many light sources
+In-Reply-To: <CA+dqh62ZvfbHVKCKW+Mxz4SsX+FQtgLZgS+Y2CfbdGYNX2Wx3w@mail.gmail.com>
+References: <CA+dqh62ruHFs37K+4EwB=BtcKSSpfrkL9HgtB6J-EC5HRQOX6A@mail.gmail.com>
+ <D857C449-3BF7-4EFB-99A6-43C0A5BA0AF6@lmi.net>
+ <CA+dqh63nwY9YGHuneEiuCakn1Kju2XCPirbwZiMqyLxsSN799g@mail.gmail.com>
+ <CACBDBD9-BFF8-4E4F-9898-2C2FA4BD711B@lmi.net>
+ <CA+dqh62ZvfbHVKCKW+Mxz4SsX+FQtgLZgS+Y2CfbdGYNX2Wx3w@mail.gmail.com>
+Message-ID: <CA+dqh61qNYx9KSwGL5rDc6TXGvsmf5wJPiqG6r8OiEtxmppZHg@mail.gmail.com>
+
+Dear all,
+
+I thought I give a quick update on this.
+
+Traditionally, we have been exporting our geometry to individual RTMs,
+which is typically one per layer and material.  The project where I
+first noticed this slow spawning behaviour with many artificial light
+sources (around 7,000 in this case) had 40 individual RTMs, but on
+some larger projects this can be several hundreds.
+
+For each RTM, there is one rad file with only the mesh primitive in
+it.  All those rad files are finally called from a master xform file,
+as we call it.
+
+Running this project (only -ab 0) took around 40 minutes with this
+approach.  During almost all of this time, rtrace was only running as
+a single thread, despite being called with -n 80.
+
+Greg suggested that this approach is not ideal, and that it could be sped up by:
+a) instead of RTM geometry (obj2mesh), use polygons (obj2rad)
+b) expance all calls to xform in the master file (xform -e master.rad
+> master2.rad)
+c) compile a frozen octree (oconv -f master2.rad > test.oct)
+
+I ran some test to find out which of the above has the biggest impact
+on render times.  Expectedly(?), it is the use of polygon geometry
+instead of RTMs that makes all the difference here.  Rendering time
+went down from 40 mins to somewhere between 10 and 20 seconds.  It is
+also a good idea to expand all xform calls, but once this is done,
+using frozen octrees does not make the calculation significantly
+faster.
+
+Have a jolly good weekend, everyone
+
+Axel
+
+
+
+On 22 February 2017 at 09:55, Axel Jacobs <jacobs.axel at gmail.com> wrote:
+> Hi Greg,
+>
+> thank you so much for solving this riddle.  I have to admit I have
+> been blissfully unaware of the drawbacks of using RTMs. We use them as
+> much as possible now, since I have come to appreciate the fast compile
+> times and small octree sizes this can give us.  However, there have
+> been quite a few projects where RTMs would take hours to compile,
+> generating octrees many GB in size.  In such instances, we convert the
+> OBJs into polygon, but without the normals.  Occasionally, we also
+> need to go via obj2rad, simply because obj2mesh fails to generate the
+> RTMs.
+>
+> Looks as if we need to take a fresh look at our workflow.
+>
+> Thank you for adding the limit on the source obstruction code.  I'll
+> try this out in the next few days, and re-run the project
+>
+> Thanks again
+>
+> Axel
+>
+>
+> On 20 February 2017 at 18:00, Greg Ward <gregoryjward at gmail.com> wrote:
+>> Oh, I just remembered -- there's also the shadow cache, which gets initialized in marksources() as well.  This also ends up tracing some number of rays, about 400 per source, to look for near-source obstructions before the main calculation begins.  So, that could be part of your slow-down.  I guess 6,000 light sources would be about 2.5 million rays to trace, though I have trouble seeing how that would take 45 minutes even on one process.  It should only take a couple of minutes on a modern processor with enough memory to hold the scene.
+>>
+>> You could try recompiling with -DSHADCACHE=0, but I don't think you would want to, as the shadow cache is the thing that really saves you with so many light sources.  I'd only do it to determine if that's what slows down the start-up.  (Although it would be an interesting test of the shadow cache under extreme conditions.)
+>>
+>> I don't know how to sample running processes on your system, but it would be interesting to find out where rtrace is spending all its time during start-up....
+>>
+>> Cheers,
+>> -Greg
+>>
+>> P.S.  More info on shadow cache in 2004 workshop program:       http://www.radiance-online.org/community/workshops/2004-fribourg/Ward_talk.pdf
+>>
+>>> From: Axel Jacobs <jacobs.axel at gmail.com>
+>>> Date: February 20, 2017 9:28:36 AM PST
+>>>
+>>> Thanks for your answer, Greg.
+>>>
+>>> There are no mirror or prism surfaces in this scene.  Just glass and
+>>> plastic.  So this is weird, then.
+>>>
+>>> I did notice this behaviour on previous projects where we had
+>>> thousands of light sources, but didn't look into it back then.
+>>>
+>>> Cheers
+>>>
+>>> Axel
+>>>
+>>>
+>>> On 20 February 2017 at 17:18, Greg Ward <gregoryjward at gmail.com> wrote:
+>>>> Hi Axel,
+>>>>
+>>>> There is quite a bit of initialization code, the goal of which is to get as much common data into shared memory as possible before calling fork().  This reduces the memory footprint of your processes, as well as avoiding redundant work that wouldn't make it go faster, anyway.
+>>>>
+>>>> Included in this preamble are initializing the photon maps (if any), loading the octree, marking light sources (including virtual sources), and preloading the ambient cache (if one).  It also preloads all object data, including instanced octrees, meshes, pictures used in patterns, and so on.
+>>>>
+>>>> Even with 6,000 light soruce, marking light sources shouldn't take all that long, *unless* you have "mirror" or "prism" surfaces in your scene.  These will create virtual light sources, multiplying the number of sources potentially by many times.  (Mirror surfaces that face each other are the worst case.)  The virtual light source preamble can take quite some time in such cases, as it tries to eliminate virtual source paths that would never pass light due to obstructions, etc.
+>>>>
+>>>> If you don't have any mirror or prism surfaces, then I'm not sure why it would be taking so long.
+>>>>
+>>>> Cheers,
+>>>> -Greg
+>>>>
+>>>>> From: Axel Jacobs <jacobs.axel at gmail.com>
+>>>>> Date: February 20, 2017 4:01:33 AM PST
+>>>>>
+>>>>> Dear list,
+>>>>>
+>>>>> I'm running some rtrace -n xx calculations, and noticed that there is
+>>>>> only one thread for 30 to 45 minutes, before the -n xx kicks in.  My
+>>>>> scene contains some 6,000 artificial light sources.
+>>>>>
+>>>>> The question I have is this:  Is there something within rtrace/mkillum
+>>>>> that is not multi-threaded that is run before the actual ray tracing
+>>>>> part starts (which does honour the -n option)?  I could think of some
+>>>>> light source visibility or intensity test that need to be done before
+>>>>> the actual ray tracing.
+>>>>>
+>>>>> Many thanks for your thoughts
+>>>>>
+>>>>> Best regards
+>>>>>
+>>>>> Axel
+>>
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From emb15fwo at student.lu.se  Fri Mar  3 01:24:56 2017
+From: emb15fwo at student.lu.se (Florian Wochele)
+Date: Fri, 3 Mar 2017 10:24:56 +0100
+Subject: [Radiance-general] Calculating luminance of surface
+Message-ID: <b1243bf9-a3b1-c3ca-0ad7-44db2f033d7f@student.lu.se>
+
+Dear Sir or Madam,
+
+We are working on our master thesis at Lund University about Glare from 
+reflections on PV panels. To evaluate whether glare occurs or not, we 
+need the luminance of the reflection on the surface the PV panel 
+reflects light on. However we only get the illuminance of the sun (light 
+source). How can we translate the illuminance from the sun to the 
+luminance of the surface? There has to be a way since we can get the 
+luminance via simulations, however we are interested in a way to 
+calculate the luminance. We also have to take into account that PV 
+panels are neither perfectly specular nor perfectly diffuse.
+
+Best regards,
+
+Erik Hjorth and Florian Wochele
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170303/28c63ed1/attachment-0001.html>
+
+From gregoryjward at gmail.com  Fri Mar  3 10:21:48 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri, 3 Mar 2017 10:21:48 -0800
+Subject: [Radiance-general] Calculating luminance of surface
+In-Reply-To: <b1243bf9-a3b1-c3ca-0ad7-44db2f033d7f@student.lu.se>
+References: <b1243bf9-a3b1-c3ca-0ad7-44db2f033d7f@student.lu.se>
+Message-ID: <3B393295-AF93-454B-A6E4-E67C4A0DA03A@lmi.net>
+
+The quantity you are asking for, luminance as a function of incident illuminance, is precisely what the BRDF (bidirectional reflectance distribution function) tells you.  If you have the BRDF of your panel, you can compute the luminance directly from illuminance and incident direction.  If you do not, you cannot compute the luminance without making some (likely wrong) assumptions.
+
+-Greg
+
+> From: Florian Wochele <emb15fwo at student.lu.se>
+> Date: March 3, 2017 1:24:56 AM PST
+> 
+> Dear Sir or Madam,
+> 
+> We are working on our master thesis at Lund University about Glare from reflections on PV panels. To evaluate whether glare occurs or not, we need the luminance of the reflection on the surface the PV panel reflects light on. However we only get the illuminance of the sun (light source). How can we translate the illuminance from the sun to the luminance of the surface? There has to be a way since we can get the luminance via simulations, however we are interested in a way to calculate the luminance. We also have to take into account that PV panels are neither perfectly specular nor perfectly diffuse.
+> 
+> Best regards,
+> 
+> Erik Hjorth and Florian Wochele
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170303/c162b6ea/attachment.html>
+
+From mcneil.andrew at gmail.com  Fri Mar  3 11:18:16 2017
+From: mcneil.andrew at gmail.com (Andy McNeil)
+Date: Fri, 3 Mar 2017 11:18:16 -0800
+Subject: [Radiance-general] Calculating luminance of surface
+In-Reply-To: <3B393295-AF93-454B-A6E4-E67C4A0DA03A@lmi.net>
+References: <b1243bf9-a3b1-c3ca-0ad7-44db2f033d7f@student.lu.se>
+ <3B393295-AF93-454B-A6E4-E67C4A0DA03A@lmi.net>
+Message-ID: <838974B4-811F-4CD8-91CF-5BFBC38EAE48@gmail.com>
+
+Florian,
+You might find something useful in Alston's study of disability glare from PV panels: 
+http://web.mit.edu/SustainableDesignLab/publications/jakubiec,reinhart_assessing-disability-glare-potential.pdf
+
+Andy
+
+> On Mar 3, 2017, at 10:21 AM, Greg Ward <gregoryjward at gmail.com> wrote:
+> 
+> The quantity you are asking for, luminance as a function of incident illuminance, is precisely what the BRDF (bidirectional reflectance distribution function) tells you.  If you have the BRDF of your panel, you can compute the luminance directly from illuminance and incident direction.  If you do not, you cannot compute the luminance without making some (likely wrong) assumptions.
+> 
+> -Greg
+> 
+>> From: Florian Wochele <emb15fwo at student.lu.se>
+>> Date: March 3, 2017 1:24:56 AM PST
+>> 
+>> Dear Sir or Madam,
+>> 
+>> We are working on our master thesis at Lund University about Glare from reflections on PV panels. To evaluate whether glare occurs or not, we need the luminance of the reflection on the surface the PV panel reflects light on. However we only get the illuminance of the sun (light source). How can we translate the illuminance from the sun to the luminance of the surface? There has to be a way since we can get the luminance via simulations, however we are interested in a way to calculate the luminance. We also have to take into account that PV panels are neither perfectly specular nor perfectly diffuse.
+>> 
+>> Best regards,
+>> 
+>> Erik Hjorth and Florian Wochele
+>> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170303/3dfb24d2/attachment.html>
+
+From emb15fwo at student.lu.se  Mon Mar  6 01:20:22 2017
+From: emb15fwo at student.lu.se (Florian Wochele)
+Date: Mon, 6 Mar 2017 10:20:22 +0100
+Subject: [Radiance-general] Calculating luminance of surface
+In-Reply-To: <3B393295-AF93-454B-A6E4-E67C4A0DA03A@lmi.net>
+References: <b1243bf9-a3b1-c3ca-0ad7-44db2f033d7f@student.lu.se>
+ <3B393295-AF93-454B-A6E4-E67C4A0DA03A@lmi.net>
+Message-ID: <9198c9b1-0b4c-9c04-1f27-b0428b78975a@student.lu.se>
+
+Hello Greg,
+unfortunately we don't have the BRDF (at least not yet). What kind of 
+assumptions are you talking about? Maybe we can still use the solution 
+in reference to those assumptions.
+/Florian
+
+Am 03.03.2017 um 19:21 schrieb Greg Ward:
+> The quantity you are asking for, luminance as a function of incident 
+> illuminance, is precisely what the BRDF (bidirectional reflectance 
+> distribution function) tells you.  If you have the BRDF of your panel, 
+> you can compute the luminance directly from illuminance and incident 
+> direction.  If you do not, you cannot compute the luminance without 
+> making some (likely wrong) assumptions.
+>
+> -Greg
+>
+>> *From: *Florian Wochele <emb15fwo at student.lu.se 
+>> <mailto:emb15fwo at student.lu.se>>
+>>
+>> *Date: *March 3, 2017 1:24:56 AM PST
+>>
+>> *
+>> *
+>>
+>> Dear Sir or Madam,
+>>
+>> We are working on our master thesis at Lund University about Glare 
+>> from reflections on PV panels. To evaluate whether glare occurs or 
+>> not, we need the luminance of the reflection on the surface the PV 
+>> panel reflects light on. However we only get the illuminance of the 
+>> sun (light source). How can we translate the illuminance from the sun 
+>> to the luminance of the surface? There has to be a way since we can 
+>> get the luminance via simulations, however we are interested in a way 
+>> to calculate the luminance. We also have to take into account that PV 
+>> panels are neither perfectly specular nor perfectly diffuse.
+>>
+>> Best regards,
+>>
+>> Erik Hjorth and Florian Wochele
+>>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170306/49e59599/attachment.html>
+
+From ali at surveymbs.com  Mon Mar  6 08:18:00 2017
+From: ali at surveymbs.com (Ali Fatoorechi)
+Date: Mon, 6 Mar 2017 16:18:00 +0000
+Subject: [Radiance-general] Glass transmittance
+Message-ID: <CAGV9VE2FwUo+p8mf+_WmDYSz_xW4W9TN2EPY+o01sVU-jBDaLA@mail.gmail.com>
+
+Hi Guys,
+
+I am fairly new to Radiance and am trying to test one of the CIE Technical
+Report test 5.10 "Sky Component under a roof glazed opening".
+There is only one window that is a 1m x 1m opening with 6mm clear glass
+that serves a 4m x 4m x 3m room.
+The formula for directional transmittance is defined in the report as the
+one in this webpage:
+http://naturalfrequency.com/Tregenza_Sharples/Daylight_Algorithms/algorithm_2_34.htm
+
+The Sky Component value for the opening(assuming no glazing is used)
+matches the report results but on introducing the glazing, Radiance gives
+slightly lower results.
+I am testing this test case against our own software too. Multiplying the
+above directional transmittance to the radiance value along each ray gives
+the correct result which is inline with the report.
+But for some reasons I cannot get same from Radiance. I have set the
+transmissivity
+of the glass to 1 but am not sure what value should I use here?
+In other words if I want to scale the radiance along a ray by the above
+formula only, how should I define the glazing?
+
+
+The window rectangle is defined as two triangles
+
+void brightfunc bf
+2 val gtrans.cal
+0
+0
+void glass Glass1
+0
+0
+3 1 1 1
+
+Glass1 polygon triangle1
+0
+0
+9 (3 coordinates here..)
+Glass1 polygon triangle2
+0
+0
+9 (3 coordinates here..)
+
+The "gtrans.cal" file is defined as below based on the formula given on the
+above link:
+cosine =  Dx * Nx + Dy * Ny + Dz * Nz;
+val = -.028378 + (3.156075 * cosine) - (3.058376 * cosine * cosine) -
+(1.428919 * cosine * cosine * cosine) + (4.014235 * cosine * cosine *
+cosine * cosine) - (1.775827 * cosine * cosine * cosine * cosine * cosine);
+
+Regards,
+
+Ali Fatoorechi
+MBS Survey Software Ltd
+
+*62 High Street*
+
+
+*SteyningWest SussexBN44 3RD*
+
+*T +44 (0)1903 879323M +44(0)7830751409*
+ali at surveymbs.com
+www.surveymbs.com
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170306/d2d5e958/attachment.html>
+
+From mcneil.andrew at gmail.com  Mon Mar  6 09:57:44 2017
+From: mcneil.andrew at gmail.com (Andy McNeil)
+Date: Mon, 6 Mar 2017 09:57:44 -0800
+Subject: [Radiance-general] Calculating luminance of surface
+In-Reply-To: <9198c9b1-0b4c-9c04-1f27-b0428b78975a@student.lu.se>
+References: <b1243bf9-a3b1-c3ca-0ad7-44db2f033d7f@student.lu.se>
+ <3B393295-AF93-454B-A6E4-E67C4A0DA03A@lmi.net>
+ <9198c9b1-0b4c-9c04-1f27-b0428b78975a@student.lu.se>
+Message-ID: <CAEFJVk8BcJueqQyd5gQKzgkR=Ffj5Hy7Y04Mndj6nKGJYnogXg@mail.gmail.com>
+
+Florian,
+As a placeholder, until you have a BRDF, you could use data from table 1 of
+Alson's paper I sent previously or possibly the angular reflectance and
+roughness in Sandia's SGHAT technical reference (section 5.3 and 5.4):
+https://share.sandia.gov/phlux/static/references/glint-glare/SGHAT_Technical_Reference-v6.pdf
+Andy
+
+On Mon, Mar 6, 2017 at 1:20 AM, Florian Wochele <emb15fwo at student.lu.se>
+wrote:
+
+> Hello Greg,
+> unfortunately we don't have the BRDF (at least not yet). What kind of
+> assumptions are you talking about? Maybe we can still use the solution in
+> reference to those assumptions.
+> /Florian
+>
+>
+> Am 03.03.2017 um 19:21 schrieb Greg Ward:
+>
+> The quantity you are asking for, luminance as a function of incident
+> illuminance, is precisely what the BRDF (bidirectional reflectance
+> distribution function) tells you.  If you have the BRDF of your panel, you
+> can compute the luminance directly from illuminance and incident
+> direction.  If you do not, you cannot compute the luminance without making
+> some (likely wrong) assumptions.
+>
+> -Greg
+>
+> *From: *Florian Wochele <emb15fwo at student.lu.se>
+>
+> *Date: *March 3, 2017 1:24:56 AM PST
+>
+>
+> Dear Sir or Madam,
+>
+> We are working on our master thesis at Lund University about Glare from
+> reflections on PV panels. To evaluate whether glare occurs or not, we need
+> the luminance of the reflection on the surface the PV panel reflects light
+> on. However we only get the illuminance of the sun (light source). How can
+> we translate the illuminance from the sun to the luminance of the surface?
+> There has to be a way since we can get the luminance via simulations,
+> however we are interested in a way to calculate the luminance. We also have
+> to take into account that PV panels are neither perfectly specular nor
+> perfectly diffuse.
+>
+> Best regards,
+>
+> Erik Hjorth and Florian Wochele
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing listRadiance-general at radiance-online.orghttp://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170306/6b2f6c5f/attachment-0001.html>
+
+From gregoryjward at gmail.com  Mon Mar  6 12:45:12 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon, 6 Mar 2017 12:45:12 -0800
+Subject: [Radiance-general] Glass transmittance
+In-Reply-To: <CAGV9VE2FwUo+p8mf+_WmDYSz_xW4W9TN2EPY+o01sVU-jBDaLA@mail.gmail.com>
+References: <CAGV9VE2FwUo+p8mf+_WmDYSz_xW4W9TN2EPY+o01sVU-jBDaLA@mail.gmail.com>
+Message-ID: <8FD5BD8A-C487-490E-9F0C-41DD3620CA27@lmi.net>
+
+Helo Ali,
+
+If you have the formula that accounts for the presence of the window in your opening, you should not apply it to a "glass" surface.  The Radiance "glass" type does an exact calculation of transmission and reflection as a function of incident angle, which your polynomial approximates.  If you want or need to use the formula, then switch out your glass for:
+
+void brightfunc bf
+2 val gtrans.cal
+0
+0
+
+bf trans Glass1
+0
+0
+7 1 1 1 0 0 1 1
+
+Note that you need to use "bf" as the modifier to your trans material to see its effect.  (Your original model used "void" which ignores the brightfunc entirely.)
+
+You should also use "cosine=Rdot;" in your cal file, or change the sign of your calculation, which will always produce a negative cosine value in this case.
+
+Finally, you should feel free to try using the "glass" type with the correct transmission value, which you can calculate from your formula, which yields 0.87881 as the transmittance at normal incidence, and the trans.cal file, which says transmission should be 0.95712, assuming an index of refraction of 1.52:
+
+void glass Glass1
+0
+0
+3 0.95712 0.95712 0.95712
+
+I'm hoping the results should be the same between the two descriptions.
+
+Cheers,
+-Greg
+
+> From: Ali Fatoorechi <ali at surveymbs.com>
+> Date: March 6, 2017 8:18:00 AM PST
+> 
+> Hi Guys,
+> 
+> I am fairly new to Radiance and am trying to test one of the CIE Technical Report test 5.10 "Sky Component under a roof glazed opening".
+> There is only one window that is a 1m x 1m opening with 6mm clear glass that serves a 4m x 4m x 3m room. 
+> The formula for directional transmittance is defined in the report as the one in this webpage:
+> http://naturalfrequency.com/Tregenza_Sharples/Daylight_Algorithms/algorithm_2_34.htm
+> 
+> The Sky Component value for the opening(assuming no glazing is used) matches the report results but on introducing the glazing, Radiance gives slightly lower results. 
+> I am testing this test case against our own software too. Multiplying the above directional transmittance to the radiance value along each ray gives the correct result which is inline with the report.
+> But for some reasons I cannot get same from Radiance. I have set the transmissivity of the glass to 1 but am not sure what value should I use here? 
+> In other words if I want to scale the radiance along a ray by the above formula only, how should I define the glazing?
+> 
+> 
+> The window rectangle is defined as two triangles 
+> 
+> void brightfunc bf
+> 2 val gtrans.cal
+> 0
+> 0
+> void glass Glass1
+> 0
+> 0
+> 3 1 1 1
+> 
+> Glass1 polygon triangle1
+> 0
+> 0
+> 9 (3 coordinates here..)
+> Glass1 polygon triangle2
+> 0
+> 0
+> 9 (3 coordinates here..)
+> 
+> The "gtrans.cal" file is defined as below based on the formula given on the above link:
+> cosine =  Dx * Nx + Dy * Ny + Dz * Nz;
+> val = -.028378 + (3.156075 * cosine) - (3.058376 * cosine * cosine) - (1.428919 * cosine * cosine * cosine) + (4.014235 * cosine * cosine * cosine * cosine) - (1.775827 * cosine * cosine * cosine * cosine * cosine);
+> 
+> Regards,
+> 
+> Ali Fatoorechi
+> MBS Survey Software Ltd
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170306/951c0538/attachment.html>
+
+From ali at surveymbs.com  Tue Mar  7 06:20:43 2017
+From: ali at surveymbs.com (Ali Fatoorechi)
+Date: Tue, 7 Mar 2017 14:20:43 +0000
+Subject: [Radiance-general] Glass transmittance
+In-Reply-To: <8FD5BD8A-C487-490E-9F0C-41DD3620CA27@lmi.net>
+References: <CAGV9VE2FwUo+p8mf+_WmDYSz_xW4W9TN2EPY+o01sVU-jBDaLA@mail.gmail.com>
+ <8FD5BD8A-C487-490E-9F0C-41DD3620CA27@lmi.net>
+Message-ID: <CAGV9VE1W43=FkXzTrsTGCxNcJJgXQmVSzw_BkySdTG_z43-B0A@mail.gmail.com>
+
+Many thanks for the prompt reply Greg,
+
+I appreciate the glass material perhaps describes the glazing more
+accurately.
+
+bf trans Glass1
+0
+0
+7 1 1 1 0 0 1 1
+
+So defining trans material as above means only the specular transmittance
+is left and diffuse part(transmittance/reflectance) is zero[?] This seems
+to be what I am looking for, but I am not sure what I've done wrong
+as the values don't agree(Radiance gives 3.20, CIE report(and our software)
+3.77). Modifying bf function to return 1 treats the material just as an
+opening(no coefficient applied) which is expected I guess.
+
+Regards,
+
+Ali Fatoorechi
+MBS Survey Software Ltd
+
+*62 High Street*
+
+
+*SteyningWest SussexBN44 3RD*
+
+*T +44 (0)1903 879323M +44(0)7830751409 <+44%207830%20751409>*
+ali at surveymbs.com
+www.surveymbs.com
+
+On Mon, Mar 6, 2017 at 8:45 PM, Greg Ward <gregoryjward at gmail.com> wrote:
+
+> Helo Ali,
+>
+> If you have the formula that accounts for the presence of the window in
+> your opening, you should not apply it to a "glass" surface.  The Radiance
+> "glass" type does an exact calculation of transmission and reflection as a
+> function of incident angle, which your polynomial approximates.  If you
+> want or need to use the formula, then switch out your glass for:
+>
+> void brightfunc bf
+> 2 val gtrans.cal
+> 0
+> 0
+>
+> bf trans Glass1
+> 0
+> 0
+> 7 1 1 1 0 0 1 1
+>
+> Note that you need to use "bf" as the modifier to your trans material to
+> see its effect.  (Your original model used "void" which ignores the
+> brightfunc entirely.)
+>
+> You should also use "cosine=Rdot;" in your cal file, or change the sign of
+> your calculation, which will always produce a negative cosine value in this
+> case.
+>
+> Finally, you should feel free to try using the "glass" type with the
+> correct transmission value, which you can calculate from your formula,
+> which yields 0.87881 as the transmittance at normal incidence, and the
+> trans.cal file, which says transmission should be 0.95712, assuming an
+> index of refraction of 1.52:
+>
+> void glass Glass1
+> 0
+> 0
+> 3 0.95712 0.95712 0.95712
+>
+> I'm hoping the results should be the same between the two descriptions.
+>
+> Cheers,
+> -Greg
+>
+> *From: *Ali Fatoorechi <ali at surveymbs.com>
+>
+> *Date: *March 6, 2017 8:18:00 AM PST
+>
+>
+> Hi Guys,
+>
+> I am fairly new to Radiance and am trying to test one of the CIE Technical
+> Report test 5.10 "Sky Component under a roof glazed opening".
+> There is only one window that is a 1m x 1m opening with 6mm clear glass
+> that serves a 4m x 4m x 3m room.
+> The formula for directional transmittance is defined in the report as the
+> one in this webpage:
+> http://naturalfrequency.com/Tregenza_Sharples/Daylight_Algor
+> ithms/algorithm_2_34.htm
+>
+> The Sky Component value for the opening(assuming no glazing is used)
+> matches the report results but on introducing the glazing, Radiance gives
+> slightly lower results.
+> I am testing this test case against our own software too. Multiplying the
+> above directional transmittance to the radiance value along each ray gives
+> the correct result which is inline with the report.
+> But for some reasons I cannot get same from Radiance. I have set the transmissivity
+> of the glass to 1 but am not sure what value should I use here?
+> In other words if I want to scale the radiance along a ray by the above
+> formula only, how should I define the glazing?
+>
+>
+> The window rectangle is defined as two triangles
+>
+> void brightfunc bf
+> 2 val gtrans.cal
+> 0
+> 0
+> void glass Glass1
+> 0
+> 0
+> 3 1 1 1
+>
+> Glass1 polygon triangle1
+> 0
+> 0
+> 9 (3 coordinates here..)
+> Glass1 polygon triangle2
+> 0
+> 0
+> 9 (3 coordinates here..)
+>
+> The "gtrans.cal" file is defined as below based on the formula given on
+> the above link:
+> cosine =  Dx * Nx + Dy * Ny + Dz * Nz;
+> val = -.028378 + (3.156075 * cosine) - (3.058376 * cosine * cosine) -
+> (1.428919 * cosine * cosine * cosine) + (4.014235 * cosine * cosine *
+> cosine * cosine) - (1.775827 * cosine * cosine * cosine * cosine * cosine);
+>
+> Regards,
+>
+> Ali Fatoorechi
+> MBS Survey Software Ltd
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170307/1f0cf009/attachment-0001.html>
+
+From gregoryjward at gmail.com  Tue Mar  7 08:35:43 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue, 7 Mar 2017 08:35:43 -0800
+Subject: [Radiance-general] Glass transmittance
+In-Reply-To: <CAGV9VE1W43=FkXzTrsTGCxNcJJgXQmVSzw_BkySdTG_z43-B0A@mail.gmail.com>
+References: <CAGV9VE2FwUo+p8mf+_WmDYSz_xW4W9TN2EPY+o01sVU-jBDaLA@mail.gmail.com>
+ <8FD5BD8A-C487-490E-9F0C-41DD3620CA27@lmi.net>
+ <CAGV9VE1W43=FkXzTrsTGCxNcJJgXQmVSzw_BkySdTG_z43-B0A@mail.gmail.com>
+Message-ID: <EF4AC89D-B91B-4388-B991-6339B7381F62@lmi.net>
+
+Did you remember to change your gtrans.cal file to set "cosine=Rdot" instead of your formula, which gives negative cosines?
+
+-Greg
+
+> From: Ali Fatoorechi <ali at surveymbs.com>
+> Date: March 7, 2017 6:20:43 AM PST
+> 
+> Many thanks for the prompt reply Greg,
+> 
+> I appreciate the glass material perhaps describes the glazing more accurately. 
+> 
+> bf trans Glass1
+> 0
+> 0
+> 7 1 1 1 0 0 1 1
+> 
+> So defining trans material as above means only the specular transmittance is left and diffuse part(transmittance/reflectance) is zero[?] This seems to be what I am looking for, but I am not sure what I've done wrong
+> as the values don't agree(Radiance gives 3.20, CIE report(and our software) 3.77). Modifying bf function to return 1 treats the material just as an opening(no coefficient applied) which is expected I guess.
+> 
+> Regards,
+> 
+> Ali Fatoorechi
+> MBS Survey Software Ltd
+> 
+> 
+> On Mon, Mar 6, 2017 at 8:45 PM, Greg Ward <gregoryjward at gmail.com> wrote:
+> Helo Ali,
+> 
+> If you have the formula that accounts for the presence of the window in your opening, you should not apply it to a "glass" surface.  The Radiance "glass" type does an exact calculation of transmission and reflection as a function of incident angle, which your polynomial approximates.  If you want or need to use the formula, then switch out your glass for:
+> 
+> void brightfunc bf
+> 2 val gtrans.cal
+> 0
+> 0
+> 
+> bf trans Glass1
+> 0
+> 0
+> 7 1 1 1 0 0 1 1
+> 
+> Note that you need to use "bf" as the modifier to your trans material to see its effect.  (Your original model used "void" which ignores the brightfunc entirely.)
+> 
+> You should also use "cosine=Rdot;" in your cal file, or change the sign of your calculation, which will always produce a negative cosine value in this case.
+> 
+> Finally, you should feel free to try using the "glass" type with the correct transmission value, which you can calculate from your formula, which yields 0.87881 as the transmittance at normal incidence, and the trans.cal file, which says transmission should be 0.95712, assuming an index of refraction of 1.52:
+> 
+> void glass Glass1
+> 0
+> 0
+> 3 0.95712 0.95712 0.95712
+> 
+> I'm hoping the results should be the same between the two descriptions.
+> 
+> Cheers,
+> -Greg
+> 
+>> From: Ali Fatoorechi <ali at surveymbs.com>
+>> Date: March 6, 2017 8:18:00 AM PST
+>> 
+>> Hi Guys,
+>> 
+>> I am fairly new to Radiance and am trying to test one of the CIE Technical Report test 5.10 "Sky Component under a roof glazed opening".
+>> There is only one window that is a 1m x 1m opening with 6mm clear glass that serves a 4m x 4m x 3m room. 
+>> The formula for directional transmittance is defined in the report as the one in this webpage:
+>> http://naturalfrequency.com/Tregenza_Sharples/Daylight_Algorithms/algorithm_2_34.htm
+>> 
+>> The Sky Component value for the opening(assuming no glazing is used) matches the report results but on introducing the glazing, Radiance gives slightly lower results. 
+>> I am testing this test case against our own software too. Multiplying the above directional transmittance to the radiance value along each ray gives the correct result which is inline with the report.
+>> But for some reasons I cannot get same from Radiance. I have set the transmissivity of the glass to 1 but am not sure what value should I use here? 
+>> In other words if I want to scale the radiance along a ray by the above formula only, how should I define the glazing?
+>> 
+>> 
+>> The window rectangle is defined as two triangles 
+>> 
+>> void brightfunc bf
+>> 2 val gtrans.cal
+>> 0
+>> 0
+>> void glass Glass1
+>> 0
+>> 0
+>> 3 1 1 1
+>> 
+>> Glass1 polygon triangle1
+>> 0
+>> 0
+>> 9 (3 coordinates here..)
+>> Glass1 polygon triangle2
+>> 0
+>> 0
+>> 9 (3 coordinates here..)
+>> 
+>> The "gtrans.cal" file is defined as below based on the formula given on the above link:
+>> cosine =  Dx * Nx + Dy * Ny + Dz * Nz;
+>> val = -.028378 + (3.156075 * cosine) - (3.058376 * cosine * cosine) - (1.428919 * cosine * cosine * cosine) + (4.014235 * cosine * cosine * cosine * cosine) - (1.775827 * cosine * cosine * cosine * cosine * cosine);
+>> 
+>> Regards,
+>> 
+>> Ali Fatoorechi
+>> MBS Survey Software Ltd
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170307/0391f091/attachment.html>
+
+From ali at surveymbs.com  Tue Mar  7 09:46:40 2017
+From: ali at surveymbs.com (Ali Fatoorechi)
+Date: Tue, 7 Mar 2017 17:46:40 +0000
+Subject: [Radiance-general] Glass transmittance
+In-Reply-To: <EF4AC89D-B91B-4388-B991-6339B7381F62@lmi.net>
+References: <CAGV9VE2FwUo+p8mf+_WmDYSz_xW4W9TN2EPY+o01sVU-jBDaLA@mail.gmail.com>
+ <8FD5BD8A-C487-490E-9F0C-41DD3620CA27@lmi.net>
+ <CAGV9VE1W43=FkXzTrsTGCxNcJJgXQmVSzw_BkySdTG_z43-B0A@mail.gmail.com>
+ <EF4AC89D-B91B-4388-B991-6339B7381F62@lmi.net>
+Message-ID: <CAGV9VE0hiEzN=q1nU6dfdxTGHxTgfOniLoGNUDMhyoAOkaTy6Q@mail.gmail.com>
+
+Thanks for the reply Greg,
+
+Yes I did change the cosine=Rdot.
+I have uploaded the radiance oct/rad/script files in this link
+<https://drive.google.com/drive/folders/0BwxvtmE7yeVKLVktQ3hWck1YY3c?usp=sharing>.
+Not sure you get a chance to look at this but I couldn't understand the
+reason for the difference between the results.
+
+Best wishes,
+
+
+Regards,
+
+Ali Fatoorechi
+MBS Survey Software Ltd
+
+*62 High Street*
+
+
+*SteyningWest SussexBN44 3RD*
+
+*T +44 (0)1903 879323M +44(0)7830751409 <+44%207830%20751409>*
+ali at surveymbs.com
+www.surveymbs.com
+
+On Tue, Mar 7, 2017 at 4:35 PM, Greg Ward <gregoryjward at gmail.com> wrote:
+
+> Did you remember to change your gtrans.cal file to set "cosine=Rdot"
+> instead of your formula, which gives negative cosines?
+>
+> -Greg
+>
+> *From: *Ali Fatoorechi <ali at surveymbs.com>
+>
+> *Date: *March 7, 2017 6:20:43 AM PST
+>
+>
+> Many thanks for the prompt reply Greg,
+>
+> I appreciate the glass material perhaps describes the glazing more
+> accurately.
+>
+> bf trans Glass1
+> 0
+> 0
+> 7 1 1 1 0 0 1 1
+>
+> So defining trans material as above means only the specular transmittance
+> is left and diffuse part(transmittance/reflectance) is zero[?] This seems
+> to be what I am looking for, but I am not sure what I've done wrong
+> as the values don't agree(Radiance gives 3.20, CIE report(and our
+> software) 3.77). Modifying bf function to return 1 treats the material just
+> as an opening(no coefficient applied) which is expected I guess.
+>
+> Regards,
+>
+> Ali Fatoorechi
+> MBS Survey Software Ltd
+>
+>
+> On Mon, Mar 6, 2017 at 8:45 PM, Greg Ward <gregoryjward at gmail.com> wrote:
+>
+>> Helo Ali,
+>>
+>> If you have the formula that accounts for the presence of the window in
+>> your opening, you should not apply it to a "glass" surface.  The Radiance
+>> "glass" type does an exact calculation of transmission and reflection as a
+>> function of incident angle, which your polynomial approximates.  If you
+>> want or need to use the formula, then switch out your glass for:
+>>
+>> void brightfunc bf
+>> 2 val gtrans.cal
+>> 0
+>> 0
+>>
+>> bf trans Glass1
+>> 0
+>> 0
+>> 7 1 1 1 0 0 1 1
+>>
+>> Note that you need to use "bf" as the modifier to your trans material to
+>> see its effect.  (Your original model used "void" which ignores the
+>> brightfunc entirely.)
+>>
+>> You should also use "cosine=Rdot;" in your cal file, or change the sign
+>> of your calculation, which will always produce a negative cosine value in
+>> this case.
+>>
+>> Finally, you should feel free to try using the "glass" type with the
+>> correct transmission value, which you can calculate from your formula,
+>> which yields 0.87881 as the transmittance at normal incidence, and the
+>> trans.cal file, which says transmission should be 0.95712, assuming an
+>> index of refraction of 1.52:
+>>
+>> void glass Glass1
+>> 0
+>> 0
+>> 3 0.95712 0.95712 0.95712
+>>
+>> I'm hoping the results should be the same between the two descriptions.
+>>
+>> Cheers,
+>> -Greg
+>>
+>> *From: *Ali Fatoorechi <ali at surveymbs.com>
+>>
+>> *Date: *March 6, 2017 8:18:00 AM PST
+>>
+>>
+>> Hi Guys,
+>>
+>> I am fairly new to Radiance and am trying to test one of the CIE
+>> Technical Report test 5.10 "Sky Component under a roof glazed opening".
+>> There is only one window that is a 1m x 1m opening with 6mm clear glass
+>> that serves a 4m x 4m x 3m room.
+>> The formula for directional transmittance is defined in the report as the
+>> one in this webpage:
+>> http://naturalfrequency.com/Tregenza_Sharples/Daylight_Algor
+>> ithms/algorithm_2_34.htm
+>>
+>> The Sky Component value for the opening(assuming no glazing is used)
+>> matches the report results but on introducing the glazing, Radiance gives
+>> slightly lower results.
+>> I am testing this test case against our own software too. Multiplying
+>> the above directional transmittance to the radiance value along each ray
+>> gives the correct result which is inline with the report.
+>> But for some reasons I cannot get same from Radiance. I have set the transmissivity
+>> of the glass to 1 but am not sure what value should I use here?
+>> In other words if I want to scale the radiance along a ray by the above
+>> formula only, how should I define the glazing?
+>>
+>>
+>> The window rectangle is defined as two triangles
+>>
+>> void brightfunc bf
+>> 2 val gtrans.cal
+>> 0
+>> 0
+>> void glass Glass1
+>> 0
+>> 0
+>> 3 1 1 1
+>>
+>> Glass1 polygon triangle1
+>> 0
+>> 0
+>> 9 (3 coordinates here..)
+>> Glass1 polygon triangle2
+>> 0
+>> 0
+>> 9 (3 coordinates here..)
+>>
+>> The "gtrans.cal" file is defined as below based on the formula given on
+>> the above link:
+>> cosine =  Dx * Nx + Dy * Ny + Dz * Nz;
+>> val = -.028378 + (3.156075 * cosine) - (3.058376 * cosine * cosine) -
+>> (1.428919 * cosine * cosine * cosine) + (4.014235 * cosine * cosine *
+>> cosine * cosine) - (1.775827 * cosine * cosine * cosine * cosine * cosine);
+>>
+>> Regards,
+>>
+>> Ali Fatoorechi
+>> MBS Survey Software Ltd
+>>
+>>
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>
+>>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170307/e17a29e8/attachment-0001.html>
+
+From gregoryjward at gmail.com  Tue Mar  7 10:44:42 2017
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue, 7 Mar 2017 10:44:42 -0800
+Subject: [Radiance-general] Glass transmittance
+In-Reply-To: <CAGV9VE2sAHdLMr0egSJcpihs0nFTua9U_1behPtsBicnJ-xgTA@mail.gmail.com>
+References: <CAGV9VE2FwUo+p8mf+_WmDYSz_xW4W9TN2EPY+o01sVU-jBDaLA@mail.gmail.com>
+ <8FD5BD8A-C487-490E-9F0C-41DD3620CA27@lmi.net>
+ <CAGV9VE1W43=FkXzTrsTGCxNcJJgXQmVSzw_BkySdTG_z43-B0A@mail.gmail.com>
+ <EF4AC89D-B91B-4388-B991-6339B7381F62@lmi.net>
+ <CAGV9VE0hiEzN=q1nU6dfdxTGHxTgfOniLoGNUDMhyoAOkaTy6Q@mail.gmail.com>
+ <75886065-864A-4AE8-B799-2092F1000FE7@lmi.net>
+ <CAGV9VE2sAHdLMr0egSJcpihs0nFTua9U_1behPtsBicnJ-xgTA@mail.gmail.com>
+Message-ID: <E7073850-4960-4174-A94A-FC0F1F28D639@gmail.com>
+
+Hi Ali,
+
+If it makes you feel any better, this had me stumped as well.  I thought that Rdot was guaranteed to be positive for the trans material, forgetting that I had changed this behavior long ago to make behavior more consistent.  A better fix to the problem is to set:
+
+	cosine = abs(Rdot);
+
+in your gtrans.cal file.
+
+Cheers,
+-Greg
+
+> From: Ali Fatoorechi <ali at surveymbs.com>
+> Date: March 7, 2017 10:29:48 AM PST
+> 
+> My mistake Greg,
+> 
+> Apology for wasting your time, I had the window facing the other way around. After rotating the window polyline the values match.
+> 
+> The sky is overcast.
+> 
+> Thanks for your support.
+> 
+> Regards,
+> 
+> Ali Fatoorechi
+> MBS Survey Software Ltd
+> 
+> 
+> On Tue, Mar 7, 2017 at 6:04 PM, Greg Ward <gregoryjward at gmail.com> wrote:
+> Thanks for your model, Ali.
+> 
+> Is the sky for this test supposed to be uniform or overcast?  I don't have access to the CIE document.
+> 
+> -Greg
+> 
+>> From: Ali Fatoorechi <ali at surveymbs.com>
+>> Date: March 7, 2017 9:46:40 AM PST
+>> 
+>> Thanks for the reply Greg,
+>> 
+>> Yes I did change the cosine=Rdot. 
+>> I have uploaded the radiance oct/rad/script files in this link. Not sure you get a chance to look at this but I couldn't understand the reason for the difference between the results.
+>> 
+>> Best wishes,
+>> 
+>> 
+>> Regards,
+>> 
+>> Ali Fatoorechi
+>> MBS Survey Software Ltd
+>> 
+>> On Tue, Mar 7, 2017 at 4:35 PM, Greg Ward <gregoryjward at gmail.com> wrote:
+>> Did you remember to change your gtrans.cal file to set "cosine=Rdot" instead of your formula, which gives negative cosines?
+>> 
+>> -Greg
+>> 
+>>> From: Ali Fatoorechi <ali at surveymbs.com>
+>>> Date: March 7, 2017 6:20:43 AM PST
+>>> 
+>>> Many thanks for the prompt reply Greg,
+>>> 
+>>> I appreciate the glass material perhaps describes the glazing more accurately. 
+>>> 
+>>> bf trans Glass1
+>>> 0
+>>> 0
+>>> 7 1 1 1 0 0 1 1
+>>> 
+>>> So defining trans material as above means only the specular transmittance is left and diffuse part(transmittance/reflectance) is zero[?] This seems to be what I am looking for, but I am not sure what I've done wrong
+>>> as the values don't agree(Radiance gives 3.20, CIE report(and our software) 3.77). Modifying bf function to return 1 treats the material just as an opening(no coefficient applied) which is expected I guess.
+>>> 
+>>> Regards,
+>>> 
+>>> Ali Fatoorechi
+>>> MBS Survey Software Ltd
+>>> 
+>>> 
+>>> On Mon, Mar 6, 2017 at 8:45 PM, Greg Ward <gregoryjward at gmail.com> wrote:
+>>> Helo Ali,
+>>> 
+>>> If you have the formula that accounts for the presence of the window in your opening, you should not apply it to a "glass" surface.  The Radiance "glass" type does an exact calculation of transmission and reflection as a function of incident angle, which your polynomial approximates.  If you want or need to use the formula, then switch out your glass for:
+>>> 
+>>> void brightfunc bf
+>>> 2 val gtrans.cal
+>>> 0
+>>> 0
+>>> 
+>>> bf trans Glass1
+>>> 0
+>>> 0
+>>> 7 1 1 1 0 0 1 1
+>>> 
+>>> Note that you need to use "bf" as the modifier to your trans material to see its effect.  (Your original model used "void" which ignores the brightfunc entirely.)
+>>> 
+>>> You should also use "cosine=Rdot;" in your cal file, or change the sign of your calculation, which will always produce a negative cosine value in this case.
+>>> 
+>>> Finally, you should feel free to try using the "glass" type with the correct transmission value, which you can calculate from your formula, which yields 0.87881 as the transmittance at normal incidence, and the trans.cal file, which says transmission should be 0.95712, assuming an index of refraction of 1.52:
+>>> 
+>>> void glass Glass1
+>>> 0
+>>> 0
+>>> 3 0.95712 0.95712 0.95712
+>>> 
+>>> I'm hoping the results should be the same between the two descriptions.
+>>> 
+>>> Cheers,
+>>> -Greg
+>>> 
+>>>> From: Ali Fatoorechi <ali at surveymbs.com>
+>>>> Date: March 6, 2017 8:18:00 AM PST
+>>>> 
+>>>> Hi Guys,
+>>>> 
+>>>> I am fairly new to Radiance and am trying to test one of the CIE Technical Report test 5.10 "Sky Component under a roof glazed opening".
+>>>> There is only one window that is a 1m x 1m opening with 6mm clear glass that serves a 4m x 4m x 3m room. 
+>>>> The formula for directional transmittance is defined in the report as the one in this webpage:
+>>>> http://naturalfrequency.com/Tregenza_Sharples/Daylight_Algorithms/algorithm_2_34.htm
+>>>> 
+>>>> The Sky Component value for the opening(assuming no glazing is used) matches the report results but on introducing the glazing, Radiance gives slightly lower results. 
+>>>> I am testing this test case against our own software too. Multiplying the above directional transmittance to the radiance value along each ray gives the correct result which is inline with the report.
+>>>> But for some reasons I cannot get same from Radiance. I have set the transmissivity of the glass to 1 but am not sure what value should I use here? 
+>>>> In other words if I want to scale the radiance along a ray by the above formula only, how should I define the glazing?
+>>>> 
+>>>> 
+>>>> The window rectangle is defined as two triangles 
+>>>> 
+>>>> void brightfunc bf
+>>>> 2 val gtrans.cal
+>>>> 0
+>>>> 0
+>>>> void glass Glass1
+>>>> 0
+>>>> 0
+>>>> 3 1 1 1
+>>>> 
+>>>> Glass1 polygon triangle1
+>>>> 0
+>>>> 0
+>>>> 9 (3 coordinates here..)
+>>>> Glass1 polygon triangle2
+>>>> 0
+>>>> 0
+>>>> 9 (3 coordinates here..)
+>>>> 
+>>>> The "gtrans.cal" file is defined as below based on the formula given on the above link:
+>>>> cosine =  Dx * Nx + Dy * Ny + Dz * Nz;
+>>>> val = -.028378 + (3.156075 * cosine) - (3.058376 * cosine * cosine) - (1.428919 * cosine * cosine * cosine) + (4.014235 * cosine * cosine * cosine * cosine) - (1.775827 * cosine * cosine * cosine * cosine * cosine);
+>>>> 
+>>>> Regards,
+>>>> 
+>>>> Ali Fatoorechi
+>>>> MBS Survey Software Ltd
+>> 
+> 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170307/0137e6ab/attachment.html>
+
+From raquelviula.lists at gmail.com  Tue Mar 14 06:40:30 2017
+From: raquelviula.lists at gmail.com (Raquel Viula)
+Date: Tue, 14 Mar 2017 14:40:30 +0100
+Subject: [Radiance-general] DGP on 172 fish-eye image
+Message-ID: <D4EDB15E.1D1F0%raquelviula.lists@gmail.com>
+
+Dear all,
+I have a question regarding Evalglare. Hopefully this is the right mailing
+list to ask. 
+Can DGP be calculated for a -vta fish-eye photo capture that has a view
+angle of 172 degrees? The manual says that Evalglare can be run for an image
+cut horizontally given an externally measured vertical eye illuminance and Y
+max and Y min coordinates but does not mention the possibility of using an
+image that is also cut vertically, or shall I say, all around.
+Thank you for your help.
+
+Best Regards
+
+Raquel
+
+
+
+Raquel Viula
+
+PhD candidate
+
+
+
+TU Delft | Faculty of Architecture and the Built Environment |
+
+Architectural Engineering and Technology
+
+Julianalaan 134, 2628 BL Delft, The Netherlands | P.O. Box 5043 2600 GA
+Delft
+
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170314/af3ae185/attachment.html>
+
+From alstan at jakubiec.net  Tue Mar 14 22:18:15 2017
+From: alstan at jakubiec.net (J. Alstan Jakubiec)
+Date: Wed, 15 Mar 2017 13:18:15 +0800
+Subject: [Radiance-general] DGP on 172 fish-eye image
+In-Reply-To: <D4EDB15E.1D1F0%raquelviula.lists@gmail.com>
+References: <D4EDB15E.1D1F0%raquelviula.lists@gmail.com>
+Message-ID: <7cce3bec-9072-26ec-92ea-11d3ee1399dd@jakubiec.net>
+
+Hi Raquel,
+
+I would say yes. Just make sure that the view in the HDR header is 
+appropriate or you specify it inline: evalglare -vta -vv 172 -vh 172 
+image.hdr
+
+This may slightly underestimate vertical eye illuminance calculated by 
+the software, skewing your results a bit; however, 172 is close enough 
+to 180 in terms of view angle that the error is likely minimal. Still, 
+if you have vertical eye illuminance measurements, supply them inline 
+with the -i flag as well.
+
+Best,
+
+Alstan
+
+
+On 3/14/2017 9:40 PM, Raquel Viula wrote:
+> Dear all,
+> I have a question regarding Evalglare. Hopefully this is the right 
+> mailing list to ask.
+> Can DGP be calculated for a -vta fish-eye photo capture that has a 
+> view angle of 172 degrees? The manual says that Evalglare can be run 
+> for an image cut horizontally given an externally measured vertical 
+> eye illuminance and Y max and Y min coordinates but does not mention 
+> the possibility of using an image that is also cut vertically, or 
+> shall I say, all around.
+> Thank you for your help.
+>
+> Best Regards
+>
+> Raquel
+>
+>
+> *Raquel Viula*
+>
+> PhD candidate
+>
+>
+> *TUDelft | Faculty of Architecture and the Built Environment |*
+>
+> Architectural Engineering and Technology
+>
+> Julianalaan 134, 2628 BL Delft, The Netherlands | P.O. Box 5043 2600 
+> GA Delft
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170315/a00e5dea/attachment.html>
+
+From raquelviula.lists at gmail.com  Wed Mar 15 02:31:40 2017
+From: raquelviula.lists at gmail.com (Raquel Viula)
+Date: Wed, 15 Mar 2017 10:31:40 +0100
+Subject: [Radiance-general] DGP on 172 fish-eye image
+In-Reply-To: <7cce3bec-9072-26ec-92ea-11d3ee1399dd@jakubiec.net>
+References: <D4EDB15E.1D1F0%raquelviula.lists@gmail.com>
+ <7cce3bec-9072-26ec-92ea-11d3ee1399dd@jakubiec.net>
+Message-ID: <D4EEC247.1D21F%raquelviula.lists@gmail.com>
+
+Hi Alstan,
+That?s great to know, thank you. Yes, I have vertical eye illuminance
+measurements. I think it?s probably a good idea to estimate what the error
+might be via simulation.
+
+Best Regards
+
+Raquel
+
+
+
+Raquel Viula
+
+PhD candidate
+
+
+
+TU Delft | Faculty of Architecture and the Built Environment |
+
+Architectural Engineering and Technology
+
+Julianalaan 134, 2628 BL Delft, The Netherlands | P.O. Box 5043 2600 GA
+Delft
+
+From:  "J. Alstan Jakubiec" <alstan at jakubiec.net>
+Reply-To:  Radiance general discussion
+<radiance-general at radiance-online.org>
+Date:  Wednesday 15 March 2017 06:18
+To:  <radiance-general at radiance-online.org>
+Subject:  Re: [Radiance-general] DGP on 172 fish-eye image
+
+    
+ 
+
+Hi Raquel, 
+ 
+ 
+
+I would say yes. Just make sure that the view in the HDR header is
+appropriate or you specify it inline: evalglare -vta -vv 172 -vh 172
+image.hdr
+ 
+
+This may slightly underestimate vertical eye illuminance calculated by the
+software, skewing your results a bit; however, 172 is close enough to 180 in
+terms of view angle that the error is likely minimal. Still, if you have
+vertical eye illuminance measurements, supply them inline with the -i flag
+as well.
+ 
+ 
+
+Best,
+ 
+
+Alstan
+ 
+ 
+ 
+On 3/14/2017 9:40 PM, Raquel Viula wrote:
+ 
+ 
+>  
+>  
+> Dear all,
+>  
+> I have a question regarding Evalglare. Hopefully this is the right mailing
+> list to ask. 
+>  
+> Can DGP be calculated for a -vta fish-eye photo capture that has a view angle
+> of 172 degrees? The manual says that Evalglare can be run for an image cut
+> horizontally given an externally measured vertical eye illuminance and Y max
+> and Y min coordinates but does not mention the possibility of using an image
+> that is also cut vertically, or shall I say, all around.
+>  
+> Thank you for your help.
+>  
+>  
+> 
+>  
+>  
+>  
+> 
+> Best Regards
+>  
+> 
+> Raquel
+>  
+> 
+> 
+>  
+>  
+> 
+> Raquel Viula
+>  
+> 
+> PhD candidate
+>  
+> 
+> 
+>  
+>  
+> 
+> TU Delft | Faculty of Architecture and the Built Environment |
+>  
+> 
+> Architectural Engineering and Technology
+>  
+> 
+> Julianalaan 134, 2628 BL Delft, The Netherlands | P.O. Box 5043 2600 GA Delft
+>  
+>  
+>  
+>   
+>  
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.orghttp://www.radiance-online.org/mailman/lis
+> tinfo/radiance-general
+>  
+ 
+ 
+_______________________________________________ Radiance-general mailing
+list Radiance-general at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170315/a6b9bdb9/attachment.html>
+
+From germolinal at gmail.com  Wed Mar 15 08:29:50 2017
+From: germolinal at gmail.com (=?UTF-8?Q?Germ=C3=A1n_Molina_Larrain?=)
+Date: Wed, 15 Mar 2017 12:29:50 -0300
+Subject: [Radiance-general] gendaymtx '-5' option not working
+Message-ID: <CAF-iH4Jj-8+3bRc2JHkXO8mSDhc54-QU7CRvgqUd9kf=VOcKDQ@mail.gmail.com>
+
+Dear All,
+
+I am trying to generate a '-5' sky vector from a weather file that contains
+just:
+
+place SANTIAGO_CHL
+latitude -33.38
+longitude 70.78
+time_zone 60
+site_elevation 476.0
+weather_data_file_units 1
+1 1 9.5 756 189
+
+I am using the command:
+
+g*endaymtx -h -5 0.533 -m 1 Santiago.wea > test*
+
+but I am getting the exact same sky vector as without the '-5' option (i.e.
+full sky). Any hints on this? I am trying to implement the 5 phases...
+
+Thanks in advance,
+
+Germ?n
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170315/829620dd/attachment.html>
+
+From david.moroder at gmail.com  Wed Mar 15 08:54:01 2017
+From: david.moroder at gmail.com (David Geisler-Moroder)
+Date: Wed, 15 Mar 2017 16:54:01 +0100
+Subject: [Radiance-general] gendaymtx '-5' option not working
+In-Reply-To: <CAF-iH4Jj-8+3bRc2JHkXO8mSDhc54-QU7CRvgqUd9kf=VOcKDQ@mail.gmail.com>
+References: <CAF-iH4Jj-8+3bRc2JHkXO8mSDhc54-QU7CRvgqUd9kf=VOcKDQ@mail.gmail.com>
+Message-ID: <CAL-bo5F=MQgFia=LCHvmyo1pHuxftio7X4S4N9JEw2JSSbPK3A@mail.gmail.com>
+
+Dear German,
+
+you need the "-5" option for the last step of the 5-Phase calculation, i.e.
+the detailed sun description. For that you need to use it together with the
+"-d" option and you need to take a higher sky subdivision with -m 6.
+
+The command should look like:
+
+gendaymtx -5 0.533 -d -m 6 Santiago.wea
+
+Best,
+David
+
+2017-03-15 16:29 GMT+01:00 Germ?n Molina Larrain <germolinal at gmail.com>:
+
+> Dear All,
+>
+> I am trying to generate a '-5' sky vector from a weather file that
+> contains just:
+>
+> place SANTIAGO_CHL
+> latitude -33.38
+> longitude 70.78
+> time_zone 60
+> site_elevation 476.0
+> weather_data_file_units 1
+> 1 1 9.5 756 189
+>
+> I am using the command:
+>
+> g*endaymtx -h -5 0.533 -m 1 Santiago.wea > test*
+>
+> but I am getting the exact same sky vector as without the '-5' option
+> (i.e. full sky). Any hints on this? I am trying to implement the 5 phases...
+>
+> Thanks in advance,
+>
+> Germ?n
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+
+-- 
+Dipl.-Ing. Dr. David Geisler-Moroder
+Hofwaldweg 14/20
+6020 Innsbruck
+Austria
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170315/1301e373/attachment-0001.html>
+
+From germolinal at gmail.com  Wed Mar 15 08:59:59 2017
+From: germolinal at gmail.com (=?UTF-8?Q?Germ=C3=A1n_Molina_Larrain?=)
+Date: Wed, 15 Mar 2017 15:59:59 +0000
+Subject: [Radiance-general] gendaymtx '-5' option not working
+In-Reply-To: <CAL-bo5F=MQgFia=LCHvmyo1pHuxftio7X4S4N9JEw2JSSbPK3A@mail.gmail.com>
+References: <CAF-iH4Jj-8+3bRc2JHkXO8mSDhc54-QU7CRvgqUd9kf=VOcKDQ@mail.gmail.com>
+ <CAL-bo5F=MQgFia=LCHvmyo1pHuxftio7X4S4N9JEw2JSSbPK3A@mail.gmail.com>
+Message-ID: <CAF-iH4LDBg6m1cWyEM1bTXo_n=MrVKec1C0USLEJ3HurwjEn=g@mail.gmail.com>
+
+Oh! I thought the -5 was enough, did not know i had to add also -d. Thanks
+very much.
+
+Is it possible to use other MFs rather than 6? I know the higher the
+better... I am thinking on warnings for Groundhog
+
+Best
+
+
+El mi?., 15 de mar. de 2017 12:56, David Geisler-Moroder <
+david.moroder at gmail.com> escribi?:
+
+> Dear German,
+>
+> you need the "-5" option for the last step of the 5-Phase calculation,
+> i.e. the detailed sun description. For that you need to use it together
+> with the "-d" option and you need to take a higher sky subdivision with -m
+> 6.
+>
+> The command should look like:
+>
+> gendaymtx -5 0.533 -d -m 6 Santiago.wea
+>
+> Best,
+> David
+>
+> 2017-03-15 16:29 GMT+01:00 Germ?n Molina Larrain <germolinal at gmail.com>:
+>
+> Dear All,
+>
+> I am trying to generate a '-5' sky vector from a weather file that
+> contains just:
+>
+> place SANTIAGO_CHL
+> latitude -33.38
+> longitude 70.78
+> time_zone 60
+> site_elevation 476.0
+> weather_data_file_units 1
+> 1 1 9.5 756 189
+>
+> I am using the command:
+>
+> g*endaymtx -h -5 0.533 -m 1 Santiago.wea > test*
+>
+> but I am getting the exact same sky vector as without the '-5' option
+> (i.e. full sky). Any hints on this? I am trying to implement the 5 phases...
+>
+> Thanks in advance,
+>
+> Germ?n
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>
+>
+> --
+> Dipl.-Ing. Dr. David Geisler-Moroder
+> Hofwaldweg 14/20
+> 6020 Innsbruck
+> Austria
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170315/ec7c19c1/attachment.html>
+
+From david.moroder at gmail.com  Wed Mar 15 10:06:41 2017
+From: david.moroder at gmail.com (David Geisler-Moroder)
+Date: Wed, 15 Mar 2017 18:06:41 +0100
+Subject: [Radiance-general] gendaymtx '-5' option not working
+In-Reply-To: <CAF-iH4LDBg6m1cWyEM1bTXo_n=MrVKec1C0USLEJ3HurwjEn=g@mail.gmail.com>
+References: <CAF-iH4Jj-8+3bRc2JHkXO8mSDhc54-QU7CRvgqUd9kf=VOcKDQ@mail.gmail.com>
+ <CAL-bo5F=MQgFia=LCHvmyo1pHuxftio7X4S4N9JEw2JSSbPK3A@mail.gmail.com>
+ <CAF-iH4LDBg6m1cWyEM1bTXo_n=MrVKec1C0USLEJ3HurwjEn=g@mail.gmail.com>
+Message-ID: <CAL-bo5F_GdT5stbx_Z+pzUZkq=q+5gzrysyH7fTMK1C7eH4tWQ@mail.gmail.com>
+
+I think it should also work if you use other (lower) MFs, but you need to
+take care that with less sun positions the benefits of an accurate direct
+sun calculation get lost...
+
+
+2017-03-15 16:59 GMT+01:00 Germ?n Molina Larrain <germolinal at gmail.com>:
+
+> Oh! I thought the -5 was enough, did not know i had to add also -d. Thanks
+> very much.
+>
+> Is it possible to use other MFs rather than 6? I know the higher the
+> better... I am thinking on warnings for Groundhog
+>
+> Best
+>
+>
+> El mi?., 15 de mar. de 2017 12:56, David Geisler-Moroder <
+> david.moroder at gmail.com> escribi?:
+>
+>> Dear German,
+>>
+>> you need the "-5" option for the last step of the 5-Phase calculation,
+>> i.e. the detailed sun description. For that you need to use it together
+>> with the "-d" option and you need to take a higher sky subdivision with -m
+>> 6.
+>>
+>> The command should look like:
+>>
+>> gendaymtx -5 0.533 -d -m 6 Santiago.wea
+>>
+>> Best,
+>> David
+>>
+>> 2017-03-15 16:29 GMT+01:00 Germ?n Molina Larrain <germolinal at gmail.com>:
+>>
+>> Dear All,
+>>
+>> I am trying to generate a '-5' sky vector from a weather file that
+>> contains just:
+>>
+>> place SANTIAGO_CHL
+>> latitude -33.38
+>> longitude 70.78
+>> time_zone 60
+>> site_elevation 476.0
+>> weather_data_file_units 1
+>> 1 1 9.5 756 189
+>>
+>> I am using the command:
+>>
+>> g*endaymtx -h -5 0.533 -m 1 Santiago.wea > test*
+>>
+>> but I am getting the exact same sky vector as without the '-5' option
+>> (i.e. full sky). Any hints on this? I am trying to implement the 5 phases...
+>>
+>> Thanks in advance,
+>>
+>> Germ?n
+>>
+>>
+>>
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>
+>>
+>>
+>>
+>> --
+>> Dipl.-Ing. Dr. David Geisler-Moroder
+>> Hofwaldweg 14/20
+>> 6020 Innsbruck
+>> Austria
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+
+-- 
+Dipl.-Ing. Dr. David Geisler-Moroder
+Hofwaldweg 14/20
+6020 Innsbruck
+Austria
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170315/05c8f0b6/attachment.html>
+
+From germolinal at gmail.com  Wed Mar 15 11:17:39 2017
+From: germolinal at gmail.com (=?UTF-8?Q?Germ=C3=A1n_Molina_Larrain?=)
+Date: Wed, 15 Mar 2017 15:17:39 -0300
+Subject: [Radiance-general] gendaymtx '-5' option not working
+In-Reply-To: <CAL-bo5F_GdT5stbx_Z+pzUZkq=q+5gzrysyH7fTMK1C7eH4tWQ@mail.gmail.com>
+References: <CAF-iH4Jj-8+3bRc2JHkXO8mSDhc54-QU7CRvgqUd9kf=VOcKDQ@mail.gmail.com>
+ <CAL-bo5F=MQgFia=LCHvmyo1pHuxftio7X4S4N9JEw2JSSbPK3A@mail.gmail.com>
+ <CAF-iH4LDBg6m1cWyEM1bTXo_n=MrVKec1C0USLEJ3HurwjEn=g@mail.gmail.com>
+ <CAL-bo5F_GdT5stbx_Z+pzUZkq=q+5gzrysyH7fTMK1C7eH4tWQ@mail.gmail.com>
+Message-ID: <CAF-iH4LwY1j2qAKLFPvL-rCuas8bRDwqoBWRBGAaaB_A35rCTA@mail.gmail.com>
+
+Cool! Thanks very much. I will warn that.
+
+Best!
+
+El 15 mar. 2017 14:10, "David Geisler-Moroder" <david.moroder at gmail.com>
+escribi?:
+
+> I think it should also work if you use other (lower) MFs, but you need to
+> take care that with less sun positions the benefits of an accurate direct
+> sun calculation get lost...
+>
+>
+> 2017-03-15 16:59 GMT+01:00 Germ?n Molina Larrain <germolinal at gmail.com>:
+>
+>> Oh! I thought the -5 was enough, did not know i had to add also -d.
+>> Thanks very much.
+>>
+>> Is it possible to use other MFs rather than 6? I know the higher the
+>> better... I am thinking on warnings for Groundhog
+>>
+>> Best
+>>
+>>
+>> El mi?., 15 de mar. de 2017 12:56, David Geisler-Moroder <
+>> david.moroder at gmail.com> escribi?:
+>>
+>>> Dear German,
+>>>
+>>> you need the "-5" option for the last step of the 5-Phase calculation,
+>>> i.e. the detailed sun description. For that you need to use it together
+>>> with the "-d" option and you need to take a higher sky subdivision with -m
+>>> 6.
+>>>
+>>> The command should look like:
+>>>
+>>> gendaymtx -5 0.533 -d -m 6 Santiago.wea
+>>>
+>>> Best,
+>>> David
+>>>
+>>> 2017-03-15 16:29 GMT+01:00 Germ?n Molina Larrain <germolinal at gmail.com>:
+>>>
+>>> Dear All,
+>>>
+>>> I am trying to generate a '-5' sky vector from a weather file that
+>>> contains just:
+>>>
+>>> place SANTIAGO_CHL
+>>> latitude -33.38
+>>> longitude 70.78
+>>> time_zone 60
+>>> site_elevation 476.0
+>>> weather_data_file_units 1
+>>> 1 1 9.5 756 189
+>>>
+>>> I am using the command:
+>>>
+>>> g*endaymtx -h -5 0.533 -m 1 Santiago.wea > test*
+>>>
+>>> but I am getting the exact same sky vector as without the '-5' option
+>>> (i.e. full sky). Any hints on this? I am trying to implement the 5 phases...
+>>>
+>>> Thanks in advance,
+>>>
+>>> Germ?n
+>>>
+>>>
+>>>
+>>> _______________________________________________
+>>> Radiance-general mailing list
+>>> Radiance-general at radiance-online.org
+>>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>>
+>>>
+>>>
+>>>
+>>> --
+>>> Dipl.-Ing. Dr. David Geisler-Moroder
+>>> Hofwaldweg 14/20
+>>> 6020 Innsbruck
+>>> Austria
+>>> _______________________________________________
+>>> Radiance-general mailing list
+>>> Radiance-general at radiance-online.org
+>>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>>
+>>
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general at radiance-online.org
+>> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>>
+>>
+>
+>
+> --
+> Dipl.-Ing. Dr. David Geisler-Moroder
+> Hofwaldweg 14/20
+> 6020 Innsbruck
+> Austria
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170315/6d39abd4/attachment-0001.html>
+
+From jan.wienold at epfl.ch  Wed Mar 15 11:40:40 2017
+From: jan.wienold at epfl.ch (Jan Wienold)
+Date: Wed, 15 Mar 2017 19:40:40 +0100
+Subject: [Radiance-general] DGP on 172 fish-eye image
+In-Reply-To: <D4EEC247.1D21F%raquelviula.lists@gmail.com>
+References: <D4EDB15E.1D1F0%raquelviula.lists@gmail.com>
+ <7cce3bec-9072-26ec-92ea-11d3ee1399dd@jakubiec.net>
+ <D4EEC247.1D21F%raquelviula.lists@gmail.com>
+Message-ID: <d9128c7d-70b3-223f-e441-d1144d1a0fdd@epfl.ch>
+
+Hi Raquel,
+
+I agree that the outer 8? contribute only a little to the vertical 
+illuminance. The solid angle of that section is around 0.44sr (which is 
+around 7% of the total) and the cosinus for this flat angle of incidence 
+is also very low (in average around 0.07). so the overall impact of the 
+outer 8 degree is less than 0.5%, assuming the luminances in that area 
+are comparable to the average of the image .
+
+Regarding the "filling" option in evalglare: this was implemented, 
+because there was a group using a fish-eye lens, where the projected 
+circle was larger in y-direction than the CCD-array. This function 
+"fills up" the missing parts with the last known value vertically. You 
+cannot use it in my opinion to fill up missing "ring" areas (to fill up 
+between 172? to 180?). Actually I could implement such a feature, but 
+due to the low impact I don't think it is necessary and so far no other 
+users were missing such a feature.
+
+Are you really sure you have a equidistant-projecting lens with 172??  
+The equidistant types are  much less frequent on the market - most 
+lenses cover 180? or more.
+If you have a equi-solidangle fish-eye lens, you should correct the 
+projection as well.
+
+What you should definitely check is how close you get between measured 
+illuminance with the sensor and the calculated value from evalglare. If 
+you have a deviation there, you have a problem in the calibration 
+(because the influence of the outer 8% is really negligible, so you 
+should nearly match the value ).
+
+BTW: Are you coming to the academic forum of Velux May2nd? As far as I 
+know, there are at least three other PhD students there dealing with 
+HDR-cameras, daylight and glare and as far as I heard there are still 
+free spots.  I will be there as well.
+
+best
+Jan
+
+
+
+On 03/15/2017 10:31 AM, Raquel Viula wrote:
+> Hi Alstan,
+> That?s great to know, thank you. Yes, I have vertical eye illuminance 
+> measurements. I think it?s probably a good idea to estimate what the 
+> error might be via simulation.
+>
+> Best Regards
+>
+> Raquel
+>
+>
+> *Raquel Viula*
+>
+> PhD candidate
+>
+>
+> *TUDelft | Faculty of Architecture and the Built Environment |*
+>
+> Architectural Engineering and Technology
+>
+> Julianalaan 134, 2628 BL Delft, The Netherlands | P.O. Box 5043 2600 
+> GA Delft
+>
+>
+> From: "J. Alstan Jakubiec" <alstan at jakubiec.net 
+> <mailto:alstan at jakubiec.net>>
+> Reply-To: Radiance general discussion 
+> <radiance-general at radiance-online.org 
+> <mailto:radiance-general at radiance-online.org>>
+> Date: Wednesday 15 March 2017 06:18
+> To: <radiance-general at radiance-online.org 
+> <mailto:radiance-general at radiance-online.org>>
+> Subject: Re: [Radiance-general] DGP on 172 fish-eye image
+>
+> Hi Raquel,
+>
+> I would say yes. Just make sure that the view in the HDR header is 
+> appropriate or you specify it inline: evalglare -vta -vv 172 -vh 172 
+> image.hdr
+>
+> This may slightly underestimate vertical eye illuminance calculated by 
+> the software, skewing your results a bit; however, 172 is close enough 
+> to 180 in terms of view angle that the error is likely minimal. Still, 
+> if you have vertical eye illuminance measurements, supply them inline 
+> with the -i flag as well.
+>
+> Best,
+>
+> Alstan
+>
+>
+> On 3/14/2017 9:40 PM, Raquel Viula wrote:
+>> Dear all,
+>> I have a question regarding Evalglare. Hopefully this is the right 
+>> mailing list to ask.
+>> Can DGP be calculated for a -vta fish-eye photo capture that has a 
+>> view angle of 172 degrees? The manual says that Evalglare can be run 
+>> for an image cut horizontally given an externally measured vertical 
+>> eye illuminance and Y max and Y min coordinates but does not mention 
+>> the possibility of using an image that is also cut vertically, or 
+>> shall I say, all around.
+>> Thank you for your help.
+>>
+>> Best Regards
+>>
+>> Raquel
+>>
+>>
+>> *Raquel Viula*
+>>
+>> PhD candidate
+>>
+>>
+>> *TUDelft | Faculty of Architecture and the Built Environment |*
+>>
+>> Architectural Engineering and Technology
+>>
+>> Julianalaan 134, 2628 BL Delft, The Netherlands | P.O. Box 5043 2600 
+>> GA Delft
+>>
+>>
+>>
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general at radiance-online.orghttp://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+> _______________________________________________ Radiance-general 
+> mailing list Radiance-general at radiance-online.org 
+> <mailto:Radiance-general at radiance-online.org> 
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+-- 
+Dr.-Ing.  Jan Wienold
+Ecole Polytechnique F?d?rale de Lausanne (EPFL)
+EPFL ENAC IA LIPID
+
+http://people.epfl.ch/jan.wienold
+LE 1 111 (Office)
+Phone    +41 21 69 30849
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170315/05254c4b/attachment.html>
+
+From raquelviula.lists at gmail.com  Fri Mar 17 01:05:17 2017
+From: raquelviula.lists at gmail.com (Raquel Viula)
+Date: Fri, 17 Mar 2017 09:05:17 +0100
+Subject: [Radiance-general] DGP on 172 fish-eye image
+In-Reply-To: <d9128c7d-70b3-223f-e441-d1144d1a0fdd@epfl.ch>
+References: <D4EDB15E.1D1F0%raquelviula.lists@gmail.com>
+ <7cce3bec-9072-26ec-92ea-11d3ee1399dd@jakubiec.net>
+ <D4EEC247.1D21F%raquelviula.lists@gmail.com>
+ <d9128c7d-70b3-223f-e441-d1144d1a0fdd@epfl.ch>
+Message-ID: <D4F14C8F.1D3C3%raquelviula.lists@gmail.com>
+
+Hi Jan,
+
+Thank you for the clarifications. It all makes much sense and it?s good to
+know that the filling option was developed for those particular projection
+conditions. I totally understand that if I?m the only user with this problem
+it does probably not worth your time to add that to Evalglare.
+But that also means that there is no reason why I could not use the DGP
+formula to make the calculation of a fish-eye image with these
+characteristics elsewhere, correct?
+
+I wanted to check with TechnoTeam, again, before getting back to you about
+the specifications of my system. And indeed according to them my projection
+is of an equidistant-type with a view angle of 172.
+
+I noticed that my vertical eye illuminance measurements have a bit of a time
+offset from the pictures, so really not appropriate to check for the
+deviation. I?ll get new values to test next week. But this also involves
+using a newly created TechnoTeam?s Radiance exporter which it is still under
+validation?so there are few things to get right in order to make this test
+possible. I will get back to the list when I have a conclusion.
+
+I?ll see if I can still come to Velux?I had to make a choice because there
+are so many other important events that one can attend this year. But it
+would be really important to discuss this with you and the other PhDs.
+
+Best Regards
+
+Raquel
+
+
+
+Raquel Viula
+
+PhD candidate
+
+
+
+TU Delft | Faculty of Architecture and the Built Environment |
+
+Architectural Engineering and Technology
+
+Julianalaan 134, 2628 BL Delft, The Netherlands | P.O. Box 5043 2600 GA
+Delft
+
+From:  Jan Wienold <jan.wienold at epfl.ch>
+Reply-To:  Radiance general discussion
+<radiance-general at radiance-online.org>
+Date:  Wednesday 15 March 2017 19:40
+To:  Radiance general discussion <radiance-general at radiance-online.org>
+Subject:  Re: [Radiance-general] DGP on 172 fish-eye image
+
+    
+ 
+Hi Raquel,
+ 
+ I agree that the outer 8? contribute only a little to the vertical
+illuminance. The solid angle of that section is around 0.44sr (which is
+around 7% of the total) and the cosinus for this flat angle of incidence is
+also very low (in average around 0.07). so the overall impact of the outer 8
+degree is less than 0.5%, assuming the luminances in that area are
+comparable to the average of the image .
+  
+ Regarding the "filling" option in evalglare: this was implemented, because
+there was a group using a fish-eye lens, where the projected circle was
+larger in y-direction than the CCD-array. This function "fills up" the
+missing parts with the last known value vertically. You cannot use it in my
+opinion to fill up missing "ring" areas (to fill up between 172? to 180?).
+Actually I could implement such a feature, but due to the low impact I don't
+think it is necessary and so far no other users were missing such a feature.
+ 
+ Are you really sure you have a equidistant-projecting lens with 172??  The
+equidistant types are  much less frequent on the market - most lenses cover
+180? or more. 
+ If you have a equi-solidangle fish-eye lens, you should correct the
+projection as well.
+ 
+ What you should definitely check is how close you get between measured
+illuminance with the sensor and the calculated value from evalglare. If you
+have a deviation there, you have a problem in the calibration (because the
+influence of the outer 8% is really negligible, so you should nearly match
+the value ).
+ 
+ BTW: Are you coming to the academic forum of Velux May2nd? As far as I
+know, there are at least three other PhD students there dealing with
+HDR-cameras, daylight and glare and as far as I heard there are still free
+spots.  I will be there as well.
+ 
+ best
+ Jan
+ 
+ 
+ 
+ On 03/15/2017 10:31 AM, Raquel Viula wrote:
+ 
+ 
+>   
+>  
+> Hi Alstan,
+>  
+> That?s great to know, thank you. Yes, I have vertical eye illuminance
+> measurements. I think it?s probably a good idea to estimate what the error
+> might be via simulation.
+>  
+> 
+>  
+>  
+>  
+> 
+> Best Regards
+>  
+> 
+> Raquel
+>  
+> 
+> 
+>  
+>  
+> 
+> Raquel Viula
+>  
+> 
+> PhD candidate
+>  
+> 
+> 
+>  
+>  
+> 
+> TU Delft | Faculty of Architecture and the Built Environment |
+>  
+> 
+> Architectural Engineering and Technology
+>  
+> 
+> Julianalaan 134, 2628 BL Delft, The Netherlands | P.O. Box 5043 2600 GA Delft
+>  
+>  
+>  
+>  
+> 
+>  
+>   
+> From:  "J. Alstan Jakubiec" <alstan at jakubiec.net>
+>  Reply-To:  Radiance general discussion <radiance-general at radiance-online.org>
+>  Date:  Wednesday 15 March 2017 06:18
+>  To:  <radiance-general at radiance-online.org>
+>  Subject:  Re: [Radiance-general] DGP on 172 fish-eye image
+>  
+>  
+> 
+>  
+>  
+>  
+>  
+> 
+> Hi Raquel, 
+>  
+>  
+> 
+> I would say yes. Just make sure that the view in the HDR header is appropriate
+> or you specify it inline: evalglare -vta -vv 172 -vh 172 image.hdr
+>  
+> 
+> This may slightly underestimate vertical eye illuminance calculated by the
+> software, skewing your results a bit; however, 172 is close enough to 180 in
+> terms of view angle that the error is likely minimal. Still, if you have
+> vertical eye illuminance measurements, supply them inline with the -i flag as
+> well.
+>  
+>  
+> 
+> Best,
+>  
+> 
+> Alstan
+>  
+>  
+>  
+> On 3/14/2017 9:40 PM, Raquel Viula wrote:
+>  
+>  
+>>  
+>>  
+>> Dear all,
+>>  
+>> I have a question regarding Evalglare. Hopefully this is the right mailing
+>> list to ask. 
+>>  
+>> Can DGP be calculated for a -vta fish-eye photo capture that has a view angle
+>> of 172 degrees? The manual says that Evalglare can be run for an image cut
+>> horizontally given an externally measured vertical eye illuminance and Y max
+>> and Y min coordinates but does not mention the possibility of using an image
+>> that is also cut vertically, or shall I say, all around.
+>>  
+>> Thank you for your help.
+>>  
+>>  
+>> 
+>>  
+>>  
+>>  
+>> 
+>> Best Regards
+>>  
+>> 
+>> Raquel
+>>  
+>> 
+>> 
+>>  
+>>  
+>> 
+>> Raquel Viula
+>>  
+>> 
+>> PhD candidate
+>>  
+>> 
+>> 
+>>  
+>>  
+>> 
+>> TU Delft | Faculty of Architecture and the Built Environment |
+>>  
+>> 
+>> Architectural Engineering and Technology
+>>  
+>> 
+>> Julianalaan 134, 2628 BL Delft, The Netherlands | P.O. Box 5043 2600 GA Delft
+>>  
+>>  
+>>  
+>>   
+>>  
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general at radiance-online.orghttp://www.radiance-online.org/mailman/li
+>> stinfo/radiance-general
+>>  
+>  
+>  
+>  
+>  _______________________________________________ Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>   
+>  
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.orghttp://www.radiance-online.org/mailman/lis
+> tinfo/radiance-general
+>  
+ 
+ 
+
+
+ 
+ 
+-- 
+Dr.-Ing.  Jan Wienold
+Ecole Polytechnique F?d?rale de Lausanne (EPFL)
+EPFL ENAC IA LIPID
+
+http://people.epfl.ch/jan.wienold
+LE 1 111 (Office)
+Phone    +41 21 69 30849
+ 
+_______________________________________________ Radiance-general mailing
+list Radiance-general at radiance-online.org
+http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170317/258c9c5d/attachment.html>
+
+From emb15fwo at student.lu.se  Wed Mar 29 04:16:06 2017
+From: emb15fwo at student.lu.se (Florian Wochele)
+Date: Wed, 29 Mar 2017 13:16:06 +0200
+Subject: [Radiance-general] Command to output maximum luminance from
+ falsecolour image
+In-Reply-To: <BE676C3A-958F-4CEB-9560-F27D5B016BA7@lmi.net>
+References: <BE676C3A-958F-4CEB-9560-F27D5B016BA7@lmi.net>
+Message-ID: <4bbada73-afd2-576e-27b1-a260fd012c58@student.lu.se>
+
+Dear Mr Ward,
+
+I am currently trying to get the maximum luminance values from a series 
+of falsecolour images. Since the wxfalsecolour.exe can show me the 
+extremes I assume the information is somehow saved in the file.
+However now I am searching for a command which is giving me the maximum 
+luminance value as a number, so not in the picture itself.
+
+The goal is to have a list of all the maximum values of a series of 
+image-based simulations for all the hours of the year - so a manual 
+solution is not an option for us. Since the point of the highest 
+luminance is also changing by time we can't just use the same 
+coordinates for each picture.
+
+Thank you for your help.
+
+Kind regards,
+Florian Wochele
+
+
+From Robert.Guglielmetti at nrel.gov  Wed Mar 29 08:21:28 2017
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Wed, 29 Mar 2017 15:21:28 +0000
+Subject: [Radiance-general] Command to output maximum luminance from
+ falsecolour image
+In-Reply-To: <4bbada73-afd2-576e-27b1-a260fd012c58@student.lu.se>
+References: <BE676C3A-958F-4CEB-9560-F27D5B016BA7@lmi.net>
+ <4bbada73-afd2-576e-27b1-a260fd012c58@student.lu.se>
+Message-ID: <D5012C85.2A1B3%Robert.Guglielmetti@nrel.gov>
+
+You can use the pextrem command for that, e.g.:
+
+pextrem -o image.hdr
+
+This will print the original (no exposure correction) max and min pixel
+values, and their x,y locations, to the standard output.
+
+
+
+
+On 3/29/17, 5:16 AM, "Florian Wochele" <emb15fwo at student.lu.se> wrote:
+
+>Dear Mr Ward,
+>
+>I am currently trying to get the maximum luminance values from a series
+>of falsecolour images. Since the wxfalsecolour.exe can show me the
+>extremes I assume the information is somehow saved in the file.
+>However now I am searching for a command which is giving me the maximum
+>luminance value as a number, so not in the picture itself.
+>
+>The goal is to have a list of all the maximum values of a series of
+>image-based simulations for all the hours of the year - so a manual
+>solution is not an option for us. Since the point of the highest
+>luminance is also changing by time we can't just use the same
+>coordinates for each picture.
+>
+>Thank you for your help.
+>
+>Kind regards,
+>Florian Wochele
+>
+>_______________________________________________
+>Radiance-general mailing list
+>Radiance-general at radiance-online.org
+>http://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From erika.saretta at supsi.ch  Sat Mar 25 01:43:06 2017
+From: erika.saretta at supsi.ch (Erika Saretta)
+Date: Sat, 25 Mar 2017 09:43:06 +0100
+Subject: [Radiance-general] Trans material - single pane of polycarbonate
+Message-ID: <000a01d2a543$d5f327c0$81d97740$@supsi.ch>
+
+HI!
+
+ 
+
+I am trying to model a panel of polycarbonate (modeled as a surface facing
+the sun). 
+
+My goal is to determine the annual solar radiation behind it.
+
+ 
+
+Since I have the following values:
+
+-          Transmission 71%
+
+-          Haze 66%
+
+I am trying to model the polycarbonate as a "trans" material in Radiance.
+
+ 
+
+Then, I perform the radiation analysis (I use DIVA4RHINO and Daysim model)
+with the following parameters for the trans material:
+
+ 
+
+void trans polycarbonate
+
+0
+
+0
+
+7 0.972 0.902 0.835 0.07 0 0.706 0.344 
+
+ 
+
+But. I obtain very low radiation values (from 30% to 50% of radiation loss).
+
+
+Does this loss seem unreal as a result?
+
+Do you think that "trans" material is the right choice for the
+polycarbonate? 
+
+ 
+
+Any suggestion?
+
+ 
+
+Thank you in advance
+
+ 
+
+Erika
+
+ 
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170325/af95136c/attachment.html>
+
+From gregoryjward at gmail.com  Thu Mar 30 11:15:10 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu, 30 Mar 2017 11:15:10 -0700
+Subject: [Radiance-general] Trans material - single pane of polycarbonate
+In-Reply-To: <000a01d2a543$d5f327c0$81d97740$@supsi.ch>
+References: <000a01d2a543$d5f327c0$81d97740$@supsi.ch>
+Message-ID: <A348E957-415A-427E-ACC0-8D203B637E7C@lmi.net>
+
+Hi Erika,
+
+I believe that the "trans" material is a reasonable start for this panel as far as you have described it.
+
+Your material will come out a little low on transmission, since the transmitted fraction of 0.706 multiplied by the color (0.9 or so) comes out to 64% transmission rather than your target of 71%.  This does not explain why your values are so low, but it may have to do with your sampling parameters.  Diffuse scattering from your trans surface implies that an additional "ambient bounce" is needed to account for this light.  Did you try increasing your -ab parameter?
+
+Best,
+-Greg
+
+> From: "Erika Saretta" <erika.saretta at supsi.ch>
+> Date: March 25, 2017 1:43:06 AM PDT
+> 
+> HI!
+>  
+> I am trying to model a panel of polycarbonate (modeled as a surface facing the sun).
+> My goal is to determine the annual solar radiation behind it.
+>  
+> Since I have the following values:
+> -          Transmission 71%
+> -          Haze 66%
+> I am trying to model the polycarbonate as a ?trans? material in Radiance.
+>  
+> Then, I perform the radiation analysis (I use DIVA4RHINO and Daysim model) with the following parameters for the trans material:
+>  
+> void trans polycarbonate
+> 0
+> 0
+> 7 0.972 0.902 0.835 0.07 0 0.706 0.344
+>  
+> But? I obtain very low radiation values (from 30% to 50% of radiation loss).
+> Does this loss seem unreal as a result?
+> Do you think that ?trans? material is the right choice for the polycarbonate?
+>  
+> Any suggestion?
+>  
+> Thank you in advance
+>  
+> Erika
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170330/9a96d65c/attachment.html>
+
+From Christopher.Rush at arup.com  Thu Mar 30 12:09:00 2017
+From: Christopher.Rush at arup.com (Christopher Rush)
+Date: Thu, 30 Mar 2017 19:09:00 +0000
+Subject: [Radiance-general] Trans material - single pane of polycarbonate
+In-Reply-To: <000a01d2a543$d5f327c0$81d97740$@supsi.ch>
+References: <000a01d2a543$d5f327c0$81d97740$@supsi.ch>
+Message-ID: <88079A360FAC7441AE93ECBF619982364714E5BF@AMXExMb02.global.arup.com>
+
+Erika,
+Have you seen a sample of the material? I see you note a Haze value of 66%, which is somewhat telling but not directly transferrable into a radiance definition. Is the material almost completely translucent with almost no specular transmission, or is it partially clear that you can see objects through it? Your trans parameter #7 (you have 0.344) I think implies that the material is transmitting roughly one-third of its transmission as direct and non-diffused transmission (direct view through the material).
+
+I don't think that comment would solve your transmission loss problem, but would be worth a test rendering to see if the light transmission directionality "looks" the way you'd expect.
+
+-Chris
+
+From: Erika Saretta [mailto:erika.saretta at supsi.ch]
+Sent: Saturday, March 25, 2017 4:43 AM
+To: radiance-general at radiance-online.org
+Subject: [Radiance-general] Trans material - single pane of polycarbonate
+
+HI!
+
+I am trying to model a panel of polycarbonate (modeled as a surface facing the sun).
+My goal is to determine the annual solar radiation behind it.
+
+Since I have the following values:
+
+-          Transmission 71%
+
+-          Haze 66%
+I am trying to model the polycarbonate as a "trans" material in Radiance.
+
+Then, I perform the radiation analysis (I use DIVA4RHINO and Daysim model) with the following parameters for the trans material:
+
+void trans polycarbonate
+0
+0
+7 0.972 0.902 0.835 0.07 0 0.706 0.344
+
+But... I obtain very low radiation values (from 30% to 50% of radiation loss).
+Does this loss seem unreal as a result?
+Do you think that "trans" material is the right choice for the polycarbonate?
+
+Any suggestion?
+
+Thank you in advance
+
+Erika
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170330/7cdd5add/attachment.html>
+
+From dccurcija at lbl.gov  Thu Mar 30 14:04:00 2017
+From: dccurcija at lbl.gov (D. Charlie Curcija)
+Date: Thu, 30 Mar 2017 14:04:00 -0700
+Subject: [Radiance-general] Trans material - single pane of polycarbonate
+In-Reply-To: <88079A360FAC7441AE93ECBF619982364714E5BF@AMXExMb02.global.arup.com>
+References: <000a01d2a543$d5f327c0$81d97740$@supsi.ch>
+ <88079A360FAC7441AE93ECBF619982364714E5BF@AMXExMb02.global.arup.com>
+Message-ID: <CAPCvEOE0oRUStCYMN2SgrfvngMrUXz4yBzq0G-tWnAtE_rMkBw@mail.gmail.com>
+
+Wouldn't simple model (based on simple haze value) for Radiance be a BSDF
+with specular (diagonal) portion being 34% and lambertian portion (uniform
+diffuse in all directions 66%)? For this specific sample         Tdiff =
+0.4686, Tspec = 0.2414. Calculation done using logic below (H=Haze as a
+fraction).
+
+
+        Tdiff = H*Ttot
+        Adding other fundamentals
+        Ttot = Tdiff + Tspec
+        Tspec = Ttot-Tdiff = (1-H)*Ttot
+
+Charlie
+
+
+On Thu, Mar 30, 2017 at 12:09 PM, Christopher Rush <
+Christopher.Rush at arup.com> wrote:
+
+> Erika,
+>
+> Have you seen a sample of the material? I see you note a Haze value of
+> 66%, which is somewhat telling but not directly transferrable into a
+> radiance definition. Is the material almost completely translucent with
+> almost no specular transmission, or is it partially clear that you can see
+> objects through it? Your trans parameter #7 (you have 0.344) I think
+> implies that the material is transmitting roughly one-third of its
+> transmission as direct and non-diffused transmission (direct view through
+> the material).
+>
+>
+>
+> I don?t think that comment would solve your transmission loss problem, but
+> would be worth a test rendering to see if the light transmission
+> directionality ?looks? the way you?d expect.
+>
+>
+>
+> -Chris
+>
+>
+>
+> *From:* Erika Saretta [mailto:erika.saretta at supsi.ch]
+> *Sent:* Saturday, March 25, 2017 4:43 AM
+> *To:* radiance-general at radiance-online.org
+> *Subject:* [Radiance-general] Trans material - single pane of
+> polycarbonate
+>
+>
+>
+> HI!
+>
+>
+>
+> I am trying to model a panel of polycarbonate (modeled as a surface facing
+> the sun).
+>
+> My goal is to determine the annual solar radiation behind it.
+>
+>
+>
+> Since I have the following values:
+>
+> -          Transmission 71%
+>
+> -          Haze 66%
+>
+> I am trying to model the polycarbonate as a ?trans? material in Radiance.
+>
+>
+>
+> Then, I perform the radiation analysis (I use DIVA4RHINO and Daysim model)
+> with the following parameters for the trans material:
+>
+>
+>
+> void trans polycarbonate
+>
+> 0
+>
+> 0
+>
+> 7 0.972 0.902 0.835 0.07 0 0.706 0.344
+>
+>
+>
+> But? I obtain very low radiation values (from 30% to 50% of radiation
+> loss).
+>
+> Does this loss seem unreal as a result?
+>
+> Do you think that ?trans? material is the right choice for the
+> polycarbonate?
+>
+>
+>
+> Any suggestion?
+>
+>
+>
+> Thank you in advance
+>
+>
+>
+> Erika
+>
+>
+>
+> ____________________________________________________________
+> Electronic mail messages entering and leaving Arup  business
+> systems are scanned for acceptability of content and viruses
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> http://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+
+-- 
+
+*--------------------------------------------------------------------------*
+
+*D. Charlie Curcija**, Ph.D. **                    Tel: (510) 495-2602*
+
+*Lawrence Berkeley National Laboratory         Fax: (510) 486-4089*
+
+*Windows & Envelope Materials Group            Cell:(510) 604-8668*
+
+*1 Cyclotron Rd., MS 90-3111                   Email: dccurcija at lbl.gov
+<dccurcija at lbl.gov>*
+
+*Berkeley, CA 94720                            Web: http://windows.lbl.gov/
+<http://btech.lbl.gov/>*
+
+*--------------------------------------------------------------------------*
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170330/71c32fb4/attachment-0001.html>
+
+From Christopher.Rush at arup.com  Fri Mar 31 07:11:47 2017
+From: Christopher.Rush at arup.com (Christopher Rush)
+Date: Fri, 31 Mar 2017 14:11:47 +0000
+Subject: [Radiance-general] Trans material - single pane of polycarbonate
+In-Reply-To: <CAPCvEOE0oRUStCYMN2SgrfvngMrUXz4yBzq0G-tWnAtE_rMkBw@mail.gmail.com>
+References: <000a01d2a543$d5f327c0$81d97740$@supsi.ch>
+ <88079A360FAC7441AE93ECBF619982364714E5BF@AMXExMb02.global.arup.com>
+ <CAPCvEOE0oRUStCYMN2SgrfvngMrUXz4yBzq0G-tWnAtE_rMkBw@mail.gmail.com>
+Message-ID: <88079A360FAC7441AE93ECBF619982364714F07A@AMXExMb02.global.arup.com>
+
+Hi Charlie,
+I think you might be right in theory, but I?ve never been convinced that Haze Factor is particularly accurate based on various haze factor values I?ve seen on product data sheets (but I can?t recall specific examples to substantiate that, so I might be projecting unnecessary skepticism). I would be quite happy to be informed of its reliability by someone with greater familiarity with the ASTM standard.
+
+I?m thinking of it the same way that EN testing for woven shade fabrics gives more accurate results than the ASTM testing. I think a Tv(n-n) value from EN testing would give you a more accurate idea of specular transmission than the Haze Factor from ASTM D-1003. There might be different degrees of rigor dictated by the two different testing standards (required measurement angles, etc.), or the calculation methods prescribed to translate that measured data to a single % value.
+
+I?m not an expert on either standard, but in any case I think checking expected results v. simulated results is a good idea.
+
+-Chris
+
+From: D. Charlie Curcija [mailto:dccurcija at lbl.gov]
+Sent: Thursday, March 30, 2017 5:04 PM
+To: Radiance general discussion
+Subject: Re: [Radiance-general] Trans material - single pane of polycarbonate
+
+Wouldn't simple model (based on simple haze value) for Radiance be a BSDF with specular (diagonal) portion being 34% and lambertian portion (uniform diffuse in all directions 66%)? For this specific sample         Tdiff = 0.4686, Tspec = 0.2414. Calculation done using logic below (H=Haze as a fraction).
+
+
+        Tdiff = H*Ttot
+        Adding other fundamentals
+        Ttot = Tdiff + Tspec
+        Tspec = Ttot-Tdiff = (1-H)*Ttot
+
+Charlie
+
+
+On Thu, Mar 30, 2017 at 12:09 PM, Christopher Rush <Christopher.Rush at arup.com<mailto:Christopher.Rush at arup.com>> wrote:
+Erika,
+Have you seen a sample of the material? I see you note a Haze value of 66%, which is somewhat telling but not directly transferrable into a radiance definition. Is the material almost completely translucent with almost no specular transmission, or is it partially clear that you can see objects through it? Your trans parameter #7 (you have 0.344) I think implies that the material is transmitting roughly one-third of its transmission as direct and non-diffused transmission (direct view through the material).
+
+I don?t think that comment would solve your transmission loss problem, but would be worth a test rendering to see if the light transmission directionality ?looks? the way you?d expect.
+
+-Chris
+
+From: Erika Saretta [mailto:erika.saretta at supsi.ch<mailto:erika.saretta at supsi.ch>]
+Sent: Saturday, March 25, 2017 4:43 AM
+To: radiance-general at radiance-online.org<mailto:radiance-general at radiance-online.org>
+Subject: [Radiance-general] Trans material - single pane of polycarbonate
+
+HI!
+
+I am trying to model a panel of polycarbonate (modeled as a surface facing the sun).
+My goal is to determine the annual solar radiation behind it.
+
+Since I have the following values:
+
+-          Transmission 71%
+
+-          Haze 66%
+I am trying to model the polycarbonate as a ?trans? material in Radiance.
+
+Then, I perform the radiation analysis (I use DIVA4RHINO and Daysim model) with the following parameters for the trans material:
+
+void trans polycarbonate
+0
+0
+7 0.972 0.902 0.835 0.07 0 0.706 0.344
+
+But? I obtain very low radiation values (from 30% to 50% of radiation loss).
+Does this loss seem unreal as a result?
+Do you think that ?trans? material is the right choice for the polycarbonate?
+
+Any suggestion?
+
+Thank you in advance
+
+Erika
+____________________________________________________________
+Electronic mail messages entering and leaving Arup  business
+systems are scanned for acceptability of content and viruses
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170331/d2374ea2/attachment.html>
+
+From rioboo at gmail.com  Fri Mar 31 15:32:55 2017
+From: rioboo at gmail.com (Victor LRG)
+Date: Fri, 31 Mar 2017 23:32:55 +0100
+Subject: [Radiance-general] Irradiance on tilted surfaces discarding
+ downwards rays
+Message-ID: <CADr1nSEoGhCS91A9NDAajGLQE=YHEGu2GKdRofGmQ0W7TeHUig@mail.gmail.com>
+
+Dear all,
+
+I was wondering if there is a simple way in Radiance to calculate
+irradiance (rtrace -I) on a tilted surface, but discarding the rays that
+are fired downwards, aiming below the horizon. I guess it can be done
+manipulating the source code, but I cannot think of a simple way.
+
+Perhaps it could be done inverting the initial ray, measuring the luminance
+of the surface by using a lambertian white material with an altitude
+modifier, and calculating then the illuminance, but it is a bit convoluted
+and the white material may distort too much the real lighting levels in the
+scene.
+
+Any ideas?
+
+Thanks,
+
+Victor Lopez-Rioboo Gil
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170331/686f9f79/attachment.html>
+
+From gregoryjward at gmail.com  Fri Mar 31 16:08:06 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri, 31 Mar 2017 16:08:06 -0700
+Subject: [Radiance-general] Irradiance on tilted surfaces discarding
+ downwards rays
+In-Reply-To: <CADr1nSEoGhCS91A9NDAajGLQE=YHEGu2GKdRofGmQ0W7TeHUig@mail.gmail.com>
+References: <CADr1nSEoGhCS91A9NDAajGLQE=YHEGu2GKdRofGmQ0W7TeHUig@mail.gmail.com>
+Message-ID: <51902E25-126F-402B-BC80-B0444C389FC1@lmi.net>
+
+Could you place very small, horizontal black ring surfaces (void plastic black 0 0 5 0 0 0 0 0) at each measurement position?  These would then block downward rays without giving any contribution.  The surfaces themselves can be so small as to not affect the rest of the scene.
+
+-Greg
+
+> From: Victor LRG <rioboo at gmail.com>
+> Date: March 31, 2017 3:32:55 PM PDT
+> 
+> Dear all,
+> 
+> I was wondering if there is a simple way in Radiance to calculate irradiance (rtrace -I) on a tilted surface, but discarding the rays that are fired downwards, aiming below the horizon. I guess it can be done manipulating the source code, but I cannot think of a simple way.
+> 
+> Perhaps it could be done inverting the initial ray, measuring the luminance of the surface by using a lambertian white material with an altitude modifier, and calculating then the illuminance, but it is a bit convoluted and the white material may distort too much the real lighting levels in the scene.
+> 
+> Any ideas?
+> 
+> Thanks,
+> 
+> Victor Lopez-Rioboo Gil
+> 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170331/6d568823/attachment.html>
+

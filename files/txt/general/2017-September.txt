@@ -1,0 +1,1917 @@
+From stephen at coolshadow.com  Tue Sep  5 18:22:09 2017
+From: stephen at coolshadow.com (Stephen Wasilewski)
+Date: Tue, 5 Sep 2017 18:22:09 -0700
+Subject: [Radiance-general] arguments to function file constant
+Message-ID: <CAK5mS-9RfQvcgnoR03c4mJ+wr2V=-G5Gt8VAYGQ1VOhWyccwxw@mail.gmail.com>
+
+As I understand function files: lines with colons are defined once upon
+loading the func file and lines with equal signs are calculated for every
+intersecting ray.  Is there a way to pass an argument from my material
+(A1,A2 etc.) to a constant?  if I try something like this:
+
+darea : A3^2*PI;
+
+I get this error:
+rvu: internal - arg(n) called without a modifier context
+
+but this:
+darea = A3^2*PI;
+
+runs fine.
+
+Although perhaps my first question should be:  does this make a difference
+in the calculation time?
+
+Thanks,
+
+Stephen Wasilewski
+*LOISOS *+* UBBELOHDE*
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+1917 Clement Avenue  Building 10A
+Alameda, CA  94501 USA
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+510 521 3800 VOICE
+510 521 3820 FAX
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+www.coolshadow.com
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170905/8ab931ce/attachment.html>
+
+From gregoryjward at gmail.com  Tue Sep  5 18:40:21 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue, 5 Sep 2017 18:40:21 -0700
+Subject: [Radiance-general] arguments to function file constant
+In-Reply-To: <CAK5mS-9RfQvcgnoR03c4mJ+wr2V=-G5Gt8VAYGQ1VOhWyccwxw@mail.gmail.com>
+References: <CAK5mS-9RfQvcgnoR03c4mJ+wr2V=-G5Gt8VAYGQ1VOhWyccwxw@mail.gmail.com>
+Message-ID: <5CD1C447-75A0-460F-9827-B2D45846DD23@lmi.net>
+
+Hi Stephen,
+
+Good question.  Short answer, you can't use A* variables in constant expressions as they need to call the underlying arg(i) function to update the parameter values for the particular modifier context.  Since .cal files can be shared between modifiers, there really was no other way to do this.
+
+It also doesn't make much difference in terms of performance, because values still get "cached" at each variable definition.  If you have a complicated expression, just define a variable for it, then multiple uses will share the same evaluation.
+
+Also, minor point, but "A3*A3" may be slightly faster than "A3^2", which calls pow().  There is a constant function "sq(x):x*x" defined for this reason in rayinit.cal.
+
+While I'm on the subject, note that a constant function is not the same as a constant setting.  It only means that the value of the function depends solely on its arguments, not any transient variable settings in the current evaluation context.
+
+Most of this stuff is explained or at least alluded to in Chapter 4 of "Rendering with Radiance" and the supplemental PDF (filefmts.pdf).
+
+Best,
+-Greg
+
+P.S.  Were you one of the requestors that the "-s" option to falsecolor assign the largest value in the legend?  I just checked that into the CVS head.
+
+> From: Stephen Wasilewski <stephen at coolshadow.com>
+> Date: September 5, 2017 6:22:09 PM PDT
+> 
+> As I understand function files: lines with colons are defined once upon loading the func file and lines with equal signs are calculated for every intersecting ray.  Is there a way to pass an argument from my material (A1,A2 etc.) to a constant?  if I try something like this:
+> 
+> darea : A3^2*PI;
+> 
+> I get this error:
+> rvu: internal - arg(n) called without a modifier context
+> 
+> but this:
+> darea = A3^2*PI;
+> 
+> runs fine.
+> 
+> Although perhaps my first question should be:  does this make a difference in the calculation time? 
+> 
+> Thanks,
+> 
+> Stephen Wasilewski
+> LOISOS + UBBELOHDE
+> - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+> 1917 Clement Avenue  Building 10A
+> Alameda, CA  94501 USA
+> - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+> 510 521 3800 VOICE
+> 510 521 3820 FAX
+> - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+> www.coolshadow.com
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170905/675a2c60/attachment.html>
+
+From rocky1 at netcourrier.com  Sun Sep 10 03:20:53 2017
+From: rocky1 at netcourrier.com (rocky1 at netcourrier.com)
+Date: Sun, 10 Sep 2017 12:20:53 +0200 (CEST)
+Subject: [Radiance-general] RVU for version 5.1 unresolved symbol
+Message-ID: <ea-mime-59b51205-573e-487b0d69@www-6.netcourrier.com>
+
+
+Hello to all,
+
+Today I tried to download the new release of Radiance. There is a problem when I run "rvu" (Windows 10 64 bits). It complains about a strange "qstring" missing. Using Dependency Walker I found that the problem was in "qt5core.dll", searching in other forums I see that this problem may appear when compiling a program against a QT version and distributing another. 
+
+Maybe I am the only one to have this problem?
+
+Thanks for replies. 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170910/f5557936/attachment.html>
+
+From rob.guglielmetti at gmail.com  Sun Sep 10 06:24:55 2017
+From: rob.guglielmetti at gmail.com (Rob Guglielmetti)
+Date: Sun, 10 Sep 2017 07:24:55 -0600
+Subject: [Radiance-general] RVU for version 5.1 unresolved symbol
+In-Reply-To: <ea-mime-59b51205-573e-487b0d69@www-6.netcourrier.com>
+References: <ea-mime-59b51205-573e-487b0d69@www-6.netcourrier.com>
+Message-ID: <78A6B645-3905-482F-920B-05CE5F3BDB58@gmail.com>
+
+Hmm, thanks. I used a different version of MSVC to make the 5.1 packages, perhaps I have yet another (goddamn) issue with Qt because of that. I'll take a look as soon as I can, sorry. We really need to implement proper testing. =/
+
+- Rob
+
+> On Sep 10, 2017, at 4:20 AM, rocky1 at netcourrier.com wrote:
+> 
+> 
+> Hello to all,
+> 
+> Today I tried to download the new release of Radiance. There is a problem when I run "rvu" (Windows 10 64 bits). It complains about a strange "qstring" missing. Using Dependency Walker I found that the problem was in "qt5core.dll", searching in other forums I see that this problem may appear when compiling a program against a QT version and distributing another. 
+> 
+> Maybe I am the only one to have this problem?
+> 
+> Thanks for replies.
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From Chris.Coulter at BuroHappold.com  Mon Sep 11 06:02:36 2017
+From: Chris.Coulter at BuroHappold.com (Chris Coulter)
+Date: Mon, 11 Sep 2017 13:02:36 +0000
+Subject: [Radiance-general] metal material - roughness
+Message-ID: <CBDA7B0F3FC5354F986B71977E204BEC4DA7A86C@EX-MBX01.burohappold.com>
+
+Hello Radiance gurus!
+
+I have a quick question about defining roughness in a metal/plastic material. The reference manual describes roughness as ?the rms slope of surface facets?.
+We had a sample tested and the lab has given us this value back, something in the order of magnitude of a few hundred microns. Does this number get input as the roughness factor (after converting microns to meters)?
+
+This number is quite small, but for a metal panel surface it could be correct. Just curious how to take the input and make it a bit more useful.
+Thanks in advance. Sorry to have missed everyone in Portland, hopefully next time!
+
+Chris
+
+Chris Coulter
+Associate
+BuroHappold Engineering | Lighting Design
+T: +1 212 334 2025
+M: +1 646 574 2791
+www.burohappold.com<http://www.burohappold.com/> | @burohappold<http://www.twitter.com/burohappold>
+
+
+This transmission is confidential and intended solely for the person or organization to whom it is correctly addressed. If you are not the intended recipient of this transmission, you should not take any action in reliance on it. Further, this transmission may contain confidential design and other information owned by Buro Happold Engineering (?Buro Happold?). You should not copy, distribute, use, offer for sale or hire such information or in any way infringe the design and intellectual property rights of Buro Happold Engineering. It is intended that communication by email from Buro Happold Engineering or its employees is limited to communications connected to the services provided by Buro Happold Engineering. Buro Happold Engineering accepts no liability for any communications not connected to the services it provides. Computer viruses may be transmitted or downloaded onto your computer system via email communication. It is the recipient?s responsibility to take any action necessary to prevent computer viruses being transmitted in this way. Accordingly, Buro Happold Engineering disclaims all responsibility which arises directly or indirectly from such transmission of computer viruses. Buro Happold Engineering.. Registered in New York State, USA. Registered Office: 100 Broadway 23rd Floor, New York, NY 10005. If you receive this message in error, please notify the sender by return e-mail immediately and delete this message, any attachments and all copies from your system.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170911/1aafba0c/attachment.html>
+
+From gregoryjward at gmail.com  Mon Sep 11 08:20:44 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon, 11 Sep 2017 08:20:44 -0700
+Subject: [Radiance-general] metal material - roughness
+In-Reply-To: <CBDA7B0F3FC5354F986B71977E204BEC4DA7A86C@EX-MBX01.burohappold.com>
+References: <CBDA7B0F3FC5354F986B71977E204BEC4DA7A86C@EX-MBX01.burohappold.com>
+Message-ID: <5CA80916-F2BF-48D0-94E4-AA82B4ADEDC4@lmi.net>
+
+Hi Chris,
+
+The reason roughness is defined as the RMS surface "slope" is because you need to know the surface height deviation over the average correlation distance.  Both values would be measured in distance units, which cancel out to give you RMS roughness.  (This assumes a Gaussian surface profile.)  You may have measured the height deviation, but without an estimate of correlation distance, you can't get to roughness.  It's often best to adjust the roughness until it looks similar to the surface you are modeling, since these parameters are difficult to measure even with a good profilometer.
+
+Cheers,
+-Greg
+
+> From: Chris Coulter <Chris.Coulter at BuroHappold.com>
+> Date: September 11, 2017 6:02:36 AM PDT
+> 
+> Hello Radiance gurus!
+>  
+> I have a quick question about defining roughness in a metal/plastic material. The reference manual describes roughness as ?the rms slope of surface facets?.
+> We had a sample tested and the lab has given us this value back, something in the order of magnitude of a few hundred microns. Does this number get input as the roughness factor (after converting microns to meters)?
+>  
+> This number is quite small, but for a metal panel surface it could be correct. Just curious how to take the input and make it a bit more useful.
+> Thanks in advance. Sorry to have missed everyone in Portland, hopefully next time!
+>  
+> Chris
+>  
+> Chris Coulter
+> Associate
+> BuroHappold Engineering | Lighting Design
+> T: +1 212 334 2025
+> M: +1 646 574 2791 
+> www.burohappold.com | @burohappold
+> 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170911/cb42a64a/attachment-0001.html>
+
+From Chris.Coulter at BuroHappold.com  Tue Sep 12 08:08:54 2017
+From: Chris.Coulter at BuroHappold.com (Chris Coulter)
+Date: Tue, 12 Sep 2017 15:08:54 +0000
+Subject: [Radiance-general] metal material - roughness
+In-Reply-To: <5CA80916-F2BF-48D0-94E4-AA82B4ADEDC4@lmi.net>
+References: <CBDA7B0F3FC5354F986B71977E204BEC4DA7A86C@EX-MBX01.burohappold.com>
+ <5CA80916-F2BF-48D0-94E4-AA82B4ADEDC4@lmi.net>
+Message-ID: <CBDA7B0F3FC5354F986B71977E204BEC4DA7CBA0@EX-MBX01.burohappold.com>
+
+Thanks Greg -
+I assumed it wouldn't be that straight forward but was curious.
+We wanted to have Peter/pab-opto analyze the sample, but the client went a different direction.
+
+Chris
+
+From: Greg Ward [mailto:gregoryjward at gmail.com]
+Sent: Monday, September 11, 2017 11:21 AM
+To: Radiance general discussion <radiance-general at radiance-online.org>
+Subject: Re: [Radiance-general] metal material - roughness
+
+** External E-Mail **
+Hi Chris,
+
+The reason roughness is defined as the RMS surface "slope" is because you need to know the surface height deviation over the average correlation distance.  Both values would be measured in distance units, which cancel out to give you RMS roughness.  (This assumes a Gaussian surface profile.)  You may have measured the height deviation, but without an estimate of correlation distance, you can't get to roughness.  It's often best to adjust the roughness until it looks similar to the surface you are modeling, since these parameters are difficult to measure even with a good profilometer.
+
+Cheers,
+-Greg
+
+
+
+From: Chris Coulter <Chris.Coulter at BuroHappold.com<mailto:Chris.Coulter at BuroHappold.com>>
+
+Date: September 11, 2017 6:02:36 AM PDT
+
+
+Hello Radiance gurus!
+
+I have a quick question about defining roughness in a metal/plastic material. The reference manual describes roughness as ???the rms slope of surface facets???.
+We had a sample tested and the lab has given us this value back, something in the order of magnitude of a few hundred microns. Does this number get input as the roughness factor (after converting microns to meters)?
+
+This number is quite small, but for a metal panel surface it could be correct. Just curious how to take the input and make it a bit more useful.
+Thanks in advance. Sorry to have missed everyone in Portland, hopefully next time!
+
+Chris
+
+Chris Coulter
+Associate
+BuroHappold Engineering | Lighting Design
+T: +1 212 334 2025
+M: +1 646 574 2791
+www.burohappold.com<https://emea01.safelinks.protection.outlook.com/?url=http%3A%2F%2Fwww.burohappold.com%2F&data=02%7C01%7Cchris.coulter%40burohappold.com%7C881c6c39f6084becf25608d4f928fbc3%7C50ee6418869e48f5a9823607fcee1e1d%7C0%7C0%7C636407401805716983&sdata=AZu%2FmnryQKNPnd7ZTBrkdj5xWxno%2BifA1e6o7AdQ6nU%3D&reserved=0> | @burohappold<https://emea01.safelinks.protection.outlook.com/?url=http%3A%2F%2Fwww.twitter.com%2Fburohappold&data=02%7C01%7Cchris.coulter%40burohappold.com%7C881c6c39f6084becf25608d4f928fbc3%7C50ee6418869e48f5a9823607fcee1e1d%7C0%7C0%7C636407401805716983&sdata=JOaPqThdWK7nYSTPoF3i%2B7XrMDODLvbZVUwSDUL%2BasU%3D&reserved=0>
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170912/b100c36d/attachment.html>
+
+From rocky1 at netcourrier.com  Wed Sep 13 11:20:38 2017
+From: rocky1 at netcourrier.com (rocky1 at netcourrier.com)
+Date: Wed, 13 Sep 2017 20:20:38 +0200 (CEST)
+Subject: [Radiance-general] RVU for version 5.1 unresolved symbol
+In-Reply-To: <78A6B645-3905-482F-920B-05CE5F3BDB58@gmail.com>
+Message-ID: <ea-mime-59b976f6-777b-5b2f52b1@www-2.netcourrier.com>
+
+Thanks for the reply. Other tools work as expected, I will wait for the new release and in the meantime, use the previous RVU. 
+
+Rocco
+
+
+De : Rob Guglielmetti <rob.guglielmetti at gmail.com>
+? : Radiance general discussion <radiance-general at radiance-online.org>
+Objet : Re: [Radiance-general] RVU for version 5.1 unresolved symbol
+Date : 10/09/2017 15:24:55 CEST
+
+Hmm, thanks. I used a different version of MSVC to make the 5.1 packages, perhaps I have yet another (goddamn) issue with Qt because of that. I'll take a look as soon as I can, sorry. We really need to implement proper testing. =/
+
+- Rob
+
+> On Sep 10, 2017, at 4:20 AM, rocky1 at netcourrier.com wrote:
+> 
+> 
+> Hello to all,
+> 
+> Today I tried to download the new release of Radiance. There is a problem when I run "rvu" (Windows 10 64 bits). It complains about a strange "qstring" missing. Using Dependency Walker I found that the problem was in "qt5core.dll", searching in other forums I see that this problem may appear when compiling a program against a QT version and distributing another. 
+> 
+> Maybe I am the only one to have this problem?
+> 
+> Thanks for replies.
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general at radiance-online.org
+https://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170913/4c06d4a9/attachment.html>
+
+From J.Mardaljevic at lboro.ac.uk  Mon Sep 18 01:15:19 2017
+From: J.Mardaljevic at lboro.ac.uk (John Mardaljevic)
+Date: Mon, 18 Sep 2017 08:15:19 +0000
+Subject: [Radiance-general] Potential date for the 2018 Workshop
+ (Loughborough, UK)
+Message-ID: <29889D1D-276D-485C-9DE4-D4BBCDA153C9@lboro.ac.uk>
+
+Week commencing 3rd September has been identified as a possible date for the 2018 Radiance International Workshop.  Usual format of 2+1 days.  The venue will be the School of Architecture, Building & Civil Engineering, Loughborough University, Loughborough, UK.
+
+Please post details here if you are aware of any potentially conflicting/rival events (conferences/workshops/meetings etc.) that could impact on numbers for the Workshop.  Also, if there are any potential synergies with UK/European events in the week before/after.
+
+Cheers
+John
+
+John Mardaljevic PhD FSLL FIBPSA
+Professor of Building Daylight Modelling
+School of Architecture, Building & Civil Engineering
+Loughborough University
+Loughborough
+Leicestershire
+LE11 3TU, UK
+
+Tel: +44 1509 222630 (Direct)
+Tel: +44 1509 228529 (Secretary)
+
+j.mardaljevic at lboro.ac.uk
+
+http://www.lboro.ac.uk/departments/abce/staff/john-mardaljevic
+
+Personal daylighting website:
+http://climate-based-daylighting.com
+
+
+
+From Santiago.Torres at arup.com  Fri Sep 22 07:55:53 2017
+From: Santiago.Torres at arup.com (Santiago Torres)
+Date: Fri, 22 Sep 2017 14:55:53 +0000
+Subject: [Radiance-general] parallel dctimestep
+Message-ID: <ACF98A76D0047542A29FEB2F3EB0DAA111EABEFD@E-AEXMBX01.global.arup.com>
+
+Dear all,
+
+This might be a silly question, but I couldn't find any reference. Is there a way to run dctimestep in parallel?
+
+Or, would it be possible to create a weather tape for each month, create a matrix from each, and run each month separately?
+
+Thanks,
+Santiago
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup business
+systems are scanned for viruses and acceptability of content
+
+
+
+From sarith at psu.edu  Fri Sep 22 08:53:15 2017
+From: sarith at psu.edu (Sarith Subramaniam)
+Date: Fri, 22 Sep 2017 10:53:15 -0500
+Subject: [Radiance-general] parallel dctimestep
+In-Reply-To: <ACF98A76D0047542A29FEB2F3EB0DAA111EABEFD@E-AEXMBX01.global.arup.com>
+References: <ACF98A76D0047542A29FEB2F3EB0DAA111EABEFD@E-AEXMBX01.global.arup.com>
+Message-ID: <5ba47d00-c777-f82c-1762-6d5180a05213@psu.edu>
+
+Hi Santiago,
+
+I pretty much did the exact same thing that you mentioned to run 
+multiple instances of dctimestep with Python. The syntax is something like:
+
+/import multiprocessing as mp/
+
+/import os//
+/
+
+/#Run dctimesteps, 16 at at time./
+
+/#runCommand is just a call to os.system
+/
+
+/#commands is a list of dctimestep commands like ["dctimestep dc.mtx 
+sky0001.smx > res0001.smx", ///"dctimestep dc.mtx sky0002.smx > 
+res0002.smx" ...]
+//
+
+/pools = mp.Pool(processes=16)/
+
+/pools.map(runCommand, commands)/
+
+
+For the above, you'd have to do some additional scripting to run rmtxop 
+and compile all the results into a single file. There is also a method 
+that was discussed by Wangda Zuo and Andy Mcneil in this paper: 
+http://www.ibpsa.org/proceedings/BS2011/P_1155.pdf
+
+Sarith
+
+//
+
+
+On 9/22/2017 9:55 AM, Santiago Torres wrote:
+> Dear all,
+>
+> This might be a silly question, but I couldn't find any reference. Is there a way to run dctimestep in parallel?
+>
+> Or, would it be possible to create a weather tape for each month, create a matrix from each, and run each month separately?
+>
+> Thanks,
+> Santiago
+>
+> ____________________________________________________________
+> Electronic mail messages entering and leaving Arup business
+> systems are scanned for viruses and acceptability of content
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170922/a125262c/attachment.html>
+
+From gregoryjward at gmail.com  Fri Sep 22 08:58:27 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri, 22 Sep 2017 08:58:27 -0700
+Subject: [Radiance-general] parallel dctimestep
+In-Reply-To: <ACF98A76D0047542A29FEB2F3EB0DAA111EABEFD@E-AEXMBX01.global.arup.com>
+References: <ACF98A76D0047542A29FEB2F3EB0DAA111EABEFD@E-AEXMBX01.global.arup.com>
+Message-ID: <7EA1F77C-004D-4914-B183-C9AC11CCDECC@lmi.net>
+
+Hi Santiago,
+
+A research assistant at LBNL spent some time implementing a GPU version of dctimestep, and found that the process was i/o-bound, meaning that the matrix multiplications, etc. took much less time to do that just loading the input and writing out the result.  His process was still a bit faster than the original dctimestep, but since then, I implemented some optimizations to avoid multiplying zero rows and vectors (mostly nighttime points from gendaymtx), which meant the GPU implementation was really no faster.
+
+If you have an SSD or RAMdisk for i/o, then you may yet eek some benefit from running the calculation in parallel, but you'd have to interleave the matrices in the end or handle subsequent calcs by month.  Interleaving would probably require transposing each matrix, concatenating, then transposing the result.  It's all doable with rcollate, but that will take a bit of time as well.
+
+Cheers,
+-Greg
+
+> From: Santiago Torres <Santiago.Torres at arup.com>
+> Date: September 22, 2017 7:55:53 AM PDT
+> 
+> Dear all,
+> 
+> This might be a silly question, but I couldn't find any reference. Is there a way to run dctimestep in parallel?
+> 
+> Or, would it be possible to create a weather tape for each month, create a matrix from each, and run each month separately?
+> 
+> Thanks,
+> Santiago
+
+
+From Santiago.Torres at arup.com  Fri Sep 22 09:13:50 2017
+From: Santiago.Torres at arup.com (Santiago Torres)
+Date: Fri, 22 Sep 2017 16:13:50 +0000
+Subject: [Radiance-general] parallel dctimestep
+In-Reply-To: <5ba47d00-c777-f82c-1762-6d5180a05213@psu.edu>
+References: <ACF98A76D0047542A29FEB2F3EB0DAA111EABEFD@E-AEXMBX01.global.arup.com>
+ <5ba47d00-c777-f82c-1762-6d5180a05213@psu.edu>
+Message-ID: <ACF98A76D0047542A29FEB2F3EB0DAA111EABFC2@E-AEXMBX01.global.arup.com>
+
+Dear Sarith, Greg,
+
+Thank you for your replies. In this case I am running the annual calculation of an image, and each time-step (daytime) is taking 3-4 minutes to run, so the total calculation takes more than 9 days. And I would like to increase the resolution to reduce noise?
+
+So I thought if I run 10 dctimestep processes in parallel, it should take less than a day. I hope this makes sense. I will try it out and let you know if I find problems.
+
+Thank you,
+Santiago
+
+
+From: Sarith Subramaniam [mailto:sarith at psu.edu]
+Sent: 22 September 2017 16:53
+To: radiance-general at radiance-online.org
+Subject: Re: [Radiance-general] parallel dctimestep
+
+Hi Santiago,
+
+I pretty much did the exact same thing that you mentioned to run multiple instances of dctimestep with Python. The syntax is something like:
+
+import multiprocessing as mp
+
+import os
+
+#Run dctimesteps, 16 at at time.
+
+#runCommand is just a call to os.system
+
+#commands is a list of dctimestep commands like ["dctimestep dc.mtx sky0001.smx > res0001.smx",  "dctimestep dc.mtx sky0002.smx > res0002.smx" ...]
+
+pools = mp.Pool(processes=16)
+
+pools.map(runCommand, commands)
+
+For the above, you'd have to do some additional scripting to run rmtxop and compile all the results into a single file. There is also a method that was discussed by Wangda Zuo and Andy Mcneil in this paper: http://www.ibpsa.org/proceedings/BS2011/P_1155.pdf<http://secure-web.cisco.com/1Dg4sbIwWzfdNHSDFjoErkam7XpFZkZl_YajPwbdNSfN3qC1GSwtzOsoHjzUTCbiw63iGUUuE2gD4bllTAnDKmlmn_oe9aU9yRt8wzVUSrmsrE1PKj6ErqSMsFikzAe_P4HEM_ZQk3m52HImTpdUxnGXUzrzYTkz-kgXQZX-U9wtAWex8uSdvjmJXLQZIBdOdjRn7Um1GekbwQI--4karqReEQedYXrhJsex6RkYtNIiYFMCYiwet0zel4nY98Gol/http%3A%2F%2Fwww.ibpsa.org%2Fproceedings%2FBS2011%2FP_1155.pdf>
+
+Sarith
+
+
+
+On 9/22/2017 9:55 AM, Santiago Torres wrote:
+
+Dear all,
+
+
+
+This might be a silly question, but I couldn't find any reference. Is there a way to run dctimestep in parallel?
+
+
+
+Or, would it be possible to create a weather tape for each month, create a matrix from each, and run each month separately?
+
+
+
+Thanks,
+
+Santiago
+
+
+
+____________________________________________________________
+
+Electronic mail messages entering and leaving Arup business
+
+systems are scanned for viruses and acceptability of content
+
+
+
+
+
+_______________________________________________
+
+Radiance-general mailing list
+
+Radiance-general at radiance-online.org<mailto:Radiance-general at radiance-online.org>
+
+https://www.radiance-online.org/mailman/listinfo/radiance-general<https://secure-web.cisco.com/1dNm1tL5ZkC_5oSXGas8FrDHQjSEoA-AXQFIbvI-laeD2_dA8ZZxclAD1SI0QMbRn3l7yrnbDa-7x9KSVqSDSTJ3bk0nLMZT75aOcULZ2TMPQzn3kYPcm_Vpu7o6w5IfTvXvVEOjQE9m0GLvQr7ApX14n8GJGbpG4u9HQmjOqTWn9t7lgXoUehVcv90pQYsw4Lx80fWfdCqcYRrWNqbGCOHyq05iKumfv2LomyE18zxqH84Dccnn9kXeQJ4djRZyB/https%3A%2F%2Fwww.radiance-online.org%2Fmailman%2Flistinfo%2Fradiance-general>
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170922/395da53c/attachment-0001.html>
+
+From gregoryjward at gmail.com  Fri Sep 22 09:38:58 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri, 22 Sep 2017 09:38:58 -0700
+Subject: [Radiance-general] parallel dctimestep
+In-Reply-To: <ACF98A76D0047542A29FEB2F3EB0DAA111EABFC2@E-AEXMBX01.global.arup.com>
+References: <ACF98A76D0047542A29FEB2F3EB0DAA111EABEFD@E-AEXMBX01.global.arup.com>
+ <5ba47d00-c777-f82c-1762-6d5180a05213@psu.edu>
+ <ACF98A76D0047542A29FEB2F3EB0DAA111EABFC2@E-AEXMBX01.global.arup.com>
+Message-ID: <964FC571-B76A-4FEC-8150-CBBA4805EB7D@lmi.net>
+
+Ah, that's a different problem!  
+
+How much memory is on your machine?  If there is less RAM than the combined size of the component images, then you won't see the benefit of disk caching.  You can try decreasing the memory required for caching by compacting your pictures (e.g., running "ra_rgbe -r" on each of them).
+
+If you don't have as much free RAM as you have images and you're running off a hard disk rather than an SSD, that is the worst case for dctimestep and image processing.  Running in parallel may help you a bit, but you still need to think about the i/o requirements.  Having a bunch of processes fighting to access the same disk information might not do that much.
+
+Cheers,
+-Greg
+
+> From: Santiago Torres <Santiago.Torres at arup.com>
+> Date: September 22, 2017 9:13:50 AM PDT
+> 
+> Dear Sarith, Greg,
+>  
+> Thank you for your replies. In this case I am running the annual calculation of an image, and each time-step (daytime) is taking 3-4 minutes to run, so the total calculation takes more than 9 days. And I would like to increase the resolution to reduce noise?
+>  
+> So I thought if I run 10 dctimestep processes in parallel, it should take less than a day. I hope this makes sense. I will try it out and let you know if I find problems.
+>  
+> Thank you,
+> Santiago
+>  
+>  
+> From: Sarith Subramaniam [mailto:sarith at psu.edu] 
+> Sent: 22 September 2017 16:53
+>  
+> Hi Santiago,
+> 
+> I pretty much did the exact same thing that you mentioned to run multiple instances of dctimestep with Python. The syntax is something like:
+> import multiprocessing as mp
+> 
+> import os
+> 
+> #Run dctimesteps, 16 at at time.
+> 
+> #runCommand is just a call to os.system
+> 
+> #commands is a list of dctimestep commands like ["dctimestep dc.mtx sky0001.smx > res0001.smx",  "dctimestep dc.mtx sky0002.smx > res0002.smx" ...]
+> 
+> pools = mp.Pool(processes=16)
+> 
+> pools.map(runCommand, commands)
+> 
+> 
+> For the above, you'd have to do some additional scripting to run rmtxop and compile all the results into a single file. There is also a method that was discussed by Wangda Zuo and Andy Mcneil in this paper: http://www.ibpsa.org/proceedings/BS2011/P_1155.pdf
+> Sarith
+> 
+>   
+> 
+> On 9/22/2017 9:55 AM, Santiago Torres wrote:
+> Dear all,
+>  
+> This might be a silly question, but I couldn't find any reference. Is there a way to run dctimestep in parallel?
+>  
+> Or, would it be possible to create a weather tape for each month, create a matrix from each, and run each month separately?
+>  
+> Thanks,
+> Santiago
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170922/955ab020/attachment.html>
+
+From sarith at psu.edu  Fri Sep 22 09:58:17 2017
+From: sarith at psu.edu (Sarith Subramaniam)
+Date: Fri, 22 Sep 2017 11:58:17 -0500
+Subject: [Radiance-general] parallel dctimestep
+In-Reply-To: <964FC571-B76A-4FEC-8150-CBBA4805EB7D@lmi.net>
+References: <ACF98A76D0047542A29FEB2F3EB0DAA111EABEFD@E-AEXMBX01.global.arup.com>
+ <5ba47d00-c777-f82c-1762-6d5180a05213@psu.edu>
+ <ACF98A76D0047542A29FEB2F3EB0DAA111EABFC2@E-AEXMBX01.global.arup.com>
+ <964FC571-B76A-4FEC-8150-CBBA4805EB7D@lmi.net>
+Message-ID: <77a2a7ba-3470-ca46-dada-a3eba9d8446a@psu.edu>
+
+Hi Santiago and Greg,
+
+
+To add to my original reply, I ran my simulations using the standard 
+version of dctimestep. I use a fairly souped-up Microsoft Azure 
+cloud-based VM which has? 250GB of RAM. If you are parallelizing 
+image-based simulations, you'd want to explicitly specify the 
+month-name, or number, in the string formatting option( something like 
+-o results/Jan%03d.hdr). If not, there is a chance that the results from 
+one instance of dctimestep might get overwritten by the other (I learnt 
+this the hard way).
+
+Sarith
+
+
+On 9/22/2017 11:38 AM, Greg Ward wrote:
+> Ah, that's a different problem!
+>
+> How much memory is on your machine? ?If there is less RAM than the 
+> combined size of the component images, then you won't see the benefit 
+> of disk caching. ?You can try decreasing the memory required for 
+> caching by compacting your pictures (e.g., running "ra_rgbe -r" on 
+> each of them).
+>
+> If you don't have as much free RAM as you have images and you're 
+> running off a hard disk rather than an SSD, that is the worst case for 
+> dctimestep and image processing. ?Running in parallel may help you a 
+> bit, but you still need to think about the i/o requirements. ?Having a 
+> bunch of processes fighting to access the same disk information might 
+> not do that much.
+>
+> Cheers,
+> -Greg
+>
+>> *From: *Santiago Torres <Santiago.Torres at arup.com 
+>> <mailto:Santiago.Torres at arup.com>>
+>>
+>> *Date: *September 22, 2017 9:13:50 AM PDT
+>>
+>> *
+>> *
+>>
+>> Dear Sarith, Greg,
+>>
+>> Thank you for your replies. In this case I am running the annual 
+>> calculation of an image, and each time-step (daytime) is taking 3-4 
+>> minutes to run, so the total calculation takes more than 9 days. And 
+>> I would like to increase the resolution to reduce noise?
+>>
+>> So I thought if I run 10 dctimestep processes in parallel, it should 
+>> take less than a day. I hope this makes sense. I will try it out and 
+>> let you know if I find problems.
+>>
+>> Thank you,
+>>
+>> Santiago
+>>
+>> *From:*Sarith Subramaniam [mailto:sarith at psu.edu]
+>> *Sent:* 22 September 2017 16:53*
+>> *
+>>
+>> Hi Santiago,
+>>
+>> I pretty much did the exact same thing that you mentioned to run 
+>> multiple instances of dctimestep with Python. The syntax is something 
+>> like:
+>>
+>> /import multiprocessing as mp/
+>>
+>> /import os/
+>>
+>> /#Run dctimesteps, 16 at at time./
+>>
+>> /#runCommand is just a call to os.system/
+>>
+>> /#commands is a list of dctimestep commands like ["dctimestep dc.mtx 
+>> sky0001.smx > res0001.smx",? "dctimestep dc.mtx sky0002.smx > 
+>> res0002.smx" ...]/
+>>
+>> /pools = mp.Pool(processes=16)/
+>>
+>> /pools.map(runCommand, commands)/
+>>
+>>
+>> For the above, you'd have to do some additional scripting to run 
+>> rmtxop and compile all the results into a single file. There is also 
+>> a method that was discussed by Wangda Zuo and Andy Mcneil in this 
+>> paper: http://www.ibpsa.org/proceedings/BS2011/P_1155.pdf 
+>> <http://secure-web.cisco.com/1Dg4sbIwWzfdNHSDFjoErkam7XpFZkZl_YajPwbdNSfN3qC1GSwtzOsoHjzUTCbiw63iGUUuE2gD4bllTAnDKmlmn_oe9aU9yRt8wzVUSrmsrE1PKj6ErqSMsFikzAe_P4HEM_ZQk3m52HImTpdUxnGXUzrzYTkz-kgXQZX-U9wtAWex8uSdvjmJXLQZIBdOdjRn7Um1GekbwQI--4karqReEQedYXrhJsex6RkYtNIiYFMCYiwet0zel4nY98Gol/http%3A%2F%2Fwww.ibpsa.org%2Fproceedings%2FBS2011%2FP_1155.pdf> 
+>>
+>>
+>> Sarith
+>>
+>> On 9/22/2017 9:55 AM, Santiago Torres wrote:
+>>
+>>     Dear all,
+>>
+>>     This might be a silly question, but I couldn't find any reference. Is there a way to run dctimestep in parallel?
+>>
+>>     Or, would it be possible to create a weather tape for each month, create a matrix from each, and run each month separately?
+>>
+>>     Thanks,
+>>
+>>     Santiago
+>>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170922/b361b435/attachment-0001.html>
+
+From david.moroder at gmail.com  Tue Sep 26 05:13:20 2017
+From: david.moroder at gmail.com (David Geisler-Moroder)
+Date: Tue, 26 Sep 2017 14:13:20 +0200
+Subject: [Radiance-general] Potential date for the 2018 Workshop
+ (Loughborough, UK)
+In-Reply-To: <29889D1D-276D-485C-9DE4-D4BBCDA153C9@lboro.ac.uk>
+References: <29889D1D-276D-485C-9DE4-D4BBCDA153C9@lboro.ac.uk>
+Message-ID: <CAL-bo5ETXPtKYdgvZVsChLVWWp3bP+oDiZWD2JCSe_3egos=iQ@mail.gmail.com>
+
+Hi John,
+
+after the proposed week the LICHT2018 (http://licht2018.ch/en/) will take
+place in Switzerland from 9-12 September.
+
+Cheers,
+David
+
+
+
+2017-09-18 10:15 GMT+02:00 John Mardaljevic <J.Mardaljevic at lboro.ac.uk>:
+
+> Week commencing 3rd September has been identified as a possible date for
+> the 2018 Radiance International Workshop.  Usual format of 2+1 days.  The
+> venue will be the School of Architecture, Building & Civil Engineering,
+> Loughborough University, Loughborough, UK.
+>
+> Please post details here if you are aware of any potentially
+> conflicting/rival events (conferences/workshops/meetings etc.) that could
+> impact on numbers for the Workshop.  Also, if there are any potential
+> synergies with UK/European events in the week before/after.
+>
+> Cheers
+> John
+>
+> John Mardaljevic PhD FSLL FIBPSA
+> Professor of Building Daylight Modelling
+> School of Architecture, Building & Civil Engineering
+> Loughborough University
+> Loughborough
+> Leicestershire
+> LE11 3TU, UK
+>
+> Tel: +44 1509 222630 (Direct)
+> Tel: +44 1509 228529 (Secretary)
+>
+> j.mardaljevic at lboro.ac.uk
+>
+> http://www.lboro.ac.uk/departments/abce/staff/john-mardaljevic
+>
+> Personal daylighting website:
+> http://climate-based-daylighting.com
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170926/781dab58/attachment.html>
+
+From benjwebb at icloud.com  Tue Sep 26 10:23:16 2017
+From: benjwebb at icloud.com (Benjamin Webb)
+Date: Tue, 26 Sep 2017 13:23:16 -0400
+Subject: [Radiance-general] Rview
+Message-ID: <01A71605-2DEF-436E-A6C8-AD70022C0C8C@icloud.com>
+
+
+I recently was able to get radiance up and running on a windows machine and am going back to the beginning of "Rendering with Radiance" so I know more than just enough to be dangerous. 
+
+Having trouble with the with the first tutorial (a dubious start) in that I can't seem to get the rview command to work so went back to my power Pc and couldn't get it to work there either. 
+
+My guess is that maybe it's not compiled in the versions I have?  
+
+Not a big deal at all, but thought I'd pluck up the courage to ask. 
+
+Best,
+Ben
+
+From germolinal at gmail.com  Tue Sep 26 10:29:23 2017
+From: germolinal at gmail.com (=?UTF-8?Q?Germ=C3=A1n_Molina_Larrain?=)
+Date: Tue, 26 Sep 2017 14:29:23 -0300
+Subject: [Radiance-general] Rview
+In-Reply-To: <01A71605-2DEF-436E-A6C8-AD70022C0C8C@icloud.com>
+References: <01A71605-2DEF-436E-A6C8-AD70022C0C8C@icloud.com>
+Message-ID: <CAF-iH4+rOi9VXYw7Tn83k-WXorfXa8hwoq2o4BZH3y0pD6824A@mail.gmail.com>
+
+Hello Benjamin,
+
+I believe that command is now called RVU... does that work?
+
+2017-09-26 14:23 GMT-03:00 Benjamin Webb <benjwebb at icloud.com>:
+
+>
+> I recently was able to get radiance up and running on a windows machine
+> and am going back to the beginning of "Rendering with Radiance" so I know
+> more than just enough to be dangerous.
+>
+> Having trouble with the with the first tutorial (a dubious start) in that
+> I can't seem to get the rview command to work so went back to my power Pc
+> and couldn't get it to work there either.
+>
+> My guess is that maybe it's not compiled in the versions I have?
+>
+> Not a big deal at all, but thought I'd pluck up the courage to ask.
+>
+> Best,
+> Ben
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170926/81a7aa2e/attachment.html>
+
+From Robert.Guglielmetti at nrel.gov  Tue Sep 26 10:31:12 2017
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Tue, 26 Sep 2017 17:31:12 +0000
+Subject: [Radiance-general] Rview
+In-Reply-To: <01A71605-2DEF-436E-A6C8-AD70022C0C8C@icloud.com>
+References: <01A71605-2DEF-436E-A6C8-AD70022C0C8C@icloud.com>
+Message-ID: <D5EFEA62.2E3A0%Robert.Guglielmetti@nrel.gov>
+
+The program formerly known as rview is now known as rvu. Not sure what
+vintage(s) of Radiance installs you have on your machines, but I?d start
+by substituting rvu for rview. If this is a very new install on the
+Windows system you may be hitting an issue with the latest builds. In that
+case you;d get a Qt error, and I?d recommend using a slightly older
+version of the installer (assuming you?re using the NREL installers in
+this case).  
+
+
+
+On 9/26/17, 11:23 AM, "Benjamin Webb" <benjwebb at icloud.com> wrote:
+
+>
+>I recently was able to get radiance up and running on a windows machine
+>and am going back to the beginning of "Rendering with Radiance" so I know
+>more than just enough to be dangerous.
+>
+>Having trouble with the with the first tutorial (a dubious start) in that
+>I can't seem to get the rview command to work so went back to my power Pc
+>and couldn't get it to work there either.
+>
+>My guess is that maybe it's not compiled in the versions I have?
+>
+>Not a big deal at all, but thought I'd pluck up the courage to ask.
+>
+>Best,
+>Ben
+>_______________________________________________
+>Radiance-general mailing list
+>Radiance-general at radiance-online.org
+>https://na01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fwww.radia
+>nce-online.org%2Fmailman%2Flistinfo%2Fradiance-general&data=02%7C01%7Crobe
+>rt.guglielmetti%40nrel.gov%7C5012d5b3da3545558c0008d50503d08a%7Ca0f29d7e28
+>cd4f5484427885aee7c080%7C0%7C0%7C636420436300193208&sdata=jifHgGV4iolul8E9
+>RKx671YtTE8W0c5FQFSe98fcEFE%3D&reserved=0
+
+
+From J.Mardaljevic at lboro.ac.uk  Thu Sep 28 02:44:27 2017
+From: J.Mardaljevic at lboro.ac.uk (John Mardaljevic)
+Date: Thu, 28 Sep 2017 09:44:27 +0000
+Subject: [Radiance-general] Potential date for the 2018 Workshop
+ (Loughborough, UK)
+Message-ID: <1CEC9058-D2CC-40BC-9C99-EE23545D110A@lboro.ac.uk>
+
+Thanks, David.
+
+Here's another -- a few weeks later:  The 2018 ASHRAE Building Performance Analysis Conference and SimBuild, will be held September 26-28, 2018 at the Hilton Chicago, Chicago, IL.
+
+https://www.ibpsa.us/2018-ashrae-building-performance-analysis-conference-simbuild
+
+No clashes/conflict so far...
+
+Cheers
+John
+
+John Mardaljevic PhD FSLL FIBPSA
+Professor of Building Daylight Modelling
+School of Architecture, Building and Civil Engineering
+Loughborough University
+Loughborough
+Leicestershire
+LE11 3TU, UK
+
+Tel: +44 1509 222630 (direct)
+Tel: +44 1509 228529 (secretary)
+
+j.mardaljevic at lboro.ac.uk
+
+http://www.lboro.ac.uk/departments/civil-building/staff/mardaljevicjohn
+
+Personal daylighting website:
+http://climate-based-daylighting.com
+
+
+
+
+From kalyanam at rhrk.uni-kl.de  Fri Sep 29 02:28:33 2017
+From: kalyanam at rhrk.uni-kl.de (raghuram kalyanam)
+Date: Fri, 29 Sep 2017 11:28:33 +0200
+Subject: [Radiance-general] dctimestep error
+Message-ID: <B0BE0C3F-9E4E-4964-B04B-6E05486DC565@rhrk.uni-kl.de>
+
+Hi All,
+
+Did any one come across below error from the sky matrix file, while executing the dctimestep?
+
+dctimestep -n 8760 Geometry/vmx/photocells.vmx 2011-SA5.XML matrices/south.dmx mannheim.smx > matrices/Satine_Dark_Grey_White.dat
+
+fatal - unexpected EOF reading mannheim.smx
+
+I created smx file with gendaymtx with out any error.
+
+If i use a sky vector then i don?t see any error.
+
+Is it some thing to do with the time steps and header in smx file?
+
+It would be great if some one could help me. Incase if you want to try it out ,here <https://seafile.rlp.net/d/9ccd83f3c24141709aa7/> are the  files.
+
+Best Regards,
+Raghu
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170929/94c57a7b/attachment.html>
+
+From germolinal at gmail.com  Fri Sep 29 06:05:16 2017
+From: germolinal at gmail.com (=?UTF-8?Q?Germ=C3=A1n_Molina_Larrain?=)
+Date: Fri, 29 Sep 2017 10:05:16 -0300
+Subject: [Radiance-general] dctimestep error
+In-Reply-To: <B0BE0C3F-9E4E-4964-B04B-6E05486DC565@rhrk.uni-kl.de>
+References: <B0BE0C3F-9E4E-4964-B04B-6E05486DC565@rhrk.uni-kl.de>
+Message-ID: <CAF-iH4+pqr-BSz-MF-nAQoM94BHgwiU4LAccTgKi6SCbKvQx4w@mail.gmail.com>
+
+Hello Raghu,
+
+It has been a while since the last time I played with the 3-phase method,
+so I forgot what error message appears when. However, you might want to
+check two things:
+
+   - That your Sky Matrix and your Daylight matrix were created with the
+   same number of patches in the sky. Your Daylight Matrix was created using
+   MF-4, so your skymatrix should be created using --> gendaymtx -m 4
+   WEATHER.wea > mannheim.smx
+   - Check that your weather tape has, indeed, 8760 lines.... I am not sure
+   the -n 8760 options is still needed in dctimestep, though.
+
+Hope this helps!
+
+Germ?n
+
+2017-09-29 6:28 GMT-03:00 raghuram kalyanam <kalyanam at rhrk.uni-kl.de>:
+
+> Hi All,
+>
+> Did any one come across below error from the sky matrix file, while
+> executing the dctimestep?
+>
+> dctimestep -n 8760 Geometry/vmx/photocells.vmx 2011-SA5.XML
+> matrices/south.dmx mannheim.smx > matrices/Satine_Dark_Grey_White.dat
+>
+> fatal - unexpected EOF reading mannheim.smx
+>
+> I created smx file with gendaymtx with out any error.
+>
+> If i use a sky vector then i don?t see any error.
+>
+> Is it some thing to do with the time steps and header in smx file?
+>
+> It would be great if some one could help me. Incase if you want to try it
+> out ,here <https://seafile.rlp.net/d/9ccd83f3c24141709aa7/> are the
+>  files.
+>
+> Best Regards,
+> Raghu
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170929/29ce713f/attachment.html>
+
+From kalyanam at rhrk.uni-kl.de  Fri Sep 29 06:18:25 2017
+From: kalyanam at rhrk.uni-kl.de (raghuram kalyanam)
+Date: Fri, 29 Sep 2017 15:18:25 +0200
+Subject: [Radiance-general] dctimestep error
+In-Reply-To: <CAF-iH4+pqr-BSz-MF-nAQoM94BHgwiU4LAccTgKi6SCbKvQx4w@mail.gmail.com>
+References: <B0BE0C3F-9E4E-4964-B04B-6E05486DC565@rhrk.uni-kl.de>
+ <CAF-iH4+pqr-BSz-MF-nAQoM94BHgwiU4LAccTgKi6SCbKvQx4w@mail.gmail.com>
+Message-ID: <D8CED202-5381-4C43-B580-561F32843F64@rhrk.uni-kl.de>
+
+Hi Germ?n,
+
+Thanks for the reply. I wondered about this initially, and tried this with several other climate files, the error was the same. Yes the epw and wea has 8760 lines. Also i generated the sky matrix with -m 4 option and it generated a huge smx file about 200mb.
+
+Best Regards,
+Raghu
+
+> On 29. Sep 2017, at 15:05, Germ?n Molina Larrain <germolinal at gmail.com> wrote:
+> 
+> Hello Raghu, 
+> 
+> It has been a while since the last time I played with the 3-phase method, so I forgot what error message appears when. However, you might want to check two things:
+> That your Sky Matrix and your Daylight matrix were created with the same number of patches in the sky. Your Daylight Matrix was created using MF-4, so your skymatrix should be created using --> gendaymtx -m 4 WEATHER.wea > mannheim.smx
+> Check that your weather tape has, indeed, 8760 lines.... I am not sure the -n 8760 options is still needed in dctimestep, though.
+> Hope this helps!
+> 
+> Germ?n
+> 
+> 
+> 2017-09-29 6:28 GMT-03:00 raghuram kalyanam <kalyanam at rhrk.uni-kl.de <mailto:kalyanam at rhrk.uni-kl.de>>:
+> Hi All,
+> 
+> Did any one come across below error from the sky matrix file, while executing the dctimestep?
+> 
+> dctimestep -n 8760 Geometry/vmx/photocells.vmx 2011-SA5.XML matrices/south.dmx mannheim.smx > matrices/Satine_Dark_Grey_White.dat
+> 
+> fatal - unexpected EOF reading mannheim.smx
+> 
+> I created smx file with gendaymtx with out any error.
+> 
+> If i use a sky vector then i don?t see any error.
+> 
+> Is it some thing to do with the time steps and header in smx file?
+> 
+> It would be great if some one could help me. Incase if you want to try it out ,here <https://seafile.rlp.net/d/9ccd83f3c24141709aa7/> are the  files.
+> 
+> Best Regards,
+> Raghu
+> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org <mailto:Radiance-general at radiance-online.org>
+> https://www.radiance-online.org/mailman/listinfo/radiance-general <https://www.radiance-online.org/mailman/listinfo/radiance-general>
+> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170929/bd9a9bf6/attachment-0001.html>
+
+From germolinal at gmail.com  Fri Sep 29 06:26:02 2017
+From: germolinal at gmail.com (=?UTF-8?Q?Germ=C3=A1n_Molina_Larrain?=)
+Date: Fri, 29 Sep 2017 10:26:02 -0300
+Subject: [Radiance-general] dctimestep error
+In-Reply-To: <D8CED202-5381-4C43-B580-561F32843F64@rhrk.uni-kl.de>
+References: <B0BE0C3F-9E4E-4964-B04B-6E05486DC565@rhrk.uni-kl.de>
+ <CAF-iH4+pqr-BSz-MF-nAQoM94BHgwiU4LAccTgKi6SCbKvQx4w@mail.gmail.com>
+ <D8CED202-5381-4C43-B580-561F32843F64@rhrk.uni-kl.de>
+Message-ID: <CAF-iH4L7HYDEF0iTQPyx7GB=2v2UDxaCGKuiwLiPwU23Dz_ZZg@mail.gmail.com>
+
+Yes.... smx files are huge. You could think on, instead of storing them,
+just piping it to dctimestep, so you save storage.
+
+gendaymtx -m 4 WEATHER.wea | dctimestep V T D > results
+
+Maybe you can try deleting the -n option in dctimestep...?
+
+You can allways use RMTXOP program as well.
+
+Kind regards
+
+Germ?n
+
+2017-09-29 10:18 GMT-03:00 raghuram kalyanam <kalyanam at rhrk.uni-kl.de>:
+
+> Hi Germ?n,
+>
+> Thanks for the reply. I wondered about this initially, and tried this with
+> several other climate files, the error was the same. Yes the epw and wea
+> has 8760 lines. Also i generated the sky matrix with -m 4 option and it
+> generated a huge smx file about 200mb.
+>
+> Best Regards,
+> Raghu
+>
+> On 29. Sep 2017, at 15:05, Germ?n Molina Larrain <germolinal at gmail.com>
+> wrote:
+>
+> Hello Raghu,
+>
+> It has been a while since the last time I played with the 3-phase method,
+> so I forgot what error message appears when. However, you might want to
+> check two things:
+>
+>    - That your Sky Matrix and your Daylight matrix were created with the
+>    same number of patches in the sky. Your Daylight Matrix was created using
+>    MF-4, so your skymatrix should be created using --> gendaymtx -m 4
+>    WEATHER.wea > mannheim.smx
+>    - Check that your weather tape has, indeed, 8760 lines.... I am not
+>    sure the -n 8760 options is still needed in dctimestep, though.
+>
+> Hope this helps!
+>
+> Germ?n
+>
+> 2017-09-29 6:28 GMT-03:00 raghuram kalyanam <kalyanam at rhrk.uni-kl.de>:
+>
+>> Hi All,
+>>
+>> Did any one come across below error from the sky matrix file, while
+>> executing the dctimestep?
+>>
+>> dctimestep -n 8760 Geometry/vmx/photocells.vmx 2011-SA5.XML
+>> matrices/south.dmx mannheim.smx > matrices/Satine_Dark_Grey_White.dat
+>>
+>> fatal - unexpected EOF reading mannheim.smx
+>>
+>> I created smx file with gendaymtx with out any error.
+>>
+>> If i use a sky vector then i don?t see any error.
+>>
+>> Is it some thing to do with the time steps and header in smx file?
+>>
+>> It would be great if some one could help me. Incase if you want to try it
+>> out ,here <https://seafile.rlp.net/d/9ccd83f3c24141709aa7/> are the
+>>  files.
+>>
+>> Best Regards,
+>> Raghu
+>>
+>>
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general at radiance-online.org
+>> https://www.radiance-online.org/mailman/listinfo/radiance-general
+>>
+>>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170929/25569efb/attachment.html>
+
+From kalyanam at rhrk.uni-kl.de  Fri Sep 29 06:47:39 2017
+From: kalyanam at rhrk.uni-kl.de (raghuram kalyanam)
+Date: Fri, 29 Sep 2017 15:47:39 +0200
+Subject: [Radiance-general] dctimestep error
+In-Reply-To: <CAF-iH4L7HYDEF0iTQPyx7GB=2v2UDxaCGKuiwLiPwU23Dz_ZZg@mail.gmail.com>
+References: <B0BE0C3F-9E4E-4964-B04B-6E05486DC565@rhrk.uni-kl.de>
+ <CAF-iH4+pqr-BSz-MF-nAQoM94BHgwiU4LAccTgKi6SCbKvQx4w@mail.gmail.com>
+ <D8CED202-5381-4C43-B580-561F32843F64@rhrk.uni-kl.de>
+ <CAF-iH4L7HYDEF0iTQPyx7GB=2v2UDxaCGKuiwLiPwU23Dz_ZZg@mail.gmail.com>
+Message-ID: <552755A5-AA97-4779-8A0E-EC607CBEDBFD@rhrk.uni-kl.de>
+
+In dctimestep manual it asks to put -n when the sky matrix file doesn?t have the no of  columns in the header .Since  my smx file has 8760 columns in the header , i tried removing -n option  and  it says 'fatal - unexpected column count in header?. 
+
+May be i should give a try with RMTXOP. Thanks for the information Germ?n .
+
+Best Regards,
+Raghu 
+
+> On 29. Sep 2017, at 15:26, Germ?n Molina Larrain <germolinal at gmail.com> wrote:
+> 
+> Yes.... smx files are huge. You could think on, instead of storing them, just piping it to dctimestep, so you save storage. 
+> 
+> gendaymtx -m 4 WEATHER.wea | dctimestep V T D > results
+> 
+> Maybe you can try deleting the -n option in dctimestep...? 
+> 
+> You can allways use RMTXOP program as well.
+> 
+> Kind regards
+> 
+> Germ?n
+> 
+> 2017-09-29 10:18 GMT-03:00 raghuram kalyanam <kalyanam at rhrk.uni-kl.de <mailto:kalyanam at rhrk.uni-kl.de>>:
+> Hi Germ?n,
+> 
+> Thanks for the reply. I wondered about this initially, and tried this with several other climate files, the error was the same. Yes the epw and wea has 8760 lines. Also i generated the sky matrix with -m 4 option and it generated a huge smx file about 200mb.
+> 
+> Best Regards,
+> Raghu
+> 
+>> On 29. Sep 2017, at 15:05, Germ?n Molina Larrain <germolinal at gmail.com <mailto:germolinal at gmail.com>> wrote:
+>> 
+>> Hello Raghu, 
+>> 
+>> It has been a while since the last time I played with the 3-phase method, so I forgot what error message appears when. However, you might want to check two things:
+>> That your Sky Matrix and your Daylight matrix were created with the same number of patches in the sky. Your Daylight Matrix was created using MF-4, so your skymatrix should be created using --> gendaymtx -m 4 WEATHER.wea > mannheim.smx
+>> Check that your weather tape has, indeed, 8760 lines.... I am not sure the -n 8760 options is still needed in dctimestep, though.
+>> Hope this helps!
+>> 
+>> Germ?n
+>> 
+>> 
+>> 2017-09-29 6:28 GMT-03:00 raghuram kalyanam <kalyanam at rhrk.uni-kl.de <mailto:kalyanam at rhrk.uni-kl.de>>:
+>> Hi All,
+>> 
+>> Did any one come across below error from the sky matrix file, while executing the dctimestep?
+>> 
+>> dctimestep -n 8760 Geometry/vmx/photocells.vmx 2011-SA5.XML matrices/south.dmx mannheim.smx > matrices/Satine_Dark_Grey_White.dat
+>> 
+>> fatal - unexpected EOF reading mannheim.smx
+>> 
+>> I created smx file with gendaymtx with out any error.
+>> 
+>> If i use a sky vector then i don?t see any error.
+>> 
+>> Is it some thing to do with the time steps and header in smx file?
+>> 
+>> It would be great if some one could help me. Incase if you want to try it out ,here <https://seafile.rlp.net/d/9ccd83f3c24141709aa7/> are the  files.
+>> 
+>> Best Regards,
+>> Raghu
+>> 
+>> 
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general at radiance-online.org <mailto:Radiance-general at radiance-online.org>
+>> https://www.radiance-online.org/mailman/listinfo/radiance-general <https://www.radiance-online.org/mailman/listinfo/radiance-general>
+>> 
+>> 
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general at radiance-online.org <mailto:Radiance-general at radiance-online.org>
+>> https://www.radiance-online.org/mailman/listinfo/radiance-general <https://www.radiance-online.org/mailman/listinfo/radiance-general>
+> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org <mailto:Radiance-general at radiance-online.org>
+> https://www.radiance-online.org/mailman/listinfo/radiance-general <https://www.radiance-online.org/mailman/listinfo/radiance-general>
+> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170929/b9e28d27/attachment.html>
+
+From rioboo at gmail.com  Fri Sep 29 08:20:48 2017
+From: rioboo at gmail.com (Victor LRG)
+Date: Fri, 29 Sep 2017 16:20:48 +0100
+Subject: [Radiance-general] Transparencies outside image boundaries with
+ mixpict and colorpict (email copy)
+Message-ID: <CADr1nSHUWhDmxzw989FX+jgrzNDuq94HLos3NuUy6QU0QKc5pQ@mail.gmail.com>
+
+Just for the record, I sent this email to the wrong address so I am copying
+it again just in case it is useful for somebody else. I have also included
+the original attachments.
+
+Hi Greg,
+
+Thanks for that. The tiling option with match is not what I was looking for
+at the moment because I am using a site map, but I will keep it mind for
+other projects. However, your suggestion about mixfunc was very useful,
+although the result was a bit unexpected. The bits that were supposed to be
+transparent were actually picking up the white plastic material receiving
+bound_image as a modifier. If I changed it to red plastic, the background
+of the image became red. It works for me, others should be aware of this
+potential effect. On another note, I was trying to change void (second
+material) for another material in mixfunc but I was getting an error. I
+wonder why. Finally, I figured out how to make it work with rectangular
+images. Thanks!
+
+Victor
+
+[image: Inline images 4]
+
+Hi Victor,
+
+Did you try replacing "pic_u" and "pic_v" with "match_u" and "match_v" in
+your original description?  If all you care about is avoiding the black
+borders, this should give you a reasonable-looking result by tiling the
+image over the terrain.
+
+The other option is to use a mixfunc to clip to the edges of your pattern,
+i.e.:
+
+void colorpict image
+15 clip_r clip_g clip_g image.hdr picture.cal pic_u pic_v
+0
+0
+
+void mixfunc bound_image
+4 image void "if(and(inside(0,pic_u,1),inside(0,pic_v,1)),1,0)" picture.cal
+0
+0
+
+bound_image plastic terrain
+0
+0
+5 1 1 1 0 0
+
+------
+
+This is assuming your picture is square.  If not, then you need to adjust
+the upper bound of pic_u or pic_v, whichever is larger.
+
+Cheers,
+-Greg
+
+P.S.  The double-quotes above aren't strictly necessary, but they allow
+spaces in the formulas for readability if desired.
+
+*From: *Victor LRG <rioboo at gmail.com>
+
+*Date: *September 28, 2017 2:20:29 AM PDT
+
+
+Dear all,
+
+I am trying to map an image to a terrain, but as the terrain is larger than
+the image I am getting black borders beyond the limits of the image. I
+thought about using mixpict to create a transparency but it is not really
+working outside the image boundaries. I wonder if there is any other option
+apart from cutting the terrain so it is smaller than the image. I have
+provided details below.
+
+Thanks,
+
+Victor Lopez-Rioboo Gil
+
+#Standard mapping (standard_mapping.png)
+void colorpict image
+15 clip_r clip_g clip_g image.hdr picture.cal pic_u pic_v
+0
+0
+image plastic terrain
+0
+0
+5 1 1 1 0 0
+
+#Transparency test (transparency_test.png)
+void colorpict image
+15 clip_r clip_g clip_g image.hdr picture.cal pic_u pic_v
+0
+0
+void mixpict mixImage
+15 image void noblack image.hdr transparency.cal Px Py
+0
+0
+mixImage plastic terrain
+0
+0
+5 1 1 1 0 0
+
+In transparency.cal I just have one line:
+noblack(r,g,b) = if(max(r,max(g,b))-FTINY, 1, 0);
+
+With this method I just manage to get two white bands (almost) outside the
+image. It looks like the system is somehow mapping only within the limits
+of the image in the two main directions.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170929/62daa33b/attachment-0001.html>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: final_mapping.png
+Type: image/png
+Size: 102750 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170929/62daa33b/attachment-0004.png>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: standard_mapping.png
+Type: image/png
+Size: 38328 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170929/62daa33b/attachment-0005.png>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: transparency_test.png
+Type: image/png
+Size: 38917 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170929/62daa33b/attachment-0006.png>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: transparency_test_rotated_10_degrees.png
+Type: image/png
+Size: 18977 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170929/62daa33b/attachment-0007.png>
+
+From thanyalak_s at sutd.edu.sg  Sun Sep 24 23:09:52 2017
+From: thanyalak_s at sutd.edu.sg (Thanyalak Srisamranrungruang)
+Date: Mon, 25 Sep 2017 06:09:52 +0000
+Subject: [Radiance-general] Rendering each matrix with 3 and 5 phase
+Message-ID: <SG2PR0302MB2592199E777E9ADFC28E409FCD7A0@SG2PR0302MB2592.apcprd03.prod.outlook.com>
+
+Dear all,
+I have been working on three and five phase methods for a couple months. I followed the two tutorials and all published presentation. I got stuck on rendering each matrix. I am trying to figure out by myself but I have not yet solved it. Here is the codes I used;
+
+I downloaded the model from DIVA tutorial and export geometry and material to run with Radiance.
+1. Rendering view matrix by using command vways pipe to rcontrib
+oconv testroom.mat material.rad Reference_sky.rad Reference.rad ground.rad window.rad viewtxsursf.rad daymtxsurf.rad > Referencerender.oct
+
+vwrays -vf Reference.vf -ff -x 500 -y 500| rcontrib -x 500 -y 359 -ld- -ffc -fo -o .\viewpics\Reference_%03d.hdr -f klems_full.cal -b kbinS -bn Nkbins -m viewsurf -ab 2 -ad 65536 -lw 1.52e-5 Referencerender.oct
+Warning>>>
+rcontrib: system - cannot open '.\viewpics\Reference_C:\Users\Thanyalak\Desktop\Test_5P\Reference-lessgrid\Rendering.bat3d.hdr' for writing: Invalid argument
+
+Then I divided command into two lines
+
+vwrays -vf Reference.vf -ff -x 500 -y 500
+rcontrib -x 500 -y 359 -ld- -ffc -fo -o .\viewpics\Reference_%03d.hdr -f klems_full.cal -b kbinS -bn Nkbins -m viewsurf -ab 2 -ad 65536 -lw 1.52e-5 Referencerender.oct
+There are no any outputs come out and rcontrib was continuing run about 3-4 days then I closed it.
+
+2. Rendering view matrix by using command rways pipe to rfluxmtx
+oconv material.rad Reference.rad window.rad Reference_skyrfluxmtx.rad  > Referencerender_rflux.oct
+vwrays -vf Reference1.vf -ff -x 500 -y 500 | rfluxmtx -v -ffc -ab 1 -ad 65536 -lw 2e-5 - windowfluxmtx.rad -i Referencerender_rflux.oct
+
+145 pictures were created but they can't open with wxfalsecolor.
+The warnings are shown >>>
+Error loading image
+line 967 readImageData
+Line1000 analyzeImage
+
+Could you please give me suggestion to fix these problems?
+
+
+Best regards,
+Thanyalak Srisamranrungruang
+e-mail: thanyalak_s at sutd.edu.sg<mailto:thanyalak_s at sutd.edu.sg>
+Singapore University of Technology and Design
+
+
+
+
+This email may contain confidential and/or proprietary information that is exempt from disclosure under applicable law and is intended for receipt and use solely by the addressee(s) named above. If you are not the intended recipient, you are notified that any use, dissemination, distribution, or copying of this email, or any attachment, is strictly prohibited. Please delete the email immediately and inform the sender. Thank You
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170925/e5aaa553/attachment.html>
+
+From gregoryjward at gmail.com  Fri Sep 29 08:59:43 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri, 29 Sep 2017 08:59:43 -0700
+Subject: [Radiance-general] Transparencies outside image boundaries with
+ mixpict and colorpict (email copy)
+In-Reply-To: <CADr1nSHUWhDmxzw989FX+jgrzNDuq94HLos3NuUy6QU0QKc5pQ@mail.gmail.com>
+References: <CADr1nSHUWhDmxzw989FX+jgrzNDuq94HLos3NuUy6QU0QKc5pQ@mail.gmail.com>
+Message-ID: <F5E2BCE6-24FE-4FEA-BB36-B979F0E4B21D@lmi.net>
+
+Hi Victor,
+
+You can mix between two materials (or a material and "void") or two non-material modifiers.  You can't mix between a non-material and a material.
+
+Glad you got it to work.
+
+-Greg
+
+> From: Victor LRG <rioboo at gmail.com>
+> Date: September 29, 2017 8:20:48 AM PDT
+> 
+> Just for the record, I sent this email to the wrong address so I am copying it again just in case it is useful for somebody else. I have also included the original attachments.
+> 
+> Hi Greg,
+> 
+> Thanks for that. The tiling option with match is not what I was looking for at the moment because I am using a site map, but I will keep it mind for other projects. However, your suggestion about mixfunc was very useful, although the result was a bit unexpected. The bits that were supposed to be transparent were actually picking up the white plastic material receiving bound_image as a modifier. If I changed it to red plastic, the background of the image became red. It works for me, others should be aware of this potential effect. On another note, I was trying to change void (second material) for another material in mixfunc but I was getting an error. I wonder why. Finally, I figured out how to make it work with rectangular images. Thanks!
+> 
+> Victor
+> 
+> ------------------
+> 
+> Hi Victor,
+> 
+> Did you try replacing "pic_u" and "pic_v" with "match_u" and "match_v" in your original description?  If all you care about is avoiding the black borders, this should give you a reasonable-looking result by tiling the image over the terrain.
+> 
+> The other option is to use a mixfunc to clip to the edges of your pattern, i.e.:
+> 
+> void colorpict image
+> 15 clip_r clip_g clip_g image.hdr picture.cal pic_u pic_v
+> 0
+> 0
+> 
+> void mixfunc bound_image
+> 4 image void "if(and(inside(0,pic_u,1),inside(0,pic_v,1)),1,0)" picture.cal
+> 0
+> 0
+> 
+> bound_image plastic terrain
+> 0
+> 0
+> 5 1 1 1 0 0
+> 
+> ------
+> 
+> This is assuming your picture is square.  If not, then you need to adjust the upper bound of pic_u or pic_v, whichever is larger.
+> 
+> Cheers,
+> -Greg
+> 
+> P.S.  The double-quotes above aren't strictly necessary, but they allow spaces in the formulas for readability if desired.
+> 
+>> From: Victor LRG <rioboo at gmail.com>
+>> Date: September 28, 2017 2:20:29 AM PDT
+>> 
+>> 
+>> Dear all,
+>> 
+>> I am trying to map an image to a terrain, but as the terrain is larger than the image I am getting black borders beyond the limits of the image. I thought about using mixpict to create a transparency but it is not really working outside the image boundaries. I wonder if there is any other option apart from cutting the terrain so it is smaller than the image. I have provided details below.
+>> 
+>> Thanks,
+>> 
+>> Victor Lopez-Rioboo Gil
+>> 
+>> #Standard mapping (standard_mapping.png)
+>> void colorpict image
+>> 15 clip_r clip_g clip_g image.hdr picture.cal pic_u pic_v
+>> 0
+>> 0
+>> image plastic terrain
+>> 0
+>> 0
+>> 5 1 1 1 0 0
+>> 
+>> #Transparency test (transparency_test.png)
+>> void colorpict image
+>> 15 clip_r clip_g clip_g image.hdr picture.cal pic_u pic_v
+>> 0
+>> 0
+>> void mixpict mixImage
+>> 15 image void noblack image.hdr transparency.cal Px Py
+>> 0
+>> 0
+>> mixImage plastic terrain
+>> 0
+>> 0
+>> 5 1 1 1 0 0
+>> 
+>> In transparency.cal I just have one line:
+>> noblack(r,g,b) = if(max(r,max(g,b))-FTINY, 1, 0);
+>> 
+>> With this method I just manage to get two white bands (almost) outside the image. It looks like the system is somehow mapping only within the limits of the image in the two main directions.
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170929/d70a835e/attachment-0001.html>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: standard_mapping.png
+Type: image/png
+Size: 38328 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170929/d70a835e/attachment-0003.png>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: transparency_test.png
+Type: image/png
+Size: 38917 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170929/d70a835e/attachment-0004.png>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: transparency_test_rotated_10_degrees.png
+Type: image/png
+Size: 18977 bytes
+Desc: not available
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170929/d70a835e/attachment-0005.png>
+
+From taoningwang at lbl.gov  Fri Sep 29 11:46:11 2017
+From: taoningwang at lbl.gov (Taoning Wang)
+Date: Fri, 29 Sep 2017 11:46:11 -0700
+Subject: [Radiance-general] Rendering each matrix with 3 and 5 phase
+In-Reply-To: <SG2PR0302MB2592199E777E9ADFC28E409FCD7A0@SG2PR0302MB2592.apcprd03.prod.outlook.com>
+References: <SG2PR0302MB2592199E777E9ADFC28E409FCD7A0@SG2PR0302MB2592.apcprd03.prod.outlook.com>
+Message-ID: <CABdVBp2zB_mgUbY10kt5JxcKkUW0WXd6-+fcqcJ53ePmQ-PvXg@mail.gmail.com>
+
+Hi Thanyalak,
+
+For you second try with rfluxmtx, I think you are missing the output image
+dimensions, try:
+vwrays -vf Reference1.vf -ff -x 500 -y 500 | rfluxmtx -v -x 500 -y 500 -ffc
+-ab 1 -ad 65536 -lw 2e-5 -o {youroutputpath}/%03d.hdr - windowfluxmtx.rad
+-i Referencerender_rflux.oct
+
+thanks,
+Taoning
+
+
+On Sun, Sep 24, 2017 at 11:09 PM, Thanyalak Srisamranrungruang <
+thanyalak_s at sutd.edu.sg> wrote:
+
+> Dear all,
+>
+> I have been working on three and five phase methods for a couple months. I
+> followed the two tutorials and all published presentation. I got stuck on
+> rendering each matrix. I am trying to figure out by myself but I have not
+> yet solved it. Here is the codes I used;
+>
+>
+>
+> I downloaded the model from DIVA tutorial and export geometry and material
+> to run with Radiance.
+>
+> 1. Rendering view matrix by using command vways pipe to rcontrib
+>
+> oconv testroom.mat material.rad Reference_sky.rad Reference.rad ground.rad
+> window.rad viewtxsursf.rad daymtxsurf.rad > Referencerender.oct
+>
+>
+>
+> vwrays -vf Reference.vf -ff -x 500 -y 500| rcontrib -x 500 -y 359 -ld-
+> -ffc -fo -o .\viewpics\Reference_%03d.hdr -f klems_full.cal -b kbinS -bn
+> Nkbins -m viewsurf -ab 2 -ad 65536 -lw 1.52e-5 Referencerender.oct
+>
+> Warning>>>
+>
+> rcontrib: system - cannot open '.\viewpics\Reference_C:\
+> Users\Thanyalak\Desktop\Test_5P\Reference-lessgrid\Rendering.bat3d.hdr'
+> for writing: Invalid argument
+>
+>
+>
+> Then I divided command into two lines
+>
+>
+>
+> vwrays -vf Reference.vf -ff -x 500 -y 500
+>
+> rcontrib -x 500 -y 359 -ld- -ffc -fo -o .\viewpics\Reference_%03d.hdr -f
+> klems_full.cal -b kbinS -bn Nkbins -m viewsurf -ab 2 -ad 65536 -lw 1.52e-5
+> Referencerender.oct
+>
+> There are no any outputs come out and rcontrib was continuing run about
+> 3-4 days then I closed it.
+>
+>
+>
+> 2. Rendering view matrix by using command rways pipe to rfluxmtx
+>
+> oconv material.rad Reference.rad window.rad Reference_skyrfluxmtx.rad  >
+> Referencerender_rflux.oct
+>
+> vwrays -vf Reference1.vf -ff -x 500 -y 500 | rfluxmtx -v -ffc -ab 1 -ad
+> 65536 -lw 2e-5 - windowfluxmtx.rad -i Referencerender_rflux.oct
+>
+>
+>
+> 145 pictures were created but they can?t open with wxfalsecolor.
+>
+> The warnings are shown >>>
+>
+> Error loading image
+>
+> line 967 readImageData
+>
+> Line1000 analyzeImage
+>
+>
+>
+> Could you please give me suggestion to fix these problems?
+>
+>
+>
+>
+>
+> *Best regards,*
+>
+> Thanyalak Srisamranrungruang
+>
+> e-mail: thanyalak_s at sutd.edu.sg
+> *Singapore University of Technology and Design*
+>
+>
+>
+>
+>
+> This email may contain confidential and/or proprietary information that is
+> exempt from disclosure under applicable law and is intended for receipt and
+> use solely by the addressee(s) named above. If you are not the intended
+> recipient, you are notified that any use, dissemination, distribution, or
+> copying of this email, or any attachment, is strictly prohibited. Please
+> delete the email immediately and inform the sender. Thank You
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+
+
+-- 
+Taoning Wang
+Building Technology and Urban Systems
+Lawrence Berkeley National Laboratory
+774-243-4891 <510-495-8892>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170929/c4b0a505/attachment.html>
+
+From thanyalak_s at sutd.edu.sg  Sat Sep 30 03:28:20 2017
+From: thanyalak_s at sutd.edu.sg (Thanyalak Srisamranrungruang)
+Date: Sat, 30 Sep 2017 10:28:20 +0000
+Subject: [Radiance-general] Rendering each matrix with 3 and 5 phase
+In-Reply-To: <8BC78818-2CA3-4FCA-A945-42BF87C50D02@lmi.net>
+References: <SG2PR0302MB2592199E777E9ADFC28E409FCD7A0@SG2PR0302MB2592.apcprd03.prod.outlook.com>
+ <8BC78818-2CA3-4FCA-A945-42BF87C50D02@lmi.net>
+Message-ID: <HK2PR0302MB2577E09846396559BAC35B6ACD7F0@HK2PR0302MB2577.apcprd03.prod.outlook.com>
+
+Dear all,
+
+First, I would like to thank Taoning very much for your kindly support.
+I have already corrected the code as the suggestion.
+>>>
+oconv material.rad Reference.rad Reference_skyrfluxmtx.rad windowfluxmtxglow.rad > Referencerender_rflux.oct
+vwrays -vf Reference1.vf -ff -x 500 -y 500 | rfluxmtx -v -x 500 -y 500 -ffc -ab 1 -ad 65536 -lw 2e-5
+-o .\images\vmx\window_%03d.hdr - windowfluxmtx.rad -i Referencerender_rflux.oct
+
+There is a new error pop-up. Could you please suggest me for the new issue?
+Error reading pixel values: pvalue read error
+[cid:image001.jpg at 01D33A19.E1497F00]
+
+Here, this is a link for the files that I used.
+https://www.dropbox.com/sh/drq4ibeoyu2yrhk/AABJh_Exxw7HQGvz_yJPVYwqa?dl=0
+
+
+Best regards,
+Thanyalak Srisamranrungruang
+e-mail: thanyalak_s at sutd.edu.sg<mailto:thanyalak_s at sutd.edu.sg>
+Singapore University of Technology and Design
+[cid:image001.jpg at 01D2F029.FB98B4A0]
+
+
+
+
+From: Greg Ward [mailto:gregoryjward at gmail.com]
+Sent: Saturday, September 30, 2017 2:58 AM
+To: Thanyalak Srisamranrungruang <thanyalak_s at sutd.edu.sg>
+Subject: Re: [Radiance-general] Rendering each matrix with 3 and 5 phase
+
+In case you still have not subscribed to the mailing list.  Have you?
+
+-Greg
+
+Begin forwarded message:
+
+
+
+From: Taoning Wang <taoningwang at lbl.gov<mailto:taoningwang at lbl.gov>>
+
+Subject: Re: [Radiance-general] Rendering each matrix with 3 and 5 phase
+
+Date: September 29, 2017 11:46:11 AM PDT
+
+To: Radiance general discussion <radiance-general at radiance-online.org<mailto:radiance-general at radiance-online.org>>
+
+Reply-To: Radiance general discussion <radiance-general at radiance-online.org<mailto:radiance-general at radiance-online.org>>
+
+
+Hi Thanyalak,
+
+For you second try with rfluxmtx, I think you are missing the output image dimensions, try:
+vwrays -vf Reference1.vf -ff -x 500 -y 500 | rfluxmtx -v -x 500 -y 500 -ffc -ab 1 -ad 65536 -lw 2e-5 -o {youroutputpath}/%03d.hdr - windowfluxmtx.rad -i Referencerender_rflux.oct
+
+thanks,
+Taoning
+
+
+On Sun, Sep 24, 2017 at 11:09 PM, Thanyalak Srisamranrungruang <thanyalak_s at sutd.edu.sg<mailto:thanyalak_s at sutd.edu.sg>> wrote:
+Dear all,
+I have been working on three and five phase methods for a couple months. I followed the two tutorials and all published presentation. I got stuck on rendering each matrix. I am trying to figure out by myself but I have not yet solved it. Here is the codes I used;
+
+I downloaded the model from DIVA tutorial and export geometry and material to run with Radiance.
+1. Rendering view matrix by using command vways pipe to rcontrib
+oconv testroom.mat material.rad Reference_sky.rad Reference.rad ground.rad window.rad viewtxsursf.rad daymtxsurf.rad > Referencerender.oct
+
+vwrays -vf Reference.vf -ff -x 500 -y 500| rcontrib -x 500 -y 359 -ld- -ffc -fo -o .\viewpics\Reference_%03d.hdr -f klems_full.cal -b kbinS -bn Nkbins -m viewsurf -ab 2 -ad 65536 -lw 1.52e-5 Referencerender.oct
+Warning>>>
+rcontrib: system - cannot open '.\viewpics\Reference_C:\Users\Thanyalak\Desktop\Test_5P\Reference-lessgrid\Rendering.bat3d.hdr' for writing: Invalid argument
+
+Then I divided command into two lines
+
+vwrays -vf Reference.vf -ff -x 500 -y 500
+rcontrib -x 500 -y 359 -ld- -ffc -fo -o .\viewpics\Reference_%03d.hdr -f klems_full.cal -b kbinS -bn Nkbins -m viewsurf -ab 2 -ad 65536 -lw 1.52e-5 Referencerender.oct
+There are no any outputs come out and rcontrib was continuing run about 3-4 days then I closed it.
+
+2. Rendering view matrix by using command rways pipe to rfluxmtx
+oconv material.rad Reference.rad window.rad Reference_skyrfluxmtx.rad  > Referencerender_rflux.oct
+vwrays -vf Reference1.vf -ff -x 500 -y 500 | rfluxmtx -v -ffc -ab 1 -ad 65536 -lw 2e-5 - windowfluxmtx.rad -i Referencerender_rflux.oct
+
+145 pictures were created but they can't open with wxfalsecolor.
+The warnings are shown >>>
+Error loading image
+line 967 readImageData
+Line1000 analyzeImage
+
+Could you please give me suggestion to fix these problems?
+
+
+Best regards,
+Thanyalak Srisamranrungruang
+e-mail: thanyalak_s at sutd.edu.sg<mailto:thanyalak_s at sutd.edu.sg>
+Singapore University of Technology and Design
+
+
+
+This email may contain confidential and/or proprietary information that is exempt from disclosure under applicable law and is intended for receipt and use solely by the addressee(s) named above. If you are not the intended recipient, you are notified that any use, dissemination, distribution, or copying of this email, or any attachment, is strictly prohibited. Please delete the email immediately and inform the sender. Thank You
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general at radiance-online.org<mailto:Radiance-general at radiance-online.org>
+https://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+
+--
+Taoning Wang
+Building Technology and Urban Systems
+Lawrence Berkeley National Laboratory
+774-243-4891<tel:510-495-8892>
+_______________________________________________
+Radiance-general mailing list
+Radiance-general at radiance-online.org<mailto:Radiance-general at radiance-online.org>
+https://www.radiance-online.org/mailman/listinfo/radiance-general
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170930/f1f13d83/attachment-0001.html>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: image003.jpg
+Type: image/jpeg
+Size: 4787 bytes
+Desc: image003.jpg
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170930/f1f13d83/attachment-0002.jpg>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: image001.jpg
+Type: image/jpeg
+Size: 6299 bytes
+Desc: image001.jpg
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170930/f1f13d83/attachment-0003.jpg>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: Renderview_matrix.rar
+Type: application/octet-stream
+Size: 188547 bytes
+Desc: Renderview_matrix.rar
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170930/f1f13d83/attachment-0001.obj>
+

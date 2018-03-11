@@ -1,0 +1,2369 @@
+From kalyanam at rhrk.uni-kl.de  Sun Jul  2 10:10:33 2017
+From: kalyanam at rhrk.uni-kl.de (Raghuram Kalyanam)
+Date: Sun, 2 Jul 2017 19:10:33 +0200
+Subject: [Radiance-general] 360 degree rendering
+In-Reply-To: <2C7382D6-0B2E-44AB-9EE9-807B302D1596@gmail.com>
+References: <C812F12E-FB22-4BE9-B07B-6CAFD35C4317@rhrk.uni-kl.de>
+ <01F07958-E7EB-4AF9-B834-579854D41BFD@lmi.net>
+ <F68D1B3E-AC03-499E-8833-B8A6D874B1C3@rhrk.uni-kl.de>
+ <CADoMKs0zD4nuH1PJOUx9rSfW_6bZ8MMaYYUZt=Uicu99guem0g@mail.gmail.com>
+ <CDBE4D69-B9DB-4D31-A7BA-BF8C2A7DD69A@rhrk.uni-kl.de>
+ <11A1C1F3-74D2-4FD7-A4A6-3258EEBAE7DF@lmi.net>
+ <FE34835F-D09F-4377-8694-9915C3D7F1A2@rhrk.uni-kl.de>
+ <2C7382D6-0B2E-44AB-9EE9-807B302D1596@gmail.com>
+Message-ID: <A88E385A-437F-46B8-BB57-A3CA67B05B4B@rhrk.uni-kl.de>
+
+Thanks Greg, that was very helpful. It worked. 
+
+Best Regards,
+Raghu
+
+> On Jul 1, 2017, at 3:00 AM, Gregory J. Ward <gregoryjward at gmail.com> wrote:
+> 
+> Hi Raghu,
+> 
+> I had a look at your files.  Thanks for providing a link.
+> 
+> Line 48 of the file Components/Group_1.rad has a duplicate real argument count, which causes this file not be be included:
+> 
+> 	## guessed Material
+> 
+> 	void    glass   glass1_Group_1
+> 	0
+> 	0
+> 	3       3       0.75 0.75 0.75
+> 
+> Deleting the second '3' above fixes the issue.  If this file was generated automatically, you should talk to the people who wrote that software.  It's also apparent that they aren't putting the proper dependencies into the "scene.rif" file.  This should include lines like:
+> 
+> 	objects= Materials/[Color_M06].mat Materials/[Color_M05].mat Materials/glass3.mat Materials/glass1.mat Materials/Default_Material.mat
+> 	objects= Materials/[Color_M00].mat Materials/Lisanne_Boots.mat Materials/[Color_M04].mat Materials/Color_M1.mat
+> 
+> ...and so on.
+> 
+> Also, the "guessed" materials are terrible.  Most of them have 50% specular reflectance, which makes them metallic.  This is probably the main cause of noise in your images.  If you put in more reasonable material values, preferably with specularity less than 0.04 or so, your results will improve substantially.  Reserve specularities above 0.05 for metallic materials.
+> 
+> Cheers,
+> -Greg
+> 
+>> From: Raghuram Kalyanam <kalyanam at rhrk.uni-kl.de>
+>> Date: June 30, 2017 9:39:19 PM GMT+06:30
+>> 
+>> Hi Greg,
+>> 
+>> Thanks for answering, here are the files. I have tried out rvu also to check out, if normal image also the same (grainy). I guess you are right, it could be with the light sources. I am using only direct sun light. you can find it in sky.rad file.
+>> 
+>> The below command 
+>> rvu -vtc -vh 360 -vv 130 -vp 0 0 1.25 -vd 1 1 0 -n 4 -ab 7 -as 1024 scene.oct
+>> results  this image
+>> 
+>> Thanks & Regards,
+>> Raghu
+>> 
+>>> On Jun 30, 2017, at 4:58 PM, Greg Ward <gward at lmi.net> wrote:
+>>> 
+>>> If you send me your input files and exact commands in a private message, I'll have a look. There's nothing in your parameters to explain your grainy results. My only guess at this point is that your light sources might be right triangles rather than rectangles, which screws up source sampling.
+>>> 
+>>> Cheers,
+>>> -Greg
+>>> 
+>>> Sent from my iPad
+>>> 
+>>>> On Jun 30, 2017, at 9:08 PM, Raghuram Kalyanam <kalyanam at rhrk.uni-kl.de> wrote:
+>>>> 
+>>>> Hi Mark,
+>>>> 
+>>>> Thanks for answering, I tried with IPD 0 and its still same. I changed the default to also zero in cal file. Any idea how do i improve the graininess of the picture?
+>>>> 
+>>>> Best Regards,
+>>>> Raghu
+>>>> 
+>>>>> On Jun 30, 2017, at 4:27 PM, Mark Stock <mstock at umich.edu> wrote:
+>>>>> 
+>>>>> Raghu,
+>>>>> 
+>>>>> An easy, though somewhat inefficient, way to get a single-eye view
+>>>>> without digging into the script would be to change the IPD to 0.
+>>>>> 
+>>>>> Mark
+>>>>> 
+>>>>>> On 6/30/17, Raghuram Kalyanam <kalyanam at rhrk.uni-kl.de> wrote:
+>>>>>> Thanks Greg. That was helpful. I generated the VR images. Could I get only
+>>>>>> get the 360 degree projection only for one eye  using that cal file, if so
+>>>>>> which variable should i tweak. Here
+>>>>>> <https://seafile.rlp.net/f/5c3a3a6aeecb42faa3de/?dl=1> is a sample image i
+>>>>>> wanted to produce.
+>>>>>> 
+>>>>>> Also there is lot of noise in the picture and appears grainy. I increased
+>>>>>> -ab but it didn't improve much. i tried other parameters, here is a glimpse
+>>>>>> of the command.
+>>>>>> 
+>>>>>> X=2048; Y=2048; cnt $Y $X | rcalc -f view360stereo.cal -e
+>>>>>> "XD:$X;YD:$Y;X:0;Y:0;Z:1.25;IPD:0.06;EX:0;EZ:0" | rtrace -dp 4096 -ar 256
+>>>>>> -ds .02 -dj .9 -dt .05 -dc .75 -dr 3 -ss 16 -st .01 -ab 5 -aa .03 -ad 1024
+>>>>>> -as 512 -lr 12 -lw 1e-5 -x $X -y $Y -fac scene.oct  > out4.hdr
+>>>>>> <https://seafile.rlp.net/f/7f343d2d476e43b2b546/?dl=1>
+>>>>>> 
+>>>>>> Best Regards,
+>>>>>> Raghu
+>>>>>> 
+>>>>>>> On Jun 26, 2017, at 4:57 PM, Greg Ward <gregoryjward at gmail.com> wrote:
+>>>>>>> 
+>>>>>>> Hi Raghu,
+>>>>>>> 
+>>>>>>> Mark Stock created the attached file "view360stereo.cal" that makes a 360?
+>>>>>>> stereo panorama in the standard format for such viewers.  This was checked
+>>>>>>> into the Radiance HEAD back in January.
+>>>>>>> 
+>>>>>>> Cheers,
+>>>>>>> -Greg
+>>>>>>> 
+>>>>>>> <view360stereo.cal>
+>> 
+
+
+
+From stephen at coolshadow.com  Mon Jul  3 09:44:46 2017
+From: stephen at coolshadow.com (Stephen Wasilewski)
+Date: Mon, 3 Jul 2017 09:44:46 -0700
+Subject: [Radiance-general] irradiance calc that ignores incident angle
+In-Reply-To: <5FDEC987-A965-4310-9354-CBD3E1F2585B@lmi.net>
+References: <CAK5mS-_O2KssN5Pd2ZZ0E7UEh-aKLiV_uKmFngJ6dTuvBMoavw@mail.gmail.com>
+ <565330A8-4618-42C3-95E5-C129A6B15ACF@lmi.net>
+ <CAK5mS--m86ezNrzMO8_HzY+9VtWBi1BW-1WbJy8_xxtDtjHzuQ@mail.gmail.com>
+ <5FDEC987-A965-4310-9354-CBD3E1F2585B@lmi.net>
+Message-ID: <CAK5mS--1xu1RC0zKdf6_nFDEn1X95k9a2bRCi0pfGvirwyhKHg@mail.gmail.com>
+
+Thaks Greg,  I ended up trying something like this (correct syntax for
+anyone who is curious, the -u 10 allows for a standard input read within
+the loop):
+
+while read -u 10 p;
+do
+rsensor -vp $p -h -rd 100000 -vd 0 0 1 -vu 0 1 0 -n 8 -w -ab 0 uniform.dat
+test.oct
+done 10<vpts.txt
+
+but it is very slow (since it is making lots of successive calls to rsensor
+and has to load the octree into memory each time).  Ultimately, I realized
+that for my purposes I could just correct the source with 1/cos and then
+use rtrace normally.
+
+Stephen Wasilewski
+*LOISOS *+* UBBELOHDE*
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+1917 Clement Avenue  Building 10A
+Alameda, CA  94501 USA
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+510 521 3800 VOICE
+510 521 3820 FAX
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+www.coolshadow.com
+
+On Fri, Jun 30, 2017 at 5:29 PM, Greg Ward <gregoryjward at gmail.com> wrote:
+
+> It sounds like you want to be able to specify a list of points and
+> orientations at which to compute this uniform (non-cosine) average.  In
+> other words, replacing the -I option in rtrace with something that computes
+> a uniform hemispherical integral.
+>
+> You could take the first part of your command to generate the points and
+> normals.  Then, call  rsensor in a loop like so:
+>
+> vwrays -fa refs/L2.hdr refs/L2.zbf | rcalc -of -e
+> '$1=$1;$2=$2;$3=$3+2.5;$4=0;$5=0;$6=if($3-1,1,0)' > orig_dir.txt
+>
+> foreach orig_dir ( " `cat orig_dir.txt` " )
+> rsensor -n 8 [rtrace options] [-rd $N1] [-dn $N2] -vp $orig_dir[1-3] -vd
+> $orig_dir[4-6] uniform.dat test.oct >> results.txt
+> end
+>
+> (I apologize that I don't know the bash syntax for the loop.  I never
+> really understood bash.)
+>
+> If you really, really want to use rtrace, you can instead use the above
+> loop with "." in place of the octree to create a really long list of ray
+> samples, which you can give to rtrace and send it's output again to total
+> using an option to average every N values.  The result would be about the
+> same, though rsensor is more accurate/efficient because of the separate
+> source sampling, which you can control with the -dn option.
+>
+> Cheers,
+> -Greg
+>
+> *From: *Stephen Wasilewski <stephen at coolshadow.com>
+>
+> *Date: *July 1, 2017 12:25:51 AM GMT+06:30
+>
+>
+> Greg,
+>
+> the reason I want to call rtrace is because I want to run the uniform
+> distribution for a large number of points/pixels
+> is there a way to feed a points file into either of your example commands
+> to run the sensor for all points (and accumulate result for each point).
+> I'm looking to be able to do something like this:
+>
+> rtrace -n 8 -ffc -w -I -ov -x 3000 -y 1163 -ld- [options] test.oct  <
+> test.pts  > test.hdr
+>
+> or
+>
+> vwrays -fa refs/L2.hdr refs/L2.zbf | rcalc -of -e
+> '$1=$1;$2=$2;$3=$3+2.5;$4=0;$5=0;$6=if($3-1,1,0)' | rtrace -n 8 -ffc -w
+> -I -ov -x 3000 -y 1163 -ld- [options] test.oct > test.hdr
+>
+> and have it run fairly quickly, but with a uniform distribution.
+>
+> thanks,
+>
+> Stephen Wasilewski
+> - - - - - - - - - - - - - - - - - - - - - - - - - - -
+>
+> On Thu, Jun 29, 2017 at 7:20 PM, Greg Ward <gregoryjward at gmail.com> wrote:
+>
+>> Hi Stephen,
+>>
+>> The simplest method is to use rsensor to generate a set of uniformly
+>> distributed rays over the hemisphere, which you can re-use as often as you
+>> like.  The sensor file below specifies a uniform distribution out to 90?,
+>> and even samples a few rays below the horizon  Let's call it "uniform.dat":
+>>
+>> degrees 0 90 180 270
+>> 0 1 1 1 1
+>> 5 1 1 1 1
+>> 85 1 1 1 1
+>> 90 1 1 1 1
+>> 95 0 0 0 0
+>>
+>> You can run rsensor on the above file and either use it to call rtrace,
+>> or since you seem to want to call rtrace yourself, create instead a set of
+>> sample rays:
+>>
+>> rsensor -h -rd 100000 -vp 0 0 0 -vd 0 0 1 -vu 0 1 0 uniform.dat >
+>> uniform_znorm_samp.txt
+>>
+>> You can then give this as input to rtrace with whatever model you like:
+>>
+>> rtrace -h [options] octree < uniform_znorm_samp.txt | total -m
+>>
+>> I've passed the output to total with the -m option, assuming you just
+>> want the average result.  If you're willing to call rsensor in place of
+>> rtrace, you can shorten the calculation time with:
+>>
+>> rsensor -rd 100000 -vp 0 0 0 -vd 0 0 1 -vu 0 1 0 uniform.dat [rtrace
+>> options] octree
+>>
+>> This has the added advantage of sampling light sources directly (unless
+>> you set -dn 0), and it even supports the -n multiprocessing option on
+>> Unix.  You will need to divide the result by the hemispherical solid angle
+>> (2?), or else change all your sensor file values by 1/(2?) to get a uniform
+>> average.
+>>
+>> I did spent quite a bit of time writing and debugging rsensor for just
+>> this sort of thing, so you may as well use it.  (Thanks to Zack Rogers for
+>> specifying the problem and funding the initial work, and to David
+>> Geisler-Moroder for doggedly testing the code & helping me sort out its
+>> many issues.)
+>>
+>> Cheers,
+>> -Greg
+>>
+>> *From: *Stephen Wasilewski <stephen at coolshadow.com>
+>>
+>> *Date: *June 30, 2017 4:18:34 AM GMT+06:30
+>>
+>>
+>> I'm curious if anyone knows of a way to simulate a sensor point that has
+>> a constant response (not cosine corrected) for all incident angles (at
+>> least over a hemisphere).  I know I can do this with an angular fisheye
+>> image and I assume I could use rsensor, but i would like a way to do this
+>> with a single rtrace or rpict calculation.  Applications include:
+>>
+>> 1. measuring direct normal irradiance (when I know the source is small
+>> (cos(x) ~ 1), but not the incident angle.
+>> 2. calculating percent of a sky/source description that is visible from a
+>> point.
+>>
+>> The one though I have is to place an analysis plane with a BRTDfunc
+>> material assigned and then do a radiance calc looking at the plane, but
+>> this only works for the 1st case, where it is part of the direct
+>> calculation.  For the second case I tried making a bsdf with bsdf2ttree (or
+>> bsdf2klems) but it seems to introduce a lot of sampling error and doesn't
+>> appear to be working quite right.
+>>
+>> BRTDfunc approach:
+>>
+>> #cal file:
+>> r(x,y,z) = 1/(x*NxP+y*NyP+z*NzP)/PI;
+>>
+>> #material:
+>> void BRTDfunc test
+>> 10 0 0 0 0 0 0 r r r test.cal
+>> 0
+>> 9 0 0 0 0 0 0 0 0 0
+>>
+>> BSDF approach:
+>> #cal file:
+>> rdif(ix,iy,iz,ox,oy,oz) = if(oz*iz,1/(ix*ox+iy*oy+iz*oz)/PI,0);
+>>
+>> #bsdf2ttree:
+>> bsdf2ttree -t3 -g 7 -forward -f test.cal rdif > test.xml
+>>
+>> #material:
+>> void BSDF test
+>> 6 0 test.xml 0 1 0 .
+>> 0
+>> 0
+>>
+>> Either way, this feels like an inelegant approach, so anyone have a
+>> better idea or a way to get this working for a diffuse calculation?
+>>
+>> Stephen Wasilewski
+>>
+>>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170703/5686a06f/attachment.html>
+
+From eslee at lbl.gov  Wed Jul  5 11:29:57 2017
+From: eslee at lbl.gov (Eleanor Lee)
+Date: Wed, 5 Jul 2017 11:29:57 -0700
+Subject: [Radiance-general] Going to IBPSA, San Francisco?
+Message-ID: <CAGEN5y9-kNX95LiERsvQ3W95yteDD6spRmfsNdLo6PdO2WmF_Q@mail.gmail.com>
+
+Hi Guys:
+
+The 15th biennial meeting of the International Building Performance
+Simulation Association is being held in San Francisco this year from August
+5-11th.
+
+If you are visiting from a *country other than the United States* and would
+like to visit us at the Berkeley Lab before or after the conference (e.g.,
+August 4th; outside of the normal tours that are occurring through the
+IBPSA conference itself), please let us know as soon as possible so that we
+can put in the proper paperwork. We will not be able to process requests
+past July 19th.
+
+Else, see you at the IBPSA conference in San Francisco or at the Radiance
+Workshop!
+
+best regards, the LBNL Radiance team
+
+-- 
+Eleanor S. Lee, Staff Scientist, Deputy Group Leader
+Building Technologies and Urban Systems Division, Energy Technologies Area
+Lawrence Berkeley National Laboratory, 1 Cyclotron Road, MS: 90-3111,
+Berkeley, CA 94720 USA
+(510) 486-4997 Tel.  (510) 486-4089 Fax.  eslee at lbl.gov
+http://facades.lbl.gov
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170705/c3566c83/attachment.html>
+
+From andrea.laenens at student.kuleuven.be  Sat Jul  8 08:56:42 2017
+From: andrea.laenens at student.kuleuven.be (Andrea Laenens)
+Date: Sat, 8 Jul 2017 15:56:42 +0000
+Subject: [Radiance-general] Illuminance data from different daylight sources
+Message-ID: <1499529402699.29535@student.kuleuven.be>
+
+Dear,
+
+I am a student at the KULeuven and currently working on a master thesis about estimating the health effects of daylight in a room. So far, I've been using the program DIVA for Grasshopper (McNeel), which counts on Radiance for light calculations. However, I am unable to retrieve the data from it that need. I am therefore considering to dig a little deeper into the underlying commands, and start working in Radiance instead.
+
+The main idea for the calculation is to weigh the values of the intensity measured inside to the spectral distribution of the light source (outside). I would like to approach this problem using the CIE illuminants for direct sunlight, cloudy sky and clear blue sky (as suggested by Mardaljevic et al., 2013). As an output of Radiance, I thus expect:
+- illuminance values inside, resulting from direct sunlight only
+- illuminance values inside, resulting from cloudy sky only
+- illuminance values inside, resulting from clear blue sky only
+- or, a way to retrieve the contribution of clouded/clear sky to the light coming from the sky dome, using a sky cover coefficient
+
+Before I start my adventure in Radiance, I would like to know:
+- is it possible to retrieve this kind of data from Radiance?
+- how would you suggest doing this?
+
+Thanks in advance,
+Kind regards,
+
+Andrea Laenens
+
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170708/ff24271a/attachment.html>
+
+From boutillier at estia.ch  Thu Jul 13 13:24:35 2017
+From: boutillier at estia.ch (boutillier at estia.ch)
+Date: Thu, 13 Jul 2017 22:24:35 +0200 (CEST)
+Subject: [Radiance-general] 
+ =?utf-8?q?Illuminance_data_from_different_day?=
+ =?utf-8?q?light_sources?=
+Message-ID: <20170713202435.C9E8913204B3@prospero5.kreativmedia.ch>
+
+Bonjour, 
+
+Je suis actuellement en vacances. Je serai de retour le 7 ao?t 2017. 
+
+En cas d'urgence, vous pouvez toujours appeler le num?ro g?n?ral d'Estia : +41 (0) 21/510.59.59 ou envoyer un mail ? l'adresse mail at estia.ch.
+
+Pour toutes questions relatives ? DIAL+, merci d'utiliser l'adresse mail dial at estia.ch. 
+
+Cordialement
+
+Julien Boutillier
+Estia SA
+
+
+
+
+From germolinal at gmail.com  Thu Jul 13 13:37:51 2017
+From: germolinal at gmail.com (=?UTF-8?Q?Germ=C3=A1n_Molina_Larrain?=)
+Date: Thu, 13 Jul 2017 16:37:51 -0400
+Subject: [Radiance-general] Illuminance data from different daylight
+ sources
+In-Reply-To: <1499529402699.29535@student.kuleuven.be>
+References: <1499529402699.29535@student.kuleuven.be>
+Message-ID: <CAF-iH4K9i=Luumsykrb2t90z_Zr-hsBFtsSPq7=fwBNTH5POJA@mail.gmail.com>
+
+Hi Andrea,
+
+If I understood your question correctly, I would say it is definitely
+possible to get all that data from a Radiance Model and, after
+understanding how the command line and Radiance programs work, should not
+really be that hard.
+
+The programs GENSKY allows you define CIE clear and overcast skies, and
+even control the color of the sky and ignore the sun. You can always delete
+the sky as well, and use a black (i.e. 0% reflection) model for calculating
+the direct sunlight.
+
+If you are going to perform static simulations (i.e. choosing a certain
+date and time of the year), I would just use RTRACE program (I think Axel's
+Radiance Cookbook has all the info you need to start doing all this). HINT:
+You can use the XFORM "-m" option for transforming your model into a
+completely black world.
+
+If you are going to perform climate-based daylight simulations, well...
+everything gets messier and requires a longer explanation. I would start by
+going through the first couple of tutorials in the website in order to
+understand how Radiance works.
+
+Final comment + disclaimer: I am the developer of Groundhog, so I would use
+that tool in order to create the model within SketchUp and export it to
+Radiance. *However, I have not ever used another tool, so there may be
+better ones out there.*
+
+Kind regards
+
+Germ?n
+
+
+2017-07-08 11:56 GMT-04:00 Andrea Laenens <
+andrea.laenens at student.kuleuven.be>:
+
+> Dear,
+>
+> I am a student at the KULeuven and currently working on a master thesis
+> about estimating the health effects of daylight in a room. So far, I've
+> been using the program DIVA for Grasshopper (McNeel), which counts
+> on Radiance for light calculations. However, I am unable to retrieve the
+> data from it that need. I am therefore considering to dig a little deeper
+> into the underlying commands, and start working in Radiance instead.
+>
+> The main idea for the calculation is to weigh the values of the intensity
+> measured inside to the spectral distribution of the light source (outside).
+> I would like to approach this problem using the CIE illuminants for direct
+> sunlight, cloudy sky and clear blue sky (as suggested by Mardaljevic et
+> al., 2013). As an output of Radiance, I thus expect:
+> - illuminance values inside, resulting from direct sunlight only
+> - illuminance values inside, resulting from cloudy sky only
+> - illuminance values inside, resulting from clear blue sky only
+> - or, a way to retrieve the contribution of clouded/clear sky to the light
+> coming from the sky dome, using a sky cover coefficient
+>
+> Before I start my adventure in Radiance, I would like to know:
+> - is it possible to retrieve this kind of data from Radiance?
+> - how would you suggest doing this?
+>
+> Thanks in advance,
+> Kind regards,
+>
+> Andrea Laenens
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170713/4aceab45/attachment.html>
+
+From john.everist at icloud.com  Sun Jul 16 16:22:51 2017
+From: john.everist at icloud.com (John Everist)
+Date: Mon, 17 Jul 2017 00:22:51 +0100
+Subject: [Radiance-general] Remove attenuation and specify ray distance of
+ an IES light source?
+Message-ID: <9AB9A5B5-EA73-4153-A0E8-D9C2D5C1D8FC@icloud.com>
+
+Hello community,
+
+Is it possible to totally break the laws of physics in radiance? Can I make a calculation with an IES file where I can terminate the ray distance (at 100 metres for example) and remove any attenuation from the rays? 
+
+In summary, i want to use radiance to identify 'line of sight' to a maximum distance - a  point was/was not 'seen' from the light source position.
+
+Its properly an easy question but i cant find the answer. I have the rendering with radiance book if e answer is in there...
+
+Sent from my iPad
+
+From boutillier at estia.ch  Sun Jul 16 16:26:41 2017
+From: boutillier at estia.ch (boutillier at estia.ch)
+Date: Mon, 17 Jul 2017 01:26:41 +0200 (CEST)
+Subject: [Radiance-general] 
+ =?utf-8?q?Remove_attenuation_and_specify_ray_?=
+ =?utf-8?q?distance_of_an_IES_light_source=3F?=
+Message-ID: <20170716232641.89F41132027F@prospero5.kreativmedia.ch>
+
+Bonjour, 
+
+Je suis actuellement en vacances. Je serai de retour le 7 ao?t 2017. 
+
+En cas d'urgence, vous pouvez toujours appeler le num?ro g?n?ral d'Estia : +41 (0) 21/510.59.59 ou envoyer un mail ? l'adresse mail at estia.ch.
+
+Pour toutes questions relatives ? DIAL+, merci d'utiliser l'adresse mail dial at estia.ch. 
+
+Cordialement
+
+Julien Boutillier
+Estia SA
+
+
+
+
+From gregoryjward at gmail.com  Sun Jul 16 17:11:26 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Sun, 16 Jul 2017 17:11:26 -0700
+Subject: [Radiance-general] Remove attenuation and specify ray distance
+ of an IES light source?
+In-Reply-To: <9AB9A5B5-EA73-4153-A0E8-D9C2D5C1D8FC@icloud.com>
+References: <9AB9A5B5-EA73-4153-A0E8-D9C2D5C1D8FC@icloud.com>
+Message-ID: <4D3FD49A-D528-46AF-83A6-637309650667@lmi.net>
+
+Hi John,
+
+If I understand your query, you just want to "see" what is within a certain distance from a point -- it that right?
+
+To generate an image from the light source's perspective to some maximum distance, just use an rpict or rvu view with a fisheye view and aft clipping distance:
+
+	-vta -vp Lx Ly Lz -vh 360 -vv 360 -va Dmax
+
+Where (Lx,Ly,Lz) is the position of your light source (or just in front of it) and Dmax is how far you want to look.  You may also need the -vd and -vu specs to specify the central view direction and distance.  The above will generate a 360? fisheye view, which may be larger than you want, so adjust accordingly.
+
+If instead you want to illuminate your scene, but only for points within some distance of a source, you can use the "glow" type:
+
+void glow limited_light
+0
+0
+4 1000 1000 1000 Dmax
+
+limited_light sphere limited_bulb
+0
+0
+5 Lx Ly Lz 1
+
+Again, you'll need to insert the appropriate values for your source position, and this light will still have a 1/r^2 fall-off.  Also, make sure to set "-ab 0" in your rendering, so it doesn't try to count the glow source in the indirect calculation.
+
+If you want to eliminate the fall-off, you can use a compensating pattern like so:
+
+void brightfunc square_riseup
+2 T*T .
+0
+0
+
+square_riseup glow limited_light
+0
+0
+4 1 1 1 Dmax
+
+limited_light sphere limited_bulb
+0
+0
+5 Lx Ly Lz 1
+
+This will still have a cosine-orientation effect on your surfaces, but no fall-off.
+
+Hope this helps.
+-Greg
+
+> From: John Everist <john.everist at icloud.com>
+> Date: July 16, 2017 4:22:51 PM PDT
+> 
+> Hello community,
+> 
+> Is it possible to totally break the laws of physics in radiance? Can I make a calculation with an IES file where I can terminate the ray distance (at 100 metres for example) and remove any attenuation from the rays? 
+> 
+> In summary, i want to use radiance to identify 'line of sight' to a maximum distance - a  point was/was not 'seen' from the light source position.
+> 
+> Its properly an easy question but i cant find the answer. I have the rendering with radiance book if e answer is in there...
+> 
+
+
+From boutillier at estia.ch  Sun Jul 16 17:13:38 2017
+From: boutillier at estia.ch (boutillier at estia.ch)
+Date: Mon, 17 Jul 2017 02:13:38 +0200 (CEST)
+Subject: [Radiance-general] 
+ =?utf-8?q?Remove_attenuation_and_specify_ray_?=
+ =?utf-8?q?distance_of_an_IES_light_source=3F?=
+Message-ID: <20170717001338.D512B13202FA@prospero5.kreativmedia.ch>
+
+Bonjour, 
+
+Je suis actuellement en vacances. Je serai de retour le 7 ao?t 2017. 
+
+En cas d'urgence, vous pouvez toujours appeler le num?ro g?n?ral d'Estia : +41 (0) 21/510.59.59 ou envoyer un mail ? l'adresse mail at estia.ch.
+
+Pour toutes questions relatives ? DIAL+, merci d'utiliser l'adresse mail dial at estia.ch. 
+
+Cordialement
+
+Julien Boutillier
+Estia SA
+
+
+
+
+From john.everist at icloud.com  Mon Jul 17 14:15:33 2017
+From: john.everist at icloud.com (John Everist)
+Date: Mon, 17 Jul 2017 22:15:33 +0100
+Subject: [Radiance-general] Remove attenuation and specify ray distance
+ of an IES light source?
+In-Reply-To: <4D3FD49A-D528-46AF-83A6-637309650667@lmi.net>
+References: <9AB9A5B5-EA73-4153-A0E8-D9C2D5C1D8FC@icloud.com>
+ <4D3FD49A-D528-46AF-83A6-637309650667@lmi.net>
+Message-ID: <4053C55C-C183-44F1-99ED-BBE996189937@icloud.com>
+
+Thank you greg - that's very kind of you to answer so quickly. You even managed to answer part 2 of my task before i asked it (relating to the rendered image).
+
+Out of curiosity, is it possible to limit the ray distance of an IES light source?
+
+Sent from my iPad
+
+> On 17 Jul 2017, at 01:11, Greg Ward <gregoryjward at gmail.com> wrote:
+> 
+> Hi John,
+> 
+> If I understand your query, you just want to "see" what is within a certain distance from a point -- it that right?
+> 
+> To generate an image from the light source's perspective to some maximum distance, just use an rpict or rvu view with a fisheye view and aft clipping distance:
+> 
+>    -vta -vp Lx Ly Lz -vh 360 -vv 360 -va Dmax
+> 
+> Where (Lx,Ly,Lz) is the position of your light source (or just in front of it) and Dmax is how far you want to look.  You may also need the -vd and -vu specs to specify the central view direction and distance.  The above will generate a 360? fisheye view, which may be larger than you want, so adjust accordingly.
+> 
+> If instead you want to illuminate your scene, but only for points within some distance of a source, you can use the "glow" type:
+> 
+> void glow limited_light
+> 0
+> 0
+> 4 1000 1000 1000 Dmax
+> 
+> limited_light sphere limited_bulb
+> 0
+> 0
+> 5 Lx Ly Lz 1
+> 
+> Again, you'll need to insert the appropriate values for your source position, and this light will still have a 1/r^2 fall-off.  Also, make sure to set "-ab 0" in your rendering, so it doesn't try to count the glow source in the indirect calculation.
+> 
+> If you want to eliminate the fall-off, you can use a compensating pattern like so:
+> 
+> void brightfunc square_riseup
+> 2 T*T .
+> 0
+> 0
+> 
+> square_riseup glow limited_light
+> 0
+> 0
+> 4 1 1 1 Dmax
+> 
+> limited_light sphere limited_bulb
+> 0
+> 0
+> 5 Lx Ly Lz 1
+> 
+> This will still have a cosine-orientation effect on your surfaces, but no fall-off.
+> 
+> Hope this helps.
+> -Greg
+> 
+>> From: John Everist <john.everist at icloud.com>
+>> Date: July 16, 2017 4:22:51 PM PDT
+>> 
+>> Hello community,
+>> 
+>> Is it possible to totally break the laws of physics in radiance? Can I make a calculation with an IES file where I can terminate the ray distance (at 100 metres for example) and remove any attenuation from the rays? 
+>> 
+>> In summary, i want to use radiance to identify 'line of sight' to a maximum distance - a  point was/was not 'seen' from the light source position.
+>> 
+>> Its properly an easy question but i cant find the answer. I have the rendering with radiance book if e answer is in there...
+>> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From gregoryjward at gmail.com  Mon Jul 17 14:32:26 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon, 17 Jul 2017 14:32:26 -0700
+Subject: [Radiance-general] Remove attenuation and specify ray distance
+ of an IES light source?
+In-Reply-To: <4053C55C-C183-44F1-99ED-BBE996189937@icloud.com>
+References: <9AB9A5B5-EA73-4153-A0E8-D9C2D5C1D8FC@icloud.com>
+ <4D3FD49A-D528-46AF-83A6-637309650667@lmi.net>
+ <4053C55C-C183-44F1-99ED-BBE996189937@icloud.com>
+Message-ID: <7202E710-4923-4487-AA30-265320199174@lmi.net>
+
+Well, you have to convert an IES source to Radiance using ies2rad, right?  Just edit the output of that program to fit the described solution.  For example, you can use the "-i" option of ies2rad to generate a spherical light source, then change the "illum" to "glow" with the Dmax limit.
+
+Cheers,
+-Greg
+
+> From: John Everist <john.everist at icloud.com>
+> Date: July 17, 2017 2:15:33 PM PDT
+> 
+> Thank you greg - that's very kind of you to answer so quickly. You even managed to answer part 2 of my task before i asked it (relating to the rendered image).
+> 
+> Out of curiosity, is it possible to limit the ray distance of an IES light source?
+> 
+> Sent from my iPad
+> 
+>> On 17 Jul 2017, at 01:11, Greg Ward <gregoryjward at gmail.com> wrote:
+>> 
+>> Hi John,
+>> 
+>> If I understand your query, you just want to "see" what is within a certain distance from a point -- it that right?
+>> 
+>> To generate an image from the light source's perspective to some maximum distance, just use an rpict or rvu view with a fisheye view and aft clipping distance:
+>> 
+>>   -vta -vp Lx Ly Lz -vh 360 -vv 360 -va Dmax
+>> 
+>> Where (Lx,Ly,Lz) is the position of your light source (or just in front of it) and Dmax is how far you want to look.  You may also need the -vd and -vu specs to specify the central view direction and distance.  The above will generate a 360? fisheye view, which may be larger than you want, so adjust accordingly.
+>> 
+>> If instead you want to illuminate your scene, but only for points within some distance of a source, you can use the "glow" type:
+>> 
+>> void glow limited_light
+>> 0
+>> 0
+>> 4 1000 1000 1000 Dmax
+>> 
+>> limited_light sphere limited_bulb
+>> 0
+>> 0
+>> 5 Lx Ly Lz 1
+>> 
+>> Again, you'll need to insert the appropriate values for your source position, and this light will still have a 1/r^2 fall-off.  Also, make sure to set "-ab 0" in your rendering, so it doesn't try to count the glow source in the indirect calculation.
+>> 
+>> If you want to eliminate the fall-off, you can use a compensating pattern like so:
+>> 
+>> void brightfunc square_riseup
+>> 2 T*T .
+>> 0
+>> 0
+>> 
+>> square_riseup glow limited_light
+>> 0
+>> 0
+>> 4 1 1 1 Dmax
+>> 
+>> limited_light sphere limited_bulb
+>> 0
+>> 0
+>> 5 Lx Ly Lz 1
+>> 
+>> This will still have a cosine-orientation effect on your surfaces, but no fall-off.
+>> 
+>> Hope this helps.
+>> -Greg
+>> 
+>>> From: John Everist <john.everist at icloud.com>
+>>> Date: July 16, 2017 4:22:51 PM PDT
+>>> 
+>>> Hello community,
+>>> 
+>>> Is it possible to totally break the laws of physics in radiance? Can I make a calculation with an IES file where I can terminate the ray distance (at 100 metres for example) and remove any attenuation from the rays? 
+>>> 
+>>> In summary, i want to use radiance to identify 'line of sight' to a maximum distance - a  point was/was not 'seen' from the light source position.
+>>> 
+>>> Its properly an easy question but i cant find the answer. I have the rendering with radiance book if e answer is in there...
+
+
+From john.everist at icloud.com  Mon Jul 24 14:40:49 2017
+From: john.everist at icloud.com (John Everist)
+Date: Mon, 24 Jul 2017 22:40:49 +0100
+Subject: [Radiance-general] Remove attenuation and specify ray distance
+ of an IES light source?
+In-Reply-To: <7202E710-4923-4487-AA30-265320199174@lmi.net>
+References: <9AB9A5B5-EA73-4153-A0E8-D9C2D5C1D8FC@icloud.com>
+ <4D3FD49A-D528-46AF-83A6-637309650667@lmi.net>
+ <4053C55C-C183-44F1-99ED-BBE996189937@icloud.com>
+ <7202E710-4923-4487-AA30-265320199174@lmi.net>
+Message-ID: <ez-614883527.1656222974@icloud.com>
+
+Thanks Greg, thats working for me ?
+
+
+Sent from AltaMail
+
+
+ From: Greg Ward <gregoryjward at gmail.com> To: Radiance general discussion <radiance-general at radiance-online.org> Subject: Re: [Radiance-general] Remove attenuation and specify ray distance of an IES light source? Date: 17/07/2017, 22:32
+
+ 
+Well, you have to convert an IES source to Radiance using ies2rad, right?  Just edit the output of that program to fit the described solution.  For example, you can use the "-i" option of ies2rad to generate a spherical light source, then change the "illum" to "glow" with the Dmax limit. 
+ 
+Cheers, 
+-Greg 
+ 
+> From: John Everist <john.everist at icloud.com> 
+> Date: July 17, 2017 2:15:33 PM PDT 
+>  
+> Thank you greg - that's very kind of you to answer so quickly. You even managed to answer part 2 of my task before i asked it (relating to the rendered image). 
+>  
+> Out of curiosity, is it possible to limit the ray distance of an IES light source? 
+>  
+> Sent from my iPad 
+>  
+>> On 17 Jul 2017, at 01:11, Greg Ward <gregoryjward at gmail.com> wrote: 
+>>  
+>> Hi John, 
+>>  
+>> If I understand your query, you just want to "see" what is within a certain distance from a point -- it that right? 
+>>  
+>> To generate an image from the light source's perspective to some maximum distance, just use an rpict or rvu view with a fisheye view and aft clipping distance: 
+>>  
+>>   -vta -vp Lx Ly Lz -vh 360 -vv 360 -va Dmax 
+>>  
+>> Where (Lx,Ly,Lz) is the position of your light source (or just in front of it) and Dmax is how far you want to look.  You may also need the -vd and -vu specs to specify the central view direction and distance.  The above will generate a 360? fisheye view, which may be larger than you want, so adjust accordingly. 
+>>  
+>> If instead you want to illuminate your scene, but only for points within some distance of a source, you can use the "glow" type: 
+>>  
+>> void glow limited_light 
+>> 0 
+>> 0 
+>> 4 1000 1000 1000 Dmax 
+>>  
+>> limited_light sphere limited_bulb 
+>> 0 
+>> 0 
+>> 5 Lx Ly Lz 1 
+>>  
+>> Again, you'll need to insert the appropriate values for your source position, and this light will still have a 1/r^2 fall-off.  Also, make sure to set "-ab 0" in your rendering, so it doesn't try to count the glow source in the indirect calculation. 
+>>  
+>> If you want to eliminate the fall-off, you can use a compensating pattern like so: 
+>>  
+>> void brightfunc square_riseup 
+>> 2 T*T . 
+>> 0 
+>> 0 
+>>  
+>> square_riseup glow limited_light 
+>> 0 
+>> 0 
+>> 4 1 1 1 Dmax 
+>>  
+>> limited_light sphere limited_bulb 
+>> 0 
+>> 0 
+>> 5 Lx Ly Lz 1 
+>>  
+>> This will still have a cosine-orientation effect on your surfaces, but no fall-off. 
+>>  
+>> Hope this helps. 
+>> -Greg 
+>>  
+>>> From: John Everist <john.everist at icloud.com> 
+>>> Date: July 16, 2017 4:22:51 PM PDT 
+>>>  
+>>> Hello community, 
+>>>  
+>>> Is it possible to totally break the laws of physics in radiance? Can I make a calculation with an IES file where I can terminate the ray distance (at 100 metres for example) and remove any attenuation from the rays?  
+>>>  
+>>> In summary, i want to use radiance to identify 'line of sight' to a maximum distance - a  point was/was not 'seen' from the light source position. 
+>>>  
+>>> Its properly an easy question but i cant find the answer. I have the rendering with radiance book if e answer is in there... 
+ 
+_______________________________________________ 
+Radiance-general mailing list 
+Radiance-general at radiance-online.org 
+https://www.radiance-online.org/mailman/listinfo/radiance-general 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170724/b671990e/attachment.html>
+
+From k.morsink at student.tue.nl  Wed Jul 26 07:34:45 2017
+From: k.morsink at student.tue.nl (Morsink, K.)
+Date: Wed, 26 Jul 2017 14:34:45 +0000
+Subject: [Radiance-general] How does Pvalue determine CCT in HDR images and
+ how is the EV of a HDR image determined?
+Message-ID: <DF2842D04D2F7F46A3394CFFFDF81A807E320178@xserver31a.campus.tue.nl>
+
+Hello everybody,
+
+I?m Kars and I?m new to this Radiance forum.
+
+In the manual of Pvalue (https://www.radiance-online.org/learning/documentation/manual-pages/pdfs/pvalue.pdf) it is stated that inputting a file in XYZE format will give you the luminance values of the image (corresponding to the Y channel).  I?ve inserted some .hdr images in Pvalue with the following Primaries (taken from the EXIF data): PRIMARIES= 0.6400 0.3300 0.3000 0.6000 0.1500 0.0600 0.3127 0.3290, where the first two numbers correspond to the R primary (x,y), the third and fourth to the G primary (x,y), the fifth and sixth to the B primary (x,y), and the seventh and eighth to the white point (x,y). The EXIF data also shows an exposure value of the .hdr image.
+
+I?ve got two questions regarding this conversion.
+
+To my knowledge the white point coordinates can be used to calculate the CCT, as described by Inanici in Evaluation of High Dynamic Range Photography as a Luminance Data Acquisition System. The white point coordinates, as found in the EXIF data, correspond to the CIE standard illuminant D65. Does this mean Pvalue assumes a constant CCT for all the .hdr images when converting to luminance? Or is Pvalue making other assumptions / calculations?
+
+My second question refers to the exposure value of the .hdr image, as shown in the EXIF data of the image. How is this value determined? Since a HDR image consists of multiple images (in my case 7) with different exposure values. What is this exposure value of the .hdr image based on and is this used by Pvalue somehow?
+
+I hope I?ve made myself clear.
+
+Kind regards,
+
+Kars Morsink
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170726/c6bddd47/attachment.html>
+
+From boutillier at estia.ch  Wed Jul 26 07:39:00 2017
+From: boutillier at estia.ch (boutillier at estia.ch)
+Date: Wed, 26 Jul 2017 16:39:00 +0200 (CEST)
+Subject: [Radiance-general] 
+ =?utf-8?q?How_does_Pvalue_determine_CCT_in_HD?=
+ =?utf-8?q?R_images_and_how_is_the_EV_of_a_HDR_image_determined=3F?=
+Message-ID: <20170726143900.5248D1320397@prospero5.kreativmedia.ch>
+
+Bonjour, 
+
+Je suis actuellement en vacances. Je serai de retour le 7 ao?t 2017. 
+
+En cas d'urgence, vous pouvez toujours appeler le num?ro g?n?ral d'Estia : +41 (0) 21/510.59.59 ou envoyer un mail ? l'adresse mail at estia.ch.
+
+Pour toutes questions relatives ? DIAL+, merci d'utiliser l'adresse mail dial at estia.ch. 
+
+Cordialement
+
+Julien Boutillier
+Estia SA
+
+
+
+
+From Christopher.Rush at arup.com  Wed Jul 26 08:20:02 2017
+From: Christopher.Rush at arup.com (Christopher Rush)
+Date: Wed, 26 Jul 2017 15:20:02 +0000
+Subject: [Radiance-general] How does Pvalue determine CCT in HDR images
+ and how is the EV of a HDR image determined?
+In-Reply-To: <DF2842D04D2F7F46A3394CFFFDF81A807E320178@xserver31a.campus.tue.nl>
+References: <DF2842D04D2F7F46A3394CFFFDF81A807E320178@xserver31a.campus.tue.nl>
+Message-ID: <88079A360FAC7441AE93ECBF6199823657A96A6F@AMXExMb02.global.arup.com>
+
+Hi Kars. Just a friendly tip that there is another mailing list dedicated to HDR image capture/manipulation. See last row of the table on this page: https://radiance-online.org/community/mailing-lists
+There's a lot of cross-subscribers between lists, so you may still get a response without re-posting. If your interests lie particularly in HDR imaging, you also might want to subscribe to the HDRI list to keep up with future topics.
+
+-Chris
+
+
+From: Morsink, K. [mailto:k.morsink at student.tue.nl]
+Sent: Wednesday, July 26, 2017 10:35 AM
+To: radiance-general at radiance-online.org
+Subject: [Radiance-general] How does Pvalue determine CCT in HDR images and how is the EV of a HDR image determined?
+
+Hello everybody,
+
+I'm Kars and I'm new to this Radiance forum.
+
+In the manual of Pvalue (https://www.radiance-online.org/learning/documentation/manual-pages/pdfs/pvalue.pdf<https://secure-web.cisco.com/1xZYMoIcnbOsaow7kOjcsylubpX3S1Rvfh1LDzJTWhsMxA7baVVdKOuA3HgWhFBFYTT0MB64GYZlcc-T8kHQjagzFlH9fdchH4_DQOKdTme3WdqqdscGM3lHfaEqwOhV45YQHN1yU-ko715qg1V6WF7BUmMCCLFwiSkqP320yjYS3L0yADar6mJPXH2WzEFY373JY2UsJ8rjSRENAHZN25bmZ02ZOK0kwH_12xIQnU7tVFUijBmYv_1phASPb0aNd/https%3A%2F%2Fwww.radiance-online.org%2Flearning%2Fdocumentation%2Fmanual-pages%2Fpdfs%2Fpvalue.pdf>) it is stated that inputting a file in XYZE format will give you the luminance values of the image (corresponding to the Y channel).  I've inserted some .hdr images in Pvalue with the following Primaries (taken from the EXIF data): PRIMARIES= 0.6400 0.3300 0.3000 0.6000 0.1500 0.0600 0.3127 0.3290, where the first two numbers correspond to the R primary (x,y), the third and fourth to the G primary (x,y), the fifth and sixth to the B primary (x,y), and the seventh and eighth to the white point (x,y). The EXIF data also shows an exposure value of the .hdr image.
+
+I've got two questions regarding this conversion.
+
+To my knowledge the white point coordinates can be used to calculate the CCT, as described by Inanici in Evaluation of High Dynamic Range Photography as a Luminance Data Acquisition System. The white point coordinates, as found in the EXIF data, correspond to the CIE standard illuminant D65. Does this mean Pvalue assumes a constant CCT for all the .hdr images when converting to luminance? Or is Pvalue making other assumptions / calculations?
+
+My second question refers to the exposure value of the .hdr image, as shown in the EXIF data of the image. How is this value determined? Since a HDR image consists of multiple images (in my case 7) with different exposure values. What is this exposure value of the .hdr image based on and is this used by Pvalue somehow?
+
+I hope I've made myself clear.
+
+Kind regards,
+
+Kars Morsink
+____________________________________________________________
+Electronic mail messages entering and leaving Arup business
+systems are scanned for viruses and acceptability of content
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170726/43fc743e/attachment.html>
+
+From gregoryjward at gmail.com  Wed Jul 26 10:15:08 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed, 26 Jul 2017 10:15:08 -0700
+Subject: [Radiance-general] How does Pvalue determine CCT in HDR images
+ and how is the EV of a HDR image determined?
+In-Reply-To: <DF2842D04D2F7F46A3394CFFFDF81A807E320178@xserver31a.campus.tue.nl>
+References: <DF2842D04D2F7F46A3394CFFFDF81A807E320178@xserver31a.campus.tue.nl>
+Message-ID: <FE2D4326-4082-4E47-AC51-8F315D17F0CC@lmi.net>
+
+Hi Kars,
+
+I am cross-posting my response to the HDRI mailing list per Chris' suggestion.
+
+Specifying the "-o" option of pvalue takes into account the exposure setting, which is determined from the ExIF data if you created the image using Photosphere or hdrgen.  The formula below has an empirically derived constant that may not exactly fit your camera, so it is best to add your own calibrating scale factor:
+
+	sample_to_nits = 87 * (f-stop)^2 / (ISO * exposure_secs)
+
+The sample_to_nits is converted to a Radiance picture exposure using:
+
+	EXPOSURE = 179 / sample_to_nits
+
+where 179 lumens/watt is the agreed-upon efficacy of the equal-energy illuminant E over the visible spectrum.
+
+Unfortunately, pvalue is not very smart about reporting brightness using the "-b" option.  It uses a formula based on the standard Radiance color space, which differs from the CCIR-709 color space produced by Photosphere in both the green primary and the white point.  It only makes a small difference, but if you are worrying about such things, you had best use the following to report luminance from your image:
+
+	ra_xyze image.hdr | pvalue -o -b [other options]
+
+This also takes care of the 179 factor, reporting results in candelas/meter^2.
+
+Cheers,
+-Greg
+
+> From: "Morsink, K." <k.morsink at student.tue.nl>
+> Date: July 26, 2017 7:34:45 AM PDT
+> 
+> Hello everybody,
+> 
+> I?m Kars and I?m new to this Radiance forum.
+> 
+> In the manual of Pvalue (https://www.radiance-online.org/learning/documentation/manual-pages/pdfs/pvalue.pdf) it is stated that inputting a file in XYZE format will give you the luminance values of the image (corresponding to the Y channel).  I?ve inserted some .hdr images in Pvalue with the following Primaries (taken from the EXIF data): PRIMARIES= 0.6400 0.3300 0.3000 0.6000 0.1500 0.0600 0.3127 0.3290, where the first two numbers correspond to the R primary (x,y), the third and fourth to the G primary (x,y), the fifth and sixth to the B primary (x,y), and the seventh and eighth to the white point (x,y). The EXIF data also shows an exposure value of the .hdr image.
+> 
+> I?ve got two questions regarding this conversion.
+> 
+> To my knowledge the white point coordinates can be used to calculate the CCT, as described by Inanici in Evaluation of High Dynamic Range Photography as a Luminance Data Acquisition System. The white point coordinates, as found in the EXIF data, correspond to the CIE standard illuminant D65. Does this mean Pvalue assumes a constant CCT for all the .hdr images when converting to luminance? Or is Pvalue making other assumptions / calculations?
+> 
+> My second question refers to the exposure value of the .hdr image, as shown in the EXIF data of the image. How is this value determined? Since a HDR image consists of multiple images (in my case 7) with different exposure values. What is this exposure value of the .hdr image based on and is this used by Pvalue somehow?
+> 
+> I hope I?ve made myself clear.
+> 
+> Kind regards,
+> 
+> Kars Morsink
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From john.everist at icloud.com  Wed Jul 26 14:17:32 2017
+From: john.everist at icloud.com (John Everist)
+Date: Wed, 26 Jul 2017 22:17:32 +0100
+Subject: [Radiance-general] Get vector relationships between points
+Message-ID: <DC874EEA-F9E6-453E-9B44-F6C7F0612D69@icloud.com>
+
+Hello community,
+
+Is it possible to use radiance to collect the vector relationship between points. For example i have a camera and 100 sensors points (to pass to rtrace). Can i get the 100 vectors from each sensor to the source? This is to aim each sensor to the camera face - rather than the zenith.
+
+Im using python at the moment but its taking ages!
+
+Sent from my iPad
+
+From gregoryjward at gmail.com  Wed Jul 26 15:07:47 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed, 26 Jul 2017 15:07:47 -0700
+Subject: [Radiance-general] Get vector relationships between points
+In-Reply-To: <DC874EEA-F9E6-453E-9B44-F6C7F0612D69@icloud.com>
+References: <DC874EEA-F9E6-453E-9B44-F6C7F0612D69@icloud.com>
+Message-ID: <F18E7B1D-3652-4548-8BA5-8BB7A553EF83@lmi.net>
+
+Hi John,
+
+I'm not exactly sure what you're asking.  It sounds like a simple math question.  The vector direction between a camera position and the sensor positions is just subtract one point from the other to get your vector.
+
+Can you be more specific?
+
+-Greg
+
+> From: John Everist <john.everist at icloud.com>
+> Date: July 26, 2017 2:17:32 PM PDT
+> 
+> Hello community,
+> 
+> Is it possible to use radiance to collect the vector relationship between points. For example i have a camera and 100 sensors points (to pass to rtrace). Can i get the 100 vectors from each sensor to the source? This is to aim each sensor to the camera face - rather than the zenith.
+> 
+> Im using python at the moment but its taking ages!
+> 
+
+
+From solarjoe at posteo.org  Thu Jul 27 00:44:29 2017
+From: solarjoe at posteo.org (Joe)
+Date: Thu, 27 Jul 2017 09:44:29 +0200
+Subject: [Radiance-general] Questions about spotlight and specularity
+Message-ID: <de589f6144daad9a1a9370eaa982dba2@posteo.de>
+
+Hello,
+I am new to Radiance, have some questions and hope
+that you can help me.
+
+Here is an image to illustrate my questions:
+http://imgur.com/M2ln4Sb
+
+About spotlights.
+
+1.)
+
+Does each point of e.g. a ring act as single spotlight when spotlight
+is assigned to a surface? (upper left image)
+
+2.)
+
+When I assign a spotlight to a ring, how does the direction of the 
+ring's normal
+and the direction of the spotlight act together?
+
+I would have expected the light spot to get elliptic when the spotlight 
+is pointing
+downwards but the ring has a different normal. (like the projected
+area of the ring when looking in the direction of the light)
+But the light spot stays round. Why?
+
+3.)
+
+I found a comment in Radiance Digest
+
+> The focal length produces only a subtle difference as it shifts the 
+> effective
+> position of the source behind the actual emitting surface.
+
+I interpret this as shown in the lower image. Is this correct?
+
+4.) Is the "specularity" parameter for the materials the same as 
+"reflectivity" or "reflectance"?
+
+Kind regards,
+Joe
+
+
+
+
+From boutillier at estia.ch  Thu Jul 27 00:48:27 2017
+From: boutillier at estia.ch (boutillier at estia.ch)
+Date: Thu, 27 Jul 2017 09:48:27 +0200 (CEST)
+Subject: [Radiance-general] 
+ =?utf-8?q?Questions_about_spotlight_and_specu?= =?utf-8?q?larity?=
+Message-ID: <20170727074827.233261320473@prospero5.kreativmedia.ch>
+
+Bonjour, 
+
+Je suis actuellement en vacances. Je serai de retour le 7 ao?t 2017. 
+
+En cas d'urgence, vous pouvez toujours appeler le num?ro g?n?ral d'Estia : +41 (0) 21/510.59.59 ou envoyer un mail ? l'adresse mail at estia.ch.
+
+Pour toutes questions relatives ? DIAL+, merci d'utiliser l'adresse mail dial at estia.ch. 
+
+Cordialement
+
+Julien Boutillier
+Estia SA
+
+
+
+
+From k.morsink at student.tue.nl  Thu Jul 27 08:22:59 2017
+From: k.morsink at student.tue.nl (Morsink, K.)
+Date: Thu, 27 Jul 2017 15:22:59 +0000
+Subject: [Radiance-general] How does Pvalue determine CCT in HDR images
+ and how is the EV of a HDR image determined?
+In-Reply-To: <FE2D4326-4082-4E47-AC51-8F315D17F0CC@lmi.net>
+References: <DF2842D04D2F7F46A3394CFFFDF81A807E320178@xserver31a.campus.tue.nl>
+ <FE2D4326-4082-4E47-AC51-8F315D17F0CC@lmi.net>
+Message-ID: <DF2842D04D2F7F46A3394CFFFDF81A807E322485@xserver31a.campus.tue.nl>
+
+Hi Greg,
+
+Thank you for your quick response!
+
+The formula you provided works for me with a single LDR image and thus a single exposure time, but I'm stuck in how I should insert the multiple exposure times (of the 7 LDR images to form the HDR image) in exposure_secs and get the correct EXPOSURE, could you maybe explain this further?
+
+Making use of the equal-energy illuminant E, is it assumed that the white point remains constant (1/3, 1/3)? I'm asking this since I'm taking outdoor photographs, where the CCT (and thereby the white point) changes constantly, assuming a constant white point would therefore affect the accuracy of the conversion to luminance values.
+
+Kind regards,
+Kars
+
+-----Original Message-----
+From: Greg Ward [mailto:gregoryjward at gmail.com] 
+Sent: woensdag 26 juli 2017 19:15
+To: Radiance general discussion
+Cc: High Dynamic Range Imaging
+Subject: Re: [Radiance-general] How does Pvalue determine CCT in HDR images and how is the EV of a HDR image determined?
+
+Hi Kars,
+
+I am cross-posting my response to the HDRI mailing list per Chris' suggestion.
+
+Specifying the "-o" option of pvalue takes into account the exposure setting, which is determined from the ExIF data if you created the image using Photosphere or hdrgen.  The formula below has an empirically derived constant that may not exactly fit your camera, so it is best to add your own calibrating scale factor:
+
+	sample_to_nits = 87 * (f-stop)^2 / (ISO * exposure_secs)
+
+The sample_to_nits is converted to a Radiance picture exposure using:
+
+	EXPOSURE = 179 / sample_to_nits
+
+where 179 lumens/watt is the agreed-upon efficacy of the equal-energy illuminant E over the visible spectrum.
+
+Unfortunately, pvalue is not very smart about reporting brightness using the "-b" option.  It uses a formula based on the standard Radiance color space, which differs from the CCIR-709 color space produced by Photosphere in both the green primary and the white point.  It only makes a small difference, but if you are worrying about such things, you had best use the following to report luminance from your image:
+
+	ra_xyze image.hdr | pvalue -o -b [other options]
+
+This also takes care of the 179 factor, reporting results in candelas/meter^2.
+
+Cheers,
+-Greg
+
+> From: "Morsink, K." <k.morsink at student.tue.nl>
+> Date: July 26, 2017 7:34:45 AM PDT
+> 
+> Hello everybody,
+> 
+> I'm Kars and I'm new to this Radiance forum.
+> 
+> In the manual of Pvalue (https://www.radiance-online.org/learning/documentation/manual-pages/pdfs/pvalue.pdf) it is stated that inputting a file in XYZE format will give you the luminance values of the image (corresponding to the Y channel).  I've inserted some .hdr images in Pvalue with the following Primaries (taken from the EXIF data): PRIMARIES= 0.6400 0.3300 0.3000 0.6000 0.1500 0.0600 0.3127 0.3290, where the first two numbers correspond to the R primary (x,y), the third and fourth to the G primary (x,y), the fifth and sixth to the B primary (x,y), and the seventh and eighth to the white point (x,y). The EXIF data also shows an exposure value of the .hdr image.
+> 
+> I've got two questions regarding this conversion.
+> 
+> To my knowledge the white point coordinates can be used to calculate the CCT, as described by Inanici in Evaluation of High Dynamic Range Photography as a Luminance Data Acquisition System. The white point coordinates, as found in the EXIF data, correspond to the CIE standard illuminant D65. Does this mean Pvalue assumes a constant CCT for all the .hdr images when converting to luminance? Or is Pvalue making other assumptions / calculations?
+> 
+> My second question refers to the exposure value of the .hdr image, as shown in the EXIF data of the image. How is this value determined? Since a HDR image consists of multiple images (in my case 7) with different exposure values. What is this exposure value of the .hdr image based on and is this used by Pvalue somehow?
+> 
+> I hope I've made myself clear.
+> 
+> Kind regards,
+> 
+> Kars Morsink
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general at radiance-online.org
+https://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From gregoryjward at gmail.com  Thu Jul 27 10:37:32 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu, 27 Jul 2017 10:37:32 -0700
+Subject: [Radiance-general] Questions about spotlight and specularity
+In-Reply-To: <de589f6144daad9a1a9370eaa982dba2@posteo.de>
+References: <de589f6144daad9a1a9370eaa982dba2@posteo.de>
+Message-ID: <02064C47-8F0C-429F-B813-2A3652F1ABCA@lmi.net>
+
+Hi Joe,
+
+I love your little drawings.
+
+1.)  Each point in a ring is luminous when assigned a spotlight material, yes.  However, you will only ever sample the center of the ring if you set "-dj 0" in your rendering, which is typically the default.
+
+2.)  This is an excellent question, and your drawing illustrates what goes on fairly accurately.  The boundaries of the spotlight is dictated by the spotlight vector, but the output intensity is affected by the cosine of the ring orientation, since this changes the visible solid angle of the source.
+
+3.)  Your diagram looks right to me for the focal (spotlight vector) length.  Effectively, it changes the fall-off of the source so that it is 1/r^2 measured from a point behind the object.  The size of the spotlight area is unchanged -- i.e., the cone still covers the number of degrees specified.
+
+Remember that a spotlight is just a convenient way to cut off the boundaries of illumination.  It doesn't necessarily correspond to any real light source, but it can be a handy way to save calculation time for narrow spots, since there's no need to do shadow testing except for the part of the scene covered by the spotlight cone.  Ideally, you would still use a measured light distribution or fall-off model as a pattern applied to your spotlight material.
+
+4.) I haven't found a good definition of "reflectivity" that differs from "reflectance," but the specular component for a plastic is an uncolored highlight that corresponds to the given fraction of incident light.  Generally speaking, non-metals do not have specularity values greater than 0.06 or so.  The rest is treated as Lambertian, with the specified RGB color.
+
+Cheers,
+-Greg
+
+> From: Joe <solarjoe at posteo.org>
+> Date: July 27, 2017 12:44:29 AM PDT
+> 
+> Hello,
+> I am new to Radiance, have some questions and hope
+> that you can help me.
+> 
+> Here is an image to illustrate my questions:
+> http://imgur.com/M2ln4Sb
+> 
+> About spotlights.
+> 
+> 1.)
+> 
+> Does each point of e.g. a ring act as single spotlight when spotlight
+> is assigned to a surface? (upper left image)
+> 
+> 2.)
+> 
+> When I assign a spotlight to a ring, how does the direction of the ring's normal
+> and the direction of the spotlight act together?
+> 
+> I would have expected the light spot to get elliptic when the spotlight is pointing
+> downwards but the ring has a different normal. (like the projected
+> area of the ring when looking in the direction of the light)
+> But the light spot stays round. Why?
+> 
+> 3.)
+> 
+> I found a comment in Radiance Digest
+> 
+>> The focal length produces only a subtle difference as it shifts the effective
+>> position of the source behind the actual emitting surface.
+> 
+> I interpret this as shown in the lower image. Is this correct?
+> 
+> 4.) Is the "specularity" parameter for the materials the same as "reflectivity" or "reflectance"?
+> 
+> Kind regards,
+> Joe
+
+
+From gregoryjward at gmail.com  Thu Jul 27 08:43:48 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu, 27 Jul 2017 08:43:48 -0700
+Subject: [Radiance-general] How does Pvalue determine CCT in HDR images
+ and how is the EV of a HDR image determined?
+In-Reply-To: <DF2842D04D2F7F46A3394CFFFDF81A807E322485@xserver31a.campus.tue.nl>
+References: <DF2842D04D2F7F46A3394CFFFDF81A807E320178@xserver31a.campus.tue.nl>
+ <FE2D4326-4082-4E47-AC51-8F315D17F0CC@lmi.net>
+ <DF2842D04D2F7F46A3394CFFFDF81A807E322485@xserver31a.campus.tue.nl>
+Message-ID: <F40C48BF-58E7-497F-9BF0-D0E1DC612F1F@lmi.net>
+
+Hi Kars,
+
+It's difficult to answer your question if you don't explain why you are asking.  If you use the given formulae to compute your EXPOSURE value in some kind of manual conversion of each image to HDR format, the values will correspond, even if the limits are still standard dynamic range.  This is sort of what happens if you give Photosphere a single image and tell it to build an HDR result.  If you give Photosphere multiple images, it knows how to apply the formula for you.  The same is true of hdrgen.
+
+If you are using different software or writing your own, then you need to better explain your expected inputs, or provide a clear example with where you are stuck.
+
+Best,
+-Greg
+
+P.S.  I am moving the remainder of this thread to the HDRI mailing list.
+
+> From: "Morsink, K." <k.morsink at student.tue.nl>
+> Date: July 27, 2017 8:22:59 AM PDT
+> 
+> Hi Greg,
+> 
+> Thank you for your quick response!
+> 
+> The formula you provided works for me with a single LDR image and thus a single exposure time, but I'm stuck in how I should insert the multiple exposure times (of the 7 LDR images to form the HDR image) in exposure_secs and get the correct EXPOSURE, could you maybe explain this further?
+> 
+> Making use of the equal-energy illuminant E, is it assumed that the white point remains constant (1/3, 1/3)? I'm asking this since I'm taking outdoor photographs, where the CCT (and thereby the white point) changes constantly, assuming a constant white point would therefore affect the accuracy of the conversion to luminance values.
+> 
+> Kind regards,
+> Kars
+> 
+> -----Original Message-----
+> From: Greg Ward [mailto:gregoryjward at gmail.com] 
+> Sent: woensdag 26 juli 2017 19:15
+> 
+> Hi Kars,
+> 
+> I am cross-posting my response to the HDRI mailing list per Chris' suggestion.
+> 
+> Specifying the "-o" option of pvalue takes into account the exposure setting, which is determined from the ExIF data if you created the image using Photosphere or hdrgen.  The formula below has an empirically derived constant that may not exactly fit your camera, so it is best to add your own calibrating scale factor:
+> 
+> 	sample_to_nits = 87 * (f-stop)^2 / (ISO * exposure_secs)
+> 
+> The sample_to_nits is converted to a Radiance picture exposure using:
+> 
+> 	EXPOSURE = 179 / sample_to_nits
+> 
+> where 179 lumens/watt is the agreed-upon efficacy of the equal-energy illuminant E over the visible spectrum.
+> 
+> Unfortunately, pvalue is not very smart about reporting brightness using the "-b" option.  It uses a formula based on the standard Radiance color space, which differs from the CCIR-709 color space produced by Photosphere in both the green primary and the white point.  It only makes a small difference, but if you are worrying about such things, you had best use the following to report luminance from your image:
+> 
+> 	ra_xyze image.hdr | pvalue -o -b [other options]
+> 
+> This also takes care of the 179 factor, reporting results in candelas/meter^2.
+> 
+> Cheers,
+> -Greg
+> 
+>> From: "Morsink, K." <k.morsink at student.tue.nl>
+>> Date: July 26, 2017 7:34:45 AM PDT
+>> 
+>> Hello everybody,
+>> 
+>> I'm Kars and I'm new to this Radiance forum.
+>> 
+>> In the manual of Pvalue (https://www.radiance-online.org/learning/documentation/manual-pages/pdfs/pvalue.pdf) it is stated that inputting a file in XYZE format will give you the luminance values of the image (corresponding to the Y channel).  I've inserted some .hdr images in Pvalue with the following Primaries (taken from the EXIF data): PRIMARIES= 0.6400 0.3300 0.3000 0.6000 0.1500 0.0600 0.3127 0.3290, where the first two numbers correspond to the R primary (x,y), the third and fourth to the G primary (x,y), the fifth and sixth to the B primary (x,y), and the seventh and eighth to the white point (x,y). The EXIF data also shows an exposure value of the .hdr image.
+>> 
+>> I've got two questions regarding this conversion.
+>> 
+>> To my knowledge the white point coordinates can be used to calculate the CCT, as described by Inanici in Evaluation of High Dynamic Range Photography as a Luminance Data Acquisition System. The white point coordinates, as found in the EXIF data, correspond to the CIE standard illuminant D65. Does this mean Pvalue assumes a constant CCT for all the .hdr images when converting to luminance? Or is Pvalue making other assumptions / calculations?
+>> 
+>> My second question refers to the exposure value of the .hdr image, as shown in the EXIF data of the image. How is this value determined? Since a HDR image consists of multiple images (in my case 7) with different exposure values. What is this exposure value of the .hdr image based on and is this used by Pvalue somehow?
+>> 
+>> I hope I've made myself clear.
+>> 
+>> Kind regards,
+>> 
+>> Kars Morsink
+
+
+From solarjoe at posteo.org  Fri Jul 28 02:18:13 2017
+From: solarjoe at posteo.org (Joe)
+Date: Fri, 28 Jul 2017 11:18:13 +0200
+Subject: [Radiance-general] Questions about spotlight and specularity
+In-Reply-To: <02064C47-8F0C-429F-B813-2A3652F1ABCA@lmi.net>
+References: <de589f6144daad9a1a9370eaa982dba2@posteo.de>
+ <02064C47-8F0C-429F-B813-2A3652F1ABCA@lmi.net>
+Message-ID: <da3651d29248123cfbf38a7c44e5e2d1@posteo.de>
+
+Hello Greg,
+
+thank you very much for your quick response and the good answers.
+Abbout reflectivity / reflectance, I just found this
+https://en.wikipedia.org/wiki/Reflectance#Reflectivity
+
+I am also using SolTrace, also from NREL, maybe you know it. It's a
+more technical raytracer (path tracing, starting at the light source),
+not considering colors, only energy.
+
+Now I would like to make a rendering of a concentrating solar tower
+plant. But since I have only very little experience with rendering so
+far I can't get the materials right, or I am missing something else.
+
+A solar tower plant consists of thousands of tracking mirrors reflection 
+solar radiation
+onto a receiver at the top of a tower.
+
+Tower and receiver:
+http://cspworld.org/sites/default/files/map/images/eSolarBabcockWilkoxReceiver.jpg
+
+Heliostats scattered around the tower
+http://www.solartowersystems.com/mediapool/99/994662/resources/big_21459290_0_350-279.jpg
+
+This is what I have so far
+
+http://imgur.com/Vgf6Zuz
+
+But I was not able to see a light spot of the heliostat on the receiver 
+(large black cylinder with lid).
+I would have expected it at the spot marked in blue.
+
+The scene is illuminated by a sun disk in zenith (0, 0, 1, from 
+gendaylit) and a downward
+pointing spot (red) directly above the heliostat (green). Heliostat 
+diameter is 10 m.
+
+This is the sun I am using at the moment
+
+void light sun
+0
+0
+3 7.131e+004, 7.131e+004, 7.131e+004
+
+gendaylit originally returned
+
+void light sun
+0
+0
+3 7.131e+006, 7.131e+006, 7.131e+006
+
+but this oversaturates my scene completely and it looks like a 
+white-out.
+
+I tried several materials for the heliostat (glossy colors, glass with 
+no transmittance, mirror).
+
+So far I tried a red plastic material for the receiver and played a bit 
+with the specularity
+and roughness but could not get it to reflect anything towards the 
+camera.
+
+Do you have some ideas how I could get this to work?
+
+Kind regards,
+Joe
+
+Am 27.07.2017 19:37 schrieb Greg Ward:
+> Hi Joe,
+> 
+> I love your little drawings.
+> 
+> 1.)  Each point in a ring is luminous when assigned a spotlight
+> material, yes.  However, you will only ever sample the center of the
+> ring if you set "-dj 0" in your rendering, which is typically the
+> default.
+> 
+> 2.)  This is an excellent question, and your drawing illustrates what
+> goes on fairly accurately.  The boundaries of the spotlight is
+> dictated by the spotlight vector, but the output intensity is affected
+> by the cosine of the ring orientation, since this changes the visible
+> solid angle of the source.
+> 
+> 3.)  Your diagram looks right to me for the focal (spotlight vector)
+> length.  Effectively, it changes the fall-off of the source so that it
+> is 1/r^2 measured from a point behind the object.  The size of the
+> spotlight area is unchanged -- i.e., the cone still covers the number
+> of degrees specified.
+> 
+> Remember that a spotlight is just a convenient way to cut off the
+> boundaries of illumination.  It doesn't necessarily correspond to any
+> real light source, but it can be a handy way to save calculation time
+> for narrow spots, since there's no need to do shadow testing except
+> for the part of the scene covered by the spotlight cone.  Ideally, you
+> would still use a measured light distribution or fall-off model as a
+> pattern applied to your spotlight material.
+> 
+> 4.) I haven't found a good definition of "reflectivity" that differs
+> from "reflectance," but the specular component for a plastic is an
+> uncolored highlight that corresponds to the given fraction of incident
+> light.  Generally speaking, non-metals do not have specularity values
+> greater than 0.06 or so.  The rest is treated as Lambertian, with the
+> specified RGB color.
+> 
+> Cheers,
+> -Greg
+> 
+>> From: Joe <solarjoe at posteo.org>
+>> Date: July 27, 2017 12:44:29 AM PDT
+>> 
+>> Hello,
+>> I am new to Radiance, have some questions and hope
+>> that you can help me.
+>> 
+>> Here is an image to illustrate my questions:
+>> http://imgur.com/M2ln4Sb
+>> 
+>> About spotlights.
+>> 
+>> 1.)
+>> 
+>> Does each point of e.g. a ring act as single spotlight when spotlight
+>> is assigned to a surface? (upper left image)
+>> 
+>> 2.)
+>> 
+>> When I assign a spotlight to a ring, how does the direction of the 
+>> ring's normal
+>> and the direction of the spotlight act together?
+>> 
+>> I would have expected the light spot to get elliptic when the 
+>> spotlight is pointing
+>> downwards but the ring has a different normal. (like the projected
+>> area of the ring when looking in the direction of the light)
+>> But the light spot stays round. Why?
+>> 
+>> 3.)
+>> 
+>> I found a comment in Radiance Digest
+>> 
+>>> The focal length produces only a subtle difference as it shifts the 
+>>> effective
+>>> position of the source behind the actual emitting surface.
+>> 
+>> I interpret this as shown in the lower image. Is this correct?
+>> 
+>> 4.) Is the "specularity" parameter for the materials the same as 
+>> "reflectivity" or "reflectance"?
+>> 
+>> Kind regards,
+>> Joe
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From boutillier at estia.ch  Fri Jul 28 02:22:13 2017
+From: boutillier at estia.ch (boutillier at estia.ch)
+Date: Fri, 28 Jul 2017 11:22:13 +0200 (CEST)
+Subject: [Radiance-general] 
+ =?utf-8?q?Questions_about_spotlight_and_specu?= =?utf-8?q?larity?=
+Message-ID: <20170728092213.8B0A11320495@prospero5.kreativmedia.ch>
+
+Bonjour, 
+
+Je suis actuellement en vacances. Je serai de retour le 7 ao?t 2017. 
+
+En cas d'urgence, vous pouvez toujours appeler le num?ro g?n?ral d'Estia : +41 (0) 21/510.59.59 ou envoyer un mail ? l'adresse mail at estia.ch.
+
+Pour toutes questions relatives ? DIAL+, merci d'utiliser l'adresse mail dial at estia.ch. 
+
+Cordialement
+
+Julien Boutillier
+Estia SA
+
+
+
+
+From gregoryjward at gmail.com  Fri Jul 28 10:13:07 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri, 28 Jul 2017 10:13:07 -0700
+Subject: [Radiance-general] Questions about spotlight and specularity
+In-Reply-To: <da3651d29248123cfbf38a7c44e5e2d1@posteo.de>
+References: <de589f6144daad9a1a9370eaa982dba2@posteo.de>
+ <02064C47-8F0C-429F-B813-2A3652F1ABCA@lmi.net>
+ <da3651d29248123cfbf38a7c44e5e2d1@posteo.de>
+Message-ID: <24518E05-9DF9-415A-81FD-B819B74938C0@lmi.net>
+
+Hi Joe,
+
+Regarding reflectivity, I suppose you could say that for any opaque material, reflectivity==reflectance.  Since Radiance materials (with the possible exceptions of "dielectric," "interface" and "mist") don't really consider volumes, this equality generally applies.
+
+I don't really know anything about SolTrace, but from your brief description, it sounds like it might be the right tool for your purpose.
+
+The basic problem with Radiance is that as a light-backwards ray-tracer, it needs to know where to look for light sources, particularly tiny ones like the sun.  There is a trick you can use, which is the "mirror" material light, which enables a virtual light source search.  That brings other issue, especially once you go to a full array.  By the way, it employs the "spotlight" mechanism internally to avoid unnecessary source tests, so you had a good idea with that.
+
+I remember clearly that someone covered this in a Radiance workshop presentation.  Can someone post the link for me?  I haven't managed to locate it with any of my searches.
+
+Cheers,
+-Greg
+
+> From: Joe <solarjoe at posteo.org>
+> Date: July 28, 2017 2:18:13 AM PDT
+> 
+> Hello Greg,
+> 
+> thank you very much for your quick response and the good answers.
+> Abbout reflectivity / reflectance, I just found this
+> https://en.wikipedia.org/wiki/Reflectance#Reflectivity
+> 
+> I am also using SolTrace, also from NREL, maybe you know it. It's a
+> more technical raytracer (path tracing, starting at the light source),
+> not considering colors, only energy.
+> 
+> Now I would like to make a rendering of a concentrating solar tower
+> plant. But since I have only very little experience with rendering so
+> far I can't get the materials right, or I am missing something else.
+> 
+> A solar tower plant consists of thousands of tracking mirrors reflection solar radiation
+> onto a receiver at the top of a tower.
+> 
+> Tower and receiver:
+> http://cspworld.org/sites/default/files/map/images/eSolarBabcockWilkoxReceiver.jpg
+> 
+> Heliostats scattered around the tower
+> http://www.solartowersystems.com/mediapool/99/994662/resources/big_21459290_0_350-279.jpg
+> 
+> This is what I have so far
+> 
+> http://imgur.com/Vgf6Zuz
+> 
+> But I was not able to see a light spot of the heliostat on the receiver (large black cylinder with lid).
+> I would have expected it at the spot marked in blue.
+> 
+> The scene is illuminated by a sun disk in zenith (0, 0, 1, from gendaylit) and a downward
+> pointing spot (red) directly above the heliostat (green). Heliostat diameter is 10 m.
+> 
+> This is the sun I am using at the moment
+> 
+> void light sun
+> 0
+> 0
+> 3 7.131e+004, 7.131e+004, 7.131e+004
+> 
+> gendaylit originally returned
+> 
+> void light sun
+> 0
+> 0
+> 3 7.131e+006, 7.131e+006, 7.131e+006
+> 
+> but this oversaturates my scene completely and it looks like a white-out.
+> 
+> I tried several materials for the heliostat (glossy colors, glass with no transmittance, mirror).
+> 
+> So far I tried a red plastic material for the receiver and played a bit with the specularity
+> and roughness but could not get it to reflect anything towards the camera.
+> 
+> Do you have some ideas how I could get this to work?
+> 
+> Kind regards,
+> Joe
+
+
+From gregoryjward at gmail.com  Fri Jul 28 10:24:02 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Fri, 28 Jul 2017 10:24:02 -0700
+Subject: [Radiance-general] Questions about spotlight and specularity
+In-Reply-To: <24518E05-9DF9-415A-81FD-B819B74938C0@lmi.net>
+References: <de589f6144daad9a1a9370eaa982dba2@posteo.de>
+ <02064C47-8F0C-429F-B813-2A3652F1ABCA@lmi.net>
+ <da3651d29248123cfbf38a7c44e5e2d1@posteo.de>
+ <24518E05-9DF9-415A-81FD-B819B74938C0@lmi.net>
+Message-ID: <48FFAE3A-2CCC-4DE1-BAFC-FEBC74D92E78@lmi.net>
+
+I should add that Roland Schregle's photon mapping routines might help you with this calculation.  Saves creating as many virtual light sources as you have mirror elements.  (This number approaches infinity when you try to model curved mirrors.)  Unfortunately, I am not knowledgeable enough about it to even tell you how to set it up, but I guess it will involve a portal for the sun, somewhere.
+
+Cheers,
+-Greg
+
+> From: Greg Ward <gregoryjward at gmail.com>
+> Date: July 28, 2017 10:13:07 AM PDT
+> 
+> Hi Joe,
+> 
+> Regarding reflectivity, I suppose you could say that for any opaque material, reflectivity==reflectance.  Since Radiance materials (with the possible exceptions of "dielectric," "interface" and "mist") don't really consider volumes, this equality generally applies.
+> 
+> I don't really know anything about SolTrace, but from your brief description, it sounds like it might be the right tool for your purpose.
+> 
+> The basic problem with Radiance is that as a light-backwards ray-tracer, it needs to know where to look for light sources, particularly tiny ones like the sun.  There is a trick you can use, which is the "mirror" material light, which enables a virtual light source search.  That brings other issue, especially once you go to a full array.  By the way, it employs the "spotlight" mechanism internally to avoid unnecessary source tests, so you had a good idea with that.
+> 
+> I remember clearly that someone covered this in a Radiance workshop presentation.  Can someone post the link for me?  I haven't managed to locate it with any of my searches.
+> 
+> Cheers,
+> -Greg
+> 
+>> From: Joe <solarjoe at posteo.org>
+>> Date: July 28, 2017 2:18:13 AM PDT
+>> 
+>> Hello Greg,
+>> 
+>> thank you very much for your quick response and the good answers.
+>> Abbout reflectivity / reflectance, I just found this
+>> https://en.wikipedia.org/wiki/Reflectance#Reflectivity
+>> 
+>> I am also using SolTrace, also from NREL, maybe you know it. It's a
+>> more technical raytracer (path tracing, starting at the light source),
+>> not considering colors, only energy.
+>> 
+>> Now I would like to make a rendering of a concentrating solar tower
+>> plant. But since I have only very little experience with rendering so
+>> far I can't get the materials right, or I am missing something else.
+>> 
+>> A solar tower plant consists of thousands of tracking mirrors reflection solar radiation
+>> onto a receiver at the top of a tower.
+>> 
+>> Tower and receiver:
+>> http://cspworld.org/sites/default/files/map/images/eSolarBabcockWilkoxReceiver.jpg
+>> 
+>> Heliostats scattered around the tower
+>> http://www.solartowersystems.com/mediapool/99/994662/resources/big_21459290_0_350-279.jpg
+>> 
+>> This is what I have so far
+>> 
+>> http://imgur.com/Vgf6Zuz
+>> 
+>> But I was not able to see a light spot of the heliostat on the receiver (large black cylinder with lid).
+>> I would have expected it at the spot marked in blue.
+>> 
+>> The scene is illuminated by a sun disk in zenith (0, 0, 1, from gendaylit) and a downward
+>> pointing spot (red) directly above the heliostat (green). Heliostat diameter is 10 m.
+>> 
+>> This is the sun I am using at the moment
+>> 
+>> void light sun
+>> 0
+>> 0
+>> 3 7.131e+004, 7.131e+004, 7.131e+004
+>> 
+>> gendaylit originally returned
+>> 
+>> void light sun
+>> 0
+>> 0
+>> 3 7.131e+006, 7.131e+006, 7.131e+006
+>> 
+>> but this oversaturates my scene completely and it looks like a white-out.
+>> 
+>> I tried several materials for the heliostat (glossy colors, glass with no transmittance, mirror).
+>> 
+>> So far I tried a red plastic material for the receiver and played a bit with the specularity
+>> and roughness but could not get it to reflect anything towards the camera.
+>> 
+>> Do you have some ideas how I could get this to work?
+>> 
+>> Kind regards,
+>> Joe
+
+
+From solarjoe at posteo.org  Fri Jul 28 23:10:42 2017
+From: solarjoe at posteo.org (Joe)
+Date: Sat, 29 Jul 2017 08:10:42 +0200
+Subject: [Radiance-general] Questions about spotlight and specularity
+In-Reply-To: <48FFAE3A-2CCC-4DE1-BAFC-FEBC74D92E78@lmi.net>
+References: <de589f6144daad9a1a9370eaa982dba2@posteo.de>
+ <02064C47-8F0C-429F-B813-2A3652F1ABCA@lmi.net>
+ <da3651d29248123cfbf38a7c44e5e2d1@posteo.de>
+ <24518E05-9DF9-415A-81FD-B819B74938C0@lmi.net>
+ <48FFAE3A-2CCC-4DE1-BAFC-FEBC74D92E78@lmi.net>
+Message-ID: <a6d2ca49-c78f-746c-99d0-14c7f051acf9@posteo.org>
+
+Hello Greg,
+
+so, as defined in Radiance, is specularity == reflectivity == reflectance?
+
+I guess you mean this presentation:
+
+ 
+https://www.radiance-online.org/community/workshops/2008-fribourg/Content/Augsburger/GermainAugsburgerPresentation.pdf
+
+He was using Radiance like SolTrace, to calculate the flux distribution 
+on the receiver.
+
+He calculated the surface normals at the receiver panels sent them
+into the scene using rtrace.
+
+I am not sure if I understood that correctly:
+The material "mirror" uses sort of mimics the spotlight, so only
+shooting rays within a fixed cone angle towards the light sources
+or other illumination surfaces?
+
+I will also look into the photon mapping, have never used that before.
+
+Well, I would like to create realistic renderings of these power plands 
+at different values of solar irradiance, e.g. 500 and 1000 W / m^2.
+
+Images like
+
+http://www.dlr.de/dlr/en/Portaldata/1/Resources/bilder/portal/portal_2011_7/turmkraftwerk.jpg
+
+http://www.bine.info/fileadmin/content/Publikationen/Themen-Infos/II_2013/themen_0213_29.jpg
+
+https://s-media-cache-ak0.pinimg.com/originals/2b/b8/fb/2bb8fb6e9d4194bb87d32a5b0855182b.jpg
+
+But instead of "cheating" myself into a glowing receiver, I would
+rather have it to be illuminated by the heliostats.
+
+Maybe also with some mist:
+
+https://www.e-education.psu.edu/eme812/sites/www.e-education.psu.edu.eme812/files/Lesson07/7.2solucarps10.png
+
+Do you think it is possible to create images like that at all?
+
+Kind regards and thanks for your patience :)
+
+Joe
+
+
+
+Am 28.07.2017 um 19:24 schrieb Greg Ward:
+> I should add that Roland Schregle's photon mapping routines might help you with this calculation.  Saves creating as many virtual light sources as you have mirror elements.  (This number approaches infinity when you try to model curved mirrors.)  Unfortunately, I am not knowledgeable enough about it to even tell you how to set it up, but I guess it will involve a portal for the sun, somewhere.
+> 
+> Cheers,
+> -Greg
+> 
+>> From: Greg Ward <gregoryjward at gmail.com>
+>> Date: July 28, 2017 10:13:07 AM PDT
+>>
+>> Hi Joe,
+>>
+>> Regarding reflectivity, I suppose you could say that for any opaque material, reflectivity==reflectance.  Since Radiance materials (with the possible exceptions of "dielectric," "interface" and "mist") don't really consider volumes, this equality generally applies.
+>>
+>> I don't really know anything about SolTrace, but from your brief description, it sounds like it might be the right tool for your purpose.
+>>
+>> The basic problem with Radiance is that as a light-backwards ray-tracer, it needs to know where to look for light sources, particularly tiny ones like the sun.  There is a trick you can use, which is the "mirror" material light, which enables a virtual light source search.  That brings other issue, especially once you go to a full array.  By the way, it employs the "spotlight" mechanism internally to avoid unnecessary source tests, so you had a good idea with that.
+>>
+>> I remember clearly that someone covered this in a Radiance workshop presentation.  Can someone post the link for me?  I haven't managed to locate it with any of my searches.
+>>
+>> Cheers,
+>> -Greg
+>>
+>>> From: Joe <solarjoe at posteo.org>
+>>> Date: July 28, 2017 2:18:13 AM PDT
+>>>
+>>> Hello Greg,
+>>>
+>>> thank you very much for your quick response and the good answers.
+>>> Abbout reflectivity / reflectance, I just found this
+>>> https://en.wikipedia.org/wiki/Reflectance#Reflectivity
+>>>
+>>> I am also using SolTrace, also from NREL, maybe you know it. It's a
+>>> more technical raytracer (path tracing, starting at the light source),
+>>> not considering colors, only energy.
+>>>
+>>> Now I would like to make a rendering of a concentrating solar tower
+>>> plant. But since I have only very little experience with rendering so
+>>> far I can't get the materials right, or I am missing something else.
+>>>
+>>> A solar tower plant consists of thousands of tracking mirrors reflection solar radiation
+>>> onto a receiver at the top of a tower.
+>>>
+>>> Tower and receiver:
+>>> http://cspworld.org/sites/default/files/map/images/eSolarBabcockWilkoxReceiver.jpg
+>>>
+>>> Heliostats scattered around the tower
+>>> http://www.solartowersystems.com/mediapool/99/994662/resources/big_21459290_0_350-279.jpg
+>>>
+>>> This is what I have so far
+>>>
+>>> http://imgur.com/Vgf6Zuz
+>>>
+>>> But I was not able to see a light spot of the heliostat on the receiver (large black cylinder with lid).
+>>> I would have expected it at the spot marked in blue.
+>>>
+>>> The scene is illuminated by a sun disk in zenith (0, 0, 1, from gendaylit) and a downward
+>>> pointing spot (red) directly above the heliostat (green). Heliostat diameter is 10 m.
+>>>
+>>> This is the sun I am using at the moment
+>>>
+>>> void light sun
+>>> 0
+>>> 0
+>>> 3 7.131e+004, 7.131e+004, 7.131e+004
+>>>
+>>> gendaylit originally returned
+>>>
+>>> void light sun
+>>> 0
+>>> 0
+>>> 3 7.131e+006, 7.131e+006, 7.131e+006
+>>>
+>>> but this oversaturates my scene completely and it looks like a white-out.
+>>>
+>>> I tried several materials for the heliostat (glossy colors, glass with no transmittance, mirror).
+>>>
+>>> So far I tried a red plastic material for the receiver and played a bit with the specularity
+>>> and roughness but could not get it to reflect anything towards the camera.
+>>>
+>>> Do you have some ideas how I could get this to work?
+>>>
+>>> Kind regards,
+>>> Joe
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+
+
+From boutillier at estia.ch  Fri Jul 28 23:16:13 2017
+From: boutillier at estia.ch (boutillier at estia.ch)
+Date: Sat, 29 Jul 2017 08:16:13 +0200 (CEST)
+Subject: [Radiance-general] 
+ =?utf-8?q?Questions_about_spotlight_and_specu?= =?utf-8?q?larity?=
+Message-ID: <20170729061613.887031320500@prospero5.kreativmedia.ch>
+
+Bonjour, 
+
+Je suis actuellement en vacances. Je serai de retour le 7 ao?t 2017. 
+
+En cas d'urgence, vous pouvez toujours appeler le num?ro g?n?ral d'Estia : +41 (0) 21/510.59.59 ou envoyer un mail ? l'adresse mail at estia.ch.
+
+Pour toutes questions relatives ? DIAL+, merci d'utiliser l'adresse mail dial at estia.ch. 
+
+Cordialement
+
+Julien Boutillier
+Estia SA
+
+
+
+
+From gregoryjward at gmail.com  Sat Jul 29 07:42:14 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Sat, 29 Jul 2017 07:42:14 -0700
+Subject: [Radiance-general] Questions about spotlight and specularity
+In-Reply-To: <a6d2ca49-c78f-746c-99d0-14c7f051acf9@posteo.org>
+References: <de589f6144daad9a1a9370eaa982dba2@posteo.de>
+ <02064C47-8F0C-429F-B813-2A3652F1ABCA@lmi.net>
+ <da3651d29248123cfbf38a7c44e5e2d1@posteo.de>
+ <24518E05-9DF9-415A-81FD-B819B74938C0@lmi.net>
+ <48FFAE3A-2CCC-4DE1-BAFC-FEBC74D92E78@lmi.net>
+ <a6d2ca49-c78f-746c-99d0-14c7f051acf9@posteo.org>
+Message-ID: <C9C3370C-133B-4899-B49F-130B014B5BD1@lmi.net>
+
+Hi Joe,
+
+The only time specularity == reflectance is when you have a plastic material whose first three (RGB) arguments are all zero.  Otherwise, there is a diffuse component that gets added to the specular in the following manner:
+
+	R_total_refl = (1 - A4)*A1 + A4
+	G_total_refl = (1 - A4)*A2 + A4
+	B_total_refl = (1 - A4)*A3 + A4
+
+This is explained (more or less) in the following document:
+
+	http://radsite.lbl.gov/radiance/refer/materials.pdf
+
+Good -- you found the presentation from Germain.  That's the one I was looking for.
+
+Your understanding of the "mirror" material is correct.  For every light source in the scene, a virtual spotlight is created that encompasses the surface modified by "mirror", "prism", or "prism2".  The number of reflections searched is set by the "-dr" option, which should be set to 1 in this case because you neither care about nor wish to burden the calculation searching for secondary reflections.
+
+You should be able to create images using the virtual light source calculation Germain used.  The photon-mapping approach ought to work as well.  You don't need to "cheat," although getting a reasonable tone-mapped exposure might be challenging.  You can play around with pcond, especially the veiling glare simulation, to give you the kind of flare effect you are looking for in a post-process.
+
+Cheers,
+-Greg
+
+> From: Joe <solarjoe at posteo.org>
+> Date: July 28, 2017 11:10:42 PM PDT
+> 
+> Hello Greg,
+> 
+> so, as defined in Radiance, is specularity == reflectivity == reflectance?
+> 
+> I guess you mean this presentation:
+> 
+> https://www.radiance-online.org/community/workshops/2008-fribourg/Content/Augsburger/GermainAugsburgerPresentation.pdf
+> 
+> He was using Radiance like SolTrace, to calculate the flux distribution on the receiver.
+> 
+> He calculated the surface normals at the receiver panels sent them
+> into the scene using rtrace.
+> 
+> I am not sure if I understood that correctly:
+> The material "mirror" uses sort of mimics the spotlight, so only
+> shooting rays within a fixed cone angle towards the light sources
+> or other illumination surfaces?
+> 
+> I will also look into the photon mapping, have never used that before.
+> 
+> Well, I would like to create realistic renderings of these power plands at different values of solar irradiance, e.g. 500 and 1000 W / m^2.
+> 
+> Images like
+> 
+> http://www.dlr.de/dlr/en/Portaldata/1/Resources/bilder/portal/portal_2011_7/turmkraftwerk.jpg
+> 
+> http://www.bine.info/fileadmin/content/Publikationen/Themen-Infos/II_2013/themen_0213_29.jpg
+> 
+> https://s-media-cache-ak0.pinimg.com/originals/2b/b8/fb/2bb8fb6e9d4194bb87d32a5b0855182b.jpg
+> 
+> But instead of "cheating" myself into a glowing receiver, I would
+> rather have it to be illuminated by the heliostats.
+> 
+> Maybe also with some mist:
+> 
+> https://www.e-education.psu.edu/eme812/sites/www.e-education.psu.edu.eme812/files/Lesson07/7.2solucarps10.png
+> 
+> Do you think it is possible to create images like that at all?
+> 
+> Kind regards and thanks for your patience :)
+> 
+> Joe
+> 
+> 
+> 
+> Am 28.07.2017 um 19:24 schrieb Greg Ward:
+>> I should add that Roland Schregle's photon mapping routines might help you with this calculation.  Saves creating as many virtual light sources as you have mirror elements.  (This number approaches infinity when you try to model curved mirrors.)  Unfortunately, I am not knowledgeable enough about it to even tell you how to set it up, but I guess it will involve a portal for the sun, somewhere.
+>> Cheers,
+>> -Greg
+>>> From: Greg Ward <gregoryjward at gmail.com>
+>>> Date: July 28, 2017 10:13:07 AM PDT
+>>> 
+>>> Hi Joe,
+>>> 
+>>> Regarding reflectivity, I suppose you could say that for any opaque material, reflectivity==reflectance.  Since Radiance materials (with the possible exceptions of "dielectric," "interface" and "mist") don't really consider volumes, this equality generally applies.
+>>> 
+>>> I don't really know anything about SolTrace, but from your brief description, it sounds like it might be the right tool for your purpose.
+>>> 
+>>> The basic problem with Radiance is that as a light-backwards ray-tracer, it needs to know where to look for light sources, particularly tiny ones like the sun.  There is a trick you can use, which is the "mirror" material light, which enables a virtual light source search.  That brings other issue, especially once you go to a full array.  By the way, it employs the "spotlight" mechanism internally to avoid unnecessary source tests, so you had a good idea with that.
+>>> 
+>>> I remember clearly that someone covered this in a Radiance workshop presentation.  Can someone post the link for me?  I haven't managed to locate it with any of my searches.
+>>> 
+>>> Cheers,
+>>> -Greg
+>>> 
+>>>> From: Joe <solarjoe at posteo.org>
+>>>> Date: July 28, 2017 2:18:13 AM PDT
+>>>> 
+>>>> Hello Greg,
+>>>> 
+>>>> thank you very much for your quick response and the good answers.
+>>>> Abbout reflectivity / reflectance, I just found this
+>>>> https://en.wikipedia.org/wiki/Reflectance#Reflectivity
+>>>> 
+>>>> I am also using SolTrace, also from NREL, maybe you know it. It's a
+>>>> more technical raytracer (path tracing, starting at the light source),
+>>>> not considering colors, only energy.
+>>>> 
+>>>> Now I would like to make a rendering of a concentrating solar tower
+>>>> plant. But since I have only very little experience with rendering so
+>>>> far I can't get the materials right, or I am missing something else.
+>>>> 
+>>>> A solar tower plant consists of thousands of tracking mirrors reflection solar radiation
+>>>> onto a receiver at the top of a tower.
+>>>> 
+>>>> Tower and receiver:
+>>>> http://cspworld.org/sites/default/files/map/images/eSolarBabcockWilkoxReceiver.jpg
+>>>> 
+>>>> Heliostats scattered around the tower
+>>>> http://www.solartowersystems.com/mediapool/99/994662/resources/big_21459290_0_350-279.jpg
+>>>> 
+>>>> This is what I have so far
+>>>> 
+>>>> http://imgur.com/Vgf6Zuz
+>>>> 
+>>>> But I was not able to see a light spot of the heliostat on the receiver (large black cylinder with lid).
+>>>> I would have expected it at the spot marked in blue.
+>>>> 
+>>>> The scene is illuminated by a sun disk in zenith (0, 0, 1, from gendaylit) and a downward
+>>>> pointing spot (red) directly above the heliostat (green). Heliostat diameter is 10 m.
+>>>> 
+>>>> This is the sun I am using at the moment
+>>>> 
+>>>> void light sun
+>>>> 0
+>>>> 0
+>>>> 3 7.131e+004, 7.131e+004, 7.131e+004
+>>>> 
+>>>> gendaylit originally returned
+>>>> 
+>>>> void light sun
+>>>> 0
+>>>> 0
+>>>> 3 7.131e+006, 7.131e+006, 7.131e+006
+>>>> 
+>>>> but this oversaturates my scene completely and it looks like a white-out.
+>>>> 
+>>>> I tried several materials for the heliostat (glossy colors, glass with no transmittance, mirror).
+>>>> 
+>>>> So far I tried a red plastic material for the receiver and played a bit with the specularity
+>>>> and roughness but could not get it to reflect anything towards the camera.
+>>>> 
+>>>> Do you have some ideas how I could get this to work?
+>>>> 
+>>>> Kind regards,
+>>>> Joe
+
+
+From alenmahic at gmail.com  Sat Jul 29 18:57:21 2017
+From: alenmahic at gmail.com (Alen Mahic)
+Date: Sat, 29 Jul 2017 18:57:21 -0700
+Subject: [Radiance-general] 2017 International Radiance Workshop -- Portland, OR
+Message-ID: <CAJgQ_PN7dPUArK_j4LOHCYJVC-JjizAGi4vEh1+0V4aBf2MWFw@mail.gmail.com>
+
+Hello all,
+
+Just a friendly reminder that the 2017 International Radiance Workshop
+registration deadline is fast-approaching this coming Monday, July 31st.
+For more information please head to http://radiance.uoregon.edu
+
+Registration will remain open past this date with a 10% addition to ticket
+price!
+
+Please feel free to contact Alen Mahic (alen at uoregon.edu) or Stephanie
+Luiere (sluiere at uoregon.edu) with any questions or concerns.
+
+Thank you and we look forward to seeing you in Portland!
+
+Best regards,
+
+
+
+
+
+*Alen Mahi? Energy Studies in Buildings Laboratory, University of Oregon
+541.346.5647 p 208.283.0255 c*
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170729/3add426d/attachment.html>
+
+From boutillier at estia.ch  Sat Jul 29 19:04:00 2017
+From: boutillier at estia.ch (boutillier at estia.ch)
+Date: Sun, 30 Jul 2017 04:04:00 +0200 (CEST)
+Subject: [Radiance-general] 
+ =?utf-8?q?2017_International_Radiance_Worksho?=
+ =?utf-8?q?p_--_Portland=2C_OR?=
+Message-ID: <20170730020400.38FD7132032C@prospero5.kreativmedia.ch>
+
+Bonjour, 
+
+Je suis actuellement en vacances. Je serai de retour le 7 ao?t 2017. 
+
+En cas d'urgence, vous pouvez toujours appeler le num?ro g?n?ral d'Estia : +41 (0) 21/510.59.59 ou envoyer un mail ? l'adresse mail at estia.ch.
+
+Pour toutes questions relatives ? DIAL+, merci d'utiliser l'adresse mail dial at estia.ch. 
+
+Cordialement
+
+Julien Boutillier
+Estia SA
+
+
+
+
+From shakespe at indiana.edu  Sat Jul 29 19:46:28 2017
+From: shakespe at indiana.edu (Shakespeare, Robert A.)
+Date: Sun, 30 Jul 2017 02:46:28 +0000
+Subject: [Radiance-general] 2017 International Radiance Workshop --
+ Portland, OR
+In-Reply-To: <CAJgQ_PN7dPUArK_j4LOHCYJVC-JjizAGi4vEh1+0V4aBf2MWFw@mail.gmail.com>
+References: <CAJgQ_PN7dPUArK_j4LOHCYJVC-JjizAGi4vEh1+0V4aBf2MWFw@mail.gmail.com>
+Message-ID: <A31D8B0B-F056-4654-9CD1-E7B827843795@indiana.edu>
+
+Ware Have I registered? Rob shakespeare
+
+Sent from my iPad
+
+On Jul 29, 2017, at 9:58 PM, Alen Mahic <alenmahic at gmail.com<mailto:alenmahic at gmail.com>> wrote:
+
+Hello all,
+
+Just a friendly reminder that the 2017 International Radiance Workshop registration deadline is fast-approaching this coming Monday, July 31st. For more information please head to http://radiance.uoregon.edu
+
+Registration will remain open past this date with a 10% addition to ticket price!
+
+Please feel free to contact Alen Mahic (alen at uoregon.edu<mailto:alen at uoregon.edu>) or Stephanie Luiere (sluiere at uoregon.edu<mailto:sluiere at uoregon.edu>) with any questions or concerns.
+
+Thank you and we look forward to seeing you in Portland!
+
+Best regards,
+
+
+Alen Mahi?
+Energy Studies in Buildings Laboratory, University of Oregon
+541.346.5647 p
+208.283.0255 c
+_______________________________________________
+Radiance-general mailing list
+Radiance-general at radiance-online.org<mailto:Radiance-general at radiance-online.org>
+https://www.radiance-online.org/mailman/listinfo/radiance-general
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170730/8a2b21f8/attachment.html>
+
+From dion at thinkmoult.com  Sun Jul 30 16:15:08 2017
+From: dion at thinkmoult.com (Dion Moult)
+Date: Mon, 31 Jul 2017 09:15:08 +1000
+Subject: [Radiance-general] Various texture mappings at rendertime
+Message-ID: <jb70w9ddcoxk5l4htmo77wgd.1501456508213@email.android.com>
+
+Good day all,?
+I've got a few questions about texture mappings which are so prevalent in other less validated rendering engines. I understand that these texture mappings aren't usually in the Radiance vocabulary as usually simple materials, or even greyscale materials with a focus purely on luminance is used. But hey :)?
+Displacement maps:
+
+Some other rendering engines (which may not be scientifically validated, such as Pixar's Renderman) support a form of displacement mapping that is applied at render time. That is, the lower resolution mesh is fed into the rendering engine along with a bitmap that represents a height map, which is then used to displace the mesh.?
+Please note that this is not the same as a normal map / bump map, which simply perturbs the surface normals but does not actually shift the geometry itself.?
+Is this possible in Radiance?
+Normal maps:
+As a side question, I encountered the original discussion about bump mapping / normal mapping by Simon and Greg back in 1992 about using texdata along with a custom script to create the data files. I've recreated this method successfully but am curious as to whether there is something now more built-in :) (yes, I saw the texpict patch but it is now outdated) Is there?
+Occlusion maps:
+From my understanding, the usage of occlusion maps to express ambient occlusion is not a thing in Radiance. ?Although it is perhaps technically possible to achieve, it only serves to create artificial peak thresholds of the Rgb reflectance values that is ignorant of the actual lighting being used in the scene. Instead, the occlusion should be calculated by Radiance itself by nature of less bounces near corners. Is this understanding correct? If so, I am curious why it is so popular in other "photorealistic" rendering engines.?
+Diffuse maps:
+This is basically colorpict in action. From my understanding, there is no problem in using this to add further realism and rgb relevant analysis to the Radiance render as long as the picture used has pixels that aren't merely artistic, but actually do represent the Rgb reflectance values of the material. Where can I learn more about how to create and find repositories of these types of pictures? I am cautious that if I simply use any old picture online, it may incorrectly skew the luminance analysis.?
+UV mapping with coordinates:
+I played a bit with maps and got familiar with the various transforms, pic_u/v and tile_u/v options to place the maps to scale. At first glance I did not notice anything in the refman about using more sophisticated UV coordinates (for example, map UV coordinates directly to coordinates in a polygon) Is this possible??
+Sorry for the barrage of questions.?
+Kind regards,?Dion
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170731/a9fb5e44/attachment.html>
+
+From gregoryjward at gmail.com  Sun Jul 30 21:11:57 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Sun, 30 Jul 2017 21:11:57 -0700
+Subject: [Radiance-general] Various texture mappings at rendertime
+In-Reply-To: <jb70w9ddcoxk5l4htmo77wgd.1501456508213@email.android.com>
+References: <jb70w9ddcoxk5l4htmo77wgd.1501456508213@email.android.com>
+Message-ID: <5910CE78-4687-4529-BE99-8D412A2F4C32@lmi.net>
+
+Hi Dion,
+
+I've put a few responses inline, below...
+
+> From: Dion Moult <dion at thinkmoult.com>
+> Date: July 30, 2017 4:15:08 PM PDT
+> 
+> Good day all, 
+> 
+> I've got a few questions about texture mappings which are so prevalent in other less validated rendering engines. I understand that these texture mappings aren't usually in the Radiance vocabulary as usually simple materials, or even greyscale materials with a focus purely on luminance is used. But hey :) 
+> 
+> Displacement maps:
+> 
+> Some other rendering engines (which may not be scientifically validated, such as Pixar's Renderman) support a form of displacement mapping that is applied at render time. That is, the lower resolution mesh is fed into the rendering engine along with a bitmap that represents a height map, which is then used to displace the mesh. 
+> 
+> Please note that this is not the same as a normal map / bump map, which simply perturbs the surface normals but does not actually shift the geometry itself. 
+> 
+> Is this possible in Radiance?
+
+Not as such.  The ray intersection routines in Radiance don't offer surface subdivision capabilities, as are necessary when implementing displacement maps.  The complexity of supporting this feature is considerable.
+
+> Normal maps:
+> 
+> As a side question, I encountered the original discussion about bump mapping / normal mapping by Simon and Greg back in 1992 about using texdata along with a custom script to create the data files. I've recreated this method successfully but am curious as to whether there is something now more built-in :) (yes, I saw the texpict patch but it is now outdated) Is there?
+
+I don't really see the problem converting images to data files if you want that kind of texture/bump map.  Is something broken with your method, or you just want to do it the way other renderers do it?  
+
+> Occlusion maps:
+> 
+> From my understanding, the usage of occlusion maps to express ambient occlusion is not a thing in Radiance.  Although it is perhaps technically possible to achieve, it only serves to create artificial peak thresholds of the Rgb reflectance values that is ignorant of the actual lighting being used in the scene. Instead, the occlusion should be calculated by Radiance itself by nature of less bounces near corners. Is this understanding correct? If so, I am curious why it is so popular in other "photorealistic" rendering engines. 
+
+The interreflection calculation gives you something close to the right answer, where occlusion maps offer no guarantees and in fact no strict relation to real lighting. They are merely a convenient shortcut that "looks OK" because your eye is a lousy photometer.  They are much easier to compute, because you don't need to consider other objects in your scene.  That's also why they're wrong.
+
+> Diffuse maps:
+> 
+> This is basically colorpict in action. From my understanding, there is no problem in using this to add further realism and rgb relevant analysis to the Radiance render as long as the picture used has pixels that aren't merely artistic, but actually do represent the Rgb reflectance values of the material. Where can I learn more about how to create and find repositories of these types of pictures? I am cautious that if I simply use any old picture online, it may incorrectly skew the luminance analysis. 
+
+True enough.  So long as your image value multiplied against the diffuse RGB of the material are not greater than 1.0, you stay within what is physically plausible.  Since most images convert to Radiance pictures in the 0-1 range, this is fairly easy to ensure.  You should still use an RGB value that when multiplied against the average given by "pvalue -h -b -d texture.hdr | total -m" gives you the desired average diffuse surface reflectance.
+
+> UV mapping with coordinates:
+> 
+> I played a bit with maps and got familiar with the various transforms, pic_u/v and tile_u/v options to place the maps to scale. At first glance I did not notice anything in the refman about using more sophisticated UV coordinates (for example, map UV coordinates directly to coordinates in a polygon) Is this possible? 
+
+If you have (u,v) coordinates in a Wavefront .OBJ file, you can use obj2mesh to preserve them and utilize the "Lu" and "Lv" built-in variables to access them in the .cal file associated with patterns or textures.  This is currently the only way to import (u,v) coordinates in Radiance, unfortunately.
+
+> Sorry for the barrage of questions. 
+> 
+> Kind regards, 
+> Dion
+> 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170730/ea7b0af5/attachment.html>
+
+From boutillier at estia.ch  Sun Jul 30 21:15:36 2017
+From: boutillier at estia.ch (boutillier at estia.ch)
+Date: Mon, 31 Jul 2017 06:15:36 +0200 (CEST)
+Subject: [Radiance-general] 
+ =?utf-8?q?Various_texture_mappings_at_rendert?= =?utf-8?q?ime?=
+Message-ID: <20170731041536.3B42A1322186@prospero5.kreativmedia.ch>
+
+Bonjour, 
+
+Je suis actuellement en vacances. Je serai de retour le 7 ao?t 2017. 
+
+En cas d'urgence, vous pouvez toujours appeler le num?ro g?n?ral d'Estia : +41 (0) 21/510.59.59 ou envoyer un mail ? l'adresse mail at estia.ch.
+
+Pour toutes questions relatives ? DIAL+, merci d'utiliser l'adresse mail dial at estia.ch. 
+
+Cordialement
+
+Julien Boutillier
+Estia SA
+
+
+
+
+From J.Mardaljevic at lboro.ac.uk  Mon Jul 31 11:06:44 2017
+From: J.Mardaljevic at lboro.ac.uk (John Mardaljevic)
+Date: Mon, 31 Jul 2017 18:06:44 +0000
+Subject: [Radiance-general] Three-day course in Climate-Based Daylight
+ Modelling September 2017 (Loughborough,
+ UK) - register expression of interest
+Message-ID: <53A533E0-BADC-434D-A730-9623E96FAA83@lboro.ac.uk>
+
+Dear Colleague,
+
+Three day course in Climate-Based Daylight Modelling (CBDM) to be held at Loughborough University in September 2017 (two possible dates) - link to flyer:
+
+http://climate-based-daylighting.com/pickup/cbdm-course-flyer-sep-2017.pdf
+
+Please forward to anyone who might be interested. 
+
+Cheers
+John
+
+John Mardaljevic PhD FSLL
+Professor of Building Daylight Modelling
+School of Civil & Building Engineering
+Loughborough University
+Loughborough
+Leicestershire
+LE11 3TU, UK
+
+Tel: +44 1509 222630 (Direct)
+Tel: +44 1509 228529 (Pam Allen, secretary)
+
+j.mardaljevic at lboro.ac.uk
+
+http://www.lboro.ac.uk/departments/civil-building/staff/mardaljevicjohn/
+
+Personal daylighting website:
+http://climate-based-daylighting.com
+

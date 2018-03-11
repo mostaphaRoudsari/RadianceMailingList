@@ -1,0 +1,79 @@
+From germolinal at gmail.com  Thu Mar  1 19:58:09 2018
+From: germolinal at gmail.com (=?UTF-8?Q?Germ=C3=A1n_Molina_Larrain?=)
+Date: Fri, 2 Mar 2018 16:58:09 +1300
+Subject: [Radiance-general] Emp: Another Radiance-based calculation engine
+Message-ID: <CAF-iH4L-PLAw81enmZjiKdyFpkuy=2SzX644h3WU7iwAhOOc_g@mail.gmail.com>
+
+Hello List,
+
+As some of you might now, I have been developing Groundhog
+<https://github.com/GroundhogLighting/Groundhog> for a few years now. Even
+if its use has not spread too much, my students have help me improve the
+usability, fixing bugs and understanding my users. Thanks to those
+improvements, some Groundhog users have started to create models much more
+large and complex than those it has been tested at, causing that an
+important part of the processing time is not due to the Radiance
+calculation, but by the pre and post processing of results (i.e.
+Triangulation of workplanes, analysis of the hourly data on each of the
+3892 sensors in a workplane).
+
+In order to solve this problem, I re-writing the calculation processes of
+Groundhog in C++. This re-writing has allowed me to re-think how things
+were done, thus I quickly realized that this could become a separate
+project that can be reused by others. This reusable C++ library is called
+Emp_core <https://github.com/GroundhogLighting/emp_core>, is now as Open
+Source on Github.
+
+The testing of this engine is done using a program called simply Emp
+<https://github.com/GroundhogLighting/emp>, which I expect to ship with the
+next big release of Groundhog. Emp is a Lua wrapper to Emp_core, that tries
+to provide Radiance with some features I think would improve it. Those are:
+
+   - *Efficient out-of-the-box multicore processing across programs* (i.e.
+   call several RTRACE or RCONTRIB threads at the same time)
+      - *Out of the box script optimization, eliminating redundant tasks*
+   (i.e. do not create two octrees for calculating the Daylight Factor and the
+   Annual Illuminance... one is enough... but please reuse the ambient files
+   when possible)
+      - *Cross platform script-based model generation* (i.e. do not rely on
+   Unix programs to generate complex geometry... on the contrary, allow
+   including trigonometric functions, randomness, and more, in all platforms)
+      - *Read and write several file formats* (i.e. allow me to draw my
+   models in some modern 3D modelling tool)
+      - *Simple automation of those tasks required on a daily basis*, so I
+   can work faster and avoid errors (i.e. I do not want to write a script
+   every time I want to perform a Climate Based Daylight Simulation)
+      - *Cross platform consistency* (i.e. should I write rcalc -e "$1 =
+   $1+$2" or rcalc -e '$1 = $1+$2' ?)
+      - *Workplane interpretation as geometry, not a grid of points* (i.e.
+   if I want to know the Spatial Daylight Autonomy of a workplane, I can
+   probably describe a polygon that encolses it... but I do not want to write
+   every point where the illuminance is measured)
+      - *Post-processing capabilities* (i.e. my workplane contains 4,528
+   sensors... I do not want to know, nor write down, the illuminance of each
+   of them on each of the 8,760 hours of the year. Just return the CBD metric
+   I asked for)
+      - Do not create 3,125 files, please (i.e. there are several files I
+   am not interested in, which are just intermediate results... please delete
+   them afterwards)
+
+These improvements are possible thanks to Intel TBB library, and some
+triangulation libraries (for meshing workplanes) available in Github as
+well.
+
+As mentioned earlier, Emp_core is meant to allow integration to other CAD
+tools (I am looking at you, Revit) and other formats (ESPr and EnergyPlus,
+probably?). Emp, on the other hand, is meant to allow scripting. It is
+possible to use scripts to just generate models, or to solving them.
+
+If anyone is interested in knowing more, please let me know. All this is in
+early stages of development, so it is still quickly changing.
+
+Best,
+
+-- 
+Germ?n Molina
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20180302/99f9c08f/attachment.html>
+

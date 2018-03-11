@@ -1,0 +1,2416 @@
+From solarjoe at posteo.org  Wed Aug  2 09:24:57 2017
+From: solarjoe at posteo.org (Joe)
+Date: Wed, 2 Aug 2017 18:24:57 +0200
+Subject: [Radiance-general] rendering solar tower plant
+Message-ID: <1c407567-196d-be39-a74c-f005d7012cc7@posteo.org>
+
+Hello Greg,
+
+thanks for you help. I made some progress on this and have new questions :)
+
+The image linked below shows three scenarios I tried.
+
+The left image shows heliostats reflecting the sun [source, at 0, 0, 1, 
+ring with 0.5?] onto the receiver. This works fine so far.
+
+But I also tried other materials that I would have expected to work.
+
+The middle image uses a white glossy plastic with specularity 1.0 and 
+roughness 0.0 . I would have expected to see the reflection on the 
+receiver, too.
+
+Same for the right picture, here I used a non-transmitting dielectric.
+I would have expected that the complete radiation is reflected.
+
+http://imgur.com/soSzJNe
+
+Do you have an idea what might causethis behaviour or what I might have 
+missed?
+
+Kind regards,
+Joe
+
+
+From boutillier at estia.ch  Wed Aug  2 09:30:22 2017
+From: boutillier at estia.ch (boutillier at estia.ch)
+Date: Wed,  2 Aug 2017 18:30:22 +0200 (CEST)
+Subject: [Radiance-general] =?utf-8?q?rendering_solar_tower_plant?=
+Message-ID: <20170802163022.86A341320467@prospero5.kreativmedia.ch>
+
+Bonjour, 
+
+Je suis actuellement en vacances. Je serai de retour le 7 ao?t 2017. 
+
+En cas d'urgence, vous pouvez toujours appeler le num?ro g?n?ral d'Estia : +41 (0) 21/510.59.59 ou envoyer un mail ? l'adresse mail at estia.ch.
+
+Pour toutes questions relatives ? DIAL+, merci d'utiliser l'adresse mail dial at estia.ch. 
+
+Cordialement
+
+Julien Boutillier
+Estia SA
+
+
+
+
+From gregoryjward at gmail.com  Wed Aug  2 10:19:06 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed, 2 Aug 2017 10:19:06 -0700
+Subject: [Radiance-general] rendering solar tower plant (was: Questions
+ about spotlight and specularity)
+In-Reply-To: <1c407567-196d-be39-a74c-f005d7012cc7@posteo.org>
+References: <1c407567-196d-be39-a74c-f005d7012cc7@posteo.org>
+Message-ID: <2DD86165-C799-4882-B941-3E3D61561990@lmi.net>
+
+Hi Joe,
+
+The "mirror" type is working, which is excellent and means you have things oriented properly.
+
+I wouldn't expect either of the other types to work, because as I mentioned, a limitation of backwards ray-tracers is that they need to know where to look for light sources.  The "mirror" type creates virtual light sources that allow the calculation to work, but the other two types do not.  You might get them to work with the photon map, however.
+
+You should know that setting the transmission of a dielectric does not give you a 100% reflecting material.  At most, you'll get about 5% reflectance, but again, the calculation still needs to know where to look, and it does not.
+
+Cheers,
+-Greg
+
+P.S.  It's best to keep the subject the same, so the thread holds together on the list archives.
+
+> From: Joe <solarjoe at posteo.org>
+> Date: August 2, 2017 9:24:57 AM PDT
+> 
+> Hello Greg,
+> 
+> thanks for you help. I made some progress on this and have new questions :)
+> 
+> The image linked below shows three scenarios I tried.
+> 
+> The left image shows heliostats reflecting the sun [source, at 0, 0, 1, ring with 0.5?] onto the receiver. This works fine so far.
+> 
+> But I also tried other materials that I would have expected to work.
+> 
+> The middle image uses a white glossy plastic with specularity 1.0 and roughness 0.0 . I would have expected to see the reflection on the receiver, too.
+> 
+> Same for the right picture, here I used a non-transmitting dielectric.
+> I would have expected that the complete radiation is reflected.
+> 
+> http://imgur.com/soSzJNe
+> 
+> Do you have an idea what might causethis behaviour or what I might have missed?
+> 
+> Kind regards,
+> Joe
+
+
+From vlt26 at cornell.edu  Wed Aug  2 11:18:32 2017
+From: vlt26 at cornell.edu (Valerie Tan)
+Date: Wed, 2 Aug 2017 14:18:32 -0400
+Subject: [Radiance-general] Greenhouse energy modeling
+Message-ID: <CAFWG2Td3xhdNOZfsJx4b5L624xqfJd5ekYQVsuuxdh8vkFHD3w@mail.gmail.com>
+
+Hello,
+
+
+
+My name is Valerie Tan and I am a undergrad designing greenhouse energy
+modeling software for the Cornell Controlled Environment Agriculture group. I
+am a computer science major (Cornell Engineering, Class of 2019) working
+for the Cornell CEA group with Kale Harbick (researcher) and Kevin Ye (also
+an undergrad). I am new to using the Radiance libraries and have questions
+on the features and capabilities of Radiance. I have been, and will
+continue to look through tutorials, archived mailing lists and
+presentations.
+
+
+
+We are implementing a ray-tracing and energy modeling component of the
+NYSERDA funded GLASE project. See https://glase.cals.cornell.edu/ for a
+brief synopsis.
+
+
+
+I was given a big task of designing software that models a greenhouse and
+calculates the total amount of light (from all directions, not just one
+direction as in backwards ray-tracing) that reaches particular sample
+points, given the geometry, weather, time of day, artificial light
+configurations, etc. Imagine a typical greenhouse, with glass panels that
+reflect and refract light, and a rectangular plot where you grow the
+plants. We want to pick sample points on that rectangular plot and figure
+out how much energy reaches that point. Ultimately, we want to model and
+optimize everything such that all areas of the growing area receive optimal
+and equal amounts of light.
+
+
+
+My main question is, how do I make light calculations in micromoles instead
+of lumens or RGB values? From what I've seen, Radiance appears to have this
+type of focus, but I could be entirely wrong. (This is my first research
+position and that I am still in the learning process of understanding
+technical descriptions and tutorials.) The issue with lumens and RGB values
+is that they are calibrated for human vision and are very difficult to work
+with in terms of plant science, while micromoles measures the actual number
+of photons. It looks like the "Photon map extension user manual" from the
+website (
+https://www.radiance-online.org/learning/documentation/photonmap-user-guide)
+is a possible solution.
+
+
+
+I really appreciate any kind of advice on using the Radiance libraries.
+Thank you for your time and hope to hear from all of you.
+
+
+
+Best,
+
+
+
+Valerie
+
+-- 
+Valerie Tan
+Computer Science
+College of Engineering
+Cornell University '19
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170802/52573750/attachment-0001.html>
+
+From gregoryjward at gmail.com  Wed Aug  2 11:34:47 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Wed, 2 Aug 2017 11:34:47 -0700
+Subject: [Radiance-general] Greenhouse energy modeling
+In-Reply-To: <CAFWG2Td3xhdNOZfsJx4b5L624xqfJd5ekYQVsuuxdh8vkFHD3w@mail.gmail.com>
+References: <CAFWG2Td3xhdNOZfsJx4b5L624xqfJd5ekYQVsuuxdh8vkFHD3w@mail.gmail.com>
+Message-ID: <4BB778EB-81EE-47D6-BBF9-BBC647B89C80@lmi.net>
+
+Hello Valerie and welcome,
+
+Radiance defaults to RGB-type calculations, but these are just values and you are free to choose different units or interpretations as fit your needs.  The math does not change.  Just think of these as three radiation channels that correspond to the reflectances and lighting values you have used them for.  There is nothing special in the simulation that says these have to correspond to visible wavelengths.
+
+For your purposes, the photon map extension might indeed be useful.  However, the "classic" version will also be able to account for interreflections between surfaces, with certain limitations handling reflections from curved, specular surfaces.
+
+It would help to frame your problem to define exactly what you mean by "light arriving at a point."  We usually specify an incident normal direction and compute a cosine-weighted average to arrive at irradiance or illuminance, but you may be after either a uniform spherical weighting or something similar.  I suggest looking into the "rsensor" program <http://radsite.lbl.gov/radiance/man_html/rsensor.1.html> as a possible calculation engine for your task.  However, I have not tried integrating this tool with the photon map, and I am not sure if this part is working.  (I would have to check.)
+
+Cheers,
+-Greg
+
+> From: Valerie Tan <vlt26 at cornell.edu>
+> Date: August 2, 2017 11:18:32 AM PDT
+> 
+> Hello,  
+>  
+> My name is Valerie Tan and I am a undergrad designing greenhouse energy modeling software for the Cornell Controlled Environment Agriculture group. I am a computer science major (Cornell Engineering, Class of 2019) working for the Cornell CEA group with Kale Harbick (researcher) and Kevin Ye (also an undergrad). I am new to using the Radiance libraries and have questions on the features and capabilities of Radiance. I have been, and will continue to look through tutorials, archived mailing lists and presentations.  
+>   
+> We are implementing a ray-tracing and energy modeling component of the NYSERDA funded GLASE project. See https://glase.cals.cornell.edu/ for a brief synopsis.  
+>   
+> I was given a big task of designing software that models a greenhouse and calculates the total amount of light (from all directions, not just one direction as in backwards ray-tracing) that reaches particular sample points, given the geometry, weather, time of day, artificial light configurations, etc. Imagine a typical greenhouse, with glass panels that reflect and refract light, and a rectangular plot where you grow the plants. We want to pick sample points on that rectangular plot and figure out how much energy reaches that point. Ultimately, we want to model and optimize everything such that all areas of the growing area receive optimal and equal amounts of light.  
+>  
+> My main question is, how do I make light calculations in micromoles instead of lumens or RGB values? From what I've seen, Radiance appears to have this type of focus, but I could be entirely wrong. (This is my first research position and that I am still in the learning process of understanding technical descriptions and tutorials.) The issue with lumens and RGB values is that they are calibrated for human vision and are very difficult to work with in terms of plant science, while micromoles measures the actual number of photons. It looks like the "Photon map extension user manual" from the website (https://www.radiance-online.org/learning/documentation/photonmap-user-guide) is a possible solution.  
+>  
+> I really appreciate any kind of advice on using the Radiance libraries. Thank you for your time and hope to hear from all of you. 
+>  
+> Best,  
+>  
+> Valerie 
+> 
+> -- 
+> Valerie Tan 
+> Computer Science
+> College of Engineering
+> Cornell University '19
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170802/61b67258/attachment-0001.html>
+
+From Christopher.Rush at arup.com  Wed Aug  2 12:13:48 2017
+From: Christopher.Rush at arup.com (Christopher Rush)
+Date: Wed, 2 Aug 2017 19:13:48 +0000
+Subject: [Radiance-general] Greenhouse energy modeling
+In-Reply-To: <CAFWG2Td3xhdNOZfsJx4b5L624xqfJd5ekYQVsuuxdh8vkFHD3w@mail.gmail.com>
+References: <CAFWG2Td3xhdNOZfsJx4b5L624xqfJd5ekYQVsuuxdh8vkFHD3w@mail.gmail.com>
+Message-ID: <88079A360FAC7441AE93ECBF6199823657AA28CD@AMXExMb02.global.arup.com>
+
+Hi Valerie,
+Are you primarily doing electric lighting calculations (rather than daylight) for real manufactured light fixtures? Do the manufacturers provide IES photometric data in human vision lumens and candela?
+
+The radiance tool ies2rad converts IES files into radiance data and geometry. There is a multiplier option for that command that could create the radiance light source definition in photosynthesis units rather than visible light units. For example if your source provides 0.003 Watts PAR per lumen (*), and you?re using an IES data file that?s based on visual lighting units, you could apply -m 0.003 to the ies2rad command and then work in Radiance as usual from there as if it were any other light source. Any results you have that would typically report lux (if you had not used the multiplier) would instead be reported in W/m? PAR since you provided the conversion in the front end in setting up the light source definition.
+
+However you should take more care if you can?t work with equal spectrum material definitions. If you need reflective or transmitting materials that have colored reflectance and varying PAR properties across the spectrum, you might need something more complicated than above.
+
+* disclaimer: I hope I?m conveying the concept here correctly, but I don?t know if this is a realistic conversion factor ? just tried to make something up roughly based from Wikipedia
+
+-Chris
+
+
+
+From: Valerie Tan [mailto:vlt26 at cornell.edu]
+Sent: Wednesday, August 02, 2017 2:19 PM
+To: radiance-general at radiance-online.org
+Subject: [Radiance-general] Greenhouse energy modeling
+
+
+Hello,
+
+
+
+My name is Valerie Tan and I am a undergrad designing greenhouse energy modeling software for the Cornell Controlled Environment Agriculture group. I am a computer science major (Cornell Engineering, Class of 2019) working for the Cornell CEA group with Kale Harbick (researcher) and Kevin Ye (also an undergrad). I am new to using the Radiance libraries and have questions on the features and capabilities of Radiance. I have been, and will continue to look through tutorials, archived mailing lists and presentations.
+
+
+
+We are implementing a ray-tracing and energy modeling component of the NYSERDA funded GLASE project. See https://glase.cals.cornell.edu/<https://secure-web.cisco.com/1SKjFONMt9byWzA9S9ADQZ0p1y2eIkClhW_NBkxGkDeAcXXWk8dgMJnJp76a8kbr-G11WDx_MJZJhuuJGiFfHJdb3WeIUgQiHfA3blgs8haqOQaf16HndOxJQvF79dsZtQ0enZ1oLB5ucfun0Sm2jJj2j7881SD7Ck8Tblw4cffzGxLr3CmAOANg8HtOhY2d3XXfmF6C-H8Jj3wcqVJNi_FwZczYGZOw-fLylWsKwgomxjgAS6Pk3sIoRY4jIk5ZFWv4jtMy_773Z6AsdpEHbCw/https%3A%2F%2Fglase.cals.cornell.edu%2F> for a brief synopsis.
+
+
+
+I was given a big task of designing software that models a greenhouse and calculates the total amount of light (from all directions, not just one direction as in backwards ray-tracing) that reaches particular sample points, given the geometry, weather, time of day, artificial light configurations, etc. Imagine a typical greenhouse, with glass panels that reflect and refract light, and a rectangular plot where you grow the plants. We want to pick sample points on that rectangular plot and figure out how much energy reaches that point. Ultimately, we want to model and optimize everything such that all areas of the growing area receive optimal and equal amounts of light.
+
+
+
+My main question is, how do I make light calculations in micromoles instead of lumens or RGB values? From what I've seen, Radiance appears to have this type of focus, but I could be entirely wrong. (This is my first research position and that I am still in the learning process of understanding technical descriptions and tutorials.) The issue with lumens and RGB values is that they are calibrated for human vision and are very difficult to work with in terms of plant science, while micromoles measures the actual number of photons. It looks like the "Photon map extension user manual" from the website (https://www.radiance-online.org/learning/documentation/photonmap-user-guide<https://secure-web.cisco.com/1oBqhvNcvvnKBsnXUz3WOQvxiumTnewUCZDdwFua-KClDBlzaNwMBKLpONUQlkL8xzQoP2qjE_OwZls1DJY8VzH9DLbgnRR1LAgLGO-7D-wgtR91DdakdecZfI8T0mYp7Pr26oEjqgjXaO70KCyDPivYqbnmzYCURvhAddOWtG4kMihXZhiML3nHbrE-bBKIz_duRZ7ou14UENzb6fhnZETGdl4RU7Dqetkn_QtxLCF3hwAhujhwPL__6YqwYM_Dj/https%3A%2F%2Fwww.radiance-online.org%2Flearning%2Fdocumentation%2Fphotonmap-user-guide>) is a possible solution.
+
+
+
+I really appreciate any kind of advice on using the Radiance libraries. Thank you for your time and hope to hear from all of you.
+
+
+
+Best,
+
+
+
+Valerie
+
+--
+Valerie Tan
+Computer Science
+College of Engineering
+Cornell University '19
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup business
+systems are scanned for viruses and acceptability of content
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170802/be82b97c/attachment-0001.html>
+
+From dion at thinkmoult.com  Sun Aug  6 15:49:10 2017
+From: dion at thinkmoult.com (Dion Moult)
+Date: Mon, 07 Aug 2017 08:49:10 +1000
+Subject: [Radiance-general] Calibrating HDR sky maps for IBL similar to CIE
+ skies
+Message-ID: <ax5b4k2918k45fcrad4dsemu.1502057255503@email.android.com>
+
+Good morning all,?
+CIE skies are a great set of benchmarks for lighting analysis, but do not offer the same aesthetic richness as in real-life. One way of solving this is by using image based lighting to light the environment. The downside is that most of these HDR images do not offer appropriate luminance values. For example, a simple test of using ximage to look at a bunch of HDRs downloaded online and checking the luminance values of various pixels show me that they are nowhere close to the numbers that you get if I render out a HDR of a blank scene with a a gensky-created sky and ground.?
+I'd like to be able to "calibrate" the HDR so that it offers the same luminous effect as a CIE sky, plus the various objects around it. Here's the current approach I'm using, but I'm questioning whether it is good enough or if I missed something.?
+1. I use a blank scene with gensky to serve as a benchmark. The environment is basically the same as the one in the gensky manpage. However, I do not use the skyfunc modifier. This'll give me a floating solar disk, but a totally flat sky. I will attempt to match this base luminance with the HDR map before applying skyfunc. ?
+2. Keep the light source definitions that gensky generates that represents the sun. This will provide the necessary sharp shadows and is hard to merge into the calibrated HDR image, which is inevitably going to have clipped luminance values.?
+3. Use pcomb to multiply the luminance values of the HDR image such that the average luminance values (thanks Greg for the tip last month! pvalue -h -d -b | total -m) of the empty parts of sky roughly match the luminance of my flat gensky environment. This happened to be around 160L in my winter test in Sydney.?
+4. Then modify the HDR image so that I delete all the sky and replace it with a flat 160L sky. This will give me a flat base upon which the skyfunc can work its magic. Keep the rest of the HDR intact (trees, buildings). I have the flatten it otherwise the existing suns in most HDRs will artificially multiply the skyfunc unrealistically.?
+5. Define a colorpict for the HDR map, with the skyfunc modifier applied to it. I.e:
+skyfunc colorpict myhdrmap[... Stuff...]?
+myhdrmap glow skyglow?04 0.9 0.9 1 0 <-- unsure about this
+skyglow source skyandground04 0 0 1 360
+6. Render it out, when comparing a few random scenes with falsecolor, I find that the results of a HDR calibrated sky vs a CIE sky is very, very similar. The differences largely are due to things like the HDR having a much darker ground (black asphalt) or dark reflections (of trees, for example). In addition, the actual image aesthetically looks much richer with nicer reflections, but with the knowledge that the daylight (skyfunc) and sun are from the CIE definitions.?
+How does this approach sound? A few things I am unsure about:
+1. The colorpict modifies Rgb reflectivity, the skyfunc modifies Rgb luminance, and the glow defines Rgb radiance? Is the way I have combined these three correct??
+2. I haven't mentioned anything about colour accuracy. How would this be approached for a HDR map that doesn't have any benchmark colour checkers captured in it??
+Would be interested in your feedback.?
+Kind regards,?Dion?
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170807/59ac76e3/attachment.html>
+
+From boutillier at estia.ch  Sun Aug  6 15:54:55 2017
+From: boutillier at estia.ch (boutillier at estia.ch)
+Date: Mon,  7 Aug 2017 00:54:55 +0200 (CEST)
+Subject: [Radiance-general] 
+ =?utf-8?q?Calibrating_HDR_sky_maps_for_IBL_si?=
+ =?utf-8?q?milar_to_CIE_skies?=
+Message-ID: <20170806225455.59C51132272D@prospero5.kreativmedia.ch>
+
+Bonjour, 
+
+Je suis actuellement en vacances. Je serai de retour le 7 ao?t 2017. 
+
+En cas d'urgence, vous pouvez toujours appeler le num?ro g?n?ral d'Estia : +41 (0) 21/510.59.59 ou envoyer un mail ? l'adresse mail at estia.ch.
+
+Pour toutes questions relatives ? DIAL+, merci d'utiliser l'adresse mail dial at estia.ch. 
+
+Cordialement
+
+Julien Boutillier
+Estia SA
+
+
+
+
+From dion at thinkmoult.com  Sun Aug  6 15:59:25 2017
+From: dion at thinkmoult.com (Dion Moult)
+Date: Mon, 07 Aug 2017 08:59:25 +1000
+Subject: [Radiance-general] Various texture mappings at rendertime
+Message-ID: <vq3ocynra1lr7ep84smss6q0.1502059829820@email.android.com>
+
+Thanks Greg, and sorry for the late reply.
+It's a pity for displacement maps, but completely understandable :)?
+For normal maps there's nothing wrong with doing the data conversion, just wondering if there was something built in now to skip this step :)?
+Sounds good to hear the occlusion maps really shouldn't be a thing. Still curious why they are so popular - yes, they are cheaper to compute, but is that it? Maybe other rendering engines aren't that good at occlusion??
+Thanks for the diffuse tip. I assume that I should also try to match the average rgb reflectance values if they are known? Or why did you just focus on brightness?
+Haven't tried the UV mapping yet, will let you know how it goes :)?
+-------- Original message --------From: Greg Ward <gregoryjward at gmail.com> Date: 31/07/2017  14:11  (GMT+10:00) To: Radiance general discussion <radiance-general at radiance-online.org> Subject: Re: [Radiance-general] Various texture mappings at rendertime 
+Hi Dion,
+I've put a few responses inline, below...
+From: Dion Moult <dion at thinkmoult.com>
+Date: July 30, 2017 4:15:08 PM PDT
+
+
+Good day all,?
+I've got a few questions about texture mappings which are so prevalent in other less validated rendering engines. I understand that these texture mappings aren't usually in the Radiance vocabulary as usually simple materials, or even greyscale materials with a focus purely on luminance is used. But hey :)?
+Displacement maps:
+
+Some other rendering engines (which may not be scientifically validated, such as Pixar's Renderman) support a form of displacement mapping that is applied at render time. That is, the lower resolution mesh is fed into the rendering engine along with a bitmap that represents a height map, which is then used to displace the mesh.?
+Please note that this is not the same as a normal map / bump map, which simply perturbs the surface normals but does not actually shift the geometry itself.?
+Is this possible in Radiance?
+Not as such. ?The ray intersection routines in Radiance don't offer surface subdivision capabilities, as are necessary when implementing displacement maps. ?The complexity of supporting this feature is considerable.
+Normal maps:
+As a side question, I encountered the original discussion about bump mapping / normal mapping by Simon and Greg back in 1992 about using texdata along with a custom script to create the data files. I've recreated this method successfully but am curious as to whether there is something now more built-in :) (yes, I saw the texpict patch but it is now outdated) Is there?
+I don't really see the problem converting images to data files if you want that kind of texture/bump map. ?Is something broken with your method, or you just want to do it the way other renderers do it? ?
+Occlusion maps:
+From my understanding, the usage of occlusion maps to express ambient occlusion is not a thing in Radiance. ?Although it is perhaps technically possible to achieve, it only serves to create artificial peak thresholds of the Rgb reflectance values that is ignorant of the actual lighting being used in the scene. Instead, the occlusion should be calculated by Radiance itself by nature of less bounces near corners. Is this understanding correct? If so, I am curious why it is so popular in other "photorealistic" rendering engines.?
+The interreflection calculation gives you something close to the right answer, where occlusion maps offer no guarantees and in fact no strict relation to real lighting. They are merely a convenient shortcut that "looks OK" because your eye is a lousy photometer. ?They are much easier to compute, because you don't need to consider other objects in your scene. ?That's also why they're wrong.
+Diffuse maps:
+This is basically colorpict in action. From my understanding, there is no problem in using this to add further realism and rgb relevant analysis to the Radiance render as long as the picture used has pixels that aren't merely artistic, but actually do represent the Rgb reflectance values of the material. Where can I learn more about how to create and find repositories of these types of pictures? I am cautious that if I simply use any old picture online, it may incorrectly skew the luminance analysis.?
+True enough. ?So long as your image value multiplied against the diffuse RGB of the material are not greater than 1.0, you stay within what is physically plausible. ?Since most images convert to Radiance pictures in the 0-1 range, this is fairly easy to ensure. ?You should still use an RGB value that when multiplied against the average given by "pvalue -h -b -d texture.hdr | total -m" gives you the desired average diffuse surface reflectance.
+UV mapping with coordinates:
+I played a bit with maps and got familiar with the various transforms, pic_u/v and tile_u/v options to place the maps to scale. At first glance I did not notice anything in the refman about using more sophisticated UV coordinates (for example, map UV coordinates directly to coordinates in a polygon) Is this possible??
+If you have (u,v) coordinates in a Wavefront .OBJ file, you can use obj2mesh to preserve them and utilize the "Lu" and "Lv" built-in variables to access them in the .cal file associated with patterns or textures. ?This is currently the only way to import (u,v) coordinates in Radiance, unfortunately.
+Sorry for the barrage of questions.?
+Kind regards,?Dion
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170807/ef34bfcd/attachment-0001.html>
+
+From R.Southall at brighton.ac.uk  Mon Aug  7 01:34:39 2017
+From: R.Southall at brighton.ac.uk (Ryan Southall)
+Date: Mon, 7 Aug 2017 08:34:39 +0000
+Subject: [Radiance-general] Various texture mappings at rendertime (Dion
+ Moult)
+Message-ID: <18EF33640F961B4BA442571DEB1356B3011E4081A6@BELLATRIX.university.brighton.ac.uk>
+
+Hi Dion.
+The VI-Suite will turn images and tangential normal maps into Radiance patterns and textures. Still uses Texdata but it is at least semi automated for you. 
+Link to patterns video tutorial here https://youtu.be/0RXTu-brBZI
+Link to textures video tutorial here https://youtu.be/K_nloppSRlg
+
+Regards
+Ryan
+
+___________________________________________________________
+This email has been scanned by MessageLabs' Email Security System
+on behalf of the University of Brighton. For more information see:
+https://staff.brighton.ac.uk/is/computing/Pages/Email/spam.aspx
+
+
+From gregoryjward at gmail.com  Mon Aug  7 07:37:50 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon, 7 Aug 2017 07:37:50 -0700
+Subject: [Radiance-general] Various texture mappings at rendertime (Dion
+ Moult)
+In-Reply-To: <18EF33640F961B4BA442571DEB1356B3011E4081A6@BELLATRIX.university.brighton.ac.uk>
+References: <18EF33640F961B4BA442571DEB1356B3011E4081A6@BELLATRIX.university.brighton.ac.uk>
+Message-ID: <FEB87E97-91D4-4C78-806F-DE8527C30831@lmi.net>
+
+Thanks, Ryan!
+
+Very cool -- I had not heard about the VI-Suite before:
+
+	http://arts.brighton.ac.uk/projects/vi-suite
+
+Seems to be free and open-source, built atop Blender 3D.
+
+Cheers,
+-Greg
+
+> From: Ryan Southall <R.Southall at brighton.ac.uk>
+> Date: August 7, 2017 1:34:39 AM PDT
+> 
+> Hi Dion.
+> The VI-Suite will turn images and tangential normal maps into Radiance patterns and textures. Still uses Texdata but it is at least semi automated for you. 
+> Link to patterns video tutorial here https://youtu.be/0RXTu-brBZI
+> Link to textures video tutorial here https://youtu.be/K_nloppSRlg
+> 
+> Regards
+> Ryan
+> 
+
+
+From gregoryjward at gmail.com  Mon Aug  7 08:30:11 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon, 7 Aug 2017 08:30:11 -0700
+Subject: [Radiance-general] Various texture mappings at rendertime
+In-Reply-To: <vq3ocynra1lr7ep84smss6q0.1502059829820@email.android.com>
+References: <vq3ocynra1lr7ep84smss6q0.1502059829820@email.android.com>
+Message-ID: <40DD3203-0AF3-4AA1-AB37-C32758ACB8FF@lmi.net>
+
+Hi Dion,
+
+As I said, occlusion maps 'look OK' as well as being cheaper to compute.  You can also store them with the object as opposed to recalculating them for each new scene, which makes them fit conveniently into the same category as texture, bump, and displacement maps.  I don't know if anyone has worked on this, but there might be a way to fit some kind of "near field" interreflection information with occlusion maps to make them a little more realistic.  You will still have the existing problems with contact shadows and the like, however.
+
+I mentioned brightness assuming that luminance is what you can conveniently measure.  If you can measure RGB somehow, then by all means calibrate to that.
+
+Cheers,
+-Greg
+
+> From: Dion Moult <dion at thinkmoult.com>
+> Date: August 6, 2017 3:59:25 PM PDT
+> 
+> Thanks Greg, and sorry for the late reply.
+> 
+> It's a pity for displacement maps, but completely understandable :) 
+> 
+> For normal maps there's nothing wrong with doing the data conversion, just wondering if there was something built in now to skip this step :) 
+> 
+> Sounds good to hear the occlusion maps really shouldn't be a thing. Still curious why they are so popular - yes, they are cheaper to compute, but is that it? Maybe other rendering engines aren't that good at occlusion? 
+> 
+> Thanks for the diffuse tip. I assume that I should also try to match the average rgb reflectance values if they are known? Or why did you just focus on brightness?
+> 
+> Haven't tried the UV mapping yet, will let you know how it goes :) 
+> 
+> -------- Original message --------
+> From: Greg Ward <gregoryjward at gmail.com>
+> Date: 31/07/2017 14:11 (GMT+10:00)
+> To: Radiance general discussion <radiance-general at radiance-online.org>
+> Subject: Re: [Radiance-general] Various texture mappings at rendertime
+> 
+> Hi Dion,
+> 
+> I've put a few responses inline, below...
+> 
+>> From: Dion Moult <dion at thinkmoult.com>
+>> Date: July 30, 2017 4:15:08 PM PDT
+>> 
+>> Good day all, 
+>> 
+>> I've got a few questions about texture mappings which are so prevalent in other less validated rendering engines. I understand that these texture mappings aren't usually in the Radiance vocabulary as usually simple materials, or even greyscale materials with a focus purely on luminance is used. But hey :) 
+>> 
+>> Displacement maps:
+>> 
+>> Some other rendering engines (which may not be scientifically validated, such as Pixar's Renderman) support a form of displacement mapping that is applied at render time. That is, the lower resolution mesh is fed into the rendering engine along with a bitmap that represents a height map, which is then used to displace the mesh. 
+>> 
+>> Please note that this is not the same as a normal map / bump map, which simply perturbs the surface normals but does not actually shift the geometry itself. 
+>> 
+>> Is this possible in Radiance?
+> 
+> Not as such.  The ray intersection routines in Radiance don't offer surface subdivision capabilities, as are necessary when implementing displacement maps.  The complexity of supporting this feature is considerable.
+> 
+>> Normal maps:
+>> 
+>> As a side question, I encountered the original discussion about bump mapping / normal mapping by Simon and Greg back in 1992 about using texdata along with a custom script to create the data files. I've recreated this method successfully but am curious as to whether there is something now more built-in :) (yes, I saw the texpict patch but it is now outdated) Is there?
+> 
+> I don't really see the problem converting images to data files if you want that kind of texture/bump map.  Is something broken with your method, or you just want to do it the way other renderers do it?  
+> 
+>> Occlusion maps:
+>> 
+>> From my understanding, the usage of occlusion maps to express ambient occlusion is not a thing in Radiance.  Although it is perhaps technically possible to achieve, it only serves to create artificial peak thresholds of the Rgb reflectance values that is ignorant of the actual lighting being used in the scene. Instead, the occlusion should be calculated by Radiance itself by nature of less bounces near corners. Is this understanding correct? If so, I am curious why it is so popular in other "photorealistic" rendering engines. 
+> 
+> The interreflection calculation gives you something close to the right answer, where occlusion maps offer no guarantees and in fact no strict relation to real lighting. They are merely a convenient shortcut that "looks OK" because your eye is a lousy photometer.  They are much easier to compute, because you don't need to consider other objects in your scene.  That's also why they're wrong.
+> 
+>> Diffuse maps:
+>> 
+>> This is basically colorpict in action. From my understanding, there is no problem in using this to add further realism and rgb relevant analysis to the Radiance render as long as the picture used has pixels that aren't merely artistic, but actually do represent the Rgb reflectance values of the material. Where can I learn more about how to create and find repositories of these types of pictures? I am cautious that if I simply use any old picture online, it may incorrectly skew the luminance analysis. 
+> 
+> True enough.  So long as your image value multiplied against the diffuse RGB of the material are not greater than 1.0, you stay within what is physically plausible.  Since most images convert to Radiance pictures in the 0-1 range, this is fairly easy to ensure.  You should still use an RGB value that when multiplied against the average given by "pvalue -h -b -d texture.hdr | total -m" gives you the desired average diffuse surface reflectance.
+> 
+>> UV mapping with coordinates:
+>> 
+>> I played a bit with maps and got familiar with the various transforms, pic_u/v and tile_u/v options to place the maps to scale. At first glance I did not notice anything in the refman about using more sophisticated UV coordinates (for example, map UV coordinates directly to coordinates in a polygon) Is this possible? 
+> 
+> If you have (u,v) coordinates in a Wavefront .OBJ file, you can use obj2mesh to preserve them and utilize the "Lu" and "Lv" built-in variables to access them in the .cal file associated with patterns or textures.  This is currently the only way to import (u,v) coordinates in Radiance, unfortunately.
+> 
+>> Sorry for the barrage of questions. 
+>> 
+>> Kind regards, 
+>> Dion
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170807/bc65cc74/attachment-0001.html>
+
+From ali at surveymbs.com  Mon Aug  7 12:10:07 2017
+From: ali at surveymbs.com (Ali Fatoorechi)
+Date: Mon, 7 Aug 2017 20:10:07 +0100
+Subject: [Radiance-general] glass material derivation
+Message-ID: <CAGV9VE2qm7GLGCx7v4eTpSLXhTjadk_eB09J663kOwuhgm8-6Q@mail.gmail.com>
+
+Hello Everyone,
+
+I was after derivations of glass material formulas, defined in Radiance
+material
+<https://www.google.co.uk/url?sa=t&rct=j&q=&esrc=s&source=web&cd=1&cad=rja&uact=8&ved=0ahUKEwj-nrTe6MXVAhVPF8AKHXELBMQQFggrMAA&url=http%3A%2F%2Fradsite.lbl.gov%2Fradiance%2Frefer%2Fmaterials.pdf&usg=AFQjCNFhWIDnvS02rPPhI6_PRrG89cRgGw>
+document. I looked up the online mailing list but couldn't find much.
+In case anyone is interested or for future reference I post my findings
+here in this link
+<https://drive.google.com/file/d/0BwxvtmE7yeVKdVdMbWZPYllHWGc/view?usp=sharing>;
+I hope it's correct :)
+Sorry if I am re-sending something that already existed/documented.
+
+Regards,
+
+Ali Fatoorechi
+MBS Survey Software Ltd
+
+*62 High Street*
+
+
+*SteyningWest SussexBN44 3RD*
+
+*T +44 (0)1903 879323M +44(0)7830751409 <+44%207830%20751409>*
+ali at surveymbs.com
+www.surveymbs.com
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170807/6ac7affc/attachment.html>
+
+From R.Southall at brighton.ac.uk  Mon Aug  7 12:26:15 2017
+From: R.Southall at brighton.ac.uk (Ryan Southall)
+Date: Mon, 7 Aug 2017 19:26:15 +0000
+Subject: [Radiance-general] VI-Suite v0.4
+Message-ID: <18EF33640F961B4BA442571DEB1356B3011E4083BF@BELLATRIX.university.brighton.ac.uk>
+
+Hi. 
+Yes, sorry Greg. Probably should have contextualised my previous post a bit. I did announce the VI-Suite on this list but that was a wee while ago.
+
+For those that don't know, the VI-Suite is an addon (plugin) for the Blender 3D content creation suite. As Blender attempts to be the Swiss Army Knife of digital content creation so the Vi-Suite tries to be the Swiss Army Knife of building contextual and performance evaluation. It is indeed free and open source and is released under the same license as Blender (GPL v2).
+
+The VI-Suite has two children: LiVi (Radiance) and EnVI (EnergyPlus). Both emphasise ease of use over exposing a complete set of underlying capabilities. There are also a number of nephews and nieces (sun path, wind rose, shadow mapping, sky view factor). The VI-Suite is also currently pregnant with FloVi (OpenFoam).
+
+LiVi, although geared towards the generation of lighting metrics and the visualisation thereof, does I think encompass a fair amount of Radiance functionality including:
+
+*    Static and parametric basic (Lux, DF, Irradiance), compliance (LEEDv4, BREEAM, Green Star), Exposure (Luxhours, kWh) and CBDM (DA, ASE, SDA)  calculations. CBDM is done with a two-phase 
+     method with Numpy Python matrix transformations to keep it quick and relatively simple.
+
+*    Patterns and textures support as posted.
+
+*    BSDF creation, simulation and visualisation (only currently Klems for the last one).
+
+*    Glare analysis.
+
+*    Rpict image generation and falsecolor processing.
+
+Results can be exported to CSV or visualised within Blender. Blender mesh objects are used to define the sensor points for rtrace numerical calculations and LiVi visualises the results by colouring these meshes. The integration with Blender is generally pretty deep. Blender's text editor can be used to manually edit Radiance input files and Blender cameras are used for rvu viewpoint etc.
+
+Current version number is 0.4.12, and as the number suggests it is by no means bug free.
+
+As Greg correctly identified, the main website is at http://arts.brighton.ac.uk/projects/vi-suite where the VI-Suite can be downloaded for OS X, Win & Linux, but most of the 'action' happens at the blog site https://blogs.brighton.ac.uk/visuite. 
+There is also a YouTube video channel where I attempt to explain how the whole thing works https://www.youtube.com/playlist?list=PLySrjcxbIMopXVXNU6FWqy5BCPU1oif8I and a google group https://groups.google.com/forum/#!forum/vi-suite where you can rave at me for writing dodgy code. 
+
+Cheers.
+Ryan
+
+___________________________________________________________
+This email has been scanned by MessageLabs' Email Security System
+on behalf of the University of Brighton. For more information see:
+https://staff.brighton.ac.uk/is/computing/Pages/Email/spam.aspx
+
+
+From gregoryjward at gmail.com  Mon Aug  7 12:32:34 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Mon, 7 Aug 2017 12:32:34 -0700
+Subject: [Radiance-general] glass material derivation
+In-Reply-To: <CAGV9VE2qm7GLGCx7v4eTpSLXhTjadk_eB09J663kOwuhgm8-6Q@mail.gmail.com>
+References: <CAGV9VE2qm7GLGCx7v4eTpSLXhTjadk_eB09J663kOwuhgm8-6Q@mail.gmail.com>
+Message-ID: <3C73A3C4-DDDC-4D00-A9FD-1B21C6F7FDDC@lmi.net>
+
+Thanks, Ali.
+
+I haven't double-checked your work, but the formula in Radiance was borrowed from an earlier version of WINDOW.  I can try to dig up the paper where their derivation was published, if no one else comes up with it in the next couple of days.
+
+-Greg
+
+> From: Ali Fatoorechi <ali at surveymbs.com>
+> Date: August 7, 2017 12:10:07 PM PDT
+> 
+> Hello Everyone,
+> 
+> I was after derivations of glass material formulas, defined in Radiance material document. I looked up the online mailing list but couldn't find much. 
+> In case anyone is interested or for future reference I post my findings here in this link; I hope it's correct :) 
+> Sorry if I am re-sending something that already existed/documented.
+> 
+> Regards,
+> 
+> Ali Fatoorechi
+> MBS Survey Software Ltd
+> 
+> 62 High Street
+> Steyning
+> West Sussex
+> BN44 3RD
+> T +44 (0)1903 879323
+> M +44(0)7830751409
+> ali at surveymbs.com
+> www.surveymbs.com
+> _______________________________________________
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170807/b1e6dcdd/attachment.html>
+
+From ali at surveymbs.com  Mon Aug  7 12:55:52 2017
+From: ali at surveymbs.com (Ali Fatoorechi)
+Date: Mon, 7 Aug 2017 20:55:52 +0100
+Subject: [Radiance-general] glass material derivation
+In-Reply-To: <3C73A3C4-DDDC-4D00-A9FD-1B21C6F7FDDC@lmi.net>
+References: <CAGV9VE2qm7GLGCx7v4eTpSLXhTjadk_eB09J663kOwuhgm8-6Q@mail.gmail.com>
+ <3C73A3C4-DDDC-4D00-A9FD-1B21C6F7FDDC@lmi.net>
+Message-ID: <CAGV9VE2LDMuX6tvYsJfTQeY_9opxJhNZwxxzaQ2KkacV92k-rA@mail.gmail.com>
+
+Sorry I forgot to mention most of the above stuff is taken from "Medium and
+High Temprature" book p.53-54.
+
+On Aug 7, 2017 8:32 PM, "Greg Ward" <gregoryjward at gmail.com> wrote:
+
+> Thanks, Ali.
+>
+> I haven't double-checked your work, but the formula in Radiance was
+> borrowed from an earlier version of WINDOW.  I can try to dig up the paper
+> where their derivation was published, if no one else comes up with it in
+> the next couple of days.
+>
+> -Greg
+>
+> *From: *Ali Fatoorechi <ali at surveymbs.com>
+>
+> *Date: *August 7, 2017 12:10:07 PM PDT
+>
+>
+> Hello Everyone,
+>
+> I was after derivations of glass material formulas, defined in Radiance
+> material
+> <https://www.google.co.uk/url?sa=t&rct=j&q=&esrc=s&source=web&cd=1&cad=rja&uact=8&ved=0ahUKEwj-nrTe6MXVAhVPF8AKHXELBMQQFggrMAA&url=http%3A%2F%2Fradsite.lbl.gov%2Fradiance%2Frefer%2Fmaterials.pdf&usg=AFQjCNFhWIDnvS02rPPhI6_PRrG89cRgGw>
+> document. I looked up the online mailing list but couldn't find much.
+> In case anyone is interested or for future reference I post my findings
+> here in this link
+> <https://drive.google.com/file/d/0BwxvtmE7yeVKdVdMbWZPYllHWGc/view?usp=sharing>;
+> I hope it's correct :)
+> Sorry if I am re-sending something that already existed/documented.
+>
+> Regards,
+>
+> Ali Fatoorechi
+> MBS Survey Software Ltd
+>
+> *62 High Street*
+>
+>
+> *SteyningWest SussexBN44 3RD*
+>
+> *T +44 (0)1903 879323M +44(0)7830751409 <+44%207830%20751409>*
+> ali at surveymbs.com
+> www.surveymbs.com
+> _______________________________________________
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170807/8b216220/attachment-0001.html>
+
+From dion at thinkmoult.com  Mon Aug  7 14:54:25 2017
+From: dion at thinkmoult.com (Dion Moult)
+Date: Tue, 08 Aug 2017 07:54:25 +1000
+Subject: [Radiance-general] VI-Suite v0.4
+Message-ID: <po29sfj67gqwap5p8h2bv3sp.1502142793698@email.android.com>
+
+Good morning Ryan,?
+Looks like a great tool - I'll be sure to try it out and give you my comments.
+I have used ODS Studio in the past (https://www.ods-engineering.com) which is a similar offering that integrates Blender 3D with the range of building physics software. Do you mind contrasting the two projects??
+Also, it may be worthwhile to do a post about your software on the blenderartists.org forum, or submitted to blendernation.com, so that the community can pick up on it a bit more :)?
+Kind regards,?Dion
+-------- Original message --------From: Ryan Southall <R.Southall at brighton.ac.uk> Date: 8/08/2017  05:26  (GMT+10:00) To: radiance-general at radiance-online.org Subject: [Radiance-general] VI-Suite v0.4 
+Hi. 
+Yes, sorry Greg. Probably should have contextualised my previous post a bit. I did announce the VI-Suite on this list but that was a wee while ago.
+
+For those that don't know, the VI-Suite is an addon (plugin) for the Blender 3D content creation suite. As Blender attempts to be the Swiss Army Knife of digital content creation so the Vi-Suite tries to be the Swiss Army Knife of building contextual and performance evaluation. It is indeed free and open source and is released under the same license as Blender (GPL v2).
+
+The VI-Suite has two children: LiVi (Radiance) and EnVI (EnergyPlus). Both emphasise ease of use over exposing a complete set of underlying capabilities. There are also a number of nephews and nieces (sun path, wind rose, shadow mapping, sky view factor). The VI-Suite is also currently pregnant with FloVi (OpenFoam).
+
+LiVi, although geared towards the generation of lighting metrics and the visualisation thereof, does I think encompass a fair amount of Radiance functionality including:
+
+*??? Static and parametric basic (Lux, DF, Irradiance), compliance (LEEDv4, BREEAM, Green Star), Exposure (Luxhours, kWh) and CBDM (DA, ASE, SDA)? calculations. CBDM is done with a two-phase 
+???? method with Numpy Python matrix transformations to keep it quick and relatively simple.
+
+*??? Patterns and textures support as posted.
+
+*??? BSDF creation, simulation and visualisation (only currently Klems for the last one).
+
+*??? Glare analysis.
+
+*??? Rpict image generation and falsecolor processing.
+
+Results can be exported to CSV or visualised within Blender. Blender mesh objects are used to define the sensor points for rtrace numerical calculations and LiVi visualises the results by colouring these meshes. The integration with Blender is generally pretty deep. Blender's text editor can be used to manually edit Radiance input files and Blender cameras are used for rvu viewpoint etc.
+
+Current version number is 0.4.12, and as the number suggests it is by no means bug free.
+
+As Greg correctly identified, the main website is at http://arts.brighton.ac.uk/projects/vi-suite where the VI-Suite can be downloaded for OS X, Win & Linux, but most of the 'action' happens at the blog site https://blogs.brighton.ac.uk/visuite. 
+There is also a YouTube video channel where I attempt to explain how the whole thing works https://www.youtube.com/playlist?list=PLySrjcxbIMopXVXNU6FWqy5BCPU1oif8I and a google group https://groups.google.com/forum/#!forum/vi-suite where you can rave at me for writing dodgy code. 
+
+Cheers.
+Ryan
+
+___________________________________________________________
+This email has been scanned by MessageLabs' Email Security System
+on behalf of the University of Brighton. For more information see:
+https://staff.brighton.ac.uk/is/computing/Pages/Email/spam.aspx
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general at radiance-online.org
+https://www.radiance-online.org/mailman/listinfo/radiance-general
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170808/473af917/attachment.html>
+
+From R.Southall at brighton.ac.uk  Mon Aug  7 16:24:54 2017
+From: R.Southall at brighton.ac.uk (Ryan Southall)
+Date: Mon, 7 Aug 2017 23:24:54 +0000
+Subject: [Radiance-general] VI-Suite v0.4 (Ryan Southall)
+Message-ID: <18EF33640F961B4BA442571DEB1356B3011E408403@BELLATRIX.university.brighton.ac.uk>
+
+Hi Dion.
+I can't really compare the two. I think ODS is commercial so I've never played with it. If you have a play with the VI-Suite you should get a feel for the differences pretty quick. 
+Regards
+Ryan
+
+___________________________________________________________
+This email has been scanned by MessageLabs' Email Security System
+on behalf of the University of Brighton. For more information see:
+https://staff.brighton.ac.uk/is/computing/Pages/Email/spam.aspx
+
+
+From solarjoe at posteo.org  Tue Aug  8 00:17:05 2017
+From: solarjoe at posteo.org (Joe)
+Date: Tue, 08 Aug 2017 09:17:05 +0200
+Subject: [Radiance-general] Images too bright with gendaylit
+Message-ID: <fc532a0458f04f581fa59f53738907bc@posteo.de>
+
+Hello,
+
+when I use gendaylit to create a sun my images are too bright.
+
+The command used is
+
+gendaylit -ang 90 0 -W 900 200
+
+
+void light solar
+0
+0
+3 7.576e+006 7.576e+006 7.576e+006
+
+solar source sun
+0
+0
+4 -0.000000 -0.052336 0.998630 0.533000
+
+This will put the sun to the zenith with reasonable values
+for direct normal and diffuse irradiance in W/m^2.
+
+Correct so far?
+
+I removed the skyfunc, just the sun source is active.
+
+I put together a simple scene:
+- plastic cylinders as coordinate origin,
+- large brown ground plate
+- dielectric spheres (I just love those :)
+
+Here is an image with renderings of different sun settings:
+
+http://imgur.com/hOqCpmY
+
+When I use the sun as stated above the image on the right
+side is rendered. Much too bright.
+
+Reducing the parameters of void light solar:
+
+middle image (7.576e+005 7.576e+005 7.576e+005 )
+left image (7.576e+004 7.576e+004 7.576e+004)
+
+Viewed with default parameters of rvu.
+
+Do you have an idea what I am doing wrong
+or might have missed?
+
+Kind regards,
+Joe
+
+
+
+
+
+From jan.wienold at epfl.ch  Tue Aug  8 01:01:56 2017
+From: jan.wienold at epfl.ch (Jan Wienold)
+Date: Tue, 8 Aug 2017 10:01:56 +0200
+Subject: [Radiance-general] Images too bright with gendaylit
+In-Reply-To: <fc532a0458f04f581fa59f53738907bc@posteo.de>
+References: <fc532a0458f04f581fa59f53738907bc@posteo.de>
+Message-ID: <3ec24e40-fc56-5961-0b51-0960f1fe728c@epfl.ch>
+
+Hi Joe,
+
+why do you think it is too bright? Is the luminance to high? I guess you 
+just have to adapt your exposure setting for the image.
+
+The physics for gendaylit and your parameters is correct:
+
+1. test of luminance of the sun (ray in sun direction):
+
+gendaylit -ang 90 0 -W 900 200 >sky.rad
+oconv -f sky.rad >sky.oct
+
+echo  0 0 0 -0.000000 -0.052336 0.998630 |rtrace -h sky.oct | rcalc -e 
+'$1=47.4*$1+120*$2+11.6*$3'
+result: 1.356104e+09 cd/m2
+
+This value looks reasonable - the max is about 1.6 e9 cd/m2
+
+2. test of irradiance (sensor also looks towards sun):
+
+gendaylit -ang 90 0 -O 1  -W 900 200 >sky_irr.rad
+oconv -f sky_irr.rad >sky_irr.oct
+echo  0 0 0 -0.000000 -0.052336 0.998630 |rtrace -h -I+ sky_irr.oct
+result : 8.998834e+02   W/m2
+
+Equals the direct irradiance which was "put" into the model (the sky is 
+ignored, as in your example).
+
+cheers
+
+Jan
+
+
+On 08.08.17 09:17, Joe wrote:
+> Hello,
+>
+> when I use gendaylit to create a sun my images are too bright.
+>
+> The command used is
+>
+> gendaylit -ang 90 0 -W 900 200
+>
+>
+> void light solar
+> 0
+> 0
+> 3 7.576e+006 7.576e+006 7.576e+006
+>
+> solar source sun
+> 0
+> 0
+> 4 -0.000000 -0.052336 0.998630 0.533000
+>
+> This will put the sun to the zenith with reasonable values
+> for direct normal and diffuse irradiance in W/m^2.
+>
+> Correct so far?
+>
+> I removed the skyfunc, just the sun source is active.
+>
+> I put together a simple scene:
+> - plastic cylinders as coordinate origin,
+> - large brown ground plate
+> - dielectric spheres (I just love those :)
+>
+> Here is an image with renderings of different sun settings:
+>
+> http://imgur.com/hOqCpmY
+>
+> When I use the sun as stated above the image on the right
+> side is rendered. Much too bright.
+>
+> Reducing the parameters of void light solar:
+>
+> middle image (7.576e+005 7.576e+005 7.576e+005 )
+> left image (7.576e+004 7.576e+004 7.576e+004)
+>
+> Viewed with default parameters of rvu.
+>
+> Do you have an idea what I am doing wrong
+> or might have missed?
+>
+> Kind regards,
+> Joe
+>
+>
+>
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-- 
+Dr.-Ing.  Jan Wienold
+Ecole Polytechnique F?d?rale de Lausanne (EPFL)
+EPFL ENAC IA LIPID
+
+http://people.epfl.ch/jan.wienold
+LE 1 111 (Office)
+Phone    +41 21 69 30849
+
+
+
+From solarjoe at posteo.org  Tue Aug  8 04:28:45 2017
+From: solarjoe at posteo.org (Joe)
+Date: Tue, 08 Aug 2017 13:28:45 +0200
+Subject: [Radiance-general] Images too bright with gendaylit
+In-Reply-To: <3ec24e40-fc56-5961-0b51-0960f1fe728c@epfl.ch>
+References: <fc532a0458f04f581fa59f53738907bc@posteo.de>
+ <3ec24e40-fc56-5961-0b51-0960f1fe728c@epfl.ch>
+Message-ID: <e8206a3df277c3bb9ac4b8d7ef27b543@posteo.de>
+
+Hi,
+
+I am quite new to Radiance and have not used the exposure setting so 
+far.
+So far I had expected to get a "well illuminated" scene with some 
+shadows
+cast.
+I have to read a bit on how exposure works.
+
+Does it work like an ambient light to sort of adjust the overall 
+brightness
+of the image?
+
+ From what I understand so far exposure only affects
+the view of the rendered image, not the actual physical properties
+like illuminance, radiance and irradiance.
+And if rtrace is used to "view" the image instead of rvu the
+illumination would be consistent.
+
+Is that correct?
+
+Kind regards,
+Joe
+
+
+Am 08.08.2017 10:01 schrieb Jan Wienold:
+> Hi Joe,
+> 
+> why do you think it is too bright? Is the luminance to high? I guess
+> you just have to adapt your exposure setting for the image.
+> 
+> The physics for gendaylit and your parameters is correct:
+> 
+> 1. test of luminance of the sun (ray in sun direction):
+> 
+> gendaylit -ang 90 0 -W 900 200 >sky.rad
+> oconv -f sky.rad >sky.oct
+> 
+> echo  0 0 0 -0.000000 -0.052336 0.998630 |rtrace -h sky.oct | rcalc -e
+> '$1=47.4*$1+120*$2+11.6*$3'
+> result: 1.356104e+09 cd/m2
+> 
+> This value looks reasonable - the max is about 1.6 e9 cd/m2
+> 
+> 2. test of irradiance (sensor also looks towards sun):
+> 
+> gendaylit -ang 90 0 -O 1  -W 900 200 >sky_irr.rad
+> oconv -f sky_irr.rad >sky_irr.oct
+> echo  0 0 0 -0.000000 -0.052336 0.998630 |rtrace -h -I+ sky_irr.oct
+> result : 8.998834e+02   W/m2
+> 
+> Equals the direct irradiance which was "put" into the model (the sky
+> is ignored, as in your example).
+> 
+> cheers
+> 
+> Jan
+> 
+> 
+> On 08.08.17 09:17, Joe wrote:
+>> Hello,
+>> 
+>> when I use gendaylit to create a sun my images are too bright.
+>> 
+>> The command used is
+>> 
+>> gendaylit -ang 90 0 -W 900 200
+>> 
+>> 
+>> void light solar
+>> 0
+>> 0
+>> 3 7.576e+006 7.576e+006 7.576e+006
+>> 
+>> solar source sun
+>> 0
+>> 0
+>> 4 -0.000000 -0.052336 0.998630 0.533000
+>> 
+>> This will put the sun to the zenith with reasonable values
+>> for direct normal and diffuse irradiance in W/m^2.
+>> 
+>> Correct so far?
+>> 
+>> I removed the skyfunc, just the sun source is active.
+>> 
+>> I put together a simple scene:
+>> - plastic cylinders as coordinate origin,
+>> - large brown ground plate
+>> - dielectric spheres (I just love those :)
+>> 
+>> Here is an image with renderings of different sun settings:
+>> 
+>> http://imgur.com/hOqCpmY
+>> 
+>> When I use the sun as stated above the image on the right
+>> side is rendered. Much too bright.
+>> 
+>> Reducing the parameters of void light solar:
+>> 
+>> middle image (7.576e+005 7.576e+005 7.576e+005 )
+>> left image (7.576e+004 7.576e+004 7.576e+004)
+>> 
+>> Viewed with default parameters of rvu.
+>> 
+>> Do you have an idea what I am doing wrong
+>> or might have missed?
+>> 
+>> Kind regards,
+>> Joe
+>> 
+>> 
+>> 
+>> 
+>> _______________________________________________
+>> Radiance-general mailing list
+>> Radiance-general at radiance-online.org
+>> https://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From jan.wienold at epfl.ch  Tue Aug  8 05:45:34 2017
+From: jan.wienold at epfl.ch (Jan Wienold)
+Date: Tue, 8 Aug 2017 14:45:34 +0200
+Subject: [Radiance-general] VI-Suite v0.4
+In-Reply-To: <18EF33640F961B4BA442571DEB1356B3011E4083BF@BELLATRIX.university.brighton.ac.uk>
+References: <18EF33640F961B4BA442571DEB1356B3011E4083BF@BELLATRIX.university.brighton.ac.uk>
+Message-ID: <dafc952c-581b-df1a-be09-30e16860ea23@epfl.ch>
+
+Hi Ryan,
+
+it looks really cool.
+
+Are there already plans to include evaluations according to the new 
+European Daylight Standard prEN17037 "Daylight of buildings"? So far it 
+is still a draft, but if all goes well it will become a standard at the 
+beginning of next year.
+This would mean including CBDM for the daylight provision (a bit other 
+definition than sDA),  calculate the sunlight exposure (in contrary to 
+the US, the European standard recommends to have access to direct 
+sunlight) and calculate the protection from glare (CBDM glare evaluation 
+based on DGP).
+
+For an implementation of the CBDM glare analysis I can offer my help.
+
+Cheers
+Jan
+
+
+On 07.08.17 21:26, Ryan Southall wrote:
+> Hi.
+> Yes, sorry Greg. Probably should have contextualised my previous post a bit. I did announce the VI-Suite on this list but that was a wee while ago.
+>
+> For those that don't know, the VI-Suite is an addon (plugin) for the Blender 3D content creation suite. As Blender attempts to be the Swiss Army Knife of digital content creation so the Vi-Suite tries to be the Swiss Army Knife of building contextual and performance evaluation. It is indeed free and open source and is released under the same license as Blender (GPL v2).
+>
+> The VI-Suite has two children: LiVi (Radiance) and EnVI (EnergyPlus). Both emphasise ease of use over exposing a complete set of underlying capabilities. There are also a number of nephews and nieces (sun path, wind rose, shadow mapping, sky view factor). The VI-Suite is also currently pregnant with FloVi (OpenFoam).
+>
+> LiVi, although geared towards the generation of lighting metrics and the visualisation thereof, does I think encompass a fair amount of Radiance functionality including:
+>
+> *    Static and parametric basic (Lux, DF, Irradiance), compliance (LEEDv4, BREEAM, Green Star), Exposure (Luxhours, kWh) and CBDM (DA, ASE, SDA)  calculations. CBDM is done with a two-phase
+>       method with Numpy Python matrix transformations to keep it quick and relatively simple.
+>
+> *    Patterns and textures support as posted.
+>
+> *    BSDF creation, simulation and visualisation (only currently Klems for the last one).
+>
+> *    Glare analysis.
+>
+> *    Rpict image generation and falsecolor processing.
+>
+> Results can be exported to CSV or visualised within Blender. Blender mesh objects are used to define the sensor points for rtrace numerical calculations and LiVi visualises the results by colouring these meshes. The integration with Blender is generally pretty deep. Blender's text editor can be used to manually edit Radiance input files and Blender cameras are used for rvu viewpoint etc.
+>
+> Current version number is 0.4.12, and as the number suggests it is by no means bug free.
+>
+> As Greg correctly identified, the main website is at http://arts.brighton.ac.uk/projects/vi-suite where the VI-Suite can be downloaded for OS X, Win & Linux, but most of the 'action' happens at the blog site https://blogs.brighton.ac.uk/visuite.
+> There is also a YouTube video channel where I attempt to explain how the whole thing works https://www.youtube.com/playlist?list=PLySrjcxbIMopXVXNU6FWqy5BCPU1oif8I and a google group https://groups.google.com/forum/#!forum/vi-suite where you can rave at me for writing dodgy code.
+>
+> Cheers.
+> Ryan
+>
+> ___________________________________________________________
+> This email has been scanned by MessageLabs' Email Security System
+> on behalf of the University of Brighton. For more information see:
+> https://staff.brighton.ac.uk/is/computing/Pages/Email/spam.aspx
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+
+-- 
+Dr.-Ing.  Jan Wienold
+Ecole Polytechnique F?d?rale de Lausanne (EPFL)
+EPFL ENAC IA LIPID
+
+http://people.epfl.ch/jan.wienold
+LE 1 111 (Office)
+Phone    +41 21 69 30849
+
+
+
+From Robert.Guglielmetti at nrel.gov  Tue Aug  8 08:03:36 2017
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Tue, 8 Aug 2017 15:03:36 +0000
+Subject: [Radiance-general] Images too bright with gendaylit
+In-Reply-To: <e8206a3df277c3bb9ac4b8d7ef27b543@posteo.de>
+References: <fc532a0458f04f581fa59f53738907bc@posteo.de>
+ <3ec24e40-fc56-5961-0b51-0960f1fe728c@epfl.ch>
+ <e8206a3df277c3bb9ac4b8d7ef27b543@posteo.de>
+Message-ID: <D5AF2D3B.2D434%Robert.Guglielmetti@nrel.gov>
+
+Yes; exposure affects the appearance of the image but not the underlying
+photo/radiometric values, or pixel data if you will. A Radiance image is
+this amazing collection of spot meter data, basically. I?m not sure I
+understand your last statement there, about the ?illumination [being]
+consistent?. 
+
+You can take a Radiance luminance image and run it through pcond to
+'tonemap' the image and create all kinds of valuable effects. The simplest
+is the '-h' option, which will map the pixel luminance according to human
+vision capability. Thus, creating an image that conveys the appearance of
+the scene as viewed by a human observer in that scene.
+
+The main takeaway is that the raw Radiance images are physically accurate,
+yet you are viewing them on dynamic range-limited devices, so they will be
+hard-pressed to ?look right?.
+
+- Rob
+
+
+
+On 8/8/17, 5:28 AM, "Joe" <solarjoe at posteo.org> wrote:
+
+>
+> From what I understand so far exposure only affects
+>the view of the rendered image, not the actual physical properties
+>like illuminance, radiance and irradiance.
+>And if rtrace is used to "view" the image instead of rvu the
+>illumination would be consistent.
+>
+>Is that correct?
+>
+>Kind regards,
+>Joe
+
+
+From minchen.wei at polyu.edu.hk  Tue Aug  8 08:44:10 2017
+From: minchen.wei at polyu.edu.hk (WEI, Minchen [BSE])
+Date: Tue, 8 Aug 2017 15:44:10 +0000
+Subject: [Radiance-general] Rcontrib to render reinhart sky patches
+Message-ID: <0F0F4293-D854-48A3-BAAB-7D00D6E0E505@polyu.edu.hk>
+
+Hello all,
+
+I am trying to use vwrays and rcontrib to render sky patches. The code below works fine for the tregenza patches, but cannot render reinhart patches.
+
+vwrays -ff $vw|rcontrib @image.opt -ffc -fo $(vwrays -d $vw) -V+ -f tregenza.cal -b tbin -bn Ntbins -o images/patches/p%d.hdr -m skyglow a.oct
+
+vwrays -ff $vw|rcontrib @image.opt -ffc -fo $(vwrays -d $vw) -V+ -e MF:4 -f reinhart.cal -b rbin -bn Nrbins -o images/patches/p%d.hdr -m skyglow a.oct
+
+Thank you!
+
+Tommy
+[Sent from my iPhone]
+[http://mlm.polyu.edu.hk/PolyU80_Email_Signature.png]
+
+www.polyu.edu.hk/80anniversary<http://www.polyu.edu.hk/80anniversary>
+
+Disclaimer:
+
+This message (including any attachments) contains confidential information intended for a specific individual and purpose. If you are not the intended recipient, you should delete this message and notify the sender and The Hong Kong Polytechnic University (the University) immediately. Any disclosure, copying, or distribution of this message, or the taking of any action based on it, is strictly prohibited and may be unlawful.
+
+The University specifically denies any responsibility for the accuracy or quality of information obtained through University E-mail Facilities. Any views and opinions expressed are only those of the author(s) and do not necessarily represent those of the University and the University accepts no liability whatsoever for any losses or damages incurred or caused to any party as a result of the use of such information.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170808/4b3b38ff/attachment-0001.html>
+
+From gregoryjward at gmail.com  Tue Aug  8 19:33:31 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue, 8 Aug 2017 19:33:31 -0700
+Subject: [Radiance-general] Rcontrib to render reinhart sky patches
+In-Reply-To: <0F0F4293-D854-48A3-BAAB-7D00D6E0E505@polyu.edu.hk>
+References: <0F0F4293-D854-48A3-BAAB-7D00D6E0E505@polyu.edu.hk>
+Message-ID: <E3CB0C02-E3FF-4CB3-9C48-8F6B31B1A1A6@lmi.net>
+
+Hi Tommy,
+
+Did you try reinhart.cal with MF:1 ?
+
+If that works, you are most likely running up against your system limit on the number of simultaneous open files.  The fix for this is discussed a number of times in the archives, and belongs in a FAQ.
+
+See https://www.radiance-online.org/pipermail/radiance-general/2014-March/010137.html
+
+-Greg
+
+> From: "WEI, Minchen [BSE]" <minchen.wei at polyu.edu.hk>
+> Date: August 8, 2017 8:44:10 AM PDT
+> 
+> Hello all,
+> 
+> I am trying to use vwrays and rcontrib to render sky patches. The code below works fine for the tregenza patches, but cannot render reinhart patches.
+> 
+> vwrays -ff $vw|rcontrib @image.opt -ffc -fo $(vwrays -d $vw) -V+ -f tregenza.cal -b tbin -bn Ntbins -o images/patches/p%d.hdr -m skyglow a.oct
+> 
+> vwrays -ff $vw|rcontrib @image.opt -ffc -fo $(vwrays -d $vw) -V+ -e MF:4 -f reinhart.cal -b rbin -bn Nrbins -o images/patches/p%d.hdr -m skyglow a.oct
+> 
+> Thank you!
+> 
+> Tommy
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170808/7994b137/attachment.html>
+
+From minchen.wei at polyu.edu.hk  Tue Aug  8 19:42:34 2017
+From: minchen.wei at polyu.edu.hk (WEI, Minchen [BSE])
+Date: Wed, 9 Aug 2017 02:42:34 +0000
+Subject: [Radiance-general] [WARNING: SUSPECTED SPAM]Re: Rcontrib to
+ render reinhart sky patches
+In-Reply-To: <E3CB0C02-E3FF-4CB3-9C48-8F6B31B1A1A6@lmi.net>
+References: <0F0F4293-D854-48A3-BAAB-7D00D6E0E505@polyu.edu.hk>
+ <E3CB0C02-E3FF-4CB3-9C48-8F6B31B1A1A6@lmi.net>
+Message-ID: <HKNPR02MB051687206F4AC861FCC71264CD8B0@HKNPR02MB0516.apcprd02.prod.outlook.com>
+
+Hi Greg,
+
+Yes, I tried. It always gives me an error "required modifier is missing".
+
+Thanks,
+
+Tommy
+
+--
+Minchen (Tommy) Wei, PhD
+The Hong Kong Polytechnic University
+(+852)-3400 3606 minchen.wei at polyu.edu.hk<mailto:minchen.wei at polyu.edu.hk>
+
+From: Greg Ward [mailto:gregoryjward at gmail.com]
+Sent: Wednesday, 9 August 2017 10:34 AM
+To: Radiance general discussion <radiance-general at radiance-online.org>
+Subject: [WARNING: SUSPECTED SPAM]Re: [Radiance-general] Rcontrib to render reinhart sky patches
+
+Hi Tommy,
+
+Did you try reinhart.cal with MF:1 ?
+
+If that works, you are most likely running up against your system limit on the number of simultaneous open files.  The fix for this is discussed a number of times in the archives, and belongs in a FAQ.
+
+See https://www.radiance-online.org/pipermail/radiance-general/2014-March/010137.html<https://secure-web.cisco.com/1VWBuBCL2c4oc--8y2PuBRIXllcWklIl9l04WklgqEgOUN00VUZdU2ytY_eigJ93eZf5kUhxpGZoGRL7ocuOuEP3hbWJPsJkE5bQbw_3MVYYZHu871QXJJGmCWMBGtvdSGz_-pT2WArKL2H4A8b2E9PAvSO7TQJSsH7qX8-hheMnYiQeKxNFCcfPondyZNjk4aG7O43bEt316QeUEsEAy6r_1QM0r9fxlv1KXX7RFfi9qm03zXgZwlcrkhfLuhnO2QTN6lUMlM4LguwutPYZRHJGiYMjZxNtlVdoyLaD1xdUekT-MUSCmG5SItPBdxTh-/https%3A%2F%2Fwww.radiance-online.org%2Fpipermail%2Fradiance-general%2F2014-March%2F010137.html>
+
+-Greg
+
+
+
+From: "WEI, Minchen [BSE]" <minchen.wei at polyu.edu.hk<mailto:minchen.wei at polyu.edu.hk>>
+
+Date: August 8, 2017 8:44:10 AM PDT
+
+
+Hello all,
+
+I am trying to use vwrays and rcontrib to render sky patches. The code below works fine for the tregenza patches, but cannot render reinhart patches.
+
+vwrays -ff $vw|rcontrib @image.opt -ffc -fo $(vwrays -d $vw) -V+ -f tregenza.cal -b tbin -bn Ntbins -o images/patches/p%d.hdr -m skyglow a.oct
+
+vwrays -ff $vw|rcontrib @image.opt -ffc -fo $(vwrays -d $vw) -V+ -e MF:4 -f reinhart.cal -b rbin -bn Nrbins -o images/patches/p%d.hdr -m skyglow a.oct
+
+Thank you!
+
+Tommy
+[http://mlm.polyu.edu.hk/PolyU80_Email_Signature.png]
+
+www.polyu.edu.hk/80anniversary<http://www.polyu.edu.hk/80anniversary>
+
+Disclaimer:
+
+This message (including any attachments) contains confidential information intended for a specific individual and purpose. If you are not the intended recipient, you should delete this message and notify the sender and The Hong Kong Polytechnic University (the University) immediately. Any disclosure, copying, or distribution of this message, or the taking of any action based on it, is strictly prohibited and may be unlawful.
+
+The University specifically denies any responsibility for the accuracy or quality of information obtained through University E-mail Facilities. Any views and opinions expressed are only those of the author(s) and do not necessarily represent those of the University and the University accepts no liability whatsoever for any losses or damages incurred or caused to any party as a result of the use of such information.
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170809/90aa183b/attachment.html>
+
+From gregoryjward at gmail.com  Tue Aug  8 20:19:14 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Tue, 8 Aug 2017 20:19:14 -0700
+Subject: [Radiance-general] [WARNING: SUSPECTED SPAM]Re: Rcontrib to
+ render reinhart sky patches
+In-Reply-To: <HKNPR02MB051687206F4AC861FCC71264CD8B0@HKNPR02MB0516.apcprd02.prod.outlook.com>
+References: <0F0F4293-D854-48A3-BAAB-7D00D6E0E505@polyu.edu.hk>
+ <E3CB0C02-E3FF-4CB3-9C48-8F6B31B1A1A6@lmi.net>
+ <HKNPR02MB051687206F4AC861FCC71264CD8B0@HKNPR02MB0516.apcprd02.prod.outlook.com>
+Message-ID: <32C0A080-C282-4146-852F-991C8B469A4D@lmi.net>
+
+OK, thanks.  It does (usually) help to tell us what error you are getting, rather than simply saying "it doesn't work."
+
+In this case, I don't understand why you would be getting such an error.  Your command *looks* alright as you have shared it.  Are you certain there are no special characters or newlines where there shouldn't be one?
+
+Try cutting and pasting the command from your e-mail.  If it still isn't working, you may have to send me your files in a private message so I can try to reproduce the error, which makes no sense.
+
+Cheers,
+-Greg
+
+> From: "WEI, Minchen [BSE]" <minchen.wei at polyu.edu.hk>
+> Date: August 8, 2017 7:42:34 PM PDT
+> 
+> Hi Greg,
+>  
+> Yes, I tried. It always gives me an error ?required modifier is missing?.
+>  
+> Thanks,
+>  
+> Tommy
+>  
+> --
+> Minchen (Tommy) Wei, PhD
+> The Hong Kong Polytechnic University
+> (+852)-3400 3606 minchen.wei at polyu.edu.hk
+>  
+> From: Greg Ward [mailto:gregoryjward at gmail.com] 
+> Sent: Wednesday, 9 August 2017 10:34 AM
+> To: Radiance general discussion <radiance-general at radiance-online.org>
+> Subject: [WARNING: SUSPECTED SPAM]Re: [Radiance-general] Rcontrib to render reinhart sky patches
+>  
+> Hi Tommy,
+>  
+> Did you try reinhart.cal with MF:1 ?
+>  
+> If that works, you are most likely running up against your system limit on the number of simultaneous open files.  The fix for this is discussed a number of times in the archives, and belongs in a FAQ.
+>  
+> See https://www.radiance-online.org/pipermail/radiance-general/2014-March/010137.html
+>  
+> -Greg
+> 
+> 
+> From: "WEI, Minchen [BSE]" <minchen.wei at polyu.edu.hk>
+> Date: August 8, 2017 8:44:10 AM PDT
+>  
+> Hello all,
+>  
+> I am trying to use vwrays and rcontrib to render sky patches. The code below works fine for the tregenza patches, but cannot render reinhart patches.
+>  
+> vwrays -ff $vw|rcontrib @image.opt -ffc -fo $(vwrays -d $vw) -V+ -f tregenza.cal -b tbin -bn Ntbins -o images/patches/p%d.hdr -m skyglow a.oct
+>  
+> vwrays -ff $vw|rcontrib @image.opt -ffc -fo $(vwrays -d $vw) -V+ -e MF:4 -f reinhart.cal -b rbin -bn Nrbins -o images/patches/p%d.hdr -m skyglow a.oct
+>  
+> Thank you!
+>  
+> Tommy
+> 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170808/b5c38e6f/attachment-0001.html>
+
+From solarjoe at posteo.org  Tue Aug  8 22:50:16 2017
+From: solarjoe at posteo.org (Joe)
+Date: Wed, 09 Aug 2017 07:50:16 +0200
+Subject: [Radiance-general] Images too bright with gendaylit
+In-Reply-To: <D5AF2D3B.2D434%Robert.Guglielmetti@nrel.gov>
+References: <fc532a0458f04f581fa59f53738907bc@posteo.de>
+ <3ec24e40-fc56-5961-0b51-0960f1fe728c@epfl.ch>
+ <e8206a3df277c3bb9ac4b8d7ef27b543@posteo.de>
+ <D5AF2D3B.2D434%Robert.Guglielmetti@nrel.gov>
+Message-ID: <631c2f3aa94f1de77c6052d82722561a@posteo.de>
+
+Thanks for your responses!
+It works now as expected.
+
+For future reference: I also found a good explanation here, page 9.
+https://www.radiance-online.org/archived/radsite/radiance/refer/rc97tut.pdf/at_download/file
+
+Does pcond -h something like automatically calculate the maximum 
+luminance
+and adjust the exposure? Or will it also apply the different perception 
+of red, green and blue?
+
+Is there a parameter for rvu to automatically set the exposure using the 
+maximum Luminance
+calculated?
+
+
+
+Am 08.08.2017 17:03 schrieb Guglielmetti, Robert:
+> Yes; exposure affects the appearance of the image but not the 
+> underlying
+> photo/radiometric values, or pixel data if you will. A Radiance image 
+> is
+> this amazing collection of spot meter data, basically. I?m not sure I
+> understand your last statement there, about the ?illumination [being]
+> consistent?.
+> 
+> You can take a Radiance luminance image and run it through pcond to
+> 'tonemap' the image and create all kinds of valuable effects. The 
+> simplest
+> is the '-h' option, which will map the pixel luminance according to 
+> human
+> vision capability. Thus, creating an image that conveys the appearance 
+> of
+> the scene as viewed by a human observer in that scene.
+> 
+> The main takeaway is that the raw Radiance images are physically 
+> accurate,
+> yet you are viewing them on dynamic range-limited devices, so they will 
+> be
+> hard-pressed to ?look right?.
+> 
+> - Rob
+> 
+> 
+> 
+> On 8/8/17, 5:28 AM, "Joe" <solarjoe at posteo.org> wrote:
+> 
+>> 
+>> From what I understand so far exposure only affects
+>> the view of the rendered image, not the actual physical properties
+>> like illuminance, radiance and irradiance.
+>> And if rtrace is used to "view" the image instead of rvu the
+>> illumination would be consistent.
+>> 
+>> Is that correct?
+>> 
+>> Kind regards,
+>> Joe
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+
+
+From Robert.Guglielmetti at nrel.gov  Wed Aug  9 08:23:50 2017
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Wed, 9 Aug 2017 15:23:50 +0000
+Subject: [Radiance-general] Images too bright with gendaylit
+In-Reply-To: <631c2f3aa94f1de77c6052d82722561a@posteo.de>
+References: <fc532a0458f04f581fa59f53738907bc@posteo.de>
+ <3ec24e40-fc56-5961-0b51-0960f1fe728c@epfl.ch>
+ <e8206a3df277c3bb9ac4b8d7ef27b543@posteo.de>
+ <D5AF2D3B.2D434%Robert.Guglielmetti@nrel.gov>
+ <631c2f3aa94f1de77c6052d82722561a@posteo.de>
+Message-ID: <D5B08271.2D456%Robert.Guglielmetti@nrel.gov>
+
+
+
+On 8/8/17, 11:50 PM, "Joe" <solarjoe at posteo.org> wrote:
+
+>
+>Does pcond -h something like automatically calculate the maximum
+>luminance
+>and adjust the exposure? Or will it also apply the different perception
+>of red, green and blue?
+
+
+Something like that, yeah. When low-luminance scenes are detected (by
+inspecting the pixels? values), the loss of color acuity is modeled.
+Disability glare and veiling reflections are modeled as well. The exact
+goings-on are detailed in Chapter 7 (Roadway Lighting) of the Rendering
+with Radiance book, and the -h option to pcond is simply a combination of
+luminance-based tweaks to the pixels, discussed in that chapter. The
+output images lose all validity at the pixel value level, but they make
+for compelling images on low dynamic range displays.
+
+You will definitely want to look at Rob Shakespeare?s work (he?s
+presenting an update at this years? Radiance Workshop) with using Radiance
+images and tone mapping to simulate scenes as perceived by aging eyes.
+It;s awesome stuff, and a great illustration of the value of Radiance
+images and the tools used to create and analyze them.
+
+>Is there a parameter for rvu to automatically set the exposure using the
+>maximum Luminance
+>calculated?
+
+
+In rvu you can hit ?e? and the pick a point near where you know max
+luminance to be and it will scale the exposure accordingly, albeit
+linearly. You can also use ?pextrem? at the command line to get the
+maximum and minimum pixel values (and x,y locations) of an input image.
+Another utility you may be interested in is ?phisto?, which will create a
+histogram of a series of input images and supply a value you can use to
+expose the input images uniformly (sorta).
+
+- Rob
+
+
+From Kristen.Garibaldi at arup.com  Thu Aug 10 12:41:57 2017
+From: Kristen.Garibaldi at arup.com (Kristen Garibaldi)
+Date: Thu, 10 Aug 2017 19:41:57 +0000
+Subject: [Radiance-general] falsecolor scale adjustments
+Message-ID: <8EA785851B7BF642B9E13DFD84F98B8230BE555C@AMXExMb02.global.arup.com>
+
+Hello all!
+
+I'm attempting to customize the falsecolor scale to match the below scale (generated in photosphere) but unable to decipher the options required.  Any insights on the -s and -log multipliers necessary?  Is there a way to manually set the low end of the scale?
+
+Thanks for your help! So very appreciated!
+Kristen
+
+[cid:image001.png at 01D311EE.E1A67EB0]
+
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup business
+systems are scanned for viruses and acceptability of content
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170810/1d9cb9a4/attachment-0001.html>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: image001.png
+Type: image/png
+Size: 27019 bytes
+Desc: image001.png
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170810/1d9cb9a4/attachment-0002.png>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: scale.png
+Type: image/png
+Size: 30981 bytes
+Desc: scale.png
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170810/1d9cb9a4/attachment-0003.png>
+
+From gregoryjward at gmail.com  Thu Aug 10 12:50:08 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu, 10 Aug 2017 12:50:08 -0700
+Subject: [Radiance-general] falsecolor scale adjustments
+In-Reply-To: <8EA785851B7BF642B9E13DFD84F98B8230BE555C@AMXExMb02.global.arup.com>
+References: <8EA785851B7BF642B9E13DFD84F98B8230BE555C@AMXExMb02.global.arup.com>
+Message-ID: <AB2E1F2C-DD7E-44BF-B8A2-69EF0752DC21@lmi.net>
+
+Hi Kristen,
+
+If I understand your question, you essentially want to have 6 log divisions with a maximum of 10000 cd/m^2.  I think the following will work with falsecolor:
+
+	falsecolor -log 6 -s 10000 -i image.hdr > image_fc.hdr
+
+I guess you are not asking about the color scale itself, which should be the same as the default palette in falsecolor.  (Running "falsecolor -palettes > pal.hdr" will show you the standard palattes you may choose from.)
+
+Cheers,
+-Greg
+
+> From: Kristen Garibaldi <Kristen.Garibaldi at arup.com>
+> Date: August 10, 2017 12:41:57 PM PDT
+> 
+> Hello all!
+>  
+> I?m attempting to customize the falsecolor scale to match the below scale (generated in photosphere) but unable to decipher the options required.  Any insights on the ?s and ?log multipliers necessary?  Is there a way to manually set the low end of the scale?
+>  
+> Thanks for your help! So very appreciated!
+> Kristen
+> 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170810/243ebb10/attachment.html>
+
+From Robert.Guglielmetti at nrel.gov  Thu Aug 10 12:54:42 2017
+From: Robert.Guglielmetti at nrel.gov (Guglielmetti, Robert)
+Date: Thu, 10 Aug 2017 19:54:42 +0000
+Subject: [Radiance-general] falsecolor scale adjustments
+In-Reply-To: <AB2E1F2C-DD7E-44BF-B8A2-69EF0752DC21@lmi.net>
+References: <8EA785851B7BF642B9E13DFD84F98B8230BE555C@AMXExMb02.global.arup.com>
+ <AB2E1F2C-DD7E-44BF-B8A2-69EF0752DC21@lmi.net>
+Message-ID: <D5B215C6.2D5E2%Robert.Guglielmetti@nrel.gov>
+
+On 8/10/17, 1:50 PM, "Greg Ward" <gregoryjward at gmail.com> wrote:
+>
+> (Running "falsecolor -palettes > pal.hdr" will show you the standard
+>palattes you may choose from.)
+
+
+^ cool trick, Greg! #alwayssomethingnew #neverends #Radianceisdeep
+
+
+
+From jacobs.axel at gmail.com  Thu Aug 10 13:01:01 2017
+From: jacobs.axel at gmail.com (Axel Jacobs)
+Date: Thu, 10 Aug 2017 21:01:01 +0100
+Subject: [Radiance-general] falsecolor scale adjustments
+In-Reply-To: <AB2E1F2C-DD7E-44BF-B8A2-69EF0752DC21@lmi.net>
+References: <8EA785851B7BF642B9E13DFD84F98B8230BE555C@AMXExMb02.global.arup.com>
+ <AB2E1F2C-DD7E-44BF-B8A2-69EF0752DC21@lmi.net>
+Message-ID: <ea8a9bbc-898a-93b9-7df6-3cbed7896cd4@gmail.com>
+
+With the official Radiance version of falsecolor (coded in Perl), there 
+is no way of adjusting the lower end of the scale.
+
+Cheer
+Axel
+
+On 10/08/17 20:50, Greg Ward wrote:
+> Hi Kristen,
+> 
+> If I understand your question, you essentially want to have 6 log 
+> divisions with a maximum of 10000 cd/m^2.  I think the following will 
+> work with falsecolor:
+> 
+> falsecolor -log 6 -s 10000 -i image.hdr > image_fc.hdr
+> 
+> I guess you are not asking about the color scale itself, which should be 
+> the same as the default palette in falsecolor.  (Running "falsecolor 
+> -palettes > pal.hdr" will show you the standard palattes you may choose 
+> from.)
+> 
+> Cheers,
+> -Greg
+> 
+>> *From: *Kristen Garibaldi <Kristen.Garibaldi at arup.com 
+>> <mailto:Kristen.Garibaldi at arup.com>>
+>>
+>> *Date: *August 10, 2017 12:41:57 PM PDT
+>>
+>> *
+>> *
+>>
+>> Hello all!
+>>
+>> I?m attempting to customize the falsecolor scale to match the below 
+>> scale (generated in photosphere) but unable to decipher the options 
+>> required.  Any insights on the ?s and ?log multipliers necessary?  Is 
+>> there a way to manually set the low end of the scale?
+>>
+>> Thanks for your help! So very appreciated!
+>>
+>> Kristen
+>>
+>>
+> 
+> 
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+> 
+
+
+
+From gregoryjward at gmail.com  Thu Aug 10 13:01:52 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu, 10 Aug 2017 13:01:52 -0700
+Subject: [Radiance-general] falsecolor scale adjustments
+In-Reply-To: <D5B215C6.2D5E2%Robert.Guglielmetti@nrel.gov>
+References: <8EA785851B7BF642B9E13DFD84F98B8230BE555C@AMXExMb02.global.arup.com>
+ <AB2E1F2C-DD7E-44BF-B8A2-69EF0752DC21@lmi.net>
+ <D5B215C6.2D5E2%Robert.Guglielmetti@nrel.gov>
+Message-ID: <C2874B8F-714C-4866-B897-A1CE8D8ADD4C@lmi.net>
+
+Full credit to Axel Jacobs on this one -- he thought of this option, came up with the extra palettes, and re-implemented a better version of falsecolor.csh in Perl.
+
+-Greg
+
+> From: "Guglielmetti, Robert" <Robert.Guglielmetti at nrel.gov>
+> Date: August 10, 2017 12:54:42 PM PDT
+> 
+> On 8/10/17, 1:50 PM, "Greg Ward" <gregoryjward at gmail.com> wrote:
+>> 
+>> (Running "falsecolor -palettes > pal.hdr" will show you the standard
+>> palattes you may choose from.)
+> 
+> 
+> ^ cool trick, Greg! #alwayssomethingnew #neverends #Radianceisdeep
+> 
+
+
+From gregoryjward at gmail.com  Thu Aug 10 13:13:54 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu, 10 Aug 2017 13:13:54 -0700
+Subject: [Radiance-general] falsecolor scale adjustments
+In-Reply-To: <ea8a9bbc-898a-93b9-7df6-3cbed7896cd4@gmail.com>
+References: <8EA785851B7BF642B9E13DFD84F98B8230BE555C@AMXExMb02.global.arup.com>
+ <AB2E1F2C-DD7E-44BF-B8A2-69EF0752DC21@lmi.net>
+ <ea8a9bbc-898a-93b9-7df6-3cbed7896cd4@gmail.com>
+Message-ID: <FA795967-95C0-47BD-A1FC-E6ECC07EA9B6@lmi.net>
+
+While it's true that the minimum is always zero if you are using the default linear scale, setting a log scale allows you to (indirectly) specify the minimum as the scale setting divided by 10^N specified using the "-log N" option.  (And "N" can be any positive value.)
+
+I checked, and the setting I recommended works for your example.
+
+Cheers,
+-Greg
+
+> From: Axel Jacobs <jacobs.axel at gmail.com>
+> Date: August 10, 2017 1:01:01 PM PDT
+> 
+> With the official Radiance version of falsecolor (coded in Perl), there is no way of adjusting the lower end of the scale.
+> 
+> Cheer
+> Axel
+> 
+> On 10/08/17 20:50, Greg Ward wrote:
+>> Hi Kristen,
+>> If I understand your question, you essentially want to have 6 log divisions with a maximum of 10000 cd/m^2.  I think the following will work with falsecolor:
+>> falsecolor -log 6 -s 10000 -i image.hdr > image_fc.hdr
+>> I guess you are not asking about the color scale itself, which should be the same as the default palette in falsecolor.  (Running "falsecolor -palettes > pal.hdr" will show you the standard palattes you may choose from.)
+>> Cheers,
+>> -Greg
+>>> *From: *Kristen Garibaldi <Kristen.Garibaldi at arup.com <mailto:Kristen.Garibaldi at arup.com>>
+>>> 
+>>> *Date: *August 10, 2017 12:41:57 PM PDT
+>>> 
+>>> *
+>>> *
+>>> 
+>>> Hello all!
+>>> 
+>>> I?m attempting to customize the falsecolor scale to match the below scale (generated in photosphere) but unable to decipher the options required.  Any insights on the ?s and ?log multipliers necessary?  Is there a way to manually set the low end of the scale?
+>>> 
+>>> Thanks for your help! So very appreciated!
+>>> 
+>>> Kristen
+>>> 
+
+
+From rmfritz3 at gmail.com  Thu Aug 10 14:52:11 2017
+From: rmfritz3 at gmail.com (Randolph M. Fritz)
+Date: Thu, 10 Aug 2017 14:52:11 -0700
+Subject: [Radiance-general] Rendering with Radiance at the Radiance Workshop
+Message-ID: <CANeAMoJx2HdsVhgBLqk+g_OBGbWKExLWt98=efhL+9b23MkEZw@mail.gmail.com>
+
+I am not registered this year, but I will be in Portland Wednesday and will
+bring some of my softcover copies of *Rendering with Radiance*. These I
+will be selling for $35 each.
+
+I also have a few misprints left; the printer left the special characters
+out. You can learn Radiance from one of these, but all the mathematics is
+trashed; I just want to get rid of them and you can have one while they
+last (I only have five left) for $5.
+
+I will be taking cards, checks, and cash.
+
+If you're interested please let me know; I would like to plan for sales.
+-- 
+Randolph M. Fritz || +1 206 659-8617 <(206)%20659-8617> ||
+rmfritz3 at gmail.com
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170810/0a2550f3/attachment.html>
+
+From rmfritz3 at gmail.com  Thu Aug 10 15:55:42 2017
+From: rmfritz3 at gmail.com (Randolph M. Fritz)
+Date: Thu, 10 Aug 2017 15:55:42 -0700
+Subject: [Radiance-general] Rendering with Radiance at the Radiance
+ Workshop
+In-Reply-To: <CANeAMoJx2HdsVhgBLqk+g_OBGbWKExLWt98=efhL+9b23MkEZw@mail.gmail.com>
+References: <CANeAMoJx2HdsVhgBLqk+g_OBGbWKExLWt98=efhL+9b23MkEZw@mail.gmail.com>
+Message-ID: <CANeAMoKJTFebUjZUnZ+mnNjUVsTTyVXAW42hNJo4CQGF+av+Gg@mail.gmail.com>
+
+Also, one of Chas Ehrlich's hardcover printing will be raffled or something
+at the conference.
+
+-- 
+Randolph M. Fritz || +1 206 659-8617 || rmfritz3 at gmail.com
+
+On Thu, Aug 10, 2017 at 2:52 PM, Randolph M. Fritz <rmfritz3 at gmail.com>
+wrote:
+
+> I am not registered this year, but I will be in Portland Wednesday and
+> will bring some of my softcover copies of *Rendering with Radiance*.
+> These I will be selling for $35 each.
+>
+> I also have a few misprints left; the printer left the special characters
+> out. You can learn Radiance from one of these, but all the mathematics is
+> trashed; I just want to get rid of them and you can have one while they
+> last (I only have five left) for $5.
+>
+> I will be taking cards, checks, and cash.
+>
+> If you're interested please let me know; I would like to plan for sales.
+> --
+> Randolph M. Fritz || +1 206 659-8617 <(206)%20659-8617> ||
+> rmfritz3 at gmail.com
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170810/a82cc80d/attachment.html>
+
+From Kristen.Garibaldi at arup.com  Thu Aug 10 16:01:43 2017
+From: Kristen.Garibaldi at arup.com (Kristen Garibaldi)
+Date: Thu, 10 Aug 2017 23:01:43 +0000
+Subject: [Radiance-general] falsecolor scale adjustments
+In-Reply-To: <FA795967-95C0-47BD-A1FC-E6ECC07EA9B6@lmi.net>
+References: <8EA785851B7BF642B9E13DFD84F98B8230BE555C@AMXExMb02.global.arup.com>
+ <AB2E1F2C-DD7E-44BF-B8A2-69EF0752DC21@lmi.net>
+ <ea8a9bbc-898a-93b9-7df6-3cbed7896cd4@gmail.com>
+ <FA795967-95C0-47BD-A1FC-E6ECC07EA9B6@lmi.net>
+Message-ID: <8EA785851B7BF642B9E13DFD84F98B8230BE5861@AMXExMb02.global.arup.com>
+
+Much appreciated all! Thanks!!!
+
+Kristen
+
+-----Original Message-----
+From: Greg Ward [mailto:gregoryjward at gmail.com] 
+Sent: Thursday, August 10, 2017 4:14 PM
+To: Radiance general discussion
+Subject: Re: [Radiance-general] falsecolor scale adjustments
+
+While it's true that the minimum is always zero if you are using the default linear scale, setting a log scale allows you to (indirectly) specify the minimum as the scale setting divided by 10^N specified using the "-log N" option.  (And "N" can be any positive value.)
+
+I checked, and the setting I recommended works for your example.
+
+Cheers,
+-Greg
+
+> From: Axel Jacobs <jacobs.axel at gmail.com>
+> Date: August 10, 2017 1:01:01 PM PDT
+> 
+> With the official Radiance version of falsecolor (coded in Perl), there is no way of adjusting the lower end of the scale.
+> 
+> Cheer
+> Axel
+> 
+> On 10/08/17 20:50, Greg Ward wrote:
+>> Hi Kristen,
+>> If I understand your question, you essentially want to have 6 log divisions with a maximum of 10000 cd/m^2.  I think the following will work with falsecolor:
+>> falsecolor -log 6 -s 10000 -i image.hdr > image_fc.hdr I guess you 
+>> are not asking about the color scale itself, which should be the same 
+>> as the default palette in falsecolor.  (Running "falsecolor -palettes 
+>> > pal.hdr" will show you the standard palattes you may choose from.) 
+>> Cheers, -Greg
+>>> *From: *Kristen Garibaldi <Kristen.Garibaldi at arup.com 
+>>> <mailto:Kristen.Garibaldi at arup.com>>
+>>> 
+>>> *Date: *August 10, 2017 12:41:57 PM PDT
+>>> 
+>>> *
+>>> *
+>>> 
+>>> Hello all!
+>>> 
+>>> I'm attempting to customize the falsecolor scale to match the below scale (generated in photosphere) but unable to decipher the options required.  Any insights on the -s and -log multipliers necessary?  Is there a way to manually set the low end of the scale?
+>>> 
+>>> Thanks for your help! So very appreciated!
+>>> 
+>>> Kristen
+>>> 
+
+_______________________________________________
+Radiance-general mailing list
+Radiance-general at radiance-online.org
+https://secure-web.cisco.com/1TC63JN9AfCBlgHT2CP4wXjM9J37bm8euY3BsjYncx0umW__H5GAcOrpjnHLq3IJjGlkk-cIKU5AyydJs3T_whrDLv7pgXH845-hzEAwJ1yHUMzg4ovETjQIwpKNsp2uF57eTYTdVHv-rXyAAJdRhOZ68ke40bxDSgotMXJg87cKzzlKYWDfcTNN6WfCl1OqIr2CEo-ljtucFamVYhwxrjxCLwzE9dR6zdyrfzHXFkY98Z5JUe7eseJ8WdiF_v9Nu/https%3A%2F%2Fwww.radiance-online.org%2Fmailman%2Flistinfo%2Fradiance-general
+
+____________________________________________________________
+Electronic mail messages entering and leaving Arup business
+systems are scanned for viruses and acceptability of content
+
+
+
+From mcneil.andrew at gmail.com  Fri Aug 11 16:22:29 2017
+From: mcneil.andrew at gmail.com (Andy McNeil)
+Date: Fri, 11 Aug 2017 16:22:29 -0700
+Subject: [Radiance-general] Rcontrib to render reinhart sky patches
+In-Reply-To: <0F0F4293-D854-48A3-BAAB-7D00D6E0E505@polyu.edu.hk>
+References: <0F0F4293-D854-48A3-BAAB-7D00D6E0E505@polyu.edu.hk>
+Message-ID: <CAEFJVk-ANi3TJ_chjgOZW7FU+VMingHFStfLz0g0gFsx=MXfCg@mail.gmail.com>
+
+Hi Tommy,
+Can you tell us what error you get or describe the result?
+When rendering MF4, make sure you increase the number of simultaneous files
+that can be open with this command:
+ulimit -n 6000
+
+Best,
+Andy
+
+On Tue, Aug 8, 2017 at 8:44 AM, WEI, Minchen [BSE] <minchen.wei at polyu.edu.hk
+> wrote:
+
+> Hello all,
+>
+> I am trying to use vwrays and rcontrib to render sky patches. The code
+> below works fine for the tregenza patches, but cannot render reinhart
+> patches.
+>
+> vwrays -ff $vw|rcontrib @image.opt -ffc -fo $(vwrays -d $vw) -V+ -f
+> tregenza.cal -b tbin -bn Ntbins -o images/patches/p%d.hdr -m skyglow a.oct
+>
+> vwrays -ff $vw|rcontrib @image.opt -ffc -fo $(vwrays -d $vw) -V+ -e MF:4
+> -f reinhart.cal -b rbin -bn Nrbins -o images/patches/p%d.hdr -m skyglow
+> a.oct
+>
+> Thank you!
+>
+> Tommy
+> [Sent from my iPhone]
+>
+> www.polyu.edu.hk/80anniversary
+>
+> *Disclaimer:*
+>
+> *This message (including any attachments) contains confidential
+> information intended for a specific individual and purpose. If you are not
+> the intended recipient, you should delete this message and notify the
+> sender and The Hong Kong Polytechnic University (the University)
+> immediately. Any disclosure, copying, or distribution of this message, or
+> the taking of any action based on it, is strictly prohibited and may be
+> unlawful.*
+>
+> *The University specifically denies any responsibility for the accuracy or
+> quality of information obtained through University E-mail Facilities. Any
+> views and opinions expressed are only those of the author(s) and do not
+> necessarily represent those of the University and the University accepts no
+> liability whatsoever for any losses or damages incurred or caused to any
+> party as a result of the use of such information.*
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170811/33b25661/attachment.html>
+
+From alenmahic at gmail.com  Tue Aug 22 09:35:42 2017
+From: alenmahic at gmail.com (Alen Mahic)
+Date: Tue, 22 Aug 2017 09:35:42 -0700
+Subject: [Radiance-general] 2017 International Radiance Workshop Live
+ Webcasts
+Message-ID: <CAJgQ_POcB809zbAe+=r7mPea4fHcwdHjw+iEtO66a-+Z7qTm6A@mail.gmail.com>
+
+Good morning all,
+
+A quick reminder that we will be webcasting the presentation sessions via
+GoToWebinar.
+
+Please check https://radiance.uoregon.edu/webcasts for an updated list of
+webcast registration links as the workshop progresses, and the agenda can
+be viewed at https://radiance.uoregon.edu/agenda
+
+Best regards,
+
+
+
+
+
+*Alen Mahi? Energy Studies in Buildings Laboratory, University of Oregon
+541.346.5647 p 208.283.0255 c *
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170822/7da69e3f/attachment.html>
+
+From 20.pin.chang at gmail.com  Fri Aug 25 08:22:42 2017
+From: 20.pin.chang at gmail.com (=?UTF-8?B?7ZWR7YGs6buS?=)
+Date: Fri, 25 Aug 2017 23:22:42 +0800
+Subject: [Radiance-general] General Questions: Math for Radiance;
+ Estimated time to proficiency
+Message-ID: <CANuMEArawg=Gwoqp-iyB=WoSjz8QBKy4qRFe1n2m_gC_Yxqrmw@mail.gmail.com>
+
+Hello Radiance Community,
+
+I'm from the ladybug/honeybee community. I'm not very familiar with the
+technicalities behind ray-tracing software so I was just wondering about
+what Mathematics/Physics I'd have to study in order to have a firm
+understanding of how Radiance works. The only thing that comes to mind is
+Optics and maybe Linear Algebra but I'm sure there's more to that.
+
+For example, I studied Thermodynamics in order to understand EnergyPlus,
+and Multivariable Calculus w/ Fluid dynamics to understand CFD software.
+
+Also, I was just wondering about the learning curve of Radiance. Although
+I'm not an expert, I'm quite confident in my Python skills. How long might
+it take me to get a good grasp of Radiance (Intermediate - Proficient) if
+study it for 2-3 hours a day?
+
+Thank you very much!
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170825/77a58759/attachment.html>
+
+From rmfritz3 at gmail.com  Sun Aug 27 20:10:19 2017
+From: rmfritz3 at gmail.com (Randolph M. Fritz)
+Date: Sun, 27 Aug 2017 20:10:19 -0700
+Subject: [Radiance-general] General Questions: Math for Radiance;
+ Estimated time to proficiency
+In-Reply-To: <CANuMEArawg=Gwoqp-iyB=WoSjz8QBKy4qRFe1n2m_gC_Yxqrmw@mail.gmail.com>
+References: <CANuMEArawg=Gwoqp-iyB=WoSjz8QBKy4qRFe1n2m_gC_Yxqrmw@mail.gmail.com>
+Message-ID: <CANeAMoLNEtF_4gOw8QtjAvo0RA6QCu2ZWGhrNb2d6bA5rRv=mg@mail.gmail.com>
+
+Glassner?s *Principles of Digital Image Synthesis*. (2 vols. San
+Francisco, CA: Morgann Kaufmann Publishers, Inc., 1995) is the
+reference I used, back when; anyone know if there has been a
+subsequent book which covers the same ground? The physics, I would
+say, is basically simple, *but* presents computational problems which
+remain difficult, even with modern computing hardware.
+
+For Radiance specifically, the mathematical specifics of the basic
+system are covered in *Rendering with Radiance* part III. Newer
+components are covered in various Radiance Workshop presentations.
+
+Randolph M. Fritz
+
+
+From germolinal at gmail.com  Mon Aug 28 05:29:36 2017
+From: germolinal at gmail.com (=?UTF-8?Q?Germ=C3=A1n_Molina_Larrain?=)
+Date: Mon, 28 Aug 2017 09:29:36 -0300
+Subject: [Radiance-general] General Questions: Math for Radiance;
+ Estimated time to proficiency
+In-Reply-To: <CANeAMoLNEtF_4gOw8QtjAvo0RA6QCu2ZWGhrNb2d6bA5rRv=mg@mail.gmail.com>
+References: <CANuMEArawg=Gwoqp-iyB=WoSjz8QBKy4qRFe1n2m_gC_Yxqrmw@mail.gmail.com>
+ <CANeAMoLNEtF_4gOw8QtjAvo0RA6QCu2ZWGhrNb2d6bA5rRv=mg@mail.gmail.com>
+Message-ID: <CAF-iH4Lkv7=RZ-+wWv34Wak-risz5jTRoiXaOTn84BdDS5FDeg@mail.gmail.com>
+
+Hello,
+
+I started just like you a few years ago... I also have a Thermodynamics
+background that ad to be complemented with Radiance (lighting simulation)
+knowledge.
+
+In my experience (from learning and teaching), the first really frustrating
+challenge people face is understanding that Radiance is not "a program" as
+they are used to, but a "suite of program" that have to be used in "that
+ugly, old-school and unpleasant terminal". Getting to understand the Unix
+way might be hard.
+
+However, if you already know Python, you are, probably, already with those
+concepts. After understanding that, I found the tutorials available in the
+Radiance-online website very useful for general matters. Also, for
+understanding better the different programs and learning how to organize
+your files, I found the tutorials on the Rendering With Radiance book very
+good.
+
+A third step, I would say, is to understand how Ray-tracing works. There
+are a few good lectures on rendering and computer graphics on YouTube that
+you can watch. They will guide you on some core concepts, I think. After
+that, it may be useful to read a bit of how Radiance work itself. This can
+be done through the Rendering With Radiance book and/or journal and
+conference articles by Greg Ward.
+
+Finally, to understand climate based daylight simulation methods (all first
+3 steps were focused on how radiance did things), I would recommend to read
+the advanced tutorials on the website (3-phase method, 5-phase method,
+etc.) and maybe some journal articles on those topics. John Mardaljevic PhD
+thesis is also a good asset, as well as some papers by Christoph Reinhart,
+both developed methodologies for performing annual simulations using
+Radiance. In this regard, I made a literature review on lighting and
+thermal simulation methods for my M.Sc. thesis a while ago... after a while
+I noticed there were things missing (i.e. John's 4-component method being
+the most remarkable one), but it might help you.
+
+I hope that helps... I learned using these sources, as well as this list,
+which is full of very nice people who may help you a lot
+
+Germ?n
+
+
+
+2017-08-28 0:10 GMT-03:00 Randolph M. Fritz <rmfritz3 at gmail.com>:
+
+> Glassner?s *Principles of Digital Image Synthesis*. (2 vols. San
+> Francisco, CA: Morgann Kaufmann Publishers, Inc., 1995) is the
+> reference I used, back when; anyone know if there has been a
+> subsequent book which covers the same ground? The physics, I would
+> say, is basically simple, *but* presents computational problems which
+> remain difficult, even with modern computing hardware.
+>
+> For Radiance specifically, the mathematical specifics of the basic
+> system are covered in *Rendering with Radiance* part III. Newer
+> components are covered in various Radiance Workshop presentations.
+>
+> Randolph M. Fritz
+>
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170828/63e4e897/attachment.html>
+
+From roland.schregle at hslu.ch  Mon Aug 28 06:52:15 2017
+From: roland.schregle at hslu.ch (Roland Schregle)
+Date: Mon, 28 Aug 2017 15:52:15 +0200
+Subject: [Radiance-general] General Questions: Math for Radiance;
+ Estimated time to proficiency
+In-Reply-To: <CANeAMoLNEtF_4gOw8QtjAvo0RA6QCu2ZWGhrNb2d6bA5rRv=mg@mail.gmail.com>
+References: <CANuMEArawg=Gwoqp-iyB=WoSjz8QBKy4qRFe1n2m_gC_Yxqrmw@mail.gmail.com>
+ <CANeAMoLNEtF_4gOw8QtjAvo0RA6QCu2ZWGhrNb2d6bA5rRv=mg@mail.gmail.com>
+Message-ID: <op.y5ootds6gtp6ln@radiance>
+
+On Mon, 28 Aug 2017 05:10:19 +0200, Randolph M. Fritz <rmfritz3 at gmail.com>  
+wrote:
+
+> Glassner?s *Principles of Digital Image Synthesis*. (2 vols. San
+> Francisco, CA: Morgann Kaufmann Publishers, Inc., 1995) is the
+> reference I used, back when; anyone know if there has been a
+> subsequent book which covers the same ground? The physics, I would
+> say, is basically simple, *but* presents computational problems which
+> remain difficult, even with modern computing hardware.
+
+I second the recommendation for Glassner's comprehensive 2-volume  
+reference, and I consider most of it still relevant, though it of course  
+doesn't cover the newer sampling algorithms like Vertex Connection &  
+Merging and Markov Chain Monte Carlo (Metropolis and derivatives), but  
+these are absent in RADIANCE anyway.
+
+I'd also like to point out Philip Dutr?'s excellent Global Illumination  
+Compendium (https://people.cs.kuleuven.be/~philip.dutre/GI/). This is a  
+highly condensed formulaic summary of a lot of what goes in RADIANCE (and  
+other GI software). It does assume a strong background in mathematics,  
+however. It's an absolute must-have for developers, and was always on my  
+desk when I developed the initial photon mapping release. If you ever  
+wondered how radiance handles hemispherical geometry in its sampling  
+routines, for instance, this document will explain it in probably more  
+detail than you care to know. ;^)
+
+The "Advanced Global Illumination" book referred to in the above link is  
+worth a look too; it's a more general overview of GI techniques and more  
+recent than Glassner's reference, though I personally find it lacking in  
+detail compared to the latter. As an overview, it does the job, tho.
+
+"Physically Based Rendering" by Pharr, Jakob, and Humphreys  
+(http://www.pbrt.org/) is the most up-to-date of these references, and  
+describes advanced raytracing algorithms as implemented in PBRT, an  
+open-source raytracer with functionality similar to RADIANCE, albeit for  
+more general rendering using newer algorithms. This is a hands-on book  
+that places less emphasis on the maths and more on the implementation.
+
+Hope this helps; best regards,
+
+--Roland
+
+
+-- 
+Lucerne University of Applied Sciences and Arts
+School of Engineering and Architecture
+
+Institute of Civil Engineering
+CC Building Envelopes
+Dr. Roland Schregle
+Senior Research Associate
+
+T direct: +41 41 349 36 26
+roland.schregle at hslu.ch
+
+Technikumstrasse 21, CH-6048 Horw
+T +41 41 349 33 11, F +41 41 349 39 60
+www.hslu.ch/ccease
+
+
+From gregoryjward at gmail.com  Mon Aug 28 16:09:00 2017
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Mon, 28 Aug 2017 16:09:00 -0700
+Subject: [Radiance-general] Official Radiance 5.1 release
+Message-ID: <E8C3D729-CC04-4FC7-9754-137E19401C17@gmail.com>
+
+As announced at the recent workshop, a new, official release of Radiance (5.1) is now available for download.
+
+This release contains a number of important bug fixes:
+
+	?	Fixed issue with multiple records on picture output in rcontrib & rfluxmtx
+	?	Fixed Klems normalization (wrapBSDF)
+	?	Fixed old bug: -aa 0 ignored textures
+	?	Added MAX2SHADE macro to avoid long start-up times with many sources
+	?	Fixed orientation of Reinhart & Tregenza sampling in rfluxmtx
+
+We also have a few new features, such as:
+
+	?	New getinfo -a option
+	?	Added genBSDF -recover option
+	?	Rewrote bsdf2rad for better BSDF visualizatons
+	?	Improved handling of ?view? component in Klems & tensor tree BSDFs
+
+Finally, we have some contribution updates:
+
+	?	Roland Schregle added multiprocessing to photon-map routines
+	?	Worked with Rob Guglielmetti to get it to compile smoothly under Windows (where MP is not supported)
+	?	view360stereo.cal by Mark Stock
+	?	evalglare fixes from Jan Wienold
+
+The code can be found at:
+
+	https://www.radiance-online.org/download-install/radiance-source-code/latest-release
+
+Thanks to Rob Guglielmetti and others at NREL, installers are ready to go for Windows and Mac OS X, with a compile-ready package for Linux at:
+
+	https://github.com/NREL/Radiance/releases
+
+Best,
+-Greg
+
+P.S.  Be sure to check out the workshop talks, posted by Andy McNeil at:
+
+	https://www.radiance-online.org/community/workshops/2017-portland-or
+
+From gregoryjward at gmail.com  Tue Aug 29 14:05:57 2017
+From: gregoryjward at gmail.com (Gregory J. Ward)
+Date: Tue, 29 Aug 2017 14:05:57 -0700
+Subject: [Radiance-general] Radiance under Mac OS X (Mavericks 10.9 and
+ later)
+Message-ID: <8C66CCAF-6C16-4953-8283-F2965EED2955@gmail.com>
+
+If you are running Radiance under a recent edition of Mac OS X, you may want to selectively disable "App Nap", which is a feature that makes your process take longer because it thinks you're not "using it."  See:
+
+	https://www.howtogeek.com/277414/what-is-app-nap-is-it-slowing-down-my-mac-apps/
+
+You can scroll down for how to disable App Nap for specific applications.  I haven't experimented with it enough to be sure if it's sufficient to just disable it for the Terminal, or if you have to individually apply it to the Radiance renderers (if such a thing is possible), or if you need to do it system-wide.  You may need to experiment, and please report back with what you found.
+
+I'm still running Lion (10.7), because it's the *oldest* version of OS X my MacBook supports.   So, I don't really know how big a problem this is, but I've noticed that background renders take forever under more recent versions.  (Can't say I'm a fan of anything Apple has done in the last 5 years.)
+
+Also check out a very useful command-line tool called "caffeinate", which I just heard about.  It flags a process to keep the system from going to sleep while it's running.
+
+Cheers,
+-Greg
+
+From stephen at coolshadow.com  Wed Aug 30 17:56:09 2017
+From: stephen at coolshadow.com (Stephen Wasilewski)
+Date: Wed, 30 Aug 2017 17:56:09 -0700
+Subject: [Radiance-general] Radiance under Mac OS X (Mavericks 10.9 and
+ later)
+In-Reply-To: <8C66CCAF-6C16-4953-8283-F2965EED2955@gmail.com>
+References: <8C66CCAF-6C16-4953-8283-F2965EED2955@gmail.com>
+Message-ID: <CAK5mS-9h4dMMYVmPun5SinZm8rCqXxFvc9ZkNqqJWHK1-htWgw@mail.gmail.com>
+
+I tested this on 10.9.5:
+Using a rtrace process running for 10 minutes as a benchmark, the run with
+app nap disabled calculated the same general number of points as the run
+where app nap kicked in after a minute or two.
+
+Activity Monitor shows app nap in effect for terminal, but not any of its
+child processes (bash, rtrace, etc), so it's possible it has no effect on
+these, to be safe I will be leaving app nap disabled for terminal.
+
+You cannot disable app nap for terminal per the instructions in the article
+greg linked, so you need to either use the system wide command (in
+terminal):
+
+defaults write NSGlobalDomain NSAppSleepDisabled -bool YES
+
+OR, to just disable for terminal:
+
+defaults write com.apple.Terminal NSAppSleepDisabled -bool YES
+
+to undo either of these replace YES with NO in the command.  Global changes
+requires a restart to take effect, terminal specific changes requires
+quitting and reopening terminal.
+
+
+Stephen Wasilewski
+*LOISOS *+* UBBELOHDE*
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+1917 Clement Avenue  Building 10A
+Alameda, CA  94501 USA
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+510 521 3800 VOICE
+510 521 3820 FAX
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+www.coolshadow.com
+
+On Tue, Aug 29, 2017 at 2:05 PM, Gregory J. Ward <gregoryjward at gmail.com>
+wrote:
+
+> If you are running Radiance under a recent edition of Mac OS X, you may
+> want to selectively disable "App Nap", which is a feature that makes your
+> process take longer because it thinks you're not "using it."  See:
+>
+>         https://www.howtogeek.com/277414/what-is-app-nap-is-it-
+> slowing-down-my-mac-apps/
+>
+> You can scroll down for how to disable App Nap for specific applications.
+> I haven't experimented with it enough to be sure if it's sufficient to just
+> disable it for the Terminal, or if you have to individually apply it to the
+> Radiance renderers (if such a thing is possible), or if you need to do it
+> system-wide.  You may need to experiment, and please report back with what
+> you found.
+>
+> I'm still running Lion (10.7), because it's the *oldest* version of OS X
+> my MacBook supports.   So, I don't really know how big a problem this is,
+> but I've noticed that background renders take forever under more recent
+> versions.  (Can't say I'm a fan of anything Apple has done in the last 5
+> years.)
+>
+> Also check out a very useful command-line tool called "caffeinate", which
+> I just heard about.  It flags a process to keep the system from going to
+> sleep while it's running.
+>
+> Cheers,
+> -Greg
+> _______________________________________________
+> Radiance-general mailing list
+> Radiance-general at radiance-online.org
+> https://www.radiance-online.org/mailman/listinfo/radiance-general
+>
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170830/757587bb/attachment.html>
+
+From gregoryjward at gmail.com  Thu Aug 31 08:35:47 2017
+From: gregoryjward at gmail.com (Greg Ward)
+Date: Thu, 31 Aug 2017 08:35:47 -0700
+Subject: [Radiance-general] Radiance under Mac OS X (Mavericks 10.9 and
+ later)
+In-Reply-To: <CAK5mS-9h4dMMYVmPun5SinZm8rCqXxFvc9ZkNqqJWHK1-htWgw@mail.gmail.com>
+References: <8C66CCAF-6C16-4953-8283-F2965EED2955@gmail.com>
+ <CAK5mS-9h4dMMYVmPun5SinZm8rCqXxFvc9ZkNqqJWHK1-htWgw@mail.gmail.com>
+Message-ID: <B26A4DE2-9291-4CA6-A436-575E775CC961@lmi.net>
+
+Hi Stephen,
+
+Thanks for doing a little investigation of this.  Sounds like it's not too big a problem, at least with the latest releases of OS X.  I can't remember exactly when I noticed it was an issue -- it must have been 10.8, and they fixed it since then.  Anyway, I was looking up some tips on speeding up Mac's and ran across this, so thought I would pass it along.
+
+Cheers,
+-Greg
+
+> From: Stephen Wasilewski <stephen at coolshadow.com>
+> Date: August 30, 2017 5:56:09 PM PDT
+> 
+> I tested this on 10.9.5:
+> Using a rtrace process running for 10 minutes as a benchmark, the run with app nap disabled calculated the same general number of points as the run where app nap kicked in after a minute or two.
+> 
+> Activity Monitor shows app nap in effect for terminal, but not any of its child processes (bash, rtrace, etc), so it's possible it has no effect on these, to be safe I will be leaving app nap disabled for terminal.
+> 
+> You cannot disable app nap for terminal per the instructions in the article greg linked, so you need to either use the system wide command (in terminal):
+> 
+> defaults write NSGlobalDomain NSAppSleepDisabled -bool YES
+> 
+> OR, to just disable for terminal:
+> 
+> defaults write com.apple.Terminal NSAppSleepDisabled -bool YES
+> 
+> to undo either of these replace YES with NO in the command.  Global changes requires a restart to take effect, terminal specific changes requires quitting and reopening terminal.
+> 
+> 
+> Stephen Wasilewski
+> www.coolshadow.com
+> 
+> On Tue, Aug 29, 2017 at 2:05 PM, Gregory J. Ward <gregoryjward at gmail.com> wrote:
+> If you are running Radiance under a recent edition of Mac OS X, you may want to selectively disable "App Nap", which is a feature that makes your process take longer because it thinks you're not "using it."  See:
+> 
+>         https://www.howtogeek.com/277414/what-is-app-nap-is-it-slowing-down-my-mac-apps/
+> 
+> You can scroll down for how to disable App Nap for specific applications.  I haven't experimented with it enough to be sure if it's sufficient to just disable it for the Terminal, or if you have to individually apply it to the Radiance renderers (if such a thing is possible), or if you need to do it system-wide.  You may need to experiment, and please report back with what you found.
+> 
+> I'm still running Lion (10.7), because it's the *oldest* version of OS X my MacBook supports.   So, I don't really know how big a problem this is, but I've noticed that background renders take forever under more recent versions.  (Can't say I'm a fan of anything Apple has done in the last 5 years.)
+> 
+> Also check out a very useful command-line tool called "caffeinate", which I just heard about.  It flags a process to keep the system from going to sleep while it's running.
+> 
+> Cheers,
+> -Greg
+> ________________________________
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: <http://www.radiance-online.org/pipermail/radiance-general/attachments/20170831/84e4ba1f/attachment.html>
+
